@@ -1,4 +1,4 @@
-import { user, verification } from '@kobato/server/infra/db/schema/user.ts'
+import { user, verification } from '@kobato/db/schema/user.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

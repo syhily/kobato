@@ -1,9 +1,8 @@
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { sendTestMail } from '@kobato/server/infra/email/sender.ts'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { sendTestMail } from '../../../infra/email/sender'
-import { adminProc } from '../../orpc-base'
 
 const sendTest = adminProc
   .route({ method: 'POST', path: '/admin/mail/send-test' })

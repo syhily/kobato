@@ -1,5 +1,5 @@
+import { comment } from '@kobato/db/schema/comment.ts'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
-import { comment } from '@kobato/server/infra/db/schema/comment.ts'
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/test/mock-ctx.ts'

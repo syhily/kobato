@@ -1,14 +1,12 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@kobato/shared/utils/comment-token.ts'
 
+import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 import { and, eq, gt, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
-
-import type { Database } from '../../../infra/db/database'
-
-import { oneTimeToken } from '../../../infra/db/schema/one-time-token'
-import { getLogger } from '../../../infra/logger'
 
 const log = getLogger('comments.token')
 

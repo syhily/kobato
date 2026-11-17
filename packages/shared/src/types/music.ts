@@ -2,7 +2,7 @@
 // DTOs (`AdminMusicDto`, `MetingSearchHit`, list/search/add/update outputs)
 // are zod-derived in `@/shared/contracts/music`.
 
-import type { MetingSource } from '../contracts/music'
+import type { MetingSource } from '@kobato/shared/contracts/music.ts'
 
 export interface ListMusicInput {
   q?: string

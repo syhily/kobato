@@ -1,16 +1,15 @@
-import type { ReactNode } from 'react'
-
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '../editor-shell/editor-shell-types'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
+import type { ReactNode } from 'react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/card'
-import { Label } from '../../components/label'
-import { Textarea } from '../../components/textarea'
-import { useI18n } from '../../lib/I18nProvider'
-import { PublishStatusRow } from './PublishStatusRow'
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Textarea } from '@kobato/ui/components/textarea.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { PublishStatusRow } from '@kobato/web/ui/admin/editor-shared/PublishStatusRow.tsx'
 
 export interface BasicInfoCardProps {
   /** `<Textarea>` id + label htmlFor (`post-summary` / `page-summary`). */

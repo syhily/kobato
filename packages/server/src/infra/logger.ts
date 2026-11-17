@@ -2,12 +2,11 @@
 // stable surface. L3 fields are wrapped in {E}…{/E} and credential headers
 // are fully [REDACTED] by logger/sanitizer.ts, never tagged.
 
+import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from '@kobato/server/infra/config.ts'
+import { pushLogLine } from '@kobato/server/infra/logger/sink.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { Writable } from 'node:stream'
 import pino from 'pino'
-
-import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from './config'
-import { pushLogLine } from './logger/sink'
 
 type Level = NonNullable<ServerConfig['server']['loggingLevel']>
 

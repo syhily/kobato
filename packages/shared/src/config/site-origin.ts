@@ -1,4 +1,4 @@
-import { getBlogSettingsBundleSync } from './getters'
+import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 
 /** Single owner of the site-origin derivation: configured `website` or the
  *  request origin — email links must point at the public site, never at an

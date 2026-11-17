@@ -2,11 +2,14 @@
 // client-revision token plus the latest/published revisions advance ONLY through
 // `updateAfterSave`; the `server` autosave freeze rides the same race.
 
+import type {
+  EditorShellDetail,
+  EntityLike,
+  RevisionLike,
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
+
+import { deriveBaselineRevision } from '@kobato/web/ui/admin/editor-shell/editor-shell-derived.ts'
 import { useCallback, useState } from 'react'
-
-import type { EditorShellDetail, EntityLike, RevisionLike } from './editor-shell-types'
-
-import { deriveBaselineRevision } from './editor-shell-derived'
 
 export function useEditorShellPersistRace<TEntity extends EntityLike>(detail: EditorShellDetail<TEntity> | undefined) {
   const [expectedToken, setExpectedToken] = useState<string | null>(

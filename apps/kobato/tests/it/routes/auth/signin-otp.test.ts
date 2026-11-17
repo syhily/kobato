@@ -3,12 +3,12 @@ import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { Mock } from 'vitest'
 
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { user, verification } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { user, verification } from '@kobato/server/infra/db/schema/user.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
@@ -65,7 +65,7 @@ const OTP_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-const { action } = await import('@/routes/auth/signin')
+const { action } = await import('@/routes/auth/signin.tsx')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

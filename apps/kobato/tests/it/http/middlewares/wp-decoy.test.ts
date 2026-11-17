@@ -1,6 +1,6 @@
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { isWordPressDecoyPath } from '@kobato/server/http/middlewares/wp-decoy.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { regularSession } from '@kobato/test/session.ts'
@@ -37,7 +37,7 @@ async function seedPage(slug: string, title: string): Promise<number> {
   return pageId
 }
 
-const pageDetailRoute = await import('@/routes/public/page/detail')
+const pageDetailRoute = await import('@/routes/public/page/detail.tsx')
 
 describe('isWordPressDecoyPath', () => {
   it('matches WordPress probe patterns', () => {

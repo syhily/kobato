@@ -1,10 +1,9 @@
+import type { Setting } from '@kobato/db/types.ts'
 import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 
-import type { Setting } from '../../../infra/db/types'
-
-import { encryptIfNeeded } from '../../../infra/crypto/secret-encryption'
-import { SECRET_FIELDS } from '../secrets'
-import { isRecord } from './section-patch'
+import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
+import { isRecord } from '@kobato/server/domains/settings/services/section-patch.ts'
+import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
 
 /**
  * Shape the validated payload into the row to persist: omitted secrets carry over from

@@ -1,6 +1,5 @@
+import type { SanitizeStrategyConfig } from '@kobato/shared/sanitize/config.ts'
 import type createDOMPurify from 'dompurify'
-
-import type { SanitizeStrategyConfig } from './config'
 
 // Shared DOMPurify core for both sanitize engines. The engines differ only in
 // where the DOM comes from (browser global vs a process-cached jsdom); every

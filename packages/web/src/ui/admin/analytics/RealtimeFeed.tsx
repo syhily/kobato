@@ -1,11 +1,10 @@
 import type { RealtimeEvent } from '@kobato/shared/contracts/analytics.ts'
 
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useEventStream } from '@kobato/web/ui/admin/analytics/use-event-stream.ts'
 import { useMemo } from 'react'
-
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/card'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useEventStream } from './use-event-stream'
 
 export function RealtimeFeed({ className }: { className?: string }) {
   const { t } = useI18n()

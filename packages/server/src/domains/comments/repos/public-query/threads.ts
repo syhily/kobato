@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { EntityTarget } from '@kobato/db/target.ts'
+
+import { comment } from '@kobato/db/schema/comment.ts'
+import { user } from '@kobato/db/schema/user.ts'
+import { commentWithUser, whereTarget } from '@kobato/server/domains/comments/repos/shared.ts'
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
-
-import type { Database } from '../../../../infra/db/database'
-import type { EntityTarget } from '../../../../infra/db/target'
-
-import { comment } from '../../../../infra/db/schema/comment'
-import { user } from '../../../../infra/db/schema/user'
-import { commentWithUser, whereTarget } from '../shared'
 
 // Viewer-visibility predicate: caller-visible pending rows without a delete
 // request, or the viewer's own pending/delete-requested comment.

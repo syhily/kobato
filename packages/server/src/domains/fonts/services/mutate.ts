@@ -1,19 +1,17 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { FontRow } from '@kobato/db/schema/font.ts'
 import type { FontsSettings } from '@kobato/shared/config/types.ts'
 import type { FontSlot } from '@kobato/shared/contracts/fonts.ts'
 
+import { findSettingByScope } from '@kobato/db/operations/setting.ts'
+import { font } from '@kobato/db/schema/font.ts'
+import { deleteFontPackage } from '@kobato/server/domains/fonts/storage.ts'
+import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { eq, inArray } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { FontRow } from '../../../infra/db/schema/font'
-
-import { findSettingByScope } from '../../../infra/db/operations/setting'
-import { font } from '../../../infra/db/schema/font'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { SECTION_REGISTRY } from '../../settings/sections/registry'
-import { updateBlogSettingsSection } from '../../settings/services/core'
-import { deleteFontPackage } from '../storage'
 
 // Mutation side of the fonts domain: slot assignment and direct delete. Slot
 // edits never garbage-collect a font package — only an explicit delete does.

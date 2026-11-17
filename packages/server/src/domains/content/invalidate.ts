@@ -1,4 +1,4 @@
-import { bumpCounter, clear } from '../../infra/cache/registry'
+import { bumpCounter, clear } from '@kobato/server/infra/cache/registry.ts'
 
 /**
  * The single content-invalidation door: mutations emit one coarse event,

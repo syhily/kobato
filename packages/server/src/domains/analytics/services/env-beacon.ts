@@ -1,11 +1,9 @@
+import type { DeviceEnvClientRow } from '@kobato/server/domains/analytics/services/device-env.ts'
 import type { DeviceEnvBeacon } from '@kobato/shared/contracts/analytics.ts'
 
 import { type DuckDBConnection } from '@duckdb/node-api'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { DeviceEnvClientRow } from './device-env'
-
-import { getBatcher, registerBatcher, requireBatcher } from '../../../infra/db/batcher-registry'
+import { appendDeviceEnvClientRows } from '@kobato/server/domains/analytics/services/device-env.ts'
+import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
 import {
   deserializeDeadLetterJsonLine,
   type FlushResult,
@@ -13,10 +11,10 @@ import {
   replayDeadLetter as replayFromInfra,
   serializeDeadLetterJsonLines,
   writeDeadLetter,
-} from '../../../infra/db/insert-batcher'
-import { getLogger } from '../../../infra/logger'
-import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '../../../infra/paths'
-import { appendDeviceEnvClientRows } from './device-env'
+} from '@kobato/server/infra/db/insert-batcher.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '@kobato/server/infra/paths.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // The device-environment beacon side (`device_env_client`): the beacon arrives
 // seconds after the server-side event row, so it is a pure append into its own

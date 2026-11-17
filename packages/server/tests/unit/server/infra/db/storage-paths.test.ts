@@ -1,5 +1,6 @@
+import { isInMemoryPath } from '@kobato/db/database.ts'
 import { resolveAnalyticsPath } from '@kobato/server/infra/analytics/duckdb.ts'
-import { isInMemoryPath, resolveDatabasePath } from '@kobato/server/infra/db/database.ts'
+import { resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
 import { describe, expect, it } from 'vitest'
 
 // The unit setup provides the config env (storage__data=/tmp/kobato-data,

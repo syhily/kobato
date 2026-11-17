@@ -1,6 +1,5 @@
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
 import { z } from 'zod'
-
-import { idString, isoDateTime } from './primitives'
 
 // Fields every content entity (post / page) shares, projected from the shared
 // meta columns. Bigint ids are stringified — the admin contract declares

@@ -1,9 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { Comment, NewComment } from '@kobato/db/types.ts'
+
+import { comment } from '@kobato/db/schema/comment.ts'
 import { and, eq } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { Comment, NewComment } from '../../../infra/db/types'
-
-import { comment } from '../../../infra/db/schema/comment'
 
 export function insertComment(db: Database, values: NewComment): Comment | null {
   const res = db.insert(comment).values(values).returning().all()

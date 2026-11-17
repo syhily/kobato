@@ -1,12 +1,11 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { NavigateFunction } from 'react-router'
 
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { type ConfirmState } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
-import { useI18n } from '../../lib/I18nProvider'
-import { type ConfirmState } from '../shared/ConfirmDialog'
 
 export interface UseEditorDeleteRestoreArgs {
   /** Edit-mode entity; `undefined` in create mode (buttons stay unmounted). */

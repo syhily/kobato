@@ -6,9 +6,9 @@ import type { BrowserContext, Locator, Page } from '@playwright/test'
 
 import { expect } from '@playwright/test'
 
-import type { BrowserEnv } from './env'
+import type { BrowserEnv } from './env.ts'
 
-import { BASELINE_GENERAL } from './settings-api'
+import { BASELINE_GENERAL } from './settings-api.ts'
 
 /** Endonyms, deliberately NOT translated (see `LOCALE_DISPLAY_NAMES`). */
 export const LOCALE_LABELS = {

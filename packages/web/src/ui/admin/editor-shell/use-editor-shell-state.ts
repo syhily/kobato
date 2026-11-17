@@ -1,17 +1,14 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
-
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/shared/lexical/schema.ts'
-import { useCallback, useMemo, useState } from 'react'
-
 import type {
   EntityLike,
   PublishState,
   SidebarPublishStatus,
   UseEditorShellStateArgs,
   UseEditorShellStateOutput,
-} from './editor-shell-types'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { useCreateDraft } from '../../../client/hooks/use-create-draft'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/shared/lexical/schema.ts'
+import { useCreateDraft } from '@kobato/web/client/hooks/use-create-draft.ts'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
@@ -19,10 +16,11 @@ import {
   deriveSidebarPublishStatus,
   deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
-} from './editor-shell-derived'
-import { useEditorKeyboardShortcuts } from './use-editor-keyboard-shortcuts'
-import { useEditorShellLayout } from './use-editor-shell-layout'
-import { useEditorShellPersist } from './use-editor-shell-persist'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-derived.ts'
+import { useEditorKeyboardShortcuts } from '@kobato/web/ui/admin/editor-shell/use-editor-keyboard-shortcuts.ts'
+import { useEditorShellLayout } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-layout.ts'
+import { useEditorShellPersist } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-persist.ts'
+import { useCallback, useMemo, useState } from 'react'
 
 export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },

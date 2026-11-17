@@ -4,13 +4,11 @@
 // body surfaces as the `local` autosave freeze leg until the dialog resolves it.
 
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { LocalDraftConfig } from '@kobato/web/client/hooks/use-local-draft.ts'
 
 import { areLexicalEditorStatesEquivalent } from '@kobato/shared/lexical/equivalence.ts'
+import { useLocalDraft } from '@kobato/web/client/hooks/use-local-draft.ts'
 import { useCallback, useState } from 'react'
-
-import type { LocalDraftConfig } from '../../../client/hooks/use-local-draft'
-
-import { useLocalDraft } from '../../../client/hooks/use-local-draft'
 
 export interface EditorShellLocalConflict {
   localBody: LexicalEditorState

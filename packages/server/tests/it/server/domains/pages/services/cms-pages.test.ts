@@ -1,9 +1,9 @@
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
 import * as lifecycle from '@kobato/server/domains/content/lifecycle.ts'
 import * as adminQuery from '@kobato/server/domains/pages/services/admin-query.ts'
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
 import * as mutate from '@kobato/server/domains/pages/services/mutate.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageMetaTable } from '@kobato/server/infra/db/schema/page.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import {

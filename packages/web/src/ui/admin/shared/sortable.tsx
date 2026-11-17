@@ -11,9 +11,8 @@ import {
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { GripVerticalIcon } from 'lucide-react'
-
-import { useI18n } from '../../lib/I18nProvider'
 
 // Shared chrome for the admin's @dnd-kit sortable lists: sensors, drag-end
 // plumbing, and row scaffolding — lists keep their own row contents and

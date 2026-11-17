@@ -1,9 +1,8 @@
+import { COMMENT_NODE_TYPES } from '@kobato/shared/lexical/node-whitelist.ts'
+import { buildLexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
+import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { z } from 'zod'
-
-import { unsafeCast } from '../utils/unsafe-cast'
-import { COMMENT_NODE_TYPES } from './node-whitelist'
-import { buildLexicalEditorStateSchema } from './schema'
-import { lexicalNodeTextContent, visitLexicalNodes } from './walk'
 
 // Restricted Lexical state for comment bodies — the server perimeter validates
 // every incoming body. Capability set: multi-paragraph, blockquote, nested

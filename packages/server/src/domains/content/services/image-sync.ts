@@ -1,12 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
 
+import { findImagesByIds, updateImageNote } from '@kobato/db/operations/image.ts'
 import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { Database } from '../../../infra/db/database'
-
-import { findImagesByIds, updateImageNote } from '../../../infra/db/operations/image'
 
 // Save-time sync for `image` nodes: library nodes re-resolve from the
 // canonical `image` row and write back `alt`; external nodes are left

@@ -1,0 +1,24 @@
+{
+  "name": "@kobato/db",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "src",
+    "drizzle"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    "./drizzle/*": "./drizzle/*",
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/db": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@types/node": "catalog:",
+    "bcryptjs": "catalog:",
+    "drizzle-orm": "catalog:",
+    "vitest": "catalog:"
+  }
+}

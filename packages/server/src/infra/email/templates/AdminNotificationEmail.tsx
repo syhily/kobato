@@ -1,11 +1,10 @@
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+
+import { Hr, Link, Text } from '@kobato/server/infra/email/render.tsx'
+import { RawEmailHtml } from '@kobato/server/infra/email/safe-html.tsx'
+import { EmailLayout } from '@kobato/server/infra/email/templates/layout/EmailLayout.tsx'
+import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-
-import type { ServerTranslator } from '../../i18n'
-
-import { Hr, Link, Text } from '../render'
-import { RawEmailHtml } from '../safe-html'
-import { EmailLayout } from './layout/EmailLayout'
-import { light } from './styles/tokens'
 
 // One card line: text rows render `{label}{value}` (first emphasised, rest muted);
 // `html` rows carry a pre-sanitised comment body — see `RawEmailHtml`.

@@ -1,20 +1,18 @@
+import type { MailTransport, SendOptions, SendResult } from '@kobato/server/infra/email/types.ts'
 import type { ServerMessageId } from '@kobato/shared/i18n/messages/server/en-US.ts'
 
+import { render } from '@kobato/server/infra/email/render.tsx'
+import AuthorInvite from '@kobato/server/infra/email/templates/AuthorInvite.tsx'
+import PasswordReset from '@kobato/server/infra/email/templates/PasswordReset.tsx'
+import SignInLink from '@kobato/server/infra/email/templates/SignInLink.tsx'
+import SignInOtp from '@kobato/server/infra/email/templates/SignInOtp.tsx'
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
+import { MailgunTransport } from '@kobato/server/infra/email/transports/mailgun.ts'
+import { SmtpTransport } from '@kobato/server/infra/email/transports/smtp.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { escapeHtml } from '@kobato/shared/utils/security.ts'
 import { createHash } from 'node:crypto'
-
-import type { MailTransport, SendOptions, SendResult } from './types'
-
-import { getLogger } from '../logger'
-import { render } from './render'
-import AuthorInvite from './templates/AuthorInvite'
-import PasswordReset from './templates/PasswordReset'
-import SignInLink from './templates/SignInLink'
-import SignInOtp from './templates/SignInOtp'
-import { emailTranslator } from './translator'
-import { MailgunTransport } from './transports/mailgun'
-import { SmtpTransport } from './transports/smtp'
 
 const log = getLogger('email')
 

@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 
-import type { RequestFacts } from '../../infra/http/request-facts'
+import { randomUUID } from 'node:crypto'
 
 /**
  * Normalize a request URL to its document form (`.data`/`_.data` stripped,

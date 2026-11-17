@@ -1,5 +1,5 @@
+import { setting } from '@kobato/db/schema/config.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'

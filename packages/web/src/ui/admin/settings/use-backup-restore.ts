@@ -1,14 +1,12 @@
 import type { RestoreProgressDto, RestoreProgressStage } from '@kobato/shared/types/backup.ts'
+import type { ToastTranslator } from '@kobato/web/client/lib/toast-api-error.ts'
+import type { RestoreStep } from '@kobato/web/ui/admin/settings/RestoreProgressPanel.tsx'
 
 import { extractApiErrorMessage } from '@kobato/shared/utils/api-error.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-
-import type { ToastTranslator } from '../../../client/lib/toast-api-error'
-import type { RestoreStep } from './RestoreProgressPanel'
-
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { useI18n } from '../../lib/I18nProvider'
 
 const PROGRESS_POLL_MS = 500
 const READY_POLL_MS = 2000

@@ -1,9 +1,8 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { CheckIcon, Loader2Icon } from 'lucide-react'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 export type RestoreStep = 'uploading' | 'decrypting' | 'extracting' | 'switching' | 'restarting'
 

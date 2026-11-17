@@ -1,13 +1,12 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { useMutation } from '@tanstack/react-query'
 import { EyeIcon, EyeOffIcon, KeyRoundIcon } from 'lucide-react'
 import { useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/card'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
 
 export function PasswordChangeForm() {
   const { t } = useI18n()

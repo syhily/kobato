@@ -3,7 +3,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import CategoryListRoute from '@/routes/public/category/list'
+import CategoryListRoute from '@/routes/public/category/list.tsx'
 
 describe('snapshot: routes/public/category/list', () => {
   it('renders the category listing route', () => {

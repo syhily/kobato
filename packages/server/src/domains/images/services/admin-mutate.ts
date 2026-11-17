@@ -1,6 +1,5 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
-
-import type { Database } from '../../../infra/db/database'
 
 import {
   findAdminImageRowById,
@@ -8,15 +7,15 @@ import {
   softDeleteImage,
   updateImageNoteWithUploader,
   updateImageThumbhashWithUploader,
-} from '../../../infra/db/operations/image'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError, ErrorMessages } from '../../../infra/http/errors'
-import { processImageBuffer } from '../../../infra/image/process'
-import { getLogger } from '../../../infra/logger'
-import { StorageObjectNotFound } from '../../../infra/storage/backend'
-import { backendFor } from '../../../infra/storage/registry'
-import { canEditImage, type ViewerIdentity } from '../../auth/rbac'
-import { toAdminImageDto } from './admin-read'
+} from '@kobato/db/operations/image.ts'
+import { canEditImage, type ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import { toAdminImageDto } from '@kobato/server/domains/images/services/admin-read.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
+import { processImageBuffer } from '@kobato/server/infra/image/process.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
+import { backendFor } from '@kobato/server/infra/storage/registry.ts'
 
 const log = getLogger('images.service')
 

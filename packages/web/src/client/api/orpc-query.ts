@@ -1,5 +1,4 @@
+import { orpc } from '@kobato/web/client/api/client.ts'
 import { createORPCReactQueryUtils } from '@orpc/react-query'
-
-import { orpc } from './client'
 
 export const orpcQuery = createORPCReactQueryUtils(orpc)

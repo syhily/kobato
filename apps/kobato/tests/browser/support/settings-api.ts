@@ -7,7 +7,7 @@ import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test/e2e-clien
 import { callE2eRpc } from '@kobato/test/e2e-rpc.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 
-import type { BrowserEnv } from './env'
+import type { BrowserEnv } from './env.ts'
 
 /** Deterministic site state every journey starts from (restored after each test). */
 export const BASELINE_GENERAL = {

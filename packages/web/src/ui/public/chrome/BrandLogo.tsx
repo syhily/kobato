@@ -2,8 +2,7 @@ import type { ImgHTMLAttributes } from 'react'
 
 import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { useAssetsSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
-
-import { cn } from '../../lib/cn'
+import { cn } from '@kobato/ui/lib/cn.ts'
 
 export interface BrandLogoProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   className?: string

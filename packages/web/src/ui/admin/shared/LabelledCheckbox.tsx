@@ -1,4 +1,4 @@
-import { Checkbox } from '../../components/checkbox'
+import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
 
 export interface LabelledCheckboxProps {
   id: string

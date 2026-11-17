@@ -1,6 +1,5 @@
+import { isoDateTime } from '@kobato/shared/contracts/primitives.ts'
 import { z } from 'zod'
-
-import { isoDateTime } from './primitives'
 
 /** The three browser web-font slots managed by `/admin/library/fonts`. */
 export const fontSlot = z.enum(['global', 'post', 'code'])

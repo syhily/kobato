@@ -1,9 +1,4 @@
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-import { useQueries } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import type { ActiveFilter, FilterPillsAction } from '../filterPillsReducer'
-import type { TextFilterValue } from './text-filter'
+import type { TextFilterValue } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'
 import type {
   FilterFieldSpec,
   FilterOptionItem,
@@ -11,16 +6,20 @@ import type {
   FilterQueryPatch,
   SearchFieldState,
   SearchFilterField,
-} from './types'
+} from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import {
   type DateFilterValue,
   parseDateFilter,
   parseSingleDateFilter,
   type SingleDateFilterValue,
-} from '../date-filter'
-import { filterPillsReducer } from '../filterPillsReducer'
-import { parseTextFilterValue } from './text-filter'
+} from '@kobato/web/ui/admin/shared/date-filter.ts'
+import { parseTextFilterValue } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'
+import { filterPillsReducer } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
+import { useQueries } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const SEARCH_DEBOUNCE_MS = 250
 

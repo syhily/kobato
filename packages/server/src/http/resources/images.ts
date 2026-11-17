@@ -1,24 +1,22 @@
+import type { Env } from '@kobato/server/http/context.ts'
 import type { Context } from 'hono'
 
+import { defaultAvatarUrl, resolveAvatarSize, serveAvatar } from '@kobato/server/domains/comments/services/avatar.ts'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query.ts'
+import { findPublicPostMetaBySlug } from '@kobato/server/domains/posts/services/single.ts'
+import { findCategoryBySlug } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
+import { rateLimitByIp, rateLimitByRequestKey } from '@kobato/server/http/middlewares/rate-limit.ts'
+import { serveCalendar } from '@kobato/server/http/resources/calendar.ts'
+import { through } from '@kobato/server/infra/cache/registry.ts'
+import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+// Side-effect: wires render-layer warmup into the content domain's slot
+// (this module owns the OG/calendar request path it mirrors).
+import '@kobato/server/render/warmup/content-cache.ts'
 import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { joinUrl } from '@kobato/shared/utils/urls.ts'
 import { Hono } from 'hono'
-
-import type { Env } from '../context'
-
-import { defaultAvatarUrl, resolveAvatarSize, serveAvatar } from '../../domains/comments/services/avatar'
-import { isLive } from '../../domains/content/schemas/live-gate'
-import { findPublicPageMetaBySlug } from '../../domains/pages/services/public-query'
-import { findPublicPostMetaBySlug } from '../../domains/posts/services/single'
-import { findCategoryBySlug } from '../../domains/taxonomies/categories/services/query'
-import { through } from '../../infra/cache/registry'
-// Side-effect: wires render-layer warmup into the content domain's slot
-// (this module owns the OG/calendar request path it mirrors).
-import '../../render/warmup/content-cache'
-import { drawOpenGraph } from '../../render/og/render'
-import { rateLimitByIp, rateLimitByRequestKey } from '../middlewares/rate-limit'
-import { serveCalendar } from './calendar'
 
 // Slug-keyed OG URLs outlive the image content — `immutable` would pin stale cards; short max-age revalidates.
 const OG_HEADERS = {

@@ -3,17 +3,16 @@ import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { formatNumber } from '@kobato/shared/i18n/format.ts'
 import { extractApiErrorMessage } from '@kobato/shared/utils/api-error.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Card, CardContent } from '@kobato/ui/components/card.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useFileUpload } from '@kobato/web/client/hooks/use-file-upload.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
 import { useCallback, useRef, useState } from 'react'
 import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
-
-import { useFileUpload } from '../../../client/hooks/use-file-upload'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { Card, CardContent } from '../../components/card'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { AdminListPage } from '../shared/AdminListPage'
 
 // Per-slot UI metadata: `publicPath` mirrors the server-side `ASSET_ROUTES` table.
 type BrandingFileSlot =

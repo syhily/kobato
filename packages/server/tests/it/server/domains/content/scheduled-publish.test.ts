@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
+import { content } from '@kobato/db/schema/content.ts'
+import { page } from '@kobato/db/schema/page.ts'
+import { post } from '@kobato/db/schema/post.ts'
 import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@kobato/server/infra/cache/registry.ts'
-import { content } from '@kobato/server/infra/db/schema/content.ts'
-import { page } from '@kobato/server/infra/db/schema/page.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/shared/config/getters.ts'

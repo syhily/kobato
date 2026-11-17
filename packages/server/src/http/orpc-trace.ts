@@ -2,9 +2,9 @@
 // createRouterClient's for `createSsrCaller`) receive the procedure `path`, so spans
 // carry a stable name and never input.
 
-import type { Span } from '../infra/trace/facade'
+import type { Span } from '@kobato/server/infra/trace/facade.ts'
 
-import { isTraceActive, runInSpan, startSpan } from '../infra/trace/facade'
+import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'
 
 export type OrpcTraceTransport = 'http' | 'in_process'
 

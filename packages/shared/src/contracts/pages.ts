@@ -1,7 +1,6 @@
+import { adminMetaBaseDto } from '@kobato/shared/contracts/admin-meta.ts'
+import { adminRevisionDto } from '@kobato/shared/contracts/revision.ts'
 import { z } from 'zod'
-
-import { adminMetaBaseDto } from './admin-meta'
-import { adminRevisionDto } from './revision'
 
 export const adminPageDto = adminMetaBaseDto.extend({
   /** Render the global friends grid at the bottom of the page detail route. */

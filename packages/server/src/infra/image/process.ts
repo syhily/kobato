@@ -1,11 +1,11 @@
-import type { ImageOperation } from '../trace/sanitize'
-import type { ProcessImageInput, ProcessedImage } from './process-worker'
+import type { ProcessImageInput, ProcessedImage } from '@kobato/server/infra/image/process-worker.ts'
+import type { ImageOperation } from '@kobato/server/infra/trace/sanitize.ts'
 
-import { domainErrorFromWire } from '../http/errors'
-import { startSpan } from '../trace/facade'
-import { imageSizeBucket, recordImageExecution, recordImageQueue } from '../trace/metrics'
-import { getProcessPool } from './process-pool'
-import { processImageInWorker, WorkerDomainError } from './process-worker'
+import { domainErrorFromWire } from '@kobato/server/infra/http/errors.ts'
+import { getProcessPool } from '@kobato/server/infra/image/process-pool.ts'
+import { processImageInWorker, WorkerDomainError } from '@kobato/server/infra/image/process-worker.ts'
+import { startSpan } from '@kobato/server/infra/trace/facade.ts'
+import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics.ts'
 
 /**
  * Decode / resize / re-encode an uploaded image (worker pool in prod,

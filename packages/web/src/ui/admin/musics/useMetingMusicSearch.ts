@@ -1,9 +1,8 @@
 import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@kobato/shared/contracts/music.ts'
 
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
 import { useCallback, useMemo, useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
 
 // Flatten pages into one hit list, first occurrence winning on `source:sourceId` — pure for direct unit tests.
 export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] {

@@ -1,40 +1,42 @@
 import type { MyCommentItem, MyCommentsStatus } from '@kobato/shared/types/comments.ts'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 import type { ReactNode } from 'react'
 
 import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
-import { Fragment, useCallback, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router'
-
-import type { ActiveFilter, FilterPillsAction } from '../shared/filterPillsReducer'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/avatar'
-import { Badge } from '../../components/badge'
-import { Button } from '../../components/button'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../components/empty'
-import { Skeleton } from '../../components/skeleton'
-import { useI18n } from '../../lib/I18nProvider'
-import { skeletonKeys } from '../../lib/skeleton-keys'
-import { CommentContentHtml } from '../../public/comments/CommentContentHtml'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import {
   DEFAULT_TEXT_OPERATOR,
   parseTextFilter,
   textFilterLabel,
   type TextFilterValue,
-} from '../comments/filter-fields'
-import { AdminInfiniteListFooter } from '../shared/AdminInfiniteListFooter'
-import { AdminListPage } from '../shared/AdminListPage'
-import { FilterPillBar } from '../shared/filter-bar/FilterPillBar'
-import { useFilterPills } from '../shared/filter-bar/useFilterPills'
-import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
-import { buildMyCommentFilterFields, MY_STATUS_OPTIONS, type MyCommentFilterFieldKey } from './filter-fields'
-import { MyEditCommentDialog } from './MyEditCommentDialog'
+} from '@kobato/web/ui/admin/comments/filter-fields.ts'
+import {
+  buildMyCommentFilterFields,
+  MY_STATUS_OPTIONS,
+  type MyCommentFilterFieldKey,
+} from '@kobato/web/ui/admin/my/filter-fields.ts'
+import { MyEditCommentDialog } from '@kobato/web/ui/admin/my/MyEditCommentDialog.tsx'
+import { AdminInfiniteListFooter } from '@kobato/web/ui/admin/shared/AdminInfiniteListFooter.tsx'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
+import { FilterPillBar } from '@kobato/web/ui/admin/shared/filter-bar/FilterPillBar.tsx'
+import { useFilterPills } from '@kobato/web/ui/admin/shared/filter-bar/useFilterPills.ts'
+import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
+import { CommentContentHtml } from '@kobato/web/ui/public/comments/CommentContentHtml.tsx'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

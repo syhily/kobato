@@ -3,11 +3,10 @@
 // Run the suite against Zod 4.5's compiled parsers, mirroring production
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
+import '@kobato/test/env.ts'
 import { afterEach, vi } from 'vitest'
-
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '../blog-settings'
-import '../env'
-import { silenceLocalStorageWarning } from '../silence-local-storage-warning'
 
 // Inert global stubs for the noisiest UI seams; setup stubs the noise,
 // `@kobato/test` owns the doubles (a file-level vi.mock overrides these).

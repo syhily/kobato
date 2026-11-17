@@ -1,11 +1,10 @@
 import type { MetingSearchHit } from '@kobato/shared/contracts/music.ts'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Equalizer } from '@kobato/web/ui/admin/musics/Equalizer.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { Loader2, Pause, Play, Plus } from 'lucide-react'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
-import { Equalizer } from './Equalizer'
 
 export interface SearchAlbumCardProps {
   hit: MetingSearchHit

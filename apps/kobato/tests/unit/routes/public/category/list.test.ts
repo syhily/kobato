@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { meta } from '@/routes/public/category/list'
+import { meta } from '@/routes/public/category/list.tsx'
 
 describe('route: public/category/list', () => {
   describe('meta', () => {

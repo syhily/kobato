@@ -1,8 +1,7 @@
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
-
-import { useI18n } from '../../lib/I18nProvider'
-import { useChromeClock } from './use-chrome-clock'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useChromeClock } from '@kobato/web/ui/public/chrome/use-chrome-clock.ts'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()

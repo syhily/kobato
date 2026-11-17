@@ -1,12 +1,10 @@
+import type { MusicEmbedResolver } from '@kobato/server/domains/pt/embeds.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { parseAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 import { collectLexicalMusicPlayerIds } from '@kobato/shared/lexical/collect.ts'
 import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
-
-import type { MusicEmbedResolver } from './embeds'
-
-import { getLogger } from '../../infra/logger'
-import { parseAssetUrl } from '../../infra/storage/public-url'
 
 const log = getLogger('pt.lexical-music-snapshot')
 

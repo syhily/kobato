@@ -1,10 +1,5 @@
 import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
-import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
-import { useState } from 'react'
-import { Link } from 'react-router'
-
-import { useLogout } from '../../../client/hooks/use-logout'
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +7,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../components/dropdown-menu'
-import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '../../components/sidebar'
-import { useI18n } from '../../lib/I18nProvider'
-import { VersionDialog } from './VersionDialog'
+} from '@kobato/ui/components/dropdown-menu.tsx'
+import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@kobato/ui/components/sidebar.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useLogout } from '@kobato/web/client/hooks/use-logout.ts'
+import { VersionDialog } from '@kobato/web/ui/admin/shell/VersionDialog.tsx'
+import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router'
 
 interface AppSidebarFooterProps {
   className?: string

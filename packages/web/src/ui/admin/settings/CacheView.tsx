@@ -2,19 +2,18 @@ import type { CacheSettings } from '@kobato/shared/config/types.ts'
 import type { ReservedCacheBucketStats } from '@kobato/shared/contracts/cache.ts'
 import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/shared/types/cache.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { BucketCard } from '@kobato/web/ui/admin/settings/cache/BucketCard.tsx'
+import { type ClearStatus, idleClearStatus } from '@kobato/web/ui/admin/settings/cache/cache-status.ts'
+import { CacheStatusLine } from '@kobato/web/ui/admin/settings/cache/CacheStatusLine.tsx'
+import { ConfirmClearDialog } from '@kobato/web/ui/admin/settings/cache/ConfirmClearDialog.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
-import { BucketCard } from './cache/BucketCard'
-import { type ClearStatus, idleClearStatus } from './cache/cache-status'
-import { CacheStatusLine } from './cache/CacheStatusLine'
-import { ConfirmClearDialog } from './cache/ConfirmClearDialog'
-import { SettingGroup } from './shell/SettingGroup'
 
 type CacheSlice = CacheSettings['cache']
 

@@ -3,11 +3,14 @@
 
 import type { SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type {
+  EditorShellStatus,
+  EntityLike,
+  UseEditorShellStateArgs,
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
 import { useMutation } from '@tanstack/react-query'
 import { useCallback } from 'react'
-
-import type { EditorShellStatus, EntityLike, UseEditorShellStateArgs } from './editor-shell-types'
 
 export interface UseEditorShellPersistMutationsArgs<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },

@@ -1,8 +1,7 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { I18nValue } from '../../lib/I18nProvider'
 
 // Pill-value contract for admin date filters: Range (`{from,to}`) and Single + operator (`{date,op}`), both serialized to a JSON string pill value.
 export interface DateFilterValue {

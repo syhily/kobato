@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow } from '@kobato/db/types.ts'
+
+import { postSearchIndex } from '@kobato/db/schema/content.ts'
+import { computeBodyText } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { eq } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { ContentRow } from '../../../infra/db/types'
-
-import { postSearchIndex } from '../../../infra/db/schema/content'
-import { computeBodyText } from '../../../infra/pt/lexical-projection'
 
 // The indexed corpus is the save-time `body_text` projection: publish passes
 // the freshly canonicalized Lexical state, the revision-row readers prefer

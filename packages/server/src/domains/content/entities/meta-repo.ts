@@ -1,16 +1,15 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { page as pageMetaTable } from '@kobato/db/schema/page.ts'
+import type { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import type { NewPageMeta, NewPostMeta } from '@kobato/db/types.ts'
+import type { MetaCrud, MetaRowBase } from '@kobato/server/domains/content/entities/descriptor.ts'
+import type { LimitOffset } from '@kobato/server/domains/content/pagination.ts'
+
+import { likeEscape } from '@kobato/db/like-escape.ts'
+import { user } from '@kobato/db/schema/user.ts'
+import { applyLimitOffset } from '@kobato/server/domains/content/pagination.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { and, eq, getColumns, isNotNull, isNull, or, sql, type Column, type SQL } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { page as pageMetaTable } from '../../../infra/db/schema/page'
-import type { post as postMetaTable } from '../../../infra/db/schema/post'
-import type { NewPageMeta, NewPostMeta } from '../../../infra/db/types'
-import type { LimitOffset } from '../pagination'
-import type { MetaCrud, MetaRowBase } from './descriptor'
-
-import { likeEscape } from '../../../infra/db/like-escape'
-import { user } from '../../../infra/db/schema/user'
-import { applyLimitOffset } from '../pagination'
 
 /** The two meta tables — type-only union; the generic queries bind shared columns structurally, never entity extras. */
 export type MetaTable = typeof postMetaTable | typeof pageMetaTable

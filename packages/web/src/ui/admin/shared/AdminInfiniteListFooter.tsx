@@ -1,6 +1,5 @@
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { LoaderIcon } from 'lucide-react'
-
-import { useI18n } from '../../lib/I18nProvider'
 
 export function AdminInfiniteListFooter({
   noun,

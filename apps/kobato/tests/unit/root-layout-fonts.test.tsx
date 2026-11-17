@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, Outlet, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Layout } from '@/root'
+import { Layout } from '@/root.tsx'
 
 // Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))

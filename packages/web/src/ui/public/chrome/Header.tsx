@@ -7,22 +7,21 @@ import {
   useSiteIdentity,
   useSocialsSettings,
 } from '@kobato/shared/lib/blog-config-context.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
+import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { safeRel } from '@kobato/ui/lib/link.ts'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import { BrandLogo } from '@kobato/web/ui/public/chrome/BrandLogo.tsx'
+import { LazyUserMenu } from '@kobato/web/ui/public/chrome/LazyUserMenu.tsx'
+import { ThemeToggle } from '@kobato/web/ui/public/chrome/ThemeToggle.tsx'
+import { SearchIconButton } from '@kobato/web/ui/public/Search.tsx'
+import { QRDialog } from '@kobato/web/ui/public/widgets/QRDialog.tsx'
 import { MenuIcon } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router'
-
-import { Button } from '../../components/button'
-import { IconButtonContent } from '../../components/icon-button-content'
-import { SOCIAL_NETWORK_ICONS } from '../../icons/brand'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { safeRel } from '../../lib/link'
-import { useMediaQuery } from '../../lib/use-media-query'
-import { SearchIconButton } from '../Search'
-import { QRDialog } from '../widgets/QRDialog'
-import { BrandLogo } from './BrandLogo'
-import { LazyUserMenu } from './LazyUserMenu'
-import { ThemeToggle } from './ThemeToggle'
 
 export interface HeaderCurrentUser {
   id: string

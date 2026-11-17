@@ -1,8 +1,8 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { pickDueWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
+import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
 import { enqueuePostWebmentionOutbox } from '@kobato/server/domains/webmentions/enqueue.ts'
-import { pickDueWebmentionOutbox } from '@kobato/server/infra/db/operations/webmention-outbox.ts'
-import { webmentionOutbox } from '@kobato/server/infra/db/schema/webmention.ts'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith } from '@kobato/test/lexical.ts'

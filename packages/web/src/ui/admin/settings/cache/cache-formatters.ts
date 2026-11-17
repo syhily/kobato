@@ -1,8 +1,7 @@
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { formatDateTime, formatNumber } from '@kobato/shared/i18n/format.ts'
-
-import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from './cache-constants'
+import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@kobato/web/ui/admin/settings/cache/cache-constants.ts'
 
 // Render the stored TTL in the most readable unit — sub-hour values keep their
 // own units. The unit label comes from Intl's locale-aware unit formatting,

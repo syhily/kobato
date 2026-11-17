@@ -1,13 +1,12 @@
+import type { AdminShellProps } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
+
 import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { useSidebar } from '@kobato/ui/components/sidebar.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useIsActiveLink } from '@kobato/web/ui/admin/shell/use-is-active-link.ts'
 import { EllipsisIcon, NotebookPenIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import type { AdminShellProps } from './AdminShell'
-
-import { useSidebar } from '../../components/sidebar'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useIsActiveLink } from './use-is-active-link'
 
 interface MobileNavButtonProps {
   to: string

@@ -4,14 +4,13 @@ import type { DateRange as DayPickerRange } from 'react-day-picker'
 
 import { type DateRange, type PresetKey, PRESET_KEYS } from '@kobato/shared/contracts/analytics.ts'
 import { formatDate } from '@kobato/shared/i18n/format.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Calendar } from '@kobato/ui/components/calendar.tsx'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { getClientTimezone } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { useState } from 'react'
-
-import { Button } from '../../components/button'
-import { Calendar } from '../../components/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { getClientTimezone } from './use-analytics-state'
 
 const PRESET_LABEL_IDS: Record<PresetKey, UiMessageId> = {
   'last-1h': 'admin.analytics.preset.last1h',

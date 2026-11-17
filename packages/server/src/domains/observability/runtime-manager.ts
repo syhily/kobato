@@ -5,18 +5,21 @@
 // hot-applies fingerprint changes. Every failure stays contained here —
 // telemetry must never affect the site's availability.
 
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ExportFailure } from '@kobato/server/infra/trace/export-health.ts'
+
+import {
+  observabilityConnectionFingerprint,
+  observabilityRuntimeFingerprint,
+  toTraceRuntimeSettings,
+} from '@kobato/server/domains/observability/config.ts'
+import { syncObservabilityRetention } from '@kobato/server/domains/observability/retention.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { logTraceDiagnostics, resolveTraceConfig, traceEnvironment } from '@kobato/server/infra/trace/config.ts'
+import { lastExportFailure } from '@kobato/server/infra/trace/export-health.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { TraceConfigResolution } from '../../infra/trace/config'
-import type { ExportFailure } from '../../infra/trace/export-health'
-import type { ObservabilitySettingsSlice } from './config'
-
-import { getLogger } from '../../infra/logger'
-import { logTraceDiagnostics, resolveTraceConfig, traceEnvironment } from '../../infra/trace/config'
-import { lastExportFailure } from '../../infra/trace/export-health'
-import { observabilityConnectionFingerprint, observabilityRuntimeFingerprint, toTraceRuntimeSettings } from './config'
-import { syncObservabilityRetention } from './retention'
 
 const log = getLogger('observability')
 
@@ -112,7 +115,7 @@ async function stopRuntime(): Promise<void> {
     return
   }
   try {
-    const { stopTraceRuntime } = await import('../../infra/trace/runtime')
+    const { stopTraceRuntime } = await import('@kobato/server/infra/trace/runtime.ts')
     await stopTraceRuntime()
   } catch (error) {
     log.warn('OpenObserve runtime stop failed; continuing with the remaining settings update', {
@@ -150,7 +153,7 @@ async function startRuntime(site: ObservabilitySettingsSlice, fingerprint: strin
 
   await stopRuntime()
   try {
-    const { startTraceRuntime } = await import('../../infra/trace/runtime')
+    const { startTraceRuntime } = await import('@kobato/server/infra/trace/runtime.ts')
     const handle = await startTraceRuntime({ resolution })
     if (!handle.started) {
       state = { phase: 'failed', fingerprint, lastError: 'trace-provider-start-failed', started: false }

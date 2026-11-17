@@ -1,4 +1,5 @@
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
 import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
 import { SettingsCloseButton } from '@kobato/web/ui/admin/settings/shell/SettingsHeader.tsx'
@@ -9,7 +10,6 @@ import { SettingsSearchInput } from '@kobato/web/ui/admin/settings/shell/Setting
 import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { ScrollSpyProvider } from '@kobato/web/ui/admin/settings/shell/useSettingsScrollSpy.tsx'
 import { SettingsSearchProvider } from '@kobato/web/ui/admin/settings/shell/useSettingsSearch.tsx'
-import { Input } from '@kobato/web/ui/components/input.tsx'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SettingGroup', () => {

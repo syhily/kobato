@@ -1,3 +1,7 @@
+import { comment } from '@kobato/db/schema/comment.ts'
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { post } from '@kobato/db/schema/post.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import {
@@ -7,10 +11,6 @@ import {
   resolveCommentDeleteRequest,
 } from '@kobato/server/domains/comments/services/moderate.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { comment } from '@kobato/server/infra/db/schema/comment.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'

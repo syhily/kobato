@@ -1,7 +1,7 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
-import CategoriesRoute from '@/routes/admin/taxonomy/categories'
+import CategoriesRoute from '@/routes/admin/taxonomy/categories.tsx'
 
 describe('snapshot: routes/admin/taxonomy/categories', () => {
   it('renders the categories route', () => {

@@ -1,10 +1,9 @@
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useSettingsSearchFilter } from '@kobato/web/ui/admin/settings/shell/useSettingsSearch.tsx'
+import { SearchShortcutHint } from '@kobato/web/ui/admin/shared/SearchShortcutHint.tsx'
 import { SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-
-import { Input } from '../../../components/input'
-import { useI18n } from '../../../lib/I18nProvider'
-import { SearchShortcutHint } from '../../shared/SearchShortcutHint'
-import { useSettingsSearchFilter } from './useSettingsSearch'
 
 function isTypingTarget(target: EventTarget | null): boolean {
   return (

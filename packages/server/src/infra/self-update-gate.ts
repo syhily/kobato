@@ -4,12 +4,11 @@
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { isSea } from '@kobato/server/infra/sea.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
 import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
-
-import { isSea } from './sea'
 
 export const SELF_UPDATE_GATE_REASON_KEYS = [
   'update.gate.notSea',

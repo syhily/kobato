@@ -11,17 +11,21 @@ import type { FooterNavItem, NavigationSettings, SocialItem } from '@kobato/shar
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/shared/config/socials.ts'
-
-import { Button } from '../../components/button'
-import { Field, FieldLabel } from '../../components/field'
-import { Label } from '../../components/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { useI18n } from '../../lib/I18nProvider'
-import { resolveSortableMove, SortableDragHandle, useSortableRow, useSortableSensors } from '../shared/sortable'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingsCheckbox } from './shell/SettingsCheckbox'
-import { SettingsInput } from './shell/SettingsInput'
-import { useSettingsCard } from './shell/useSettingsCard'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Field, FieldLabel } from '@kobato/ui/components/field.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingsCheckbox } from '@kobato/web/ui/admin/settings/shell/SettingsCheckbox.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
+import {
+  resolveSortableMove,
+  SortableDragHandle,
+  useSortableRow,
+  useSortableSensors,
+} from '@kobato/web/ui/admin/shared/sortable.tsx'
 
 interface NavigationEditorProps {
   navigation: NavigationSettings

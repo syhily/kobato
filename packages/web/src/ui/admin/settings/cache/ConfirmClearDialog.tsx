@@ -1,9 +1,6 @@
 import type { CacheBucketStats } from '@kobato/shared/contracts/cache.ts'
 import type { ClearCacheTarget } from '@kobato/shared/types/cache.ts'
 
-import { Trash2Icon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,8 +10,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/alert-dialog'
-import { useI18n } from '../../../lib/I18nProvider'
+} from '@kobato/ui/components/alert-dialog.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Trash2Icon, XIcon } from 'lucide-react'
+import { useState } from 'react'
 
 interface ConfirmClearDialogProps {
   open: boolean

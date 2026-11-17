@@ -1,27 +1,32 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 
+import { comment } from '@kobato/db/schema/comment.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { isCommentOwner } from '@kobato/server/domains/auth/rbac.ts'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
+import { findCommentWithUserAndTarget } from '@kobato/server/domains/comments/repos/admin-query.ts'
+import {
+  updateCommentBodyAndContent,
+  updateOwnCommentBody,
+  updateOwnCommentBodyAndPending,
+} from '@kobato/server/domains/comments/repos/mutate.ts'
+import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
+import { sendApprovedComment, sendNewComment } from '@kobato/server/domains/comments/services/email.ts'
+import {
+  countApprovedRepliesOfComment,
+  findCommentWithUserById,
+} from '@kobato/server/domains/comments/services/lookup.ts'
+import { decideOwnEdit } from '@kobato/server/domains/comments/services/policy.ts'
+import { asCommentTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { AuditContext } from '../../audit/types'
-import type { ViewerIdentity } from '../../auth/rbac'
-
-import { comment } from '../../../infra/db/schema/comment'
-import { fireAndForgetNotify } from '../../../infra/email/admin-notification'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError, ErrorMessages } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { recordAuditEventFromContext } from '../../audit/services/record'
-import { isCommentOwner } from '../../auth/rbac'
-import { withCommentBadgeTextColor } from '../badge'
-import { findCommentWithUserAndTarget } from '../repos/admin-query'
-import { updateCommentBodyAndContent, updateOwnCommentBody, updateOwnCommentBodyAndPending } from '../repos/mutate'
-import { canonicalizeCommentBody } from './canonicalize'
-import { sendApprovedComment, sendNewComment } from './email'
-import { countApprovedRepliesOfComment, findCommentWithUserById } from './lookup'
-import { decideOwnEdit } from './policy'
-import { asCommentTarget } from './shared'
 
 const adminLog = getLogger('comments.admin')
 

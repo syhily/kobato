@@ -16,13 +16,13 @@
 // both mount anyway because hasNodes is type-gated) are intercepted by
 // `@/client/editor/image-insert-override` at HIGH priority.
 
-import './cards/music-player'
-import './cards/solution'
-import './cards/two-column'
+import '@kobato/web/client/editor/cards/music-player.tsx'
+import '@kobato/web/client/editor/cards/solution.tsx'
+import '@kobato/web/client/editor/cards/two-column.tsx'
 // Registers the 'image' picker override through the pick seam's variant channel;
 // KobatoImageNode is a stock variant rather than a `defineCard` card, so its
 // picker registers beside the node-set composition.
-import './image-library-pick'
+import '@kobato/web/client/editor/image-library-pick.tsx'
 import {
   CodeBlockNode,
   EDITOR_BASE_NODES,
@@ -33,9 +33,8 @@ import {
   MathInlineNode,
   MathNode,
 } from '@kobato/inkling'
-
-import { excludeBaseNodes } from './base-node-filter'
-import { KobatoImageNode } from './kobato-image-node'
+import { excludeBaseNodes } from '@kobato/web/client/editor/base-node-filter.ts'
+import { KobatoImageNode } from '@kobato/web/client/editor/kobato-image-node.ts'
 
 // 'aside' is not in FULL_EDITOR_NODE_TYPES, and inkling's Ctrl+Q cycle would
 // construct one; the chord is swallowed host-side (`block-quote-aside-cycle`).

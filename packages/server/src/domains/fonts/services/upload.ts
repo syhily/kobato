@@ -1,16 +1,14 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { FontRow } from '@kobato/db/schema/font.ts'
 import type { AdminFontDto } from '@kobato/shared/contracts/fonts.ts'
 
+import { font } from '@kobato/db/schema/font.ts'
+import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read.ts'
+import { sliceFont } from '@kobato/server/domains/fonts/slice.ts'
+import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domains/fonts/storage.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { createHash } from 'node:crypto'
-
-import type { Database } from '../../../infra/db/database'
-import type { FontRow } from '../../../infra/db/schema/font'
-
-import { font } from '../../../infra/db/schema/font'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { sliceFont } from '../slice'
-import { putFont, fontCssKey, type FontPackageFile } from '../storage'
-import { findFontByHash, toAdminFontDto } from './read'
 
 // Upload runs synchronously within the request, so a font row exists only once
 // inserted — there is no `processing`/`failed` state.

@@ -2,13 +2,7 @@ import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
 import type { UpsertCategoryInput } from '@kobato/shared/types/categories.ts'
 
 import { isSafeImageSegment } from '@kobato/shared/types/images.ts'
-import { useMutation } from '@tanstack/react-query'
-import { SaveIcon, XIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -16,12 +10,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { Textarea } from '../../components/textarea'
-import { useI18n } from '../../lib/I18nProvider'
-import { CoverInputRow } from '../shared/CoverInputRow'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Textarea } from '@kobato/ui/components/textarea.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { CoverInputRow } from '@kobato/web/ui/admin/shared/CoverInputRow.tsx'
+import { useMutation } from '@tanstack/react-query'
+import { SaveIcon, XIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 export interface EditCategoryDialogProps {
   category: AdminCategoryDto | null | undefined

@@ -1,6 +1,7 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
 import { serve } from '@hono/node-server'
+import { hasAdmin } from '@kobato/db/operations/user.ts'
 import { getDb } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { getSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
 import { upgradeObservabilityProvisioningAtBoot } from '@kobato/server/domains/observability/provision.ts'
@@ -12,7 +13,6 @@ import { migrateSecretsEncryption } from '@kobato/server/domains/settings/servic
 import { wrapFetchWithLeakedResponseHandler } from '@kobato/server/http/leaked-response.ts'
 import { buildLoadContext, configureMiddleware } from '@kobato/server/http/middleware-pipeline.ts'
 import { serverConfig } from '@kobato/server/infra/config.ts'
-import { hasAdmin } from '@kobato/server/infra/db/operations/user.ts'
 import { createHonoServer } from '@kobato/server/infra/hono/node.ts'
 import { getProcessPool } from '@kobato/server/infra/image/process-pool.ts'
 import { startAllRegisteredJobs } from '@kobato/server/infra/job-registry.ts'

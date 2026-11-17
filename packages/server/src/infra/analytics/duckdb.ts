@@ -1,11 +1,11 @@
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api'
+import { isInMemoryPath } from '@kobato/db/database.ts'
+import { serverConfig } from '@kobato/server/infra/config.ts'
+import { resolveEnginePath } from '@kobato/server/infra/db/paths.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { mkdirSync } from 'node:fs'
 import { open, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
-
-import { serverConfig } from '../config'
-import { isInMemoryPath, resolveStoragePath } from '../db/database'
-import { getLogger } from '../logger'
 
 /**
  * The embedded DuckDB analytics sidecar: one file, one instance, one
@@ -31,7 +31,7 @@ const log = getLogger('analytics.duckdb')
 
 /** `:memory:` passes through — `path.resolve(':memory:')` would yield a file. */
 export function resolveAnalyticsPath(): string {
-  return resolveStoragePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
+  return resolveEnginePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
 }
 
 /**

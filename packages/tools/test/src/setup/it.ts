@@ -5,11 +5,10 @@
 // Run the suite against Zod 4.5's compiled parsers, mirroring production
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import '@kobato/test/env.ts'
+import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
 import { afterEach, vi } from 'vitest'
-
-import '../env'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '../blog-settings'
-import { silenceLocalStorageWarning } from '../silence-local-storage-warning'
 
 silenceLocalStorageWarning()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

@@ -1,3 +1,4 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
 import {
   useCallback,
   useRef,
@@ -5,8 +6,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-
-import { cn } from '../../lib/cn'
 
 export type ScrubBarProps = {
   /** 0..1 */

@@ -1,14 +1,13 @@
+import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '@kobato/server/domains/content/lifecycle.ts'
+import type { authorProc, HandlerContext } from '@kobato/server/http/orpc-base.ts'
+
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { saveBody } from '@kobato/server/domains/content/lifecycle.ts'
+import { getPublicMusicMetasByIds } from '@kobato/server/domains/music/services/read.ts'
+import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { saveBodyInput, saveResultOutput } from '@kobato/shared/contracts/revision.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
-
-import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '../../../domains/content/lifecycle'
-import type { authorProc, HandlerContext } from '../../orpc-base'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { saveBody } from '../../../domains/content/lifecycle'
-import { getPublicMusicMetasByIds } from '../../../domains/music/services/read'
-import { createServerTranslator } from '../../../infra/i18n'
-import { formatWarningDescriptors } from '../../translate-domain-error'
 
 export interface RevisionRouterAudit {
   resourceType: string

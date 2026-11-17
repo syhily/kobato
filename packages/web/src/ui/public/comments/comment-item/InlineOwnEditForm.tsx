@@ -2,14 +2,13 @@ import type { CommentItemWire as CommentItemType } from '@kobato/shared/contract
 import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 
 import { isCommentEditorStateBlank } from '@kobato/shared/lexical/comment-schema.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useCommentsActions } from '@kobato/web/ui/public/comments/comments-context.ts'
+import { LazyCommentBodyEditor } from '@kobato/web/ui/public/comments/LazyCommentBodyEditor.tsx'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-
-import { orpcQuery } from '../../../../client/api/orpc-query'
-import { Button } from '../../../components/button'
-import { useI18n } from '../../../lib/I18nProvider'
-import { useCommentsActions } from '../comments-context'
-import { LazyCommentBodyEditor } from '../LazyCommentBodyEditor'
 
 interface InlineOwnEditFormProps {
   comment: CommentItemType

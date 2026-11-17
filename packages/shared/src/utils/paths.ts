@@ -1,8 +1,8 @@
 // Canonical URL helpers shared by loaders, components, and tests: pure string
 // builders with no Response/redirect side effects, safe in both bundles.
 
-import { requireBlogSettingsSection } from '../config/getters'
-import { joinUrl } from './urls'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { joinUrl } from '@kobato/shared/utils/urls.ts'
 
 export function searchRootPath(query: string): string {
   return `/search/${encodeURIComponent(query)}`

@@ -1,9 +1,9 @@
-import type { ErrorMessageDescriptor } from '../contracts/api-error'
-import type { AdminPageDetailDto, AdminPageDto } from '../contracts/pages'
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
-import type { LexicalEditorState } from '../lexical/schema'
+import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { AdminPageDetailDto, AdminPageDto } from '@kobato/shared/contracts/pages.ts'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // Wire-format DTOs for the `/admin/pages` editor and the
 // `/api/admin/list-pages` oRPC procedure. Bigints are stringified;

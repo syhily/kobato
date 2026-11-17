@@ -6,6 +6,8 @@
 // false result withholds only the browser bootstrap, while server
 // traces/metrics continue.
 
+import type { ServerTraceRuntimeConfig } from '@kobato/server/infra/trace/config.ts'
+
 import {
   RUM_PRIVACY_FUNCTION_NAME,
   RUM_PRIVACY_HASH_MARKER,
@@ -17,8 +19,6 @@ import {
 } from '@kobato/shared/contracts/trace-pipeline.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 import { createHash } from 'node:crypto'
-
-import type { ServerTraceRuntimeConfig } from './config'
 
 export const RUM_PRIVACY_VERIFY_TIMEOUT_MS = 1500
 

@@ -5,15 +5,14 @@ import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.
 import type { UpdateJobStatus } from '@kobato/shared/contracts/update.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
+import { runSelfUpdate } from '@kobato/server/domains/update/pipeline.ts'
+import { carriesErrorMessageDescriptor, descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { closeHttpServer, requestShutdown, restartServer } from '@kobato/server/infra/lifecycle.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
 import { spawn } from 'node:child_process'
-
-import { carriesErrorMessageDescriptor, descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { createServerTranslator } from '../../infra/i18n'
-import { closeHttpServer, requestShutdown, restartServer } from '../../infra/lifecycle'
-import { getLogger } from '../../infra/logger'
-import { runSelfUpdate } from './pipeline'
 
 const log = getLogger('update.job')
 

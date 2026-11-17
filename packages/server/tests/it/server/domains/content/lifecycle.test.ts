@@ -1,8 +1,8 @@
+import type { ContentRow } from '@kobato/db/types.ts'
 import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/domains/content/lifecycle.ts'
-import type { ContentRow } from '@kobato/server/infra/db/types.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'

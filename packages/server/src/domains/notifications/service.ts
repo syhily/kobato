@@ -1,3 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { NotificationRow } from '@kobato/db/types.ts'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { SystemNotificationMessage } from '@kobato/server/domains/notifications/message.ts'
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type {
   NotificationDto,
   NotificationKind,
@@ -6,14 +11,6 @@ import type {
   ThreadMessageDto,
 } from '@kobato/shared/contracts/notifications.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-
-import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
-
-import type { Database } from '../../infra/db/database'
-import type { NotificationRow } from '../../infra/db/types'
-import type { ServerTranslator } from '../../infra/i18n'
-import type { SessionUser } from '../auth/session-storage'
-import type { SystemNotificationMessage } from './message'
 
 import {
   countUnreadNotifications,
@@ -30,12 +27,16 @@ import {
   markNotificationsUnread,
   recallNotification,
   type NewNotificationRow,
-} from '../../infra/db/operations/notification'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { createServerTranslator } from '../../infra/i18n'
-import { queueNotificationEmail } from './email'
-import { encodeNotificationDescriptor, resolveNotificationMessage } from './message'
+} from '@kobato/db/operations/notification.ts'
+import { queueNotificationEmail } from '@kobato/server/domains/notifications/email.ts'
+import {
+  encodeNotificationDescriptor,
+  resolveNotificationMessage,
+} from '@kobato/server/domains/notifications/message.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
 
 // DTO mapping
 

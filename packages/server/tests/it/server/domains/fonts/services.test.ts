@@ -1,9 +1,9 @@
-import type { FontRow } from '@kobato/server/infra/db/schema/font.ts'
+import type { FontRow } from '@kobato/db/schema/font.ts'
 
+import { setting } from '@kobato/db/schema/config.ts'
+import { font } from '@kobato/db/schema/font.ts'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate.ts'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
-import { font } from '@kobato/server/infra/db/schema/font.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

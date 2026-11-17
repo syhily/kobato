@@ -1,6 +1,16 @@
 import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
 
 import { ROLE_LABEL_KEYS } from '@kobato/shared/utils/roles.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError, toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { type ConfirmState, ConfirmDialog } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import { invalidateUsersCache } from '@kobato/web/ui/admin/users/users-cache.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   CheckCheckIcon,
@@ -14,17 +24,6 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError, toastApiError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/card'
-import { Label } from '../../components/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { useI18n } from '../../lib/I18nProvider'
-import { type ConfirmState, ConfirmDialog } from '../shared/ConfirmDialog'
-import { invalidateUsersCache } from './users-cache'
 
 type Role = NonNullable<AdminUserDto['role']>
 

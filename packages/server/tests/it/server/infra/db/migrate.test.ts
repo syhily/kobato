@@ -1,9 +1,9 @@
-import type { Database, DatabaseHandle } from '@kobato/server/infra/db/database.ts'
+import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
-import { closeDatabase, openDatabase } from '@kobato/server/infra/db/database.ts'
+import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
+import { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate.ts'
 import { createTestDatabaseFile } from '@kobato/test/integration-db.ts'
 import { sql } from 'drizzle-orm'
-import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -11,8 +11,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 // The SEA binary runs the same folder migrator against a byte-identical embedded copy of this
 // `drizzle/` tree; here the folder path itself is pinned.
 
-const MIGRATIONS_FOLDER = './drizzle'
-const MIGRATIONS_TABLE = '__drizzle_migrations'
+const MIGRATIONS_FOLDER = defaultMigrationsFolder()
 
 interface MigrationRow {
   hash: string
@@ -60,7 +59,7 @@ describe('folder migrations (sqlite)', () => {
   it('applies the full drizzle tree and records every migration', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
 
     const shape = readDbShape(handle.db)
     expect(shape.tables.length).toBeGreaterThan(0)
@@ -72,16 +71,16 @@ describe('folder migrations (sqlite)', () => {
   it('is idempotent — a second run applies nothing', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
     const before = readDbShape(handle.db)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
     expect(readDbShape(handle.db)).toEqual(before)
   })
 
   it('adds the nullable notification i18n descriptor columns', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
 
     const columns = Object.fromEntries(
       handle.db
@@ -104,7 +103,7 @@ describe('folder migrations (sqlite)', () => {
   it('adds the nullable content-language columns with no backfill', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
 
     for (const table of ['post', 'page']) {
       const column = handle.db
@@ -138,10 +137,10 @@ describe('folder migrations (sqlite)', () => {
     // schema already present — the defensive guards make the re-run a no-op.
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
     const before = readDbShape(handle.db)
     handle.db.run(sql`DELETE FROM ${sql.raw(`"${MIGRATIONS_TABLE}"`)}`)
-    migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+    migrateDatabase(handle.db)
     const after = readDbShape(handle.db)
     expect(after.tables).toEqual(before.tables)
     expect(after.migrations.length).toBe(before.migrations.length)

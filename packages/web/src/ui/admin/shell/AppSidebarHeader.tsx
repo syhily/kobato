@@ -1,13 +1,12 @@
 import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { useAssetsSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
+import { SidebarHeader } from '@kobato/ui/components/sidebar.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SearchShortcutHint } from '@kobato/web/ui/admin/shared/SearchShortcutHint.tsx'
+import { AdminSearchDialog } from '@kobato/web/ui/admin/shell/AdminSearchDialog.tsx'
 import { SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
-
-import { SidebarHeader } from '../../components/sidebar'
-import { useI18n } from '../../lib/I18nProvider'
-import { SearchShortcutHint } from '../shared/SearchShortcutHint'
-import { AdminSearchDialog } from './AdminSearchDialog'
 
 interface AppSidebarHeaderProps {
   className?: string

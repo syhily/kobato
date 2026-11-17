@@ -14,23 +14,21 @@
 // - The SDK associates the active trace context itself; callers pass no context
 //   and no exception object.
 
+import type { LogSink } from '@kobato/server/infra/logger/sink.ts'
+import type { TraceLogsRuntimeConfig } from '@kobato/server/infra/trace/config.ts'
+import type { LogSeverityText } from '@kobato/server/infra/trace/log-record.ts'
 import type { LogRecord, SeverityNumber } from '@opentelemetry/api'
 import type { LogRecordExporter } from '@opentelemetry/sdk-logs'
 
+import { observeExporter } from '@kobato/server/infra/trace/export-health.ts'
+import { projectLogLine } from '@kobato/server/infra/trace/log-record.ts'
+import { traceResourceAttributes } from '@kobato/server/infra/trace/resource.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
 import { TRACE_LOG_STREAM } from '@kobato/shared/contracts/trace-logs.ts'
 import { SeverityNumber as SeverityNumberEnum } from '@opentelemetry/api'
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs'
-
-import type { LogSink } from '../logger/sink'
-import type { TraceLogsRuntimeConfig } from './config'
-import type { LogSeverityText } from './log-record'
-
-import { observeExporter } from './export-health'
-import { projectLogLine } from './log-record'
-import { traceResourceAttributes } from './resource'
 
 const LOGGER_NAME = 'kobato-server-logs'
 const LOGGER_VERSION = APP_VERSION

@@ -14,15 +14,13 @@
 // the site-owned `/storage/<key>` form.
 
 import type { FileUploader } from '@kobato/inkling'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
 import { STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
-
-import type { I18nValue } from '../../ui/lib/I18nProvider'
-
-import { useI18n } from '../../ui/lib/I18nProvider'
-import { orpc } from '../api/client'
 
 // Mirrors the server's ALLOWED_IMAGE_MIME_TYPES
 // (src/server/domains/images/services/upload.ts) — a picker hint only; the server

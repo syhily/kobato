@@ -24,8 +24,10 @@ const PROJECT_ROOT = process.cwd()
 const SOURCE_DIRS = [
   'apps/kobato/src',
   'packages/inkling/src',
+  'packages/db/src',
   'packages/server/src',
   'packages/shared/src',
+  'packages/ui/src',
   'packages/web/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 
@@ -186,7 +188,7 @@ describe('trace SDK source boundary', () => {
       join(PROJECT_ROOT, 'packages/server/src/domains/observability/runtime-manager.ts'),
       'utf-8',
     )
-    expect(managerSource).toContain("await import('../../infra/trace/runtime')")
+    expect(managerSource).toContain("await import('@kobato/server/infra/trace/runtime.ts')")
     const serverSource = readFileSync(join(PROJECT_ROOT, 'apps/kobato/src/server.ts'), 'utf-8')
     expect(serverSource).not.toContain('infra/trace/runtime')
   })

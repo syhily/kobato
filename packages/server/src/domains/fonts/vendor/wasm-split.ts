@@ -1,15 +1,14 @@
 import { create, toBinary } from '@bufbuild/protobuf'
+import initWasm from '@kobato/server/domains/fonts/vendor/cnfs.wasm?init'
+import { InputTemplateSchema } from '@kobato/server/domains/fonts/vendor/gen/api_pb.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { isSea, seaAssetPath } from '@kobato/server/infra/sea.ts'
 import { SEA_WASM_CNFS_KEY } from '@kobato/shared/sea/assets.ts'
 import { randomBytes } from 'node:crypto'
 import { mkdtemp, mkdir, writeFile, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { WASI } from 'node:wasi'
-
-import { getLogger } from '../../../infra/logger'
-import { isSea, seaAssetPath } from '../../../infra/sea'
-import initWasm from './cnfs.wasm?init'
-import { InputTemplateSchema } from './gen/api_pb'
 
 const log = getLogger('fonts.wasm')
 

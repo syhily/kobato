@@ -3,16 +3,15 @@ import type { ReactNode } from 'react'
 
 import { useSidebarSettings, useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatShowDate } from '@kobato/shared/utils/formatter.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Pagination } from '@kobato/web/ui/public/post/Pagination.tsx'
+import { postTitleClass } from '@kobato/web/ui/public/post/postChrome.ts'
+import { Sidebar, type SidebarData } from '@kobato/web/ui/public/Sidebar.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { EyeIcon, HeartIcon, MessageCircleMoreIcon, PenLineIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Sidebar, type SidebarData } from '../Sidebar'
-import { Image } from '../widgets/Image'
-import { Pagination } from './Pagination'
-import { postTitleClass } from './postChrome'
 
 export interface HomeLayoutBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]

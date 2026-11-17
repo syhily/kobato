@@ -1,12 +1,11 @@
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { FONT_DIR } from '@kobato/server/infra/paths.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { access, readFile } from 'node:fs/promises'
-
-import { getLogger } from '../infra/logger'
-import { FONT_DIR } from '../infra/paths'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 

@@ -7,15 +7,11 @@ import type {
   MyCommentsOutput,
 } from '@kobato/shared/types/comments.ts'
 
-import { useMutation } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { flushSync } from 'react-dom'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
-import { CommentItem } from './comment-item/CommentItem'
-import { CommentReplyForm } from './CommentReplyForm'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { CommentItem } from '@kobato/web/ui/public/comments/comment-item/CommentItem.tsx'
+import { CommentReplyForm } from '@kobato/web/ui/public/comments/CommentReplyForm.tsx'
 import {
   CommentsActionsContext,
   CommentsIdentityContext,
@@ -26,7 +22,10 @@ import {
   useCommentsActions,
   useCommentsReplySlot,
   useCommentsTree,
-} from './comments-context'
+} from '@kobato/web/ui/public/comments/comments-context.ts'
+import { useMutation } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { flushSync } from 'react-dom'
 
 export interface CommentsProps {
   commentKey: string

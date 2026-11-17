@@ -1,13 +1,12 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
+import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
+import { isVitest } from '@kobato/server/infra/config.ts'
+import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '@kobato/server/infra/crypto/secret-encryption.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { Database } from '../../../infra/db/database'
-
-import { isVitest } from '../../../infra/config'
-import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '../../../infra/crypto/secret-encryption'
-import { findSettingsByScopePrefix, upsertSetting } from '../../../infra/db/operations/setting'
-import { getLogger } from '../../../infra/logger'
-import { SECRET_FIELDS } from '../secrets'
-import { SECTION_REGISTRY } from '../sections/registry'
 
 const log = getLogger('settings.migrate-secrets')
 

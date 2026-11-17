@@ -1,11 +1,11 @@
 import type { SeoSettings } from '@kobato/shared/config/types.ts'
 
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsInput } from './shell/SettingsInput'
-import { useSettingsCard } from './shell/useSettingsCard'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 
 interface SeoFormProps {
   seo: SeoSettings

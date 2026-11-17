@@ -1,4 +1,4 @@
-import { Skeleton } from '../../components/skeleton'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 
 export function EditorRouteSkeleton() {
   return (

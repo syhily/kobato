@@ -1,0 +1,29 @@
+{
+  "name": "@kobato/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@base-ui/react": "catalog:",
+    "@kobato/shared": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/ui": "workspace:*",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "cn": "catalog:",
+    "lucide-react": "catalog:",
+    "motion": "catalog:",
+    "pino": "catalog:",
+    "react": "catalog:",
+    "react-day-picker": "catalog:",
+    "react-dom": "catalog:",
+    "react-intl": "catalog:",
+    "sonner": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/server/infra/db/database.ts'
+import type { Database } from '@kobato/db/database.ts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { seedMetric } from '@kobato/test/db.ts'

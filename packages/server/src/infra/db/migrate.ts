@@ -1,14 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { defaultMigrationsFolder, migrateDatabase as runMigrations } from '@kobato/db/migrate.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { seaVfsRoot } from '@kobato/server/infra/sea.ts'
 import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/shared/sea/assets.ts'
-import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { join } from 'node:path'
-
-import type { Database } from './database'
-
-import { getLogger } from '../logger'
-import { seaVfsRoot } from '../sea'
-
-const MIGRATIONS_FOLDER = './drizzle'
-const MIGRATIONS_TABLE = '__drizzle_migrations'
 
 const log = getLogger('db:migrations')
 
@@ -18,7 +14,7 @@ const log = getLogger('db:migrations')
  */
 function migrationsFolder(): string {
   const root = seaVfsRoot()
-  return root === null ? MIGRATIONS_FOLDER : join(root, SEA_DRIZZLE_ASSET_PREFIX.replace(/\/$/, ''))
+  return root === null ? defaultMigrationsFolder() : join(root, SEA_DRIZZLE_ASSET_PREFIX.replace(/\/$/, ''))
 }
 
 /**
@@ -30,7 +26,7 @@ export async function migrateDatabase(db: Database): Promise<void> {
   log.info('Running database migrations', { migrationsFolder: folder, embedded: seaVfsRoot() !== null })
 
   try {
-    migrate(db, { migrationsFolder: folder, migrationsTable: MIGRATIONS_TABLE })
+    runMigrations(db, folder)
     log.info('Database migrations completed')
   } catch (error) {
     log.error('Database migrations failed', {

@@ -1,4 +1,4 @@
-import type { AuditLogRow } from '@kobato/server/infra/db/schema/config.ts'
+import type { AuditLogRow } from '@kobato/db/schema/config.ts'
 
 import { describe, expect, it } from 'vitest'
 

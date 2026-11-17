@@ -1,14 +1,13 @@
 import { MIN_PASSWORD_LENGTH } from '@kobato/shared/utils/security.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { inputClasses, PasswordToggle } from '@kobato/web/ui/admin/auth/shared.tsx'
 import { ArrowRightIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Form } from 'react-router'
-
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { inputClasses, PasswordToggle } from './shared'
 
 // Covers both resetpassword and accept-invite.
 export interface ResetPasswordFormProps {

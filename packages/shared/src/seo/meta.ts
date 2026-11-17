@@ -1,21 +1,20 @@
+import type { BlogSettingsBundle, SiteAssetBranding } from '@kobato/shared/config/types.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { MetaDescriptor } from 'react-router'
-
-import type { BlogSettingsBundle, SiteAssetBranding } from '../config/types'
-import type { AppLocale } from '../i18n/locales'
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
 
 // Isomorphic by construction: route `meta()` exports pull this module into the
 // browser bundle, so it may only import `@/shared/*` — never
 // `@/shared/i18n/catalog`. Localized copy arrives as the root loader's `i18n`
 // payload through `matches`.
-import { getBlogSettingsBundleSync } from '../config/getters'
-import { brandingVersionSuffix, extractXHandle } from '../config/utils'
-import { fallbackMessages } from '../i18n/fallback-messages'
-import { isSupportedLocale, toOpenGraphLocale } from '../i18n/locales'
-import { isRecord } from '../utils/type-guards'
-import { unsafeCast } from '../utils/unsafe-cast'
-import { joinUrl } from '../utils/urls'
-import { ogImagePathForSlug } from './og-image'
+import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { brandingVersionSuffix, extractXHandle } from '@kobato/shared/config/utils.ts'
+import { fallbackMessages } from '@kobato/shared/i18n/fallback-messages.ts'
+import { isSupportedLocale, toOpenGraphLocale } from '@kobato/shared/i18n/locales.ts'
+import { ogImagePathForSlug } from '@kobato/shared/seo/og-image.ts'
+import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { joinUrl } from '@kobato/shared/utils/urls.ts'
 
 /**
  * The i18n payload the root loader forwards from `content.bootstrap`. `meta()`

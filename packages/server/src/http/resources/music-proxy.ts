@@ -1,17 +1,15 @@
+import type { MusicProvider, ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
+import type { Env } from '@kobato/server/http/context.ts'
 import type { MetingSource } from '@kobato/shared/contracts/music.ts'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
+import { getProvider } from '@kobato/server/domains/music/providers/registry.ts'
+import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { Hono } from 'hono'
-
-import type { MusicProvider, ProviderTrack } from '../../domains/music/providers/types'
-import type { Env } from '../context'
-
-import { getProvider } from '../../domains/music/providers/registry'
-import { ActionFailure } from '../../infra/http/errors'
-import { safeFetch } from '../../infra/safe-fetch'
-import { requireRoleMw } from '../middlewares/hono-rbac'
 
 const SOURCE_REFERERS: Record<MetingSource, string> = {
   netease: 'https://music.163.com/',

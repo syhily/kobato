@@ -58,7 +58,7 @@ describe('honoInstallGateMiddleware', () => {
   describe('exempt paths (noAdmin → passes through)', () => {
     for (const { path, desc } of EXEMPT_CASES) {
       it(`allows ${desc}: ${path}`, async () => {
-        vi.doMock('@kobato/server/infra/db/operations/user.ts', () => ({
+        vi.doMock('@kobato/db/operations/user.ts', () => ({
           hasAdmin: vi.fn().mockResolvedValue(false),
         }))
         try {
@@ -68,7 +68,7 @@ describe('honoInstallGateMiddleware', () => {
           expect(res.status).not.toBe(302)
           expect(res.headers.get('location')).not.toBe('/admin/setup')
         } finally {
-          vi.doUnmock('@kobato/server/infra/db/operations/user.ts')
+          vi.doUnmock('@kobato/db/operations/user.ts')
         }
       })
     }
@@ -77,7 +77,7 @@ describe('honoInstallGateMiddleware', () => {
   describe('blocked paths (noAdmin → redirect)', () => {
     for (const { path, desc } of BLOCKED_CASES) {
       it(`redirects ${desc}: ${path}`, async () => {
-        vi.doMock('@kobato/server/infra/db/operations/user.ts', () => ({
+        vi.doMock('@kobato/db/operations/user.ts', () => ({
           hasAdmin: vi.fn().mockResolvedValue(false),
         }))
         try {
@@ -86,7 +86,7 @@ describe('honoInstallGateMiddleware', () => {
           expect(res.status).toBe(303)
           expect(res.headers.get('location')).toBe('/admin/setup')
         } finally {
-          vi.doUnmock('@kobato/server/infra/db/operations/user.ts')
+          vi.doUnmock('@kobato/db/operations/user.ts')
         }
       })
     }
@@ -94,7 +94,7 @@ describe('honoInstallGateMiddleware', () => {
 
   describe('installed state', () => {
     it('allows all paths when installed', async () => {
-      vi.doMock('@kobato/server/infra/db/operations/user.ts', () => ({
+      vi.doMock('@kobato/db/operations/user.ts', () => ({
         hasAdmin: vi.fn().mockResolvedValue(true),
       }))
       vi.resetModules()
@@ -103,7 +103,7 @@ describe('honoInstallGateMiddleware', () => {
         const res = await app.request('/posts/hello')
         expect(res.status).toBe(200)
       } finally {
-        vi.doUnmock('@kobato/server/infra/db/operations/user.ts')
+        vi.doUnmock('@kobato/db/operations/user.ts')
       }
     })
   })

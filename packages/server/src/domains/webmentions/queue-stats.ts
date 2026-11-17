@@ -1,13 +1,12 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { QueueTaskStatsDto } from '@kobato/shared/contracts/jobs.ts'
 
-import type { Database } from '../../infra/db/database'
-
-import { findNextWebmentionReverifyDueAt } from '../../infra/db/operations/webmention'
-import { countWebmentionInbox, findNextWebmentionInboxDueAt } from '../../infra/db/operations/webmention-inbox'
+import { countWebmentionInbox, findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox.ts'
 import {
   countWebmentionOutboxByStatus,
   findNextWebmentionOutboxDueAt,
-} from '../../infra/db/operations/webmention-outbox'
+} from '@kobato/db/operations/webmention-outbox.ts'
+import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention.ts'
 
 // Queue-depth stats backing the admin task center (`admin.jobs.list`) — one
 // branch per webmention queue task; non-queue tasks get null.

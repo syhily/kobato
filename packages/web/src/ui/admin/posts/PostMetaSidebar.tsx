@@ -1,23 +1,21 @@
 import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
 import type { PostMetaDraft } from '@kobato/shared/types/posts.ts'
-
-import { POST_META_TOGGLE_FIELDS } from '@kobato/shared/types/posts.ts'
-import { type ReactNode } from 'react'
-
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '../editor-shell/editor-shell-types'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { BasicInfoCard } from '../editor-shared/BasicInfoCard'
-import { ContentLanguageField } from '../editor-shared/ContentLanguageField'
-import { CoverOgCard } from '../editor-shared/CoverOgCard'
-import { ToggleOptionsCard } from '../editor-shared/ToggleOptionsCard'
-import { futureLocalInputValueOrEmpty } from '../editor-shell/editor-datetime'
-import { AliasField } from './meta/AliasField'
-import { CategoryField } from './meta/CategoryField'
-import { TagsField } from './meta/TagsField'
+import { POST_META_TOGGLE_FIELDS } from '@kobato/shared/types/posts.ts'
+import { BasicInfoCard } from '@kobato/web/ui/admin/editor-shared/BasicInfoCard.tsx'
+import { ContentLanguageField } from '@kobato/web/ui/admin/editor-shared/ContentLanguageField.tsx'
+import { CoverOgCard } from '@kobato/web/ui/admin/editor-shared/CoverOgCard.tsx'
+import { ToggleOptionsCard } from '@kobato/web/ui/admin/editor-shared/ToggleOptionsCard.tsx'
+import { futureLocalInputValueOrEmpty } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
+import { AliasField } from '@kobato/web/ui/admin/posts/meta/AliasField.tsx'
+import { CategoryField } from '@kobato/web/ui/admin/posts/meta/CategoryField.tsx'
+import { TagsField } from '@kobato/web/ui/admin/posts/meta/TagsField.tsx'
+import { type ReactNode } from 'react'
 
 export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
   return {

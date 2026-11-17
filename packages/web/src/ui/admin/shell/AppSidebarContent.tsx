@@ -1,10 +1,10 @@
-import type { AdminShellProps } from './AdminShell'
+import type { AdminShellProps } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
 
-import { SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu } from '../../components/sidebar'
-import { NavContent } from './NavContent'
-import { NavMain } from './NavMain'
-import { NavNotifications } from './NavNotifications'
-import { NavSettings } from './NavSettings'
+import { SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu } from '@kobato/ui/components/sidebar.tsx'
+import { NavContent } from '@kobato/web/ui/admin/shell/NavContent.tsx'
+import { NavMain } from '@kobato/web/ui/admin/shell/NavMain.tsx'
+import { NavNotifications } from '@kobato/web/ui/admin/shell/NavNotifications.tsx'
+import { NavSettings } from '@kobato/web/ui/admin/shell/NavSettings.tsx'
 
 interface AppSidebarContentProps {
   role: AdminShellProps['currentUser']['role']

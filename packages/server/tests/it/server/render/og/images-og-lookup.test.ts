@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
 import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

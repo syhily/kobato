@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
+import { setting } from '@kobato/db/schema/config.ts'
 import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
@@ -11,7 +12,6 @@ import {
   __clearSectionChangeHandlersForTests,
   registerSectionChangeHandler,
 } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'

@@ -1,9 +1,8 @@
+import type { Env } from '@kobato/server/http/context.ts'
 import type { MiddlewareHandler } from 'hono'
 
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { cors } from 'hono/cors'
-
-import type { Env } from '../context'
 
 // CORS from `security` settings, read live. No-op when disabled or pre-install; when
 // enabled only listed origins get headers — never reflect the origin with credentials on.

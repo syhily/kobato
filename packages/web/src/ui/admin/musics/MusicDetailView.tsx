@@ -3,23 +3,26 @@ import type { NavigateFunction } from 'react-router'
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
+import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { transitions } from '@kobato/web/client/lib/motion.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { LyricsDisplay } from '@kobato/web/ui/admin/musics/LyricsDisplay.tsx'
+import { buildMusicUpdate } from '@kobato/web/ui/admin/musics/music-update.ts'
+import {
+  useMusicPlayerActions,
+  useMusicPlayerState,
+  useMusicPlayerTime,
+} from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
+import { ConfirmDialog, type ConfirmState } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { type InfiniteData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { transitions } from '../../../client/lib/motion'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
-import { ConfirmDialog, type ConfirmState } from '../shared/ConfirmDialog'
-import { LyricsDisplay } from './LyricsDisplay'
-import { buildMusicUpdate } from './music-update'
-import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from './MusicPlayerContext'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
 

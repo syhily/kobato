@@ -119,7 +119,7 @@ vi.mock('motion/react', async () => {
   }
 })
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function makeSearchHit(overrides: Partial<MetingSearchHit> = {}): MetingSearchHit {
   return {

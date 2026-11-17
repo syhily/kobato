@@ -1,11 +1,9 @@
+import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import type { CountersDto, MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
 
+import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
+import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/shared/contracts/analytics.ts'
-
-import type { AnalyticsReader } from './analytics-sql'
-
-import { queryCounters } from './counters'
-import { queryMetric } from './metric'
 
 export interface AnalyticsOverviewData {
   counters: CountersDto

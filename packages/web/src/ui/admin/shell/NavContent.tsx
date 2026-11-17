@@ -1,4 +1,9 @@
+import type { AdminShellProps } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
+
 import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuBadge } from '@kobato/ui/components/sidebar.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { NavMenuItem } from '@kobato/web/ui/admin/shell/NavMenuItem.tsx'
 import {
   AtSignIcon,
   FileTextIcon,
@@ -11,12 +16,6 @@ import {
   ShieldIcon,
 } from 'lucide-react'
 import { useLocation } from 'react-router'
-
-import type { AdminShellProps } from './AdminShell'
-
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuBadge } from '../../components/sidebar'
-import { useI18n } from '../../lib/I18nProvider'
-import { NavMenuItem } from './NavMenuItem'
 
 interface NavContentProps {
   role: AdminShellProps['currentUser']['role']

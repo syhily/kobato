@@ -1,11 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { FontRow } from '@kobato/db/schema/font.ts'
 import type { AdminFontDto } from '@kobato/shared/contracts/fonts.ts'
 
+import { font } from '@kobato/db/schema/font.ts'
 import { eq, inArray } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { FontRow } from '../../../infra/db/schema/font'
-
-import { font } from '../../../infra/db/schema/font'
 
 // Read side of the fonts domain: pure DB queries plus the row→DTO mapping shared
 // by `fonts.list` and the SSR bundle resolver.

@@ -1,5 +1,5 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
-import type { Database } from '@kobato/server/infra/db/database.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 

@@ -1,10 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow } from '@kobato/db/types.ts'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
+
+import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { and, desc, eq, inArray } from 'drizzle-orm'
-
-import type { Database } from '../../infra/db/database'
-import type { ContentRow } from '../../infra/db/types'
-import type { ContentType } from './schemas/revision'
-
-import { content as contentTable } from '../../infra/db/schema/content'
 
 // Sync (node:sqlite): called inside the restore transaction.
 export function findContentById(db: Database, id: number): ContentRow | null {

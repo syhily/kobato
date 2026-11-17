@@ -1,9 +1,8 @@
+import type { MakeRequestContextOptions } from '@kobato/test/request-context.ts'
+
 import { requestContext } from '@kobato/server/http/request-context.ts'
+import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { RouterContextProvider } from 'react-router'
-
-import type { MakeRequestContextOptions } from './request-context'
-
-import { makeRequestContext } from './request-context'
 
 // Stand-in for the `RouterContextProvider` that `buildLoadContext`
 // populates in production, with the canonical RequestContext pre-loaded.

@@ -1,7 +1,7 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
-import UsersRoute from '@/routes/admin/security/users/index'
+import UsersRoute from '@/routes/admin/security/users/index.tsx'
 
 describe('snapshot: routes/admin/security/users/index', () => {
   it('renders the users index route', () => {

@@ -1,5 +1,34 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
+import { findSafeUserById } from '@kobato/db/operations/user.ts'
+import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
+import {
+  deleteCredential,
+  generateRegistrationOptions,
+  listCredentials,
+  setLoginMethod,
+  verifyRegistrationResponse,
+} from '@kobato/server/domains/auth/passkey/service.ts'
+import { newPasswordSchema } from '@kobato/server/domains/auth/schema.ts'
+import { listSessionsByUser } from '@kobato/server/domains/auth/services/sessions.ts'
+import { isMailLoginReady } from '@kobato/server/domains/auth/services/shared.ts'
+import { revokeOwnSessionWithGuard } from '@kobato/server/domains/auth/session-guard.ts'
+import {
+  getAccountProfile,
+  updateAccountPassword,
+  updateAccountProfile,
+} from '@kobato/server/domains/users/services/account.ts'
+import { authedProc, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import {
+  tryPasskeyDeleteRateLimit,
+  tryPasskeyRegisterBeginRateLimit,
+  tryPasskeyRegisterFinishRateLimit,
+  tryPasskeySetForceRateLimit,
+  tryRateLimit,
+} from '@kobato/server/infra/rate-limit.ts'
 import {
   accountProfileOutputSchema,
   accountSessionsOutputSchema,
@@ -9,32 +38,6 @@ import { loginMethodSchema } from '@kobato/shared/contracts/users.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 import { z } from 'zod'
-
-import { formatUaLabel } from '../../domains/analytics/ua-parse'
-import { recordAuditEventFromContext } from '../../domains/audit/services/record'
-import { isPasskeyEnabled } from '../../domains/auth/passkey/gate'
-import {
-  deleteCredential,
-  generateRegistrationOptions,
-  listCredentials,
-  setLoginMethod,
-  verifyRegistrationResponse,
-} from '../../domains/auth/passkey/service'
-import { newPasswordSchema } from '../../domains/auth/schema'
-import { listSessionsByUser } from '../../domains/auth/services/sessions'
-import { isMailLoginReady } from '../../domains/auth/services/shared'
-import { revokeOwnSessionWithGuard } from '../../domains/auth/session-guard'
-import { getAccountProfile, updateAccountPassword, updateAccountProfile } from '../../domains/users/services/account'
-import { findSafeUserById } from '../../infra/db/operations/user'
-import { createServerTranslator } from '../../infra/i18n'
-import {
-  tryPasskeyDeleteRateLimit,
-  tryPasskeyRegisterBeginRateLimit,
-  tryPasskeyRegisterFinishRateLimit,
-  tryPasskeySetForceRateLimit,
-  tryRateLimit,
-} from '../../infra/rate-limit'
-import { authedProc, localizedOrpcError, passkeyGuard } from '../orpc-base'
 
 function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {
   if (!isRecord(value)) {

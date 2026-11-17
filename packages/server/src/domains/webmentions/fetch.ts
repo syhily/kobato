@@ -1,9 +1,9 @@
-import type { SafeFetchFailure } from '../../infra/safe-fetch'
+import type { SafeFetchFailure } from '@kobato/server/infra/safe-fetch.ts'
 
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { safeFetch } from '../../infra/safe-fetch'
-import { isHtmlContentType } from './content-type'
+import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-type.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
 
 const log = getLogger('webmentions.fetch')
 

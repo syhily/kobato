@@ -15,8 +15,7 @@
 // (`block-quote-aside-cycle`).
 
 import { CodeBlockNode, EDITOR_BASE_NODES } from '@kobato/inkling'
-
-import { excludeBaseNodes } from './base-node-filter'
+import { excludeBaseNodes } from '@kobato/web/client/editor/base-node-filter.ts'
 
 const COMMENT_EXCLUDED_BASE_TYPES = new Set(['heading', 'extended-heading', 'aside', 'table', 'tablerow', 'tablecell'])
 

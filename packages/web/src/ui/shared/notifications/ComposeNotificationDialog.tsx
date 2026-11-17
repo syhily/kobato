@@ -1,15 +1,6 @@
 import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
 
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { CheckIcon, Loader2Icon, SearchIcon } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { useInvalidateNotifications } from '../../../client/hooks/use-notifications'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { useDebouncedSearch } from '../../admin/shared/useDebouncedSearch'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -17,14 +8,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { Switch } from '../../components/switch'
-import { Tabs, TabsList, TabsTrigger } from '../../components/tabs'
-import { Textarea } from '../../components/textarea'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Switch } from '@kobato/ui/components/switch.tsx'
+import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
+import { Textarea } from '@kobato/ui/components/textarea.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useInvalidateNotifications } from '@kobato/web/client/hooks/use-notifications.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { useDebouncedSearch } from '@kobato/web/ui/admin/shared/useDebouncedSearch.ts'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { CheckIcon, Loader2Icon, SearchIcon } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface ComposeNotificationDialogProps {
   open: boolean

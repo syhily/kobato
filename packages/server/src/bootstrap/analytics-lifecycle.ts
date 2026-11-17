@@ -1,22 +1,21 @@
-import { copyFile } from 'node:fs/promises'
+import type { Database } from '@kobato/db/database.ts'
+import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 
-import type { AnalyticsReader } from '../domains/analytics/services/analytics-sql'
-import type { Database } from '../infra/db/database'
-
-import { wireAccessLogBatcher } from '../domains/analytics/services/batcher'
-import { runAnalyticsBlobMigrationAtBoot } from '../domains/analytics/services/blob-migration'
-import { wireDeviceEnvBeaconBatcher } from '../domains/analytics/services/env-beacon'
-import { runAccessLogRetention } from '../domains/analytics/services/maintenance'
-import { ANALYTICS_DDL } from '../domains/analytics/services/schema'
+import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine.ts'
+import { wireAccessLogBatcher } from '@kobato/server/domains/analytics/services/batcher.ts'
+import { runAnalyticsBlobMigrationAtBoot } from '@kobato/server/domains/analytics/services/blob-migration.ts'
+import { wireDeviceEnvBeaconBatcher } from '@kobato/server/domains/analytics/services/env-beacon.ts'
+import { runAccessLogRetention } from '@kobato/server/domains/analytics/services/maintenance.ts'
+import { ANALYTICS_DDL } from '@kobato/server/domains/analytics/services/schema.ts'
 import {
   type AnalyticsHandle,
   closeAnalyticsDatabase,
   openAnalyticsDatabase,
   resolveAnalyticsPath,
-} from '../infra/analytics/duckdb'
-import { getBatcher } from '../infra/db/batcher-registry'
-import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '../infra/scheduler-utils'
-import { ManagedEngine } from './managed-engine'
+} from '@kobato/server/infra/analytics/duckdb.ts'
+import { getBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
+import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@kobato/server/infra/scheduler-utils.ts'
+import { copyFile } from 'node:fs/promises'
 
 /** Boot-time owner of the DuckDB sidecar and the daily 180-day retention job (the 04:30
  *  slot shared with the SQLite half). The engine's priority-0 shutdown hook runs after

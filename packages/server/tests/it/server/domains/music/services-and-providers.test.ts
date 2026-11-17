@@ -1,7 +1,7 @@
 import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
 
-import { music } from '@kobato/server/infra/db/schema/media.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
+import { music } from '@kobato/db/schema/media.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
@@ -33,7 +33,7 @@ vi.mock('@kobato/server/infra/image/process.ts', () => ({
 }))
 
 const read = await import('@kobato/server/domains/music/services/read.ts')
-const musicOps = await import('@kobato/server/infra/db/operations/music.ts')
+const musicOps = await import('@kobato/db/operations/music.ts')
 const publicUrlMod = await import('@kobato/server/infra/storage/public-url.ts')
 const searchService = await import('@kobato/server/domains/music/services/search.ts')
 const addMod = await import('@kobato/server/domains/music/services/write/add.ts')

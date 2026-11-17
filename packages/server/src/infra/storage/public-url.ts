@@ -1,8 +1,7 @@
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/shared/types/asset-url.ts'
-
-import { descriptorFor } from '../http/error-descriptor'
-import { ActionFailure } from '../http/errors'
 
 /**
  * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null while

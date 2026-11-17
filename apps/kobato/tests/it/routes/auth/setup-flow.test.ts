@@ -1,9 +1,9 @@
+import { setting } from '@kobato/db/schema/config.ts'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
-import { oneTimeToken } from '@kobato/server/infra/db/schema/one-time-token.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { makeRouteContext } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { emptySession } from '@kobato/test/session.ts'
@@ -22,7 +22,7 @@ const db = getTestDb()
 const CSRF_TOKEN = 'setup-flow-csrf-token'
 
 const mockContext = await import('@kobato/server/http/request-context.ts')
-const { action, loader } = await import('@/routes/auth/setup/index')
+const { action, loader } = await import('@/routes/auth/setup/index.tsx')
 
 beforeAll(() => {
   // Overlay real db/pool handles so the install flow hits the integration database.

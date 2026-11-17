@@ -1,10 +1,10 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { SidebarProvider } from '@kobato/ui/components/sidebar.tsx'
 import { UploadImageDialog } from '@kobato/web/ui/admin/shared/UploadImageDialog.tsx'
 import { AdminSearchDialog } from '@kobato/web/ui/admin/shell/AdminSearchDialog.tsx'
 import { AdminShell } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
 import { NavMenuItem } from '@kobato/web/ui/admin/shell/NavMenuItem.tsx'
-import { SidebarProvider } from '@kobato/web/ui/components/sidebar.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

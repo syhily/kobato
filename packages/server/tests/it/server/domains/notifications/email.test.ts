@@ -1,6 +1,7 @@
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { Role } from '@kobato/shared/utils/roles.ts'
 
+import { user } from '@kobato/db/schema/user.ts'
 import {
   notifyAdmins,
   replyToThread,
@@ -8,7 +9,6 @@ import {
   sendDirectMessage,
   unreadCount,
 } from '@kobato/server/domains/notifications/service.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
@@ -416,7 +416,7 @@ describe('notifications email — descriptor resolution', () => {
     setSiteLocale('zh-TW')
     await seedUser('admin', 'admin')
     const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
-    const { createNotificationWithRecipients } = await import('@kobato/server/infra/db/operations/notification.ts')
+    const { createNotificationWithRecipients } = await import('@kobato/db/operations/notification.ts')
     const { sendNotificationEmail } = await import('@kobato/server/domains/notifications/email.ts')
     const adminRows = db.select().from(user).all()
 

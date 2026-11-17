@@ -1,23 +1,21 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { HomeExtra } from '@kobato/shared/contracts/content.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { ClientPost, ListingPostCard } from '@kobato/shared/types/catalog.ts'
 import type { ListingPageLoaderData } from '@kobato/shared/types/listing.ts'
 
+import { selectFeaturePosts, selectSidebarPosts } from '@kobato/server/domains/posts/services/featured.ts'
+import { countPublicPosts, listPublicPostCardsPaginated } from '@kobato/server/domains/posts/services/public-query.ts'
+import { getCategoryLinks } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
+import { listAllTags } from '@kobato/server/domains/taxonomies/tags/service.ts'
+import { listingLoader } from '@kobato/server/http/loaders/listing.ts'
+import { selectSidebarTags, sidebarSelectionSeed } from '@kobato/server/http/loaders/sidebar-select.ts'
+import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { isSidebarWidgetEnabled } from '@kobato/shared/config/utils.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
-
-import type { BlogSession } from '../../domains/auth/session-storage'
-import type { Database } from '../../infra/db/database'
-
-import { selectFeaturePosts, selectSidebarPosts } from '../../domains/posts/services/featured'
-import { countPublicPosts, listPublicPostCardsPaginated } from '../../domains/posts/services/public-query'
-import { getCategoryLinks } from '../../domains/taxonomies/categories/services/query'
-import { listAllTags } from '../../domains/taxonomies/tags/service'
-import { listingLoader } from './listing'
-import { loadSidebarData } from './sidebar'
-import { selectSidebarTags, sidebarSelectionSeed } from './sidebar-select'
 
 // Tail-merge guard: an orphan last page (< pageSize − 2 posts) merges into
 // its predecessor (clamped at 0 for tiny page sizes). See `listingLoader`.

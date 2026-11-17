@@ -1,3 +1,5 @@
+import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
+import { seaVfsRoot } from '@kobato/server/infra/sea.ts'
 import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
@@ -15,9 +17,6 @@ import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { matchRoutes, type RouteObject } from 'react-router'
-
-import { seaVfsRoot } from '../../infra/sea'
-import { readAssetTextOrDisk } from '../../infra/sea-asset'
 
 let cached: WarmupManifest | null | undefined
 

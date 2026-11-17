@@ -6,17 +6,16 @@ import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
 
 import { sanitizeHtml } from '@kobato/shared/sanitize/sanitize-html.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Comments } from '@kobato/web/ui/public/comments/Comments.tsx'
+import { CommentsSkeleton } from '@kobato/web/ui/public/comments/CommentsSkeleton.tsx'
+import { LikeButton } from '@kobato/web/ui/public/LikeActions.tsx'
+import { postMetaClass, postMetaDateClass, postTitleClass } from '@kobato/web/ui/public/post/postChrome.ts'
+import { TableOfContents } from '@kobato/web/ui/public/post/TableOfContents.tsx'
 import { PencilIcon } from 'lucide-react'
 import { type ReactNode, Suspense, useMemo } from 'react'
 import { Await, Link } from 'react-router'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Comments } from '../comments/Comments'
-import { CommentsSkeleton } from '../comments/CommentsSkeleton'
-import { LikeButton } from '../LikeActions'
-import { postMetaClass, postMetaDateClass, postTitleClass } from './postChrome'
-import { TableOfContents } from './TableOfContents'
 
 // No lazy boundary around the TOC: its closed-drawer DOM must be in the SSR output, and a
 // `fallback={null}` boundary would drop it and mismatch on re-render (#418). The streamed

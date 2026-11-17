@@ -1,6 +1,6 @@
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import { bundleFromMatches, i18nFromMatches, routeMeta } from './meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/shared/seo/meta.ts'
 
 /**
  * Factory for the `meta` export of routes whose only SEO input is a static

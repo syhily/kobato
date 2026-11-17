@@ -1,16 +1,15 @@
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 
+import { compressImage } from '@kobato/server/infra/image/compress.ts'
+import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
+import { ensureCanvasFont, type FontSlot } from '@kobato/server/render/canvas-fonts.ts'
+import { logoDark } from '@kobato/server/render/og/assets.ts'
+import { layoutCanvasLines } from '@kobato/server/render/pretext-layout.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { isHttpUrl, redactUrlForLog } from '@kobato/shared/utils/safe-url.ts'
 import { Canvas, loadImage } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
-
-import { compressImage } from '../../infra/image/compress'
-import { safeFetch } from '../../infra/safe-fetch'
-import { ensureCanvasFont, type FontSlot } from '../canvas-fonts'
-import { layoutCanvasLines } from '../pretext-layout'
-import { logoDark } from './assets'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 

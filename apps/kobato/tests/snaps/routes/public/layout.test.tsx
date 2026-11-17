@@ -4,14 +4,14 @@ import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { I18nProvider } from '@kobato/web/ui/lib/I18nProvider.tsx'
-import { ThemeProvider } from '@kobato/web/ui/lib/ThemeProvider.tsx'
+import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-import PublicLayoutRoute, { ErrorBoundary } from '@/routes/public/layout'
+import PublicLayoutRoute, { ErrorBoundary } from '@/routes/public/layout.tsx'
 
 const testQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },

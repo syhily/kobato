@@ -1,6 +1,5 @@
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { isRouteErrorResponse, useRouteError } from 'react-router'
-
-import { useI18n } from '../../lib/I18nProvider'
 
 export function AdminErrorFallback() {
   const { t } = useI18n()

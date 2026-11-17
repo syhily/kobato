@@ -1,6 +1,8 @@
-import type { Database } from '@kobato/server/infra/db/database.ts'
+import type { Database } from '@kobato/db/database.ts'
 import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend.ts'
 
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import {
@@ -11,8 +13,6 @@ import {
 import { createBackup } from '@kobato/server/domains/backup/services/backup.ts'
 import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

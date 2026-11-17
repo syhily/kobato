@@ -1,10 +1,7 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { User } from '@kobato/db/types.ts'
 import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 import type { UserSortOrder } from '@kobato/shared/types/users.ts'
-
-import { count } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { User } from '../../../infra/db/types'
 
 import {
   countAdmins,
@@ -14,22 +11,23 @@ import {
   setUserMuted,
   softDeleteUserById,
   updateUserRole,
-} from '../../../infra/db/operations/user'
-import { user } from '../../../infra/db/schema/user'
-import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '../../../infra/email/sender'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { tryPasswordResetByTargetRateLimit } from '../../../infra/rate-limit'
-import { revokeAllSessionsOfUser } from '../../auth/services/sessions'
-import { issueResetToken, issueSetupToken } from '../../auth/verification-tokens'
+} from '@kobato/db/operations/user.ts'
+import { user } from '@kobato/db/schema/user.ts'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
+import { issueResetToken, issueSetupToken } from '@kobato/server/domains/auth/verification-tokens.ts'
 import {
   type AdminUserRow,
   type AdminUsersListFilters,
   countAdminUsers,
   findAdminUserById,
   listAdminUsers,
-} from '../repos/admin-query'
+} from '@kobato/server/domains/users/repos/admin-query.ts'
+import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@kobato/server/infra/email/sender.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { tryPasswordResetByTargetRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { count } from 'drizzle-orm'
 
 const log = getLogger('users.admin')
 

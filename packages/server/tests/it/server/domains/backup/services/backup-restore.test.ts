@@ -13,12 +13,12 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 let analyticsHandle: AnalyticsHandle
 
+import { findBackupByTimestamp } from '@kobato/db/operations/backup.ts'
+import { createNotificationWithRecipients } from '@kobato/db/operations/notification.ts'
+import { notification } from '@kobato/db/schema/notification.ts'
+import { post } from '@kobato/db/schema/post.ts'
+import { category } from '@kobato/db/schema/taxonomy.ts'
 import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@kobato/server/domains/backup/services/backup.ts'
-import { findBackupByTimestamp } from '@kobato/server/infra/db/operations/backup.ts'
-import { createNotificationWithRecipients } from '@kobato/server/infra/db/operations/notification.ts'
-import { notification } from '@kobato/server/infra/db/schema/notification.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
-import { category } from '@kobato/server/infra/db/schema/taxonomy.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { extractBackupFile, unpackBackupPayload } from '@kobato/test/backup-buffer.ts'
@@ -108,7 +108,7 @@ describe('backup and restore integration', () => {
     const { mkdtempSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')
     const { join } = await import('node:path')
-    const { openDatabase, closeDatabase } = await import('@kobato/server/infra/db/database.ts')
+    const { openDatabase, closeDatabase } = await import('@kobato/db/database.ts')
     const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-it-'))
     const restored = openDatabase(join(dir, 'restored.db'))
     try {

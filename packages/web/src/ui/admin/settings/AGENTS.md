@@ -33,7 +33,7 @@ A failed locale commit rolls the select back to the committed language; the next
 
 ## Cross-tab locale sync
 
-Settings-side half only — the root loop and per-document capability rules live in `../AGENTS.md` (`packages/web/src/ui/lib/LocaleSyncProvider`, mounted by `apps/kobato/src/root.tsx`); the cards use `useLocaleSyncPublish()`. Pinned by `packages/web/tests/unit/ui/admin/settings/general-locale-sync.test.tsx` (two real `GeneralForm` workspaces against one fake server, asserting persisted state) and `packages/web/tests/unit/ui/lib/locale-sync-provider.test.tsx` (no-host semantics, failure/retry, dedupe, notice).
+Settings-side half only — the root loop and per-document capability rules live in `../../AGENTS.md` (`packages/web/src/ui/lib/LocaleSyncProvider`, mounted by `apps/kobato/src/root.tsx`); the cards use `useLocaleSyncPublish()`. Pinned by `packages/web/tests/unit/ui/admin/settings/general-locale-sync.test.tsx` (two real `GeneralForm` workspaces against one fake server, asserting persisted state) and `packages/web/tests/unit/ui/lib/locale-sync-provider.test.tsx` (no-host semantics, failure/retry, dedupe, notice).
 
 - Sender — publishes once after the server acknowledged the locale, immediately before this tab's single reload; a per-mount `createLocaleSyncOrigin` id drops its own echo (`BroadcastChannel` also delivers to other channel objects in the same document) and the bootstrap settings `revision` rides along as the dedupe token.
 - Receiver — the workspace flush host (`SettingsFlushProvider` → `runTransaction` + `flushAllAndWait`) runs the SAME transaction shape as a local switch, then one automatic `reload()` only after the flush succeeded. It NEVER commits the locale and never re-publishes.

@@ -1,11 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { CommentTokenCookie } from '@kobato/shared/utils/comment-token.ts'
 
+import { findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup.ts'
+import { verifyCommentOwnership } from '@kobato/server/domains/comments/services/token.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
-
-import type { Database } from '../../../infra/db/database'
-
-import { findCommentWithUserById } from './lookup'
-import { verifyCommentOwnership } from './token'
 
 /** Access in precedence order: admin bypass, comment-token ownership, then
  *  session ownership. Also returns the cookie with dead entries dropped. */

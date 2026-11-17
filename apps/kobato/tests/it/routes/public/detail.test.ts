@@ -1,10 +1,10 @@
 import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { friend as friendTable } from '@kobato/server/infra/db/schema/friend.ts'
-import { metric as metricTable } from '@kobato/server/infra/db/schema/metric.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { friend as friendTable } from '@kobato/db/schema/friend.ts'
+import { metric as metricTable } from '@kobato/db/schema/metric.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
 import { CACHE_PROFILES } from '@kobato/server/infra/http/headers.ts'
 import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
@@ -186,8 +186,8 @@ function gateOnce(mock: (typeof mocks)[keyof typeof mocks]): { release: () => vo
   return { release }
 }
 
-const postRoute = await import('@/routes/public/post/detail')
-const pageRoute = await import('@/routes/public/page/detail')
+const postRoute = await import('@/routes/public/post/detail.tsx')
+const pageRoute = await import('@/routes/public/page/detail.tsx')
 
 describe('routes/post.detail loader', () => {
   it('301-redirects a post alias to the canonical slug', async () => {

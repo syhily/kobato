@@ -1,10 +1,9 @@
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { registerJob } from '@kobato/server/infra/job-registry.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { randomBytes } from 'node:crypto'
 import { rmSync } from 'node:fs'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { ActionFailure } from '../../infra/http/errors'
-import { registerJob } from '../../infra/job-registry'
-import { getLogger } from '../../infra/logger'
 
 /**
  * Encrypted uploads parked between the two restore calls: `upload-restore`

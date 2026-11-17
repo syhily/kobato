@@ -1,12 +1,11 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatWallClockDateTime } from '@kobato/web/ui/admin/editor-shell/wall-clock.ts'
+import { diffBodies, DiffPanel } from '@kobato/web/ui/admin/editor/lexical-body-diff.tsx'
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
-
-import { Button } from '../../components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/dialog'
-import { useI18n } from '../../lib/I18nProvider'
-import { diffBodies, DiffPanel } from '../editor/lexical-body-diff'
-import { formatWallClockDateTime } from './wall-clock'
 
 export interface DraftConflictDialogProps {
   open: boolean

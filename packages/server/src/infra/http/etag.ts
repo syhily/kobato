@@ -1,10 +1,9 @@
 import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 
+import { CACHE_PROFILES } from '@kobato/server/infra/http/headers.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { createHash } from 'node:crypto'
-
-import { CACHE_PROFILES } from './headers'
 
 /**
  * Everything that changes the HTML REPRESENTATION of a detail page without

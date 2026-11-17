@@ -1,8 +1,7 @@
 import type { MetingSource, SearchMusicOutput } from '@kobato/shared/contracts/music.ts'
 
+import { getProvider } from '@kobato/server/domains/music/providers/registry.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import { getProvider } from '../providers/registry'
 
 function toProxyCoverUrl(source: MetingSource, sourceId: string): string {
   return `/admin/music/proxy/cover?source=${source}&sourceId=${encodeURIComponent(sourceId)}`

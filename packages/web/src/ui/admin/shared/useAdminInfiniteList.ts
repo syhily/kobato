@@ -1,5 +1,8 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useInfiniteScrollSentinel } from '@kobato/web/client/hooks/use-infinite-scroll-sentinel.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 import {
   type InfiniteData,
   type QueryKey,
@@ -8,10 +11,6 @@ import {
   type UseInfiniteQueryOptions,
 } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
-
-import { useInfiniteScrollSentinel } from '../../../client/hooks/use-infinite-scroll-sentinel'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { useI18n } from '../../lib/I18nProvider'
 
 // Page contract shared by every admin list procedure: offset-paginated; `hasMore` gates the next fetch, `total` optional.
 interface AdminListPageShape {

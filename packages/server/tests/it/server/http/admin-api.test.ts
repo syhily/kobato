@@ -1,15 +1,15 @@
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
+import { comment as commentTable } from '@kobato/db/schema/comment.ts'
+import { setting } from '@kobato/db/schema/config.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { user as userTable } from '@kobato/db/schema/user.ts'
+import { webmention as webmentionTable } from '@kobato/db/schema/webmention.ts'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { comment as commentTable } from '@kobato/server/infra/db/schema/comment.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { user as userTable } from '@kobato/server/infra/db/schema/user.ts'
-import { webmention as webmentionTable } from '@kobato/server/infra/db/schema/webmention.ts'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,

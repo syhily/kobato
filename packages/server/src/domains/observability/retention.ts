@@ -13,17 +13,16 @@
 // Every failure is logged and swallowed — a data-policy sync must never
 // affect the site's availability.
 
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { O2StreamType } from '@kobato/server/domains/observability/o2-client.ts'
+
+import { isObservabilityConnectionVerified } from '@kobato/server/domains/observability/connection.ts'
+import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { TRACE_LOG_STREAM } from '@kobato/shared/contracts/trace-logs.ts'
 import { isTraceMetricStreamName } from '@kobato/shared/contracts/trace-metrics.ts'
 import { RUM_STREAM_NAME } from '@kobato/shared/contracts/trace-pipeline.ts'
-
-import type { ObservabilitySettingsSlice } from './config'
-import type { O2StreamType } from './o2-client'
-
-import { getLogger } from '../../infra/logger'
-import { isObservabilityConnectionVerified } from './connection'
-import { createO2Client, O2ClientError } from './o2-client'
 
 const log = getLogger('observability.retention')
 

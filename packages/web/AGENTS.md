@@ -1,0 +1,14 @@
+# Web package conventions
+
+`packages/web/src/` (`@kobato/web`) is the product-frontend package: browser behavior, data access, editor glue, and Kobato-specific public/admin components.
+
+## Module seam
+
+`client/` (hooks, oRPC client, editor glue) and `ui/` (product components) reference each other in both directions, so they remain one package. The reusable design system is separate: `@kobato/ui` owns base styles, primitives, icons, theme/i18n providers, and generic presentation hooks. Web may depend on UI; UI never depends on web.
+
+## Rules
+
+- Everything here is browser-safe: no `node:*` value imports, no `@kobato/server` value imports. Server-only shapes (oRPC input/output types) come from `@kobato/shared` contracts (Zod `z.infer`), never from server source.
+- The ONE sanctioned server edge is the type-only `RouterClient<ApiRouter>` in `client/api/client.ts` (`@kobato/server` is a devDependency for exactly this). Any second type channel must go through a `@kobato/shared` contract instead.
+- Imports use `@kobato/web/...` inside this package and `@kobato/ui/...`, `@kobato/shared/...`, or `@kobato/inkling` across packages.
+- Subdirectory conventions load additively: `src/client/AGENTS.md` and `src/ui/AGENTS.md` (+ `src/ui/admin/settings/AGENTS.md`). Design tokens and style-entry rules live in `packages/ui/src/styles/AGENTS.md`.

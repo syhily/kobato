@@ -1,8 +1,12 @@
-import type { ContentEntityAdapter } from '../lifecycle'
-import type { MetaEntityDescriptor, MetaRowBase, UpsertMetaInputBase } from './descriptor'
+import type {
+  MetaEntityDescriptor,
+  MetaRowBase,
+  UpsertMetaInputBase,
+} from '@kobato/server/domains/content/entities/descriptor.ts'
+import type { ContentEntityAdapter } from '@kobato/server/domains/content/lifecycle.ts'
 
-import { getLogger } from '../../../infra/logger'
-import { recordForceOverwriteAudit } from '../lifecycle'
+import { recordForceOverwriteAudit } from '@kobato/server/domains/content/lifecycle.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 /**
  * Builds the body-lifecycle adapter from the descriptor that drives the meta

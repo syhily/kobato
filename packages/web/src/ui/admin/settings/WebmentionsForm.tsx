@@ -1,14 +1,13 @@
 import type { WebmentionsSettings } from '@kobato/shared/config/types.ts'
 
+import { FieldLabel } from '@kobato/ui/components/field.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsSwitch } from '@kobato/web/ui/admin/settings/shell/SettingsSwitch.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { Controller } from 'react-hook-form'
-
-import { FieldLabel } from '../../components/field'
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsSwitch } from './shell/SettingsSwitch'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 interface WebmentionsFormProps {
   webmentions: WebmentionsSettings

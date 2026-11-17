@@ -1,8 +1,7 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ExternalLinkIcon, XIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 export interface ActionBannerProps {
   kind: 'draft' | 'published'

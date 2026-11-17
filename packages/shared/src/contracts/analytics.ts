@@ -2,9 +2,8 @@
 // Consumed by the server query layer and the React dashboard — isomorphic, no
 // server-only imports.
 
+import { safeBoolean } from '@kobato/shared/utils/schema.ts'
 import { z } from 'zod'
-
-import { safeBoolean } from '../utils/schema'
 
 export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30d', 'last-90d', 'last-365d'] as const
 

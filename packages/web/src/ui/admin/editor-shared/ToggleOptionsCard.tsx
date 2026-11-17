@@ -1,8 +1,8 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/card'
-import { useI18n } from '../../lib/I18nProvider'
-import { ToggleRow } from './ToggleRow'
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { ToggleRow } from '@kobato/web/ui/admin/editor-shared/ToggleRow.tsx'
 
 /** Shape shared by `POST_META_TOGGLE_FIELDS` / `PAGE_META_TOGGLE_FIELDS` rows. */
 export interface ToggleField {

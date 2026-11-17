@@ -1,5 +1,6 @@
 import type { AvatarSource } from '@kobato/shared/utils/avatar.ts'
 
+import { user } from '@kobato/db/schema/user.ts'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
   defaultAvatarUrl,
@@ -16,7 +17,6 @@ import {
   serveAvatar,
 } from '@kobato/server/domains/comments/services/avatar.ts'
 import { type AvatarEntry, AvatarStatus, get, set } from '@kobato/server/infra/cache/registry.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { imageWidth } from '@kobato/server/infra/image/compress.ts'
 // Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'

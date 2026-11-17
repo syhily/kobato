@@ -1,9 +1,14 @@
 import type { ZodType } from 'zod'
 
+import { draftEditKey, useDraftSession } from '@kobato/web/client/lib/draft-session.ts'
+import {
+  DRAFT_STORAGE_VERSION,
+  removeDraft,
+  setDraft,
+  type DraftRecord,
+  type DraftType,
+} from '@kobato/web/client/lib/draft-store.ts'
 import { useCallback, useState } from 'react'
-
-import { draftEditKey, useDraftSession } from '../lib/draft-session'
-import { DRAFT_STORAGE_VERSION, removeDraft, setDraft, type DraftRecord, type DraftType } from '../lib/draft-store'
 
 export interface CreateDraftConfig<TBody> {
   keyPrefix: string

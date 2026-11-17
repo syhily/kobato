@@ -1,12 +1,11 @@
+import type { RichTextTag, ServerTranslator } from '@kobato/server/infra/i18n.ts'
+
 import { TZDate } from '@date-fns/tz'
+import { Body, Container, Html, Link, Section, Text } from '@kobato/server/infra/email/render.tsx'
+import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { getYear } from 'date-fns'
 import { useState } from 'react'
-
-import type { RichTextTag, ServerTranslator } from '../../../i18n'
-
-import { Body, Container, Html, Link, Section, Text } from '../../render'
-import { light } from '../styles/tokens'
 
 interface Props {
   /** Explicit site-locale translator (see `emailTranslator`). */

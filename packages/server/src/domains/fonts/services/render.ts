@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { FontsSettings } from '@kobato/shared/config/types.ts'
 import type { ResolvedFont, ResolvedFonts } from '@kobato/shared/types/fonts.ts'
 
-import type { Database } from '../../../infra/db/database'
-
-import { getLogger } from '../../../infra/logger'
-import { resolveAssetUrl } from '../../../infra/storage/public-url'
-import { findFontsByIds, resolveSlotOrder } from './read'
+import { findFontsByIds, resolveSlotOrder } from '@kobato/server/domains/fonts/services/read.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { resolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 
 const log = getLogger('fonts.render')
 

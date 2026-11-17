@@ -1,14 +1,6 @@
 import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/shared/contracts/music.ts'
 
-import { useMutation } from '@tanstack/react-query'
-import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '../../../client/hooks/use-infinite-scroll-sentinel'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -16,17 +8,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '../../components/input-group'
-import { Label } from '../../components/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { Skeleton } from '../../components/skeleton'
-import { useI18n } from '../../lib/I18nProvider'
-import { skeletonKeys } from '../../lib/skeleton-keys'
-import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from './meting-search'
-import { useMusicPlayerActions, useMusicPlayerState } from './MusicPlayerContext'
-import { SearchResultItem } from './SearchResultItem'
-import { useMetingMusicSearch } from './useMetingMusicSearch'
+} from '@kobato/ui/components/dialog.tsx'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@kobato/ui/components/input-group.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useInfiniteScrollSentinel } from '@kobato/web/client/hooks/use-infinite-scroll-sentinel.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@kobato/web/ui/admin/musics/meting-search.ts'
+import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
+import { SearchResultItem } from '@kobato/web/ui/admin/musics/SearchResultItem.tsx'
+import { useMetingMusicSearch } from '@kobato/web/ui/admin/musics/useMetingMusicSearch.ts'
+import { useMutation } from '@tanstack/react-query'
+import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 const RESULT_LIMIT_VALUES = [5, 10, 15, 20, 30] as const
 

@@ -1,6 +1,6 @@
 # Infra conventions
 
-`packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from `domains/`, `http/`, or `render/`. Layer rules live in `../AGENTS.md`.
+`packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from `domains/`, `http/`, or `render/`. Layer rules live in `../../AGENTS.md`.
 
 ## Config file
 

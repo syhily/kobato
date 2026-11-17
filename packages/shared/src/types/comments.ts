@@ -8,8 +8,8 @@ export interface LatestComment {
 // Welcome-dashboard moderation inbox queue-switching union; row DTOs live in `@/shared/contracts/comments`.
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
-import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '../contracts/comments'
-import type { CommentEditorState } from '../lexical/comment-schema'
+import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@kobato/shared/contracts/comments.ts'
+import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 
 // Canonical comment row shape in select-map naming (`createAt` / `deleteAt`, not
 // the DB's `createdAt` / `deletedAt`). Hand-written because `shared/` cannot

@@ -1,4 +1,4 @@
-import { LabelledCheckbox } from '../shared/LabelledCheckbox'
+import { LabelledCheckbox } from '@kobato/web/ui/admin/shared/LabelledCheckbox.tsx'
 
 export interface ToggleRowProps {
   id: string

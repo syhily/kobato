@@ -6,8 +6,8 @@
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
 // Evaluate @date-fns/tz against the REAL Date constructor, before any test
 // module calls `vi.useFakeTimers()`. `TZDateMini extends Date` binds whatever
 // the global is at module-evaluation time; a test file that fakes timers and
@@ -18,10 +18,9 @@ import { afterEach, vi } from 'vitest'
 // Asia/Shanghai). Setup files evaluate first, so this import pins the real
 // binding for every unit test file.
 import '@date-fns/tz'
-
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '../blog-settings'
-import '../env'
-import { silenceLocalStorageWarning } from '../silence-local-storage-warning'
+import { cleanup } from '@testing-library/react'
+import '@kobato/test/env.ts'
+import { afterEach, vi } from 'vitest'
 
 // Inert stubs; a file-level vi.mock overrides them when a test asserts on them.
 vi.mock('sonner', () => ({

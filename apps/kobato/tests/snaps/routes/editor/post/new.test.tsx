@@ -1,7 +1,7 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
-import PostNewRoute from '@/routes/editor/post/new'
+import PostNewRoute from '@/routes/editor/post/new.tsx'
 
 describe('snapshot: routes/editor/post/new', () => {
   it('renders the new post editor route', () => {

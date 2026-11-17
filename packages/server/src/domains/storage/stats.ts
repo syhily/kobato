@@ -1,12 +1,11 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { backup as backupTable } from '@kobato/db/schema/backup.ts'
+import { image, music } from '@kobato/db/schema/media.ts'
+import { BRANDING_SLOTS } from '@kobato/server/domains/assets/services/storage.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { and, eq, isNull } from 'drizzle-orm'
-
-import type { Database } from '../../infra/db/database'
-
-import { backup as backupTable } from '../../infra/db/schema/backup'
-import { image, music } from '../../infra/db/schema/media'
-import { BRANDING_SLOTS } from '../assets/services/storage'
 
 export interface MigrationStats {
   images: number

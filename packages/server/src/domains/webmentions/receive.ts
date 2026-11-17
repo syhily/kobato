@@ -1,17 +1,22 @@
-import type { Database } from '../../infra/db/database'
-import type { WebmentionUpsertOutcome } from '../../infra/db/operations/webmention'
-import type { WebmentionRow } from '../../infra/db/types'
-import type { WebmentionReceiveInput } from './schema'
+import type { Database } from '@kobato/db/database.ts'
+import type { WebmentionUpsertOutcome } from '@kobato/db/operations/webmention.ts'
+import type { WebmentionRow } from '@kobato/db/types.ts'
+import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema.ts'
 
-import { upsertWebmention } from '../../infra/db/operations/webmention'
-import { fireAndForgetNotify } from '../../infra/email/admin-notification'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { classifyWebmentionType, type WebmentionType } from './classify'
-import { sendNewWebmention } from './email'
-import { fetchSourceHtml } from './fetch'
-import { resolveWebmentionTargetOrThrow } from './target'
-import { extractSourceMetadata, requireSourceKey, sourceLinksToTarget, type SourceMetadata } from './verify'
+import { upsertWebmention } from '@kobato/db/operations/webmention.ts'
+import { classifyWebmentionType, type WebmentionType } from '@kobato/server/domains/webmentions/classify.ts'
+import { sendNewWebmention } from '@kobato/server/domains/webmentions/email.ts'
+import { fetchSourceHtml } from '@kobato/server/domains/webmentions/fetch.ts'
+import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target.ts'
+import {
+  extractSourceMetadata,
+  requireSourceKey,
+  sourceLinksToTarget,
+  type SourceMetadata,
+} from '@kobato/server/domains/webmentions/verify.ts'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('webmentions.receive')
 

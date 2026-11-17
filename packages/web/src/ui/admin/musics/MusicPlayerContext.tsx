@@ -1,8 +1,7 @@
 import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
+import { useDominantColor } from '@kobato/web/ui/admin/musics/useDominantColor.ts'
 import { createContext, type ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import { useDominantColor } from './useDominantColor'
 
 interface MusicPlayerState {
   currentTrack: AdminMusicDto | null

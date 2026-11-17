@@ -1,13 +1,12 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { LazyPopup as Popup } from '@kobato/web/ui/public/widgets/LazyPopup.tsx'
 import { SearchIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Form, useNavigate, type NavigateFunction } from 'react-router'
-
-import { Button } from '../components/button'
-import { IconButtonContent } from '../components/icon-button-content'
-import { Input } from '../components/input'
-import { cn } from '../lib/cn'
-import { useI18n } from '../lib/I18nProvider'
-import { LazyPopup as Popup } from './widgets/LazyPopup'
 
 const sidebarSearchInputClass = cn(
   'relative block w-full',

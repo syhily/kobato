@@ -4,11 +4,10 @@ import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { useAssetsSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
 import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
 import { safeHref } from '@kobato/shared/utils/safe-url.ts'
+import { AvatarSkeleton } from '@kobato/ui/components/avatar.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { commentAuthorClass, commentAvatarClass } from '@kobato/web/ui/public/comments/comment-item/helpers.ts'
 import { useEffect, useRef, useState } from 'react'
-
-import { AvatarSkeleton } from '../../../components/avatar'
-import { cn } from '../../../lib/cn'
-import { commentAuthorClass, commentAvatarClass } from './helpers'
 
 type AvatarLoadState = 'loading' | 'loaded' | 'error'
 

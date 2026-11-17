@@ -1,4 +1,4 @@
-import { isOnSiteOrigin, STORAGE_ROUTE_PREFIX } from './asset-url'
+import { isOnSiteOrigin, STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
 
 export type AdminImageKind = 'generic' | 'category' | 'friend'
 

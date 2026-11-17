@@ -1,8 +1,7 @@
+import { adminMetaBaseDto } from '@kobato/shared/contracts/admin-meta.ts'
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
+import { adminRevisionDto } from '@kobato/shared/contracts/revision.ts'
 import { z } from 'zod'
-
-import { adminMetaBaseDto } from './admin-meta'
-import { idString, isoDateTime } from './primitives'
-import { adminRevisionDto } from './revision'
 
 export const adminPostDto = adminMetaBaseDto.extend({
   visible: z.boolean(),

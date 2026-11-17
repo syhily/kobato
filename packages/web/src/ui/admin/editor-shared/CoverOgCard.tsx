@@ -1,8 +1,8 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/card'
-import { useI18n } from '../../lib/I18nProvider'
-import { GeneratedOgPreview, ImageField } from './ImageField'
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { GeneratedOgPreview, ImageField } from '@kobato/web/ui/admin/editor-shared/ImageField.tsx'
 
 export interface CoverOgCardProps {
   /** Field ids (`post-cover` / `page-cover`, …) — keep the label htmlFor wiring stable. */

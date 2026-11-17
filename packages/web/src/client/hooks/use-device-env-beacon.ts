@@ -1,8 +1,7 @@
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { buildDeviceEnvBeacon } from '@kobato/web/client/lib/device-env.ts'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
-
-import { buildDeviceEnvBeacon } from '../lib/device-env'
 
 // Client collector: one beacon per loader-published event id.
 // Static fields (screen/touch/locale/hardware) go once per browser session,

@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react'
 
+import { EagerAnimatePresence, EagerMotionButton, EagerMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { transitions } from '@kobato/web/client/lib/motion.ts'
 import { XIcon } from 'lucide-react'
 import { use, useEffect, useRef, useState } from 'react'
 import { browser, createPortal } from 'react-dom'
-
-import { transitions } from '../../../client/lib/motion'
-import { EagerAnimatePresence, EagerMotionButton, EagerMotionDiv } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 export type PopupSize = 'sm' | 'md' | 'lg'
 

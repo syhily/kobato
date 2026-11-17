@@ -1,7 +1,7 @@
-import type { NewsletterSubscriberRow } from '@kobato/server/infra/db/types.ts'
+import type { NewsletterSubscriberRow } from '@kobato/db/types.ts'
 
+import { newsletterSubscriber } from '@kobato/db/schema/newsletter.ts'
 import { signUnsubscribeId } from '@kobato/server/domains/newsletter/signing.ts'
-import { newsletterSubscriber } from '@kobato/server/infra/db/schema/newsletter.ts'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'

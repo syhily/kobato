@@ -1,10 +1,9 @@
+import { generateAuthenticationOptions } from '@kobato/server/domains/auth/passkey/service.ts'
+import { passkeyGuard, publicProc } from '@kobato/server/http/orpc-base.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { tryPasskeyAuthBeginRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { z } from 'zod'
-
-import { generateAuthenticationOptions } from '../../domains/auth/passkey/service'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { tryPasskeyAuthBeginRateLimit } from '../../infra/rate-limit'
-import { passkeyGuard, publicProc } from '../orpc-base'
 
 /**
  * Public passkey endpoints. `authBegin` is CSRF-less: it only returns a

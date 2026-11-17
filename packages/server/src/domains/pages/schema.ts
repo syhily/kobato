@@ -1,7 +1,6 @@
+import { upsertMetaBaseSchema } from '@kobato/server/domains/content/schemas/meta-fields.ts'
 import { safeBoolean } from '@kobato/shared/utils/schema.ts'
 import { z } from 'zod'
-
-import { upsertMetaBaseSchema } from '../content/schemas/meta-fields'
 
 export const listPagesSchema = z.object({
   q: z.string().trim().max(100).optional(),

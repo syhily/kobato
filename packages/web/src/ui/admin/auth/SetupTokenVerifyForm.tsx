@@ -1,9 +1,8 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Form } from 'react-router'
-
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
 
 // Must match @/ui/admin/auth/shared.
 const inputClasses =

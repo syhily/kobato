@@ -1,6 +1,5 @@
+import { serverConfig } from '@kobato/server/infra/config.ts'
 import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto'
-
-import { serverConfig } from '../../infra/config'
 
 // HMAC-SHA256 signing key for unsubscribe URLs, HKDF-derived from the
 // deployment encryption key (no extra secret; rotation invalidates

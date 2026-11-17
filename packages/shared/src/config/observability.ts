@@ -2,7 +2,7 @@
 // actionable feedback) and the server runtime resolver (the authority). Both must
 // agree: the settings layer must never persist a value the runtime would reject.
 
-import { isPrivateIp } from '../utils/safe-url'
+import { isPrivateIp } from '@kobato/shared/utils/safe-url.ts'
 
 /** An OpenObserve organization is one path segment: no separators, no dots. */
 export const OBSERVABILITY_ORGANIZATION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/

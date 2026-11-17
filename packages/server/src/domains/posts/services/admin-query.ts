@@ -1,16 +1,15 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { PostMetaRow } from '@kobato/db/types.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { ListPostsFilters } from '@kobato/server/domains/posts/repos/shared.ts'
+import type { AdminPostsListResult } from '@kobato/server/domains/posts/services/shared.ts'
 import type { AdminPostDetailDto } from '@kobato/shared/contracts/posts.ts'
 
-import type { Database } from '../../../infra/db/database'
-import type { PostMetaRow } from '../../../infra/db/types'
-import type { ViewerIdentity } from '../../auth/rbac'
-import type { ListPostsFilters } from '../repos/shared'
-import type { AdminPostsListResult } from './shared'
-
-import { post as postMetaTable } from '../../../infra/db/schema/post'
-import { makeEntityAdminQuery } from '../../content/entities/admin-query'
-import { makeMetaListQueries } from '../../content/entities/meta-repo'
-import { postDescriptor } from '../descriptor'
-import { buildPostsOrderBy, buildPostsWhere } from '../repos/shared'
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query.ts'
+import { makeMetaListQueries } from '@kobato/server/domains/content/entities/meta-repo.ts'
+import { postDescriptor } from '@kobato/server/domains/posts/descriptor.ts'
+import { buildPostsOrderBy, buildPostsWhere } from '@kobato/server/domains/posts/repos/shared.ts'
 
 // List/count come from the shared list-query factory with the post where/orderBy legs.
 const listQueries = makeMetaListQueries<PostMetaRow, ListPostsFilters>(postMetaTable, {

@@ -1,7 +1,7 @@
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
 
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 // Uniqueness checks, delete guards, and error formatting shared by categories & tags.
 // The entity noun is a MACHINE kind — the catalog's ICU `select` picks the

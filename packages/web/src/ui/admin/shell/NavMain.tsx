@@ -1,11 +1,10 @@
+import type { AdminShellProps } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
+
 import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '@kobato/ui/components/sidebar.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { NavMenuItem } from '@kobato/web/ui/admin/shell/NavMenuItem.tsx'
 import { ChartLineIcon, ExternalLinkIcon, HomeIcon } from 'lucide-react'
-
-import type { AdminShellProps } from './AdminShell'
-
-import { SidebarGroup, SidebarGroupContent, SidebarMenu } from '../../components/sidebar'
-import { useI18n } from '../../lib/I18nProvider'
-import { NavMenuItem } from './NavMenuItem'
 
 interface NavMainProps {
   role: AdminShellProps['currentUser']['role']

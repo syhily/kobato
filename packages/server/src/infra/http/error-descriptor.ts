@@ -9,17 +9,15 @@
 // in the `error.api.rawMessage` passthrough key: every locale formats it as
 // `{message}`, so the wire shape is uniform while the text renders unchanged.
 
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { z } from 'zod'
 
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { BASE_LOCALE } from '@kobato/shared/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import { zodIssueParams } from '@kobato/shared/utils/zod-issue-bounds.ts'
-
-import type { ServerTranslator } from '../i18n'
-
-import { createServerTranslator } from '../i18n'
 
 /** The passthrough catalog key wrapping raw text. */
 export const RAW_MESSAGE_KEY = 'error.api.rawMessage'

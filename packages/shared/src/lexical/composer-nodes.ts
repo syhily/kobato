@@ -1,4 +1,4 @@
-import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from './node-whitelist'
+import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/shared/lexical/node-whitelist.ts'
 
 // Composer-mounted node-set manifests.
 //

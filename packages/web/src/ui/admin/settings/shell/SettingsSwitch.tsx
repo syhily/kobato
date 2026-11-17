@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { Switch } from '../../../components/switch'
+import { Switch } from '@kobato/ui/components/switch.tsx'
 
 // `<Switch>` + immediate save: upstream `onCheckedChange` fires first, then `save(name)` commits this field.
 

@@ -1,7 +1,8 @@
-import type { ContentType } from './schemas/revision'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
 
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError, isUniqueConstraintError } from '../../infra/http/errors'
+import { isUniqueConstraintError } from '@kobato/db/errors.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 /**
  * Single owner for the slug unique-constraint → CONFLICT mapping;

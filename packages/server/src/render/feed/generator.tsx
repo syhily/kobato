@@ -1,22 +1,23 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { Page, Post } from '@kobato/shared/types/catalog.ts'
 
+import { findCategoriesByNames } from '@kobato/db/operations/category.ts'
+import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html.ts'
+import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed.ts'
+import {
+  listAllCategories,
+  resolveCategoryBySlugOrName,
+} from '@kobato/server/domains/taxonomies/categories/services/query.ts'
+import { getTagsByNames, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { sanitizeHtmlString } from '@kobato/shared/sanitize/sanitize-html.ts'
 import { ogImagePathForSlug } from '@kobato/shared/seo/og-image.ts'
 import { joinUrl } from '@kobato/shared/utils/urls.ts'
 import { Feed } from 'feed'
-
-import type { Database } from '../../infra/db/database'
-
-import { resolveBodyHtmlFeed } from '../../domains/content/services/body-html'
-import { selectFeedPosts } from '../../domains/posts/services/feed'
-import { listAllCategories, resolveCategoryBySlugOrName } from '../../domains/taxonomies/categories/services/query'
-import { getTagsByNames, resolveTagBySlugOrName } from '../../domains/taxonomies/tags/service'
-import { findCategoriesByNames } from '../../infra/db/operations/category'
-import { DomainError } from '../../infra/http/errors'
 
 export interface FeedOptions {
   /** The request's AppLocale — drives `<language>` / `xml:lang`. Explicit, never inferred. */

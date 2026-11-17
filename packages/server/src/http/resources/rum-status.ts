@@ -1,8 +1,7 @@
+import type { Env } from '@kobato/server/http/context.ts'
+
+import { activeFrontendRum } from '@kobato/server/infra/trace/config.ts'
 import { Hono } from 'hono'
-
-import type { Env } from '../context'
-
-import { activeFrontendRum } from '../../infra/trace/config'
 
 /**
  * Frontend RUM drift signal. Boolean only: no client token, no

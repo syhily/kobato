@@ -6,18 +6,18 @@ vi.mock('node:dns/promises', () => ({
 }))
 
 import {
+  findNextWebmentionOutboxDueAt,
+  pickDueWebmentionOutbox,
+  upsertWebmentionOutbox,
+} from '@kobato/db/operations/webmention-outbox.ts'
+import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
+import {
   OUTBOX_MAX_ATTEMPTS,
   processWebmentionOutboxRow,
   runWebmentionOutboxBatch,
   type OutboxHooks,
 } from '@kobato/server/domains/webmentions/outbox.ts'
 import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
-import {
-  findNextWebmentionOutboxDueAt,
-  pickDueWebmentionOutbox,
-  upsertWebmentionOutbox,
-} from '@kobato/server/infra/db/operations/webmention-outbox.ts'
-import { webmentionOutbox } from '@kobato/server/infra/db/schema/webmention.ts'
 import { installFetch } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 

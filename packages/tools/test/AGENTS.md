@@ -13,7 +13,7 @@ Import helpers as `@kobato/test/<name>.ts`:
 - `catalog` — mock data factories
 - `render` / `i18n-render` — SSR render helpers (snapshots)
 - `mock-react-query` — `mockTanstackQuery()`, the canonical `@tanstack/react-query` module mock. Import it before the component imports, call once at module scope, rebind slots on the returned control singleton per test. Hand-roll a `vi.mock` only when the mock must BEHAVE (call-order routing, option capture, `initialData` pass-through).
-- `stubs/dialog` — SSR-safe dialog double: `vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))`
+- `stubs/dialog` — SSR-safe dialog double: `vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))`
 - `blog-settings` — test settings bundle
 - `lexical` — Lexical editor-state fixtures (`emptyLexicalBody`, `lexicalBodyWith`, `lexicalParagraph`, `lexicalHeading`, `lexicalImage`, `lexicalMusicPlayer`) + `stubMusicResolver` for `saveBody` inputs
 - `deep-freeze` — recursive `Object.freeze` for fixtures that must stay mutation-proof across tests

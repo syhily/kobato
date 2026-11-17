@@ -1,21 +1,20 @@
 import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 import type { BlogSettingsBundle, SettingsBundle } from '@kobato/shared/config/types.ts'
 
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { projectSectionForAdmin } from '@kobato/server/domains/settings/services/admin-projection.ts'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
+import { backfillSettingsSections, hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
+import { computeSecretMasks, redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks.ts'
+import { getSupportedTimeZones } from '@kobato/server/domains/settings/timezones.ts'
+import { isStorageMigrationActive } from '@kobato/server/domains/storage/s3-migration.ts'
+import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
 import { adminSettingsBootstrapOutputSchema } from '@kobato/shared/contracts/admin.ts'
 import { safeBigInt } from '@kobato/shared/utils/tools.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { projectSectionForAdmin } from '../../../domains/settings/services/admin-projection'
-import { updateBlogSettingsSection } from '../../../domains/settings/services/core'
-import { backfillSettingsSections, hydrateBlogSettings } from '../../../domains/settings/services/hydrate'
-import { computeSecretMasks, redactSecretsFromBundle } from '../../../domains/settings/services/masks'
-import { getSupportedTimeZones } from '../../../domains/settings/timezones'
-import { isStorageMigrationActive } from '../../../domains/storage/s3-migration'
-import { createServerTranslator } from '../../../infra/i18n'
-import { adminProc, localizedOrpcError } from '../../orpc-base'
 
 const update = adminProc
   .route({ method: 'POST', path: '/admin/settings/update' })

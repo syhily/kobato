@@ -1,12 +1,10 @@
 import type { DuckDBConnection, DuckDBValue } from '@duckdb/node-api'
+import type { DbOutcome } from '@kobato/server/infra/trace/sanitize.ts'
 import type { Compilable } from 'kysely'
 
+import { withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
+import { recordDbOperation } from '@kobato/server/infra/trace/metrics.ts'
 import { DummyDriver, Kysely, MysqlAdapter, MysqlIntrospector, MysqlQueryCompiler } from 'kysely'
-
-import type { DbOutcome } from '../../../infra/trace/sanitize'
-
-import { withSpanAsync } from '../../../infra/trace/facade'
-import { recordDbOperation } from '../../../infra/trace/metrics'
 
 /**
  * Kysely as a pure SQL compiler: the DummyDriver never connects — Kysely builds

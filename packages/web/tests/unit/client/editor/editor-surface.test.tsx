@@ -16,12 +16,12 @@ import { inklingLabelsFor } from '@kobato/shared/i18n/inkling-labels.ts'
 import { THEME_COOKIE } from '@kobato/shared/utils/theme-cookie.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import {
   EditorSurfaceComposer,
   type EditorSurfaceComposerProps,
   useEditorSurface,
 } from '@kobato/web/client/editor/editor-surface.tsx'
-import { ThemeProvider } from '@kobato/web/ui/lib/ThemeProvider.tsx'
 import { act, render, renderHook } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -11,6 +11,7 @@ vi.mock('@kobato/server/infra/sea.ts', () => ({
 }))
 
 const { seaVfsRoot } = await import('@kobato/server/infra/sea.ts')
+const { defaultMigrationsFolder } = await import('@kobato/db/migrate.ts')
 
 describe('migrateDatabase', () => {
   beforeEach(() => {
@@ -18,13 +19,13 @@ describe('migrateDatabase', () => {
     vi.mocked(seaVfsRoot).mockReturnValue(null)
   })
 
-  it('runs the folder migrator against ./drizzle outside SEA', async () => {
+  it('runs the folder migrator against the db package migrations outside SEA', async () => {
     const { migrateDatabase } = await import('@kobato/server/infra/db/migrate.ts')
     const db = {} as never
     await migrateDatabase(db)
 
     expect(migrateMock).toHaveBeenCalledWith(db, {
-      migrationsFolder: './drizzle',
+      migrationsFolder: defaultMigrationsFolder(),
       migrationsTable: '__drizzle_migrations',
     })
   })

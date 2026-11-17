@@ -1,5 +1,5 @@
+import type { DatabaseHandle } from '@kobato/db/database.ts'
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
-import type { DatabaseHandle } from '@kobato/server/infra/db/database.ts'
 import type { DeviceEnvBeacon } from '@kobato/shared/contracts/analytics.ts'
 
 import {

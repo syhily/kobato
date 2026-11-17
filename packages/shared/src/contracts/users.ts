@@ -1,6 +1,5 @@
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
 import { z } from 'zod'
-
-import { idString, isoDateTime } from './primitives'
 
 // Per-user signin method: `password` default, `magic-link` (needs a ready
 // mail transport), `passkey` (needs a registered passkey + global switch).

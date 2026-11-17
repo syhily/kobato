@@ -1,11 +1,10 @@
 import type { RefObject } from 'react'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useShowOnScroll } from '@kobato/web/client/hooks/use-show-on-scroll.ts'
 import { ArrowUpIcon } from 'lucide-react'
-
-import { useShowOnScroll } from '../../../client/hooks/use-show-on-scroll'
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 export interface AdminScrollTopButtonProps {
   /** When set (live preview / focus mode), depth is read from `<main>` instead of `window`. */

@@ -1,9 +1,8 @@
 import type { SaveBodyInput, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { CreateDraftConfig } from '@kobato/web/client/hooks/use-create-draft.ts'
+import type { LocalDraftConfig } from '@kobato/web/client/hooks/use-local-draft.ts'
 import type { NavigateFunction } from 'react-router'
-
-import type { CreateDraftConfig } from '../../../client/hooks/use-create-draft'
-import type { LocalDraftConfig } from '../../../client/hooks/use-local-draft'
 
 export type EditorShellStatus =
   | { kind: 'idle' }

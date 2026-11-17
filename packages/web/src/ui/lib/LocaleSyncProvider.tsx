@@ -7,16 +7,18 @@
 // and a failed flush keeps the edits and offers Retry.
 
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { LocaleChangeAnnouncement } from '@kobato/web/client/lib/locale-sync.ts'
 import type { ReactNode } from 'react'
 
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { getLogger } from '@kobato/ui/lib/logger.ts'
+import {
+  createLocaleSyncOrigin,
+  publishLocaleChange,
+  subscribeLocaleChange,
+} from '@kobato/web/client/lib/locale-sync.ts'
 import { XIcon } from 'lucide-react'
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import type { LocaleChangeAnnouncement } from '../../client/lib/locale-sync'
-
-import { createLocaleSyncOrigin, publishLocaleChange, subscribeLocaleChange } from '../../client/lib/locale-sync'
-import { getLogger } from '../../client/lib/logger'
-import { useI18n } from './I18nProvider'
 
 const log = getLogger('locale-sync')
 

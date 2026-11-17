@@ -1,7 +1,7 @@
-import type { BlogSettingsBundle } from './types'
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
-import { SECTION_TO_BUNDLE_KEY, type SettingsSection } from './sections'
+import { SECTION_TO_BUNDLE_KEY, type SettingsSection } from '@kobato/shared/config/sections.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 /**
  * The section-scoped REPRESENTATION GENERATIONS.

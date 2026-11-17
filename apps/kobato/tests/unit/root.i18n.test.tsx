@@ -19,14 +19,14 @@ import { uiMessagesZhTW } from '@kobato/shared/i18n/messages/ui/zh-TW.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { prerenderToHtml } from '@kobato/test/render.tsx'
-import { useI18n } from '@kobato/web/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ErrorBoundary, Layout, shouldRevalidate } from '@/root'
+import { ErrorBoundary, Layout, shouldRevalidate } from '@/root.tsx'
 
 // Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))

@@ -12,7 +12,6 @@
 
 import type { DecoratorNodeProperty } from '@kobato/inkling/headless'
 
-import { SOLUTION_NODE_TYPE } from '../node-whitelist'
 import {
   type CardRenderContext,
   type CardRenderOutput,
@@ -20,7 +19,8 @@ import {
   feedPassthroughElement,
   htmlToPlainText,
   isFeedVariantRender,
-} from './card-html'
+} from '@kobato/shared/lexical/cards/card-html.ts'
+import { SOLUTION_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
 
 export const SOLUTION_CARD_PROPERTIES = [
   // Nested-editor HTML payload (serializedKey of `contentEditor`).

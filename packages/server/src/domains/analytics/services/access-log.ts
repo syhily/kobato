@@ -1,3 +1,5 @@
+import type { EnrichedAccessEvent } from '@kobato/server/domains/analytics/types.ts'
+
 import {
   BOOLEAN,
   DOUBLE,
@@ -12,8 +14,6 @@ import {
   type DuckDBValue,
 } from '@duckdb/node-api'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { EnrichedAccessEvent } from '../types'
 
 /**
  * The access_events table shape — owned here, passed to the infra DuckDB

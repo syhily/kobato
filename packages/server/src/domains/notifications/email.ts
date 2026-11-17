@@ -1,20 +1,19 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { NotificationRow } from '@kobato/db/types.ts'
+import type { ResolvedNotificationMessage } from '@kobato/server/domains/notifications/message.ts'
+import type { SendResult } from '@kobato/server/infra/email/types.ts'
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+
+import { findUserEmailsByIds, findUserNamesByIds } from '@kobato/db/operations/notification.ts'
+import { resolveNotificationMessage } from '@kobato/server/domains/notifications/message.ts'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
+import { render } from '@kobato/server/infra/email/render.tsx'
+import { sendEmail } from '@kobato/server/infra/email/sender.ts'
+import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { createElement } from 'react'
-
-import type { Database } from '../../infra/db/database'
-import type { NotificationRow } from '../../infra/db/types'
-import type { SendResult } from '../../infra/email/types'
-import type { ServerTranslator } from '../../infra/i18n'
-import type { ResolvedNotificationMessage } from './message'
-
-import { findUserEmailsByIds, findUserNamesByIds } from '../../infra/db/operations/notification'
-import { fireAndForgetNotify } from '../../infra/email/admin-notification'
-import { render } from '../../infra/email/render'
-import { sendEmail } from '../../infra/email/sender'
-import { AdminNotificationEmail } from '../../infra/email/templates/AdminNotificationEmail'
-import { emailTranslator } from '../../infra/email/translator'
-import { getLogger } from '../../infra/logger'
-import { resolveNotificationMessage } from './message'
 
 const log = getLogger('notifications.email')
 

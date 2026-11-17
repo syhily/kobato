@@ -1,39 +1,37 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { NewComment } from '@kobato/db/types.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
+import type { MetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 import type { CommentAndUser, CommentReq } from '@kobato/shared/types/comments.ts'
 
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { createHash } from 'node:crypto'
-
-import type { Database } from '../../../infra/db/database'
-import type { NewComment } from '../../../infra/db/types'
-import type { RequestFacts } from '../../../infra/http/request-facts'
-import type { BlogSession } from '../../auth/session-storage'
-import type { MetricTarget } from './shared'
-
-import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '../../../infra/db/operations/user'
-import { fireAndForgetNotify } from '../../../infra/email/admin-notification'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { userSession } from '../../auth/primitives'
-import { withCommentBadgeTextColor } from '../badge'
-import { insertComment } from '../repos/mutate'
+import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@kobato/db/operations/user.ts'
+import { userSession } from '@kobato/server/domains/auth/primitives.ts'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
+import { insertComment } from '@kobato/server/domains/comments/repos/mutate.ts'
 import {
   countApprovedCommentsByUser,
   findCommentWithSourceUser,
   recentCommentsForUserDedupe,
-} from '../repos/public-query/by-id'
-import { findCommentRootId } from '../repos/public-query/threads'
-import { canonicalizeCommentBody } from './canonicalize'
-import { sendNewComment, sendNewReply } from './email'
+} from '@kobato/server/domains/comments/repos/public-query/by-id.ts'
+import { findCommentRootId } from '@kobato/server/domains/comments/repos/public-query/threads.ts'
+import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
+import { sendNewComment, sendNewReply } from '@kobato/server/domains/comments/services/email.ts'
 import {
   DEDUPE_SAMPLE_LIMIT,
   DEDUPE_WINDOW_MS,
   decideCommenterGate,
   decideContentGate,
   decideEmailGate,
-} from './policy'
-import { safeResolveMetricTarget } from './shared'
+} from '@kobato/server/domains/comments/services/policy.ts'
+import { safeResolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.loader')
 

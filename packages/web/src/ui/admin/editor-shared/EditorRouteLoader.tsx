@@ -2,10 +2,9 @@ import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { ComponentType } from 'react'
 import type { NavigateFunction } from 'react-router'
 
+import { EditorRouteError } from '@kobato/web/ui/admin/editor-shared/EditorRouteError.tsx'
+import { EditorRouteSkeleton } from '@kobato/web/ui/admin/editor-shared/EditorRouteSkeleton.tsx'
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
-
-import { EditorRouteError } from './EditorRouteError'
-import { EditorRouteSkeleton } from './EditorRouteSkeleton'
 
 /** The editor shell contract this loader mounts once the detail DTO arrives. */
 type EditorShellComponent<TDetail> = ComponentType<{

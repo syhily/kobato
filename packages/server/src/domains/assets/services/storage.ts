@@ -1,21 +1,19 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { BinarySlot, SvgSlot } from '@kobato/server/assets/defaults.ts'
 import type { BrandingObjectRef, StorageDriver } from '@kobato/shared/config/types.ts'
 
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { BINARY_SLOTS, SVG_SLOTS } from '@kobato/server/assets/defaults.ts'
+import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
+import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
 import { createBoundedMap } from '@kobato/shared/utils/memo.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { createHash } from 'node:crypto'
-
-import type { BinarySlot, SvgSlot } from '../../../assets/defaults'
-import type { Database } from '../../../infra/db/database'
-
-import { BINARY_SLOTS, SVG_SLOTS } from '../../../assets/defaults'
-import { findSettingByScope, upsertSetting } from '../../../infra/db/operations/setting'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { ActionFailure } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { StorageObjectNotFound } from '../../../infra/storage/backend'
-import { activeBackend, backendFor } from '../../../infra/storage/registry'
-import { SECTION_REGISTRY } from '../../settings/sections/registry'
-import { refreshBlogSettings } from '../../settings/services/hydrate'
 
 const log = getLogger('branding.storage')
 

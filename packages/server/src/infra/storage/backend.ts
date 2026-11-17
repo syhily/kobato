@@ -1,10 +1,9 @@
+import type { ObjectVisibility } from '@kobato/server/infra/storage/key-policy.ts'
 import type { StorageDriver } from '@kobato/shared/config/types.ts'
 import type { Readable } from 'node:stream'
 
-import type { ObjectVisibility } from './key-policy'
-
-import { descriptorFor } from '../http/error-descriptor'
-import { ActionFailure } from '../http/errors'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 
 export interface StoredObjectMeta {
   key: string

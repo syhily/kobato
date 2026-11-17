@@ -1,4 +1,13 @@
 import {
+  getThread,
+  listInbox,
+  markRead,
+  markUnread,
+  replyToThread,
+  unreadCount,
+} from '@kobato/server/domains/notifications/service.ts'
+import { authedProc, notificationReplyRateLimit, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import {
   listNotificationsInput,
   listNotificationsOutput,
   markNotificationsReadInput,
@@ -9,16 +18,6 @@ import {
   replyNotificationOutput,
   unreadCountOutput,
 } from '@kobato/shared/contracts/notifications.ts'
-
-import {
-  getThread,
-  listInbox,
-  markRead,
-  markUnread,
-  replyToThread,
-  unreadCount,
-} from '../../domains/notifications/service'
-import { authedProc, notificationReplyRateLimit, resourceRateLimit } from '../orpc-base'
 
 const list = authedProc
   .route({ method: 'GET', path: '/notifications/list' })

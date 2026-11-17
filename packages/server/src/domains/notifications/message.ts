@@ -12,16 +12,14 @@
 // `Unexpected token '<'` is legitimate data. Every read path escapes it at
 // render time; write-time validation only enforces JSON semantics.
 
+import type { NotificationRow } from '@kobato/db/types.ts'
+import type { MessageParams, ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type { ServerMessageId } from '@kobato/shared/i18n/messages/server/en-US.ts'
 
+import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { BASE_LOCALE } from '@kobato/shared/i18n/locales.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { NotificationRow } from '../../infra/db/types'
-import type { MessageParams, ServerTranslator } from '../../infra/i18n'
-
-import { createServerTranslator, isServerMessageId } from '../../infra/i18n'
-import { getLogger } from '../../infra/logger'
 
 const log = getLogger('notifications.message')
 

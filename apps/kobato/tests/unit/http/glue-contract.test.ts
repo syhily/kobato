@@ -140,7 +140,7 @@ describe('glue contract / request-context projections', () => {
 
 describe('glue contract / entry.server export surface', () => {
   it('keeps the default export, streamTimeout, and handleError', async () => {
-    const entry = await import('@/entry.server')
+    const entry = await import('@/entry.server.tsx')
 
     expect(typeof entry.default).toBe('function')
     expect(entry.streamTimeout).toBe(5_000)

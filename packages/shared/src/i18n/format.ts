@@ -10,14 +10,12 @@
 // values, calendar URL parts, feed/sitemap/API wire formats, analytics bucket labels
 // — machine formats stay machine formats.
 
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { Locale as DateFnsLocale } from 'date-fns'
 
 import { TZDate } from '@date-fns/tz'
+import { createBoundedMap } from '@kobato/shared/utils/memo.ts'
 import { enUS, zhCN, zhHK, zhTW } from 'date-fns/locale'
-
-import type { AppLocale } from './locales'
-
-import { createBoundedMap } from '../utils/memo'
 
 /** All app locales resolve to a date-fns locale for DayPicker / dayPeriod names. */
 const DATE_FNS_LOCALES = {

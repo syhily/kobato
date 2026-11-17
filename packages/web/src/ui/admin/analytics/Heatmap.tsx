@@ -1,18 +1,21 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { formatNumber } from '@kobato/shared/i18n/format.ts'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useAnalyticsDashboardState } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
+import { AnalyticsQueryState } from '@kobato/web/ui/admin/analytics/AnalyticsQueryState.tsx'
+import { HEATMAP_METRIC_LABEL_IDS } from '@kobato/web/ui/admin/analytics/metric-labels.ts'
+import { useAnalyticsQueryData } from '@kobato/web/ui/admin/analytics/use-analytics-query.ts'
+import {
+  buildAnalyticsInput,
+  type AnalyticsScope,
+  type HeatmapMetric,
+} from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Skeleton } from '../../components/skeleton'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useAnalyticsDashboardState } from './analytics-state-context'
-import { AnalyticsQueryState } from './AnalyticsQueryState'
-import { HEATMAP_METRIC_LABEL_IDS } from './metric-labels'
-import { useAnalyticsQueryData } from './use-analytics-query'
-import { buildAnalyticsInput, type AnalyticsScope, type HeatmapMetric } from './use-analytics-state'
 
 // Self-fetching with clientTimezone: loader cells are bucketed in Etc/UTC, so
 // the skeleton stays up until the client query resolves (hour columns would shift).

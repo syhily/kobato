@@ -1,7 +1,7 @@
 import type { Hono } from 'hono'
 import type { BlankEnv } from 'hono/types'
 
-import { getLogger } from '../infra/logger'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const leakedResponseLog = getLogger('http.leaked-response')
 

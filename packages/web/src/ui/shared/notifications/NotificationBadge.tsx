@@ -1,4 +1,4 @@
-import { cn } from '../../lib/cn'
+import { cn } from '@kobato/ui/lib/cn.ts'
 
 // The one unread-count pill shared by every notifications entry point (sidebar
 // nav, user menus, drawer header). Renders nothing at zero.

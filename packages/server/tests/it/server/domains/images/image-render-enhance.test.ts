@@ -1,4 +1,4 @@
-import { image } from '@kobato/server/infra/db/schema/media.ts'
+import { image } from '@kobato/db/schema/media.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 

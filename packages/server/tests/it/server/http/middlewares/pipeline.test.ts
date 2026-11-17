@@ -1,9 +1,9 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 
+import { closeDatabase } from '@kobato/db/database.ts'
+import { upsertSetting } from '@kobato/db/operations/setting.ts'
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { closeDatabase } from '@kobato/server/infra/db/database.ts'
-import { upsertSetting } from '@kobato/server/infra/db/operations/setting.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { resetBlogSettingsForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/test/integration-db.ts'

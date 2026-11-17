@@ -1,9 +1,9 @@
-import type { MarkdownHeading } from '../utils/toc'
-import type { LexicalEditorState } from './schema'
+import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
-import { createHeadingSlugTracker, slugifyHeadingText } from './heading-slug'
-import { lexicalNodeTextContent, visitLexicalNodes } from './walk'
+import { createHeadingSlugTracker, slugifyHeadingText } from '@kobato/shared/lexical/heading-slug.ts'
+import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // Save-time derived columns for the Lexical storage format.
 

@@ -1,7 +1,7 @@
 import type { ComponentProps, FocusEventHandler } from 'react'
 
-import { Input } from '../../../components/input'
-import { Textarea } from '../../../components/textarea'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Textarea } from '@kobato/ui/components/textarea.tsx'
 
 // `<Input>` + blur-driven save: `flushOnBlur` is a separate prop so it
 // survives `{...form.register('x')}` — the spread's `onBlur` would

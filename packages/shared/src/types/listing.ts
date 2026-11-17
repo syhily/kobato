@@ -1,6 +1,5 @@
+import type { ListingPostCardWithMetadata } from '@kobato/shared/types/catalog.ts'
 import type { MetaDescriptor } from 'react-router'
-
-import type { ListingPostCardWithMetadata } from './catalog'
 
 // Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
 // `/tags/:slug`, `/search/:keyword`); `extra` is the per-route slot for

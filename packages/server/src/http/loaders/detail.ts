@@ -1,10 +1,9 @@
+import type { EntityTarget } from '@kobato/db/target.ts'
+import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 import type { DetailCriticalPayload } from '@kobato/shared/contracts/content.ts'
 
-import type { EntityTarget } from '../../infra/db/target'
-import type { HandlerContext } from '../orpc-base'
-
-import { trackPageView } from '../../domains/analytics/track'
-import { loadDetailPageCritical } from './comments'
+import { trackPageView } from '@kobato/server/domains/analytics/track.ts'
+import { loadDetailPageCritical } from '@kobato/server/http/loaders/comments.ts'
 
 // The detail critical orchestrator for `content.posts/pages.bySlug`: the
 // above-the-fold payload (comment key, likes, current-user identity, sidebar).

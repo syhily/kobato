@@ -1,9 +1,9 @@
 import type { ClearCacheTarget } from '@kobato/shared/types/cache.ts'
 
+import { session } from '@kobato/db/schema/session.ts'
 import { clearAdminCache, getAdminCacheStats } from '@kobato/server/infra/cache/admin-ops.ts'
 import { countEntryFiles, readGeneration, resolveCacheRoot, setItem } from '@kobato/server/infra/cache/file-store.ts'
 import { bumpCounter, get, getCounter, set, through } from '@kobato/server/infra/cache/registry.ts'
-import { session } from '@kobato/server/infra/db/schema/session.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { readdir, stat } from 'node:fs/promises'

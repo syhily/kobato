@@ -6,11 +6,10 @@
 // visitor who already decided. `useRum` treats `null` as "not accepted", so
 // the SDK chunk stays undownloaded until acceptance.
 
+import type { RumConsent } from '@kobato/web/client/lib/rum-consent.ts'
+
+import { readRumConsent, subscribeRumConsent, writeRumConsent } from '@kobato/web/client/lib/rum-consent.ts'
 import { useCallback, useSyncExternalStore } from 'react'
-
-import type { RumConsent } from '../lib/rum-consent'
-
-import { readRumConsent, subscribeRumConsent, writeRumConsent } from '../lib/rum-consent'
 
 export interface RumConsentState {
   /** False during SSR and the first client render; the banner renders only when true. */

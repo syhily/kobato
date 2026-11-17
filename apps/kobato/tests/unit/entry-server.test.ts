@@ -17,7 +17,7 @@ vi.mock('@react-router/node', () => ({
   createReadableStreamFromReadable: vi.fn((stream: unknown) => stream),
 }))
 
-const { default: handleRequest } = await import('@/entry.server')
+const { default: handleRequest } = await import('@/entry.server.tsx')
 
 function routerContext(rootLoaderData?: unknown): unknown {
   return {

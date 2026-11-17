@@ -1,7 +1,6 @@
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Suspense, use } from 'react'
 import { browser } from 'react-dom'
-
-import { useI18n } from '../../lib/I18nProvider'
 
 function ShortcutKeys({ isMac }: { isMac: boolean }) {
   const { t } = useI18n()

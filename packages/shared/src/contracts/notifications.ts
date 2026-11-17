@@ -1,6 +1,5 @@
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
 import { z } from 'zod'
-
-import { idString, isoDateTime } from './primitives'
 
 // Notification kinds: `direct` (admin ↔ user private thread, always
 // replyable), `admin` (system-generated, fanned out to every admin at creation,

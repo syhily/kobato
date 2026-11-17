@@ -1,6 +1,6 @@
-import type { Database } from '../../infra/db/database'
+import type { Database } from '@kobato/db/database.ts'
 
-import { getLogger } from '../../infra/logger'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 /**
  * The single owner of the restore job lifecycle (claim → drain → swap →

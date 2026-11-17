@@ -1,8 +1,11 @@
 import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
-import type { I18nValue } from '../../../lib/I18nProvider'
-
-import { PREFIX_PATTERN, RESERVED_PREFIXES, SECONDS_PER_HOUR } from './cache-constants'
+import {
+  PREFIX_PATTERN,
+  RESERVED_PREFIXES,
+  SECONDS_PER_HOUR,
+} from '@kobato/web/ui/admin/settings/cache/cache-constants.ts'
 
 export interface BucketDraft {
   prefix: string

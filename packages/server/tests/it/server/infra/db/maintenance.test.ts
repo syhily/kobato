@@ -1,10 +1,10 @@
+import type { DatabaseHandle } from '@kobato/db/database.ts'
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
-import type { DatabaseHandle } from '@kobato/server/infra/db/database.ts'
 
+import { jobRun } from '@kobato/db/schema/job-run.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { runAccessLogRetention } from '@kobato/server/domains/analytics/services/maintenance.ts'
 import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
-import { jobRun } from '@kobato/server/infra/db/schema/job-run.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import {
   closeTestAnalyticsDb,

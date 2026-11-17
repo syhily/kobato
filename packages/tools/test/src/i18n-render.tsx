@@ -6,7 +6,7 @@ import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
 import { uiMessagesZhHK } from '@kobato/shared/i18n/messages/ui/zh-HK.ts'
 import { uiMessagesZhTW } from '@kobato/shared/i18n/messages/ui/zh-TW.ts'
-import { I18nProvider } from '@kobato/web/ui/lib/I18nProvider.tsx'
+import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
 import { render, renderHook, type RenderHookOptions, type RenderHookResult } from '@testing-library/react'
 
 const CATALOGS = {

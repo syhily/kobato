@@ -6,7 +6,6 @@
 
 import type { DecoratorNodeProperty } from '@kobato/inkling/headless'
 
-import { TWO_COLUMN_NODE_TYPE } from '../node-whitelist'
 import {
   type CardRenderContext,
   type CardRenderOutput,
@@ -14,7 +13,8 @@ import {
   feedPassthroughElement,
   htmlToPlainText,
   isFeedVariantRender,
-} from './card-html'
+} from '@kobato/shared/lexical/cards/card-html.ts'
+import { TWO_COLUMN_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
 
 export const TWO_COLUMN_CARD_PROPERTIES = [
   { name: 'left', default: '', urlType: 'html', wordCount: true },

@@ -18,23 +18,22 @@
 // everywhere else (see `catalog-scope`). Every returned catalog is memoized per
 // `locale:scope` and frozen, so callers share one object and cannot mutate it.
 
+import type { CatalogScope } from '@kobato/shared/i18n/catalog-scope.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { ServerMessages } from '@kobato/shared/i18n/messages/server/en-US.ts'
+import type { UiMessages } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+
 import { TYPE, parse, type MessageFormatElement } from '@formatjs/icu-messageformat-parser'
-
-import type { CatalogScope } from './catalog-scope'
-import type { AppLocale } from './locales'
-import type { ServerMessages } from './messages/server/en-US'
-import type { UiMessages } from './messages/ui/en-US'
-
-import { isPublicMessageKey } from './catalog-scope'
-import { BASE_LOCALE, SUPPORTED_LOCALES } from './locales'
-import { serverMessagesEnUS } from './messages/server/en-US'
-import { serverMessagesZhCN } from './messages/server/zh-CN'
-import { serverMessagesZhHK } from './messages/server/zh-HK'
-import { serverMessagesZhTW } from './messages/server/zh-TW'
-import { uiMessagesEnUS } from './messages/ui/en-US'
-import { uiMessagesZhCN } from './messages/ui/zh-CN'
-import { uiMessagesZhHK } from './messages/ui/zh-HK'
-import { uiMessagesZhTW } from './messages/ui/zh-TW'
+import { isPublicMessageKey } from '@kobato/shared/i18n/catalog-scope.ts'
+import { BASE_LOCALE, SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { serverMessagesEnUS } from '@kobato/shared/i18n/messages/server/en-US.ts'
+import { serverMessagesZhCN } from '@kobato/shared/i18n/messages/server/zh-CN.ts'
+import { serverMessagesZhHK } from '@kobato/shared/i18n/messages/server/zh-HK.ts'
+import { serverMessagesZhTW } from '@kobato/shared/i18n/messages/server/zh-TW.ts'
+import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
+import { uiMessagesZhHK } from '@kobato/shared/i18n/messages/ui/zh-HK.ts'
+import { uiMessagesZhTW } from '@kobato/shared/i18n/messages/ui/zh-TW.ts'
 
 export type CatalogNamespace = 'ui' | 'server'
 

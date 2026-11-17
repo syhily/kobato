@@ -1,14 +1,13 @@
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { z } from 'zod'
-
 import {
   newsletterConfirmSchema,
   newsletterSubscribeSchema,
   newsletterUnsubscribeSchema,
-} from '../../domains/newsletter/schema'
-import { confirm, subscribe, unsubscribe } from '../../domains/newsletter/service'
-import { tryNewsletterSubscribeByEmailRateLimit } from '../../infra/rate-limit'
-import { localizedOrpcError, publicProc, resourceRateLimit } from '../orpc-base'
+} from '@kobato/server/domains/newsletter/schema.ts'
+import { confirm, subscribe, unsubscribe } from '@kobato/server/domains/newsletter/service.ts'
+import { localizedOrpcError, publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { z } from 'zod'
 
 // Uniform `{ ok: true }` — must not reveal whether an address was ever seen.
 const okOutput = z.object({ ok: z.literal(true) })

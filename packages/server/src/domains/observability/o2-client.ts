@@ -10,16 +10,15 @@
 // (`version`), so it is probed after the organization exists and the credentials
 // are proven.
 
+import type { SafeFetchFailure, SafeFetchResult } from '@kobato/server/infra/safe-fetch.ts'
+
+import { basicAuthorizationHeader } from '@kobato/server/domains/observability/config.ts'
+import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
 import {
   OBSERVABILITY_ORGANIZATION_PATTERN,
   normalizeObservabilityOrigin,
 } from '@kobato/shared/config/observability.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { SafeFetchFailure, SafeFetchResult } from '../../infra/safe-fetch'
-
-import { safeFetch } from '../../infra/safe-fetch'
-import { basicAuthorizationHeader } from './config'
 
 export const O2_REQUEST_TIMEOUT_MS = 8_000
 export const O2_HEALTH_TIMEOUT_MS = 5_000

@@ -1,10 +1,8 @@
+import type { Env } from '@kobato/server/http/context.ts'
 import type { Context, MiddlewareHandler } from 'hono'
 
+import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
 import { HTTPException } from 'hono/http-exception'
-
-import type { Env } from '../context'
-
-import { localizedHttpException } from '../localized-http-exception'
 
 type OnError = (c: Context<Env>) => Response | Promise<Response>
 

@@ -16,7 +16,7 @@ queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
 // The stubbed dialog renders inline (the real portal never mounts under SSR);
 // open = category !== undefined.
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 // Flips category from undefined (closed) to the target on first render so the dialog mounts.
 function OpenDialog({ category }: { category: AdminCategoryDto | null }) {

@@ -4,22 +4,25 @@ import type {
   ObservabilityTestConnectionOutput,
 } from '@kobato/shared/contracts/observability.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { ObservabilityProvisionSummaryLines } from '@kobato/web/ui/admin/settings/ObservabilityProvisionSummaryLines.tsx'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import {
+  SettingsSecretInput,
+  secretFieldPatch,
+  secretFieldStrings,
+} from '@kobato/web/ui/admin/settings/shell/SettingsSecretInput.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { useMutation } from '@tanstack/react-query'
 import { PlugZapIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { ObservabilityProvisionSummaryLines } from './ObservabilityProvisionSummaryLines'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsInput } from './shell/SettingsInput'
-import { SettingsSecretInput, secretFieldPatch, secretFieldStrings } from './shell/SettingsSecretInput'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 interface ConnectionFormState {
   endpoint: string

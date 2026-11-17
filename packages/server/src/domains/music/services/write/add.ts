@@ -1,18 +1,12 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { MusicRow, NewMusic } from '@kobato/db/types.ts'
+import type { ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
 import type { StorageDriver } from '@kobato/shared/config/types.ts'
 import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
-import type { Database } from '../../../../infra/db/database'
-import type { MusicRow, NewMusic } from '../../../../infra/db/types'
-import type { ProviderTrack } from '../../providers/types'
-
-import { findMusicById, findMusicBySourceAndId, insertMusic, restoreMusic } from '../../../../infra/db/operations/music'
-import { descriptorFor } from '../../../../infra/http/error-descriptor'
-import { DomainError } from '../../../../infra/http/errors'
-import { processImageBuffer } from '../../../../infra/image/process'
-import { getLogger } from '../../../../infra/logger'
-import { activeBackend, backendFor } from '../../../../infra/storage/registry'
-import { toAdminMusicDto } from '../../projection'
-import { getProvider } from '../../providers/registry'
+import { findMusicById, findMusicBySourceAndId, insertMusic, restoreMusic } from '@kobato/db/operations/music.ts'
+import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'
+import { getProvider } from '@kobato/server/domains/music/providers/registry.ts'
 import {
   COVER_JPEG_QUALITY,
   COVER_SIZE,
@@ -20,7 +14,12 @@ import {
   generateUniquePlayerId,
   MAX_AUDIO_BYTES,
   MAX_COVER_BYTES,
-} from './shared'
+} from '@kobato/server/domains/music/services/write/shared.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { processImageBuffer } from '@kobato/server/infra/image/process.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
 
 const log = getLogger('music.service')
 

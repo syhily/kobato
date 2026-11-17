@@ -2,6 +2,10 @@ import type { SettingsNavGroup } from '@kobato/shared/config/display.ts'
 import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 
 import { NAV_GROUP_LABEL_KEYS } from '@kobato/shared/config/display.ts'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useScrollSpyContext, useScrollSpyNav } from '@kobato/web/ui/admin/settings/shell/useSettingsScrollSpy.tsx'
+import { useSettingsSearch } from '@kobato/web/ui/admin/settings/shell/useSettingsSearch.tsx'
 import {
   Activity,
   Archive,
@@ -25,11 +29,6 @@ import {
   SlidersHorizontal,
   Type,
 } from 'lucide-react'
-
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
-import { useScrollSpyContext, useScrollSpyNav } from './useSettingsScrollSpy'
-import { useSettingsSearch } from './useSettingsSearch'
 
 export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Settings,

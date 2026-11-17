@@ -1,5 +1,5 @@
-import { ACCESS_EVENTS_DDL } from './access-log'
-import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from './device-env'
+import { ACCESS_EVENTS_DDL } from '@kobato/server/domains/analytics/services/access-log.ts'
+import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from '@kobato/server/domains/analytics/services/device-env.ts'
 
 /**
  * Every DuckDB table, in creation order — the single source both the DDL list

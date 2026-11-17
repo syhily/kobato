@@ -32,7 +32,7 @@ queryMocks.queryClient = {
 // FriendsView relies on an infinite-query list + delete mutation + debounced
 // search; queries are neutralized so SSR emits the loading chrome.
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 describe('snapshot: FriendsView', () => {
   beforeEach(() => {

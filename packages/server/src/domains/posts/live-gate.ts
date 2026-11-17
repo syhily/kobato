@@ -1,7 +1,11 @@
 import type { SQL } from 'drizzle-orm'
 
-import { post as postMetaTable } from '../../infra/db/schema/post'
-import { liveContentWhere, promotedContentWhere, type LiveContentOptions } from '../content/schemas/live-gate'
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import {
+  liveContentWhere,
+  promotedContentWhere,
+  type LiveContentOptions,
+} from '@kobato/server/domains/content/schemas/live-gate.ts'
 
 /**
  * Post-table binding of the live gate — call sites never hand-assemble

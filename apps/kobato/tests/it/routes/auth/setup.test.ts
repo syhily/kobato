@@ -1,6 +1,6 @@
+import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
-import { oneTimeToken } from '@kobato/server/infra/db/schema/one-time-token.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { makeRouteContext } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeSession } from '@kobato/test/session.ts'
@@ -32,7 +32,7 @@ const db = getTestDb()
 const mockContext = await import('@kobato/server/http/request-context.ts')
 const flows = await import('@kobato/server/domains/auth/services/setup.ts')
 const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@kobato/server/infra/rate-limit.ts')
-const { action, loader } = await import('@/routes/auth/setup/index')
+const { action, loader } = await import('@/routes/auth/setup/index.tsx')
 
 beforeAll(() => {
   // Overlay the real db handle so the gate / token / CSRF code hits the integration db.

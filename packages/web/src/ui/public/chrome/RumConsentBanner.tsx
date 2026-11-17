@@ -5,8 +5,8 @@
 // decision. Accepting starts browser RUM (forwarding the coarse identity the VRL reduces to
 // country and browser/OS/device family); declining permanently opts this browser out.
 
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 interface RumConsentBannerProps {
   onAccept: () => void

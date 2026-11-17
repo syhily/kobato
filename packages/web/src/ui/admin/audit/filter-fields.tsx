@@ -1,10 +1,9 @@
 import type { AuditLogActorDto } from '@kobato/shared/contracts/audit.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 
 import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 'lucide-react'
-
-import type { I18nValue } from '../../lib/I18nProvider'
-import type { FilterFieldSpec, FilterOptionItem } from '../shared/filter-bar/types'
 
 // ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS double as the row badge vocabularies
 // (minus the synthetic "all" entry).

@@ -1,14 +1,13 @@
 import type { MetricGroup, MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
 
 import { METRIC_GROUP_TABS } from '@kobato/shared/contracts/analytics.ts'
-
-import { Card } from '../../components/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/tabs'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { METRIC_TYPE_LABEL_IDS } from './metric-labels'
-import { MetricList } from './MetricList'
-import { type AnalyticsScope } from './use-analytics-state'
+import { Card } from '@kobato/ui/components/card.tsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { METRIC_TYPE_LABEL_IDS } from '@kobato/web/ui/admin/analytics/metric-labels.ts'
+import { MetricList } from '@kobato/web/ui/admin/analytics/MetricList.tsx'
+import { type AnalyticsScope } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 
 export interface MetricsGroupProps {
   group: MetricGroup

@@ -4,10 +4,10 @@ import { useDetachPublicCss } from '@kobato/web/client/hooks/use-detach-public-c
 import { AdminErrorFallback } from '@kobato/web/ui/admin/shell/AdminErrorFallback.tsx'
 import { data, Outlet, redirect } from 'react-router'
 
-import type { RouteHandle } from '@/root'
+import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/layout'
-import '@kobato/web/styles/admin.css'
+import '@kobato/ui/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 

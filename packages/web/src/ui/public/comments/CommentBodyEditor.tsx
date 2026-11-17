@@ -5,20 +5,19 @@
 // import graph stays editor-free. `isEmojiEnabled={false}` keeps the emoji-mart chunk out of
 // nested editors; `codeEditor="plain"` avoids the CodeMirror chunk here.
 
-import '../../../styles/inkling-comment-editor.css'
+import '@kobato/ui/styles/inkling-comment-editor.css'
 import type { InklingLabelsInput } from '@kobato/inkling'
 import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 
 import { InklingSurface, ListPlugin } from '@kobato/inkling'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { blockQuoteAsideCycle } from '@kobato/web/client/editor/block-quote-aside-cycle.ts'
+import { COMMENT_EDITOR_NODES } from '@kobato/web/client/editor/comment-editor-nodes.ts'
+import { downgradeLegacyCommentMath } from '@kobato/web/client/editor/comment-legacy-math.ts'
+import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/web/client/editor/comment-markdown-transformers.ts'
+import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web/client/editor/editor-surface.tsx'
 import { useCallback } from 'react'
-
-import { blockQuoteAsideCycle } from '../../../client/editor/block-quote-aside-cycle'
-import { COMMENT_EDITOR_NODES } from '../../../client/editor/comment-editor-nodes'
-import { downgradeLegacyCommentMath } from '../../../client/editor/comment-legacy-math'
-import { COMMENT_MARKDOWN_TRANSFORMERS } from '../../../client/editor/comment-markdown-transformers'
-import { EditorSurfaceComposer, useEditorSurface } from '../../../client/editor/editor-surface'
-import { cn } from '../../lib/cn'
 
 export interface CommentBodyEditorProps {
   /** Initial comment state; reseeded on mount and when `bodyKey` changes. */

@@ -5,16 +5,16 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "packages/web/src/styles/public.css",
+    "css": "packages/ui/src/styles/public.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
   },
   "aliases": {
-    "components": "@kobato/web/ui/components",
-    "utils": "@kobato/web/ui/lib/cn",
-    "ui": "@kobato/web/ui/components",
-    "lib": "@kobato/web/ui/lib"
+    "components": "@kobato/ui/components",
+    "utils": "@kobato/ui/lib/cn",
+    "ui": "@kobato/ui/components",
+    "lib": "@kobato/ui/lib"
   },
   "iconLibrary": "lucide"
 }

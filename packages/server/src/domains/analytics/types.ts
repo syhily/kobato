@@ -3,8 +3,8 @@
 // onto `access_events` blob slots through `blobsMap`/`doublesMap` in
 // `services/access-log` — adding a field means assigning it a slot there.
 
-import type { EntityTarget } from '../../infra/db/target'
-import type { UaClientHints } from './ua-parse'
+import type { EntityTarget } from '@kobato/db/target.ts'
+import type { UaClientHints } from '@kobato/server/domains/analytics/ua-parse.ts'
 
 export interface RawAccessEvent {
   /** The request's minted analytics event id — the beacon join key. */

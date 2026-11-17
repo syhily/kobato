@@ -1,7 +1,7 @@
+import { findSettingByScope } from '@kobato/db/operations/setting.ts'
 import { generalSchema } from '@kobato/server/domains/settings/sections/general.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
-import { findSettingByScope } from '@kobato/server/infra/db/operations/setting.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/shared/i18n/locales.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'

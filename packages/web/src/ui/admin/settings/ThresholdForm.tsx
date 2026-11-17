@@ -3,19 +3,24 @@ import type { RateLimitBucket, RateLimitSettings } from '@kobato/shared/config/t
 import { rateLimitBounds, rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
 import { rateLimitBucketSchema } from '@kobato/shared/config/rate-limit-bucket.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@kobato/ui/components/table.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import {
+  ADVANCED_GROUPS,
+  ALL_KEYS,
+  BUCKET_META,
+  COMMON_KEYS,
+  type BucketKey,
+} from '@kobato/web/ui/admin/settings/rate-limit/constants.ts'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { ChevronDownIcon, InfoIcon, RotateCcwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useWatch, type UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
-
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/table'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { ADVANCED_GROUPS, ALL_KEYS, BUCKET_META, COMMON_KEYS, type BucketKey } from './rate-limit/constants'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingsInput } from './shell/SettingsInput'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 // Client-side mirror of the server section schema, composed from the same
 // shared bucket schema: blur commits validate BEFORE the POST so an

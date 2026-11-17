@@ -1,4 +1,4 @@
-import type { PageMetaRow } from '@kobato/server/infra/db/types.ts'
+import type { PageMetaRow } from '@kobato/db/types.ts'
 
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
 import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'

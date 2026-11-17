@@ -1,6 +1,8 @@
 import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { user as userTable } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import {
@@ -9,8 +11,6 @@ import {
   recordAuditEventFromContext,
 } from '@kobato/server/domains/audit/services/record.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { user as userTable } from '@kobato/server/infra/db/schema/user.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'

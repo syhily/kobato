@@ -1,13 +1,12 @@
+import { type OgWarmTarget, wireContentRenderWarmup } from '@kobato/server/domains/content/render-warmup.ts'
+import { through } from '@kobato/server/infra/cache/registry.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
+import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
 import { getBlogSettingsSnapshotSync } from '@kobato/shared/config/getters.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
 import { resolveAppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 import { format } from 'date-fns'
-
-import { type OgWarmTarget, wireContentRenderWarmup } from '../../domains/content/render-warmup'
-import { through } from '../../infra/cache/registry'
-import { getLogger } from '../../infra/logger'
-import { renderCalendar } from '../calendar/render'
-import { drawOpenGraph } from '../og/render'
 
 const log = getLogger('render.warmup')
 

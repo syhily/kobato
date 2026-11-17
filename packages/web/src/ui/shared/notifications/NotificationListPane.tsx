@@ -2,19 +2,18 @@ import type { NotificationDto, NotificationTab } from '@kobato/shared/contracts/
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useInfiniteScrollSentinel } from '@kobato/web/client/hooks/use-infinite-scroll-sentinel.ts'
+import { usePatchNotificationReadState } from '@kobato/web/client/hooks/use-notifications.ts'
+import { useNow } from '@kobato/web/client/hooks/use-now.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { formatNotificationTime, notificationMeta } from '@kobato/web/ui/shared/notifications/notification-meta.ts'
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
 import { ChevronRightIcon, InboxIcon, Loader2Icon, MailIcon } from 'lucide-react'
 import { Fragment, useEffect, useRef } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '../../../client/hooks/use-infinite-scroll-sentinel'
-import { usePatchNotificationReadState } from '../../../client/hooks/use-notifications'
-import { useNow } from '../../../client/hooks/use-now'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { formatNotificationTime, notificationMeta } from './notification-meta'
 
 interface NotificationListPaneProps {
   tab: NotificationTab

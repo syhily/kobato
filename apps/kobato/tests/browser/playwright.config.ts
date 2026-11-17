@@ -6,7 +6,7 @@
 
 import { defineConfig } from '@playwright/test'
 
-import { browserEnv } from './support/env'
+import { browserEnv } from './support/env.ts'
 
 const env = browserEnv()
 const channel = process.env.KOBATO_BROWSER_CHANNEL ?? (process.env.CI ? 'chromium' : 'chrome')

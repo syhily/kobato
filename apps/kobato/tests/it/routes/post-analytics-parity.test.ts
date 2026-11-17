@@ -1,13 +1,13 @@
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 import type { AdminPostAnalyticsData } from '@kobato/shared/contracts/admin.ts'
 
+import { postTag } from '@kobato/db/schema/post-tag.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
+import { tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
 // Parity net: both analytics shells must return identical loader data for the same post. Real
 // engine: real rows + the seeded DuckDB sidecar adopted into the lifecycle; only the view module
 // is mocked.
@@ -37,8 +37,8 @@ const session = authorSession()
 analytics.handle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analytics.handle)
 
-const adminRoute = await import('@/routes/admin/posts/analytics')
-const editorRoute = await import('@/routes/editor/post/analytics')
+const adminRoute = await import('@/routes/admin/posts/analytics.tsx')
+const editorRoute = await import('@/routes/editor/post/analytics.tsx')
 
 // Explicit range so `parseAnalyticsSearch` never consults the clock.
 const request = new Request('http://localhost/analytics?startAt=1000&endAt=2000')

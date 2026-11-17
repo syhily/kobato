@@ -1,6 +1,3 @@
-import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,9 +7,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../components/alert-dialog'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
+} from '@kobato/ui/components/alert-dialog.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { type ReactNode, useState } from 'react'
 
 export interface ConfirmState {
   title: string

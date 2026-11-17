@@ -1,5 +1,5 @@
 // music/write/shared against the real DB; mocks: randomBytes (deterministic ids) and global fetch (network is a true external).
-import { music } from '@kobato/server/infra/db/schema/media.ts'
+import { music } from '@kobato/db/schema/media.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

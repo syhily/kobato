@@ -1,7 +1,6 @@
+import { serverConfig } from '@kobato/server/infra/config.ts'
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-
-import { serverConfig } from './config'
 
 const { data: DATA_PATH, defaultFont: DEFAULT_FONT_PATH } = serverConfig.storage
 

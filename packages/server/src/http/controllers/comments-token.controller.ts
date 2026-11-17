@@ -1,12 +1,15 @@
+import { asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
+import { findCommentsByIds } from '@kobato/server/domains/comments/services/lookup.ts'
+import { parseComments } from '@kobato/server/domains/comments/services/public-query.ts'
+import {
+  cleanupExpiredTokens,
+  revokeCommentToken,
+  verifyCommentOwnership,
+} from '@kobato/server/domains/comments/services/token.ts'
+import { commentTokenCookie, publicProc } from '@kobato/server/http/orpc-base.ts'
 import { commentItemDto } from '@kobato/shared/contracts/comments.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { asCommentItemsWire } from '../../domains/comments/projection'
-import { findCommentsByIds } from '../../domains/comments/services/lookup'
-import { parseComments } from '../../domains/comments/services/public-query'
-import { cleanupExpiredTokens, revokeCommentToken, verifyCommentOwnership } from '../../domains/comments/services/token'
-import { commentTokenCookie, publicProc } from '../orpc-base'
 
 const successOutput = z.object({ success: z.boolean() })
 

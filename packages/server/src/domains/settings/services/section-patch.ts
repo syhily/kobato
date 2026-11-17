@@ -1,10 +1,9 @@
 import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
+import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { z } from 'zod'
-
-import { DomainError } from '../../../infra/http/errors'
-import { SECTION_REGISTRY } from '../sections/registry'
 
 /**
  * The one "settings payload rejected" descriptor. Static (no runtime

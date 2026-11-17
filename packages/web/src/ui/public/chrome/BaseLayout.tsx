@@ -1,22 +1,20 @@
 import type { NavigationItem } from '@kobato/shared/config/types.ts'
+import type { HeaderCurrentUser } from '@kobato/web/ui/public/chrome/Header.tsx'
 import type { ReactNode } from 'react'
 
 import { useNavigationSettings } from '@kobato/shared/lib/blog-config-context.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useUnreadNotificationCount } from '@kobato/web/client/hooks/use-notifications.ts'
+import { Footer } from '@kobato/web/ui/public/chrome/Footer.tsx'
+import { Header } from '@kobato/web/ui/public/chrome/Header.tsx'
+import { LazyUserMenu } from '@kobato/web/ui/public/chrome/LazyUserMenu.tsx'
+import { ScrollTopButton } from '@kobato/web/ui/public/chrome/ScrollTopButton.tsx'
+import { ThemeToggle } from '@kobato/web/ui/public/chrome/ThemeToggle.tsx'
+import { LazyNotificationsDrawer } from '@kobato/web/ui/shared/notifications/LazyNotificationsDrawer.tsx'
 import { useState } from 'react'
-
-import type { HeaderCurrentUser } from './Header'
-
-import { useUnreadNotificationCount } from '../../../client/hooks/use-notifications'
-import { useI18n } from '../../lib/I18nProvider'
-import { LazyNotificationsDrawer } from '../../shared/notifications/LazyNotificationsDrawer'
-import { Footer } from './Footer'
-import { Header } from './Header'
-import { LazyUserMenu } from './LazyUserMenu'
-import { ScrollTopButton } from './ScrollTopButton'
-import { ThemeToggle } from './ThemeToggle'
 // Static import so React Router preloads `public.css` during SSR (no FOUC).
 // Do NOT re-export from `@/root` — that would pin this module in the admin chunk.
-import '../../../styles/public.css'
+import '@kobato/ui/styles/public.css'
 
 export interface BaseLayoutProps {
   navigation?: NavigationItem[]

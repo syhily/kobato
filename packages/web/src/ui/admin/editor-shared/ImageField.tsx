@@ -1,17 +1,16 @@
 import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { ImageLibraryPicker } from '@kobato/web/ui/admin/editor/pickers/ImageLibraryPicker.tsx'
+import { UploadImageDialog } from '@kobato/web/ui/admin/shared/UploadImageDialog.tsx'
+import { useErroredSrc } from '@kobato/web/ui/admin/shared/useErroredSrc.ts'
 import { ImageOffIcon, ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-
-import { Badge } from '../../components/badge'
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { ImageLibraryPicker } from '../editor/pickers/ImageLibraryPicker'
-import { UploadImageDialog } from '../shared/UploadImageDialog'
-import { useErroredSrc } from '../shared/useErroredSrc'
 
 export interface ImageFieldProps {
   id: string

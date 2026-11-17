@@ -1,11 +1,10 @@
 import type { SessionSortDirection, SessionSortOption, SessionSortState } from '@kobato/shared/utils/sessions-sort.ts'
 
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
 import { useState } from 'react'
-
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 interface SessionSortSelectProps<T extends string = string> {
   sort: SessionSortState<T>

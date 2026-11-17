@@ -1,9 +1,8 @@
+import type { MusicProvider } from '@kobato/server/domains/music/providers/types.ts'
+
+import { neteaseProvider } from '@kobato/server/domains/music/providers/netease.ts'
+import { tencentProvider } from '@kobato/server/domains/music/providers/tencent.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { MusicProvider } from './types'
-
-import { neteaseProvider } from './netease'
-import { tencentProvider } from './tencent'
 
 type MetingSource = 'netease' | 'tencent'
 

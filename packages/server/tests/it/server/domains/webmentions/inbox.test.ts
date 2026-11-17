@@ -1,11 +1,11 @@
-import { processWebmentionInboxRow, runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox.ts'
 import {
   listWebmentionInbox,
   markWebmentionInboxRetry,
   upsertWebmentionInbox,
-} from '@kobato/server/infra/db/operations/webmention-inbox.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
-import { webmention, webmentionInbox } from '@kobato/server/infra/db/schema/webmention.ts'
+} from '@kobato/db/operations/webmention-inbox.ts'
+import { post } from '@kobato/db/schema/post.ts'
+import { webmention, webmentionInbox } from '@kobato/db/schema/webmention.ts'
+import { processWebmentionInboxRow, runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

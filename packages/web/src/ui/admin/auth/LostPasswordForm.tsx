@@ -1,11 +1,10 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { inputClasses } from '@kobato/web/ui/admin/auth/shared.tsx'
 import { SendIcon } from 'lucide-react'
 import { Form, Link } from 'react-router'
-
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
-import { inputClasses } from './shared'
 
 export interface LostPasswordFormProps {
   action?: string

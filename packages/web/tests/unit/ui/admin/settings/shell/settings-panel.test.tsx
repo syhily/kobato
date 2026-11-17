@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const logWarn = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/web/client/lib/logger.ts', () => ({
+vi.mock('@kobato/ui/lib/logger.ts', () => ({
   getLogger: () => ({
     debug: vi.fn(),
     info: vi.fn(),

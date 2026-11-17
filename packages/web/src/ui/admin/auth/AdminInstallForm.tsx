@@ -1,17 +1,16 @@
 import { formatBytes } from '@kobato/shared/i18n/format.ts'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/shared/i18n/locales.ts'
 import { isApiAccepted } from '@kobato/shared/utils/api-error.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useFileUpload } from '@kobato/web/client/hooks/use-file-upload.ts'
 import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
-
-import { useFileUpload } from '../../../client/hooks/use-file-upload'
-import { Button } from '../../components/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 // Must match @/ui/admin/auth/shared.
 const inputClasses =

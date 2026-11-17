@@ -1,8 +1,7 @@
+import type { SanitizeStrategyConfig } from '@kobato/shared/sanitize/config.ts'
+
+import { createPurifySanitizer } from '@kobato/shared/sanitize/purify-core.ts'
 import createDOMPurify from 'dompurify'
-
-import type { SanitizeStrategyConfig } from './config'
-
-import { createPurifySanitizer } from './purify-core'
 
 // Browser engine for `sanitizeHtmlString`; vite's client environment aliases
 // the node engine's specifier here so DOMPurify binds the real window.

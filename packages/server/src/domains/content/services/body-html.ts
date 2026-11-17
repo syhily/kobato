@@ -1,7 +1,7 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
-import { getLogger } from '../../../infra/logger'
-import { computeBodyProjections } from '../../../infra/pt/lexical-projection'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 
 const log = getLogger('content')
 

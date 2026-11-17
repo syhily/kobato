@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/server/infra/db/database.ts'
-import type { ContentRow } from '@kobato/server/infra/db/types.ts'
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow } from '@kobato/db/types.ts'
 
 import { checkTokenConflict, lockMetaAndLoadLatest } from '@kobato/server/domains/content/repos/mutate.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'

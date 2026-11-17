@@ -1,15 +1,14 @@
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { RenderMathOutput } from '@kobato/shared/types/pages.ts'
 
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html.ts'
+import { reindexSearchBatch } from '@kobato/server/domains/posts/services/search-reindex.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
 import katex from 'katex'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { reprojectBodyHtmlBatch } from '../../../domains/content/services/reproject-body-html'
-import { reindexSearchBatch } from '../../../domains/posts/services/search-reindex'
-import { descriptorFor, rawMessageDescriptor } from '../../../infra/http/error-descriptor'
-import { KATEX_OPTIONS } from '../../../infra/pt/katex'
-import { adminProc } from '../../orpc-base'
 
 const MAX_RENDER_INPUT_LENGTH = 10_000
 

@@ -33,7 +33,7 @@ queryMocks.queryClient = {
 // cache via an internal `useInfiniteQuery`). The list query, delete mutation and query
 // client are stubbed through hoisted slots so each test picks the branch.
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function resetInfinite(): void {
   queryMocks.infinite = {

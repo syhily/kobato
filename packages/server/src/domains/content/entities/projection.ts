@@ -1,6 +1,5 @@
+import type { MetaRowBase } from '@kobato/server/domains/content/entities/descriptor.ts'
 import type { AdminMetaBaseDto } from '@kobato/shared/contracts/admin-meta.ts'
-
-import type { MetaRowBase } from './descriptor'
 
 // Shared fields are zod-derived from `adminMetaBaseDto`; only the id/date transform below is hand-written.
 export type AdminMetaDto = AdminMetaBaseDto

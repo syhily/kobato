@@ -1,11 +1,10 @@
 import type { MetingSearchHit } from '@kobato/shared/contracts/music.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { Loader2Icon, Pause, Play, PlusIcon } from 'lucide-react'
-
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
 
 export interface SearchResultItemProps {
   hit: MetingSearchHit

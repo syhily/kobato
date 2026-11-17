@@ -2,14 +2,8 @@ import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 import type { UpsertFriendInput } from '@kobato/shared/types/friends.ts'
 
 import { extractFriendHostSafe } from '@kobato/shared/types/images.ts'
-import { useMutation } from '@tanstack/react-query'
-import { SaveIcon, XIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
-import { Checkbox } from '../../components/checkbox'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
 import {
   Dialog,
   DialogContent,
@@ -17,12 +11,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { Textarea } from '../../components/textarea'
-import { useI18n } from '../../lib/I18nProvider'
-import { CoverInputRow } from '../shared/CoverInputRow'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { Textarea } from '@kobato/ui/components/textarea.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { CoverInputRow } from '@kobato/web/ui/admin/shared/CoverInputRow.tsx'
+import { useMutation } from '@tanstack/react-query'
+import { SaveIcon, XIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 // Discriminator: `null` = new friend, a friend = edit, `undefined` = closed.
 export interface EditFriendDialogProps {

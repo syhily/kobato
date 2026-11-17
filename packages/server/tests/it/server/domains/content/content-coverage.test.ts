@@ -1,3 +1,6 @@
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { saveDraftRevision, publishLatestRevision } from '@kobato/server/domains/content/repos/mutate.ts'
 import {
   findContentById,
@@ -6,9 +9,6 @@ import {
   findLatestDraft,
   listRevisions,
 } from '@kobato/server/domains/content/revisions.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageMetaTable } from '@kobato/server/infra/db/schema/page.ts'
-import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'

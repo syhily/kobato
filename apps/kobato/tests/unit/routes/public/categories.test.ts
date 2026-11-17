@@ -1,7 +1,7 @@
 import { rootMatchesWithI18n } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-import { meta } from '@/routes/public/categories'
+import { meta } from '@/routes/public/categories.tsx'
 
 describe('route: public/categories', () => {
   describe('meta', () => {

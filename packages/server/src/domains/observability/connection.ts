@@ -3,20 +3,19 @@
 // never an unsaved draft: proving a credential the admin has not persisted would
 // let a typo unlock a configuration that was never written.
 
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
+
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
+import { throwO2Failure } from '@kobato/server/domains/observability/errors.ts'
+import { createO2Client } from '@kobato/server/domains/observability/o2-client.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
 } from '@kobato/shared/config/observability.ts'
-
-import type { ObservabilitySettingsSlice } from './config'
-import type { O2Client } from './o2-client'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { observabilityConnectionFingerprint } from './config'
-import { throwO2Failure } from './errors'
-import { createO2Client } from './o2-client'
 
 export interface ConnectionProbeResult {
   organization: 'created' | 'exists'

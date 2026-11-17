@@ -1,6 +1,6 @@
-import type { LexicalEditorState, LexicalNodeJson } from './schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // Depth-first pre-order traversal with an explicit stack (recursion-free, like
 // the schema's policy walk). Validated states are depth-capped by

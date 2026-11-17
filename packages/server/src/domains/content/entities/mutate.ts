@@ -1,24 +1,26 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type {
+  MetaEntityDescriptor,
+  MetaRowBase,
+  UpsertMetaInputBase,
+} from '@kobato/server/domains/content/entities/descriptor.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { Database } from '../../../infra/db/database'
-import type { ViewerIdentity } from '../../auth/rbac'
-import type { MetaEntityDescriptor, MetaRowBase, UpsertMetaInputBase } from './descriptor'
 
 import {
   deleteSlugRegistryByEntity,
   insertSlugRegistry,
   updateSlugRegistryByEntity,
-} from '../../../infra/db/operations/slug-registry'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { reserveSlugInTransaction } from '../../../infra/slug/reservation'
-import { resolveSlug } from '../../../infra/slug/resolve'
-import { rescheduleScheduledPublish } from '../scheduled-publish'
-import { resolveContentLanguage } from '../schemas/meta-fields'
-import { rethrowSlugConflict } from '../slug-conflict'
-import { reclaimSlugOnRestore } from '../slug-reclaim'
+} from '@kobato/db/operations/slug-registry.ts'
+import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish.ts'
+import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields.ts'
+import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict.ts'
+import { reclaimSlugOnRestore } from '@kobato/server/domains/content/slug-reclaim.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation.ts'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> {
   create: (db: Database, input: TInput, authorId: number | null, viewer?: ViewerIdentity) => Promise<TAdminDto>

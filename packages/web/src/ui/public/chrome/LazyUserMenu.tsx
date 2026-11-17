@@ -1,21 +1,22 @@
+import type { HeaderCurrentUser } from '@kobato/web/ui/public/chrome/Header.tsx'
+
 import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Suspense, lazy, useState } from 'react'
-
-import type { HeaderCurrentUser } from './Header'
-
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/avatar'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
 
 // The dropdown chrome (Base UI menu, logout, notification entries) rides a lazy chunk so
 // anonymous visitors never download logged-in-only JS. The trigger below is the static half,
 // byte-stable across SSR and hydration; the first click swaps it for the real UserMenu with
 // the menu already open. Trigger-subtree parity with UserMenu is pinned by
 // tests/unit/ui/public/chrome/lazy-user-menu.test.tsx.
-const UserMenu = lazy(() => import('./UserMenu').then((module) => ({ default: module.UserMenu })))
+const UserMenu = lazy(() =>
+  import('@kobato/web/ui/public/chrome/UserMenu.tsx').then((module) => ({ default: module.UserMenu })),
+)
 
 // Hover-intent prefetch; the browser dedupes this against the lazy boundary's own import.
-export const warmUserMenuChunk = () => void import('./UserMenu')
+export const warmUserMenuChunk = () => void import('@kobato/web/ui/public/chrome/UserMenu.tsx')
 
 interface LazyUserMenuProps {
   currentUser: HeaderCurrentUser

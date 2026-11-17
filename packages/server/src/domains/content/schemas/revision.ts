@@ -3,8 +3,8 @@
  * cross the post/page boundary.
  */
 
-import type { ContentRow } from '../../../infra/db/types'
-import type { BodyProjections } from '../../../infra/pt/lexical-projection'
+import type { ContentRow } from '@kobato/db/types.ts'
+import type { BodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 
 export type ContentType = 'page' | 'post'
 

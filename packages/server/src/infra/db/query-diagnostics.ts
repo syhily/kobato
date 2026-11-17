@@ -4,11 +4,10 @@
 // Subscription is gated on the debug log level (zero overhead at info+ in
 // production) and is a no-op under vitest unless a test opts in explicitly.
 
+import { isVitest } from '@kobato/server/infra/config.ts'
+import { getLogger, root } from '@kobato/server/infra/logger.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 import diagnostics_channel from 'node:diagnostics_channel'
-
-import { isVitest } from '../config'
-import { getLogger, root } from '../logger'
 
 const log = getLogger('db.query')
 

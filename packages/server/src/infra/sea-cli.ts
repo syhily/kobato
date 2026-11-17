@@ -10,6 +10,19 @@
 // shared display formatter (for the real `formatDuration` output), reads no
 // configuration and touches no database (`packages/server/src/infra/intl-probe.ts`).
 
+import { rollbackBinary } from '@kobato/server/infra/binary-rollback.ts'
+import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
+import {
+  collectDoctorReport,
+  doctorOk,
+  formatDoctorText,
+  parseProbeIssues,
+} from '@kobato/server/infra/doctor-report.ts'
+import { runIntlProbe } from '@kobato/server/infra/intl-probe.ts'
+import { bootstrapSeaRuntime } from '@kobato/server/infra/sea-natives.ts'
+import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea-vfs-fs-patch.ts'
+import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea.ts'
+import { evaluateSelfUpdateGate } from '@kobato/server/infra/self-update-gate.ts'
 import {
   SEA_CLIENT_ASSET_PREFIX,
   SEA_DRIZZLE_ASSET_PREFIX,
@@ -24,15 +37,6 @@ import { createWriteStream, mkdtempSync, readdirSync, readFileSync, rmSync, stat
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { Worker } from 'node:worker_threads'
-
-import { rollbackBinary } from './binary-rollback'
-import { parseConfigArg } from './config-arg'
-import { collectDoctorReport, doctorOk, formatDoctorText, parseProbeIssues } from './doctor-report'
-import { runIntlProbe } from './intl-probe'
-import { isSea, seaAssetPath, seaVfsRoot } from './sea'
-import { bootstrapSeaRuntime } from './sea-natives'
-import { installSeaVfsRuntimePatches } from './sea-vfs-fs-patch'
-import { evaluateSelfUpdateGate } from './self-update-gate'
 
 // Baked at build time by vite define — a single executable has no package.json.
 declare const __SEA_APP_VERSION__: string
@@ -291,7 +295,7 @@ async function main(args: ReadonlySet<string>): Promise<void> {
   }
   if (args.has('--doctor-config-probe')) {
     // Importing the config graph validates the configuration as a module side effect.
-    await import('./config')
+    await import('@kobato/server/infra/config.ts')
   }
 }
 

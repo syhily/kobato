@@ -1,11 +1,10 @@
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
+import { GROUP_META, GROUP_ORDER, TASK_CAPABILITIES } from '@kobato/web/ui/admin/tasks/meta.ts'
+import { TaskCard } from '@kobato/web/ui/admin/tasks/TaskCard.tsx'
 import { useQuery } from '@tanstack/react-query'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Skeleton } from '../../components/skeleton'
-import { useI18n } from '../../lib/I18nProvider'
-import { AdminListPage } from '../shared/AdminListPage'
-import { GROUP_META, GROUP_ORDER, TASK_CAPABILITIES } from './meta'
-import { TaskCard } from './TaskCard'
 
 function TasksSkeleton() {
   return (

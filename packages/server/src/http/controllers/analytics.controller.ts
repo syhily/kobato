@@ -1,3 +1,12 @@
+import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
+import { queryExportCsv } from '@kobato/server/domains/analytics/services/export.ts'
+import { queryHeatmap } from '@kobato/server/domains/analytics/services/heatmap.ts'
+import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
+import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
+import { parseAnalyticsSearch, resolveAnalyticsRange } from '@kobato/server/domains/analytics/services/query-filter.ts'
+import { queryViews } from '@kobato/server/domains/analytics/services/views.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import {
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
@@ -14,16 +23,6 @@ import {
   type ResolvedAnalyticsQuery,
 } from '@kobato/shared/contracts/analytics.ts'
 import { z } from 'zod'
-
-import { getAnalyticsReader } from '../../bootstrap/analytics-lifecycle'
-import { queryCounters } from '../../domains/analytics/services/counters'
-import { queryExportCsv } from '../../domains/analytics/services/export'
-import { queryHeatmap } from '../../domains/analytics/services/heatmap'
-import { queryMetric } from '../../domains/analytics/services/metric'
-import { loadAnalyticsOverview } from '../../domains/analytics/services/overview'
-import { parseAnalyticsSearch, resolveAnalyticsRange } from '../../domains/analytics/services/query-filter'
-import { queryViews } from '../../domains/analytics/services/views'
-import { adminProc } from '../orpc-base'
 
 function resolve(input: AnalyticsQuery): ResolvedAnalyticsQuery {
   return { ...input, range: resolveAnalyticsRange(input) }

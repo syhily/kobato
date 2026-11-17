@@ -2,11 +2,10 @@ import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical
 
 import { lexicalNodeFingerprint } from '@kobato/shared/lexical/equivalence.ts'
 import { lexicalNodeTextContent } from '@kobato/shared/lexical/walk.ts'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { diff_match_patch } from 'diff-match-patch'
-
-import { Badge } from '../../components/badge'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 // Diffs the top-level children of two editor states. Lexical's serialized nodes
 // carry no stable `_key`, so 'unchanged' anchors are semantic fingerprints and

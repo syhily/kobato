@@ -5,21 +5,29 @@ import type { AvatarSource } from '@kobato/shared/utils/avatar.ts'
 import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { GRAVATAR_MIRROR_PRESETS } from '@kobato/web/ui/admin/settings/gravatar-mirror-presets.ts'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import {
+  SettingsSecretInput,
+  secretFieldPatch,
+  secretFieldStrings,
+} from '@kobato/web/ui/admin/settings/shell/SettingsSecretInput.tsx'
+import { SettingsSelect } from '@kobato/web/ui/admin/settings/shell/SettingsSelect.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
+import {
+  resolveSortableMove,
+  SortableDragHandle,
+  useSortableRow,
+  useSortableSensors,
+} from '@kobato/web/ui/admin/shared/sortable.tsx'
 import { useQuery } from '@tanstack/react-query'
 import { Controller } from 'react-hook-form'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { useI18n } from '../../lib/I18nProvider'
-import { resolveSortableMove, SortableDragHandle, useSortableRow, useSortableSensors } from '../shared/sortable'
-import { GRAVATAR_MIRROR_PRESETS } from './gravatar-mirror-presets'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsInput } from './shell/SettingsInput'
-import { SettingsSecretInput, secretFieldPatch, secretFieldStrings } from './shell/SettingsSecretInput'
-import { SettingsSelect } from './shell/SettingsSelect'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 

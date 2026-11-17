@@ -1,11 +1,9 @@
+import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import type { RealtimeEvent } from '@kobato/shared/contracts/analytics.ts'
 
+import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import { sql } from 'kysely'
 import { createHash } from 'node:crypto'
-
-import type { AnalyticsReader } from './analytics-sql'
-
-import { createAnalyticsQuery, runAnalyticsQuery } from './analytics-sql'
 
 // Per-session SSE connection cap for `/api/analytics/events`.
 const MAX_REALTIME_CONNECTIONS_PER_SESSION = 2

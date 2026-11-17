@@ -1,11 +1,11 @@
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
 import type { SidebarSettings } from '@kobato/shared/config/types.ts'
 
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { postTag } from '@kobato/db/schema/post-tag.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
-import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/test/lexical.ts'
@@ -365,7 +365,7 @@ describe('posts/services/search-index — indexPost', () => {
     const pid = await seedPost({ slug: 'idx-post' })
     const { indexPost } = await import('@kobato/server/domains/posts/services/search-index.ts')
     await indexPost(db, pid, 'Title', 'Summary', 'body')
-    const { postSearchIndex } = await import('@kobato/server/infra/db/schema/content.ts')
+    const { postSearchIndex } = await import('@kobato/db/schema/content.ts')
     const rows = await db.select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('body')

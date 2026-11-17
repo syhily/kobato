@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle } from './types'
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
 /**
  * Module-level mutable state — safe only because writes happen in server-side

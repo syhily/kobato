@@ -1,5 +1,6 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { coerceBoolean } from '@kobato/server/domains/settings/sections/shared.ts'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
@@ -7,8 +8,6 @@ import {
 } from '@kobato/shared/config/observability.ts'
 import { rumClientIdentitySchema } from '@kobato/shared/contracts/trace.ts'
 import { z } from 'zod'
-
-import { coerceBoolean } from './shared'
 
 /** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
 export const observabilityValidationMessages = {

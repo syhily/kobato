@@ -1,26 +1,32 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow } from '@kobato/db/types.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type {
+  ContentType,
+  PublishLatestResult,
+  SaveDraftResult,
+} from '@kobato/server/domains/content/schemas/revision.ts'
+import type { MusicEmbedResolver } from '@kobato/server/domains/pt/embeds.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { AdminRevisionDto } from '@kobato/shared/contracts/revision.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
+import {
+  isEquivalentToPublishedLatest,
+  publishLatestRevision,
+  saveDraftRevision,
+} from '@kobato/server/domains/content/repos/mutate.ts'
+import { findContentById, findLatestDraft, findLatestRevision } from '@kobato/server/domains/content/revisions.ts'
+import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish.ts'
+import { syncLibraryImageBlocks } from '@kobato/server/domains/content/services/image-sync.ts'
+import { snapshotMusicPlayerMeta } from '@kobato/server/domains/pt/lexical-music-snapshot.ts'
+import { canonicalizeLexicalEditorState } from '@kobato/server/domains/pt/services/lexical-canonicalize.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { getLogger, type Logger } from '@kobato/server/infra/logger.ts'
+import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/shared/lexical/collect.ts'
 import { compactLexicalEditorState } from '@kobato/shared/lexical/dialect.ts'
-
-import type { Database } from '../../infra/db/database'
-import type { ContentRow } from '../../infra/db/types'
-import type { ViewerIdentity } from '../auth/rbac'
-import type { MusicEmbedResolver } from '../pt/embeds'
-import type { ContentType, PublishLatestResult, SaveDraftResult } from './schemas/revision'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { getLogger, type Logger } from '../../infra/logger'
-import { computeBodyProjections, type BodyProjections } from '../../infra/pt/lexical-projection'
-import { snapshotMusicPlayerMeta } from '../pt/lexical-music-snapshot'
-import { canonicalizeLexicalEditorState } from '../pt/services/lexical-canonicalize'
-import { toAdminRevisionDto } from './projection'
-import { isEquivalentToPublishedLatest, publishLatestRevision, saveDraftRevision } from './repos/mutate'
-import { findContentById, findLatestDraft, findLatestRevision } from './revisions'
-import { rescheduleScheduledPublish } from './scheduled-publish'
-import { syncLibraryImageBlocks } from './services/image-sync'
 
 const log = getLogger('content.lifecycle')
 

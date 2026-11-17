@@ -1,3 +1,16 @@
+import { asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
+import {
+  countMyComments,
+  listMyCommentEntities,
+  loadMineCommentsPage,
+} from '@kobato/server/domains/comments/services/mine-comments.ts'
+import {
+  cancelOwnCommentDeletion,
+  editOwnComment,
+  requestOwnCommentDeletion,
+} from '@kobato/server/domains/comments/services/moderate.ts'
+import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
+import { authedProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
@@ -8,20 +21,6 @@ import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.
 import { parseCommentEntity, serializeCommentEntity } from '@kobato/shared/utils/comments.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { asCommentItemWire } from '../../domains/comments/projection'
-import {
-  countMyComments,
-  listMyCommentEntities,
-  loadMineCommentsPage,
-} from '../../domains/comments/services/mine-comments'
-import {
-  cancelOwnCommentDeletion,
-  editOwnComment,
-  requestOwnCommentDeletion,
-} from '../../domains/comments/services/moderate'
-import { resolveEntitiesForComments } from '../../domains/content/entities/slug-title'
-import { authedProc, localizedOrpcError } from '../orpc-base'
 
 const updateOwn = authedProc
   .route({ method: 'POST', path: '/comments/update-own' })

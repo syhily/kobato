@@ -7,8 +7,8 @@
 // host/pid, arbitrary context, error messages, stacks, and causes have no route
 // through here. Local stdout logging is unaffected by any drop.
 
-import { projectError } from './sanitize'
-import { isSelfTelemetryPath } from './self-telemetry-paths'
+import { projectError } from '@kobato/server/infra/trace/sanitize.ts'
+import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths.ts'
 
 export const LOG_LINE_MAX_BYTES = 32 * 1024
 export const LOG_BODY_MAX_LENGTH = 200

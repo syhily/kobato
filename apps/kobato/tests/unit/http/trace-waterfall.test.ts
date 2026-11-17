@@ -63,7 +63,7 @@ const renderHarness = vi.hoisted(() => {
 vi.mock('react-dom/server', () => ({ renderToPipeableStream: renderHarness.render }))
 vi.mock('@react-router/node', () => ({ createReadableStreamFromReadable: (stream: unknown) => stream }))
 
-const { default: handleRequest } = await import('@/entry.server')
+const { default: handleRequest } = await import('@/entry.server.tsx')
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',

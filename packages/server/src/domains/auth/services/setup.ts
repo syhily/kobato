@@ -1,19 +1,18 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
+
+import { hasAdmin, hashAdminPassword, insertAdmin } from '@kobato/db/operations/user.ts'
+import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
+import { authFlowError } from '@kobato/server/domains/auth/services/shared.ts'
+import { invalidateSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
+import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/shared/i18n/locales.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { sql } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { BlogSession } from '../session-storage'
-import type { AuthFlowResult } from './shared'
-
-import { hasAdmin, hashAdminPassword, insertAdmin } from '../../../infra/db/operations/user'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { refreshBlogSettings } from '../../settings/services/hydrate'
-import { buildInstallSectionRows, seedInstallSections } from '../../settings/services/install-flow'
-import { establishLoginSession } from '../primitives'
-import { invalidateSetupToken } from '../setup-token'
-import { authFlowError } from './shared'
 
 export interface SignUpAdminSeed {
   title: string

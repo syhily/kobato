@@ -1,15 +1,15 @@
 // Default font chains per UI locale.
 //
-// `packages/web/src/styles/tailwind.css` applies the zh-CN chain on `:root` and overrides
+// `packages/ui/src/styles/tailwind.css` applies the zh-CN chain on `:root` and overrides
 // `--font-body` / `--font-serif` through `:lang()` branches for the other
 // locales. The SAME map feeds `src/root.tsx`, where a configured custom family is
 // prepended to the locale's fallback tail, so a custom font keeps a
 // locale-appropriate fallback chain instead of a hardcoded CJK one.
 //
 // The CSS copy and this map are contract-pinned
-// (`packages/web/tests/contract/font-stacks.test.ts`): change both or neither.
+// (`packages/ui/tests/contract/font-stacks.test.ts`): change both or neither.
 
-import type { AppLocale } from '../i18n/locales'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 export interface LocaleFontStacks {
   /** Chrome / interface body chain. */

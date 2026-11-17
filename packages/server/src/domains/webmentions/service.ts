@@ -1,3 +1,6 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { WebmentionStatus } from '@kobato/db/operations/webmention.ts'
+import type { EntityTarget } from '@kobato/db/target.ts'
 import type {
   AdminWebmentionOutboxWire,
   AdminWebmentionWire,
@@ -6,14 +9,7 @@ import type {
   WebmentionStatusCounts,
 } from '@kobato/shared/contracts/webmentions.ts'
 
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { eq } from 'drizzle-orm'
-
-import type { Database } from '../../infra/db/database'
-import type { WebmentionStatus } from '../../infra/db/operations/webmention'
-import type { EntityTarget } from '../../infra/db/target'
-
+import { countWebmentionOutboxByStatus, listWebmentionOutboxForAdmin } from '@kobato/db/operations/webmention-outbox.ts'
 import {
   countWebmentions,
   countWebmentionsByStatus,
@@ -21,16 +17,19 @@ import {
   listApprovedWebmentionsForTarget,
   listWebmentionsByStatus,
   setWebmentionStatus,
-} from '../../infra/db/operations/webmention'
+} from '@kobato/db/operations/webmention.ts'
+import { page } from '@kobato/db/schema/page.ts'
+import { post } from '@kobato/db/schema/post.ts'
 import {
-  countWebmentionOutboxByStatus,
-  listWebmentionOutboxForAdmin,
-} from '../../infra/db/operations/webmention-outbox'
-import { page } from '../../infra/db/schema/page'
-import { post } from '../../infra/db/schema/post'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { asAdminWebmentionOutboxListWire, asAdminWebmentionsWire, asPublicWebmentionsWire } from './projection'
+  asAdminWebmentionOutboxListWire,
+  asAdminWebmentionsWire,
+  asPublicWebmentionsWire,
+} from '@kobato/server/domains/webmentions/projection.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { eq } from 'drizzle-orm'
 
 export interface AdminWebmentionList {
   mentions: AdminWebmentionWire[]

@@ -23,12 +23,11 @@ import type {
 } from '@kobato/inkling'
 
 import { InklingComposer } from '@kobato/inkling'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useTheme } from '@kobato/ui/lib/ThemeProvider.tsx'
+import { useKobatoInklingLabels } from '@kobato/web/client/editor/inkling-labels.ts'
+import { useEditorBodyReset } from '@kobato/web/client/editor/use-editor-body-reset.ts'
 import { useCallback, useState } from 'react'
-
-import { useI18n } from '../../ui/lib/I18nProvider'
-import { useTheme } from '../../ui/lib/ThemeProvider'
-import { useKobatoInklingLabels } from './inkling-labels'
-import { useEditorBodyReset } from './use-editor-body-reset'
 
 export interface UseEditorSurfaceArgs<TBody extends SerializedEditorState> {
   /** Initial body. Only read on first mount + when `bodyKey` changes. */

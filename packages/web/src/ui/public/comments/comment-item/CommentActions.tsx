@@ -2,9 +2,6 @@ import type { CommentItemWire as CommentItemType } from '@kobato/shared/contract
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
-import { useMutation } from '@tanstack/react-query'
-
-import { orpcQuery } from '../../../../client/api/orpc-query'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,13 +12,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '../../../components/alert-dialog'
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
-import { useCommentsActions, useCommentsIdentity } from '../comments-context'
-import { warmCommentEditorChunks } from '../LazyCommentBodyEditor'
-import { commentFlags } from './comment-flags'
-import { commentFooterButtonClass } from './helpers'
+} from '@kobato/ui/components/alert-dialog.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { commentFlags } from '@kobato/web/ui/public/comments/comment-item/comment-flags.ts'
+import { commentFooterButtonClass } from '@kobato/web/ui/public/comments/comment-item/helpers.ts'
+import { useCommentsActions, useCommentsIdentity } from '@kobato/web/ui/public/comments/comments-context.ts'
+import { warmCommentEditorChunks } from '@kobato/web/ui/public/comments/LazyCommentBodyEditor.tsx'
+import { useMutation } from '@tanstack/react-query'
 
 interface CommentActionsProps {
   comment: CommentItemType

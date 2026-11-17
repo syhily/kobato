@@ -26,9 +26,8 @@ import {
   TWO_COLUMN_NESTED_EDITORS,
 } from '@kobato/shared/lexical/cards/two-column.ts'
 import { TWO_COLUMN_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Columns2Icon } from 'lucide-react'
-
-import { useI18n } from '../../../ui/lib/I18nProvider'
 
 // The card's nested-editor spec, const-asserted so the literal names survive into
 // the derived field maps (the same array self-types the base class below and feeds

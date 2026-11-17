@@ -28,8 +28,10 @@ import { describe, expect, it } from 'vitest'
 const SCAN_ROOTS = [
   'apps/kobato/src',
   'packages/inkling/src',
+  'packages/db/src',
   'packages/server/src',
   'packages/shared/src',
+  'packages/ui/src',
   'packages/web/src',
 ] as const
 
@@ -326,8 +328,8 @@ describe('production sources', () => {
         'packages/web/src/ui/admin/settings/cache/BucketCard.tsx',
         'apps/kobato/src/routes/admin/settings/layout.tsx',
         'apps/kobato/src/routes/admin/layout.tsx',
-        'packages/web/src/ui/components/pagination.tsx',
-        'packages/web/src/ui/components/combobox.tsx',
+        'packages/ui/src/components/pagination.tsx',
+        'packages/ui/src/components/combobox.tsx',
         // The editor routes, admin editor families and client glue.
         'apps/kobato/src/routes/editor/layout.tsx',
         'apps/kobato/src/routes/editor/post/analytics.tsx',

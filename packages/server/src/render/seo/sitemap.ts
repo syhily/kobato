@@ -1,12 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
+import { listSitemapPages } from '@kobato/server/domains/pages/services/public-query.ts'
+import { listSitemapPosts } from '@kobato/server/domains/posts/services/public-query.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { joinUrl } from '@kobato/shared/utils/urls.ts'
-
-import type { Database } from '../../infra/db/database'
-
-import { listSitemapPages } from '../../domains/pages/services/public-query'
-import { listSitemapPosts } from '../../domains/posts/services/public-query'
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

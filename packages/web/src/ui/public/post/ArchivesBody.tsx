@@ -3,11 +3,10 @@ import type { ListingPostCardWithMetadata } from '@kobato/shared/types/catalog.t
 import { formatDate } from '@kobato/shared/i18n/format.ts'
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { localDateParts } from '@kobato/shared/utils/formatter.ts'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { postTitleClass } from './postChrome'
-import { PostSquare } from './PostListViews'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { postTitleClass } from '@kobato/web/ui/public/post/postChrome.ts'
+import { PostSquare } from '@kobato/web/ui/public/post/PostListViews.tsx'
 
 export interface ArchivesBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]

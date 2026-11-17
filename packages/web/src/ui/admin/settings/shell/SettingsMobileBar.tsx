@@ -1,10 +1,9 @@
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useSettingsSearchFilter } from '@kobato/web/ui/admin/settings/shell/useSettingsSearch.tsx'
 import { SearchIcon, XIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'
-
-import { Input } from '../../../components/input'
-import { useI18n } from '../../../lib/I18nProvider'
-import { useSettingsSearchFilter } from './useSettingsSearch'
 
 export function SettingsMobileBar() {
   const { t } = useI18n()

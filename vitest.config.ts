@@ -12,8 +12,12 @@ export default defineConfig({
     projects: [
       'packages/shared/tests/unit/vitest.config.ts',
       'packages/shared/tests/snaps/vitest.config.ts',
+      'packages/db/tests/unit/vitest.config.ts',
+      'packages/db/tests/it/vitest.config.ts',
       'packages/server/tests/unit/vitest.config.ts',
       'packages/server/tests/it/vitest.config.ts',
+      'packages/ui/tests/unit/vitest.config.ts',
+      'packages/ui/tests/snaps/vitest.config.ts',
       'packages/web/tests/unit/vitest.config.ts',
       'packages/web/tests/snaps/vitest.config.ts',
       'packages/inkling/tests/vitest.config.ts',
@@ -30,8 +34,9 @@ export default defineConfig({
       exclude: [
         'packages/*/src/**/*.d.ts',
         'apps/kobato/src/**/*.d.ts',
-        'packages/server/src/infra/db/schema/**',
-        'packages/server/src/infra/db/types/**',
+        'packages/db/src/schema/**',
+        'packages/db/src/types/**',
+        'packages/ui/src/**',
         'packages/web/src/ui/**',
         // The inkling editor tree is covered by its own vitest project
         // (packages/inkling/tests, jsdom) whose historical thresholds

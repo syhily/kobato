@@ -1,3 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { findEmailById } from '@kobato/db/operations/user.ts'
+import { type AvatarEntry, AvatarStatus, get, set, through } from '@kobato/server/infra/cache/registry.ts'
+import { compressImage, imageWidth } from '@kobato/server/infra/image/compress.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { DEFAULT_AVATAR_SIZE } from '@kobato/shared/utils/avatar.ts'
@@ -8,14 +15,6 @@ import { isNumeric } from '@kobato/shared/utils/tools.ts'
 import { joinUrl } from '@kobato/shared/utils/urls.ts'
 import { Buffer } from 'node:buffer'
 import { z } from 'zod'
-
-import type { Database } from '../../../infra/db/database'
-
-import { type AvatarEntry, AvatarStatus, get, set, through } from '../../../infra/cache/registry'
-import { findEmailById } from '../../../infra/db/operations/user'
-import { compressImage, imageWidth } from '../../../infra/image/compress'
-import { getLogger } from '../../../infra/logger'
-import { safeFetch } from '../../../infra/safe-fetch'
 
 // Avatar-fetch domain service: the admin-ordered upstream chain
 // (qq/github/gravatar), the no-avatar fallback, and id ↔ email-hash translation.

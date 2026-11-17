@@ -1,13 +1,11 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { ToastTranslator } from '@kobato/web/client/lib/toast-api-error.ts'
 
 import { extractApiErrorMessage } from '@kobato/shared/utils/api-error.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { useCallback, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
-
-import type { ToastTranslator } from '../lib/toast-api-error'
-
-import { toastApiError } from '../lib/toast-api-error'
 
 // Shared admin upload adapter for `/api/*` resource routes: CSRF from the
 // root loader, accept/size guards, multipart POST, `{ error: { message } }`

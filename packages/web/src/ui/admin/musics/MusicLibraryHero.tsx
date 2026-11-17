@@ -1,14 +1,13 @@
 import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 import type { ReactNode } from 'react'
 
+import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import { transitions } from '@kobato/web/client/lib/motion.ts'
+import { useMusicPlayerState } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
-
-import { transitions } from '../../../client/lib/motion'
-import { LazyAnimatePresence, LazyMotionDiv } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useMediaQuery } from '../../lib/use-media-query'
-import { useMusicPlayerState } from './MusicPlayerContext'
 
 interface MusicLibraryHeroProps {
   musics: AdminMusicDto[]

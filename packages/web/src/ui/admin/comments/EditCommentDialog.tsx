@@ -3,14 +3,7 @@ import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.t
 
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/shared/lexical/comment-schema.ts'
 import { idStr } from '@kobato/shared/utils/tools.ts'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { SaveIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -18,10 +11,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
-import { LazyCommentBodyEditor } from '../../public/comments/LazyCommentBodyEditor'
+} from '@kobato/ui/components/dialog.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { LazyCommentBodyEditor } from '@kobato/web/ui/public/comments/LazyCommentBodyEditor.tsx'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { SaveIcon, XIcon } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export interface EditCommentDialogProps {
   comment: AdminComment | null

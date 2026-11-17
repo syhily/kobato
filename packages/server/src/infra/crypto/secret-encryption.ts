@@ -1,7 +1,6 @@
+import { serverConfig } from '@kobato/server/infra/config.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { createCipheriv, createDecipheriv, createHash, createHmac, hkdfSync, randomBytes } from 'node:crypto'
-
-import { serverConfig } from '../config'
-import { getLogger } from '../logger'
 
 const log = getLogger('crypto')
 

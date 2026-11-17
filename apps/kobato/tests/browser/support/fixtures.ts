@@ -10,9 +10,9 @@ import type { BrowserContext, Page } from '@playwright/test'
 
 import { test as base } from '@playwright/test'
 
-import { browserEnv } from './env'
-import { signInAdmin } from './journey'
-import { SettingsApi } from './settings-api'
+import { browserEnv } from './env.ts'
+import { signInAdmin } from './journey.ts'
+import { SettingsApi } from './settings-api.ts'
 
 interface WorkerFixtures {
   /** Cookies + localStorage from the one real server sign-in. */

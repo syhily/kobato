@@ -1,6 +1,6 @@
-import { findNextWebmentionReverifyDueAt } from '../../infra/db/operations/webmention'
-import { makeQueueScheduler } from './queue-scheduler'
-import { runWebmentionReverifyBatch } from './reverify'
+import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention.ts'
+import { makeQueueScheduler } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
+import { runWebmentionReverifyBatch } from '@kobato/server/domains/webmentions/reverify.ts'
 
 const queue = makeQueueScheduler({
   name: 'webmentions.reverify',

@@ -15,7 +15,8 @@
  *     how the pre-split layout leaked across layers);
  *  d. the `@/` app alias resolves to `apps/kobato/src` (root tsconfig), so it
  *     may appear only inside the app package itself;
- *  e. inkling is reached only through its three public entry specifiers.
+ *  e. inkling is reached only through its three public entry specifiers;
+ *  f. product source trees use package-root imports instead of relative traversal.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
@@ -46,8 +47,11 @@ const REPO_PACKAGES = [
   { name: 'kobato', dir: 'apps/kobato' },
   { name: '@kobato/inkling', dir: 'packages/inkling' },
   { name: '@kobato/shared', dir: 'packages/shared' },
+  { name: '@kobato/db', dir: 'packages/db' },
   { name: '@kobato/server', dir: 'packages/server' },
+  { name: '@kobato/ui', dir: 'packages/ui' },
   { name: '@kobato/web', dir: 'packages/web' },
+  { name: '@kobato/config', dir: 'packages/tools/config' },
   { name: '@kobato/test', dir: 'packages/tools/test' },
   { name: '@kobato/trace', dir: 'packages/tools/trace' },
   { name: '@kobato/email', dir: 'packages/tools/email' },
@@ -70,12 +74,30 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/inkling': ['@kobato/inkling', '@kobato/shared', '@kobato/test'],
   // shared's server/web entries exist only for its test fixtures.
   '@kobato/shared': ['@kobato/shared', '@kobato/inkling', '@kobato/server', '@kobato/web', '@kobato/test'],
+  '@kobato/db': ['@kobato/db', '@kobato/shared', '@kobato/test'],
   // server's web entry exists only for its test fixtures.
-  '@kobato/server': ['@kobato/server', '@kobato/inkling', '@kobato/shared', '@kobato/web', '@kobato/test'],
+  '@kobato/server': [
+    '@kobato/server',
+    '@kobato/db',
+    '@kobato/inkling',
+    '@kobato/shared',
+    '@kobato/web',
+    '@kobato/test',
+  ],
+  '@kobato/ui': ['@kobato/ui', '@kobato/shared', '@kobato/test'],
   // web's server entry is the documented RouterClient type-only channel.
-  '@kobato/web': ['@kobato/web', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/test'],
+  '@kobato/web': ['@kobato/web', '@kobato/ui', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/test'],
   // test-helpers fixtures touch every layer.
-  '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
+  '@kobato/test': [
+    '@kobato/test',
+    '@kobato/db',
+    '@kobato/inkling',
+    '@kobato/shared',
+    '@kobato/server',
+    '@kobato/ui',
+    '@kobato/web',
+  ],
+  '@kobato/config': [],
   // Orchestration and tooling layers may depend on anything internal.
   kobato: INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
@@ -94,9 +116,20 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   // The editor island imports no @kobato/* package at all.
   '@kobato/inkling': [],
   '@kobato/shared': ['@kobato/shared', '@kobato/inkling'],
-  '@kobato/server': ['@kobato/server', '@kobato/inkling', '@kobato/shared'],
-  '@kobato/web': ['@kobato/web', '@kobato/inkling', '@kobato/shared', '@kobato/server'],
-  '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
+  '@kobato/db': ['@kobato/db', '@kobato/shared'],
+  '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', '@kobato/shared'],
+  '@kobato/ui': ['@kobato/ui', '@kobato/shared'],
+  '@kobato/web': ['@kobato/web', '@kobato/ui', '@kobato/inkling', '@kobato/shared', '@kobato/server'],
+  '@kobato/test': [
+    '@kobato/test',
+    '@kobato/db',
+    '@kobato/inkling',
+    '@kobato/shared',
+    '@kobato/server',
+    '@kobato/ui',
+    '@kobato/web',
+  ],
+  '@kobato/config': [],
   kobato: INTERNAL_SCOPES,
   // Tooling packages (SEA pipeline, OpenObserve DEV container, journey
   // runner, preview/report generators) may reach any internal package from
@@ -337,6 +370,28 @@ describe('package DAG', () => {
       for (const specifier of importSpecifiers(readSource(file))) {
         if (specifier.startsWith('@/')) {
           offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('product source trees use package-root imports', () => {
+    const rootAnchored = new Set([
+      'kobato',
+      '@kobato/shared',
+      '@kobato/db',
+      '@kobato/server',
+      '@kobato/ui',
+      '@kobato/web',
+    ])
+    const offenders: string[] = []
+    for (const pkg of REPO_PACKAGES.filter((entry) => rootAnchored.has(entry.name))) {
+      for (const file of sourceFiles(`${pkg.dir}/src`)) {
+        for (const specifier of importSpecifiers(readSource(file))) {
+          if (specifier.startsWith('.') && !specifier.startsWith('./+types/')) {
+            offenders.push(`${file}: ${specifier}`)
+          }
         }
       }
     }

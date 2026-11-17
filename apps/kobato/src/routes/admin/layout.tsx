@@ -6,14 +6,14 @@ import { AdminErrorFallback } from '@kobato/web/ui/admin/shell/AdminErrorFallbac
 import { AdminShell } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
 import { data, Outlet, redirect } from 'react-router'
 
-import type { RouteHandle } from '@/root'
+import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/layout'
 
 // `admin.css` shares the token partial with the public site but scans only admin-rendered sources, so this
 // bundle excludes the public cascade; `useDetachPublicCss` covers SPA navigations arriving with `public.css`
 // still in <head>.
-import '@kobato/web/styles/admin.css'
+import '@kobato/ui/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 

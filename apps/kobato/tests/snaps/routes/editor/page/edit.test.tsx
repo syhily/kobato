@@ -2,7 +2,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import PageEditRoute from '@/routes/editor/page/edit'
+import PageEditRoute from '@/routes/editor/page/edit.tsx'
 
 describe('snapshot: routes/editor/page/edit', () => {
   it('renders the edit page editor route', () => {

@@ -2,7 +2,7 @@
 // throwing `requireRole` / `requireUserRole` guards in
 // `@/server/domains/auth/rbac`; UI consumers stick to `Role` + helpers.
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 export const ROLE_LEVELS = { visitor: 1, author: 2, admin: 3 } as const
 

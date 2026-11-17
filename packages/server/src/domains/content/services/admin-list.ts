@@ -1,8 +1,8 @@
-import type { Database } from '../../../infra/db/database'
-import type { EntityType } from '../../../infra/db/target'
+import type { Database } from '@kobato/db/database.ts'
+import type { EntityType } from '@kobato/db/target.ts'
 
-import { commentCountsByOwnerIds, metricsByOwnerIds } from '../../../infra/db/operations/like'
-import { ensureMetricsBatch } from '../../../infra/db/operations/metric'
+import { commentCountsByOwnerIds, metricsByOwnerIds } from '@kobato/db/operations/like.ts'
+import { ensureMetricsBatch } from '@kobato/db/operations/metric.ts'
 
 /** Engagement fields every admin list row gets from the metrics/comment batch. */
 export interface AdminListEngagement {

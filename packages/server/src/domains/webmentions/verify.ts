@@ -1,6 +1,5 @@
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
-
-import { DomainError } from '../../infra/http/errors'
 
 // Link verification + best-effort metadata extraction. Regex-based and
 // best-effort (the fetch layer size-caps the document); the only hard

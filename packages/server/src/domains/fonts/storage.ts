@@ -1,7 +1,7 @@
 import type { StorageDriver } from '@kobato/shared/config/types.ts'
 
-import { DEFAULT_PUBLIC_CACHE_CONTROL } from '../../infra/storage/key-policy'
-import { activeBackend, backendFor } from '../../infra/storage/registry'
+import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
+import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
 
 // Storage entry point for the fonts domain. Writes go to the active backend;
 // reads/deletes dispatch on the row's recorded `driver`. Owns the

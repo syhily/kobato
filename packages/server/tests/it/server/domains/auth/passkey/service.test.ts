@@ -1,8 +1,8 @@
-import type { SafeUser } from '@kobato/server/infra/db/operations/user.ts'
+import type { SafeUser } from '@kobato/db/operations/user.ts'
 
-import { oneTimeToken } from '@kobato/server/infra/db/schema/one-time-token.ts'
-import { passkeyCredential } from '@kobato/server/infra/db/schema/passkey.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
+import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import bcrypt from 'bcryptjs'

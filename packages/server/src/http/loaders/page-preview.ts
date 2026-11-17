@@ -1,15 +1,14 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type { DetailPageShell, DraftMarker, Page } from '@kobato/shared/types/catalog.ts'
 
-import type { ViewerIdentity } from '../../domains/auth/rbac'
-import type { Database } from '../../infra/db/database'
-
-import { loadDraftPreviewBySlug } from '../../domains/content/lifecycle'
-import { isLive } from '../../domains/content/schemas/live-gate'
-import { pageLifecycleAdapter } from '../../domains/pages/services/lifecycle-adapter'
-import { findPageBySlug } from '../../domains/pages/services/public-query'
-import { findPublicPostMetaBySlug } from '../../domains/posts/services/single'
-import { redirectPermanent } from '../../infra/http/redirects'
-import { notFound } from '../../infra/http/status'
+import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle.ts'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
+import { findPageBySlug } from '@kobato/server/domains/pages/services/public-query.ts'
+import { findPublicPostMetaBySlug } from '@kobato/server/domains/posts/services/single.ts'
+import { redirectPermanent } from '@kobato/server/infra/http/redirects.ts'
+import { notFound } from '@kobato/server/infra/http/status.ts'
 
 export interface PagePreviewResult {
   page: DetailPageShell

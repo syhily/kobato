@@ -1,10 +1,8 @@
+import type { DraftRecord, DraftType } from '@kobato/web/client/lib/draft-store.ts'
 import type { ZodType } from 'zod'
 
+import { draftEditKey, useDraftSession } from '@kobato/web/client/lib/draft-session.ts'
 import { useCallback } from 'react'
-
-import type { DraftRecord, DraftType } from '../lib/draft-store'
-
-import { draftEditKey, useDraftSession } from '../lib/draft-session'
 
 export interface LocalDraftConfig<TBody> {
   keyPrefix: string

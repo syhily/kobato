@@ -9,11 +9,11 @@ vi.mock('@simplewebauthn/browser', () => ({
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 
-import AdminLayoutRouteRaw from '@/routes/auth/layout'
-import AdminInstallRouteRaw from '@/routes/auth/setup'
+import AdminLayoutRouteRaw from '@/routes/auth/layout.tsx'
+import AdminInstallRouteRaw from '@/routes/auth/setup/index.tsx'
 // Drive the route Component directly with fixture loaderData/actionData — branches are
 // pure given the data. `asRoute` widens the strict ComponentProps to the fields each reads.
-import LoginRouteRaw from '@/routes/auth/signin'
+import LoginRouteRaw from '@/routes/auth/signin.tsx'
 
 const LoginRoute = asRoute(LoginRouteRaw)
 const AdminInstallRoute = asRoute(AdminInstallRouteRaw)

@@ -1,13 +1,12 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
-import type { Database } from '@kobato/server/infra/db/database.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 
 import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/utils/request-facts.ts'
 import { createLazyAppSnapshot } from '@kobato/shared/i18n/app-localization.ts'
-
-import { regularSession } from './session'
+import { regularSession } from '@kobato/test/session.ts'
 
 // The suite's single `RequestContext` factory; never hand-roll `{ session, viewer, … }`
 // literals. Types only from `@/server/http/request-context`, so vi.mock factories stay

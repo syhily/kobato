@@ -1,11 +1,15 @@
+import {
+  decreaseLikes,
+  increaseLikes,
+  queryLikes,
+  validateLikeToken,
+} from '@kobato/server/domains/comments/services/likes.ts'
+import { resolveMetricTarget, safeResolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { localizedOrpcError, publicProc } from '@kobato/server/http/orpc-base.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { tryLikeIncreaseRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { z } from 'zod'
-
-import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '../../domains/comments/services/likes'
-import { resolveMetricTarget, safeResolveMetricTarget } from '../../domains/comments/services/shared'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { tryLikeIncreaseRateLimit } from '../../infra/rate-limit'
-import { localizedOrpcError, publicProc } from '../orpc-base'
 
 const increaseLike = publicProc
   .route({ method: 'POST', path: '/likes/increase' })

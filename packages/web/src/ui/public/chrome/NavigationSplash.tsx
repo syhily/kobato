@@ -1,9 +1,8 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { BrandLogo } from '@kobato/web/ui/public/chrome/BrandLogo.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigation } from 'react-router'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { BrandLogo } from './BrandLogo'
 
 // Global navigation splash for slow route transitions. Watches `useNavigation()` only —
 // mutation flows own their own pending UI — and renders null during SSR, where it is idle.

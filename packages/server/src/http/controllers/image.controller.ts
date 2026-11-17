@@ -1,7 +1,6 @@
+import { resolveImageRef } from '@kobato/server/domains/images/services/resolve.ts'
+import { publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 import { z } from 'zod'
-
-import { resolveImageRef } from '../../domains/images/services/resolve'
-import { publicProc, resourceRateLimit } from '../orpc-base'
 
 const resolveThumbhash = publicProc
   .route({ method: 'GET', path: '/image/resolve-thumbhash' })

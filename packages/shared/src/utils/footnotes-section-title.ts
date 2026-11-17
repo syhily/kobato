@@ -1,4 +1,4 @@
-import type { ContentSettings } from '../config/types'
+import type { ContentSettings } from '@kobato/shared/config/types.ts'
 
 export const DEFAULT_FOOTNOTES_SECTION_TITLE = '尾声礼记'
 

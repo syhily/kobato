@@ -1,10 +1,9 @@
 import type { MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
 
 import { formatNumber } from '@kobato/shared/i18n/format.ts'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { MetricName } from './MetricName'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { MetricName } from '@kobato/web/ui/admin/analytics/MetricName.tsx'
 
 // `total` is the caller-computed FULL-set visit sum, so the card's sliced
 // top-10 rows still show shares of the whole result.

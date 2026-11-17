@@ -1,6 +1,6 @@
-import type { LexicalEditorState } from './schema'
+import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // Two wire dialects of the same editor state:
 //

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 // Query-state chrome for the self-fetching analytics panels; fixed precedence:
 // error → loading → empty → content. `skeleton` stays panel-owned to match its geometry.

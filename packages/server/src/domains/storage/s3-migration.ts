@@ -1,5 +1,24 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
 import type { AssetsSettings, StorageDriver } from '@kobato/shared/config/types.ts'
 
+import { backup as backupTable } from '@kobato/db/schema/backup.ts'
+import { font as fontTable } from '@kobato/db/schema/font.ts'
+import { image, music } from '@kobato/db/schema/media.ts'
+import { storageMigration } from '@kobato/db/schema/storage-migration.ts'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
+import { decryptIfNeeded, encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import {
+  createS3BackendFromConfig,
+  validateS3Config,
+  type S3ValidationResult,
+} from '@kobato/server/infra/storage/backends/s3.ts'
+import { contentTypeForKey, visibilityForKey } from '@kobato/server/infra/storage/key-policy.ts'
+import { backendFor } from '@kobato/server/infra/storage/registry.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import {
   isStorageMigrationInFlightPhase,
@@ -13,23 +32,6 @@ import {
 } from '@kobato/shared/contracts/storage.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { eq } from 'drizzle-orm'
-
-import type { Database } from '../../infra/db/database'
-import type { StorageBackend } from '../../infra/storage/backend'
-
-import { decryptIfNeeded, encryptIfNeeded } from '../../infra/crypto/secret-encryption'
-import { finishJobRun, startJobRun } from '../../infra/db/job-run-recorder'
-import { backup as backupTable } from '../../infra/db/schema/backup'
-import { font as fontTable } from '../../infra/db/schema/font'
-import { image, music } from '../../infra/db/schema/media'
-import { storageMigration } from '../../infra/db/schema/storage-migration'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { createS3BackendFromConfig, validateS3Config, type S3ValidationResult } from '../../infra/storage/backends/s3'
-import { contentTypeForKey, visibilityForKey } from '../../infra/storage/key-policy'
-import { backendFor } from '../../infra/storage/registry'
-import { recordAuditEvent } from '../audit/services/record'
 
 /**
  * Storage migration task: copies every object from the current primary backend

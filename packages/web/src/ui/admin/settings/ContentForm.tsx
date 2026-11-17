@@ -2,18 +2,17 @@ import type { ContentSettings } from '@kobato/shared/config/types.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/shared/utils/footnotes-section-title.ts'
+import { FieldLabel } from '@kobato/ui/components/field.tsx'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import { SettingsSelect } from '@kobato/web/ui/admin/settings/shell/SettingsSelect.tsx'
+import { SettingsSwitch } from '@kobato/web/ui/admin/settings/shell/SettingsSwitch.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { Controller } from 'react-hook-form'
-
-import { FieldLabel } from '../../components/field'
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsInput } from './shell/SettingsInput'
-import { SettingsSelect } from './shell/SettingsSelect'
-import { SettingsSwitch } from './shell/SettingsSwitch'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 interface ContentFormProps {
   content: ContentSettings

@@ -2,13 +2,12 @@ import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 import type { SettingsSectionPatch } from '@kobato/shared/config/types.ts'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { useI18n } from '../../lib/I18nProvider'
 
 export type SettingsCommitResult = { ok: true; section: unknown } | { ok: false }
 

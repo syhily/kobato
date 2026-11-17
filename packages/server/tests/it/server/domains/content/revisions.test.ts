@@ -1,4 +1,4 @@
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 

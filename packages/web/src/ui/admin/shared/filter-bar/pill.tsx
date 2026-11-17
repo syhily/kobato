@@ -1,21 +1,26 @@
-import { XIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import type { FilterFieldSpec, SearchFieldState } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
+import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
-import type { ActiveFilter } from '../filterPillsReducer'
-import type { FilterFieldSpec, SearchFieldState } from './types'
-
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   dateFilterLabel,
   parseDateFilter,
   parseSingleDateFilter,
   singleDateFilterLabel,
-} from '../date-filter'
-import { DateSingleFilterEditor } from './date-single-editor'
-import { DateRangeEditor, FreetextEditor, OptionsValueEditor, SearchComboboxEditor, TextFilterEditor } from './editors'
-import { parseTextFilterValue, textFilterValueLabel } from './text-filter'
+} from '@kobato/web/ui/admin/shared/date-filter.ts'
+import { DateSingleFilterEditor } from '@kobato/web/ui/admin/shared/filter-bar/date-single-editor.tsx'
+import {
+  DateRangeEditor,
+  FreetextEditor,
+  OptionsValueEditor,
+  SearchComboboxEditor,
+  TextFilterEditor,
+} from '@kobato/web/ui/admin/shared/filter-bar/editors.tsx'
+import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'
+import { XIcon } from 'lucide-react'
+import { useMemo } from 'react'
 
 // One pill: label + icon, kind-specific value editor, remove button. Values are
 // opaque strings — this component owns decoding (never throws) + re-serialization.

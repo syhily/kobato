@@ -1,6 +1,6 @@
-import { Hono } from 'hono'
+import type { Env } from '@kobato/server/http/context.ts'
 
-import type { Env } from '../context'
+import { Hono } from 'hono'
 
 // 301 collapses for legacy entry points (`/tags` → `/`, `/search` → the
 // path-style search endpoint) so inbound links and bookmarks keep resolving.

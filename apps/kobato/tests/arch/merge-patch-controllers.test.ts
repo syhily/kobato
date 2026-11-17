@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 // Multi-column field-update procedures must use the shared merge-patch
 // contract (`mergePatchInput` / `splitMergePatch` from
-// `@kobato/shared/contracts/merge-patch`) — see `packages/server/src/AGENTS.md`
+// `@kobato/shared/contracts/merge-patch`) — see `packages/server/AGENTS.md`
 // → Adding an endpoint. The hand-rolled conditional spread `...(x !== undefined && { x })`
 // is the pre-contract signature: it re-implements the "absent = untouched"
 // projection by hand, cannot express "null = clear" consistently, and is what

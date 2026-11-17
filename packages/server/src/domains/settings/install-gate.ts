@@ -1,8 +1,7 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { hasAdmin } from '@kobato/db/operations/user.ts'
 import { redirect } from 'react-router'
-
-import type { Database } from '../../infra/db/database'
-
-import { hasAdmin } from '../../infra/db/operations/user'
 
 // "Has admin" is equivalent to "installed" (user creation and settings seeding are
 // atomic).

@@ -5,13 +5,12 @@ import type { ReactNode } from 'react'
 import { useSidebarSettings, useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { safeHref } from '@kobato/shared/utils/safe-url.ts'
+import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useChromeClock } from '@kobato/web/ui/public/chrome/use-chrome-clock.ts'
+import { SearchBar } from '@kobato/web/ui/public/Search.tsx'
 import { Link } from 'react-router'
-
-import { Tooltip } from '../components/tooltip'
-import { cn } from '../lib/cn'
-import { useI18n } from '../lib/I18nProvider'
-import { useChromeClock } from './chrome/use-chrome-clock'
-import { SearchBar } from './Search'
 
 const sidebarInnerClass = cn('mb-7 px-7 py-8', 'bg-canvas shadow-card', 'xl:sticky xl:top-[30px]')
 

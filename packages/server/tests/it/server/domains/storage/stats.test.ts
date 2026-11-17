@@ -1,8 +1,8 @@
 import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/shared/config/types.ts'
 
+import { backup as backupTable } from '@kobato/db/schema/backup.ts'
+import { image, music } from '@kobato/db/schema/media.ts'
 import { getLocalStorageMigrationStats } from '@kobato/server/domains/storage/stats.ts'
-import { backup as backupTable } from '@kobato/server/infra/db/schema/backup.ts'
-import { image, music } from '@kobato/server/infra/db/schema/media.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

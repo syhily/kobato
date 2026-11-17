@@ -2,10 +2,10 @@
 // the reserved (read-only) bucket metadata all derive from
 // `@/shared/cache/registry` — no second hand-synced enumeration exists.
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import { CACHE_DECLARATIONS } from '../cache/registry'
-import { unsafeCast } from '../utils/unsafe-cast'
+import { CACHE_DECLARATIONS } from '@kobato/shared/cache/registry.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 export type CacheBucketId = (typeof CACHE_DECLARATIONS)[number]['id']
 

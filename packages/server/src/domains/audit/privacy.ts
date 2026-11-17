@@ -1,9 +1,8 @@
 // L3 (direct identifier) tagging for audit-log `details`; key set shared
 // with `@/server/infra/logger.ts` (`{E}…{/E}` markers).
 
+import { L3_KEYS } from '@kobato/server/infra/logger.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import { L3_KEYS } from '../../infra/logger'
 
 const L3_OPEN = '{E}'
 const L3_CLOSE = '{/E}'

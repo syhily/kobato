@@ -2,18 +2,17 @@ import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } 
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { joinUrl } from '@kobato/shared/utils/urls.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
+import { QQIcon, WechatIcon, WeiboIcon } from '@kobato/ui/icons/brand.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useHydrated } from '@kobato/ui/lib/use-hydrated.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { QRDialog } from '@kobato/web/ui/public/widgets/QRDialog.tsx'
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
 import { startTransition, Suspense, lazy, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
-
-import { orpcQuery } from '../../client/api/orpc-query'
-import { Button } from '../components/button'
-import { IconButtonContent } from '../components/icon-button-content'
-import { QQIcon, WechatIcon, WeiboIcon } from '../icons/brand'
-import { cn } from '../lib/cn'
-import { useI18n } from '../lib/I18nProvider'
-import { useHydrated } from '../lib/use-hydrated'
-import { QRDialog } from './widgets/QRDialog'
 
 export interface LikeButtonProps {
   /** Stable URL — used as the `localStorage` namespace for the like token. */

@@ -1,10 +1,8 @@
+import type { Env } from '@kobato/server/http/context.ts'
 import type { MiddlewareHandler } from 'hono'
 
+import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { Env } from '../context'
-
-import { localizedHttpException } from '../localized-http-exception'
 
 // Per-request deadline: an `AbortController` merged with the client
 // disconnect signal; a firing timeout surfaces as a clean 503.

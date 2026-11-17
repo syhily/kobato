@@ -1,5 +1,5 @@
-import { LazyMotionDiv } from '../../components/lazy-motion'
-import { useMediaQuery } from '../../lib/use-media-query'
+import { LazyMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
 
 const BAR_HEIGHTS = [3, 14, 3] as const
 const BAR_BASES = [3, 2, 4] as const

@@ -1,8 +1,8 @@
-import type { LexicalEditorState, LexicalNodeJson } from './schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
 
-import { isRecord } from '../utils/type-guards'
-import { unsafeCast } from '../utils/unsafe-cast'
-import { SERVER_FILLED_NODE_FIELDS } from './artifacts'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/shared/lexical/artifacts.ts'
+import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // Semantic equality for Lexical editor states — the save pipeline's no-op
 // short-circuit (`content/repos/mutate`) and the editor shell's dirty check.

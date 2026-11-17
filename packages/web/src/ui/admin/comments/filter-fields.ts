@@ -1,14 +1,12 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { FilterFieldSpec } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { resolveSingleDateFilterBounds } from '@kobato/web/ui/admin/shared/date-filter.ts'
+import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'
 import { CalendarIcon, FileTextIcon, ListChecksIcon, SearchIcon, UserIcon } from 'lucide-react'
-
-import type { I18nValue } from '../../lib/I18nProvider'
-import type { FilterFieldSpec } from '../shared/filter-bar/types'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { resolveSingleDateFilterBounds } from '../shared/date-filter'
-import { parseTextFilterValue, textFilterValueLabel } from '../shared/filter-bar/text-filter'
 
 // Filter-pill specs for the comments list plus the contains/not-contains text codec over the shared one.
 export type CommentFilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'

@@ -1,28 +1,27 @@
-import { useQuery } from '@tanstack/react-query'
-import { PlusIcon, SearchIcon } from 'lucide-react'
-import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button, buttonVariants } from '../../components/button'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../components/empty'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { AdminInfiniteListFooter } from '../shared/AdminInfiniteListFooter'
-import { AdminListPage } from '../shared/AdminListPage'
-import { FilterPillBar } from '../shared/filter-bar/FilterPillBar'
-import { useFilterPills } from '../shared/filter-bar/useFilterPills'
-import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
+import { Button, buttonVariants } from '@kobato/ui/components/button.tsx'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import {
   buildPostFilterFields,
   postFiltersFromSearch,
   postFiltersToSearch,
   type PostsFilterQuery,
   syncPostFiltersFromUrl,
-} from './filter-fields'
-import { PostRow } from './PostRow'
-import { PostsSkeleton } from './PostsSkeleton'
+} from '@kobato/web/ui/admin/posts/filter-fields.ts'
+import { PostRow } from '@kobato/web/ui/admin/posts/PostRow.tsx'
+import { PostsSkeleton } from '@kobato/web/ui/admin/posts/PostsSkeleton.tsx'
+import { AdminInfiniteListFooter } from '@kobato/web/ui/admin/shared/AdminInfiniteListFooter.tsx'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
+import { FilterPillBar } from '@kobato/web/ui/admin/shared/filter-bar/FilterPillBar.tsx'
+import { useFilterPills } from '@kobato/web/ui/admin/shared/filter-bar/useFilterPills.ts'
+import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
+import { useQuery } from '@tanstack/react-query'
+import { PlusIcon, SearchIcon } from 'lucide-react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router'
 
 const SORT_OPTIONS = [
   { value: 'publishedAt-desc', labelId: 'admin.posts.sort.latestPublished' },

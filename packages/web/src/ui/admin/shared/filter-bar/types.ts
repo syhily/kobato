@@ -1,9 +1,8 @@
+import type { DateFilterValue, SingleDateFilterValue } from '@kobato/web/ui/admin/shared/date-filter.ts'
+import type { TextFilterOperatorOption, TextFilterValue } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'
+import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 import type { UseQueryOptions } from '@tanstack/react-query'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
-
-import type { DateFilterValue, SingleDateFilterValue } from '../date-filter'
-import type { ActiveFilter } from '../filterPillsReducer'
-import type { TextFilterOperatorOption, TextFilterValue } from './text-filter'
 
 // Shared filter-pill contracts: views declare fields as a `FilterFieldSpec` array; pill values stay opaque strings.
 

@@ -38,7 +38,7 @@ import {
   tier2BucketForRouteId,
 } from '@kobato/server/infra/route-warmup.ts'
 
-import routes from '@/routes'
+import routes from '@/routes.ts'
 
 function buildManifest(prefix: string): string {
   return `${prefix}${JSON.stringify(

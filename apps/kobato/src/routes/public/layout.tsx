@@ -6,7 +6,7 @@ import { BaseLayout } from '@kobato/web/ui/public/chrome/BaseLayout.tsx'
 import { ErrorView } from '@kobato/web/ui/public/chrome/ErrorView.tsx'
 import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-router'
 
-import type { RouteHandle } from '@/root'
+import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/layout'
 

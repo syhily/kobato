@@ -2,6 +2,20 @@ import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@kobato/ui/components/dropdown-menu.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useInfiniteScrollSentinel } from '@kobato/web/client/hooks/use-infinite-scroll-sentinel.ts'
+import { AlbumCard } from '@kobato/web/ui/admin/musics/AlbumCard.tsx'
+import { MusicLibraryHero } from '@kobato/web/ui/admin/musics/MusicLibraryHero.tsx'
+import { useMusicPlayerActions } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
+import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
+import {
   ArrowDownAZ,
   ArrowUpAZ,
   CalendarArrowDown,
@@ -14,21 +28,6 @@ import {
 } from 'lucide-react'
 import { Fragment, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '../../../client/hooks/use-infinite-scroll-sentinel'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../../components/dropdown-menu'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
-import { AlbumCard } from './AlbumCard'
-import { MusicLibraryHero } from './MusicLibraryHero'
-import { useMusicPlayerActions } from './MusicPlayerContext'
 
 export type MusicSortBy = 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
 export type MusicSortOrder = 'asc' | 'desc'

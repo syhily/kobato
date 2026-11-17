@@ -1,6 +1,5 @@
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { Fragment } from 'react'
-
-import { Skeleton } from '../../components/skeleton'
 
 export function PagesSkeleton() {
   return (

@@ -1,6 +1,6 @@
+import { setting } from '@kobato/db/schema/config.ts'
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

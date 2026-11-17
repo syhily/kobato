@@ -1,15 +1,14 @@
+import type { FilterFieldSpec, SearchFieldState } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
+import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
+
+import { buttonVariants } from '@kobato/ui/components/button.tsx'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { DEFAULT_SINGLE_DATE_OPERATOR } from '@kobato/web/ui/admin/shared/date-filter.ts'
+import { InlineSearchList, SearchableOptionList } from '@kobato/web/ui/admin/shared/filter-bar/option-list.tsx'
 import { ArrowLeftIcon, FunnelIcon, FunnelPlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-
-import type { ActiveFilter } from '../filterPillsReducer'
-import type { FilterFieldSpec, SearchFieldState } from './types'
-
-import { buttonVariants } from '../../../components/button'
-import { Popover, PopoverContent, PopoverTrigger } from '../../../components/popover'
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
-import { DEFAULT_SINGLE_DATE_OPERATOR } from '../date-filter'
-import { InlineSearchList, SearchableOptionList } from './option-list'
 
 // The filter / add-filter trigger — text/freetext/date kinds instant-add a default pill,
 // option/search open a picker step; global `f` opens it except on text-entry surfaces.

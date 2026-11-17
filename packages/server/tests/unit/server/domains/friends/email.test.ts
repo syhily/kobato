@@ -1,4 +1,4 @@
-import type { FriendRow } from '@kobato/server/infra/db/types.ts'
+import type { FriendRow } from '@kobato/db/types.ts'
 
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'

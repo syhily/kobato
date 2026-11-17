@@ -1,28 +1,33 @@
-import { CheckIcon, ChevronDownIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-
-import type { DateFilterValue } from '../date-filter'
-import type { TextFilterValue } from './text-filter'
+import type { DateFilterValue } from '@kobato/web/ui/admin/shared/date-filter.ts'
+import type { TextFilterValue } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'
 import type {
   FilterOptionItem,
   OptionsFilterField,
   SearchFieldState,
   SearchFilterField,
   TextFilterField,
-} from './types'
+} from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '../../../components/combobox'
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxItem,
+  ComboboxTrigger,
+  ComboboxValue,
+} from '@kobato/ui/components/combobox.tsx'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../../../components/dropdown-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '../../../components/popover'
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
-import { DateRangeCalendarPicker } from '../DateRangePicker'
-import { SearchableOptionList } from './option-list'
+} from '@kobato/ui/components/dropdown-menu.tsx'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { DateRangeCalendarPicker } from '@kobato/web/ui/admin/shared/DateRangePicker.tsx'
+import { SearchableOptionList } from '@kobato/web/ui/admin/shared/filter-bar/option-list.tsx'
+import { CheckIcon, ChevronDownIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 // Pill value editors — one per field `kind`; the pill owns serialization.
 

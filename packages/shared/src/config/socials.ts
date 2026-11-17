@@ -2,7 +2,7 @@
 // settings array (fixed header icons + admin editor menu). Shared: the server Zod
 // schema and the admin editor need the same list.
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 export const SOCIAL_NETWORKS = ['github', 'x', 'wechat', 'weibo', 'qq'] as const
 export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number]

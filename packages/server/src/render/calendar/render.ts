@@ -2,15 +2,14 @@ import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { Buffer } from 'node:buffer'
 
+import { compressImage } from '@kobato/server/infra/image/compress.ts'
+import { getDailyQuote } from '@kobato/server/render/calendar/daily-quote.ts'
+import { auspiciousLabel, calendarCopyFor, lunarLabel } from '@kobato/server/render/calendar/locale.ts'
+import { ensureCanvasFont, type FontSlot } from '@kobato/server/render/canvas-fonts.ts'
+import { layoutCanvasLines } from '@kobato/server/render/pretext-layout.ts'
 import { createCanvas } from '@napi-rs/canvas'
 import { getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
-
-import { compressImage } from '../../infra/image/compress'
-import { ensureCanvasFont, type FontSlot } from '../canvas-fonts'
-import { layoutCanvasLines } from '../pretext-layout'
-import { getDailyQuote } from './daily-quote'
-import { auspiciousLabel, calendarCopyFor, lunarLabel } from './locale'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 

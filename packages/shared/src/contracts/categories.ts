@@ -1,6 +1,5 @@
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
 import { z } from 'zod'
-
-import { idString, isoDateTime } from './primitives'
 
 export const adminCategoryDto = z.object({
   id: idString,

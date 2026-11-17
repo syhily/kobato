@@ -1,3 +1,6 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
 import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
@@ -5,20 +8,24 @@ import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { CommentTokenCookie } from '@kobato/shared/utils/comment-token.ts'
 import type { z } from 'zod'
 
+import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
+import {
+  apiErrorData,
+  summarizeApiError,
+  translateApiError,
+  translateDomainError,
+} from '@kobato/server/http/translate-domain-error.ts'
+import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import {
+  tryCommentPostRateLimit,
+  tryNotificationReplyRateLimit,
+  tryResourceRateLimit,
+} from '@kobato/server/infra/rate-limit.ts'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@kobato/shared/utils/comment-token.ts'
 import { hasAtLeast, type Role } from '@kobato/shared/utils/roles.ts'
 import { ORPCError, os } from '@orpc/server'
-
-import type { BlogSession, SessionUser } from '../domains/auth/session-storage'
-import type { Database } from '../infra/db/database'
-import type { RequestFacts } from '../infra/http/request-facts'
-
-import { isPasskeyEnabled } from '../domains/auth/passkey/gate'
-import { descriptorFor, zodIssuesToWire } from '../infra/http/error-descriptor'
-import { ActionFailure, DomainError, ErrorMessages } from '../infra/http/errors'
-import { createServerTranslator } from '../infra/i18n'
-import { tryCommentPostRateLimit, tryNotificationReplyRateLimit, tryResourceRateLimit } from '../infra/rate-limit'
-import { apiErrorData, summarizeApiError, translateApiError, translateDomainError } from './translate-domain-error'
 
 // Context every oRPC procedure sees — `responseHeaders` merges onto the final `Response`.
 export interface HandlerContext {

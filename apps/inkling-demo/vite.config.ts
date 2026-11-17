@@ -16,10 +16,11 @@ export default defineConfig({
   plugins: [react({ compiler: true }), tailwindcss(), svgr()],
   resolve: {
     alias: {
-      '@kobato/inkling/headless': resolve(import.meta.dirname, '../packages/inkling/src/headless.ts'),
-      '@kobato/inkling': resolve(import.meta.dirname, '../packages/inkling/src'),
-      '@kobato/web': resolve(import.meta.dirname, '../packages/web/src'),
-      '@kobato/shared': resolve(import.meta.dirname, '../packages/shared/src'),
+      '@kobato/inkling/headless': resolve(import.meta.dirname, '../../packages/inkling/src/headless.ts'),
+      '@kobato/inkling': resolve(import.meta.dirname, '../../packages/inkling/src'),
+      '@kobato/web': resolve(import.meta.dirname, '../../packages/web/src'),
+      '@kobato/ui': resolve(import.meta.dirname, '../../packages/ui/src'),
+      '@kobato/shared': resolve(import.meta.dirname, '../../packages/shared/src'),
       // Prevents double-bundling of yjs due to cjs/esm mismatch
       // (see https://github.com/facebook/lexical/issues/2153).
       yjs: require.resolve('yjs/src/index.js'),

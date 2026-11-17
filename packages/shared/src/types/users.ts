@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '../contracts/users'
+import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
 
 export const userSortOrders = ['recent', 'commentCount'] as const
 export type UserSortOrder = (typeof userSortOrders)[number]

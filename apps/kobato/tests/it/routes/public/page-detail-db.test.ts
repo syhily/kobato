@@ -1,5 +1,5 @@
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalHeading, lexicalParagraph } from '@kobato/test/lexical.ts'
@@ -53,7 +53,7 @@ async function seedAboutPage(): Promise<number> {
   return pageId
 }
 
-const pageRoute = await import('@/routes/public/page/detail')
+const pageRoute = await import('@/routes/public/page/detail.tsx')
 
 describe('routes/page.detail loader (DB-backed page)', () => {
   it('returns the saved body_html projection', async () => {

@@ -4,13 +4,12 @@ import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { sanitizeHtml } from '@kobato/shared/sanitize/sanitize-html.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@kobato/shared/utils/roles.ts'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@kobato/web/ui/admin/audit/filter-fields.tsx'
 import { ChevronRightIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-
-import { Badge } from '../../components/badge'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from './filter-fields'
 
 interface AuditLogRowProps {
   row: AuditLogItemDto

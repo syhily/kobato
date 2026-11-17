@@ -2,6 +2,10 @@ import type { SigninFlowContext } from '@kobato/server/domains/auth/services/sha
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { user as userTable, verification } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { requestPasswordReset, resetPasswordWithToken } from '@kobato/server/domains/auth/services/password-reset.ts'
@@ -13,10 +17,6 @@ import {
   peekToken,
 } from '@kobato/server/domains/auth/verification-tokens.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { passkeyCredential } from '@kobato/server/infra/db/schema/passkey.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { user as userTable, verification } from '@kobato/server/infra/db/schema/user.ts'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

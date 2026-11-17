@@ -1,13 +1,12 @@
 import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
 
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { TableCell, TableRow } from '@kobato/ui/components/table.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
 import { SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 import { Link } from 'react-router'
-
-import { Skeleton } from '../../components/skeleton'
-import { TableCell, TableRow } from '../../components/table'
-import { useI18n } from '../../lib/I18nProvider'
-import { skeletonKeys } from '../../lib/skeleton-keys'
 
 interface TagRowProps {
   tag: AdminTagDto

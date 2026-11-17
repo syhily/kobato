@@ -1,6 +1,5 @@
+import { coerceBoolean } from '@kobato/server/domains/settings/sections/shared.ts'
 import { z } from 'zod'
-
-import { coerceBoolean } from './shared'
 
 export const newsletterSchema = z.object({
   newsletter: z.object({

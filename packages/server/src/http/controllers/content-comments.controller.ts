@@ -1,8 +1,7 @@
+import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { loadCommentsAndItems } from '@kobato/server/http/loaders/comments.ts'
+import { publicProc } from '@kobato/server/http/orpc-base.ts'
 import { contentCommentsByKeyInputSchema, contentCommentsByKeyOutputSchema } from '@kobato/shared/contracts/content.ts'
-
-import { resolveMetricTarget } from '../../domains/comments/services/shared'
-import { loadCommentsAndItems } from '../loaders/comments'
-import { publicProc } from '../orpc-base'
 
 // The streamed comments payload: `pageKey` resolves through
 // `resolveMetricTarget` (NOT_FOUND semantics like `webmention.list`).

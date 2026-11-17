@@ -8,10 +8,12 @@
   },
   "devDependencies": {
     "@date-fns/tz": "catalog:",
+    "@kobato/db": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/shared": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/ui": "workspace:*",
     "@kobato/web": "workspace:*",
     "@opentelemetry/sdk-metrics": "catalog:",
     "@orpc/server": "catalog:",

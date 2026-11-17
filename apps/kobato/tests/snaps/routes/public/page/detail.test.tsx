@@ -4,7 +4,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import PageDetailRoute from '@/routes/public/page/detail'
+import PageDetailRoute from '@/routes/public/page/detail.tsx'
 
 describe('snapshot: routes/public/page/detail', () => {
   it('renders the page detail route', () => {

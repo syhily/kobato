@@ -1,14 +1,13 @@
-import { desc } from 'drizzle-orm'
+import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
 
-import type { NewPageMeta, PageMetaRow } from '../../infra/db/types'
-
-import { page as pageMetaTable } from '../../infra/db/schema/page'
+import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
 import {
   buildMetaListWhere,
   makeMetaCrud,
   makeMetaListQueries,
   type MetaListFiltersBase,
-} from '../content/entities/meta-repo'
+} from '@kobato/server/domains/content/entities/meta-repo.ts'
+import { desc } from 'drizzle-orm'
 
 export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
 

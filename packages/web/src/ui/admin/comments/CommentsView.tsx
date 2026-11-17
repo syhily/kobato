@@ -1,26 +1,28 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
 import { idStr } from '@kobato/shared/utils/tools.ts'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { AdminCommentRow } from '@kobato/web/ui/admin/comments/AdminCommentRow.tsx'
+import { EditCommentDialog } from '@kobato/web/ui/admin/comments/EditCommentDialog.tsx'
+import { EditUserDialog } from '@kobato/web/ui/admin/comments/EditUserDialog.tsx'
+import {
+  buildCommentFilterFields,
+  type CommentFilterFieldKey,
+  type CommentsFilterQuery,
+} from '@kobato/web/ui/admin/comments/filter-fields.ts'
+import { ReplyCommentDialog } from '@kobato/web/ui/admin/comments/ReplyCommentDialog.tsx'
+import { useCommentsController } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
+import { AdminInfiniteListFooter } from '@kobato/web/ui/admin/shared/AdminInfiniteListFooter.tsx'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
+import { ConfirmDialog } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import { FilterPillBar } from '@kobato/web/ui/admin/shared/filter-bar/FilterPillBar.tsx'
+import { useFilterPills } from '@kobato/web/ui/admin/shared/filter-bar/useFilterPills.ts'
 import { SearchIcon } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
-
-import type { ActiveFilter } from '../shared/filterPillsReducer'
-
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../components/empty'
-import { Skeleton } from '../../components/skeleton'
-import { useI18n } from '../../lib/I18nProvider'
-import { skeletonKeys } from '../../lib/skeleton-keys'
-import { AdminInfiniteListFooter } from '../shared/AdminInfiniteListFooter'
-import { AdminListPage } from '../shared/AdminListPage'
-import { ConfirmDialog } from '../shared/ConfirmDialog'
-import { FilterPillBar } from '../shared/filter-bar/FilterPillBar'
-import { useFilterPills } from '../shared/filter-bar/useFilterPills'
-import { AdminCommentRow } from './AdminCommentRow'
-import { EditCommentDialog } from './EditCommentDialog'
-import { EditUserDialog } from './EditUserDialog'
-import { buildCommentFilterFields, type CommentFilterFieldKey, type CommentsFilterQuery } from './filter-fields'
-import { ReplyCommentDialog } from './ReplyCommentDialog'
-import { useCommentsController } from './useCommentsController'
 
 export interface CommentsViewProps {
   currentUserName: string

@@ -1,15 +1,13 @@
 // Session meta data access; orchestration lives in `services/sessions.ts`.
 
+import type { Database } from '@kobato/db/database.ts'
+import type { SessionRow } from '@kobato/db/types.ts'
 import type { Role } from '@kobato/shared/utils/roles.ts'
 
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { resolveSessionMaxAge } from '@kobato/server/domains/auth/session-storage.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { and, eq, gt, isNotNull, ne } from 'drizzle-orm'
-
-import type { Database } from '../../infra/db/database'
-import type { SessionRow } from '../../infra/db/types'
-
-import { session as sessionTable } from '../../infra/db/schema/session'
-import { getLogger } from '../../infra/logger'
-import { resolveSessionMaxAge } from './session-storage'
 
 const log = getLogger('auth.sessions')
 

@@ -1,11 +1,11 @@
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
+import { comment as commentTable } from '@kobato/db/schema/comment.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { comment as commentTable } from '@kobato/server/infra/db/schema/comment.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
 import { EMPTY_STATE_LINE_IDS } from '@kobato/shared/contracts/dashboard.ts'
 import {
   clearAccessEvents,
@@ -27,7 +27,7 @@ const db = getTestDb()
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { loader } = await import('@/routes/admin/dashboard')
+const { loader } = await import('@/routes/admin/dashboard.tsx')
 
 beforeEach(async () => {
   await clearAllTables(db)

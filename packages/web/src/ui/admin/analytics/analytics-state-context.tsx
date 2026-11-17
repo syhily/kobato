@@ -1,6 +1,6 @@
-import { createContext, type ReactNode, use } from 'react'
+import type { AnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 
-import type { AnalyticsState } from './use-analytics-state'
+import { createContext, type ReactNode, use } from 'react'
 
 // The ROUTE module owns the `useSearchParams` read (`useAnalyticsState`) and
 // passes the state down; deep panels subscribe here instead of re-reading the

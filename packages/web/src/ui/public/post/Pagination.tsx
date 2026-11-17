@@ -1,10 +1,9 @@
 import { computePageWindow } from '@kobato/shared/utils/pagination.ts'
+import { chipActive, chipBase, chipResting } from '@kobato/ui/components/pagination.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { MoreHorizontalIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import { chipActive, chipBase, chipResting } from '../../components/pagination'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 export interface PaginationProps {
   current: number

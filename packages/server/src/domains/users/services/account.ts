@@ -1,15 +1,13 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 
+import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user.ts'
+import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
+import { revokeTokensFor } from '@kobato/server/domains/auth/verification-tokens.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import bcrypt from 'bcryptjs'
-
-import type { Database } from '../../../infra/db/database'
-
-import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '../../../infra/db/operations/user'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { deleteAllCredentials } from '../../auth/passkey/service'
-import { revokeAllSessionsOfUser } from '../../auth/services/sessions'
-import { revokeTokensFor } from '../../auth/verification-tokens'
 
 export interface AccountProfileInput {
   name?: string

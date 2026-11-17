@@ -2,17 +2,23 @@ import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/shared/c
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { formatDuration } from '@kobato/shared/i18n/format.ts'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@kobato/ui/components/sheet.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { AdminInfiniteListFooter } from '@kobato/web/ui/admin/shared/AdminInfiniteListFooter.tsx'
+import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
+import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web/ui/admin/tasks/meta.ts'
 import { Fragment, useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Badge } from '../../components/badge'
-import { Button } from '../../components/button'
-import { Empty, EmptyHeader, EmptyTitle } from '../../components/empty'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../../components/sheet'
-import { useI18n } from '../../lib/I18nProvider'
-import { AdminInfiniteListFooter } from '../shared/AdminInfiniteListFooter'
-import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
-import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from './meta'
 
 const PAGE_SIZE = 20
 

@@ -1,4 +1,4 @@
-import { font } from '@kobato/server/infra/db/schema/font.ts'
+import { font } from '@kobato/db/schema/font.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,8 +1,7 @@
+import type { MusicRow } from '@kobato/db/types.ts'
 import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
-import type { MusicRow } from '../../infra/db/types'
-
-import { resolveAssetUrl } from '../../infra/storage/public-url'
+import { resolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 
 export function toAdminMusicDto(
   row: MusicRow & { uploaderName?: string | null },

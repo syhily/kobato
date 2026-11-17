@@ -3,12 +3,11 @@ import type { MetricRow } from '@kobato/shared/contracts/analytics.ts'
 import { formatNumber } from '@kobato/shared/i18n/format.ts'
 import { escapeHtml } from '@kobato/shared/utils/security.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { regionDisplayName } from '@kobato/web/ui/admin/analytics/MetricName.tsx'
 import { VisSingleContainer, VisTooltip, VisTopoJSONMap, VisTopoJSONMapSelectors } from '@unovis/react'
 import { WorldMapTopoJSON } from '@unovis/ts/maps.js'
 import { useId, useMemo } from 'react'
-
-import { useI18n } from '../../lib/I18nProvider'
-import { regionDisplayName } from './MetricName'
 
 // CLIENT ONLY: lazy-mounted behind the hydration gate in LocationsMap.tsx; WorldMapTopoJSON rides this chunk.
 

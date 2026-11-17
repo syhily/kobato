@@ -6,8 +6,7 @@
 import type { Transformer } from '@kobato/inkling'
 
 import { DEFAULT_TRANSFORMERS } from '@kobato/inkling'
-
-import { COMMENT_EDITOR_NODES } from './comment-editor-nodes'
+import { COMMENT_EDITOR_NODES } from '@kobato/web/client/editor/comment-editor-nodes.ts'
 
 const REGISTERED_NODE_CLASSES = new Set<unknown>(COMMENT_EDITOR_NODES.filter((entry) => typeof entry === 'function'))
 

@@ -1,6 +1,9 @@
+import {
+  acquireViewportZoomLock,
+  isIosWebKit,
+  releaseViewportZoomLock,
+} from '@kobato/web/client/lib/viewport-zoom-lock.ts'
 import { useEffect, useLayoutEffect, useRef } from 'react'
-
-import { acquireViewportZoomLock, isIosWebKit, releaseViewportZoomLock } from '../lib/viewport-zoom-lock'
 
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 

@@ -3,7 +3,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import TagListRoute from '@/routes/public/tag/list'
+import TagListRoute from '@/routes/public/tag/list.tsx'
 
 describe('snapshot: routes/public/tag/list', () => {
   it('renders the tag listing route', () => {

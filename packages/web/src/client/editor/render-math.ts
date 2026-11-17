@@ -8,7 +8,7 @@
 import type { CardConfig } from '@kobato/inkling'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
-import { orpc } from '../api/client'
+import { orpc } from '@kobato/web/client/api/client.ts'
 
 const MATH_RENDER_DEBOUNCE_MS = 200
 

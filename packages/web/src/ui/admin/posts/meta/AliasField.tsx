@@ -1,13 +1,12 @@
 import { DERIVED_SLUG_PATTERN } from '@kobato/shared/slug.ts'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { XIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-
-import { Badge } from '../../../components/badge'
-import { Button } from '../../../components/button'
-import { Input } from '../../../components/input'
-import { Label } from '../../../components/label'
-import { useI18n } from '../../../lib/I18nProvider'
 
 export interface AliasFieldProps {
   values: string[]

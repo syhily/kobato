@@ -1,20 +1,19 @@
-import { resolveSiteOrigin } from '@kobato/shared/config/site-origin.ts'
-import { adminUserDto } from '@kobato/shared/contracts/users.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { deleteAllCredentials } from '../../../domains/auth/passkey/service'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
   muteUser,
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
-} from '../../../domains/users/services/admin'
-import { createServerTranslator } from '../../../infra/i18n'
-import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '../../../infra/rate-limit'
-import { adminProc, localizedOrpcError, passkeyGuard } from '../../orpc-base'
+} from '@kobato/server/domains/users/services/admin.ts'
+import { adminProc, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { resolveSiteOrigin } from '@kobato/shared/config/site-origin.ts'
+import { adminUserDto } from '@kobato/shared/contracts/users.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { z } from 'zod'
 
 const successOutput = z.object({ success: z.boolean() })
 

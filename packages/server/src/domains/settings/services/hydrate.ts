@@ -1,23 +1,21 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { BundleKey, SettingsSection } from '@kobato/shared/config/sections.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
-import { BUNDLE_KEYS, SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { Database } from '../../../infra/db/database'
-
-import { decryptIfNeeded } from '../../../infra/crypto/secret-encryption'
-import { findSettingsByScopePrefix, upsertSetting } from '../../../infra/db/operations/setting'
-import { getLogger } from '../../../infra/logger'
-import { SECRET_FIELDS } from '../secrets'
+import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
 import {
   buildDefaultSectionPayloads,
   SECTION_REGISTRY,
   sectionFromScope,
   SETTINGS_SCOPE_PREFIX,
-} from '../sections/registry'
-import { migrateLegacySiteIdentityLocale } from './locale-migration'
+} from '@kobato/server/domains/settings/sections/registry.ts'
+import { migrateLegacySiteIdentityLocale } from '@kobato/server/domains/settings/services/locale-migration.ts'
+import { decryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { BUNDLE_KEYS, SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 const log = getLogger('settings.snapshot')
 

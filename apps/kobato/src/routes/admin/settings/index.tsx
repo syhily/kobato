@@ -12,6 +12,8 @@ import {
 } from '@kobato/shared/config/projection.ts'
 import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
 import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
 import { AnalyticsForm } from '@kobato/web/ui/admin/settings/AnalyticsForm.tsx'
 import { AssetsForm } from '@kobato/web/ui/admin/settings/AssetsForm.tsx'
 import { BackupView } from '@kobato/web/ui/admin/settings/BackupView.tsx'
@@ -45,12 +47,10 @@ import { SidebarForm } from '@kobato/web/ui/admin/settings/SidebarForm.tsx'
 import { SocialsEditor } from '@kobato/web/ui/admin/settings/SocialsEditor.tsx'
 import { ThresholdForm } from '@kobato/web/ui/admin/settings/ThresholdForm.tsx'
 import { WebmentionsForm } from '@kobato/web/ui/admin/settings/WebmentionsForm.tsx'
-import { useI18n } from '@kobato/web/ui/lib/I18nProvider.tsx'
-import { useMediaQuery } from '@kobato/web/ui/lib/use-media-query.ts'
 import { Children, Fragment, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
-import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
+import type { SettingsOutletContext } from '@/routes/admin/settings/layout.tsx'
 
 export const meta = titleMeta('meta.title.admin.settings')
 

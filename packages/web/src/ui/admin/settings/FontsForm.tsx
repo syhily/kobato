@@ -1,17 +1,16 @@
 import type { FontsSettings } from '@kobato/shared/config/types.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useFileUpload } from '@kobato/web/client/hooks/use-file-upload.ts'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Link } from 'react-router'
-
-import { useFileUpload } from '../../../client/hooks/use-file-upload'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsInput } from './shell/SettingsInput'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 interface FontsFormProps {
   fonts: FontsSettings

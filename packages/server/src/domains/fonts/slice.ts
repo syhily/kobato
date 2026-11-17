@@ -1,5 +1,5 @@
-import { getLogger } from '../../infra/logger'
-import { fontSplit, type FontSplitOutputFile } from './vendor/wasm-split'
+import { fontSplit, type FontSplitOutputFile } from '@kobato/server/domains/fonts/vendor/wasm-split.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('fonts.slice')
 

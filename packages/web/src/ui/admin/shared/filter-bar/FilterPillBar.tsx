@@ -1,10 +1,9 @@
+import type { FilterPillBarProps } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
+
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { FilterAddButton } from '@kobato/web/ui/admin/shared/filter-bar/add-button.tsx'
+import { FilterPill } from '@kobato/web/ui/admin/shared/filter-bar/pill.tsx'
 import { XIcon } from 'lucide-react'
-
-import type { FilterPillBarProps } from './types'
-
-import { useI18n } from '../../../lib/I18nProvider'
-import { FilterAddButton } from './add-button'
-import { FilterPill } from './pill'
 
 // The filter chrome shared by every admin list surface: trigger-only with no
 // active filters, pill row + add/clear actions otherwise; state comes from `useFilterPills`.

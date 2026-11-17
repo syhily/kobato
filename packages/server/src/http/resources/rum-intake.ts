@@ -15,17 +15,16 @@
 // never re-mounts the router — and exempt from the install gate, HTTP traces, and
 // RUM activity by path.
 
+import type { Env } from '@kobato/server/http/context.ts'
+
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { tryRumIntakeRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
+import { activeFrontendRelay } from '@kobato/server/infra/trace/config.ts'
+import { recordRumRelayOutcome } from '@kobato/server/infra/trace/metrics.ts'
 import { OBSERVABILITY_ORGANIZATION_PATTERN } from '@kobato/shared/config/observability.ts'
 import { RUM_INTAKE_PATH } from '@kobato/shared/contracts/trace.ts'
 import { Hono } from 'hono'
-
-import type { Env } from '../context'
-
-import { getLogger } from '../../infra/logger'
-import { tryRumIntakeRateLimit } from '../../infra/rate-limit'
-import { safeFetch } from '../../infra/safe-fetch'
-import { activeFrontendRelay } from '../../infra/trace/config'
-import { recordRumRelayOutcome } from '../../infra/trace/metrics'
 
 const log = getLogger('rum.intake')
 

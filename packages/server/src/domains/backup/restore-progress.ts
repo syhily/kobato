@@ -1,6 +1,6 @@
 import type { RestoreProgressDto } from '@kobato/shared/types/backup.ts'
 
-import { peekRestoreJobPhase } from './restore-machine'
+import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
 
 /**
  * Pre-claim staging progress (decrypt / extract), merged with the restore

@@ -8,7 +8,7 @@
 // BOTH the resolved `message` and the descriptor so a consumer can map issues
 // back to fields or re-localize on its own.
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 /** ICU values a server-side error message may interpolate. */
 export type ErrorMessageParams = Record<string, string | number | boolean | null>

@@ -4,12 +4,12 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import MentionsRouteRaw from '@/routes/admin/analytics/mentions'
-import DashboardRouteRaw from '@/routes/admin/dashboard'
-import MyProfileRouteRaw from '@/routes/admin/me/profile'
-import MySessionsRouteRaw from '@/routes/admin/me/sessions'
-import AuditLogRouteRaw from '@/routes/admin/security/audit-log'
-import SessionsRouteRaw from '@/routes/admin/security/sessions'
+import MentionsRouteRaw from '@/routes/admin/analytics/mentions.tsx'
+import DashboardRouteRaw from '@/routes/admin/dashboard.tsx'
+import MyProfileRouteRaw from '@/routes/admin/me/profile.tsx'
+import MySessionsRouteRaw from '@/routes/admin/me/sessions.tsx'
+import AuditLogRouteRaw from '@/routes/admin/security/audit-log.tsx'
+import SessionsRouteRaw from '@/routes/admin/security/sessions.tsx'
 
 // `asRoute` widens the strict ComponentProps so tests supply only the fields each route reads.
 const MentionsRoute = asRoute(MentionsRouteRaw)

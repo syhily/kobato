@@ -3,10 +3,7 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { formatBytes, formatDateTime } from '@kobato/shared/i18n/format.ts'
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -14,11 +11,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 interface ImageDetailDialogProps {
   image: AdminImageDto | null

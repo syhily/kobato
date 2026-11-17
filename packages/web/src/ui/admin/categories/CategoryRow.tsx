@@ -1,15 +1,14 @@
 import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
 
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useSortableRow } from '@kobato/web/ui/admin/shared/sortable.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { ExternalLinkIcon, GripVerticalIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { Fragment, memo } from 'react'
 import { Link } from 'react-router'
-
-import { Skeleton } from '../../components/skeleton'
-import { Tooltip } from '../../components/tooltip'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
-import { useSortableRow } from '../shared/sortable'
 
 interface CategoryRowProps {
   category: AdminCategoryDto

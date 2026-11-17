@@ -1,6 +1,6 @@
 import type { ObservabilityProvisionSummary } from '@kobato/shared/contracts/observability.ts'
 
-import { useI18n } from '../../lib/I18nProvider'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 // Provision result lines shared by the connection test (its automatic asset
 // sync) and the assets card's manual resync — one rendering, no drifting copy.

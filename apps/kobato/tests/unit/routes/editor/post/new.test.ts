@@ -1,7 +1,7 @@
 import { rootMatchesWithI18n } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-import { meta } from '@/routes/editor/post/new'
+import { meta } from '@/routes/editor/post/new.tsx'
 
 describe('route: editor/post/new', () => {
   describe('meta', () => {

@@ -1,22 +1,20 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import type { ReactNode } from 'react'
-import type { NavigateFunction } from 'react-router'
-
-import { Trash2Icon, Undo2Icon } from 'lucide-react'
-
 import type {
   EditorSidebarState,
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from './editor-shell-types'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
+import type { ReactNode } from 'react'
+import type { NavigateFunction } from 'react-router'
 
-import { Button } from '../../components/button'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../../components/sheet'
-import { useI18n } from '../../lib/I18nProvider'
-import { ConfirmDialog } from '../shared/ConfirmDialog'
-import { RevisionHistoryDrawer } from './RevisionsDrawer'
-import { useEditorDeleteRestore } from './use-editor-delete-restore'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@kobato/ui/components/sheet.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { RevisionHistoryDrawer } from '@kobato/web/ui/admin/editor-shell/RevisionsDrawer.tsx'
+import { useEditorDeleteRestore } from '@kobato/web/ui/admin/editor-shell/use-editor-delete-restore.ts'
+import { ConfirmDialog } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import { Trash2Icon, Undo2Icon } from 'lucide-react'
 
 /** Props handed to the entity's meta-sidebar render slot. */
 export interface MetaSidebarSlotProps<TMeta> {

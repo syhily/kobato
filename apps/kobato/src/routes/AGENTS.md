@@ -3,7 +3,7 @@
 `apps/kobato/src/routes/` holds route modules — loader / action / meta / component orchestration. Read session/context at
 the perimeter, call orchestrators (`@kobato/server/http/loaders/*`, domain-surface services), project DTOs through
 `@kobato/shared`, render with `@kobato/web` components. No DB queries, cache access, or markdown parsing inline — never import
-`@kobato/server/infra/db/operations/*` (package-dag contract test). `routes.ts` is the URL contract, route ids derive from
+`@kobato/db/operations/*` (package-dag contract test). `routes.ts` is the URL contract, route ids derive from
 the file path; URLs and physical paths stay stable. Non-page requests (API, feeds, sitemap, generated images) are
 Hono routes in `server.ts`, not resource routes; components take plain props, never `server/*` in JSX.
 
@@ -80,7 +80,7 @@ introduce a new pattern.
 - `post` + `content` → `/posts/:slug`; `page` + `content` → `/:slug`. Both render the saved `bodyHtml` projection
   through `DetailBodyChrome` (see `packages/web/src/ui/AGENTS.md` → Content editors); public URLs use `slug`, not internal id.
 - `visible=false` posts are hidden from the public home and random-post widgets but stay in archives, tags,
-  search, sitemap, feeds, and category/tag listings (`packages/server/src/AGENTS.md` → Content).
+  search, sitemap, feeds, and category/tag listings (`packages/server/AGENTS.md` → Content).
 
 ## Page draft preview
 
@@ -97,7 +97,7 @@ introduce a new pattern.
 - **A. Public layout (`routes/public/layout.tsx`)** — **pathless** layout wrapping every public URL; owns
   `<BaseLayout>`, which **statically imports `public.css`** so the matched route graph links the stylesheet (styled
   first paint). **Do not** lazy-load `public.css` from a child route or move it into a regular component — FOUC.
-  Admin / login / install / API routes stay outside and import `admin.css` (`packages/web/src/styles/AGENTS.md` → Entry structure).
+  Admin / login / install / API routes stay outside and import `admin.css` (`packages/ui/src/styles/AGENTS.md` → Entry structure).
 - **B. Splat catch-all** — `route('*', 'routes/public/not-found.tsx')` MUST stay last inside `public/layout.tsx`:
   `*` is the lowest-priority match, firing only for paths nothing else handles — multi-segment WordPress probes
   (`/wp-content/plugins/x.php`, `/cgi-bin/test`); single-segment `.php` / `cgi-bin` probes hit `:slug` first and

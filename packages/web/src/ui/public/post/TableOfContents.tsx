@@ -2,14 +2,18 @@ import type { MarkdownHeading, TocOpts } from '@kobato/shared/utils/toc.ts'
 
 import { useSeoSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
 import { generateToC } from '@kobato/shared/utils/toc.ts'
+import {
+  LazyAnimatePresence,
+  LazyMotionButton,
+  LazyMotionDiv,
+  LazyMotionSpan,
+} from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { transitions } from '@kobato/web/client/lib/motion.ts'
+import { TocItems } from '@kobato/web/ui/public/post/TocItems.tsx'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-
-import { transitions } from '../../../client/lib/motion'
-import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv, LazyMotionSpan } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { TocItems } from './TocItems'
 
 const DEFAULT_TOC_CONFIG = {
   maxHeadingLevel: 4,

@@ -1,19 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { BackupFileDto } from '@kobato/shared/types/backup.ts'
 import type { Readable } from 'node:stream'
 
-import { sql } from 'drizzle-orm'
-import { randomBytes } from 'node:crypto'
-import { chmodSync, statSync } from 'node:fs'
-import { copyFile, unlink } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
-import { createGzip } from 'node:zlib'
-
-import type { Database } from '../../../infra/db/database'
-
-import { CONFIG_FILE_NAME, resolveConfigFilePath } from '../../../infra/config'
-import { finishJobRun, startJobRun } from '../../../infra/db/job-run-recorder'
 import {
   deleteBackupRow,
   findBackupByTimestamp,
@@ -22,13 +11,22 @@ import {
   insertBackupIfMissing,
   listBackupRows,
   listBackupStoragePaths,
-} from '../../../infra/db/operations/backup'
-import { descriptorFor, rawMessageDescriptor } from '../../../infra/http/error-descriptor'
-import { ActionFailure, DomainError } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { activeBackend, allBackends, backendFor } from '../../../infra/storage/registry'
-import { createBackupCipher } from './crypto'
-import { createTarReadStream } from './tar'
+} from '@kobato/db/operations/backup.ts'
+import { createBackupCipher } from '@kobato/server/domains/backup/services/crypto.ts'
+import { createTarReadStream } from '@kobato/server/domains/backup/services/tar.ts'
+import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@kobato/server/infra/config.ts'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
+import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { activeBackend, allBackends, backendFor } from '@kobato/server/infra/storage/registry.ts'
+import { sql } from 'drizzle-orm'
+import { randomBytes } from 'node:crypto'
+import { chmodSync, statSync } from 'node:fs'
+import { copyFile, unlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { createGzip } from 'node:zlib'
 
 const log = getLogger('backup.service')
 

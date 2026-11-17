@@ -1,26 +1,25 @@
-import { adminCommentsPendingCountOutputSchema } from '@kobato/shared/contracts/admin.ts'
-import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { asAdminCommentsWire, asCommentItemWire } from '../../../domains/comments/projection'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
 import {
   countAdminPendingDashboard,
   loadAdminPendingDashboard,
   loadAllComments,
   searchAuthorOptions,
   searchPageOptions,
-} from '../../../domains/comments/services/admin-query'
-import { probeAvatarMirrors as probeAvatarMirrorUrls } from '../../../domains/comments/services/avatar'
+} from '@kobato/server/domains/comments/services/admin-query.ts'
+import { probeAvatarMirrors as probeAvatarMirrorUrls } from '@kobato/server/domains/comments/services/avatar.ts'
 import {
   approveComment,
   deleteCommentById,
   resolveCommentDeleteRequest,
   updateComment,
-} from '../../../domains/comments/services/moderate'
-import { adminProc, localizedOrpcError } from '../../orpc-base'
+} from '@kobato/server/domains/comments/services/moderate.ts'
+import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { adminCommentsPendingCountOutputSchema } from '@kobato/shared/contracts/admin.ts'
+import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
+import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { z } from 'zod'
 
 const approve = adminProc
   .route({ method: 'POST', path: '/comment-admin/approve' })

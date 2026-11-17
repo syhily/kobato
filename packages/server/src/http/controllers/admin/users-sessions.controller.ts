@@ -1,14 +1,16 @@
+import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { listAllSessions } from '@kobato/server/domains/auth/services/sessions.ts'
+import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@kobato/server/domains/auth/session-guard.ts'
+import {
+  bulkApproveCommentsByUser,
+  bulkDeleteCommentsByUser,
+} from '@kobato/server/domains/comments/services/moderate.ts'
+import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { adminUsersListSessionsOutputSchema } from '@kobato/shared/contracts/admin.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { formatUaLabel } from '../../../domains/analytics/ua-parse'
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { listAllSessions } from '../../../domains/auth/services/sessions'
-import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '../../../domains/auth/session-guard'
-import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '../../../domains/comments/services/moderate'
-import { createServerTranslator } from '../../../infra/i18n'
-import { adminProc, localizedOrpcError } from '../../orpc-base'
 
 const userIdInput = z.object({ userId: z.string().min(1) })
 const successOutput = z.object({ success: z.boolean() })

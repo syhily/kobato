@@ -1,15 +1,14 @@
+import type { LoginActionData } from '@kobato/web/ui/admin/auth/AdminCredentialsForm.tsx'
+
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { inputClasses } from '@kobato/web/ui/admin/auth/shared.tsx'
 import { ArrowRightIcon, RotateCcwIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Form } from 'react-router'
-
-import type { LoginActionData } from './AdminCredentialsForm'
-
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { inputClasses } from './shared'
 
 export interface OtpFormProps {
   email: string

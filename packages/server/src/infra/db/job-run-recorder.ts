@@ -1,10 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { jobRun } from '@kobato/db/schema/job-run.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@kobato/shared/contracts/jobs.ts'
 import { count, desc, eq, inArray, lt, sql } from 'drizzle-orm'
-
-import type { Database } from './database'
-
-import { getLogger } from '../logger'
-import { jobRun } from './schema/job-run'
 
 // Opt-in execution-history recorder for background jobs. The composition root
 // wires the db getter (`wireJobRunRecorder`); before that every getter-resolved

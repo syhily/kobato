@@ -1,7 +1,7 @@
 // Wire DTOs for the friend-management endpoints (server actions + admin UI
 // import the same shape). Bigints are stringified; the public site never ships `id`.
 
-import type { AdminFriendDto } from '../contracts/friends'
+import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 
 // `offset`/`limit` mirror the tag and comment listings: server-side
 // pagination, both optional (client default `offset=0, limit=10`).

@@ -3,13 +3,7 @@ import type { UpsertTagInput } from '@kobato/shared/types/tags.ts'
 
 import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 import { useAssetsSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { SaveIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -17,11 +11,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
-import { CoverInputRow } from '../shared/CoverInputRow'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { CoverInputRow } from '@kobato/web/ui/admin/shared/CoverInputRow.tsx'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { SaveIcon, XIcon } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export interface EditTagDialogProps {
   tag: AdminTagDto | null | undefined

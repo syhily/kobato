@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { Checkbox } from '../../../components/checkbox'
+import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
 
 // `<Checkbox>` + immediate save: the upstream `onCheckedChange` fires
 // first, then `save(name)` commits.

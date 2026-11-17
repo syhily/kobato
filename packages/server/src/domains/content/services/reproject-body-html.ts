@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { content } from '@kobato/db/schema/content.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { count, eq } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-
-import { content } from '../../../infra/db/schema/content'
-import { getLogger } from '../../../infra/logger'
-import { computeBodyProjections } from '../../../infra/pt/lexical-projection'
 
 // The admin "重建文章缓存" recovery hatch (dashboard button →
 // `/admin/renders/reproject-bodies`): re-derives the three projection

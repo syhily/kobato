@@ -1,14 +1,13 @@
 import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { UploadImageDialog, type UploadKind } from '@kobato/web/ui/admin/shared/UploadImageDialog.tsx'
+import { useErroredSrc } from '@kobato/web/ui/admin/shared/useErroredSrc.ts'
 import { ImageOffIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
-
-import { Button } from '../../components/button'
-import { Label } from '../../components/label'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { UploadImageDialog, type UploadKind } from './UploadImageDialog'
-import { useErroredSrc } from './useErroredSrc'
 
 // Shared cover/poster row; every image goes through the upload pipeline —
 // no manual URL pasting (keeps CSP `img-src` predictable).

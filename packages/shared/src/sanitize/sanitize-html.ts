@@ -1,5 +1,5 @@
-import { strategyToConfig, type SafeHtmlStrategy } from './config'
-import { sanitizeHtmlEngine } from './engine.node'
+import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/shared/sanitize/config.ts'
+import { sanitizeHtmlEngine } from '@kobato/shared/sanitize/engine.node.ts'
 
 // Facade over the per-platform sanitize engines; every behavioral rule lives in
 // the shared purify core, so SSR and hydration bytes cannot drift.

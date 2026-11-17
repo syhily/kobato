@@ -1,13 +1,11 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
+import { userSession } from '@kobato/server/domains/auth/primitives.ts'
+import { latestComments } from '@kobato/server/domains/comments/services/public-query.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { isSidebarWidgetEnabled } from '@kobato/shared/config/utils.ts'
-
-import type { BlogSession } from '../../domains/auth/session-storage'
-import type { Database } from '../../infra/db/database'
-
-import { userSession } from '../../domains/auth/primitives'
-import { latestComments } from '../../domains/comments/services/public-query'
 
 /**
  * `settings` is the request-pinned snapshot (HandlerContext.settings) —

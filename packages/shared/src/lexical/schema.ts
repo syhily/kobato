@@ -1,10 +1,9 @@
 import type { SerializedEditorState } from '@kobato/inkling/headless'
 
+import { normalizeLexicalDialect } from '@kobato/shared/lexical/dialect.ts'
+import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
+import { isSafeUrl } from '@kobato/shared/sanitize-url.ts'
 import { z } from 'zod'
-
-import { isSafeUrl } from '../sanitize-url'
-import { normalizeLexicalDialect } from './dialect'
-import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from './node-whitelist'
 
 // Zod validation for the Lexical storage format: the full editing state for
 // posts/pages; `comment-schema.ts` builds the restricted comment variant from

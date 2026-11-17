@@ -3,8 +3,6 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { ComponentType } from 'react'
 
 import { formatDisplayName } from '@kobato/shared/i18n/format.ts'
-import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
-
 import {
   SiAcer,
   SiAndroid,
@@ -82,9 +80,10 @@ import {
   SiX,
   SiXiaomi,
   SiYandexcloud,
-} from '../../icons/metric-brands'
-import { useI18n } from '../../lib/I18nProvider'
-import { metricValueLabelId } from './metric-labels'
+} from '@kobato/ui/icons/metric-brands.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { metricValueLabelId } from '@kobato/web/ui/admin/analytics/metric-labels.ts'
+import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
 
 type IconComponent = ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
 

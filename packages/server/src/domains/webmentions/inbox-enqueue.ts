@@ -1,16 +1,16 @@
-import type { Database } from '../../infra/db/database'
-import type { WebmentionReceiveInput } from './schema'
+import type { Database } from '@kobato/db/database.ts'
+import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema.ts'
 
 import {
   countQueuedWebmentionInbox,
   countQueuedWebmentionInboxBySourceHost,
   upsertWebmentionInbox,
-} from '../../infra/db/operations/webmention-inbox'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { rescheduleWebmentionInbox } from './inbox-scheduler'
-import { resolveWebmentionTargetOrThrow } from './target'
-import { requireSourceKey } from './verify'
+} from '@kobato/db/operations/webmention-inbox.ts'
+import { rescheduleWebmentionInbox } from '@kobato/server/domains/webmentions/inbox-scheduler.ts'
+import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target.ts'
+import { requireSourceKey } from '@kobato/server/domains/webmentions/verify.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 // The receive endpoint is unauthenticated by design, so the queue itself
 // must be bounded: a global depth cap plus a per-source-host fan-out cap.

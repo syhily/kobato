@@ -1,8 +1,8 @@
 import type { Role } from '@kobato/shared/utils/roles.ts'
 
+import { user } from '@kobato/db/schema/user.ts'
 import { getThread, listInbox, unreadCount } from '@kobato/server/domains/notifications/service.ts'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 

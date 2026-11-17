@@ -2,7 +2,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import AnalyticsOverviewRoute from '@/routes/admin/analytics/overview'
+import AnalyticsOverviewRoute from '@/routes/admin/analytics/overview.tsx'
 
 describe('snapshot: routes/admin/analytics/overview', () => {
   it('renders the analytics overview route', () => {

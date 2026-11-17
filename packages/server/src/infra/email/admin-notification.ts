@@ -1,13 +1,11 @@
+import type { SendResult } from '@kobato/server/infra/email/types.ts'
+import type { Logger } from '@kobato/server/infra/logger.ts'
 import type { ReactElement } from 'react'
 
+import { render } from '@kobato/server/infra/email/render.tsx'
+import { sendEmail } from '@kobato/server/infra/email/sender.ts'
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-
-import type { Logger } from '../logger'
-import type { SendResult } from './types'
-
-import { render } from './render'
-import { sendEmail } from './sender'
-import { emailTranslator } from './translator'
 
 // Single seam for admin notifications (new comment, webmention, …): recipient
 // is always the site author, subject is `{siteTitle}: {subject}` (localized via

@@ -26,6 +26,7 @@ const APP_SRC = join(REPO_ROOT, 'apps/kobato/src')
 /** Workspace package name → source root (repo-relative). */
 const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web': 'packages/web/src',
+  '@kobato/ui': 'packages/ui/src',
   '@kobato/shared': 'packages/shared/src',
   '@kobato/inkling': 'packages/inkling/src',
   '@kobato/test': 'packages/tools/test/src',

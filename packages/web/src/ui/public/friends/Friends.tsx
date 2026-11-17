@@ -1,10 +1,9 @@
 import type { Friend } from '@kobato/shared/types/catalog.ts'
 
 import { shuffle } from '@kobato/shared/utils/tools.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { useMemo } from 'react'
-
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../widgets/Image'
 
 export interface FriendsProps {
   friends: Friend[]

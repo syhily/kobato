@@ -12,18 +12,18 @@ vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { renderWithI18n } from '@kobato/test/i18n-render.tsx'
-import { Dialog, DialogContent, DialogTitle } from '@kobato/web/ui/components/dialog.tsx'
+import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog.tsx'
 import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationNext,
   PaginationPrevious,
-} from '@kobato/web/ui/components/pagination.tsx'
-import { Sheet, SheetContent, SheetTitle } from '@kobato/web/ui/components/sheet.tsx'
-import { SidebarProvider, SidebarTrigger } from '@kobato/web/ui/components/sidebar.tsx'
-import { Toaster } from '@kobato/web/ui/components/sonner.tsx'
-import { Table, TableBody, TableCell, TableRow } from '@kobato/web/ui/components/table.tsx'
+} from '@kobato/ui/components/pagination.tsx'
+import { Sheet, SheetContent, SheetTitle } from '@kobato/ui/components/sheet.tsx'
+import { SidebarProvider, SidebarTrigger } from '@kobato/ui/components/sidebar.tsx'
+import { Toaster } from '@kobato/ui/components/sonner.tsx'
+import { Table, TableBody, TableCell, TableRow } from '@kobato/ui/components/table.tsx'
 
 function render(node: ReactElement, locale: AppLocale) {
   return renderWithI18n(node, { locale })
@@ -175,7 +175,7 @@ describe('shared primitives — en-US', () => {
 describe('combobox defaults', () => {
   it('falls back to the localized placeholder and empty copy when no props are given', async () => {
     const { SettingsCombobox } = await import('@kobato/web/ui/admin/settings/shell/SettingsCombobox.tsx')
-    const { ComboboxContent, ComboboxTrigger, ComboboxValue } = await import('@kobato/web/ui/components/combobox.tsx')
+    const { ComboboxContent, ComboboxTrigger, ComboboxValue } = await import('@kobato/ui/components/combobox.tsx')
 
     render(
       <SettingsCombobox<{ value: string; label: string }>

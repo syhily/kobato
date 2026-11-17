@@ -1,19 +1,18 @@
 import type { AdminUserUpdateInput } from '@kobato/shared/contracts/admin.ts'
 import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { buildUserUpdatePayload } from '@kobato/web/ui/admin/users/user-update-payload.ts'
+import { invalidateUsersCache } from '@kobato/web/ui/admin/users/users-cache.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SaveIcon } from 'lucide-react'
 import { useState } from 'react'
-
-import { orpc } from '../../../client/api/client'
-import { Button } from '../../components/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/card'
-import { Checkbox } from '../../components/checkbox'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
-import { buildUserUpdatePayload } from './user-update-payload'
-import { invalidateUsersCache } from './users-cache'
 
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 

@@ -1,21 +1,20 @@
-import { formatDateTime } from '@kobato/shared/i18n/format.ts'
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
-import { useId, useState } from 'react'
-
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '../editor-shell/editor-shell-types'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { Badge } from '../../components/badge'
-import { Label } from '../../components/label'
-import { RadioGroup } from '../../components/radio-group'
-import { useI18n } from '../../lib/I18nProvider'
-import { DateTimePicker } from '../editor-shell/DateTimePicker'
-import { dateToLocalInputValue } from '../editor-shell/editor-datetime'
-import { LabelledRadioCard } from '../shared/LabelledRadio'
+import { formatDateTime } from '@kobato/shared/i18n/format.ts'
+import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { RadioGroup } from '@kobato/ui/components/radio-group.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { DateTimePicker } from '@kobato/web/ui/admin/editor-shell/DateTimePicker.tsx'
+import { dateToLocalInputValue } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
+import { LabelledRadioCard } from '@kobato/web/ui/admin/shared/LabelledRadio.tsx'
+import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
+import { useId, useState } from 'react'
 
 export interface PublishStatusRowProps {
   status: SidebarPublishStatus

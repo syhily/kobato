@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ListPagesFilters } from '@kobato/server/domains/pages/repo.ts'
 import type { AdminPageDetailDto, AdminPageDto } from '@kobato/shared/contracts/pages.ts'
 
-import type { Database } from '../../../infra/db/database'
-import type { ListPagesFilters } from '../repo'
-
-import { makeEntityAdminQuery } from '../../content/entities/admin-query'
-import { pageDescriptor } from '../descriptor'
-import { countPageMetas, listPageMetas } from '../repo'
+import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query.ts'
+import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'
+import { countPageMetas, listPageMetas } from '@kobato/server/domains/pages/repo.ts'
 
 export interface AdminPagesListResult {
   pages: AdminPageDto[]

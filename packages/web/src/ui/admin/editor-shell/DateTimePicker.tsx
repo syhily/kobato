@@ -1,15 +1,14 @@
 import type { DropdownProps } from 'react-day-picker'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Calendar } from '@kobato/ui/components/calendar.tsx'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { dateToLocalInputValue, parseLocalDateTimeInput } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
+import { formatWallClockDateTime, formatWallClockMonth } from '@kobato/web/ui/admin/editor-shell/wall-clock.ts'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
-
-import { Button } from '../../components/button'
-import { Calendar } from '../../components/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { dateToLocalInputValue, parseLocalDateTimeInput } from './editor-datetime'
-import { formatWallClockDateTime, formatWallClockMonth } from './wall-clock'
 
 // The picker edits BROWSER-LOCAL wall-clock parts. Every rendered value is
 // normalized onto UTC and formatted in UTC, so SSR and the first client render

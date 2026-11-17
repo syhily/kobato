@@ -1,7 +1,7 @@
 import type { ListingPostCardWithMetadata } from '@kobato/shared/types/catalog.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
@@ -48,7 +48,7 @@ async function seedPost(opts: {
   return postId
 }
 
-const { loader } = await import('@/routes/public/archives')
+const { loader } = await import('@/routes/public/archives.tsx')
 
 function loaderEtag(result: unknown): string | null {
   const init = (result as { init?: { headers?: Record<string, string> } }).init

@@ -1,11 +1,10 @@
+import type { DomainErrorWire } from '@kobato/server/infra/http/errors.ts'
 import type { Metadata, Sharp } from 'sharp'
 
 // Relative import — the worker loads without a path-alias resolver.
 import { rgbaToThumbHash } from '@kobato/shared/utils/thumbhash.ts'
 import { parentPort, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
-
-import type { DomainErrorWire } from '../http/errors'
 
 // sharp must stay a static import: the bundler redirects its platform loads
 // to `nativeRequire` (`packages/tools/pack/src/sea/redirect-native-requires.ts`).

@@ -1,15 +1,14 @@
+import { SidebarInset, SidebarProvider } from '@kobato/ui/components/sidebar.tsx'
+import { Toaster } from '@kobato/ui/components/sonner.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { AdminMusicPlayerBar } from '@kobato/web/ui/admin/musics/AdminMusicPlayerBar.tsx'
+import { AdminMusicPlayerFloat } from '@kobato/web/ui/admin/musics/AdminMusicPlayerFloat.tsx'
+import { MusicPlayerProvider } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
+import { AdminScrollTopButton } from '@kobato/web/ui/admin/shell/AdminScrollTopButton.tsx'
+import { AppSidebar } from '@kobato/web/ui/admin/shell/AppSidebar.tsx'
+import { MobileNavBar } from '@kobato/web/ui/admin/shell/MobileNavBar.tsx'
 import { createContext, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
-
-import { SidebarInset, SidebarProvider } from '../../components/sidebar'
-import { Toaster } from '../../components/sonner'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { AdminMusicPlayerBar } from '../musics/AdminMusicPlayerBar'
-import { AdminMusicPlayerFloat } from '../musics/AdminMusicPlayerFloat'
-import { MusicPlayerProvider } from '../musics/MusicPlayerContext'
-import { AdminScrollTopButton } from './AdminScrollTopButton'
-import { AppSidebar } from './AppSidebar'
-import { MobileNavBar } from './MobileNavBar'
 
 interface AdminChromeContextValue {
   focused: boolean

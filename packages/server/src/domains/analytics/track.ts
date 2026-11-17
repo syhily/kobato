@@ -1,14 +1,13 @@
+import type { EntityTarget } from '@kobato/db/target.ts'
+import type { RawAccessEvent } from '@kobato/server/domains/analytics/types.ts'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
+
+import { buildDeviceEnvServerRow, enrichEvent } from '@kobato/server/domains/analytics/enrich.ts'
+import { pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher.ts'
+import { bumpPageView } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { isBot } from '@kobato/shared/utils/is-bot.ts'
-
-import type { EntityTarget } from '../../infra/db/target'
-import type { RequestFacts } from '../../infra/http/request-facts'
-import type { RawAccessEvent } from './types'
-
-import { getLogger } from '../../infra/logger'
-import { buildDeviceEnvServerRow, enrichEvent } from './enrich'
-import { pushAccessEvent } from './services/batcher'
-import { bumpPageView } from './services/pv-batcher'
 
 // Single owner of "what counts as a view": one call fans out to the per-entity
 // counter and the time-series access log. Every gate is synchronous; only the

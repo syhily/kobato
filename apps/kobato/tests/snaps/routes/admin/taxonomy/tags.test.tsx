@@ -1,7 +1,7 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
-import TagsRoute from '@/routes/admin/taxonomy/tags'
+import TagsRoute from '@/routes/admin/taxonomy/tags.tsx'
 
 describe('snapshot: routes/admin/taxonomy/tags', () => {
   it('renders the tags route', () => {

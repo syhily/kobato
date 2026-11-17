@@ -1,7 +1,7 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
-import MusicsRoute from '@/routes/admin/library/music'
+import MusicsRoute from '@/routes/admin/library/music.tsx'
 
 describe('snapshot: routes/admin/library/music', () => {
   it('renders the music route', () => {

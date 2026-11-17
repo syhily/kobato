@@ -1,19 +1,17 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@kobato/shared/types/catalog.ts'
 
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import { queryMetadata } from '@kobato/server/domains/comments/services/likes.ts'
+import { applyLimitOffset } from '@kobato/server/domains/content/pagination.ts'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
+import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'
+import { buildPublicPostsWhere, type ListPublicPostsFilters } from '@kobato/server/domains/posts/repos/shared.ts'
 import { toListingPostCard } from '@kobato/shared/types/catalog.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { and, desc, inArray, isNull, sql } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { PostMetaRow } from '../../../infra/db/types'
-
-import { post as postMetaTable } from '../../../infra/db/schema/post'
-import { queryMetadata } from '../../comments/services/likes'
-import { applyLimitOffset } from '../../content/pagination'
-import { isLive } from '../../content/schemas/live-gate'
-import { livePostWhere } from '../live-gate'
-import { buildPublicPostFilters, hydratePostList } from '../repos/hydrate'
-import { buildPublicPostsWhere, type ListPublicPostsFilters } from '../repos/shared'
 
 export async function listPublicPosts(
   db: Database,

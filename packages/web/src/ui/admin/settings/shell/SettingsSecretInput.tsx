@@ -1,8 +1,7 @@
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 import type { ComponentProps } from 'react'
 
-import type { I18nValue } from '../../../lib/I18nProvider'
-
-import { SettingsInput } from './SettingsInput'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
 
 // Secret-field wrapper for /admin/settings: empty/whitespace input omits
 // the key from the patch so the server keeps the stored secret; only the

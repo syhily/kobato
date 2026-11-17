@@ -1,4 +1,4 @@
-import { image as imageTable } from '@kobato/server/infra/db/schema/media.ts'
+import { image as imageTable } from '@kobato/db/schema/media.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makePublicCtx } from '@kobato/test/mock-ctx.ts'

@@ -1,8 +1,10 @@
+import type { EntityTarget } from '@kobato/db/target.ts'
 import type { TrackPageViewOptions } from '@kobato/server/domains/analytics/track.ts'
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
-import type { EntityTarget } from '@kobato/server/infra/db/target.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 
+import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric.ts'
+import { metric } from '@kobato/db/schema/metric.ts'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
@@ -11,8 +13,6 @@ import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAccessLog } from '@kobato/server/domains/analytics/services/batcher.ts'
 import { flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { ensureMetric, findMetricByTarget } from '@kobato/server/infra/db/operations/metric.ts'
-import { metric } from '@kobato/server/infra/db/schema/metric.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { clearAccessEvents, closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'

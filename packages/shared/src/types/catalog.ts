@@ -1,4 +1,4 @@
-import type { MarkdownHeading } from '../utils/toc'
+import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
 
 export type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 
@@ -190,7 +190,7 @@ export interface CommentFormUser {
 }
 
 // Types that need the Lexical projection columns (isomorphic)
-import type { LexicalEditorState } from '../lexical/schema'
+import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
 export interface Post extends ClientPost {
   /** Saved full-fidelity projection column; NULL when only the parsed state exists (compute-on-read). */

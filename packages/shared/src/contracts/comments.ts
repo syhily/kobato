@@ -1,10 +1,9 @@
+import type { Assert, Equals } from '@kobato/shared/contracts/primitives.ts'
+import type { CommentAndUser } from '@kobato/shared/types/comments.ts'
+
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
+import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
 import { z } from 'zod'
-
-import type { CommentAndUser } from '../types/comments'
-import type { Assert, Equals } from './primitives'
-
-import { commentEditorStateSchema } from '../lexical/comment-schema'
-import { idString, isoDateTime } from './primitives'
 
 // Welcome-dashboard moderation inbox row. Same shape for both queues —
 // the `kind` discriminator decides which buttons the UI renders.

@@ -389,7 +389,14 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
 
   await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'apps', 'kobato', 'build', 'client'), ctx)
 
-  await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'), ctx, isDrizzleSnapshotArtifact)
+  await addTree(
+    assets,
+    files,
+    SEA_DRIZZLE_ASSET_PREFIX,
+    join(repoRoot, 'packages', 'db', 'drizzle'),
+    ctx,
+    isDrizzleSnapshotArtifact,
+  )
 
   // The cn-font-split wasm core (single hashed file, pinned to a stable key).
   await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath, ctx)

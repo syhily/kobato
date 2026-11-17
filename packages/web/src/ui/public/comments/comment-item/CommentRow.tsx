@@ -1,14 +1,9 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
 
-import { XIcon } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
-
-import { useI18n } from '../../../lib/I18nProvider'
-import { CommentContentHtml } from '../CommentContentHtml'
-import { useCommentsActions, useCommentsIdentity } from '../comments-context'
-import { commentFlags } from './comment-flags'
-import { CommentActions } from './CommentActions'
-import { CommentAuthorLine, CommentAvatar } from './CommentAuthorLine'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { commentFlags } from '@kobato/web/ui/public/comments/comment-item/comment-flags.ts'
+import { CommentActions } from '@kobato/web/ui/public/comments/comment-item/CommentActions.tsx'
+import { CommentAuthorLine, CommentAvatar } from '@kobato/web/ui/public/comments/comment-item/CommentAuthorLine.tsx'
 import {
   commentBodyClass,
   commentContentClass,
@@ -17,9 +12,13 @@ import {
   nestedCommentInnerClass,
   nestedCommentLiClass,
   rootCommentLiClass,
-} from './helpers'
-import { InlineEditForm } from './InlineEditForm'
-import { InlineOwnEditForm } from './InlineOwnEditForm'
+} from '@kobato/web/ui/public/comments/comment-item/helpers.ts'
+import { InlineEditForm } from '@kobato/web/ui/public/comments/comment-item/InlineEditForm.tsx'
+import { InlineOwnEditForm } from '@kobato/web/ui/public/comments/comment-item/InlineOwnEditForm.tsx'
+import { CommentContentHtml } from '@kobato/web/ui/public/comments/CommentContentHtml.tsx'
+import { useCommentsActions, useCommentsIdentity } from '@kobato/web/ui/public/comments/comments-context.ts'
+import { XIcon } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 
 interface CommentRowProps {
   comment: CommentItemType

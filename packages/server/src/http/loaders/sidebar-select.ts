@@ -1,3 +1,4 @@
+import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
 import type { SidebarSettings } from '@kobato/shared/config/types.ts'
 import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 import type { ClientTag } from '@kobato/shared/types/catalog.ts'
@@ -5,8 +6,6 @@ import type { ClientTag } from '@kobato/shared/types/catalog.ts'
 import { getSidebarWidgetCount } from '@kobato/shared/config/utils.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { sampleSize } from '@kobato/shared/utils/tools.ts'
-
-import type { SidebarSelection } from '../../domains/posts/services/featured'
 
 export interface SidebarSeedInput {
   /** Entity/URL scope: `post:<id>`, `page:<id>`, `home`. */

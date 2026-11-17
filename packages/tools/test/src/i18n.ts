@@ -1,5 +1,5 @@
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { I18nValue } from '@kobato/web/ui/lib/I18nProvider.tsx'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
 import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'

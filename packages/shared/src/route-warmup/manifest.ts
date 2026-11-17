@@ -1,7 +1,7 @@
 // Single owner of the route-warmup file contract: the manifest shape the
 // build-time plugin writes and the chunk walk both sides share, so the
 // writer and reader can't drift. Isomorphic: pure JSON/regex only.
-import type { RouteManifest, RouteManifestRoute } from '../constants/route-warmup'
+import type { RouteManifest, RouteManifestRoute } from '@kobato/shared/constants/route-warmup.ts'
 
 // Local copy of `isRecord` — do NOT import it: the vite plugin pulls
 // this module into the vite.config.ts graph, where `@/` aliases are

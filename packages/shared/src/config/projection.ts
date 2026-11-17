@@ -1,10 +1,9 @@
+import type { BackupSettings, CommentsSettings, MailSettings } from '@kobato/shared/config/types.ts'
+import type { Assert, Equals } from '@kobato/shared/contracts/primitives.ts'
+import type { AvatarSource } from '@kobato/shared/utils/avatar.ts'
+
+import { AVATAR_SOURCES } from '@kobato/shared/utils/avatar.ts'
 import { z } from 'zod'
-
-import type { Assert, Equals } from '../contracts/primitives'
-import type { AvatarSource } from '../utils/avatar'
-import type { BackupSettings, CommentsSettings, MailSettings } from './types'
-
-import { AVATAR_SOURCES } from '../utils/avatar'
 
 // Per-slot status surfaced to the admin form. `etag` drives cache-busting and the
 // "is configured?" check; only the hash is sent, never the bytes.

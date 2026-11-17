@@ -1,6 +1,6 @@
+import { post } from '@kobato/db/schema/post.ts'
+import { webmention } from '@kobato/db/schema/webmention.ts'
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
-import { webmention } from '@kobato/server/infra/db/schema/webmention.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
@@ -127,7 +127,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     expect(first.outcome).toBe('inserted')
 
     // Approve, then the source author edits and re-sends.
-    const { setWebmentionStatus } = await import('@kobato/server/infra/db/operations/webmention.ts')
+    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention.ts')
     await setWebmentionStatus(db, first.row.id, 'approved')
 
     enqueueSource('https://sender.example/post')
@@ -148,7 +148,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     await seedLivePost('wm-target')
     enqueueSource('https://sender.example/post')
     const first = await receive('https://sender.example/post')
-    const { setWebmentionStatus } = await import('@kobato/server/infra/db/operations/webmention.ts')
+    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention.ts')
     await setWebmentionStatus(db, first.row.id, 'rejected')
 
     enqueueSource('https://sender.example/post')

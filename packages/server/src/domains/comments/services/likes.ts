@@ -1,8 +1,5 @@
-import { makeToken } from '@kobato/shared/utils/security.ts'
-import { startOfDay, subDays } from 'date-fns'
-
-import type { Database } from '../../../infra/db/database'
-import type { EntityTarget } from '../../../infra/db/target'
+import type { Database } from '@kobato/db/database.ts'
+import type { EntityTarget } from '@kobato/db/target.ts'
 
 import {
   commentCountsByOwnerIds,
@@ -12,11 +9,13 @@ import {
   metricVoteUp,
   purgeOldLikeTokens,
   recordLikeAndCount,
-} from '../../../infra/db/operations/like'
-import { decrementMetricVotes } from '../../../infra/db/operations/metric'
-import { targetKey } from '../../../infra/db/target'
-import { getLogger } from '../../../infra/logger'
-import { pendingViewDelta } from '../../analytics/services/pv-batcher'
+} from '@kobato/db/operations/like.ts'
+import { decrementMetricVotes } from '@kobato/db/operations/metric.ts'
+import { targetKey } from '@kobato/db/target.ts'
+import { pendingViewDelta } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { makeToken } from '@kobato/shared/utils/security.ts'
+import { startOfDay, subDays } from 'date-fns'
 
 const log = getLogger('comments.likes')
 

@@ -1,13 +1,13 @@
 // Session-revocation policy: the single owner of "who may revoke whose session".
 
-import type { Database } from '../../infra/db/database'
-import type { ViewerIdentity } from './rbac'
+import type { Database } from '@kobato/db/database.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 
-import { findSafeUserById } from '../../infra/db/operations/user'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { findSessionMeta, revokeSessionById } from './repo'
-import { revokeAllSessionsOfUser } from './services/sessions'
+import { findSafeUserById } from '@kobato/db/operations/user.ts'
+import { findSessionMeta, revokeSessionById } from '@kobato/server/domains/auth/repo.ts'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 /** Session owner, or null when the meta was already gone (no-op). */
 export interface SessionRevocation {

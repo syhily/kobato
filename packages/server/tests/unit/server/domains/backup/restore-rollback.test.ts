@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // at a per-test temp dir; the rest of the restore module stays real.
 const paths = vi.hoisted(() => ({ db: '', analytics: '' }))
 
-vi.mock('@kobato/server/infra/db/database.ts', () => ({
+vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => paths.db,
   isInMemoryPath: (path: string) => path === ':memory:',
 }))

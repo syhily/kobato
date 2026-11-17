@@ -1,7 +1,5 @@
 import type { ZodType } from 'zod'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-
 import {
   DRAFT_STORAGE_VERSION,
   getDraft,
@@ -10,7 +8,8 @@ import {
   setDraft,
   type DraftRecord,
   type DraftType,
-} from './draft-store'
+} from '@kobato/web/client/lib/draft-store.ts'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // The persisted-shape version constant lives in `draft-store` (the storage
 // layer owns the record schema) so migrations can reference it without a cycle.

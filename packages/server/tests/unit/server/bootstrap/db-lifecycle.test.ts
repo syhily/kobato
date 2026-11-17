@@ -21,12 +21,15 @@ const wireRestoreMachine = vi.fn((deps: { complete: (success: boolean, err?: Err
   restoreCallback = deps.complete
 })
 
-vi.mock('@kobato/server/infra/db/database.ts', () => ({
+vi.mock('@kobato/db/database.ts', () => ({
   openDatabase: vi.fn(() => ({ db: dbMock, client: clientMock, path: ':memory:', inMemory: true, closed: false })),
   closeDatabase: (handle: { closed: boolean }) => {
     closeDatabase(handle)
     handle.closed = true
   },
+}))
+
+vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => ':memory:',
 }))
 

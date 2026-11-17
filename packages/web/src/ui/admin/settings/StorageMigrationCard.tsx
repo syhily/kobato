@@ -2,20 +2,19 @@ import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { isStorageMigrationInFlightPhase } from '@kobato/shared/contracts/storage.ts'
 import { formatBytes } from '@kobato/shared/i18n/format.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2Icon } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
 
 const PHASE_LABEL: Record<string, UiMessageId> = {
   copying: 'admin.settings.storage.migration.phase.copying',

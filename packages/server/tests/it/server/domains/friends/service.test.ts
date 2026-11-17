@@ -1,4 +1,4 @@
-import { friend } from '@kobato/server/infra/db/schema/friend.ts'
+import { friend } from '@kobato/db/schema/friend.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 

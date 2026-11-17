@@ -1,7 +1,7 @@
 // Built-in daily-quote bank (final fallback for the calendar image), complete from the
 // source with no editorial filtering. Vendored snapshot of BullshitGenerator's data.json.
 
-import type { DailyQuote } from './daily-quote'
+import type { DailyQuote } from '@kobato/server/render/calendar/daily-quote.ts'
 
 export const LOCAL_QUOTES: readonly DailyQuote[] = [
   { content: '天才是百分之一的勤奋加百分之九十九的汗水。', author: '爱迪生' },

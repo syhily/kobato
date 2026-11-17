@@ -1,9 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
-import { SendIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -11,10 +6,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useMutation } from '@tanstack/react-query'
+import { SendIcon, XIcon } from 'lucide-react'
+import { useState } from 'react'
 
 interface Props {
   open: boolean

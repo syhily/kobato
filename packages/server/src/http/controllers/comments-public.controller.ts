@@ -1,31 +1,30 @@
 import type { CommentReq } from '@kobato/shared/types/comments.ts'
 
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { commentItemDto, ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
-import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@kobato/shared/utils/comment-token.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../domains/audit/services/record'
-import { asCommentItemWire, asCommentItemsWire } from '../../domains/comments/projection'
-import { commentReplySchema, commentRidSchema } from '../../domains/comments/schema'
-import { verifyCommentAccess } from '../../domains/comments/services/access'
-import { findCommentWithUserById } from '../../domains/comments/services/lookup'
-import { applyOwnCommentEdit } from '../../domains/comments/services/moderate'
-import { createComment } from '../../domains/comments/services/mutate'
-import { loadComments, parseComments } from '../../domains/comments/services/public-query'
-import { resolveMetricTarget } from '../../domains/comments/services/shared'
-import { appendCommentToken, issueCommentToken } from '../../domains/comments/services/token'
-import { getLogger } from '../../infra/logger'
-import { tryCommentPostRateLimitByEmail } from '../../infra/rate-limit'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
+import { commentReplySchema, commentRidSchema } from '@kobato/server/domains/comments/schema.ts'
+import { verifyCommentAccess } from '@kobato/server/domains/comments/services/access.ts'
+import { findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup.ts'
+import { applyOwnCommentEdit } from '@kobato/server/domains/comments/services/moderate.ts'
+import { createComment } from '@kobato/server/domains/comments/services/mutate.ts'
+import { loadComments, parseComments } from '@kobato/server/domains/comments/services/public-query.ts'
+import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { appendCommentToken, issueCommentToken } from '@kobato/server/domains/comments/services/token.ts'
 import {
   commentTokenCookie,
   commentPostRateLimit,
   localizedOrpcError,
   publicProc,
   resourceRateLimit,
-} from '../orpc-base'
+} from '@kobato/server/http/orpc-base.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { tryCommentPostRateLimitByEmail } from '@kobato/server/infra/rate-limit.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { commentItemDto, ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
+import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
+import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@kobato/shared/utils/comment-token.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { z } from 'zod'
 
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })

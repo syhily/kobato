@@ -1,7 +1,6 @@
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { randomBytes } from 'node:crypto'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
 
 // S3 object key generator. Generic keys are unique per upload (always
 // insert); category/friend keys are state keys — re-upload with the same

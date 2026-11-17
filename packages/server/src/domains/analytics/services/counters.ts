@@ -1,10 +1,9 @@
+import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import type { CountersDto, ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
 
-import type { AnalyticsReader } from './analytics-sql'
-
-import { visitAggregates } from './aggregates'
-import { createAnalyticsQuery, runAnalyticsQuery } from './analytics-sql'
-import { buildAnalyticsFilter } from './query-filter'
+import { visitAggregates } from '@kobato/server/domains/analytics/services/aggregates.ts'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
+import { buildAnalyticsFilter } from '@kobato/server/domains/analytics/services/query-filter.ts'
 
 export async function queryCounters(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<CountersDto> {
   const rows = await runAnalyticsQuery(

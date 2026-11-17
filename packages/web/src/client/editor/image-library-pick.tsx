@@ -17,10 +17,9 @@
 import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 
 import { type CardPickerRenderProps, registerCardPicker, useCardChrome } from '@kobato/inkling'
-
-import { ImageLibraryPicker } from '../../ui/admin/editor/pickers/ImageLibraryPicker'
-import { toSiteOwnedImageSrc } from './image-insert-override'
-import { isKobatoImageNode, type KobatoImageNode } from './kobato-image-node'
+import { toSiteOwnedImageSrc } from '@kobato/web/client/editor/image-insert-override.ts'
+import { isKobatoImageNode, type KobatoImageNode } from '@kobato/web/client/editor/kobato-image-node.ts'
+import { ImageLibraryPicker } from '@kobato/web/ui/admin/editor/pickers/ImageLibraryPicker.tsx'
 
 /** Maps the library DTO onto the node's image fields. `src` stores the site-owned
  * origin-relative form (the DTO's `publicUrl` is absolute); `thumbhash`/

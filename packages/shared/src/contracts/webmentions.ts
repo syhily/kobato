@@ -1,11 +1,10 @@
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { z } from 'zod'
-
-import { unsafeCast } from '../utils/unsafe-cast'
-import { idString, isoDateTime } from './primitives'
 
 // Canonical webmention value lists — the single source for the drizzle
 // `text({ enum })` columns, the SQL CHECK literals
-// (`packages/server/src/infra/db/schema/webmention.ts`) and every zod enum below and in
+// (`packages/db/src/schema/webmention.ts`) and every zod enum below and in
 // `packages/server/src/domains/webmentions/schema.ts`. Order is load-bearing: the CHECK
 // literals are generated from these arrays and must stay byte-identical.
 

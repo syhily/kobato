@@ -1,3 +1,31 @@
+import { findTagNamesByPostId } from '@kobato/db/operations/post-tag.ts'
+import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
+import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-filter.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { toAdminPostDto } from '@kobato/server/domains/posts/projection.ts'
+import { listPostsSchema, upsertPostMetaSchema } from '@kobato/server/domains/posts/schema.ts'
+import {
+  countPostMetas,
+  getPostDetailForAdmin,
+  listPostMetas,
+  listPostsForAdmin,
+  listRevisionsForAdmin as listPostRevisionsForAdmin,
+} from '@kobato/server/domains/posts/services/admin-query.ts'
+import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
+import {
+  createPost,
+  deletePost,
+  restorePost,
+  unpublishPost,
+  updatePostMeta,
+} from '@kobato/server/domains/posts/services/mutate.ts'
+import { assertOwnPostOr404 } from '@kobato/server/domains/posts/services/shared.ts'
+import { findPostMetaById } from '@kobato/server/domains/posts/services/single.ts'
+import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-router.ts'
+import { authorProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import {
   adminPostAnalyticsInputSchema,
   adminPostAnalyticsOutputSchema,
@@ -11,35 +39,6 @@ import {
 } from '@kobato/shared/contracts/posts.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { getAnalyticsReader } from '../../../bootstrap/analytics-lifecycle'
-import { loadAnalyticsOverview } from '../../../domains/analytics/services/overview'
-import { parseAnalyticsSearch } from '../../../domains/analytics/services/query-filter'
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { toAdminPostDto } from '../../../domains/posts/projection'
-import { listPostsSchema, upsertPostMetaSchema } from '../../../domains/posts/schema'
-import {
-  countPostMetas,
-  getPostDetailForAdmin,
-  listPostMetas,
-  listPostsForAdmin,
-  listRevisionsForAdmin as listPostRevisionsForAdmin,
-} from '../../../domains/posts/services/admin-query'
-import { postLifecycleAdapter } from '../../../domains/posts/services/lifecycle-adapter'
-import {
-  createPost,
-  deletePost,
-  restorePost,
-  unpublishPost,
-  updatePostMeta,
-} from '../../../domains/posts/services/mutate'
-import { assertOwnPostOr404 } from '../../../domains/posts/services/shared'
-import { findPostMetaById } from '../../../domains/posts/services/single'
-import { findTagNamesByPostId } from '../../../infra/db/operations/post-tag'
-import { createServerTranslator } from '../../../infra/i18n'
-import { authorProc, localizedOrpcError } from '../../orpc-base'
-import { formatWarningDescriptors } from '../../translate-domain-error'
-import { makeRevisionRouter } from './revision-router'
 
 const idInput = z.object({ id: z.string().min(1) })
 

@@ -1,13 +1,12 @@
 import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 
 import { safeHref } from '@kobato/shared/utils/safe-url.ts'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ExternalLinkIcon, EyeIcon, EyeOffIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
-
-import { Badge } from '../../components/badge'
-import { Skeleton } from '../../components/skeleton'
-import { Tooltip } from '../../components/tooltip'
-import { useI18n } from '../../lib/I18nProvider'
 
 interface FriendRowProps {
   friend: AdminFriendDto

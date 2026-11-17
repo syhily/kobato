@@ -1,5 +1,6 @@
 import type { SQL } from 'drizzle-orm'
 
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import {
   isLive,
   isPromoted,
@@ -8,7 +9,6 @@ import {
   promotedContentWhere,
   type PromotedMeta,
 } from '@kobato/server/domains/content/schemas/live-gate.ts'
-import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
 

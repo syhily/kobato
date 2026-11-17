@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Loader2Icon } from 'lucide-react'
-
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
 
 interface SettingGroupProps {
   title: string

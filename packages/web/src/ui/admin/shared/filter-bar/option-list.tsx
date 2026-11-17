@@ -1,11 +1,10 @@
+import type { FilterOptionItem, FilterOptionRenderer } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
+
+import { Input } from '@kobato/ui/components/input.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { SearchIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
-
-import type { FilterOptionItem, FilterOptionRenderer } from './types'
-
-import { Input } from '../../../components/input'
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
 
 // Two list leaves shared by the add-button picker and the pill editors: static local filter vs async server search.
 interface SearchableOptionListProps {

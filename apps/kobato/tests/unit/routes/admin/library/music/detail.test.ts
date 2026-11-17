@@ -1,7 +1,7 @@
 import { rootMatchesWithI18n } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-import { meta } from '@/routes/admin/library/music/detail'
+import { meta } from '@/routes/admin/library/music/detail.tsx'
 
 describe('route: admin/library/music/detail', () => {
   describe('meta', () => {

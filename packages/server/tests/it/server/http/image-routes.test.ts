@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'

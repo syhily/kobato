@@ -1,6 +1,13 @@
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { Role } from '@kobato/shared/utils/roles.ts'
 
+import {
+  createNotificationWithRecipients,
+  listThreadParticipantIds,
+  notificationInboxQuery,
+} from '@kobato/db/operations/notification.ts'
+import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import {
   getThread,
@@ -14,13 +21,6 @@ import {
   sendDirectMessage,
   unreadCount,
 } from '@kobato/server/domains/notifications/service.ts'
-import {
-  createNotificationWithRecipients,
-  listThreadParticipantIds,
-  notificationInboxQuery,
-} from '@kobato/server/infra/db/operations/notification.ts'
-import { notification, notificationRecipient } from '@kobato/server/infra/db/schema/notification.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

@@ -1,16 +1,15 @@
 import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { UploadImageDialog } from '@kobato/web/ui/admin/shared/UploadImageDialog.tsx'
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
 import { isValidElement, useState } from 'react'
-
-import { orpcQuery } from '../../../../client/api/orpc-query'
-import { Button } from '../../../components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/dialog'
-import { Input } from '../../../components/input'
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
-import { UploadImageDialog } from '../../shared/UploadImageDialog'
 
 // Customizable trigger; `onPick` passes the full `AdminImageDto` (publicUrl + storagePath).
 

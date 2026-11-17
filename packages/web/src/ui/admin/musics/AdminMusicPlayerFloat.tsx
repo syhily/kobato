@@ -1,15 +1,18 @@
+import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import { formatTime } from '@kobato/web/ui/admin/musics/format-time.ts'
+import {
+  useMusicPlayerActions,
+  useMusicPlayerState,
+  useMusicPlayerTime,
+} from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
+import { ProgressSlider } from '@kobato/web/ui/admin/musics/ProgressSlider.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
-
-import { LazyAnimatePresence, LazyMotionDiv } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useMediaQuery } from '../../lib/use-media-query'
-import { Image } from '../../public/widgets/Image'
-import { formatTime } from './format-time'
-import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from './MusicPlayerContext'
-import { ProgressSlider } from './ProgressSlider'
 
 const STORAGE_KEY = 'kobato-admin-player-pos'
 

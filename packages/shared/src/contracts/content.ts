@@ -1,7 +1,5 @@
-import { z } from 'zod'
-
-import type { BlogSettingsBundle } from '../config/types'
-import type { KobatoInklingLabelTable } from '../i18n/inkling-labels/en-US'
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { KobatoInklingLabelTable } from '@kobato/shared/i18n/inkling-labels/en-US.ts'
 import type {
   Category,
   ClientTag,
@@ -13,13 +11,14 @@ import type {
   ListingPostCard,
   ListingPostCardWithMetadata,
   SidebarPostLink,
-} from '../types/catalog'
-import type { DetailPageComments, LatestComment } from '../types/comments'
-import type { ResolvedFonts } from '../types/fonts'
-import type { ListingPageLoaderData } from '../types/listing'
-import type { Role } from '../utils/roles'
+} from '@kobato/shared/types/catalog.ts'
+import type { DetailPageComments, LatestComment } from '@kobato/shared/types/comments.ts'
+import type { ResolvedFonts } from '@kobato/shared/types/fonts.ts'
+import type { ListingPageLoaderData } from '@kobato/shared/types/listing.ts'
+import type { Role } from '@kobato/shared/utils/roles.ts'
 
-import { SUPPORTED_LOCALES } from '../i18n/locales'
+import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { z } from 'zod'
 
 // `content.*` — the Ghost-Content-API-style read-only group backing every public
 // SSR loader (in-process via `@/server/http/ssr-caller`). HTTP signals that cannot

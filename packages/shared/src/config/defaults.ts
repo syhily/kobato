@@ -1,5 +1,5 @@
-import type { Assert, Equals } from '../contracts/primitives'
-import type { RateLimitSettings } from './types'
+import type { RateLimitSettings } from '@kobato/shared/config/types.ts'
+import type { Assert, Equals } from '@kobato/shared/contracts/primitives.ts'
 
 // Bounds shared by the server section schema and the admin form's
 // min/max attributes: 60s ≤ window ≤ 24h, 1 ≤ maxAttempts ≤ 1000.

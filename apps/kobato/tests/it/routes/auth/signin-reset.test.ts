@@ -1,14 +1,14 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { Mock } from 'vitest'
 
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { user, verification } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { issueResetToken } from '@kobato/server/domains/auth/verification-tokens.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { passkeyCredential } from '@kobato/server/infra/db/schema/passkey.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { user, verification } from '@kobato/server/infra/db/schema/user.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
@@ -45,7 +45,7 @@ const db = getTestDb()
 
 const CSRF_TOKEN = 'signin-reset-csrf-token'
 
-const { action } = await import('@/routes/auth/signin')
+const { action } = await import('@/routes/auth/signin.tsx')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

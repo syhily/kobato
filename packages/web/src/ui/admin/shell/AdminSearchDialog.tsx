@@ -1,12 +1,11 @@
+import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { useQuery } from '@tanstack/react-query'
 import { FileTextIcon, Loader2Icon, NotebookPenIcon, SearchIcon } from 'lucide-react'
 import { type ComponentType, type ReactNode, memo, useEffect, useRef, useState, useTransition } from 'react'
 import { useNavigate } from 'react-router'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Dialog, DialogContent, DialogTitle } from '../../components/dialog'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 interface AdminSearchDialogProps {
   open: boolean

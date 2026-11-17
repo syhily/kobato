@@ -1,8 +1,7 @@
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+
+import { rateLimitBounds } from '@kobato/shared/config/defaults.ts'
 import { z } from 'zod'
-
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
-
-import { rateLimitBounds } from './defaults'
 
 // One rate-limit bucket's validation schema — the single source shared by the
 // server section schema (`server/domains/settings/sections/rate-limit`) and the

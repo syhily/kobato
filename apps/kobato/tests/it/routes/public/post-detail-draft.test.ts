@@ -1,7 +1,7 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
@@ -87,7 +87,7 @@ async function seedNeverPublishedPost(slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-const postRoute = await import('@/routes/public/post/detail')
+const postRoute = await import('@/routes/public/post/detail.tsx')
 
 type LoaderResult = {
   post: { title: string }

@@ -1,7 +1,6 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { useMemo, useRef, useEffect } from 'react'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 function parseLrc(lrcInput?: string | null): [time: number, text: string][] {
   if (!lrcInput) {

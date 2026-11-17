@@ -1,9 +1,9 @@
 import type { HomeExtra } from '@kobato/shared/contracts/content.ts'
 import type { PublicListingLoaderData } from '@kobato/shared/types/listing.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { regularSession } from '@kobato/test/session.ts'
@@ -67,7 +67,7 @@ async function seedCatalog(count: number, slugPrefix: string, categoryId?: numbe
   }
 }
 
-const { loader } = await import('@/routes/public/home')
+const { loader } = await import('@/routes/public/home.tsx')
 
 function loaderEtag(result: unknown): string | null {
   const init = (result as { init?: { headers?: Record<string, string> } }).init

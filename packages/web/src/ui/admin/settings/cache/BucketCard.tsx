@@ -1,24 +1,27 @@
 import type { CacheSettings } from '@kobato/shared/config/types.ts'
 import type { CacheBucketStats } from '@kobato/shared/contracts/cache.ts'
 import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
+import type { ClearStatus } from '@kobato/web/ui/admin/settings/cache/cache-status.ts'
 
 import { formatBytes } from '@kobato/shared/i18n/format.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@kobato/web/ui/admin/settings/cache/cache-constants.ts'
+import { clamp, formatTtl, hoursToSeconds } from '@kobato/web/ui/admin/settings/cache/cache-formatters.ts'
+import {
+  type BucketDraft,
+  draftsEqual,
+  snapshotFromSettings,
+  validateBucket,
+} from '@kobato/web/ui/admin/settings/cache/cache-validation.ts'
+import { BucketSaveStatus, ReadOnlyStatusLine } from '@kobato/web/ui/admin/settings/cache/CacheStatusLine.tsx'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { useSettingsMutation } from '@kobato/web/ui/admin/settings/useSettingsMutation.ts'
 import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useMemo, useRef, useState } from 'react'
-
-import type { ClearStatus } from './cache-status'
-
-import { Button } from '../../../components/button'
-import { Input } from '../../../components/input'
-import { useI18n } from '../../../lib/I18nProvider'
-import { SettingsRow } from '../SettingsSection'
-import { SettingGroup } from '../shell/SettingGroup'
-import { useSettingsMutation } from '../useSettingsMutation'
-import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from './cache-constants'
-import { clamp, formatTtl, hoursToSeconds } from './cache-formatters'
-import { type BucketDraft, draftsEqual, snapshotFromSettings, validateBucket } from './cache-validation'
-import { BucketSaveStatus, ReadOnlyStatusLine } from './CacheStatusLine'
 
 type CacheSlice = CacheSettings['cache']
 

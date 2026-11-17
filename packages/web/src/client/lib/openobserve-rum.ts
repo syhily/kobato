@@ -5,17 +5,15 @@
 // preflight, no CSP `connect-src` widening.
 
 import type { FrontendRumBootstrap } from '@kobato/shared/contracts/trace.ts'
+import type { RumBudgetSnapshot, RumBudgetStore } from '@kobato/web/client/lib/rum-budget.ts'
+import type { RumRouteContext } from '@kobato/web/client/lib/rum-route.ts'
 import type { DatadogRum, RumInitConfiguration } from '@openobserve/browser-rum-slim'
 
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
 import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN } from '@kobato/shared/contracts/trace.ts'
-
-import type { RumBudgetSnapshot, RumBudgetStore } from './rum-budget'
-import type { RumRouteContext } from './rum-route'
-
-import { getLogger } from './logger'
-import { createRumEventPolicy } from './rum-sanitizer'
-import { isSelfTelemetryRumUrl, isTraceableRumUrl } from './rum-url-policy'
+import { getLogger } from '@kobato/ui/lib/logger.ts'
+import { createRumEventPolicy } from '@kobato/web/client/lib/rum-sanitizer.ts'
+import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@kobato/web/client/lib/rum-url-policy.ts'
 
 const log = getLogger('rum')
 

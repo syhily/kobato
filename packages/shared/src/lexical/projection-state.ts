@@ -17,10 +17,10 @@
 //    `music-player` becomes a text paragraph with its save-time meta snapshot
 //    (or the placeholder), `solution` / `two-column` are dropped.
 
-import type { LexicalEditorState, LexicalNodeJson } from './schema'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
-import { KOBATO_HOST_CARD_NODE_TYPES } from './node-whitelist'
+import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/shared/lexical/node-whitelist.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 /** Music-player fallback copy, used when the save-time meta snapshot is absent. */
 export const MUSIC_PLAYER_PROJECTION_PLACEHOLDER = '🎵 此文章包含音乐播放器，请访问原文收听。'

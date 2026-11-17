@@ -1,8 +1,7 @@
+import { likeEscape } from '@kobato/db/like-escape.ts'
+import { postSearchIndex } from '@kobato/db/schema/content.ts'
+import { post } from '@kobato/db/schema/post.ts'
 import { sql, type SQL } from 'drizzle-orm'
-
-import { likeEscape } from '../db/like-escape'
-import { postSearchIndex } from '../db/schema/content'
-import { post } from '../db/schema/post'
 
 /**
  * The single definition of which post text is searchable; the LIKE

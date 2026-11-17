@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ErrorBoundary } from '@/routes/admin/settings/layout'
+import { ErrorBoundary } from '@/routes/admin/settings/layout.tsx'
 
 // The layout's loader path imports the settings service, whose
 // section-change wiring pulls in the backup/audit schedulers (and

@@ -1,24 +1,23 @@
 import type { TimeUnit } from '@kobato/shared/contracts/analytics.ts'
 
 import { pickTimeUnit } from '@kobato/shared/contracts/analytics.ts'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useHydrated } from '@kobato/ui/lib/use-hydrated.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useAnalyticsDashboardState } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
+import { AnalyticsQueryState } from '@kobato/web/ui/admin/analytics/AnalyticsQueryState.tsx'
+import { useAnalyticsQueryData } from '@kobato/web/ui/admin/analytics/use-analytics-query.ts'
+import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Skeleton } from '../../components/skeleton'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useHydrated } from '../../lib/use-hydrated'
-import { useAnalyticsDashboardState } from './analytics-state-context'
-import { AnalyticsQueryState } from './AnalyticsQueryState'
-import { useAnalyticsQueryData } from './use-analytics-query'
-import { buildAnalyticsInput, type AnalyticsScope } from './use-analytics-state'
 
 // The @unovis chunk is client-only: SSR and the first client render emit the
 // static skeleton; the lazy chart mounts behind an identical fallback.
 
 const LazyViewsChartInner = lazy(() =>
-  import('./ViewsChartInner').then((module) => ({ default: module.ViewsChartInner })),
+  import('@kobato/web/ui/admin/analytics/ViewsChartInner.tsx').then((module) => ({ default: module.ViewsChartInner })),
 )
 
 export interface ViewsChartProps {

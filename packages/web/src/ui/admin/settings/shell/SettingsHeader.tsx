@@ -1,7 +1,6 @@
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { XIcon } from 'lucide-react'
 import { useNavigate } from 'react-router'
-
-import { useI18n } from '../../../lib/I18nProvider'
 
 export function SettingsCloseButton() {
   const { t } = useI18n()

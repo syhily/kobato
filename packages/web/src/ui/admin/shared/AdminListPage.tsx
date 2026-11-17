@@ -1,7 +1,6 @@
+import { Card, CardContent } from '@kobato/ui/components/card.tsx'
+import { AdminPagination } from '@kobato/web/ui/admin/shared/AdminPagination.tsx'
 import { type ReactNode } from 'react'
-
-import { Card, CardContent } from '../../components/card'
-import { AdminPagination } from './AdminPagination'
 
 function AdminListPageRoot({ children }: { children: ReactNode }) {
   return <div className="flex flex-col gap-6">{children}</div>

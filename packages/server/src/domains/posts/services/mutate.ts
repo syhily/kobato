@@ -1,12 +1,11 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { PostMetaWriteInput } from '@kobato/server/domains/posts/services/shared.ts'
 import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
 
-import type { Database } from '../../../infra/db/database'
-import type { ViewerIdentity } from '../../auth/rbac'
-import type { PostMetaWriteInput } from './shared'
-
-import { DomainError } from '../../../infra/http/errors'
-import { makeEntityMutations } from '../../content/entities/mutate'
-import { postDescriptor } from '../descriptor'
+import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate.ts'
+import { postDescriptor } from '@kobato/server/domains/posts/descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 // The five mutations come from the shared descriptor-driven skeleton;
 // everything post-specific attaches through `postDescriptor`.

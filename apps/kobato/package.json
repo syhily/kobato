@@ -33,10 +33,12 @@
   },
   "devDependencies": {
     "@hono/node-server": "catalog:",
+    "@kobato/db": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/shared": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/ui": "workspace:*",
     "@kobato/web": "workspace:*",
     "@napi-rs/canvas": "catalog:",
     "@opentelemetry/api": "catalog:",

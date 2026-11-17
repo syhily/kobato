@@ -34,11 +34,10 @@ import {
 } from '@kobato/shared/lexical/cards/music-player.ts'
 import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
 import { isSafeUrl } from '@kobato/shared/sanitize-url.ts'
+import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import { MusicPickerDialog } from '@kobato/web/ui/admin/editor/pickers/MusicPickerDialog.tsx'
+import { MusicPlayerCard } from '@kobato/web/ui/public/music-player/music-player.tsx'
 import { Music2Icon } from 'lucide-react'
-
-import { MusicPickerDialog } from '../../../ui/admin/editor/pickers/MusicPickerDialog'
-import { useI18n, type I18nValue } from '../../../ui/lib/I18nProvider'
-import { MusicPlayerCard } from '../../../ui/public/music-player/music-player'
 
 export const BaseMusicPlayerNode = class extends generateDecoratorNode({
   nodeType: MUSIC_PLAYER_NODE_TYPE,

@@ -1,6 +1,5 @@
+import type { Env } from '@kobato/server/http/context.ts'
 import type { MiddlewareHandler } from 'hono'
-
-import type { Env } from '../context'
 
 /**
  * 301-normalise trailing slashes on public GET/HEAD routes (root, `/rpc/*` and probes

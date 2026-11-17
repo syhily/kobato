@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
-import type { Database } from '../../infra/db/database'
-import type { ContentType } from './schemas/revision'
-
-import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '../../infra/db/operations/slug-registry'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { isUniqueConstraintError } from '../../infra/http/errors'
+import { isUniqueConstraintError } from '@kobato/db/errors.ts'
+import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@kobato/db/operations/slug-registry.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 
 /** Re-claims a soft-deleted entity's slug during restore; returns the warning when occupied or stolen mid-restore. */
 // Sync (node:sqlite): transactions are sync callbacks.

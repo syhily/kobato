@@ -1,8 +1,7 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ArrowRightIcon } from 'lucide-react'
 import { Form } from 'react-router'
-
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
 
 export interface MagicLinkConfirmFormProps {
   action?: string

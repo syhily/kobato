@@ -1,6 +1,6 @@
+import { image } from '@kobato/db/schema/media.ts'
 // Real in-memory SQLite + storage registry; only sharp stays mocked.
 import { buildObjectKey } from '@kobato/server/domains/images/key.ts'
-import { image } from '@kobato/server/infra/db/schema/media.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
@@ -13,8 +13,8 @@ const processImageBufferMock = vi.hoisted(() => vi.fn())
 vi.mock('@kobato/server/infra/image/process.ts', () => ({ processImageBuffer: processImageBufferMock }))
 
 // Wrap-don't-replace: the wrappers only inject one-shot DB failures.
-vi.mock('@kobato/server/infra/db/operations/image.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/db/operations/image.ts')>()
+vi.mock('@kobato/db/operations/image.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/db/operations/image.ts')>()
   return {
     ...actual,
     insertImage: vi.fn(actual.insertImage),
@@ -36,7 +36,7 @@ const passthroughRandomBytes = randomBytesMock.getMockImplementation()!
 const mem = makeMemoryBackend()
 
 const { checkImageUpload, uploadImage } = await import('@kobato/server/domains/images/services/upload.ts')
-const { upsertImageByStoragePath, insertImage } = await import('@kobato/server/infra/db/operations/image.ts')
+const { upsertImageByStoragePath, insertImage } = await import('@kobato/db/operations/image.ts')
 const upsertImageByStoragePathMock = vi.mocked(upsertImageByStoragePath)
 const insertImageMock = vi.mocked(insertImage)
 

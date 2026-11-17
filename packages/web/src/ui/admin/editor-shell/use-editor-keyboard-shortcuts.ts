@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import type { PublishState } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import type { PublishState } from './editor-shell-types'
+import { useEffect } from 'react'
 
 interface UseEditorKeyboardShortcutsArgs {
   mode: 'create' | 'edit'

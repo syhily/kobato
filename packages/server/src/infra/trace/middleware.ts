@@ -6,16 +6,14 @@
 // run, and unknown/catch-all routes collapse to a fixed category so a raw
 // path can never become an attribute.
 
+import type { Span } from '@kobato/server/infra/trace/facade.ts'
 import type { Context, MiddlewareHandler } from 'hono'
 
+import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'
+import { addHttpServerActive, recordHttpServer } from '@kobato/server/infra/trace/metrics.ts'
+import { takeRoutePattern } from '@kobato/server/infra/trace/route-registry.ts'
+import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths.ts'
 import { routePath } from 'hono/route'
-
-import type { Span } from './facade'
-
-import { isTraceActive, runInSpan, startSpan } from './facade'
-import { addHttpServerActive, recordHttpServer } from './metrics'
-import { takeRoutePattern } from './route-registry'
-import { isSelfTelemetryPath } from './self-telemetry-paths'
 
 /** Hono's catch-all route for React Router documents/data requests. */
 const REACT_ROUTER_ROUTE = 'react_router'

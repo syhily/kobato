@@ -2,7 +2,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import MyProfileRoute from '@/routes/admin/me/profile'
+import MyProfileRoute from '@/routes/admin/me/profile.tsx'
 
 describe('snapshot: routes/admin/me/profile', () => {
   it('renders the my profile route', () => {

@@ -1,10 +1,9 @@
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@kobato/ui/components/sidebar.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useIsActiveLink } from '@kobato/web/ui/admin/shell/use-is-active-link.ts'
 import { ChevronRightIcon } from 'lucide-react'
 import { type ComponentProps, type ReactNode, createContext, use, useMemo, useState } from 'react'
 import { Link, matchPath, useLocation } from 'react-router'
-
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '../../components/sidebar'
-import { cn } from '../../lib/cn'
-import { useIsActiveLink } from './use-is-active-link'
 
 interface CollapsibleContextValue {
   expanded: boolean

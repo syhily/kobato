@@ -1,9 +1,9 @@
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 import { ACCESS_EVENTS_DDL } from '@kobato/server/domains/analytics/services/access-log.ts'
 import { runAnalyticsBlobMigrationAtBoot } from '@kobato/server/domains/analytics/services/blob-migration.ts'
 import { openAnalyticsDatabase } from '@kobato/server/infra/analytics/duckdb.ts'
-import { findSettingByScope, upsertSetting } from '@kobato/server/infra/db/operations/setting.ts'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'

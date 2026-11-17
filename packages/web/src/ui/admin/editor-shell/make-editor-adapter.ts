@@ -1,14 +1,13 @@
 import type { AdminRevisionDto, SaveBodyInput, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { CreateDraftConfig } from '@kobato/web/client/hooks/use-create-draft.ts'
+import type { LocalDraftConfig } from '@kobato/web/client/hooks/use-local-draft.ts'
+import type { RevisionLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
+import type { MetaSidebarSlotProps } from '@kobato/web/ui/admin/editor-shell/EditorMetaPanel.tsx'
+import type { EditorScreenAdapter, EditorScreenEntity } from '@kobato/web/ui/admin/editor-shell/EditorScreen.tsx'
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-
-import type { CreateDraftConfig } from '../../../client/hooks/use-create-draft'
-import type { LocalDraftConfig } from '../../../client/hooks/use-local-draft'
-import type { RevisionLike } from './editor-shell-types'
-import type { MetaSidebarSlotProps } from './EditorMetaPanel'
-import type { EditorScreenAdapter, EditorScreenEntity } from './EditorScreen'
 
 /** Meta-draft shape the shared screen reads (mirrors EditorScreenAdapter). */
 type EditorMetaShape = { title: string; slug: string; published: boolean; publishedAt: string }

@@ -2,18 +2,17 @@ import type { CountersDto, ViewsDto, ViewsPoint } from '@kobato/shared/contracts
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { formatNumber } from '@kobato/shared/i18n/format.ts'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useHydrated } from '@kobato/ui/lib/use-hydrated.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { dayKeyOfLabel } from '@kobato/web/ui/admin/analytics/time-labels.ts'
+import { getClientTimezone } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRightIcon, EyeIcon, GlobeIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
-import { Skeleton } from '../../components/skeleton'
-import { useI18n } from '../../lib/I18nProvider'
-import { useHydrated } from '../../lib/use-hydrated'
-import { dayKeyOfLabel } from '../analytics/time-labels'
-import { getClientTimezone } from '../analytics/use-analytics-state'
 
 interface VisitSummaryCardProps {
   summary: CountersDto

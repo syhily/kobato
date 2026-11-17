@@ -1,15 +1,14 @@
 import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
 
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { SettingsSelect } from '@kobato/web/ui/admin/settings/shell/SettingsSelect.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { useCallback } from 'react'
 import { Controller } from 'react-hook-form'
-
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingsRow } from './SettingsSection'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingGroupContent } from './shell/SettingGroupContent'
-import { SettingsSelect } from './shell/SettingsSelect'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 const TRANSPORT_OPTIONS: { value: MailLoaderShape['mail']['transport']; label: string }[] = [
   { value: 'smtp', label: 'SMTP' },

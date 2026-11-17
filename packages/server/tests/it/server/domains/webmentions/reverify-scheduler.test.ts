@@ -8,11 +8,11 @@ vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
 
+import { upsertWebmention } from '@kobato/db/operations/webmention.ts'
+import { post } from '@kobato/db/schema/post.ts'
+import { webmention } from '@kobato/db/schema/webmention.ts'
 import { REVERIFY_MIN_DELAY_MS } from '@kobato/server/domains/webmentions/reverify-scheduler.ts'
 import { REVERIFY_BATCH_SIZE } from '@kobato/server/domains/webmentions/reverify.ts'
-import { upsertWebmention } from '@kobato/server/infra/db/operations/webmention.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
-import { webmention } from '@kobato/server/infra/db/schema/webmention.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'

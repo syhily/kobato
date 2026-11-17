@@ -1,12 +1,10 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { FilterFieldSpec, FilterQueryPatch } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { deriveStatusQueryFields } from '@kobato/web/ui/admin/shared/filter-bar/status-fields.ts'
 import { ListChecksIcon, UserIcon } from 'lucide-react'
-
-import type { I18nValue } from '../../lib/I18nProvider'
-import type { FilterFieldSpec, FilterQueryPatch } from '../shared/filter-bar/types'
-
-import { deriveStatusQueryFields } from '../shared/filter-bar/status-fields'
 
 // Pages-list filter-pill specs + `toQuery` mappers onto `admin.pages.list` input.
 export type PageFilterFieldKey = 'status' | 'author'

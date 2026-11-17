@@ -1,8 +1,7 @@
+import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '@kobato/ui/components/field.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { SettingsHintTooltip } from '@kobato/web/ui/admin/settings/SettingsHintTooltip.tsx'
 import { type ReactNode, useId } from 'react'
-
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '../../components/field'
-import { cn } from '../../lib/cn'
-import { SettingsHintTooltip } from './SettingsHintTooltip'
 
 export interface SettingsControlProps {
   'aria-invalid'?: true

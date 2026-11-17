@@ -1,4 +1,4 @@
-import { useI18n } from '../../lib/I18nProvider'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 export function NotWordPressView() {
   const { t } = useI18n()

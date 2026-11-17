@@ -1,9 +1,8 @@
+import { SidebarMenuItem } from '@kobato/ui/components/sidebar.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { warmNotificationsDrawerChunk } from '@kobato/web/ui/shared/notifications/LazyNotificationsDrawer.tsx'
+import { NotificationBadge } from '@kobato/web/ui/shared/notifications/NotificationBadge.tsx'
 import { BellIcon } from 'lucide-react'
-
-import { SidebarMenuItem } from '../../components/sidebar'
-import { useI18n } from '../../lib/I18nProvider'
-import { warmNotificationsDrawerChunk } from '../../shared/notifications/LazyNotificationsDrawer'
-import { NotificationBadge } from '../../shared/notifications/NotificationBadge'
 
 interface NavNotificationsProps {
   /** Supplied by the shell's single count owner — never subscribe here.

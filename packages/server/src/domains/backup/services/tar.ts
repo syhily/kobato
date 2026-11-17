@@ -1,9 +1,8 @@
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { Readable } from 'node:stream'
-
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { ActionFailure } from '../../../infra/http/errors'
 
 /**
  * Minimal USTAR writer/reader for the backup archive (content DB, optional

@@ -1,3 +1,22 @@
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { listPagesSchema, upsertPageMetaSchema } from '@kobato/server/domains/pages/schema.ts'
+import {
+  listPagesForAdmin,
+  getPageDetailForAdmin,
+  listRevisionsForAdmin as listPageRevisionsForAdmin,
+} from '@kobato/server/domains/pages/services/admin-query.ts'
+import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
+import {
+  createPage,
+  deletePage,
+  restorePage,
+  unpublishPage,
+  updatePageMeta,
+} from '@kobato/server/domains/pages/services/mutate.ts'
+import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-router.ts'
+import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import {
   adminPageDetailDto,
   adminPageDto,
@@ -6,26 +25,6 @@ import {
 } from '@kobato/shared/contracts/pages.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { listPagesSchema, upsertPageMetaSchema } from '../../../domains/pages/schema'
-import {
-  listPagesForAdmin,
-  getPageDetailForAdmin,
-  listRevisionsForAdmin as listPageRevisionsForAdmin,
-} from '../../../domains/pages/services/admin-query'
-import { pageLifecycleAdapter } from '../../../domains/pages/services/lifecycle-adapter'
-import {
-  createPage,
-  deletePage,
-  restorePage,
-  unpublishPage,
-  updatePageMeta,
-} from '../../../domains/pages/services/mutate'
-import { createServerTranslator } from '../../../infra/i18n'
-import { adminProc, localizedOrpcError } from '../../orpc-base'
-import { formatWarningDescriptors } from '../../translate-domain-error'
-import { makeRevisionRouter } from './revision-router'
 
 const idInput = z.object({ id: z.string().min(1) })
 

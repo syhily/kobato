@@ -1,8 +1,7 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { FriendRow } from '@kobato/db/types.ts'
 import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 import type { Friend } from '@kobato/shared/types/catalog.ts'
-
-import type { Database } from '../../infra/db/database'
-import type { FriendRow } from '../../infra/db/types'
 
 import {
   type AdminFriendsListFilters,
@@ -14,13 +13,13 @@ import {
   listAdminFriendRows,
   listPublicFriendRows,
   updateFriend,
-} from '../../infra/db/operations/friend'
-import { fireAndForgetNotify } from '../../infra/email/admin-notification'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { hydrateImageRefs } from '../images/services/enhance'
-import { sendNewFriendApplication } from './email'
+} from '@kobato/db/operations/friend.ts'
+import { sendNewFriendApplication } from '@kobato/server/domains/friends/email.ts'
+import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance.ts'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('friends.service')
 

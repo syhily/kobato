@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import { Input } from '../../components/input'
-import { useI18n } from '../../lib/I18nProvider'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 interface TitleSlugStripProps {
   entityLabelId: UiMessageId

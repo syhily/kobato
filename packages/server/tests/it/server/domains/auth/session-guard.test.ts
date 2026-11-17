@@ -1,13 +1,13 @@
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { findSessionMeta, recordSessionLogin } from '@kobato/server/domains/auth/repo.ts'
 import {
   revokeAllSessionsWithGuard,
   revokeOwnSessionWithGuard,
   revokeSessionWithGuard,
 } from '@kobato/server/domains/auth/session-guard.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

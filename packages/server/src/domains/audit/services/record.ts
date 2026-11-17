@@ -1,8 +1,8 @@
-import type { AuditContext, AuditEventInput } from '../types'
+import type { AuditContext, AuditEventInput } from '@kobato/server/domains/audit/types.ts'
 
-import { getLogger } from '../../../infra/logger'
-import { tagL3InDetails } from '../privacy'
-import { pushAuditEvent } from './batcher'
+import { tagL3InDetails } from '@kobato/server/domains/audit/privacy.ts'
+import { pushAuditEvent } from '@kobato/server/domains/audit/services/batcher.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('audit.service')
 

@@ -1,24 +1,26 @@
 import type { SaveBodyInput, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { CreateDraftConfig } from '@kobato/web/client/hooks/use-create-draft.ts'
+import type { LocalDraftConfig } from '@kobato/web/client/hooks/use-local-draft.ts'
+import type {
+  EntityLike,
+  RevisionLike,
+  UseEditorShellStateOutput,
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
+import type { MetaSidebarSlotProps } from '@kobato/web/ui/admin/editor-shell/EditorMetaPanel.tsx'
 import type { NavigateFunction } from 'react-router'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { CreateModeBanner } from '@kobato/web/ui/admin/editor-shared/CreateModeBanner.tsx'
+import { TitleSlugStrip } from '@kobato/web/ui/admin/editor-shared/TitleSlugStrip.tsx'
+import { ActionBanner } from '@kobato/web/ui/admin/editor-shell/ActionBanner.tsx'
+import { DraftConflictDialog } from '@kobato/web/ui/admin/editor-shell/DraftConflictDialog.tsx'
+import { EditorMetaPanel } from '@kobato/web/ui/admin/editor-shell/EditorMetaPanel.tsx'
+import { EditorToolbar } from '@kobato/web/ui/admin/editor-shell/EditorToolbar.tsx'
+import { useEditorShellState } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-state.ts'
+import { PageBodyEditor } from '@kobato/web/ui/admin/editor/PageBodyEditor.tsx'
 import { useMemo } from 'react'
-
-import type { CreateDraftConfig } from '../../../client/hooks/use-create-draft'
-import type { LocalDraftConfig } from '../../../client/hooks/use-local-draft'
-import type { EntityLike, RevisionLike, UseEditorShellStateOutput } from './editor-shell-types'
-import type { MetaSidebarSlotProps } from './EditorMetaPanel'
-
-import { cn } from '../../lib/cn'
-import { CreateModeBanner } from '../editor-shared/CreateModeBanner'
-import { TitleSlugStrip } from '../editor-shared/TitleSlugStrip'
-import { PageBodyEditor } from '../editor/PageBodyEditor'
-import { ActionBanner } from './ActionBanner'
-import { DraftConflictDialog } from './DraftConflictDialog'
-import { EditorMetaPanel } from './EditorMetaPanel'
-import { EditorToolbar } from './EditorToolbar'
-import { useEditorShellState } from './use-editor-shell-state'
 
 /** Entity shape the screen itself reads (toolbar links, panel extras). */
 export interface EditorScreenEntity extends EntityLike {

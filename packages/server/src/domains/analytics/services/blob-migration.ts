@@ -1,8 +1,8 @@
-import type { AnalyticsHandle } from '../../../infra/analytics/duckdb'
-import type { Database } from '../../../infra/db/database'
+import type { Database } from '@kobato/db/database.ts'
+import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
-import { findSettingByScope, upsertSetting } from '../../../infra/db/operations/setting'
-import { getLogger } from '../../../infra/logger'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 /**
  * One-time conversion of the legacy `access_log` table (named columns) to the

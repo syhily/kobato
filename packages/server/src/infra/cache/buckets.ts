@@ -1,19 +1,22 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/shared/contracts/cache.ts'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@kobato/shared/types/cache.ts'
 
+import { session } from '@kobato/db/schema/session.ts'
+import { clearBucketDir, clearBucketEntries, statBucket } from '@kobato/server/infra/cache/file-store.ts'
+import {
+  bumpCounter,
+  evictBucketMemory,
+  isCounterBucket,
+  resolveCacheSlot,
+} from '@kobato/server/infra/cache/registry.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { rateLimitEntryCount } from '@kobato/server/infra/rate-limit.ts'
 import { CACHE_DECLARATIONS } from '@kobato/shared/cache/registry.ts'
 import { resolveAppLocalization } from '@kobato/shared/i18n/app-localization.ts'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@kobato/shared/types/cache.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { count, gt } from 'drizzle-orm'
-
-import type { Database } from '../db/database'
-
-import { session } from '../db/schema/session'
-import { createServerTranslator } from '../i18n'
-import { rateLimitEntryCount } from '../rate-limit'
-import { clearBucketDir, clearBucketEntries, statBucket } from './file-store'
-import { bumpCounter, evictBucketMemory, isCounterBucket, resolveCacheSlot } from './registry'
 
 // Admin view over the shared cache declarations; bucket IDs are the stable
 // directory names under `<storage.data>/cache`. Sessions and rate-limit

@@ -1,9 +1,8 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { subscribeChunkReload } from '@kobato/web/client/hooks/use-chunk-error-recovery.ts'
+import { BrandLogo } from '@kobato/web/ui/public/chrome/BrandLogo.tsx'
 import { useEffect, useState } from 'react'
-
-import { subscribeChunkReload } from '../../../client/hooks/use-chunk-error-recovery'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { BrandLogo } from './BrandLogo'
 
 export function ChunkReloadOverlay() {
   const [pending, setPending] = useState(false)

@@ -1,6 +1,6 @@
+import { setting } from '@kobato/db/schema/config.ts'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/test/mock-ctx.ts'

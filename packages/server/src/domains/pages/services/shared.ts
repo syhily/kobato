@@ -1,8 +1,8 @@
-import type { PageMetaRow } from '../../../infra/db/types'
-import type { UpsertMetaInputBase } from '../../content/entities/descriptor'
+import type { PageMetaRow } from '@kobato/db/types.ts'
+import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor.ts'
 
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 // Server-side write shape (number ids / Dates) — distinct from the wire
 // `UpsertPageMetaInput` in `@/shared/types/pages` (string ids / ISO dates).

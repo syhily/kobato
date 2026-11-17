@@ -1,3 +1,10 @@
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read.ts'
+import { searchMusic } from '@kobato/server/domains/music/services/search.ts'
+import { addMusic } from '@kobato/server/domains/music/services/write/add.ts'
+import { deleteMusic } from '@kobato/server/domains/music/services/write/delete.ts'
+import { updateMusicMetadata } from '@kobato/server/domains/music/services/write/metadata.ts'
+import { authorProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import {
   addMusicOutputDto,
   getMusicOutputDto,
@@ -7,14 +14,6 @@ import {
 } from '@kobato/shared/contracts/music.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { findMusicDtoById, listMusicForAdmin } from '../../../domains/music/services/read'
-import { searchMusic } from '../../../domains/music/services/search'
-import { addMusic } from '../../../domains/music/services/write/add'
-import { deleteMusic } from '../../../domains/music/services/write/delete'
-import { updateMusicMetadata } from '../../../domains/music/services/write/metadata'
-import { authorProc, localizedOrpcError } from '../../orpc-base'
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/music/list' })

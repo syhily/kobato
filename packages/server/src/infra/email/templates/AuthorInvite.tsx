@@ -1,10 +1,9 @@
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+
+import { Link, Text } from '@kobato/server/infra/email/render.tsx'
+import { EmailLayout } from '@kobato/server/infra/email/templates/layout/EmailLayout.tsx'
+import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-
-import type { ServerTranslator } from '../../i18n'
-
-import { Link, Text } from '../render'
-import { EmailLayout } from './layout/EmailLayout'
-import { light } from './styles/tokens'
 
 interface Props {
   t: ServerTranslator

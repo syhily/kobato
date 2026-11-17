@@ -2,7 +2,7 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-import BrandingRoute from '@/routes/admin/library/branding'
+import BrandingRoute from '@/routes/admin/library/branding.tsx'
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')

@@ -1,13 +1,12 @@
 import { computePageWindow } from '@kobato/shared/utils/pagination.ts'
-import { useMemo } from 'react'
-
 import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
-} from '../../components/pagination'
+} from '@kobato/ui/components/pagination.tsx'
+import { useMemo } from 'react'
 
 interface AdminPaginationProps {
   /** Total number of pages (>=1). The component renders nothing when total <= 1. */

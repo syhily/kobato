@@ -9,14 +9,14 @@
 // token (`revision`) is request identity; the per-scope content hashes
 // (`revisions`) are what cache keys and ETags consume.
 
-import type { RepresentationRevisions } from '../config/representation-scopes'
-import type { BlogSettingsSnapshot } from '../config/snapshot'
-import type { BlogSettingsBundle } from '../config/types'
-import type { AppLocale } from './locales'
+import type { RepresentationRevisions } from '@kobato/shared/config/representation-scopes.ts'
+import type { BlogSettingsSnapshot } from '@kobato/shared/config/snapshot.ts'
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
-import { getBlogSettingsSnapshotSync } from '../config/getters'
-import { representationRevisionsFor } from '../config/representation-scopes'
-import { DEFAULT_LOCALE } from './locales'
+import { getBlogSettingsSnapshotSync } from '@kobato/shared/config/getters.ts'
+import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
+import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
 
 export interface AppLocalization {
   locale: AppLocale

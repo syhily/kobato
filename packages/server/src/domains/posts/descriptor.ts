@@ -1,38 +1,45 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types.ts'
+import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
 import type { Post } from '@kobato/shared/types/catalog.ts'
 
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
-
-import type { Database } from '../../infra/db/database'
-import type { ContentRow, NewPostMeta, PostMetaRow } from '../../infra/db/types'
-import type { MetaEntityDescriptor } from '../content/entities/descriptor'
-
-import { findCategoryById, findCategoryNamesByIds } from '../../infra/db/operations/category'
-import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '../../infra/db/operations/post-tag'
-import { findTagsByNames, seedTagsIfMissing } from '../../infra/db/operations/tag'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { computeBodyText } from '../../infra/pt/lexical-projection'
-import { resolveSlug } from '../../infra/slug/resolve'
-import { canEditPost } from '../auth/rbac'
-import { invalidateContent } from '../content/invalidate'
-import { warmContentRenderCaches } from '../content/render-warmup'
-import { findContentById } from '../content/revisions'
-import { isLive, isPromoted } from '../content/schemas/live-gate'
-import { toAdminPostDto, toCmsPost } from './projection'
-import { runPostPublishHooks } from './publish-hooks'
-import { insertPostMeta, restorePostMeta, softDeletePostMeta, updatePostMetaById } from './repos/write'
-import { indexPost, indexPostFromRevision, removePostIndex } from './services/search-index'
-import { assertOwnPostOr404, type PostMetaWriteInput } from './services/shared'
+import { findCategoryById, findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
+import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag.ts'
+import { findTagsByNames, seedTagsIfMissing } from '@kobato/db/operations/tag.ts'
+import { canEditPost } from '@kobato/server/domains/auth/rbac.ts'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
+import { findContentById } from '@kobato/server/domains/content/revisions.ts'
+import { isLive, isPromoted } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { toAdminPostDto, toCmsPost } from '@kobato/server/domains/posts/projection.ts'
+import { runPostPublishHooks } from '@kobato/server/domains/posts/publish-hooks.ts'
+import {
+  insertPostMeta,
+  restorePostMeta,
+  softDeletePostMeta,
+  updatePostMetaById,
+} from '@kobato/server/domains/posts/repos/write.ts'
+import {
+  indexPost,
+  indexPostFromRevision,
+  removePostIndex,
+} from '@kobato/server/domains/posts/services/search-index.ts'
+import { assertOwnPostOr404, type PostMetaWriteInput } from '@kobato/server/domains/posts/services/shared.ts'
 import {
   findPostMetaById,
   findPostMetaBySlug,
   findPostMetaBySlugForUpdate,
   findPublicPostMetaBySlug,
-} from './services/single'
+} from '@kobato/server/domains/posts/services/single.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { computeBodyText } from '@kobato/server/infra/pt/lexical-projection.ts'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
 
 const log = getLogger('posts.service')
 

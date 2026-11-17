@@ -20,8 +20,8 @@ vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => ({
   resolveConfigFilePath: () => holder.configPath,
 }))
 
-vi.mock('@kobato/server/infra/db/database.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/db/database.ts')>()),
+vi.mock('@kobato/server/infra/db/paths.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@kobato/server/infra/db/paths.ts')>()),
   resolveDatabasePath: () => holder.dbPath,
 }))
 

@@ -45,6 +45,7 @@
     "sharp": "catalog:"
   },
   "devDependencies": {
+    "@kobato/config": "workspace:*",
     "@playwright/test": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",

@@ -1,6 +1,6 @@
+import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
+import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
 import { adminWebmentionsRouter } from '@kobato/server/http/controllers/admin/webmentions.controller.ts'
-import { upsertWebmentionOutbox } from '@kobato/server/infra/db/operations/webmention-outbox.ts'
-import { webmentionOutbox } from '@kobato/server/infra/db/schema/webmention.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'

@@ -1,10 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { SQL } from 'drizzle-orm'
 
-import type { Database } from '../db/database'
-
-import { getCounter, through } from '../cache/registry'
-import { getLogger } from '../logger'
-import { likeCacheKeyParts, runLikeSearch } from './like'
+import { getCounter, through } from '@kobato/server/infra/cache/registry.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { likeCacheKeyParts, runLikeSearch } from '@kobato/server/infra/search/like.ts'
 
 // Search-result cache: the full ordered slug list per query, so pagination
 // never re-runs the DB query. Key = generation + query; empty result sets

@@ -1,9 +1,7 @@
-import { idFromString } from '@kobato/shared/utils/id.ts'
-
-import type { Database } from '../../infra/db/database'
-import type { WebmentionRow } from '../../infra/db/types'
-import type { WebmentionType } from './classify'
-import type { SourceMetadata } from './verify'
+import type { Database } from '@kobato/db/database.ts'
+import type { WebmentionRow } from '@kobato/db/types.ts'
+import type { WebmentionType } from '@kobato/server/domains/webmentions/classify.ts'
+import type { SourceMetadata } from '@kobato/server/domains/webmentions/verify.ts'
 
 import {
   applyWebmentionReverifyFailure,
@@ -12,13 +10,14 @@ import {
   hideExhaustedPendingWebmentions,
   pickWebmentionsDueForReverify,
   WEBMENTION_HIDE_STREAK,
-} from '../../infra/db/operations/webmention'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { runDueRows } from './queue-scheduler'
-import { verifyWebmentionSource } from './receive'
-import { resolveWebmentionTarget } from './target'
+} from '@kobato/db/operations/webmention.ts'
+import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
+import { verifyWebmentionSource } from '@kobato/server/domains/webmentions/receive.ts'
+import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/target.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
 
 const log = getLogger('webmentions.reverify')
 

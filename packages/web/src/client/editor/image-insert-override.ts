@@ -28,8 +28,7 @@ import {
   OPEN_IMAGE_LIBRARY_COMMAND,
 } from '@kobato/inkling'
 import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
-
-import { KobatoImageNode } from './kobato-image-node'
+import { KobatoImageNode } from '@kobato/web/client/editor/kobato-image-node.ts'
 
 /** Content stores origin-relative `/storage/<key>` srcs (the site-owned asset URL
  * policy) so a backend/CDN switch never breaks bodies; the library DTO's

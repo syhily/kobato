@@ -1,12 +1,11 @@
+import type { SendResult } from '@kobato/server/infra/email/types.ts'
+
+import { render } from '@kobato/server/infra/email/render.tsx'
+import { sendEmail } from '@kobato/server/infra/email/sender.ts'
+import ConfirmSubscription from '@kobato/server/infra/email/templates/ConfirmSubscription.tsx'
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { createElement } from 'react'
-
-import type { SendResult } from '../../infra/email/types'
-
-import { render } from '../../infra/email/render'
-import { sendEmail } from '../../infra/email/sender'
-import ConfirmSubscription from '../../infra/email/templates/ConfirmSubscription'
-import { emailTranslator } from '../../infra/email/translator'
 
 // The only mail a `pending` subscriber ever receives.
 export async function sendConfirmSubscription(

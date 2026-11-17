@@ -1,9 +1,9 @@
 import type { PublicListingLoaderData } from '@kobato/shared/types/listing.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { postTag } from '@kobato/db/schema/post-tag.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { adminSession, regularSession } from '@kobato/test/session.ts'
@@ -75,9 +75,9 @@ async function seedCatalog(): Promise<void> {
   await linkTag(hiddenId, tagId)
 }
 
-const categoryRoute = await import('@/routes/public/category/list')
-const tagRoute = await import('@/routes/public/tag/list')
-const searchRoute = await import('@/routes/public/search/list')
+const categoryRoute = await import('@/routes/public/category/list.tsx')
+const tagRoute = await import('@/routes/public/tag/list.tsx')
+const searchRoute = await import('@/routes/public/search/list.tsx')
 
 function loaderEtag(result: unknown): string | null {
   const init = (result as { init?: { headers?: Record<string, string> } }).init

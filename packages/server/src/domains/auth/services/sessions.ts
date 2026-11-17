@@ -1,11 +1,11 @@
 // Session orchestration over the primitives in `repo.ts`; revocation policy
 // ("who may revoke whose session") lives in `session-guard.ts`.
 
-import type { Database } from '../../../infra/db/database'
-import type { SessionMeta, SessionWithUser } from '../repo'
+import type { Database } from '@kobato/db/database.ts'
+import type { SessionMeta, SessionWithUser } from '@kobato/server/domains/auth/repo.ts'
 
-import { findUsersByIds } from '../../../infra/db/operations/user'
-import { deleteSessionsOfUser, listLiveSessions, listLiveSessionsByUser } from '../repo'
+import { findUsersByIds } from '@kobato/db/operations/user.ts'
+import { deleteSessionsOfUser, listLiveSessions, listLiveSessionsByUser } from '@kobato/server/domains/auth/repo.ts'
 
 const MAX_SESSIONS_LISTED = 10_000
 

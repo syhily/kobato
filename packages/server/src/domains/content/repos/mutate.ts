@@ -1,23 +1,22 @@
-import { areLexicalEditorStatesEquivalent } from '@kobato/shared/lexical/equivalence.ts'
-import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
-import { and, desc, eq } from 'drizzle-orm'
-import { randomUUID } from 'node:crypto'
-import { isDeepStrictEqual } from 'node:util'
-
-import type { Database } from '../../../infra/db/database'
-import type { ContentRow, NewContent } from '../../../infra/db/types'
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow, NewContent } from '@kobato/db/types.ts'
 import type {
   ContentType,
   PublishLatestInput,
   PublishLatestResult,
   SaveDraftInput,
   SaveDraftResult,
-} from '../schemas/revision'
+} from '@kobato/server/domains/content/schemas/revision.ts'
 
-import { content as contentTable } from '../../../infra/db/schema/content'
-import { page as pageMetaTable } from '../../../infra/db/schema/page'
-import { post as postMetaTable } from '../../../infra/db/schema/post'
-import { DomainError } from '../../../infra/http/errors'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/shared/lexical/equivalence.ts'
+import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
+import { and, desc, eq } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
+import { isDeepStrictEqual } from 'node:util'
 
 type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]
 

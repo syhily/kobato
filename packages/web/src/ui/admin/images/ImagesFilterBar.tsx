@@ -1,15 +1,13 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { AdminImageKind } from '@kobato/shared/types/images.ts'
+import type { ActiveImageFilter, ImageFilterField } from '@kobato/web/ui/admin/images/useImagesReducer.ts'
 
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { FunnelIcon, FunnelPlusIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-
-import type { ActiveImageFilter, ImageFilterField } from './useImagesReducer'
-
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { cn } from '../../lib/cn'
-import { type I18nValue, useI18n } from '../../lib/I18nProvider'
 
 interface ImagesFilterBarProps {
   filters: ActiveImageFilter[]

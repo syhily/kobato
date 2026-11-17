@@ -1,10 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
+import { boxLog } from '@kobato/server/infra/logger/box-console.ts'
 import { and, eq, gt } from 'drizzle-orm'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
-
-import type { Database } from '../../infra/db/database'
-
-import { oneTimeToken } from '../../infra/db/schema/one-time-token'
-import { boxLog } from '../../infra/logger/box-console'
 
 const TOKEN_KEY = 'setup_token'
 const TTL_SECONDS = 7 * 24 * 60 * 60

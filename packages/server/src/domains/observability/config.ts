@@ -3,11 +3,10 @@
 // this module owns the mapping (site name → organization, admin credentials →
 // Basic header) and the two fingerprints that gate activation and hot restarts.
 
+import type { TraceRuntimeSettings } from '@kobato/server/infra/trace/config.ts'
 import type { ObservabilitySettings } from '@kobato/shared/config/types.ts'
 
-import type { TraceRuntimeSettings } from '../../infra/trace/config'
-
-import { secretHmac } from '../../infra/crypto/secret-encryption'
+import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
 
 export type ObservabilitySettingsSlice = ObservabilitySettings['observability']
 

@@ -4,18 +4,17 @@ import type { ListPendingDashboardOutput } from '@kobato/shared/types/comments.t
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowRightIcon, CheckIcon, LightbulbIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Badge } from '../../components/badge'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
 
 const PAGE_SIZE = 3
 const ROW_DATE_FORMAT = 'LL-dd HH:mm'

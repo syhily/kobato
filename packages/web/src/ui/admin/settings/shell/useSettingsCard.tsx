@@ -4,6 +4,10 @@ import type { z } from 'zod'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { zodIssueParams } from '@kobato/shared/utils/zod-issue-bounds.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { getLogger } from '@kobato/ui/lib/logger.ts'
+import { useSettingsFlushContext } from '@kobato/web/ui/admin/settings/shell/SettingsFlushProvider.tsx'
+import { useSettingsMutation } from '@kobato/web/ui/admin/settings/useSettingsMutation.ts'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   type DefaultValues,
@@ -16,11 +20,6 @@ import {
   useForm,
 } from 'react-hook-form'
 import { toast } from 'sonner'
-
-import { getLogger } from '../../../../client/lib/logger'
-import { useI18n } from '../../../lib/I18nProvider'
-import { useSettingsMutation } from '../useSettingsMutation'
-import { useSettingsFlushContext } from './SettingsFlushProvider'
 
 const log = getLogger('settings.card')
 

@@ -1,8 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { Env } from '@kobato/server/http/context.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
-import type { Database } from '@kobato/server/infra/db/database.ts'
 
-import { user as userTable } from '@kobato/server/infra/db/schema/user.ts'
+import { user as userTable } from '@kobato/db/schema/user.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'

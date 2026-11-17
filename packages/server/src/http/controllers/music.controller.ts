@@ -1,8 +1,7 @@
+import { getMusicMetaForPlayer } from '@kobato/server/domains/music/services/read.ts'
+import { localizedOrpcError, publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 import { publicMusicMetaDto } from '@kobato/shared/contracts/music.ts'
 import { z } from 'zod'
-
-import { getMusicMetaForPlayer } from '../../domains/music/services/read'
-import { localizedOrpcError, publicProc, resourceRateLimit } from '../orpc-base'
 
 const get = publicProc
   .route({ method: 'GET', path: '/music/get' })

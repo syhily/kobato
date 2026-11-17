@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import { useI18n } from '../../lib/I18nProvider'
-import { formatWallClockDateTime } from '../editor-shell/wall-clock'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatWallClockDateTime } from '@kobato/web/ui/admin/editor-shell/wall-clock.ts'
 
 interface CreateModeBannerProps {
   entityLabelId: UiMessageId

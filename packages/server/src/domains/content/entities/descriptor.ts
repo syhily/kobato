@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { ContentRow } from '@kobato/db/types.ts'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
+import type { AdminListEngagement } from '@kobato/server/domains/content/services/admin-list.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
-
-import type { Database } from '../../../infra/db/database'
-import type { ContentRow } from '../../../infra/db/types'
-import type { ViewerIdentity } from '../../auth/rbac'
-import type { ContentType } from '../schemas/revision'
-import type { AdminListEngagement } from '../services/admin-list'
 
 /**
  * The 17 columns `post` and `page` meta tables declare identically; entity

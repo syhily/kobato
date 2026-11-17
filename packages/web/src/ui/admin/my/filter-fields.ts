@@ -1,11 +1,9 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { FileTextIcon, ListChecksIcon, SearchIcon } from 'lucide-react'
-
-import type { I18nValue } from '../../lib/I18nProvider'
-import type { FilterFieldSpec, FilterOptionItem } from '../shared/filter-bar/types'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
 
 // My-comments filter-pill specs. The URL is the source of truth — the
 // `toQuery` mappers are inert; pill edits mirror back via controlled mode.

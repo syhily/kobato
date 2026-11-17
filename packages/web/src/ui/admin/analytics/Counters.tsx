@@ -1,19 +1,18 @@
 import type { CountersDto } from '@kobato/shared/contracts/analytics.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useAnalyticsDashboardState } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
+import { AnalyticsQueryState } from '@kobato/web/ui/admin/analytics/AnalyticsQueryState.tsx'
+import { useAnalyticsQueryData } from '@kobato/web/ui/admin/analytics/use-analytics-query.ts'
+import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import NumberFlow from '@number-flow/react'
 import { useQuery } from '@tanstack/react-query'
 import { FlameIcon, MousePointerClickIcon, UsersIcon } from 'lucide-react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/card'
-import { Skeleton } from '../../components/skeleton'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useAnalyticsDashboardState } from './analytics-state-context'
-import { AnalyticsQueryState } from './AnalyticsQueryState'
-import { useAnalyticsQueryData } from './use-analytics-query'
-import { buildAnalyticsInput, type AnalyticsScope } from './use-analytics-state'
 
 // Self-fetching; `initial` is the loader's first paint until the client query resolves.
 

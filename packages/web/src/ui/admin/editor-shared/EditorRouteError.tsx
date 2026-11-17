@@ -1,10 +1,9 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
 
 export interface EditorRouteErrorProps {
   message: string

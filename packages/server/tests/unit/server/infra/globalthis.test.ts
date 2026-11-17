@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 const DI_MODULES = [
-  'packages/server/src/infra/db/database.ts',
+  'packages/db/src/database.ts',
   'packages/server/src/infra/db/migrate.ts',
   'packages/server/src/infra/storage/backends/s3.ts',
   'packages/shared/src/config/snapshot.ts',

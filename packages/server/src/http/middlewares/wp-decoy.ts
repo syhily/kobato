@@ -1,6 +1,6 @@
-import { createMiddleware } from 'hono/factory'
+import type { Env } from '@kobato/server/http/context.ts'
 
-import type { Env } from '../context'
+import { createMiddleware } from 'hono/factory'
 
 // WordPress probe detector: the real admin borrows WP URL shapes; everything else that
 // looks like a WP install gets a custom 404 whose `statusText` the root boundary switches on.

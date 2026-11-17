@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 
-import { orpcQuery } from '../../../client/api/orpc-query'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 
 // Mutations on both users views must reach each other's cache — invalidate
 // at the router level (`admin.users.key()` partial-matches every procedure);

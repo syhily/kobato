@@ -1,7 +1,7 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
@@ -82,7 +82,7 @@ async function seedUnpublishedPage(slug: string, title: string): Promise<number>
   return pageId
 }
 
-const pageRoute = await import('@/routes/public/page/detail')
+const pageRoute = await import('@/routes/public/page/detail.tsx')
 
 type LoaderResult = {
   page: { title: string }

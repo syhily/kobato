@@ -2,6 +2,7 @@ import type { NotificationDto, NotificationTab } from '@kobato/shared/contracts/
 
 import { NOTIFICATION_TABS } from '@kobato/shared/contracts/notifications.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import {
   type InfiniteData,
   type QueryClient,
@@ -11,8 +12,6 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { useCallback } from 'react'
-
-import { orpcQuery } from '../api/orpc-query'
 
 /**
  * The unread badge count, polled every 120 s plus on window focus, and kept

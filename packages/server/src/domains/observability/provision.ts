@@ -4,23 +4,22 @@
 // on settings saves and at boot. All writes share one process-local queue so an
 // admin "provision" and the boot upgrade can never interleave settings writes.
 
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
+
+import { getObservabilityAssets } from '@kobato/server/domains/observability/assets.ts'
+import { isObservabilityConnectionVerified } from '@kobato/server/domains/observability/connection.ts'
+import { throwO2Failure } from '@kobato/server/domains/observability/errors.ts'
+import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import {
   RUM_PRIVACY_FUNCTION_NAME,
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
   RUM_PRIVACY_PIPELINE_NAME,
   RUM_STREAM_NAME,
 } from '@kobato/shared/contracts/trace-pipeline.ts'
-
-import type { ObservabilitySettingsSlice } from './config'
-import type { O2Client } from './o2-client'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { getObservabilityAssets } from './assets'
-import { isObservabilityConnectionVerified } from './connection'
-import { throwO2Failure } from './errors'
-import { createO2Client, O2ClientError } from './o2-client'
 
 const log = getLogger('observability.provision')
 

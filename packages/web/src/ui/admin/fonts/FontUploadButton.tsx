@@ -1,11 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useRevalidator } from 'react-router'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { useFileUpload } from '../../../client/hooks/use-file-upload'
-import { Button } from '../../components/button'
+import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
   DialogContent,
@@ -13,9 +6,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/dialog'
-import { Input } from '../../components/input'
-import { useI18n } from '../../lib/I18nProvider'
+} from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useFileUpload } from '@kobato/web/client/hooks/use-file-upload.ts'
+import { useQueryClient } from '@tanstack/react-query'
+import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useRevalidator } from 'react-router'
 
 // Web-font upload via the dedicated resource route, not oRPC — fonts can be
 // 60 MiB and oRPC sits behind the request-wide body limit.

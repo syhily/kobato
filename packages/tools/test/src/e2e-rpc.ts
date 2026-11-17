@@ -2,7 +2,7 @@
 // live server + the CSRF token /rpc/* requires. `path` is the camelCase
 // structural router path; kebab-case `.route()` strings are OpenAPI metadata.
 
-import type { E2eClient } from './e2e-client'
+import type { E2eClient } from '@kobato/test/e2e-client.ts'
 
 export interface E2eRpcResult<T> {
   status: number

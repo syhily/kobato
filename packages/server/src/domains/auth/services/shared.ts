@@ -1,19 +1,17 @@
 // Shared contract of the sign-in services; per-flow modules own the auth session-key state machine.
 
+import type { Database } from '@kobato/db/database.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { z } from 'zod'
 
+import { checkMailReady } from '@kobato/server/infra/email/sender.ts'
+import { descriptorFor, isUiMessageId, messageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { zodIssueParams } from '@kobato/shared/utils/zod-issue-bounds.ts'
-
-import type { Database } from '../../../infra/db/database'
-import type { BlogSession } from '../session-storage'
-
-import { checkMailReady } from '../../../infra/email/sender'
-import { descriptorFor, isUiMessageId, messageDescriptor } from '../../../infra/http/error-descriptor'
-import { createServerTranslator } from '../../../infra/i18n'
 
 /** A flow error whose copy the sign-in route translates for the request locale. */
 export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>

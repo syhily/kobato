@@ -2,8 +2,8 @@
 // description is a UI message id; the settings route resolves them through
 // `useI18n()` so the same registry serves all four locales.
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
-import type { SettingsSection } from './sections'
+import type { SettingsSection } from '@kobato/shared/config/sections.ts'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 export type SettingsNavGroup = 'site' | 'content' | 'service' | 'system'
 

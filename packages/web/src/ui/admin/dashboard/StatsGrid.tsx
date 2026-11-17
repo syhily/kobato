@@ -1,10 +1,9 @@
+import type { LucideIcon } from '@kobato/ui/icons/types.ts'
+
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ClockIcon, FileCheck2Icon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import type { LucideIcon } from '../../icons/types'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 // Per-card palette: soft status bg + matching fg icon, auto-flips in dark mode.
 const TONE_CLASSES = {

@@ -1,8 +1,7 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { coerceBoolean } from '@kobato/server/domains/settings/sections/shared.ts'
 import { z } from 'zod'
-
-import { coerceBoolean } from './shared'
 
 /** Custom validation messages: typed ids (mapped to descriptors on write). */
 export const mailValidationMessages = {

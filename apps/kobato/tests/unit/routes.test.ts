@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import routes from '@/routes'
+import routes from '@/routes.ts'
 
 // Pins every public route in the manifest so any rename forces an explicit
 // test update (AGENTS.md: "public URL / feed URL / stable").

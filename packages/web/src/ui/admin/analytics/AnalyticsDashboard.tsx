@@ -1,19 +1,18 @@
 import type { CountersDto, MetricGroup, MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
 
 import { METRIC_GROUPS } from '@kobato/shared/contracts/analytics.ts'
-
-import { Card } from '../../components/card'
-import { Switch } from '../../components/switch'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { AnalyticsStateProvider } from './analytics-state-context'
-import { Counters } from './Counters'
-import { DateRangePicker } from './DateRangePicker'
-import { FiltersBar } from './Filters'
-import { LocationsMap } from './LocationsMap'
-import { MetricsGroup } from './MetricsGroup'
-import { TrendTabs } from './TrendTabs'
-import { type AnalyticsScope, type AnalyticsState } from './use-analytics-state'
+import { Card } from '@kobato/ui/components/card.tsx'
+import { Switch } from '@kobato/ui/components/switch.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { AnalyticsStateProvider } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
+import { Counters } from '@kobato/web/ui/admin/analytics/Counters.tsx'
+import { DateRangePicker } from '@kobato/web/ui/admin/analytics/DateRangePicker.tsx'
+import { FiltersBar } from '@kobato/web/ui/admin/analytics/Filters.tsx'
+import { LocationsMap } from '@kobato/web/ui/admin/analytics/LocationsMap.tsx'
+import { MetricsGroup } from '@kobato/web/ui/admin/analytics/MetricsGroup.tsx'
+import { TrendTabs } from '@kobato/web/ui/admin/analytics/TrendTabs.tsx'
+import { type AnalyticsScope, type AnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 
 // Shared by the site-wide overview and the per-post shells. URL state arrives as a
 // prop from the route module (the only place useSearchParams may be read). Views/heatmap

@@ -1,8 +1,7 @@
+import { applyFriendSchema } from '@kobato/server/domains/friends/schema.ts'
+import { applyFriend } from '@kobato/server/domains/friends/service.ts'
+import { publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 import { z } from 'zod'
-
-import { applyFriendSchema } from '../../domains/friends/schema'
-import { applyFriend } from '../../domains/friends/service'
-import { publicProc, resourceRateLimit } from '../orpc-base'
 
 // Visitor-facing friend-link application — honeypot + per-IP rate limit
 // mirror the comment submit path; rows land pending and notify the admin.

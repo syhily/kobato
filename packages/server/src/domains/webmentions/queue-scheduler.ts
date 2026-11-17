@@ -1,8 +1,8 @@
-import type { Database } from '../../infra/db/database'
-import type { Logger } from '../../infra/logger'
+import type { Database } from '@kobato/db/database.ts'
+import type { Logger } from '@kobato/server/infra/logger.ts'
 
-import { jobDb, registerJob } from '../../infra/job-registry'
-import { getLogger } from '../../infra/logger'
+import { jobDb, registerJob } from '@kobato/server/infra/job-registry.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 // Single owner of the webmention queue-loop mechanics. Callers keep their own
 // exported seams (MIN_DELAY_MS constants + enqueue-path nudges) and supply

@@ -3,12 +3,11 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { formatDate } from '@kobato/shared/i18n/format.ts'
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { ImageIcon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import { cn } from '../../lib/cn'
-import { type I18nValue, useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
 
 interface PageRowProps {
   page: AdminPageDto

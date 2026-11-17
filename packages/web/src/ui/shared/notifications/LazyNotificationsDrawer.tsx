@@ -11,11 +11,14 @@ interface LazyNotificationsDrawerProps {
 }
 
 const NotificationsDrawer = lazy(() =>
-  import('./NotificationsDrawer').then((module) => ({ default: module.NotificationsDrawer })),
+  import('@kobato/web/ui/shared/notifications/NotificationsDrawer.tsx').then((module) => ({
+    default: module.NotificationsDrawer,
+  })),
 )
 
 /** Hover-intent prefetch; the browser dedupes this against the lazy boundary's own import. */
-export const warmNotificationsDrawerChunk = () => void import('./NotificationsDrawer')
+export const warmNotificationsDrawerChunk = () =>
+  void import('@kobato/web/ui/shared/notifications/NotificationsDrawer.tsx')
 
 // Interaction-gated mount for the drawer chain (sheet, panes, compose). UserMenu rides its own
 // lazy chunk, so a static drawer import there would chain the whole drawer into that chunk,

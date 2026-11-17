@@ -1,13 +1,10 @@
-import { rmSync } from 'node:fs'
-import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { withRestoreClaim } from '../../../domains/backup/restore-machine'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine.ts'
 import {
   beginStagingProgress,
   endStagingProgress,
   reportStagingProgress,
-} from '../../../domains/backup/restore-progress'
+} from '@kobato/server/domains/backup/restore-progress.ts'
 import {
   createManualBackup,
   deleteBackup,
@@ -16,19 +13,21 @@ import {
   isValidBackupKey,
   listBackups,
   resolveStoredEncryptionPassword,
-} from '../../../domains/backup/services/backup'
+} from '@kobato/server/domains/backup/services/backup.ts'
 import {
   BackupPasswordError,
   EncryptedBackupPasswordRequired,
   restoreFromStagedBackup,
   stageBackup,
-} from '../../../domains/backup/services/restore'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { ActionFailure } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { tryBackupRestorePasswordRateLimit } from '../../../infra/rate-limit'
-import { activeBackend } from '../../../infra/storage/registry'
-import { adminProc } from '../../orpc-base'
+} from '@kobato/server/domains/backup/services/restore.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { tryBackupRestorePasswordRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { activeBackend } from '@kobato/server/infra/storage/registry.ts'
+import { rmSync } from 'node:fs'
+import { z } from 'zod'
 
 const log = getLogger('backup.controller')
 

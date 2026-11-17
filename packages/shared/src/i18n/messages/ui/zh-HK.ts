@@ -1,4 +1,4 @@
-import type { UiMessages } from './en-US'
+import type { UiMessages } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 // Hong Kong Traditional Chinese — written and reviewed on its own, never
 // produced by converting the Simplified catalog.

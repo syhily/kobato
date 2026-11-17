@@ -1,6 +1,5 @@
+import { idString, isoDateTime } from '@kobato/shared/contracts/primitives.ts'
 import { z } from 'zod'
-
-import { idString, isoDateTime } from './primitives'
 
 const metingSource = z.enum(['netease', 'tencent'])
 export type MetingSource = z.infer<typeof metingSource>

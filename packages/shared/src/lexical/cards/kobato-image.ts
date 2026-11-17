@@ -11,8 +11,6 @@
 
 import type { CardImportSpec, DecoratorNodeProperty } from '@kobato/inkling/headless'
 
-import { getImageSrcset } from '../../types/images'
-import { unsafeCast } from '../../utils/unsafe-cast'
 import {
   absolutizeAssetSrcForFeed,
   type CardRenderContext,
@@ -20,7 +18,9 @@ import {
   elementFromHtml,
   htmlToPlainText,
   isFeedVariantRender,
-} from './card-html'
+} from '@kobato/shared/lexical/cards/card-html.ts'
+import { getImageSrcset } from '@kobato/shared/types/images.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 /** Float layout vocabulary. `cardWidth` has no left/right equivalent, so layout
  * is a kobato-owned extra key. */

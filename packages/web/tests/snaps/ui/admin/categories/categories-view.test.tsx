@@ -45,7 +45,7 @@ vi.mock('@dnd-kit/modifiers', () => ({
   restrictToVerticalAxis: () => ({}),
 }))
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 describe('snapshot: CategoriesView', () => {
   beforeEach(() => {

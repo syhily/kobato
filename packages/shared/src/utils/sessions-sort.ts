@@ -1,4 +1,4 @@
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 export type SessionSortField = 'lastActive' | 'loginTime' | 'userName'
 export type MySessionSortField = 'lastActive' | 'loginTime'

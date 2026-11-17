@@ -1,13 +1,12 @@
+import type { FriendRow } from '@kobato/db/types.ts'
+import type { AdminNotificationRow } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
+import type { SendResult } from '@kobato/server/infra/email/types.ts'
+
+import { sendAdminNotification } from '@kobato/server/infra/email/admin-notification.ts'
+import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { createElement } from 'react'
-
-import type { FriendRow } from '../../infra/db/types'
-import type { AdminNotificationRow } from '../../infra/email/templates/AdminNotificationEmail'
-import type { SendResult } from '../../infra/email/types'
-
-import { sendAdminNotification } from '../../infra/email/admin-notification'
-import { AdminNotificationEmail } from '../../infra/email/templates/AdminNotificationEmail'
-import { emailTranslator } from '../../infra/email/translator'
 
 // Sent to the administrator on a friend-link application. Fire-and-forget —
 // a mail-pipeline hiccup must never fail the application.

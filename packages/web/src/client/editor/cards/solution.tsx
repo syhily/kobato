@@ -30,9 +30,8 @@ import {
   SOLUTION_NESTED_EDITOR,
 } from '@kobato/shared/lexical/cards/solution.ts'
 import { SOLUTION_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ListTreeIcon } from 'lucide-react'
-
-import { useI18n } from '../../../ui/lib/I18nProvider'
 
 // The card's nested-editor spec, const-asserted so the literal name survives into
 // the derived field maps (the same array self-types the base class below and feeds

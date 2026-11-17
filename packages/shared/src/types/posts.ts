@@ -1,8 +1,8 @@
-import type { AdminPostDetailDto, AdminPostDto } from '../contracts/posts'
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
-import type { LexicalEditorState } from '../lexical/schema'
+import type { AdminPostDetailDto, AdminPostDto } from '@kobato/shared/contracts/posts.ts'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
-import { unsafeCast } from '../utils/unsafe-cast'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 
 // The row DTOs (`AdminPostDto`, `AdminPostDetailDto`, list/revision
 // outputs) are zod-derived in `@/shared/contracts/posts`.

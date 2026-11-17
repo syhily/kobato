@@ -1,17 +1,15 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
+import { wirePostPublishHook } from '@kobato/server/domains/posts/publish-hooks.ts'
+import { rescheduleWebmentionOutbox } from '@kobato/server/domains/webmentions/outbox-scheduler.ts'
+import { normalizeForMatch } from '@kobato/server/domains/webmentions/verify.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
 import { entityCommentUrl } from '@kobato/shared/utils/paths.ts'
 import { tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { Database } from '../../infra/db/database'
-
-import { upsertWebmentionOutbox } from '../../infra/db/operations/webmention-outbox'
-import { wirePostPublishHook } from '../posts/publish-hooks'
-import { rescheduleWebmentionOutbox } from './outbox-scheduler'
-import { normalizeForMatch } from './verify'
 
 // Backstop against pathological bodies (admin-written), nothing more.
 export const MAX_OUTBOUND_LINKS_PER_POST = 50

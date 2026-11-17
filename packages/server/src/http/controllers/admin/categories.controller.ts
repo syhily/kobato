@@ -1,15 +1,14 @@
-import { adminCategoryDto } from '@kobato/shared/contracts/categories.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import {
   deleteAdminCategory,
   reorderAdminCategories,
   upsertAdminCategory,
-} from '../../../domains/taxonomies/categories/services/mutate'
-import { listCategoriesForAdmin } from '../../../domains/taxonomies/categories/services/query'
-import { adminProc, localizedOrpcError } from '../../orpc-base'
+} from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
+import { listCategoriesForAdmin } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
+import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { adminCategoryDto } from '@kobato/shared/contracts/categories.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { z } from 'zod'
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/categories/list' })

@@ -1,15 +1,15 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { setting } from '@kobato/db/schema/config.ts'
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { friend as friendTable } from '@kobato/db/schema/friend.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
+import { post as postTable } from '@kobato/db/schema/post.ts'
+import { category as categoryTable } from '@kobato/db/schema/taxonomy.ts'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
 } from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { setting } from '@kobato/server/infra/db/schema/config.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { friend as friendTable } from '@kobato/server/infra/db/schema/friend.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
-import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { category as categoryTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'

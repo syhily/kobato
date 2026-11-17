@@ -1,12 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { CategoryRow } from '@kobato/db/types.ts'
+import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup.ts'
+import type { UpsertCategoryInputs } from '@kobato/server/domains/taxonomies/categories/projection.ts'
 import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
-
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-
-import type { Database } from '../../../../infra/db/database'
-import type { CategoryRow } from '../../../../infra/db/types'
-import type { OgWarmTarget } from '../../../content/render-warmup'
-import type { UpsertCategoryInputs } from '../projection'
 
 import {
   deleteCategory as deleteCategoryRow,
@@ -16,21 +12,23 @@ import {
   listPublicCategoryRows,
   reorderCategories as reorderCategoryRows,
   updateCategory,
-} from '../../../../infra/db/operations/category'
-import { descriptorFor } from '../../../../infra/http/error-descriptor'
-import { DomainError } from '../../../../infra/http/errors'
-import { resolveSlug } from '../../../../infra/slug/resolve'
-import { invalidateContent } from '../../../content/invalidate'
-import { warmContentRenderCaches } from '../../../content/render-warmup'
-import { countPostsByTaxonomy, listPostTitlesByCategoryId } from '../../../posts/services/taxonomy'
+} from '@kobato/db/operations/category.ts'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
+import { countPostsByTaxonomy, listPostTitlesByCategoryId } from '@kobato/server/domains/posts/services/taxonomy.ts'
+import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection.ts'
+import { findCategoryBySlug } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
   taxonomyNotFound,
-} from '../../shared'
-import { toAdminCategoryDto } from '../projection'
-import { findCategoryBySlug } from './query'
+} from '@kobato/server/domains/taxonomies/shared.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
 
 // Warm key must match the OG route's inputs: `cat-` slug, empty description → site description.
 function categoryOgTarget(row: CategoryRow): OgWarmTarget {

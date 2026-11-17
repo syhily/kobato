@@ -1,7 +1,7 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
-import PageNewRoute from '@/routes/editor/page/new'
+import PageNewRoute from '@/routes/editor/page/new.tsx'
 
 describe('snapshot: routes/editor/page/new', () => {
   it('renders the new page editor route', () => {

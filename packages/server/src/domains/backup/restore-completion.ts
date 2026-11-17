@@ -1,10 +1,10 @@
-import type { Database, DatabaseHandle } from '../../infra/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
-import { migrateDatabase } from '../../infra/db/migrate'
-import { scheduleRegisteredJob } from '../../infra/job-registry'
-import { restartServer } from '../../infra/lifecycle'
-import { getLogger } from '../../infra/logger'
-import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from './services/restore'
+import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@kobato/server/domains/backup/services/restore.ts'
+import { migrateDatabase } from '@kobato/server/infra/db/migrate.ts'
+import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
+import { restartServer } from '@kobato/server/infra/lifecycle.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 /**
  * The restore completion chain behind the machine's `complete` step: rollback

@@ -1,10 +1,8 @@
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
 import { formatDuration } from '@kobato/shared/i18n/format.ts'
-
-import type { I18nValue } from '../../../lib/I18nProvider'
-
-import { cn } from '../../../lib/cn'
+import { cn } from '@kobato/ui/lib/cn.ts'
 
 export function asKey(value: number | string): string {
   return String(value)

@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 
-import { peekRestoreJobPhase } from '../domains/backup/restore-machine'
-import { getServerPhase } from '../infra/lifecycle'
+import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
+import { getServerPhase } from '@kobato/server/infra/lifecycle.ts'
 
 /** Readiness probe: 200 while running; 503 with the restore machine's phase while a restart/restore is in flight. */
 export function readyHandler(c: Context): Response {

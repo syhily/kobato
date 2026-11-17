@@ -1,6 +1,5 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
 import { useEffect, useMemo, useRef } from 'react'
-
-import { cn } from '../../lib/cn'
 
 export type LrcLine = [time: number, text: string]
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The sweep reads the real temp dir — the surface a crashed process leaks into. Only the
 // logger is silenced; infra seams this path never touches are mocked away.
-vi.mock('@kobato/server/infra/db/database.ts', () => ({
+vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => ':memory:',
   isInMemoryPath: (path: string) => path === ':memory:',
 }))

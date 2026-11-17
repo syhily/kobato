@@ -1,6 +1,6 @@
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
-import type { I18nValue } from '../../../lib/I18nProvider'
+import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 
 // Pill-value codec for operator + free-text filters (`{op, value}` as JSON).
 // Operators are per-field; parsing never throws — malformed → null.

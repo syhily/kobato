@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
 import { SETTINGS_SKIP_COMMIT } from '@kobato/web/ui/admin/settings/shell/settings-change-verdict.ts'
 import { SettingsSelect } from '@kobato/web/ui/admin/settings/shell/SettingsSelect.tsx'
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/web/ui/components/select.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

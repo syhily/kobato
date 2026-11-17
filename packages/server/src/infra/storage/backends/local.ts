@@ -1,15 +1,9 @@
 import type { Readable } from 'node:stream'
 
-import { randomBytes } from 'node:crypto'
-import { createReadStream, createWriteStream } from 'node:fs'
-import { access, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
-import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
-
-import { descriptorFor } from '../../http/error-descriptor'
-import { ActionFailure } from '../../http/errors'
-import { getLogger } from '../../logger'
-import { isPathInside, STORAGE_DIR } from '../../paths'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { isPathInside, STORAGE_DIR } from '@kobato/server/infra/paths.ts'
 import {
   MAX_OBJECT_BUFFER_SIZE,
   type PutObjectInput,
@@ -17,7 +11,12 @@ import {
   type StorageBackend,
   StorageObjectNotFound,
   type StoredObjectMeta,
-} from '../backend'
+} from '@kobato/server/infra/storage/backend.ts'
+import { randomBytes } from 'node:crypto'
+import { createReadStream, createWriteStream } from 'node:fs'
+import { access, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { pipeline } from 'node:stream/promises'
 
 const log = getLogger('storage.local')
 

@@ -4,6 +4,11 @@
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
+import { resetGeoReader } from '@kobato/server/domains/analytics/geoip.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/paths.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { Reader } from '@maxmind/geoip2-node'
 import { createWriteStream, existsSync } from 'node:fs'
@@ -13,12 +18,6 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
 import { z } from 'zod'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '../../infra/paths'
-import { resetGeoReader } from './geoip'
 
 const log = getLogger('analytics.geoip-update')
 

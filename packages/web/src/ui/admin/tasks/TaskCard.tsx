@@ -3,17 +3,12 @@ import type { StorageMigrationStatus } from '@kobato/shared/contracts/storage.ts
 
 import { isStorageMigrationInFlightPhase } from '@kobato/shared/contracts/storage.ts'
 import { formatBytes, formatDuration } from '@kobato/shared/i18n/format.ts'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2Icon } from 'lucide-react'
-import { Link } from 'react-router'
-import { toast } from 'sonner'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Badge } from '../../components/badge'
-import { Button } from '../../components/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/card'
-import { useI18n } from '../../lib/I18nProvider'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import {
   MIGRATION_PHASE_META,
   RUN_STATUS_META,
@@ -21,8 +16,12 @@ import {
   TASK_CAPABILITIES,
   useFormatAdminDate,
   type TaskStatus,
-} from './meta'
-import { RunHistorySheet } from './RunHistorySheet'
+} from '@kobato/web/ui/admin/tasks/meta.ts'
+import { RunHistorySheet } from '@kobato/web/ui/admin/tasks/RunHistorySheet.tsx'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2Icon } from 'lucide-react'
+import { Link } from 'react-router'
+import { toast } from 'sonner'
 
 function taskStatus(task: JobSummaryDto, migration?: StorageMigrationStatus): TaskStatus {
   if (TASK_CAPABILITIES[task.taskKey].usesMigrationStatus && migration !== undefined) {

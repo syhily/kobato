@@ -6,6 +6,7 @@
   "devDependencies": {
     "@kobato/inkling": "workspace:*",
     "@kobato/shared": "workspace:*",
+    "@kobato/ui": "workspace:*",
     "@kobato/web": "workspace:*",
     "@lexical/list": "catalog:",
     "@lexical/react": "catalog:",

@@ -4,15 +4,14 @@ import type { ReactElement, ReactNode } from 'react'
 import { uiMessagesFor } from '@kobato/shared/i18n/catalog.ts'
 import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { I18nProvider } from '@kobato/web/ui/lib/I18nProvider.tsx'
-import { ThemeProvider } from '@kobato/web/ui/lib/ThemeProvider.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 
 const testQueryClient = new QueryClient({
   defaultOptions: {

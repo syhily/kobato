@@ -32,11 +32,10 @@
 // fixed the forwarding upstream (nodejs/node#65909), so the guard is
 // removed; SEA builds gate on Node >= 26.10 (packages/tools/pack/src/sea/build.ts).
 
+import { isSea } from '@kobato/server/infra/sea.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import fs from 'node:fs'
 import { isMainThread } from 'node:worker_threads'
-
-import { isSea } from './sea'
 
 type BufferList = readonly NodeJS.ArrayBufferView[]
 

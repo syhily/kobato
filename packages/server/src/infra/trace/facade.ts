@@ -3,7 +3,7 @@
 // operation is a true pass-through and no telemetry failure can propagate into
 // request or rendering correctness.
 
-import { getLogger } from '../logger'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('trace')
 

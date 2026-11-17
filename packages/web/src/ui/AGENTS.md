@@ -5,9 +5,9 @@ objects, or env vars. State lives at the route module or the closest interactive
 
 ## Component tiers
 
-- **`ui/components/`** — shadcn/ui primitives (Base UI variant), flat so `npx shadcn@latest add/diff` works.
-  `components.json` aliases `components` and `ui` here. One `:root` token cascade (`tailwind.css`) covers public +
-  admin; token tiers and the dark ladder: `packages/web/src/styles/AGENTS.md`.
+- **`@kobato/ui/components`** — external design-system primitives (Base UI/shadcn variant), flat so
+  `npx shadcn@latest add/diff` works. `components.json` points there. One `:root` token cascade covers
+  public + admin; token tiers and the dark ladder: `packages/ui/src/styles/AGENTS.md`.
 - **`ui/public/`** — public-only: `chrome/`, `post/`, `comments/`, `friends/`, `widgets/`, `music-player/`,
   single-file leaves. Comment thread state is four contexts in `comments-context.ts` (Tree / Identity / ReplySlot /
   Actions) so leaf rows subscribe to slices. `MusicPlayerCard` hydrates onto `.aplayer[data-*]` mount points via
@@ -45,14 +45,13 @@ objects, or env vars. State lives at the route module or the closest interactive
   without it the previous article's enhancements leak onto detached nodes. Comment bodies render the stored `content`
   HTML through `comments/CommentContentHtml` with the narrower `'comment'` sanitize preset (comment whitelist: no
   media/headings).
-- `ui/lib/` — `cn`, `code-languages`, `I18nProvider` (react-intl provider + typed `useI18n()`; messages arrive as
-  root-loader data; `localizeMessage` formats only catalog ids and degrades a missing param / unformattable template
-  to a generic localized sentence, logged — never a token name, raw template, or id), `LocaleSyncProvider` (the ROOT
-  cross-tab loop mounted by `src/root.tsx`: a registered settings workspace flushes every dirty card then reloads
-  once, on success only; every other document is NEVER reloaded automatically — a localized `role="alert"` notice
-  with an explicit Reload keeps unsaved input; cards use `useLocaleSyncPublish`, `SettingsFlushProvider` registers
-  the flush host; full contract: `packages/web/src/ui/admin/settings/AGENTS.md`), `ThemeProvider`, `use-media-query`. shadcn's
-  `aliases.lib` is pinned here, never a parallel `src/lib/`.
+- `@kobato/ui/lib` owns `cn`, `code-languages`, `I18nProvider` (react-intl provider + typed `useI18n()`;
+  messages arrive as root-loader data), `ThemeProvider`, and generic presentation hooks.
+- `ui/lib/LocaleSyncProvider` is the web-owned ROOT cross-tab loop mounted by `src/root.tsx`: a registered
+  settings workspace flushes every dirty card then reloads once, on success only; every other document is
+  NEVER reloaded automatically — a localized `role="alert"` notice with an explicit Reload keeps unsaved
+  input; cards use `useLocaleSyncPublish`, and `SettingsFlushProvider` registers the flush host. Full contract:
+  `packages/web/src/ui/admin/settings/AGENTS.md`.
 
 ## Merge-engine tokens
 
@@ -61,7 +60,7 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
 `cn('text-toc-toggle text-ink-3')` collapses to `'text-ink-3'`.
 
 - A new `--<namespace>-<name>` token in `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list —
-  enforced by `packages/web/tests/contract/tailwind-tokens.test.ts`.
+  enforced by `packages/ui/tests/contract/tailwind-tokens.test.ts`.
 - Never write `dark:bg-foo` on a tier-1 token — the `.dark { }` rebind already handles the switch.
 - Adjacent dark surface tiers stay 3–8 L apart; no `--line-*` token shares a value with any `--surface-*` token (both
   the `border-line` outline and the `--accent` hover state vanish).
@@ -72,12 +71,12 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
   components over render-prop callbacks. Recursive components recurse by name.
 - React 19: no `forwardRef` for new components — refs flow through props.
 - Raw HTML uses `dangerouslySetInnerHTML` on the host element — no generic `Html` wrapper.
-- Conditional classNames go through `cn()` from `@kobato/web/ui/lib/cn`.
-- Icons: named imports from `lucide-react` only; `ui/icons/` is static-export. No `<Icon name="..." />` lookups.
+- Conditional classNames go through `cn()` from `@kobato/ui/lib/cn`.
+- Icons: named imports from `lucide-react` only; `@kobato/ui/icons` is static-export. No `<Icon name="..." />` lookups.
 - Interface copy is a UI message id resolved through `useI18n()`, including the accessible labels inside
-  `ui/components/` primitives (`common.*` in the UI catalog). A test rendering one of those primitives directly must
+  `@kobato/ui/components` primitives (`common.*` in the UI catalog). A test rendering one of those primitives directly must
   mount `I18nProvider` (`@kobato/test/i18n-render.ts`).
-- Animation is Motion Only: JS-driven animation uses the `@kobato/web/ui/components/lazy-motion` facade (`LazyMotion*` /
+- Animation is Motion Only: JS-driven animation uses the `@kobato/ui/components/lazy-motion` facade (`LazyMotion*` /
   `LazyAnimatePresence`; browser-only popups that cannot tolerate a static-node swap use `EagerMotion*` /
   `EagerAnimatePresence`) with constants from `@kobato/web/client/lib/motion` — never React `<ViewTransition>` or
   `document.startViewTransition` (root `AGENTS.md` holds the full rule; the ThemeProvider theme wipe is the sole
@@ -95,12 +94,12 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
 - Storage: Lexical editor states (`@kobato/shared/lexical/schema` posts/pages, `@kobato/shared/lexical/comment-schema`
   comments). The friends grid is NOT a body block — it is the `page.show_friends` toggle.
 - Public SSR: bodies render the saved `bodyHtml` projection (NULL falls back to an on-the-fly headless projection
-  server-side — `packages/server/src/AGENTS.md` → Content) through `DetailBodyChrome` and the hooks above; heading anchor ids
+  server-side — `packages/server/AGENTS.md` → Content) through `DetailBodyChrome` and the hooks above; heading anchor ids
   come from the revision's `headings` column.
 - Admin body editor: `@kobato/web/ui/admin/editor/PageBodyEditor` wraps the inkling composer (`@kobato/inkling`) through the skeleton
   shared with comments (`@kobato/web/client/editor/editor-surface`); the layer owns the composer surface, while kobato glue
   (host cards, `KobatoImageNode`, upload/picker wiring) lives in `@kobato/web/client/editor/` (see `packages/web/src/client/AGENTS.md`).
-  Inserts use `INSERT_CARD_COMMAND`; host hooks sit under `.kobato-page-editor` in `packages/web/src/styles/inkling-editor.css`.
+  Inserts use `INSERT_CARD_COMMAND`; host hooks sit under `.kobato-page-editor` in `packages/ui/src/styles/inkling-editor.css`.
   The locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`), imported by no UI module.
 - Editor copy lives in `admin.editor.*`, read with `useI18n()` (`t` / `tRich`). The entity noun ("post" / "page")
   never crosses a shared boundary as text: configs and props carry `entityLabelId` (`UiMessageId`, e.g.
@@ -125,7 +124,7 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
   hold the iOS viewport zoom lock (see `packages/web/src/client/AGENTS.md` → iOS auto-zoom).
 - Comment editor hydration: server and client first render both emit the wrapper's placeholder shell (byte-stable
   hydration); the wrapper hands focus to the contenteditable after mount, because the activating pointerdown landed
-  on a node that is gone. `min-height`/padding live on the contentEditable in `packages/web/src/styles/inkling-comment-editor.css`,
+  on a node that is gone. `min-height`/padding live on the contentEditable in `packages/ui/src/styles/inkling-comment-editor.css`,
   so the whole bordered canvas is clickable (a wrapper-owned box leaves dead click zones below the one-line empty
   paragraph). The shell is transparent (`bg-transparent`, no background, `placeholder={<></>}`); host hooks sit under
   `.kobato-comment-editor` in the same file, and the host captures Ctrl+Q before inkling sees it (AsideNode is

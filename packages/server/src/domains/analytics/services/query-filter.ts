@@ -1,5 +1,7 @@
 import type { RawBuilder } from 'kysely'
 
+import { index1Of } from '@kobato/server/domains/analytics/services/access-log.ts'
+import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/server/domains/analytics/services/metric-dimensions.ts'
 import {
   METRIC_TYPES,
   analyticsQuerySchema,
@@ -9,9 +11,6 @@ import {
   type ResolvedAnalyticsQuery,
 } from '@kobato/shared/contracts/analytics.ts'
 import { sql } from 'kysely'
-
-import { index1Of } from './access-log'
-import { METRIC_DIMENSIONS, dimensionWhere } from './metric-dimensions'
 
 /**
  * The shared analytics WHERE builder: every dashboard query filters

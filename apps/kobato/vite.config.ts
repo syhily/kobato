@@ -42,7 +42,14 @@ const appDeclared = new Set([...Object.keys(rawPkg.dependencies ?? {}), ...Objec
 // node_modules, so a sibling-owned dep needs the nested `owner > dep` form
 // that resolves through the owning package's own node_modules.
 const depOwner = new Map<string, string>()
-for (const dir of ['packages/web', 'packages/server', 'packages/shared', 'packages/inkling']) {
+for (const dir of [
+  'packages/db',
+  'packages/web',
+  'packages/ui',
+  'packages/server',
+  'packages/shared',
+  'packages/inkling',
+]) {
   const manifest = JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8')) as {
     name: string
     dependencies?: Record<string, string>

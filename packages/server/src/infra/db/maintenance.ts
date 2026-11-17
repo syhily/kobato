@@ -1,10 +1,10 @@
-import type { DatabaseHandle } from './database'
+import type { DatabaseHandle } from '@kobato/db/database.ts'
 
-import { jobHandle, registerJob } from '../job-registry'
-import { getLogger } from '../logger'
-import { nextDailyMaintenanceDelayMs } from '../scheduler-utils'
-import { pruneJobRuns } from './job-run-recorder'
-import { pruneNotifications } from './operations/notification'
+import { pruneNotifications } from '@kobato/db/operations/notification.ts'
+import { pruneJobRuns } from '@kobato/server/infra/db/job-run-recorder.ts'
+import { jobHandle, registerJob } from '@kobato/server/infra/job-registry.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { nextDailyMaintenanceDelayMs } from '@kobato/server/infra/scheduler-utils.ts'
 
 const log = getLogger('db.maintenance')
 

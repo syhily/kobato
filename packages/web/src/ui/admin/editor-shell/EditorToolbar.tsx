@@ -1,5 +1,9 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { EditorToolbarState } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import {
   ArrowLeftIcon,
   ChartLineIcon,
@@ -11,12 +15,6 @@ import {
   UploadIcon,
 } from 'lucide-react'
 import { Link } from 'react-router'
-
-import type { EditorToolbarState } from './editor-shell-types'
-
-import { Button } from '../../components/button'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 export interface EditorToolbarProps {
   mode: 'create' | 'edit'

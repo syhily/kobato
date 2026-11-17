@@ -1,8 +1,7 @@
+import { getGeoipDbStatus, runRemoteGeoipUpdate } from '@kobato/server/domains/analytics/geoip-update.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { z } from 'zod'
-
-import { getGeoipDbStatus, runRemoteGeoipUpdate } from '../../../domains/analytics/geoip-update'
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { adminProc } from '../../orpc-base'
 
 const statusDto = z.object({
   installed: z.boolean(),

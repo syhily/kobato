@@ -1,5 +1,5 @@
+import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
 import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

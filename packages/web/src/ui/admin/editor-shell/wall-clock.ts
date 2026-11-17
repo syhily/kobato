@@ -5,8 +5,7 @@
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { formatDate, formatDateTime } from '@kobato/shared/i18n/format.ts'
-
-import { calendarWallClockDate } from '../../components/calendar'
+import { calendarWallClockDate } from '@kobato/ui/components/calendar.tsx'
 
 export const WALL_CLOCK_ZONE = 'Etc/UTC'
 

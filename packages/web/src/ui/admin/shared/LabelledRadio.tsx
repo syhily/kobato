@@ -1,6 +1,6 @@
-import { Label } from '../../components/label'
-import { RadioGroupItem } from '../../components/radio-group'
-import { cn } from '../../lib/cn'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { RadioGroupItem } from '@kobato/ui/components/radio-group.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
 
 export interface LabelledRadioProps {
   id: string

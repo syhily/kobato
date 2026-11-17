@@ -1,12 +1,11 @@
+import type { Env } from '@kobato/server/http/context.ts'
+
+import { enqueueWebmention } from '@kobato/server/domains/webmentions/inbox-enqueue.ts'
+import { webmentionReceiveSchema } from '@kobato/server/domains/webmentions/schema.ts'
+import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit.ts'
+import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
 import { isWebmentionReceiveEnabled } from '@kobato/shared/config/getters.ts'
 import { Hono } from 'hono'
-
-import type { Env } from '../context'
-
-import { enqueueWebmention } from '../../domains/webmentions/inbox-enqueue'
-import { webmentionReceiveSchema } from '../../domains/webmentions/schema'
-import { dynamicBodyLimit } from '../middlewares/dynamic-body-limit'
-import { rateLimitByIp } from '../middlewares/rate-limit'
 
 // Form bodies carry exactly two URLs — anything larger is junk. dynamicBodyLimit
 // caps declared lengths up front and byte-counts chunked bodies too.

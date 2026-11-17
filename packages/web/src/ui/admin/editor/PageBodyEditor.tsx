@@ -1,20 +1,19 @@
-import '../../../styles/inkling-editor.css'
+import '@kobato/ui/styles/inkling-editor.css'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
 import { InklingEditor } from '@kobato/inkling'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useHydrated } from '@kobato/ui/lib/use-hydrated.ts'
+import { blockQuoteAsideCycle } from '@kobato/web/client/editor/block-quote-aside-cycle.ts'
+import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web/client/editor/editor-surface.tsx'
+import { registerKobatoImageInsertCommands } from '@kobato/web/client/editor/image-insert-override.ts'
+import { makePageEditorCardConfig } from '@kobato/web/client/editor/page-editor-card-config.ts'
+import { PAGE_EDITOR_NODES } from '@kobato/web/client/editor/page-editor-nodes.ts'
+import { pageEditorFileUploader } from '@kobato/web/client/editor/page-editor-upload.ts'
+import { useFocusModePreference } from '@kobato/web/client/editor/use-focus-mode.ts'
 import { FocusIcon } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
-
-import { blockQuoteAsideCycle } from '../../../client/editor/block-quote-aside-cycle'
-import { EditorSurfaceComposer, useEditorSurface } from '../../../client/editor/editor-surface'
-import { registerKobatoImageInsertCommands } from '../../../client/editor/image-insert-override'
-import { makePageEditorCardConfig } from '../../../client/editor/page-editor-card-config'
-import { PAGE_EDITOR_NODES } from '../../../client/editor/page-editor-nodes'
-import { pageEditorFileUploader } from '../../../client/editor/page-editor-upload'
-import { useFocusModePreference } from '../../../client/editor/use-focus-mode'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
-import { useHydrated } from '../../lib/use-hydrated'
 
 export interface PageBodyEditorProps {
   /** Initial Lexical body. Only read on first mount + when `bodyKey` changes. */

@@ -1,7 +1,6 @@
+import { notFound } from '@kobato/server/infra/http/status.ts'
 import { pagePath } from '@kobato/shared/utils/paths.ts'
 import { redirect } from 'react-router'
-
-import { notFound } from '../../infra/http/status'
 
 // 404s when the segment isn't numeric — `/page/abc` must not match page 1.
 export function parsePageNum(raw: string | undefined): number {

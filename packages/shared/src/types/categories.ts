@@ -1,7 +1,7 @@
 // Wire DTOs for the category-management endpoints (server actions + admin UI
 // import the same shape). Bigints are stringified; the public site never ships `id`.
 
-import type { AdminCategoryDto } from '../contracts/categories'
+import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
 
 export interface ListCategoriesInput {
   q?: string

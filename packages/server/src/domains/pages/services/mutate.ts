@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared.ts'
 import type { AdminPageDto } from '@kobato/shared/contracts/pages.ts'
 
-import type { Database } from '../../../infra/db/database'
-import type { PageMetaWriteInput } from './shared'
-
-import { DomainError } from '../../../infra/http/errors'
-import { makeEntityMutations } from '../../content/entities/mutate'
-import { pageDescriptor } from '../descriptor'
+import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate.ts'
+import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 // The five meta mutations come from the shared descriptor-driven skeleton via `pageDescriptor`.
 const mutations = makeEntityMutations(pageDescriptor)

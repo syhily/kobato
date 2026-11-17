@@ -1,8 +1,7 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { FileImageIcon, FileTextIcon, NotebookPenIcon } from 'lucide-react'
 import { Link } from 'react-router'
-
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
 
 export function QuickActions() {
   const { t } = useI18n()

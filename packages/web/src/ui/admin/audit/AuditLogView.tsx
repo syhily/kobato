@@ -1,9 +1,3 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { DownloadIcon, SearchIcon } from 'lucide-react'
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { toastApiError } from '../../../client/lib/toast-api-error'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,20 +7,25 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../components/alert-dialog'
-import { Button } from '../../components/button'
-import { Checkbox } from '../../components/checkbox'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../components/empty'
-import { Skeleton } from '../../components/skeleton'
-import { useI18n } from '../../lib/I18nProvider'
-import { skeletonKeys } from '../../lib/skeleton-keys'
-import { AdminInfiniteListFooter } from '../shared/AdminInfiniteListFooter'
-import { AdminListPage } from '../shared/AdminListPage'
-import { FilterPillBar } from '../shared/filter-bar/FilterPillBar'
-import { useFilterPills } from '../shared/filter-bar/useFilterPills'
-import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
-import { AuditLogRow } from './AuditLogRow'
-import { type AuditFilterQuery, buildAuditFilterFields } from './filter-fields'
+} from '@kobato/ui/components/alert-dialog.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { AuditLogRow } from '@kobato/web/ui/admin/audit/AuditLogRow.tsx'
+import { type AuditFilterQuery, buildAuditFilterFields } from '@kobato/web/ui/admin/audit/filter-fields.tsx'
+import { AdminInfiniteListFooter } from '@kobato/web/ui/admin/shared/AdminInfiniteListFooter.tsx'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
+import { FilterPillBar } from '@kobato/web/ui/admin/shared/filter-bar/FilterPillBar.tsx'
+import { useFilterPills } from '@kobato/web/ui/admin/shared/filter-bar/useFilterPills.ts'
+import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { DownloadIcon, SearchIcon } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 
 const PAGE_SIZE = 20
 

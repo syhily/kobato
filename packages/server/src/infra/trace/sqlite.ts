@@ -10,13 +10,12 @@
 // request/job span is already active — a boot-time migration or a timer flush
 // without an active span produces nothing.
 
+import { isVitest } from '@kobato/server/infra/config.ts'
+import { redactBoundValues } from '@kobato/server/infra/db/query-diagnostics.ts'
+import { activeTraceIds, isTraceActive, startSpan } from '@kobato/server/infra/trace/facade.ts'
+import { recordDbOperation } from '@kobato/server/infra/trace/metrics.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 import diagnostics_channel from 'node:diagnostics_channel'
-
-import { isVitest } from '../config'
-import { redactBoundValues } from '../db/query-diagnostics'
-import { activeTraceIds, isTraceActive, startSpan } from './facade'
-import { recordDbOperation } from './metrics'
 
 const SQLITE_QUERY_CHANNEL = 'sqlite.db.query'
 

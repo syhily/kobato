@@ -1,10 +1,9 @@
+import { fetchGithubAvatarDataUrl } from '@kobato/server/domains/comments/services/avatar.ts'
+import { fetchLatestRelease } from '@kobato/server/domains/update/release.ts'
+import { publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
-
-import { fetchGithubAvatarDataUrl } from '../../domains/comments/services/avatar'
-import { fetchLatestRelease } from '../../domains/update/release'
-import { DomainError } from '../../infra/http/errors'
-import { publicProc, resourceRateLimit } from '../orpc-base'
 
 const avatar = publicProc
   .route({ method: 'GET', path: '/github/avatar' })

@@ -123,7 +123,7 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
       throw new Error('boom')
     })
     const logWarn = vi.spyOn(
-      await import('@kobato/web/client/lib/logger.ts').then((m) => m.getLogger('settings.flush')),
+      await import('@kobato/ui/lib/logger.ts').then((m) => m.getLogger('settings.flush')),
       'warn',
     )
     await expect(captured!.flushAllAndWait()).resolves.toBe(false)

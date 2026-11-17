@@ -1,8 +1,11 @@
 import type { AdminImageKind } from '@kobato/shared/types/images.ts'
 
+import {
+  filterPillsReducer,
+  type ActiveFilter,
+  type FilterPillsAction,
+} from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 import { useReducer } from 'react'
-
-import { filterPillsReducer, type ActiveFilter, type FilterPillsAction } from '../shared/filterPillsReducer'
 
 export type ImageFilterField = 'q' | 'kind'
 

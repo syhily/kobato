@@ -1,6 +1,6 @@
-import { comment } from '@kobato/server/infra/db/schema/comment.ts'
-import { passkeyCredential } from '@kobato/server/infra/db/schema/passkey.ts'
-import { user, verification } from '@kobato/server/infra/db/schema/user.ts'
+import { comment } from '@kobato/db/schema/comment.ts'
+import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
+import { user, verification } from '@kobato/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
@@ -24,7 +24,7 @@ vi.mock('@kobato/server/infra/email/sender.ts', () => ({
 const admin = await import('@kobato/server/domains/users/services/admin.ts')
 const account = await import('@kobato/server/domains/users/services/account.ts')
 const adminQuery = await import('@kobato/server/domains/users/repos/admin-query.ts')
-const userOps = await import('@kobato/server/infra/db/operations/user.ts')
+const userOps = await import('@kobato/db/operations/user.ts')
 
 const db = getTestDb()
 

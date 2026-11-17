@@ -1,17 +1,15 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { RoleFilter, SortOrder } from '@kobato/web/ui/admin/users/useUsersFilters.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
+import { Separator } from '@kobato/ui/components/separator.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { LabelledCheckbox } from '@kobato/web/ui/admin/shared/LabelledCheckbox.tsx'
 import { FilterIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
-
-import type { RoleFilter, SortOrder } from './useUsersFilters'
-
-import { Button } from '../../components/button'
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/select'
-import { Separator } from '../../components/separator'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { LabelledCheckbox } from '../shared/LabelledCheckbox'
 
 const ROLE_OPTIONS: { value: RoleFilter; labelId: UiMessageId }[] = [
   { value: 'all', labelId: 'admin.users.role.all' },

@@ -2,15 +2,14 @@ import type { FontsSettings } from '@kobato/shared/config/types.ts'
 import type { FontSlot } from '@kobato/shared/contracts/fonts.ts'
 
 import { arrayMove } from '@dnd-kit/sortable'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useReducer, useRef } from 'react'
 import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { useI18n } from '../../lib/I18nProvider'
 
 // Optimistic slot controller: mirrors `blogSettings.fonts`; `seeded` only rewrites from the server while no mutation is in flight.
 export const MAX_SLOT_FONTS = 8

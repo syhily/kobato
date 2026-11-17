@@ -1,14 +1,13 @@
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-
-import { orpcQuery } from '../../../../client/api/orpc-query'
-import { Badge } from '../../../components/badge'
-import { Button } from '../../../components/button'
-import { Input } from '../../../components/input'
-import { Label } from '../../../components/label'
-import { cn } from '../../../lib/cn'
-import { useI18n } from '../../../lib/I18nProvider'
 
 export interface TagsFieldProps {
   values: string[]

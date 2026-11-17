@@ -1,6 +1,4 @@
-import { createContext, type Context, type ReactNode, use } from 'react'
-
-import type { BundleKey } from '../config/sections'
+import type { BundleKey } from '@kobato/shared/config/sections.ts'
 import type {
   AssetsSettings,
   BlogSettingsBundle,
@@ -10,9 +8,10 @@ import type {
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
-} from '../config/types'
+} from '@kobato/shared/config/types.ts'
 
-import { BUNDLE_KEYS } from '../config/sections'
+import { BUNDLE_KEYS } from '@kobato/shared/config/sections.ts'
+import { createContext, type Context, type ReactNode, use } from 'react'
 
 // Per-section React contexts. Adding a section = create the context and
 // add it to `SECTION_CONTEXTS_ANY`. Per-section (not one bundle context):

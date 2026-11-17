@@ -1,9 +1,9 @@
-import type { Database } from '../../../infra/db/database'
-import type { MetricRow } from '../../../infra/db/types'
+import type { Database } from '@kobato/db/database.ts'
+import type { MetricRow } from '@kobato/db/types.ts'
 
-import { ensureMetric, findMetricByPublicId } from '../../../infra/db/operations/metric'
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
+import { ensureMetric, findMetricByPublicId } from '@kobato/db/operations/metric.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 export interface MetricTarget {
   type: 'post' | 'page'

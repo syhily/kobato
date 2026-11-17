@@ -1,14 +1,13 @@
 import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 
 import { loginMethodSchema } from '@kobato/shared/contracts/users.ts'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { RadioGroup } from '@kobato/ui/components/radio-group.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { LabelledRadio } from '@kobato/web/ui/admin/shared/LabelledRadio.tsx'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRevalidator } from 'react-router'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/card'
-import { RadioGroup } from '../../components/radio-group'
-import { useI18n } from '../../lib/I18nProvider'
-import { LabelledRadio } from '../shared/LabelledRadio'
 
 interface LoginMethodOption {
   value: LoginMethod

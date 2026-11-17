@@ -1,6 +1,5 @@
+import { LANGUAGE_MAP } from '@kobato/ui/lib/code-languages.ts'
 import { type RefObject, useEffect } from 'react'
-
-import { LANGUAGE_MAP } from '../../lib/code-languages'
 
 const COPY_LABEL = 'Copy'
 const COPIED_LABEL = 'Copied'

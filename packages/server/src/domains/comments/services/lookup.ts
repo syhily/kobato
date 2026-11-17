@@ -1,10 +1,9 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { comment } from '@kobato/db/schema/comment.ts'
+import { user } from '@kobato/db/schema/user.ts'
+import { commentWithUser } from '@kobato/server/domains/comments/repos/shared.ts'
 import { and, count, eq, inArray, isNull } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-
-import { comment } from '../../../infra/db/schema/comment'
-import { user } from '../../../infra/db/schema/user'
-import { commentWithUser } from '../repos/shared'
 
 /** By-id comment lookups — the domain's sanctioned single-comment read
  *  surface for controllers (moderation, ownership, token flows). */

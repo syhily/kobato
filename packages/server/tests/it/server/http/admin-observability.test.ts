@@ -1,6 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
-import type { Database } from '@kobato/server/infra/db/database.ts'
 
+import { auditLog, setting } from '@kobato/db/schema/config.ts'
+import { user as userTable } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
@@ -12,8 +14,6 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
 import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog, setting } from '@kobato/server/infra/db/schema/config.ts'
-import { user as userTable } from '@kobato/server/infra/db/schema/user.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

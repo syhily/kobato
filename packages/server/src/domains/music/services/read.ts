@@ -1,11 +1,7 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { MusicRow } from '@kobato/db/types.ts'
 import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@kobato/shared/contracts/music.ts'
 import type { ListMusicInput } from '@kobato/shared/types/music.ts'
-
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
-
-import type { Database } from '../../../infra/db/database'
-import type { MusicRow } from '../../../infra/db/types'
 
 import {
   type AdminMusicListFilters,
@@ -14,9 +10,11 @@ import {
   findMusicByPlayerId,
   findMusicByPlayerIds,
   listAdminMusicRows,
-} from '../../../infra/db/operations/music'
-import { safeResolveAssetUrl } from '../../../infra/storage/public-url'
-import { toAdminMusicDto } from '../projection'
+} from '@kobato/db/operations/music.ts'
+import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'
+import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
+import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
 
 export async function listMusicForAdmin(db: Database, input: ListMusicInput = {}): Promise<ListMusicOutput> {
   const offset = clampOffset(input.offset)

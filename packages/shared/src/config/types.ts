@@ -1,10 +1,10 @@
-import type { Assert, Equals } from '../contracts/primitives'
-import type { RumClientIdentity } from '../contracts/trace'
-import type { AppLocale } from '../i18n/locales'
-import type { CacheBucketSlot, TunableCacheBucketId } from '../types/cache'
-import type { AvatarSource } from '../utils/avatar'
-import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from './sections'
-import type { SocialNetwork } from './socials'
+import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@kobato/shared/config/sections.ts'
+import type { SocialNetwork } from '@kobato/shared/config/socials.ts'
+import type { Assert, Equals } from '@kobato/shared/contracts/primitives.ts'
+import type { RumClientIdentity } from '@kobato/shared/contracts/trace.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { CacheBucketSlot, TunableCacheBucketId } from '@kobato/shared/types/cache.ts'
+import type { AvatarSource } from '@kobato/shared/utils/avatar.ts'
 
 // The DB stores one row per section; `BlogSettingsBundle` is the in-memory
 // composition of those rows.

@@ -1,15 +1,18 @@
+import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { transitions } from '@kobato/web/client/lib/motion.ts'
+import { formatTime } from '@kobato/web/ui/admin/musics/format-time.ts'
+import {
+  useMusicPlayerActions,
+  useMusicPlayerState,
+  useMusicPlayerTime,
+} from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
+import { ProgressSlider } from '@kobato/web/ui/admin/musics/ProgressSlider.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
-
-import { transitions } from '../../../client/lib/motion'
-import { LazyAnimatePresence, LazyMotionDiv } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
-import { formatTime } from './format-time'
-import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from './MusicPlayerContext'
-import { ProgressSlider } from './ProgressSlider'
 
 // Directional track swap: next slides in from the right and out to the left,
 // prev mirrors. `custom` carries the direction into the variant resolvers.

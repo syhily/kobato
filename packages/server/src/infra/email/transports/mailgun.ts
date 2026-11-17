@@ -2,10 +2,16 @@
 // other transports' skip/error vocabulary. US region only — endpoint is hardcoded
 // to `https://api.mailgun.net`; the admin UI has no region selector.
 
-import type { EmailMessage, MailTransport, MailTransportConfig, SendOptions, SendResult } from '../types'
+import type {
+  EmailMessage,
+  MailTransport,
+  MailTransportConfig,
+  SendOptions,
+  SendResult,
+} from '@kobato/server/infra/email/types.ts'
 
-import { getLogger } from '../../logger'
-import { emailTranslator } from '../translator'
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('email')
 

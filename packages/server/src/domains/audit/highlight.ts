@@ -1,6 +1,5 @@
+import { SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/pt/shiki.ts'
 import { createPromiseMemo } from '@kobato/shared/utils/memo.ts'
-
-import { SHIKI_THEMES, createShikiHighlighter } from '../../infra/pt/shiki'
 
 // Process-level singleton; single-flight, retries on failure.
 const getHighlighter = createPromiseMemo(() => createShikiHighlighter())

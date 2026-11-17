@@ -1,5 +1,5 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { Env } from '@kobato/server/http/context.ts'
-import type { Database } from '@kobato/server/infra/db/database.ts'
 import type { ServerPhase } from '@kobato/server/infra/lifecycle.ts'
 
 import {
@@ -89,7 +89,7 @@ describe('/ready endpoint', () => {
   it('is exempt from install-gate middleware', async () => {
     const mockHasAdmin = vi.fn().mockResolvedValue(false)
 
-    vi.doMock('@kobato/server/infra/db/operations/user.ts', () => ({
+    vi.doMock('@kobato/db/operations/user.ts', () => ({
       hasAdmin: () => mockHasAdmin(),
     }))
 
@@ -110,7 +110,7 @@ describe('/ready endpoint', () => {
       const res = await gated.request('/ready')
       expect(res.status).toBe(200)
     } finally {
-      vi.doUnmock('@kobato/server/infra/db/operations/user.ts')
+      vi.doUnmock('@kobato/db/operations/user.ts')
     }
   })
 })

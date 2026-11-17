@@ -1,5 +1,7 @@
-import type { DatabaseHandle } from '@kobato/server/infra/db/database.ts'
+import type { DatabaseHandle } from '@kobato/db/database.ts'
 
+import { auditLog } from '@kobato/db/schema/config.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import {
   flushAuditLog,
@@ -7,8 +9,6 @@ import {
   replayDeadLetterAuditLog,
 } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { clearAllTables } from '@kobato/test/integration-db.ts'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

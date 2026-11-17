@@ -13,16 +13,16 @@
 
 import type { DecoratorNodeProperty } from '@kobato/inkling/headless'
 
-import { MUSIC_PLAYER_NODE_TYPE } from '../node-whitelist'
-import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '../projection-state'
 import {
   absolutizeAssetSrcForFeed,
   type CardRenderContext,
   type CardRenderOutput,
   elementFromHtml,
   isFeedVariantRender,
-} from './card-html'
-import { resolveKobatoImageRenderEnv } from './kobato-image'
+} from '@kobato/shared/lexical/cards/card-html.ts'
+import { resolveKobatoImageRenderEnv } from '@kobato/shared/lexical/cards/kobato-image.ts'
+import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/shared/lexical/node-whitelist.ts'
+import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/shared/lexical/projection-state.ts'
 
 export const MUSIC_PLAYER_CARD_PROPERTIES = [
   { name: 'playerId', default: '' },

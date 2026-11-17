@@ -1,4 +1,4 @@
-import type { NotificationRow } from '@kobato/server/infra/db/types.ts'
+import type { NotificationRow } from '@kobato/db/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

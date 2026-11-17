@@ -1,17 +1,16 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog.tsx'
+import { FieldLabel } from '@kobato/ui/components/field.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { RadioGroup } from '@kobato/ui/components/radio-group.tsx'
+import { Switch } from '@kobato/ui/components/switch.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { LabelledRadio } from '@kobato/web/ui/admin/shared/LabelledRadio.tsx'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { toastApiError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/dialog'
-import { FieldLabel } from '../../components/field'
-import { Input } from '../../components/input'
-import { RadioGroup } from '../../components/radio-group'
-import { Switch } from '../../components/switch'
-import { useI18n } from '../../lib/I18nProvider'
-import { LabelledRadio } from '../shared/LabelledRadio'
 
 interface StorageMigrationDialogProps {
   open: boolean

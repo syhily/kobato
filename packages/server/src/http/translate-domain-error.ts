@@ -1,9 +1,8 @@
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
-import type { ServerTranslator } from '../infra/i18n'
-
-import { descriptorMessage, rawMessageDescriptor } from '../infra/http/error-descriptor'
-import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '../infra/http/errors'
+import { descriptorMessage, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '@kobato/server/infra/http/errors.ts'
 
 /** Single translation shared by the Hono and oRPC adapters, so status, code, message,
  *  descriptor, issues, and headers can never diverge between transports. */

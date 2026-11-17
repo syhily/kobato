@@ -1,7 +1,7 @@
 // Admin dashboard wire contracts, isomorphic so the route chunk and the server
 // share one shape.
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 export interface DraftSummary {
   id: string

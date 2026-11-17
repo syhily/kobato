@@ -1,20 +1,24 @@
 import type { GetObjectCommandOutput, ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
+import type {
+  PutObjectInput,
+  PutStreamInput,
+  StorageBackend,
+  StoredObjectMeta,
+  StreamWithMeta,
+} from '@kobato/server/infra/storage/backend.ts'
 import type { AssetsSettings } from '@kobato/shared/config/types.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { MAX_OBJECT_BUFFER_SIZE, StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
+import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { createHash } from 'node:crypto'
 import { Readable, Transform } from 'node:stream'
-
-import type { PutObjectInput, PutStreamInput, StorageBackend, StoredObjectMeta, StreamWithMeta } from '../backend'
-
-import { descriptorFor } from '../../http/error-descriptor'
-import { ActionFailure } from '../../http/errors'
-import { getLogger } from '../../logger'
-import { MAX_OBJECT_BUFFER_SIZE, StorageObjectNotFound } from '../backend'
-import { cacheControlForVisibility } from '../key-policy'
 
 // The SDK is loaded lazily via `getAwsSdk()`: `@aws-sdk/core`'s ESM index
 // imports a file without a `.js` extension, which Node ESM and the Vitest

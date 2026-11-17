@@ -1,10 +1,9 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useShowOnScroll } from '@kobato/web/client/hooks/use-show-on-scroll.ts'
 import { ArrowUpIcon } from 'lucide-react'
-
-import { useShowOnScroll } from '../../../client/hooks/use-show-on-scroll'
-import { Button } from '../../components/button'
-import { IconButtonContent } from '../../components/icon-button-content'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 // `opacity` + `pointer-events` (not `display`) avoids iOS Safari scroll ghosting; `transform-gpu` keeps opacity GPU-accelerated.
 export function ScrollTopButton() {

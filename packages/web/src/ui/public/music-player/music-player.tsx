@@ -1,13 +1,12 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import { formatAudioDuration } from '@kobato/web/ui/public/music-player/format-time.ts'
+import { LyricsPanel } from '@kobato/web/ui/public/music-player/lyrics.tsx'
+import { ScrubBar } from '@kobato/web/ui/public/music-player/scrub-bar.tsx'
+import { useMusicPlayback } from '@kobato/web/ui/public/music-player/use-music-playback.ts'
 import { ListMusicIcon, Loader2Icon, PauseIcon, PlayIcon, Volume2Icon, VolumeXIcon } from 'lucide-react'
 import { useState } from 'react'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { useMediaQuery } from '../../lib/use-media-query'
-import { formatAudioDuration } from './format-time'
-import { LyricsPanel } from './lyrics'
-import { ScrubBar } from './scrub-bar'
-import { useMusicPlayback } from './use-music-playback'
 
 export type MusicPlayerCardProps = {
   name: string

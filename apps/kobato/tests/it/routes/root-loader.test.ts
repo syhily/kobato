@@ -29,7 +29,7 @@ vi.mock('@kobato/server/infra/trace/config.ts', () => ({
   activeFrontendRum: () => traceConfig.current.rum,
 }))
 
-const { loader } = await import('@/root')
+const { loader } = await import('@/root.tsx')
 
 describe('root loader', () => {
   beforeEach(async () => {

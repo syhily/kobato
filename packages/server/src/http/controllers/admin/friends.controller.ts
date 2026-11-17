@@ -1,11 +1,10 @@
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { friendIdSchema, listFriendsSchema, upsertFriendSchema } from '@kobato/server/domains/friends/schema.ts'
+import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@kobato/server/domains/friends/service.ts'
+import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { adminFriendDto } from '@kobato/shared/contracts/friends.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { friendIdSchema, listFriendsSchema, upsertFriendSchema } from '../../../domains/friends/schema'
-import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '../../../domains/friends/service'
-import { adminProc, localizedOrpcError } from '../../orpc-base'
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/friends/list' })

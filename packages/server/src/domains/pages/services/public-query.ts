@@ -1,17 +1,15 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
 import type { Page } from '@kobato/shared/types/catalog.ts'
 
+import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
+import { makeMetaCrud } from '@kobato/server/domains/content/entities/meta-repo.ts'
+import { findContentById } from '@kobato/server/domains/content/revisions.ts'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance.ts'
+import { livePageWhere } from '@kobato/server/domains/pages/live-gate.ts'
+import { toCmsPage } from '@kobato/server/domains/pages/projection.ts'
 import { and, desc, eq } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { NewPageMeta, PageMetaRow } from '../../../infra/db/types'
-
-import { page as pageMetaTable } from '../../../infra/db/schema/page'
-import { makeMetaCrud } from '../../content/entities/meta-repo'
-import { findContentById } from '../../content/revisions'
-import { isLive } from '../../content/schemas/live-gate'
-import { hydrateImageRefs } from '../../images/services/enhance'
-import { livePageWhere } from '../live-gate'
-import { toCmsPage } from '../projection'
 
 const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 

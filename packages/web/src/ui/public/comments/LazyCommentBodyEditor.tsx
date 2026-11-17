@@ -1,23 +1,23 @@
 import type { InklingLabelsInput } from '@kobato/inkling'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { CommentBodyEditorProps } from '@kobato/web/ui/public/comments/CommentBodyEditor.tsx'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { loadInklingLabels, useKobatoInklingLabels } from '@kobato/web/client/editor/inkling-labels.ts'
+import { acquireViewportZoomLock, releaseViewportZoomLock } from '@kobato/web/client/lib/viewport-zoom-lock.ts'
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
-
-import type { CommentBodyEditorProps } from './CommentBodyEditor'
-
-import { loadInklingLabels, useKobatoInklingLabels } from '../../../client/editor/inkling-labels'
-import { acquireViewportZoomLock, releaseViewportZoomLock } from '../../../client/lib/viewport-zoom-lock'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
 
 // The composer rides a lazy chunk (inkling island + CSS) so the public post page's
 // static import graph stays editor-free.
 const CommentBodyEditor = lazy(() =>
-  import('./CommentBodyEditor').then((module) => ({ default: module.CommentBodyEditor })),
+  import('@kobato/web/ui/public/comments/CommentBodyEditor.tsx').then((module) => ({
+    default: module.CommentBodyEditor,
+  })),
 )
 
 // Hover-intent prefetch; the browser dedupes this against the lazy boundary's own import.
-const warmEditorChunk = () => void import('./CommentBodyEditor')
+const warmEditorChunk = () => void import('@kobato/web/ui/public/comments/CommentBodyEditor.tsx')
 
 /** Intent prefetch for surfaces that mount the composer on a click: warms the composer
  *  chunk and the active locale's label table, so the eager mount lands ready for input. */

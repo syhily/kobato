@@ -1,13 +1,11 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { FilterFieldSpec, FilterQueryPatch } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { deriveStatusQueryFields } from '@kobato/web/ui/admin/shared/filter-bar/status-fields.ts'
 import { FolderIcon, ListChecksIcon, TagsIcon, UserIcon } from 'lucide-react'
-
-import type { I18nValue } from '../../lib/I18nProvider'
-import type { FilterFieldSpec, FilterQueryPatch } from '../shared/filter-bar/types'
-import type { ActiveFilter, FilterPillsAction } from '../shared/filterPillsReducer'
-
-import { deriveStatusQueryFields } from '../shared/filter-bar/status-fields'
 
 // Posts-list filter-pill specs, URL seed/sync helpers, and `toQuery` mappers onto `admin.posts.list` input.
 export type PostFilterFieldKey = 'status' | 'category' | 'tag' | 'author'

@@ -1,12 +1,11 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Textarea } from '@kobato/ui/components/textarea.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { LazyPopup as Popup } from '@kobato/web/ui/public/widgets/LazyPopup.tsx'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useRef, useState } from 'react'
-
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { Textarea } from '../../components/textarea'
-import { useI18n } from '../../lib/I18nProvider'
-import { LazyPopup as Popup } from '../widgets/LazyPopup'
 
 export function FriendApplyForm() {
   const { t } = useI18n()

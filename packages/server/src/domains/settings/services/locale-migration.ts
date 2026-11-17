@@ -7,16 +7,14 @@
 // that need a flag — re-running is safe, a canonical value performs zero writes and
 // logs nothing.
 
+import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { generalSection } from '@kobato/server/domains/settings/sections/general.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { DEFAULT_LOCALE, isKnownLocaleValue, normalizeAppLocale } from '@kobato/shared/i18n/locales.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { Database } from '../../../infra/db/database'
-
-import { findSettingByScope, upsertSetting } from '../../../infra/db/operations/setting'
-import { getLogger } from '../../../infra/logger'
-import { generalSection } from '../sections/general'
 
 const log = getLogger('settings.locale-migration')
 

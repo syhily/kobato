@@ -1,6 +1,6 @@
-import { z } from 'zod'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
-import type { UiMessageId } from '../i18n/messages/ui/en-US'
+import { z } from 'zod'
 
 /**
  * Typed catalog id for the shared http(s)-URL rule: every schema reusing the

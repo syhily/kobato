@@ -1,12 +1,11 @@
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { getPublicBaseUrl } from '@kobato/server/infra/storage/public-url.ts'
+import { isS3Primary } from '@kobato/server/infra/storage/registry.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { createServerTranslator } from '../../infra/i18n'
-import { getPublicBaseUrl } from '../../infra/storage/public-url'
-import { isS3Primary } from '../../infra/storage/registry'
 
 /**
  * Redirect branch for the site-owned asset routes (`/storage/*`,

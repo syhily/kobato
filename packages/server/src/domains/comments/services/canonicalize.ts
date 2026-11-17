@@ -1,6 +1,11 @@
 import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 
 import { lexicalStateToPlainText } from '@kobato/inkling/headless'
+import { decideContentLengthGate } from '@kobato/server/domains/comments/services/policy.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/pt/lexical-prerender.ts'
+import { computeCommentContentProjection } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { SERVER_FILLED_NODE_FIELDS } from '@kobato/shared/lexical/artifacts.ts'
 import {
   commentEditorStateSchema,
@@ -10,12 +15,6 @@ import {
 import { compactLexicalEditorState } from '@kobato/shared/lexical/dialect.ts'
 import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
 import { z } from 'zod'
-
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { prerenderLexicalEditorState } from '../../../infra/pt/lexical-prerender'
-import { computeCommentContentProjection } from '../../../infra/pt/lexical-projection'
-import { decideContentLengthGate } from './policy'
 
 const COMMENT_MAX_BLOCKS = 200
 const COMMENT_MAX_HTTP_URLS = 3

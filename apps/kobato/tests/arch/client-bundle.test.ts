@@ -18,6 +18,7 @@ const PROJECT_ROOT = process.cwd()
 const CLIENT_LAYERS = [
   'packages/web/src/ui',
   'packages/web/src/client',
+  'packages/ui/src',
   'apps/kobato/src/routes',
   'packages/shared/src',
 ]
@@ -255,6 +256,7 @@ function collectServerOnlyImportViolations(filePaths: readonly string[], rule: S
 const I18N_SCANNED_ROOTS = [
   'packages/web/src/ui',
   'packages/web/src/client',
+  'packages/ui/src',
   'apps/kobato/src/routes',
   'packages/shared/src',
 ]

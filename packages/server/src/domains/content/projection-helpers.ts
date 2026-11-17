@@ -1,11 +1,10 @@
+import type { ContentRow } from '@kobato/db/types.ts'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
 
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { readStringArray } from '@kobato/shared/utils/tools.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-
-import type { ContentRow } from '../../infra/db/types'
 
 /** Parses a stored Lexical body; every stored row is a Lexical state, so anything else fails loudly. */
 export function readLexicalBody(value: unknown): LexicalEditorState {

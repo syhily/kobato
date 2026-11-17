@@ -2,7 +2,7 @@
 // tree-shakes route exports statically, so each route re-exports a named
 // constant from here. Revalidation deliberately uncustomised (router default).
 
-import { cacheHeaders } from '../../infra/http/headers'
+import { cacheHeaders } from '@kobato/server/infra/http/headers.ts'
 
 // Listing pages (home, archives, categories, tags, search): `no-cache` — the
 // UI locale is a global setting on a fixed URL, so a stored copy must

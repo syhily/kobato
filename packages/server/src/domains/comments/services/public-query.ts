@@ -1,28 +1,30 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { EntityTarget } from '@kobato/db/target.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@kobato/shared/types/comments.ts'
 
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { getSidebarWidgetCount } from '@kobato/shared/config/utils.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
-import { createHash } from 'node:crypto'
-
-import type { Database } from '../../../infra/db/database'
-import type { EntityTarget } from '../../../infra/db/target'
-import type { BlogSession } from '../../auth/session-storage'
-
-import { getLogger } from '../../../infra/logger'
-import { userSession } from '../../auth/primitives'
-import { toLatestComment } from '../projection'
-import { countApprovedCommentsByUser } from '../repos/public-query/by-id'
-import { adminUserIds, commentsByIds, latestDistinctCommentIds } from '../repos/public-query/digest'
+import { userSession } from '@kobato/server/domains/auth/primitives.ts'
+import { toLatestComment } from '@kobato/server/domains/comments/projection.ts'
+import { countApprovedCommentsByUser } from '@kobato/server/domains/comments/repos/public-query/by-id.ts'
+import {
+  adminUserIds,
+  commentsByIds,
+  latestDistinctCommentIds,
+} from '@kobato/server/domains/comments/repos/public-query/digest.ts'
 import {
   commentFingerprintRows,
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
-} from '../repos/public-query/threads'
-import { ensureCommentPage } from './shared'
+} from '@kobato/server/domains/comments/repos/public-query/threads.ts'
+import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { getSidebarWidgetCount } from '@kobato/shared/config/utils.ts'
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.parse')
 

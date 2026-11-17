@@ -1,11 +1,10 @@
+import type { MusicPlayerCardProps } from '@kobato/web/ui/public/music-player/music-player.tsx'
+
 import { isHttpUrl } from '@kobato/shared/utils/safe-url.ts'
+import { I18nProvider, type I18nMessages, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { type RefObject, useContext, useEffect, useEffectEvent } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { IntlContext } from 'react-intl'
-
-import type { MusicPlayerCardProps } from '../music-player/music-player'
-
-import { I18nProvider, type I18nMessages, useI18n } from '../../lib/I18nProvider'
 
 // Defense-in-depth for the hydrated mount points: `data-url` / `data-cover` reach body_html
 // sanitized, but this hook assigns them to `audio.src` / `<img src>` directly. Accept only
@@ -56,7 +55,7 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
     let cancelled = false
     const roots: Root[] = []
 
-    void import('../music-player/music-player').then(({ MusicPlayerCard }) => {
+    void import('@kobato/web/ui/public/music-player/music-player.tsx').then(({ MusicPlayerCard }) => {
       if (cancelled) {
         return
       }

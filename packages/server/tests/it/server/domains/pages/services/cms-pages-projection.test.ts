@@ -1,4 +1,4 @@
-import type { ContentRow, PageMetaRow } from '@kobato/server/infra/db/types.ts'
+import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
 
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'

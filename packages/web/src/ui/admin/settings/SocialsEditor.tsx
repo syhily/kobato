@@ -1,14 +1,13 @@
 import type { SocialItem, SocialsSettings } from '@kobato/shared/config/types.ts'
 
 import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@kobato/shared/config/socials.ts'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { SettingsInput } from '@kobato/web/ui/admin/settings/shell/SettingsInput.tsx'
+import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
 import { useFieldArray, useWatch } from 'react-hook-form'
-
-import { Label } from '../../components/label'
-import { SOCIAL_NETWORK_ICONS } from '../../icons/brand'
-import { useI18n } from '../../lib/I18nProvider'
-import { SettingGroup } from './shell/SettingGroup'
-import { SettingsInput } from './shell/SettingsInput'
-import { useSettingsCard } from './shell/useSettingsCard'
 
 interface SocialsEditorProps {
   socials: SocialsSettings

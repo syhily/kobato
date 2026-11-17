@@ -1,20 +1,18 @@
 import type { AdminPostDetailDto, AdminPostDto } from '@kobato/shared/contracts/posts.ts'
 import type { PostMetaDraft, UpsertPostMetaInput, UpsertPostMetaOutput } from '@kobato/shared/types/posts.ts'
+import type { EditorAdapterConfig } from '@kobato/web/ui/admin/editor-shell/make-editor-adapter.ts'
 import type { NavigateFunction } from 'react-router'
 
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { useContentSettings } from '@kobato/shared/lib/blog-config-context.tsx'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual } from '@kobato/shared/types/posts.ts'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { EditorScreen } from '@kobato/web/ui/admin/editor-shell/EditorScreen.tsx'
+import { makeEditorAdapter } from '@kobato/web/ui/admin/editor-shell/make-editor-adapter.ts'
+import { buildPostUpsertPayload } from '@kobato/web/ui/admin/posts/build-post-upsert-payload.ts'
+import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web/ui/admin/posts/PostMetaSidebar.tsx'
 import { useQueryClient } from '@tanstack/react-query'
-
-import type { EditorAdapterConfig } from '../editor-shell/make-editor-adapter'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { EditorScreen } from '../editor-shell/EditorScreen'
-import { makeEditorAdapter } from '../editor-shell/make-editor-adapter'
-import { buildPostUpsertPayload } from './build-post-upsert-payload'
-import { metaDraftFromPost, PostMetaSidebar } from './PostMetaSidebar'
 
 export interface PostEditorShellProps {
   mode: 'create' | 'edit'

@@ -16,12 +16,11 @@
 // cards are not in the page editor's node set.
 
 import type { CardConfig, LibraryImageItem } from '@kobato/inkling'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
-import type { I18nValue } from '../../ui/lib/I18nProvider'
-
-import { orpc } from '../api/client'
-import { toSiteOwnedImageSrc } from './image-insert-override'
-import { makeRenderMath, resolveMathError } from './render-math'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { toSiteOwnedImageSrc } from '@kobato/web/client/editor/image-insert-override.ts'
+import { makeRenderMath, resolveMathError } from '@kobato/web/client/editor/render-math.ts'
 
 async function searchLibraryImages(query: string): Promise<LibraryImageItem[] | undefined> {
   const trimmed = query.trim()

@@ -1,5 +1,5 @@
-import { expect, test } from './support/fixtures'
-import { openSettings } from './support/journey'
+import { expect, test } from './support/fixtures.ts'
+import { openSettings } from './support/journey.ts'
 
 const ANALYTICS_NAV_LABEL = '分析统计'
 const COLLECTION_TITLE = '采集与过滤策略'

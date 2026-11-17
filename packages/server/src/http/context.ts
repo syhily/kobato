@@ -1,6 +1,5 @@
+import type { RequestContext } from '@kobato/server/http/request-context.ts'
 import type { Env as HonoPinoEnv } from 'hono-pino'
-
-import type { RequestContext } from './request-context'
 
 type BaseEnv = {
   Variables: {

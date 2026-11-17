@@ -1,12 +1,11 @@
 import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
 
 import { idFromString } from '@kobato/shared/utils/id.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { AnalyticsDashboard, type AnalyticsDashboardData } from '@kobato/web/ui/admin/analytics/AnalyticsDashboard.tsx'
+import { ExportButton } from '@kobato/web/ui/admin/analytics/ExportButton.tsx'
+import { type AnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { Link } from 'react-router'
-
-import { useI18n } from '../../lib/I18nProvider'
-import { AnalyticsDashboard, type AnalyticsDashboardData } from './AnalyticsDashboard'
-import { ExportButton } from './ExportButton'
-import { type AnalyticsState } from './use-analytics-state'
 
 // Title + public-link header shared by both shells; each route wraps it in its own chrome.
 export function PostAnalyticsHeader({ post }: { post: AdminPostDto }) {

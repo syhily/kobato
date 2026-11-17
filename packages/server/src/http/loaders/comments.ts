@@ -1,17 +1,20 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { EntityTarget } from '@kobato/db/target.ts'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { CommentFormUser } from '@kobato/shared/types/catalog.ts'
 import type { DetailPageComments } from '@kobato/shared/types/comments.ts'
 
-import type { BlogSession, SessionUser } from '../../domains/auth/session-storage'
-import type { Database } from '../../infra/db/database'
-import type { EntityTarget } from '../../infra/db/target'
-
-import { userSession } from '../../domains/auth/primitives'
-import { asCommentItemsWire } from '../../domains/comments/projection'
-import { queryLikes } from '../../domains/comments/services/likes'
-import { commentThreadFingerprint, loadComments, parseComments } from '../../domains/comments/services/public-query'
-import { ensureCommentPage } from '../../domains/comments/services/shared'
-import { loadSidebarData } from './sidebar'
+import { userSession } from '@kobato/server/domains/auth/primitives.ts'
+import { asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
+import { queryLikes } from '@kobato/server/domains/comments/services/likes.ts'
+import {
+  commentThreadFingerprint,
+  loadComments,
+  parseComments,
+} from '@kobato/server/domains/comments/services/public-query.ts'
+import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared.ts'
+import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
 
 // Project through `CommentFormUser` — the reply form only needs the
 // admin/non-admin split, keeping future session fields out of the SSR DOM.

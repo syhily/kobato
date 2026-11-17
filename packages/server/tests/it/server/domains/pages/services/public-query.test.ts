@@ -1,13 +1,13 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { page as pageTable } from '@kobato/db/schema/page.ts'
 import {
   findLivePageBySlug,
   findPageBySlug,
   findPublicPageMetaBySlug,
   listSitemapPages,
 } from '@kobato/server/domains/pages/services/public-query.ts'
-import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'

@@ -1,15 +1,18 @@
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { userSession } from '@kobato/server/domains/auth/primitives.ts'
+import { uploadImageMetadataSchema } from '@kobato/server/domains/images/schema.ts'
+import {
+  deleteImage,
+  recalculateImageThumbhash,
+  updateImageNote,
+} from '@kobato/server/domains/images/services/admin-mutate.ts'
+import { listImagesForAdmin } from '@kobato/server/domains/images/services/admin-read.ts'
+import { checkImageUpload, uploadImage } from '@kobato/server/domains/images/services/upload.ts'
+import { authorProc, localizedOrpcError, localizedOrpcErrorDescriptor } from '@kobato/server/http/orpc-base.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { adminImageDto, listImagesOutputDto } from '@kobato/shared/contracts/images.ts'
 import { idFromString } from '@kobato/shared/utils/id.ts'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { userSession } from '../../../domains/auth/primitives'
-import { uploadImageMetadataSchema } from '../../../domains/images/schema'
-import { deleteImage, recalculateImageThumbhash, updateImageNote } from '../../../domains/images/services/admin-mutate'
-import { listImagesForAdmin } from '../../../domains/images/services/admin-read'
-import { checkImageUpload, uploadImage } from '../../../domains/images/services/upload'
-import { authorProc, localizedOrpcError, localizedOrpcErrorDescriptor } from '../../orpc-base'
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/images/list' })

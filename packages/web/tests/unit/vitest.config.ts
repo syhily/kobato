@@ -14,7 +14,7 @@ export default defineConfig({
     // core, which starves the host on high-core machines.
     maxWorkers: 4,
     environment: 'node',
-    include: ['**/*.test.{ts,tsx}', '../contract/**/*.test.{ts,tsx}'],
+    include: ['**/*.test.{ts,tsx}'],
     setupFiles: ['@kobato/test/setup/unit.ts'],
     testTimeout: 10_000,
   },

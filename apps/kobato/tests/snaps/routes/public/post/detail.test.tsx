@@ -4,7 +4,7 @@ import { prerenderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
-import PostDetailRoute from '@/routes/public/post/detail'
+import PostDetailRoute from '@/routes/public/post/detail.tsx'
 
 describe('snapshot: routes/public/post/detail', () => {
   it('renders the post detail route', async () => {

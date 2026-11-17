@@ -1,13 +1,12 @@
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { extractZodIssues } from '@kobato/server/domains/pt/services/zod-issues.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/pt/lexical-prerender.ts'
 import { SERVER_FILLED_NODE_FIELDS } from '@kobato/shared/lexical/artifacts.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
-
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { prerenderLexicalEditorState } from '../../../infra/pt/lexical-prerender'
-import { extractZodIssues } from './zod-issues'
 
 // Validate the incoming editor state, strip every server-owned artifact slot
 // the client may have forged (stored-XSS / stale-snapshot guard — the editor

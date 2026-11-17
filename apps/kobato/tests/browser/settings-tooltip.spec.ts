@@ -2,8 +2,8 @@
 // labelTooltip; this journey proves the portal tooltip actually renders (and
 // paints above the fixed z-50 settings panel) when its trigger is hovered.
 
-import { expect, test } from './support/fixtures'
-import { openSettings } from './support/journey'
+import { expect, test } from './support/fixtures.ts'
+import { openSettings } from './support/journey.ts'
 
 const HINT_TRIGGER_LABEL = '了解更多' // admin.settings.shared.hintTooltip (zh-CN)
 const OBSERVABILITY_NAV_LABEL = '可观测性' // admin.settings.section.observability.label

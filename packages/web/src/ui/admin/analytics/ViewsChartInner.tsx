@@ -2,13 +2,12 @@ import type { TimeUnit, ViewsPoint } from '@kobato/shared/contracts/analytics.ts
 
 import { formatNumber } from '@kobato/shared/i18n/format.ts'
 import { escapeHtml } from '@kobato/shared/utils/security.ts'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatTimeLabel, parseTimeLabel } from '@kobato/web/ui/admin/analytics/time-labels.ts'
+import { getClientTimezone } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { VisArea, VisAxis, VisCrosshair, VisGroupedBar, VisLine, VisTooltip, VisXYContainer } from '@unovis/react'
 import { useId, useMemo } from 'react'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { formatTimeLabel, parseTimeLabel } from './time-labels'
-import { getClientTimezone } from './use-analytics-state'
 
 // CLIENT ONLY: lazy-mounted behind the hydration gate in ViewsChart.tsx — never import statically from an SSR-rendered module.
 

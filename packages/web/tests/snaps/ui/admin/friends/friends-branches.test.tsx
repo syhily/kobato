@@ -33,7 +33,7 @@ vi.mock('@kobato/web/ui/admin/shared/useDebouncedSearch.ts', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 const debouncedSearch = vi.hoisted(() => ({
   value: '',

@@ -1,4 +1,4 @@
-import { image } from '@kobato/server/infra/db/schema/media.ts'
+import { image } from '@kobato/db/schema/media.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -175,7 +175,7 @@ describe('images/services/admin-mutate — deleteImage', () => {
   })
 
   it('soft-deletes the image', async () => {
-    const img = await seedImage({ storagePath: 'images/delete.jpg' })
+    const img = await seedImage({ storagePath: 'images/delete.jpg', storageDriver: 'local' })
     await adminMutate.deleteImage(db, img.id)
     const rows = await db.select().from(image).where(eq(image.id, img.id))
     expect(rows[0].deletedAt).not.toBeNull()

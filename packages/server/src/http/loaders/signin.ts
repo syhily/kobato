@@ -1,16 +1,15 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { logout } from '@kobato/server/domains/auth/primitives.ts'
+import { readLivePendingOtp } from '@kobato/server/domains/auth/services/otp.ts'
+import { authFlowError, authFlowMessage } from '@kobato/server/domains/auth/services/shared.ts'
+import { destroySession } from '@kobato/server/domains/auth/session-storage.ts'
+import { peekToken } from '@kobato/server/domains/auth/verification-tokens.ts'
+import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate.ts'
+import { getRequestContext, type RequestContext } from '@kobato/server/http/request-context.ts'
 import { safeRedirectPath } from '@kobato/shared/utils/safe-url.ts'
 import { data, redirect } from 'react-router'
-
-import { recordAuditEventFromContext } from '../../domains/audit/services/record'
-import { logout } from '../../domains/auth/primitives'
-import { readLivePendingOtp } from '../../domains/auth/services/otp'
-import { authFlowError, authFlowMessage } from '../../domains/auth/services/shared'
-import { destroySession } from '../../domains/auth/session-storage'
-import { peekToken } from '../../domains/auth/verification-tokens'
-import { ensureInstalledOrRedirect } from '../../domains/settings/install-gate'
-import { getRequestContext, type RequestContext } from '../request-context'
 
 // Flow routing behind `routes/auth/signin.tsx`: token peek and OTP-session
 // branching. Redirects are thrown; two `data(...)` payload shapes drive the

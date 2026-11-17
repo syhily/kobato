@@ -1,6 +1,7 @@
-import type { Database } from '@kobato/server/infra/db/database.ts'
+import type { Database } from '@kobato/db/database.ts'
 import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend.ts'
 
+import { findBackupByTimestamp, insertBackup } from '@kobato/db/operations/backup.ts'
 import {
   cleanupOldBackups,
   createBackup,
@@ -8,7 +9,6 @@ import {
   getBackupStream,
   isValidBackupStoragePath,
 } from '@kobato/server/domains/backup/services/backup.ts'
-import { findBackupByTimestamp, insertBackup } from '@kobato/server/infra/db/operations/backup.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

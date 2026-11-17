@@ -1,19 +1,16 @@
-import type { Database, DatabaseHandle } from '@kobato/server/infra/db/database.ts'
+import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
+import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
+import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { wipeCache } from '@kobato/server/infra/cache/file-store.ts'
 import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
 import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry.ts'
-import { closeDatabase, openDatabase } from '@kobato/server/infra/db/database.ts'
 import { sql } from 'drizzle-orm'
-import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll } from 'vitest'
-
-const MIGRATIONS_FOLDER = './drizzle'
-const MIGRATIONS_TABLE = '__drizzle_migrations'
 
 /**
  * Shared in-memory DB harness. `getTestDb` is the migrated lifecycle global (`:memory:`
@@ -33,7 +30,7 @@ export function createTestDatabaseFile(): DatabaseHandle {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-it-'))
   tempDirs.push(dir)
   const handle = openDatabase(join(dir, 'test.db'))
-  migrate(handle.db, { migrationsFolder: MIGRATIONS_FOLDER, migrationsTable: MIGRATIONS_TABLE })
+  migrateDatabase(handle.db)
   openHandles.push(handle)
   return handle
 }

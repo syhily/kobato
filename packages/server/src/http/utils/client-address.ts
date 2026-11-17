@@ -4,7 +4,7 @@
  * verbatim; no direct IP → 'unknown' (non-loopback, so proxy headers stay untrusted).
  */
 
-import { isValidIp, matchesTrustedProxy } from '../../infra/ip-match'
+import { isValidIp, matchesTrustedProxy } from '@kobato/server/infra/ip-match.ts'
 
 function sanitizeIp(raw: string): string | null {
   const trimmed = raw.trim()

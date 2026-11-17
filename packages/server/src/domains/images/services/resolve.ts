@@ -4,16 +4,14 @@
 // (origin-relative `/storage/…` and `/images/…` srcs still resolve) — never
 // fails the render.
 
+import type { Database } from '@kobato/db/database.ts'
+import type { ImageRow } from '@kobato/db/types.ts'
 import type { StorageDriver } from '@kobato/shared/config/types.ts'
 
+import { findImagesByStoragePaths } from '@kobato/db/operations/image.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { getPublicBaseUrl, parseAssetUrl, safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 import { STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
-
-import type { Database } from '../../../infra/db/database'
-import type { ImageRow } from '../../../infra/db/types'
-
-import { findImagesByStoragePaths } from '../../../infra/db/operations/image'
-import { getLogger } from '../../../infra/logger'
-import { getPublicBaseUrl, parseAssetUrl, safeResolveAssetUrl } from '../../../infra/storage/public-url'
 
 const log = getLogger('images.render-enhance')
 

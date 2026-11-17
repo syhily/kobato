@@ -1,7 +1,7 @@
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { publishLocaleChange, subscribeLocaleChange } from '@kobato/web/client/lib/locale-sync.ts'
-import { useI18n } from '@kobato/web/ui/lib/I18nProvider.tsx'
 import {
   LocaleSyncProvider,
   useLocaleSyncHostRegistration,

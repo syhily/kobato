@@ -1,3 +1,5 @@
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { verification, user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { establishLoginSession, logout, userSession } from '@kobato/server/domains/auth/primitives.ts'
@@ -32,8 +34,6 @@ import {
   verifyOtpToken,
 } from '@kobato/server/domains/auth/verification-tokens.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { verification, user } from '@kobato/server/infra/db/schema/user.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'

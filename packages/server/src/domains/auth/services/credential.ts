@@ -1,13 +1,19 @@
-import type { Database } from '../../../infra/db/database'
+import type { Database } from '@kobato/db/database.ts'
 
-import { findUserByEmail, verifyUserPassword } from '../../../infra/db/operations/user'
-import { tryRateLimit, trySignInByEmailRateLimit } from '../../../infra/rate-limit'
-import { recordAuditEvent } from '../../audit/services/record'
-import { isPasskeySigninUser } from '../passkey/gate'
-import { establishLoginSession } from '../primitives'
-import { signInSchema } from '../schema'
-import { sendOtpAndStageSession } from './otp'
-import { authFlowError, formFieldString, isMailLoginReady, type AuthFlowResult, type SigninFlowContext } from './shared'
+import { findUserByEmail, verifyUserPassword } from '@kobato/db/operations/user.ts'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
+import { isPasskeySigninUser } from '@kobato/server/domains/auth/passkey/gate.ts'
+import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
+import { signInSchema } from '@kobato/server/domains/auth/schema.ts'
+import { sendOtpAndStageSession } from '@kobato/server/domains/auth/services/otp.ts'
+import {
+  authFlowError,
+  formFieldString,
+  isMailLoginReady,
+  type AuthFlowResult,
+  type SigninFlowContext,
+} from '@kobato/server/domains/auth/services/shared.ts'
+import { tryRateLimit, trySignInByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
 
 function parseLoginInput(formData: FormData): { email: string; password: string } | null {
   const email = formFieldString(formData, 'email')

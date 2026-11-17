@@ -2,6 +2,13 @@ import type { UpdateCheckResult, UpdateJobState } from '@kobato/shared/contracts
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@kobato/shared/config/version.ts'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog.tsx'
+import { GithubIcon } from '@kobato/ui/icons/brand.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { useQuery } from '@tanstack/react-query'
 import {
   AlertCircleIcon,
@@ -13,14 +20,6 @@ import {
   TagIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/dialog'
-import { GithubIcon } from '../../icons/brand'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../../public/widgets/Image'
 
 type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'error'
 

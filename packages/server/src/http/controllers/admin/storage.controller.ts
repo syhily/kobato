@@ -1,24 +1,23 @@
 import type { StorageMigrationStatus } from '@kobato/shared/contracts/storage.ts'
 
-import { storageMigrationStatusDto } from '@kobato/shared/contracts/storage.ts'
-import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import {
   STORAGE_ENDPOINT_HTTPS_MESSAGE,
   STORAGE_URL_TEMPLATE_MESSAGE,
   isSafeStorageEndpoint,
   isSafeStorageUrlTemplate,
-} from '../../../domains/settings/sections/assets'
+} from '@kobato/server/domains/settings/sections/assets.ts'
 import {
   cancelStorageMigration,
   getStorageMigrationStatus,
   resumeStorageMigration,
   startStorageMigration,
-} from '../../../domains/storage/s3-migration'
-import { getLocalStorageMigrationStats, type MigrationStats } from '../../../domains/storage/stats'
-import { isS3Primary } from '../../../infra/storage/registry'
-import { adminProc } from '../../orpc-base'
+} from '@kobato/server/domains/storage/s3-migration.ts'
+import { getLocalStorageMigrationStats, type MigrationStats } from '@kobato/server/domains/storage/stats.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { isS3Primary } from '@kobato/server/infra/storage/registry.ts'
+import { storageMigrationStatusDto } from '@kobato/shared/contracts/storage.ts'
+import { z } from 'zod'
 
 const statsOutput = z.object({
   s3Primary: z.boolean(),

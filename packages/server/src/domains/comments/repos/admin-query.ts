@@ -1,11 +1,9 @@
-import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import type { Database } from '@kobato/db/database.ts'
 
-import type { Database } from '../../../infra/db/database'
-
-import { likeEscape } from '../../../infra/db/like-escape'
-import { comment } from '../../../infra/db/schema/comment'
-import { metric } from '../../../infra/db/schema/metric'
-import { user } from '../../../infra/db/schema/user'
+import { likeEscape } from '@kobato/db/like-escape.ts'
+import { comment } from '@kobato/db/schema/comment.ts'
+import { metric } from '@kobato/db/schema/metric.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import {
   adminPendingWhere,
   buildAdminListConditions,
@@ -20,7 +18,8 @@ import {
   type CommentWithUser,
   type MyCommentsFilters,
   type PageOption,
-} from './shared'
+} from '@kobato/server/domains/comments/repos/shared.ts'
+import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 export async function findCommentWithUserAndTarget(db: Database, id: number) {
   const entity = targetSlugTitleSubquery(db)

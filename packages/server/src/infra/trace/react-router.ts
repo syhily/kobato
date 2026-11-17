@@ -4,12 +4,11 @@
 // status comes from the response; a thrown Response stays control flow and a
 // real error is projected to a name plus a stable category by the facade.
 
+import type { Span } from '@kobato/server/infra/trace/facade.ts'
 import type { MiddlewareFunction } from 'react-router'
 
-import type { Span } from './facade'
-
-import { isTraceActive, runInSpan, startSpan } from './facade'
-import { recordRoutePattern } from './route-registry'
+import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'
+import { recordRoutePattern } from '@kobato/server/infra/trace/route-registry.ts'
 
 const REACT_ROUTER_ROUTE = 'react_router'
 

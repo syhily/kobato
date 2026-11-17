@@ -8,7 +8,7 @@ import { WebmentionList } from '@kobato/web/ui/public/webmentions/WebmentionList
 import { Suspense } from 'react'
 import { Await, data } from 'react-router'
 
-import type { RouteHandle } from '@/root'
+import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/detail'
 

@@ -1,6 +1,5 @@
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { useCallback, useEffect, useRef } from 'react'
-
-import { useI18n } from '../../ui/lib/I18nProvider'
 
 export type AutosaveStatus =
   | { kind: 'idle' }

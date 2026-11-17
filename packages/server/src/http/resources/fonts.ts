@@ -1,10 +1,9 @@
+import { errorJsonResponse } from '@kobato/server/http/errors.ts'
+import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route.ts'
+import { FONT_DIR } from '@kobato/server/infra/paths.ts'
+import { resetCanvasFont, resetFontCache } from '@kobato/server/render/canvas-fonts.ts'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-
-import { FONT_DIR } from '../../infra/paths'
-import { resetCanvasFont, resetFontCache } from '../../render/canvas-fonts'
-import { errorJsonResponse } from '../errors'
-import { adminUploadRoute } from './admin-upload-route'
 
 const FONT_SLOTS = new Set(['og', 'calendar'])
 const FONT_MAX_BYTES = 60 * 1024 * 1024

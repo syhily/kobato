@@ -1,10 +1,10 @@
 import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/shared/config/types.ts'
 
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { user as userTable } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { accountRouter } from '@kobato/server/http/controllers/account.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
-import { user as userTable } from '@kobato/server/infra/db/schema/user.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

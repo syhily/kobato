@@ -14,8 +14,7 @@ import { seoDefaults } from '@kobato/server/domains/settings/sections/seo.ts'
 import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot.ts'
 import { CACHE_BUCKET_FALLBACKS } from '@kobato/shared/types/cache.ts'
-
-import { deepFreeze } from './deep-freeze'
+import { deepFreeze } from '@kobato/test/deep-freeze.ts'
 
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {

@@ -4,14 +4,13 @@
 
 import type { FrontendRumBootstrap, RumClientIdentity } from '@kobato/shared/contracts/trace.ts'
 
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { verifiedFrontendBootstrap, verifiedFrontendRelay } from '@kobato/server/infra/trace/frontend-gate.ts'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
 } from '@kobato/shared/config/observability.ts'
-
-import { getLogger } from '../logger'
-import { verifiedFrontendBootstrap, verifiedFrontendRelay } from './frontend-gate'
 
 const log = getLogger('trace')
 

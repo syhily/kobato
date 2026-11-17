@@ -81,9 +81,9 @@ vi.mock('@kobato/server/infra/logger/sanitizer.ts', () => ({
   resBindings: vi.fn(() => ({})),
 }))
 
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
 import { buildCspHeader, configureMiddleware, buildLoadContext } from '@kobato/server/http/middleware-pipeline.ts'
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
 
 describe('buildCspHeader', () => {
   it('returns a strict nonce-based policy in production', () => {

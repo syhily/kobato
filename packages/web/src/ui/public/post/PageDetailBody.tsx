@@ -3,16 +3,15 @@ import type { DetailPageComments } from '@kobato/shared/types/comments.ts'
 import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
+import { useMediumZoom } from '@kobato/web/client/hooks/use-medium-zoom.ts'
+import { Footer } from '@kobato/web/ui/public/chrome/Footer.tsx'
+import { DetailBodyChrome } from '@kobato/web/ui/public/post/DetailBodyChrome.tsx'
+import { useCodeCopyButtons } from '@kobato/web/ui/public/post/use-code-copy-buttons.ts'
+import { useFootnotePreviews } from '@kobato/web/ui/public/post/use-footnote-previews.ts'
+import { useMusicPlayers } from '@kobato/web/ui/public/post/use-music-players.tsx'
+import { useThumbhashHydration } from '@kobato/web/ui/public/post/use-thumbhash-hydration.ts'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { type ReactNode, useRef } from 'react'
-
-import { useMediumZoom } from '../../../client/hooks/use-medium-zoom'
-import { Footer } from '../chrome/Footer'
-import { Image } from '../widgets/Image'
-import { DetailBodyChrome } from './DetailBodyChrome'
-import { useCodeCopyButtons } from './use-code-copy-buttons'
-import { useFootnotePreviews } from './use-footnote-previews'
-import { useMusicPlayers } from './use-music-players'
-import { useThumbhashHydration } from './use-thumbhash-hydration'
 
 export interface PageDetailBodyProps {
   page: DetailPageShell

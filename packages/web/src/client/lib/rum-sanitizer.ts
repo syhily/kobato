@@ -9,15 +9,13 @@
 // type is dropped on failure, and non-modifiable fields can only be removed
 // by the OpenObserve ingest allowlist (the second boundary).
 
+import type { RumBudgetStore } from '@kobato/web/client/lib/rum-budget.ts'
+import type { RumRouteContext } from '@kobato/web/client/lib/rum-route.ts'
 import type { RumBeforeSend, RumEvent, RumEventDomainContext } from '@openobserve/browser-rum-slim'
 
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { RumBudgetStore } from './rum-budget'
-import type { RumRouteContext } from './rum-route'
-
-import { createRumSessionBudget } from './rum-budget'
-import { sanitizeResourceUrl } from './rum-url-policy'
+import { createRumSessionBudget } from '@kobato/web/client/lib/rum-budget.ts'
+import { sanitizeResourceUrl } from '@kobato/web/client/lib/rum-url-policy.ts'
 
 type JsonRecord = Record<string, unknown>
 type Projected = JsonRecord

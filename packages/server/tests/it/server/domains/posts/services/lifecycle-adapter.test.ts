@@ -1,4 +1,4 @@
-import type { PostMetaRow } from '@kobato/server/infra/db/types.ts'
+import type { PostMetaRow } from '@kobato/db/types.ts'
 
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
 import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'

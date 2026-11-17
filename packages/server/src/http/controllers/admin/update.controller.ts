@@ -1,10 +1,9 @@
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { getUpdateJobStatus } from '@kobato/server/domains/update/job.ts'
+import { applyUpdate, checkForUpdate } from '@kobato/server/domains/update/service.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { updateCheckResultDto, updateJobStatusDto } from '@kobato/shared/contracts/update.ts'
 import { z } from 'zod'
-
-import { recordAuditEventFromContext } from '../../../domains/audit/services/record'
-import { getUpdateJobStatus } from '../../../domains/update/job'
-import { applyUpdate, checkForUpdate } from '../../../domains/update/service'
-import { adminProc } from '../../orpc-base'
 
 const check = adminProc
   .route({ method: 'GET', path: '/admin/update/check' })

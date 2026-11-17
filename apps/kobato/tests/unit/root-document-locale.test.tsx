@@ -34,8 +34,8 @@ vi.mock('react-router', async (importOriginal) => {
   }
 })
 
-const { Layout } = await import('@/root')
-const { default: handleRequest } = await import('@/entry.server')
+const { Layout } = await import('@/root.tsx')
+const { default: handleRequest } = await import('@/entry.server.tsx')
 
 function documentHtml(rootLoaderData: unknown): string {
   const routes: RouteObject[] = [

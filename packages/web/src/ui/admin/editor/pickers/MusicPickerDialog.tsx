@@ -1,16 +1,15 @@
 import type { AdminMusicDto, ListMusicOutput } from '@kobato/shared/contracts/music.ts'
 
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { AddMusicDialog } from '@kobato/web/ui/admin/musics/AddMusicDialog.tsx'
+import { useDebouncedSearch } from '@kobato/web/ui/admin/shared/useDebouncedSearch.ts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { isValidElement, useState } from 'react'
-
-import { orpcQuery } from '../../../../client/api/orpc-query'
-import { Button } from '../../../components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/dialog'
-import { Input } from '../../../components/input'
-import { useI18n } from '../../../lib/I18nProvider'
-import { AddMusicDialog } from '../../musics/AddMusicDialog'
-import { useDebouncedSearch } from '../../shared/useDebouncedSearch'
 
 // Local admin library picker with an inline add flow; new tracks are prepended.
 

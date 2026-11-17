@@ -1,4 +1,4 @@
-import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
+import { auditLog } from '@kobato/db/schema/config.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

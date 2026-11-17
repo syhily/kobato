@@ -1,27 +1,29 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { Setting } from '@kobato/db/types.ts'
+import type { SectionMeta } from '@kobato/server/domains/settings/sections/registry.ts'
 import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { SECTION_REGISTRY, validateSectionDefaults } from '@kobato/server/domains/settings/sections/registry.ts'
+import { securitySection } from '@kobato/server/domains/settings/sections/security.ts'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
+import { applySectionPatch, encryptSecretsInRow } from '@kobato/server/domains/settings/services/secrets-write.ts'
+import { sectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
+import {
+  assertSectionPatchKeys,
+  INVALID_SETTINGS_DESCRIPTOR,
+  isRecord,
+} from '@kobato/server/domains/settings/services/section-patch.ts'
+import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { validateS3Config } from '@kobato/server/infra/storage/backends/s3.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { mergeSectionPatch } from '@kobato/shared/config/merge-section-patch.ts'
 import { isValidPasskeyDomain } from '@kobato/shared/utils/safe-url.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-
-import type { Database } from '../../../infra/db/database'
-import type { Setting } from '../../../infra/db/types'
-import type { SectionMeta } from '../sections/registry'
-
-import { findSettingByScope, upsertSetting } from '../../../infra/db/operations/setting'
-import { descriptorFor, zodIssuesToWire } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
-import { validateS3Config } from '../../../infra/storage/backends/s3'
-import { SECTION_REGISTRY, validateSectionDefaults } from '../sections/registry'
-import { securitySection } from '../sections/security'
-import { refreshBlogSettings } from './hydrate'
-import { applySectionPatch, encryptSecretsInRow } from './secrets-write'
-import { sectionChangeHandler } from './section-changes'
-import { assertSectionPatchKeys, INVALID_SETTINGS_DESCRIPTOR, isRecord } from './section-patch'
 
 const log = getLogger('settings.service')
 

@@ -1,4 +1,5 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { CommentActions } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
 import type { ReactNode } from 'react'
 
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
@@ -6,17 +7,14 @@ import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { safeHref } from '@kobato/shared/utils/safe-url.ts'
 import { idStr } from '@kobato/shared/utils/tools.ts'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { commentBodyPlainText } from '@kobato/web/ui/public/comments/comment-body-helpers.ts'
+import { CommentContentHtml } from '@kobato/web/ui/public/comments/CommentContentHtml.tsx'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
-
-import type { CommentActions } from './useCommentsController'
-
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/avatar'
-import { Badge } from '../../components/badge'
-import { Button } from '../../components/button'
-import { useI18n } from '../../lib/I18nProvider'
-import { commentBodyPlainText } from '../../public/comments/comment-body-helpers'
-import { CommentContentHtml } from '../../public/comments/CommentContentHtml'
-import { Image } from '../../public/widgets/Image'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

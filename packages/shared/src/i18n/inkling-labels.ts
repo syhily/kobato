@@ -11,13 +11,13 @@
 // layer's own format, and `InklingComposer labels={...}` merges the table over
 // Inkling's English defaults at runtime.
 
-import type { KobatoInklingLabelTable } from './inkling-labels/en-US'
-import type { AppLocale } from './locales'
+import type { KobatoInklingLabelTable } from '@kobato/shared/i18n/inkling-labels/en-US.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
-import { kobatoInklingLabelsEnUS } from './inkling-labels/en-US'
-import { kobatoInklingLabelsZhCN } from './inkling-labels/zh-CN'
-import { kobatoInklingLabelsZhHK } from './inkling-labels/zh-HK'
-import { kobatoInklingLabelsZhTW } from './inkling-labels/zh-TW'
+import { kobatoInklingLabelsEnUS } from '@kobato/shared/i18n/inkling-labels/en-US.ts'
+import { kobatoInklingLabelsZhCN } from '@kobato/shared/i18n/inkling-labels/zh-CN.ts'
+import { kobatoInklingLabelsZhHK } from '@kobato/shared/i18n/inkling-labels/zh-HK.ts'
+import { kobatoInklingLabelsZhTW } from '@kobato/shared/i18n/inkling-labels/zh-TW.ts'
 
 const LABELS_BY_LOCALE = {
   'en-US': kobatoInklingLabelsEnUS,

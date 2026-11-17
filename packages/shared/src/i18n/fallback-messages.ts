@@ -7,7 +7,7 @@
 // into the client graph. Parity is pinned by
 // `packages/shared/tests/unit/shared/i18n/fallback-messages.test.ts`.
 
-import type { UiMessageId } from './messages/ui/en-US'
+import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 export const FALLBACK_MESSAGE_IDS = [
   'common.action.reload',

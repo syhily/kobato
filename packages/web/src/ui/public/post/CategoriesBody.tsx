@@ -1,11 +1,10 @@
 import type { ClientCategory } from '@kobato/shared/types/catalog.ts'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { postTitleClass } from '@kobato/web/ui/public/post/postChrome.ts'
+import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { Link } from 'react-router'
-
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { Image } from '../widgets/Image'
-import { postTitleClass } from './postChrome'
 
 export interface CategoriesBodyProps {
   title: string

@@ -1,4 +1,4 @@
-import type { ContentRow, PostMetaRow } from '@kobato/server/infra/db/types.ts'
+import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
 
 import { describe, expect, it } from 'vitest'
 

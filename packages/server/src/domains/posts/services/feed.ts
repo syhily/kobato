@@ -1,9 +1,8 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { Post, PostVisibilityOptions } from '@kobato/shared/types/catalog.ts'
 
-import type { Database } from '../../../infra/db/database'
-
-import { buildPublicPostFilters, hydratePostList } from '../repos/hydrate'
-import { listPublicPosts } from './public-query'
+import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'
+import { listPublicPosts } from '@kobato/server/domains/posts/services/public-query.ts'
 
 /**
  * Like {@link listClientPosts} but loads bodies + headings from the published

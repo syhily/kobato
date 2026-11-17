@@ -1,11 +1,10 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { verification } from '@kobato/db/schema/user.ts'
+import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto/tokens.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { and, eq, lt } from 'drizzle-orm'
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
-
-import type { Database } from '../../infra/db/database'
-
-import { generateToken, sha256, TOKEN_LEN_RE } from '../../infra/crypto/tokens'
-import { verification } from '../../infra/db/schema/user'
-import { getLogger } from '../../infra/logger'
 
 const log = getLogger('verification-tokens')
 

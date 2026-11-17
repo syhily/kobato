@@ -1,20 +1,18 @@
 import type { AdminPageDto } from '@kobato/shared/contracts/pages.ts'
 import type { PageMetaDraft } from '@kobato/shared/types/pages.ts'
-
-import { PAGE_META_TOGGLE_FIELDS } from '@kobato/shared/types/pages.ts'
-import { type ReactNode } from 'react'
-
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '../editor-shell/editor-shell-types'
+} from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { BasicInfoCard } from '../editor-shared/BasicInfoCard'
-import { ContentLanguageField } from '../editor-shared/ContentLanguageField'
-import { CoverOgCard } from '../editor-shared/CoverOgCard'
-import { ToggleOptionsCard } from '../editor-shared/ToggleOptionsCard'
-import { futureLocalInputValueOrEmpty } from '../editor-shell/editor-datetime'
+import { PAGE_META_TOGGLE_FIELDS } from '@kobato/shared/types/pages.ts'
+import { BasicInfoCard } from '@kobato/web/ui/admin/editor-shared/BasicInfoCard.tsx'
+import { ContentLanguageField } from '@kobato/web/ui/admin/editor-shared/ContentLanguageField.tsx'
+import { CoverOgCard } from '@kobato/web/ui/admin/editor-shared/CoverOgCard.tsx'
+import { ToggleOptionsCard } from '@kobato/web/ui/admin/editor-shared/ToggleOptionsCard.tsx'
+import { futureLocalInputValueOrEmpty } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
+import { type ReactNode } from 'react'
 
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
   return {

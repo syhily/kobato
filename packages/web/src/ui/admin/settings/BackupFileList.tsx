@@ -2,9 +2,6 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { BackupFileDto } from '@kobato/shared/types/backup.ts'
 
 import { formatBytes, formatDateTime } from '@kobato/shared/i18n/format.ts'
-import { LockIcon } from 'lucide-react'
-import { useState } from 'react'
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,12 +11,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../components/alert-dialog'
-import { Button } from '../../components/button'
-import { Input } from '../../components/input'
-import { useI18n } from '../../lib/I18nProvider'
-import { type ConfirmState, ConfirmDialog } from '../shared/ConfirmDialog'
-import { SettingGroup } from './shell/SettingGroup'
+} from '@kobato/ui/components/alert-dialog.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
+import { type ConfirmState, ConfirmDialog } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import { LockIcon } from 'lucide-react'
+import { useState } from 'react'
 
 interface BackupFileListProps {
   backups: BackupFileDto[]

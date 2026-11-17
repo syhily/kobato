@@ -1,6 +1,5 @@
+import { encodeIco } from '@kobato/server/domains/assets/ico.ts'
 import sharp from 'sharp'
-
-import { encodeIco } from './ico'
 
 // Keep sharp statically imported — under SEA the bundler rewrites its platform loads.
 

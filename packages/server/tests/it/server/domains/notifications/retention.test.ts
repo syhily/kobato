@@ -1,5 +1,8 @@
 import type { Role } from '@kobato/shared/utils/roles.ts'
 
+import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/operations/notification.ts'
+import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'
+import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import {
   markRead,
@@ -8,9 +11,6 @@ import {
   sendDirectMessage,
 } from '@kobato/server/domains/notifications/service.ts'
 import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
-import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/server/infra/db/operations/notification.ts'
-import { notification, notificationRecipient } from '@kobato/server/infra/db/schema/notification.ts'
-import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { count, eq } from 'drizzle-orm'

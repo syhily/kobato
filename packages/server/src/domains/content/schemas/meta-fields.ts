@@ -1,9 +1,8 @@
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { CONTENT_LANGUAGE_MAX_LENGTH, canonicalContentLanguage } from '@kobato/shared/i18n/content-language.ts'
 import { safeBoolean } from '@kobato/shared/utils/schema.ts'
 import { z } from 'zod'
-
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { DomainError } from '../../../infra/http/errors'
 
 /**
  * Field-level zod pieces shared by the post and page admin input schemas. The

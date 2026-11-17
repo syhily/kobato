@@ -8,7 +8,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-import AdminInstallRouteRaw from '@/routes/auth/setup'
+import AdminInstallRouteRaw from '@/routes/auth/setup/index.tsx'
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()

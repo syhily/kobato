@@ -1,15 +1,12 @@
+import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
+import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor.ts'
 import type { AdminPageDto } from '@kobato/shared/contracts/pages.ts'
 import type { Page } from '@kobato/shared/types/catalog.ts'
 
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-
-import type { NewPageMeta, PageMetaRow } from '../../infra/db/types'
-import type { MetaEntityDescriptor } from '../content/entities/descriptor'
-
-import { invalidateContent } from '../content/invalidate'
-import { warmContentRenderCaches } from '../content/render-warmup'
-import { isLive } from '../content/schemas/live-gate'
-import { toAdminPageDto, toCmsPage } from './projection'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { toAdminPageDto, toCmsPage } from '@kobato/server/domains/pages/projection.ts'
 import {
   findPageMetaById,
   findPageMetaBySlug,
@@ -18,9 +15,10 @@ import {
   restorePageMeta,
   softDeletePageMeta,
   updatePageMetaById,
-} from './repo'
-import { findPublicPageMetaBySlug } from './services/public-query'
-import { assertPageExists, type PageMetaWriteInput } from './services/shared'
+} from '@kobato/server/domains/pages/repo.ts'
+import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query.ts'
+import { assertPageExists, type PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 
 // Warm key must mirror the OG resolver (`http/resources/images.ts`): empty summary → site description.
 function pageOgTarget(meta: PageMetaRow) {

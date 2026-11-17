@@ -4,9 +4,9 @@
 // span, so the allowlist — not the caller — decides what can leave the process.
 // Arbitrary messages, stacks, URLs, headers, and raw paths have no route here.
 
-import { CACHE_BUCKET_IDS } from '@kobato/shared/types/cache.ts'
+import type { SpanAttributeValue, SpanAttributes } from '@kobato/server/infra/trace/facade.ts'
 
-import type { SpanAttributeValue, SpanAttributes } from './facade'
+import { CACHE_BUCKET_IDS } from '@kobato/shared/types/cache.ts'
 
 /**
  * Closed set of span attributes. A new boundary adds its own low-cardinality

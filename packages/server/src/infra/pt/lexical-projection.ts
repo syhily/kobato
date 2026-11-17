@@ -14,6 +14,8 @@ import type { LexicalStateToHtmlOptions } from '@kobato/inkling/headless'
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
 
 import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@kobato/inkling/headless'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { FEED_VARIANT_META_KIND } from '@kobato/shared/lexical/cards/card-html.ts'
 import {
@@ -45,9 +47,6 @@ import { toProjectionState } from '@kobato/shared/lexical/projection-state.ts'
 import { resolveFootnotesSectionTitle } from '@kobato/shared/utils/footnotes-section-title.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import katex from 'katex'
-
-import { getLogger } from '../logger'
-import { KATEX_OPTIONS } from './katex'
 
 export interface BodyProjections {
   /** Full-fidelity HTML — SSR/public rendering. */

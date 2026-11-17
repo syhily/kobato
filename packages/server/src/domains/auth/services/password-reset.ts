@@ -1,22 +1,30 @@
 // Password reset / claim flows: `lostpassword` (enumeration-safe reset email) and
 // `resetpassword` / `accept-invite` (consume the single-use token, set a new password).
 
+import type { Database } from '@kobato/db/database.ts'
+import type { User } from '@kobato/db/types.ts'
+
+import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user.ts'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
+import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
+import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
+import {
+  MAX_PASSWORD_BYTES,
+  PASSWORD_COMPLEXITY_RE,
+  passwordWithinBcryptLimit,
+} from '@kobato/server/domains/auth/schema.ts'
+import {
+  authFlowError,
+  authFlowSuccess,
+  type AuthFlowResult,
+  type SigninFlowContext,
+} from '@kobato/server/domains/auth/services/shared.ts'
+import { consumeToken, issueResetToken, revokeTokensFor } from '@kobato/server/domains/auth/verification-tokens.ts'
+import { sendPasswordReset } from '@kobato/server/infra/email/sender.ts'
+import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { resolveSiteOrigin } from '@kobato/shared/config/site-origin.ts'
 import { MIN_PASSWORD_LENGTH } from '@kobato/shared/utils/security.ts'
 import bcrypt from 'bcryptjs'
-
-import type { Database } from '../../../infra/db/database'
-import type { User } from '../../../infra/db/types'
-
-import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '../../../infra/db/operations/user'
-import { sendPasswordReset } from '../../../infra/email/sender'
-import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '../../../infra/rate-limit'
-import { recordAuditEvent } from '../../audit/services/record'
-import { deleteAllCredentials } from '../passkey/service'
-import { establishLoginSession } from '../primitives'
-import { MAX_PASSWORD_BYTES, PASSWORD_COMPLEXITY_RE, passwordWithinBcryptLimit } from '../schema'
-import { consumeToken, issueResetToken, revokeTokensFor } from '../verification-tokens'
-import { authFlowError, authFlowSuccess, type AuthFlowResult, type SigninFlowContext } from './shared'
 
 /**
  * Cross-domain dependency wired by the caller: the claim path needs the comments

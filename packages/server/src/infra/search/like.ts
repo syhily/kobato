@@ -1,13 +1,11 @@
+import type { Database } from '@kobato/db/database.ts'
 import type { SQL } from 'drizzle-orm'
 
+import { postSearchIndex } from '@kobato/db/schema/content.ts'
+import { post } from '@kobato/db/schema/post.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { corpusLikeDisjuncts } from '@kobato/server/infra/search/corpus.ts'
 import { and, desc, eq, or } from 'drizzle-orm'
-
-import type { Database } from '../db/database'
-
-import { postSearchIndex } from '../db/schema/content'
-import { post } from '../db/schema/post'
-import { getLogger } from '../logger'
-import { corpusLikeDisjuncts } from './corpus'
 
 export function likeWhere(baseWhere: SQL, query: string): SQL | undefined {
   return and(baseWhere, or(...corpusLikeDisjuncts(query)))

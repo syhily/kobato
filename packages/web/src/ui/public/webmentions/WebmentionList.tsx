@@ -3,8 +3,7 @@ import type { PublicWebmentionWire } from '@kobato/shared/contracts/webmentions.
 import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
-
-import { useI18n } from '../../lib/I18nProvider'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 /** Author line falls back to the source hostname when the source page
  *  exposed no author metadata. */

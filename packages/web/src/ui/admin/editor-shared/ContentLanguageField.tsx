@@ -1,8 +1,7 @@
 import { CONTENT_LANGUAGE_MAX_LENGTH, isContentLanguageInput } from '@kobato/shared/i18n/content-language.ts'
-
-import { Input } from '../../components/input'
-import { Label } from '../../components/label'
-import { useI18n } from '../../lib/I18nProvider'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { Label } from '@kobato/ui/components/label.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 export interface ContentLanguageFieldProps {
   /** `<Input>` id + label htmlFor (`post-content-language` / `page-content-language`). */

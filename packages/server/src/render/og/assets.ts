@@ -1,6 +1,5 @@
+import { resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
 import { Buffer } from 'node:buffer'
-
-import { resolveSiteAsset } from '../../domains/assets/services/routes'
 
 // Single code path for custom-upload + bundled-default logo resolution.
 export async function logoDark(): Promise<Buffer> {

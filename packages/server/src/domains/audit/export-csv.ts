@@ -1,6 +1,6 @@
-import type { auditLog } from '../../infra/db/schema/config'
+import type { auditLog } from '@kobato/db/schema/config.ts'
 
-import { toAuditLogItemDto } from './projection'
+import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection.ts'
 
 // Display-oriented CSV for the audit-log spreadsheet export: cells starting
 // with `=`, `+`, `-`, `@` get a tab prefix (formula-injection protection).

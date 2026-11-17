@@ -1,6 +1,6 @@
-import { z } from 'zod'
+import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
-import type { ErrorMessageDescriptor } from './api-error'
+import { z } from 'zod'
 
 export const updateCheckResultDto = z.object({
   currentVersion: z.string(),

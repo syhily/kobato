@@ -1,10 +1,9 @@
+import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { webmentionPublicListSchema } from '@kobato/server/domains/webmentions/schema.ts'
+import { loadPublicWebmentionsForTarget } from '@kobato/server/domains/webmentions/service.ts'
+import { publicProc } from '@kobato/server/http/orpc-base.ts'
 import { publicWebmentionDto } from '@kobato/shared/contracts/webmentions.ts'
 import { z } from 'zod'
-
-import { resolveMetricTarget } from '../../domains/comments/services/shared'
-import { webmentionPublicListSchema } from '../../domains/webmentions/schema'
-import { loadPublicWebmentionsForTarget } from '../../domains/webmentions/service'
-import { publicProc } from '../orpc-base'
 
 // Headless surface for the「引用与回应」block: `page_key` resolves through
 // `resolveMetricTarget` (miss → NOT_FOUND); the double display gate lives in

@@ -8,22 +8,20 @@
 // and a later `declined` fully stops a running SDK.
 
 import type { FrontendRumBootstrap } from '@kobato/shared/contracts/trace.ts'
+import type { RumConsent } from '@kobato/web/client/lib/rum-consent.ts'
 
 import { frontendRumBootstrapSchema } from '@kobato/shared/contracts/trace.ts'
+import { rumRouteContextFromMatches } from '@kobato/web/client/lib/rum-route.ts'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
 
-import type { RumConsent } from '../lib/rum-consent'
-
-import { rumRouteContextFromMatches } from '../lib/rum-route'
-
-type RumModule = typeof import('../lib/openobserve-rum')
+type RumModule = typeof import('@kobato/web/client/lib/openobserve-rum.ts')
 
 let rumModulePromise: Promise<RumModule> | null = null
 let pendingStopTimer: ReturnType<typeof setTimeout> | null = null
 
 function loadRumModule(): Promise<RumModule> {
-  rumModulePromise ??= import('../lib/openobserve-rum')
+  rumModulePromise ??= import('@kobato/web/client/lib/openobserve-rum.ts')
   return rumModulePromise
 }
 

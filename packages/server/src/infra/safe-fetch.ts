@@ -1,13 +1,11 @@
+import type { SafeFetchOperation } from '@kobato/server/infra/trace/sanitize.ts'
 import type { LookupAddress, LookupOptions } from 'node:dns'
 
+import { isTraceActive, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { isBlockedFetchHost, tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
 import { lookup } from 'node:dns/promises'
 import { isIP, type LookupFunction } from 'node:net'
 import { Agent } from 'undici'
-
-import type { SafeFetchOperation } from './trace/sanitize'
-
-import { isTraceActive, withSpanAsync } from './trace/facade'
 
 // SSRF-guarded outbound-fetch for all server-side downloads. Failures
 // return a typed union; callers map them to their own error modes.

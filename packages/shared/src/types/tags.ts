@@ -1,7 +1,7 @@
 // Wire DTOs for the tag-management endpoints (server actions + admin UI
 // import the same shape). Bigints are stringified; the public site never ships `id`.
 
-import type { AdminTagDto } from '../contracts/tags'
+import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
 
 // `offset`/`limit` mirror the comment moderation listing: server-side
 // pagination, both optional (client default `offset=0, limit=20`).

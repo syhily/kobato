@@ -1,9 +1,8 @@
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
+import { isSupportedTimeZone } from '@kobato/server/domains/settings/timezones.ts'
 import { DEFAULT_LOCALE, normalizeAppLocale, SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { z } from 'zod'
-
-import { isSupportedTimeZone } from '../timezones'
 
 // Custom validation messages are typed UI-catalog ids (never prose): the admin
 // form localizes them through `useI18n().localizeMessage`, and the settings

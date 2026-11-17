@@ -1,11 +1,9 @@
+import type { SanitizeStrategyConfig } from '@kobato/shared/sanitize/config.ts'
 import type { WindowLike } from 'dompurify'
 
+import { createPurifySanitizer } from '@kobato/shared/sanitize/purify-core.ts'
 import createDOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
-
-import type { SanitizeStrategyConfig } from './config'
-
-import { createPurifySanitizer } from './purify-core'
 
 // Server/SSR engine for `sanitizeHtmlString`; the `sanitize-html-engine-alias`
 // vite plugin swaps this module for the browser engine in the client bundle,

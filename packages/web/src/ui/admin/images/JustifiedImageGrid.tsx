@@ -2,16 +2,15 @@ import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 import type { FragmentInstance, Ref } from 'react'
 
 import { getImageUrl } from '@kobato/shared/types/images.ts'
+import { LazyMotionButton, LazyMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { useDevicePixelRatio } from '@kobato/ui/lib/use-device-pixel-ratio.ts'
+import { useElementWidth } from '@kobato/ui/lib/use-element-width.ts'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import { transitions } from '@kobato/web/client/lib/motion.ts'
 import { Fragment, useMemo } from 'react'
-
-import { transitions } from '../../../client/lib/motion'
-import { LazyMotionButton, LazyMotionDiv } from '../../components/lazy-motion'
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
-import { skeletonKeys } from '../../lib/skeleton-keys'
-import { useDevicePixelRatio } from '../../lib/use-device-pixel-ratio'
-import { useElementWidth } from '../../lib/use-element-width'
-import { useMediaQuery } from '../../lib/use-media-query'
 
 export interface JustifiedImageGridProps {
   images: AdminImageDto[]

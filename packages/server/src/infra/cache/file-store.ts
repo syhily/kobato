@@ -1,6 +1,8 @@
 import type { JsonValue } from '@kobato/shared/utils/json-value.ts'
 import type { Dirent } from 'node:fs'
 
+import { isInMemoryPath } from '@kobato/db/database.ts'
+import { serverConfig } from '@kobato/server/infra/config.ts'
 import { CACHE_DECLARATIONS } from '@kobato/shared/cache/registry.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { Buffer } from 'node:buffer'
@@ -18,9 +20,6 @@ import {
 import { type FileHandle, mkdir, open, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-
-import { serverConfig } from '../config'
-import { isInMemoryPath } from '../db/database'
 
 /**
  * Filesystem file-access plane for `@/server/infra/cache/registry`.

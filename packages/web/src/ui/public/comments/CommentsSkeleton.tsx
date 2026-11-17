@@ -1,5 +1,5 @@
-import { cn } from '../../lib/cn'
-import { useI18n } from '../../lib/I18nProvider'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 const SHIMMER_LINE_CLASS =
   'h-4 rounded-input bg-[linear-gradient(90deg,var(--skeleton-start)_0%,var(--skeleton-end)_50%,var(--skeleton-start)_100%)] bg-[length:200%_100%] animate-comments-shimmer motion-reduce:animate-none'

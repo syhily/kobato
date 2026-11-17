@@ -13,21 +13,12 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { formatBytes } from '@kobato/shared/i18n/format.ts'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { GripVerticalIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import { useRevalidator } from 'react-router'
-import { toast } from 'sonner'
-
-import { orpc } from '../../../client/api/client'
-import { orpcQuery } from '../../../client/api/orpc-query'
-import { onMutationError } from '../../../client/lib/toast-api-error'
-import { Button } from '../../components/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/card'
-import { useI18n } from '../../lib/I18nProvider'
-import { AdminListPage } from '../shared/AdminListPage'
-import { ConfirmDialog, type ConfirmState } from '../shared/ConfirmDialog'
-import { SortableDragHandle, sortableIndexOf, useSortableRow, useSortableSensors } from '../shared/sortable'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { orpc } from '@kobato/web/client/api/client.ts'
+import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import {
   isDragData,
   isSlotDropData,
@@ -38,9 +29,22 @@ import {
   type SlotDropData,
   slotItemId,
   type SlotItemDragData,
-} from './dnd'
-import { MAX_SLOT_FONTS, type SlotState, useFontSlotsController } from './font-slots'
-import { FontUploadButton } from './FontUploadButton'
+} from '@kobato/web/ui/admin/fonts/dnd.ts'
+import { MAX_SLOT_FONTS, type SlotState, useFontSlotsController } from '@kobato/web/ui/admin/fonts/font-slots.ts'
+import { FontUploadButton } from '@kobato/web/ui/admin/fonts/FontUploadButton.tsx'
+import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
+import { ConfirmDialog, type ConfirmState } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import {
+  SortableDragHandle,
+  sortableIndexOf,
+  useSortableRow,
+  useSortableSensors,
+} from '@kobato/web/ui/admin/shared/sortable.tsx'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { GripVerticalIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { useState } from 'react'
+import { useRevalidator } from 'react-router'
+import { toast } from 'sonner'
 
 const SLOT_LABEL_IDS: Record<FontSlot, UiMessageId> = {
   global: 'admin.fonts.slot.global',

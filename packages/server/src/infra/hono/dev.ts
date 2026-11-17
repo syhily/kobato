@@ -4,11 +4,10 @@ import type { Plugin, UserConfig, ViteDevServer } from 'vite'
 
 import honoDevServer, { type DevServerOptions } from '@hono/vite-dev-server'
 import nodeAdapter from '@hono/vite-dev-server/node'
+import { setViteDevServer } from '@kobato/server/infra/hono/dev-server-ref.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import fs from 'node:fs'
 import path from 'node:path'
-
-import { setViteDevServer } from './dev-server-ref.ts'
 
 interface ReactRouterHonoServerEnv {
   readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string

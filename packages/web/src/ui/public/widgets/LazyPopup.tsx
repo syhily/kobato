@@ -1,10 +1,12 @@
-import { Suspense, lazy } from 'react'
+import type { PopupProps } from '@kobato/web/ui/public/widgets/Popup.tsx'
 
-import type { PopupProps } from './Popup'
+import { Suspense, lazy } from 'react'
 
 // Popup is portal-mounted and browser-only, rendering nothing on the server and nothing
 // while closed, so the whole component loads behind a lazy boundary with a null fallback.
-const Popup = lazy(() => import('./Popup').then((module) => ({ default: module.Popup })))
+const Popup = lazy(() =>
+  import('@kobato/web/ui/public/widgets/Popup.tsx').then((module) => ({ default: module.Popup })),
+)
 
 export function LazyPopup(props: PopupProps) {
   return (

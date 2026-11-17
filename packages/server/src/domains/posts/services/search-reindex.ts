@@ -1,12 +1,11 @@
+import type { Database } from '@kobato/db/database.ts'
+
+import { content } from '@kobato/db/schema/content.ts'
+import { post } from '@kobato/db/schema/post.ts'
+import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
+import { indexPostFromRevision } from '@kobato/server/domains/posts/services/search-index.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { count, inArray } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-
-import { content } from '../../../infra/db/schema/content'
-import { post } from '../../../infra/db/schema/post'
-import { getLogger } from '../../../infra/logger'
-import { livePostWhere } from '../live-gate'
-import { indexPostFromRevision } from './search-index'
 
 const log = getLogger('search.reindex')
 

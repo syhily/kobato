@@ -1,7 +1,7 @@
 import type { CommentAndUser } from '@kobato/shared/types/comments.ts'
 
+import { post } from '@kobato/db/schema/post.ts'
 import { sendNewComment } from '@kobato/server/domains/comments/services/email.ts'
-import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { sendTestMail } from '@kobato/server/infra/email/sender.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'

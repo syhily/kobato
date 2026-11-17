@@ -1,8 +1,7 @@
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { MoveDiagonal2Icon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import { cn } from '../../lib/cn'
-import { type I18nValue, useI18n } from '../../lib/I18nProvider'
 
 const MAX_PREVIEW_DIMENSION = 1600
 

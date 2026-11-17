@@ -1,21 +1,20 @@
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import type { Database } from '@kobato/db/database.ts'
+import type { NewsletterSubscriberRow } from '@kobato/db/types.ts'
 
-import type { Database } from '../../infra/db/database'
-import type { NewsletterSubscriberRow } from '../../infra/db/types'
-
-import { generateToken, sha256, TOKEN_LEN_RE } from '../../infra/crypto/tokens'
 import {
   findSubscriberByConfirmTokenHash,
   findSubscriberByEmail,
   findSubscriberById,
   insertSubscriber,
   updateSubscriber,
-} from '../../infra/db/operations/newsletter'
-import { descriptorFor } from '../../infra/http/error-descriptor'
-import { DomainError } from '../../infra/http/errors'
-import { getLogger } from '../../infra/logger'
-import { sendConfirmSubscription } from './email'
-import { verifyUnsubscribeSignature } from './signing'
+} from '@kobato/db/operations/newsletter.ts'
+import { sendConfirmSubscription } from '@kobato/server/domains/newsletter/email.ts'
+import { verifyUnsubscribeSignature } from '@kobato/server/domains/newsletter/signing.ts'
+import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto/tokens.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 
 const log = getLogger('newsletter.service')
 

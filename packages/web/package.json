@@ -16,6 +16,7 @@
     "@kobato/server": "workspace:*",
     "@kobato/shared": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/ui": "workspace:*",
     "@kobato/web": "workspace:*",
     "@lexical/react": "catalog:",
     "@number-flow/react": "catalog:",

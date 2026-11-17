@@ -1,16 +1,14 @@
 import type { AnalyticsOverviewData } from '@kobato/server/domains/analytics/services/overview.ts'
 import type { AccountProfile } from '@kobato/server/domains/users/services/account.ts'
+import type { SettingsBundle, SecretMasks } from '@kobato/shared/config/types.ts'
+import type { MetricRow } from '@kobato/shared/contracts/analytics.ts'
+import type { DraftSummary } from '@kobato/shared/contracts/dashboard.ts'
+import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
+import type { Role } from '@kobato/shared/utils/roles.ts'
 
+import { clearable, mergePatchInput } from '@kobato/shared/contracts/merge-patch.ts'
+import { optionalHttpUrlSchema } from '@kobato/shared/utils/safe-url.ts'
 import { z } from 'zod'
-
-import type { SettingsBundle, SecretMasks } from '../config/types'
-import type { Role } from '../utils/roles'
-import type { MetricRow } from './analytics'
-import type { DraftSummary } from './dashboard'
-import type { AdminPostDto } from './posts'
-
-import { optionalHttpUrlSchema } from '../utils/safe-url'
-import { clearable, mergePatchInput } from './merge-patch'
 
 // Admin/me dashboard, settings, session and analytics SSR loader contracts. The
 // `z.custom<T>()` outputs must match the loader-data shapes exactly; HTTP-path

@@ -1,23 +1,21 @@
+import type { Database } from '@kobato/db/database.ts'
+import type { AdminListFilters, AdminPendingKind } from '@kobato/server/domains/comments/repos/shared.ts'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/shared/contracts/comments.ts'
 import type { AdminCommentsResult } from '@kobato/shared/types/comments.ts'
 
-import { entityPermalink } from '@kobato/shared/utils/paths.ts'
-import { sql } from 'drizzle-orm'
-
-import type { Database } from '../../../infra/db/database'
-import type { AdminListFilters, AdminPendingKind } from '../repos/shared'
-
-import { findMetricByPublicId } from '../../../infra/db/operations/metric'
-import { comment } from '../../../infra/db/schema/comment'
-import { withCommentBadgeTextColor } from '../badge'
+import { findMetricByPublicId } from '@kobato/db/operations/metric.ts'
+import { comment } from '@kobato/db/schema/comment.ts'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
 import {
   countAdminComments,
   listAdminComments,
   listAdminPendingDashboard,
   searchCommentAuthors,
   searchPages,
-} from '../repos/admin-query'
-import { asCommentTarget } from './shared'
+} from '@kobato/server/domains/comments/repos/admin-query.ts'
+import { asCommentTarget } from '@kobato/server/domains/comments/services/shared.ts'
+import { entityPermalink } from '@kobato/shared/utils/paths.ts'
+import { sql } from 'drizzle-orm'
 
 const DASHBOARD_EXCERPT_LIMIT = 120
 

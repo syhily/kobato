@@ -1,11 +1,14 @@
+import type {
+  MusicProvider,
+  ProviderSearchResult,
+  ProviderTrack,
+} from '@kobato/server/domains/music/providers/types.ts'
+
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { z } from 'zod'
-
-import type { MusicProvider, ProviderSearchResult, ProviderTrack } from './types'
-
-import { descriptorFor } from '../../../infra/http/error-descriptor'
-import { ActionFailure } from '../../../infra/http/errors'
-import { getLogger } from '../../../infra/logger'
 
 const log = getLogger('music.tencent')
 

@@ -2,12 +2,17 @@
 // routes here when `mail.transport === 'smtp'`. Shares the other transports'
 // skip/error vocabulary.
 
+import type {
+  EmailMessage,
+  MailTransport,
+  MailTransportConfig,
+  SendOptions,
+  SendResult,
+} from '@kobato/server/infra/email/types.ts'
+
+import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import nodemailer, { type Transporter } from 'nodemailer'
-
-import type { EmailMessage, MailTransport, MailTransportConfig, SendOptions, SendResult } from '../types'
-
-import { getLogger } from '../../logger'
-import { emailTranslator } from '../translator'
 
 const log = getLogger('email')
 

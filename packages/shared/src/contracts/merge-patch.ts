@@ -1,7 +1,6 @@
+import { idString } from '@kobato/shared/contracts/primitives.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { z } from 'zod'
-
-import { unsafeCast } from '../utils/unsafe-cast'
-import { idString } from './primitives'
 
 // Merge-patch input contract (RFC 7396 semantics) for every field-update
 // procedure. Per field: absent key = leave the column untouched, `null` =

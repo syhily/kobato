@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './support/fixtures'
-import { waitForHydration } from './support/journey'
+import { expect, test } from './support/fixtures.ts'
+import { waitForHydration } from './support/journey.ts'
 
 const HEADER_ROUTES = [
   '/admin/posts',
