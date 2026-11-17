@@ -9,8 +9,8 @@ import { findSettingByScope } from '@kobato/server/infra/db/operations/setting.t
 import { setting } from '@kobato/server/infra/db/schema/config.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // Real in-memory engine for reads/merge/UPSERT/encryption/snapshot;

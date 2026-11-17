@@ -1,6 +1,6 @@
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 // Contract: every TEST_BLOG_SETTINGS_BUNDLE section must parse against its

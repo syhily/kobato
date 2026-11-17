@@ -2,8 +2,8 @@
 
 import type { ViewsDto } from '@kobato/shared/contracts/analytics.ts'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { VisitSummaryCard } from '@kobato/web/ui/admin/welcome/VisitSummaryCard.tsx'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'

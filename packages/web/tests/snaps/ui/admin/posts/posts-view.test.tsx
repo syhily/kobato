@@ -1,5 +1,5 @@
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderToHtml, stableHtml, renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderToHtml, stableHtml, renderInRouter } from '@kobato/test/render.tsx'
 import { ImageField } from '@kobato/web/ui/admin/editor-shared/ImageField.tsx'
 import { PublishStatusRow } from '@kobato/web/ui/admin/editor-shared/PublishStatusRow.tsx'
 import { PostsSkeleton } from '@kobato/web/ui/admin/posts/PostsSkeleton.tsx'

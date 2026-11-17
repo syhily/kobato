@@ -2,9 +2,9 @@ import type { CommentItemWire as CommentItemType } from '@kobato/shared/contract
 import type { CommentFormUser } from '@kobato/shared/types/catalog.ts'
 import type { Comments as CommentsData } from '@kobato/shared/types/comments.ts'
 
-import { makeComment, makeCommentBody } from '@kobato/test-helpers/catalog.ts'
-import { makeLeafContext } from '@kobato/test-helpers/comments-leaf.tsx'
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { makeComment, makeCommentBody } from '@kobato/test/catalog.ts'
+import { makeLeafContext } from '@kobato/test/comments-leaf.tsx'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { CommentItem } from '@kobato/web/ui/public/comments/comment-item/CommentItem.tsx'
 import { CommentReplyForm } from '@kobato/web/ui/public/comments/CommentReplyForm.tsx'
 import { Comments } from '@kobato/web/ui/public/comments/Comments.tsx'

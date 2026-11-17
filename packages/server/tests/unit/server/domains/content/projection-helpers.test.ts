@@ -1,6 +1,6 @@
 import type { ContentRow } from '@kobato/server/infra/db/types.ts'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 const { readHeadings, readRevisionProjection } = await import('@kobato/server/domains/content/projection-helpers.ts')

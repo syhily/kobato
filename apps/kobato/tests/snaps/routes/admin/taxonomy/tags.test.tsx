@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import TagsRoute from '@/routes/admin/taxonomy/tags'

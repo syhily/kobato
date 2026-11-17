@@ -1,6 +1,6 @@
 import { CACHE_DECLARATIONS, FIXED_CACHE_PREFIXES } from '@kobato/shared/cache/registry.ts'
 import { RESERVED_CACHE_BUCKETS } from '@kobato/shared/types/cache.ts'
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 const tZhCN = makeTranslator('zh-CN')

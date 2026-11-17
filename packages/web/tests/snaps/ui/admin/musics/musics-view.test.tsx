@@ -1,8 +1,8 @@
 import type { AdminMusicDto, MetingSearchHit } from '@kobato/shared/contracts/music.ts'
 
-import { makeAdminMusic } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminMusic } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { AddMusicView } from '@kobato/web/ui/admin/musics/AddMusicView.tsx'
 import { AdminMusicPlayerFloat } from '@kobato/web/ui/admin/musics/AdminMusicPlayerFloat.tsx'
 import { AlbumCard } from '@kobato/web/ui/admin/musics/AlbumCard.tsx'

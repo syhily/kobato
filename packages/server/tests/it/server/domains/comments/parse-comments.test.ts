@@ -1,6 +1,6 @@
 import type { CommentAndUser, CommentItem } from '@kobato/shared/types/comments.ts'
 
-import { makeCommentBody } from '@kobato/test-helpers/catalog.ts'
+import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'
 
 // `parseComments` turns the roots+children union into the render tree:

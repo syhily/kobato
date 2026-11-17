@@ -49,9 +49,9 @@ import {
   SOLUTION_NODE_TYPE,
   TWO_COLUMN_NODE_TYPE,
 } from '@kobato/shared/lexical/node-whitelist.ts'
-import { makeAdminMusic } from '@kobato/test-helpers/catalog.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { tZhCN, makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeAdminMusic } from '@kobato/test/catalog.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { tZhCN, makeTranslator } from '@kobato/test/i18n.ts'
 import {
   BaseMusicPlayerNode,
   MusicCardPicker,

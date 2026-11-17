@@ -1,10 +1,10 @@
 import type { Comments as CommentsData } from '@kobato/shared/types/comments.ts'
 
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { makeComment } from '@kobato/test-helpers/catalog.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { makeComment } from '@kobato/test/catalog.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { Comments } from '@kobato/web/ui/public/comments/Comments.tsx'
 // @vitest-environment happy-dom
 /**

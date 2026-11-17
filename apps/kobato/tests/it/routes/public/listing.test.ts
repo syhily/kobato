@@ -4,9 +4,9 @@ import { content as contentTable } from '@kobato/server/infra/db/schema/content.
 import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
 import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
 import { category as categoryTable, tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test-helpers/context.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { adminSession, regularSession } from '@kobato/test-helpers/session.ts'
+import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { adminSession, regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

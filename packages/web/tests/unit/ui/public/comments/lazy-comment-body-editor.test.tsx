@@ -1,4 +1,4 @@
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { LazyCommentBodyEditor } from '@kobato/web/ui/public/comments/LazyCommentBodyEditor.tsx'
 // @vitest-environment happy-dom
 /**

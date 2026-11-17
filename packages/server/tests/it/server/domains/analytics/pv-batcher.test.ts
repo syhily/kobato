@@ -1,7 +1,7 @@
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { ensureMetric, findMetricByTarget } from '@kobato/server/infra/db/operations/metric.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { sql } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

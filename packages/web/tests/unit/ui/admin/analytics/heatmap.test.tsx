@@ -2,9 +2,9 @@
 
 import type { HeatmapCell } from '@kobato/shared/contracts/analytics.ts'
 
-import { makeAnalyticsState } from '@kobato/test-helpers/analytics-state.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { makeAnalyticsState } from '@kobato/test/analytics-state.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { AnalyticsStateProvider } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
 import { Heatmap } from '@kobato/web/ui/admin/analytics/Heatmap.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'

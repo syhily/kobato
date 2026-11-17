@@ -1,4 +1,4 @@
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { formatNotificationTime, notificationMeta } from '@kobato/web/ui/shared/notifications/notification-meta.ts'
 import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 import { describe, expect, it } from 'vitest'

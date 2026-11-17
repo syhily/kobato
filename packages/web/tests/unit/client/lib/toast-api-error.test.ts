@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: toastMock }))
 
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { onMutationError, toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 
 const tZhCN = makeTranslator('zh-CN')

@@ -5,7 +5,7 @@ import { page } from '@kobato/server/infra/db/schema/page.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // The reservation guard runs against the real engine: the own-meta lookup and the cross-entity

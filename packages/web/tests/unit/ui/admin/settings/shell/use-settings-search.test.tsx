@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import {
   SettingsSearchProvider,
   useSettingsSearch,

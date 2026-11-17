@@ -1,8 +1,8 @@
 import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
-import { makeAdminMusic } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminMusic } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { MusicDetailView } from '@kobato/web/ui/admin/musics/MusicDetailView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

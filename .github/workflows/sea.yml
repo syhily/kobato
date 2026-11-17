@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [develop]
-    # The automated release flow enters HERE: scripts/release.ts pushes
+    # The automated release flow enters HERE: packages/helpers/pack/src/release.ts pushes
     # the tag and then creates the GitHub release as a DRAFT, and GitHub
     # fires NO workflow events for draft releases — a `release:` trigger
     # alone leaves the whole chain dead (the draft never publishes, no
@@ -52,7 +52,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # patchelf rewrites the sharp addon's rpath during sea:build (see
-      # scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
+      # packages/helpers/pack/src/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
       # image — this guards against image changes.
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
@@ -235,7 +235,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # patchelf rewrites the sharp addon's rpath during sea:build (see
-      # scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
+      # packages/helpers/pack/src/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
       # image — this guards against image changes.
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
@@ -248,7 +248,7 @@ jobs:
           KOBATO_BROWSER_CHANNEL: chromium
 
   # Release assets are uploaded for the events that actually occur in the
-  # release flow — the tag push (automated: scripts/release.ts pushes the
+  # release flow — the tag push (automated: packages/helpers/pack/src/release.ts pushes the
   # tag, then creates the release as a DRAFT) and non-draft release events
   # (manual) — in a separate job so the elevated contents:write token
   # never reaches the build matrix. The publish step at the end flips the

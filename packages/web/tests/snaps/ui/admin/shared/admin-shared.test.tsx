@@ -1,4 +1,4 @@
-import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
 import { AdminPagination } from '@kobato/web/ui/admin/shared/AdminPagination.tsx'
 import { ConfirmDialog } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'

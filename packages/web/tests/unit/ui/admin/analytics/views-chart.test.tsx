@@ -1,5 +1,5 @@
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { AnalyticsStateProvider } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
 import { useAnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { ViewsChart } from '@kobato/web/ui/admin/analytics/ViewsChart.tsx'

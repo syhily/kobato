@@ -32,7 +32,7 @@ import {
 } from '@kobato/server/infra/cache/registry.ts'
 import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 
 // Content-addressed generations for the fixture settings — stable across runs.
 const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)

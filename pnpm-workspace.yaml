@@ -1,8 +1,8 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'packages/helpers/*'
   - 'scripts'
-  - 'demo'
 
 # Single version source for every dependency. package.json references these
 # entries as "catalog:" — taze updates this table (catalogs are first-class

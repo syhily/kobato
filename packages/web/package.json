@@ -15,7 +15,7 @@
     "@kobato/inkling": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/shared": "workspace:*",
-    "@kobato/test-helpers": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@kobato/web": "workspace:*",
     "@lexical/react": "catalog:",
     "@number-flow/react": "catalog:",

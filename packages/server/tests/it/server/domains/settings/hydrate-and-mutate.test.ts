@@ -1,10 +1,10 @@
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { setting } from '@kobato/server/infra/db/schema/config.ts'
-import { resetBlogSettingsForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeAuthedCtx, makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/test-helpers/rpc-call.ts'
+import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { makeAuthedCtx, makePublicCtx } from '@kobato/test/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // Section-change dispatch is covered by the unit tests; keep the schedulers out.

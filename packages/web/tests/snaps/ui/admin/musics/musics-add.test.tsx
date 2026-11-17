@@ -1,8 +1,8 @@
 import type { MetingSearchHit } from '@kobato/shared/contracts/music.ts'
 
-import { makeAdminMusic } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminMusic } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { AddMusicDialog } from '@kobato/web/ui/admin/musics/AddMusicDialog.tsx'
 import { AddMusicView } from '@kobato/web/ui/admin/musics/AddMusicView.tsx'
 import { MusicDetailView } from '@kobato/web/ui/admin/musics/MusicDetailView.tsx'
@@ -119,7 +119,7 @@ vi.mock('motion/react', async () => {
   }
 })
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function makeSearchHit(overrides: Partial<MetingSearchHit> = {}): MetingSearchHit {
   return {

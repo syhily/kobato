@@ -1,6 +1,6 @@
-import { makePost } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
-import { asRoute } from '@kobato/test-helpers/route-test-utils.tsx'
+import { makePost } from '@kobato/test/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
 import TagListRoute from '@/routes/public/tag/list'

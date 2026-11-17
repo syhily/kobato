@@ -2,8 +2,8 @@ import type { ListingPostCardWithMetadata } from '@kobato/shared/types/catalog.t
 
 import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
 import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test-helpers/context.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

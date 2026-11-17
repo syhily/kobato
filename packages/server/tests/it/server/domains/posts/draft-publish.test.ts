@@ -1,7 +1,7 @@
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
-import { makeAuthedCtx } from '@kobato/test-helpers/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/test-helpers/rpc-call.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

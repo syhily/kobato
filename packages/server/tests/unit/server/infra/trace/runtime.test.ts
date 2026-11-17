@@ -12,7 +12,7 @@ import {
   withSpanAsync,
 } from '@kobato/server/infra/trace/facade.ts'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'
 import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from '@opentelemetry/sdk-trace'

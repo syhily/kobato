@@ -8,8 +8,8 @@ import {
   sidebarSelectionSeed,
 } from '@kobato/server/http/loaders/sidebar-select.ts'
 import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { makePost, makeTag } from '@kobato/test-helpers/catalog.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { makePost, makeTag } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'
 
 const SIDEBAR_SETTINGS = TEST_BLOG_SETTINGS_BUNDLE.sidebar!

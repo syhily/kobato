@@ -7,7 +7,7 @@
 
 import type { DateRange } from '@kobato/shared/contracts/analytics.ts'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { DateRangePicker } from '@kobato/web/ui/admin/analytics/DateRangePicker.tsx'
 import { calendarMachineDay } from '@kobato/web/ui/components/calendar.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'

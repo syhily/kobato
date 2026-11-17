@@ -1,5 +1,5 @@
 import { isChunkLoadError } from '@kobato/shared/utils/chunk-error.ts'
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { subscribeChunkReload, useReloadOnChunkError } from '@kobato/web/client/hooks/use-chunk-error-recovery.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -2,7 +2,7 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { EditorToolbarState } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { EditorToolbar } from '@kobato/web/ui/admin/editor-shell/EditorToolbar.tsx'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'

@@ -3,7 +3,7 @@ import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/dom
 import { setting } from '@kobato/server/infra/db/schema/config.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { asc } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

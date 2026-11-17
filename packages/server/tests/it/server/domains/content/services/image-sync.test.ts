@@ -1,7 +1,7 @@
 import { image as imageTable } from '@kobato/server/infra/db/schema/media.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

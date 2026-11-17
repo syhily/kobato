@@ -8,7 +8,7 @@ import {
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { replayDeadLetterAccessLog } from '@kobato/server/domains/analytics/services/batcher.ts'
 import { initAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test-helpers/analytics-db.ts'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -4,7 +4,7 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/test-helpers/analytics-db.ts'
+} from '@kobato/test/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const handle = await createTestAnalyticsDb()

@@ -23,7 +23,7 @@ import { notification, notificationRecipient } from '@kobato/server/infra/db/sch
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

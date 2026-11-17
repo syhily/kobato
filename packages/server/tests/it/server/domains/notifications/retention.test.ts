@@ -12,7 +12,7 @@ import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/server/
 import { notification, notificationRecipient } from '@kobato/server/infra/db/schema/notification.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { count, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -1,6 +1,6 @@
 import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
 
-import { renderToHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml } from '@kobato/test/render.tsx'
 import { TableOfContents } from '@kobato/web/ui/public/post/TableOfContents.tsx'
 import { TocItems } from '@kobato/web/ui/public/post/TocItems.tsx'
 import { describe, expect, it } from 'vitest'

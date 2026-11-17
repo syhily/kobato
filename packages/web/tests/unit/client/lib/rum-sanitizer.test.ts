@@ -7,7 +7,7 @@ import {
   RUM_TEST_SESSION_ID,
   RUM_TEST_SPAN_ID,
   RUM_TEST_TRACE_ID,
-} from '@kobato/test-helpers/rum-events.ts'
+} from '@kobato/test/rum-events.ts'
 import { RUM_EVENT_LIMITS } from '@kobato/web/client/lib/rum-budget.ts'
 import { createRumEventPolicy, projectRumEvent } from '@kobato/web/client/lib/rum-sanitizer.ts'
 import { describe, expect, it } from 'vitest'

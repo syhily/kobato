@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { useIsActiveLink } from '@kobato/web/ui/admin/shell/use-is-active-link.ts'
 import { describe, expect, it } from 'vitest'
 

@@ -2,8 +2,8 @@ import { listPublicPostCardsPaginated } from '@kobato/server/domains/posts/servi
 import { listingLoader } from '@kobato/server/http/loaders/listing.ts'
 import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
 import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

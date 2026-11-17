@@ -12,7 +12,7 @@ import { SignInLink } from '@kobato/server/infra/email/templates/SignInLink.tsx'
 import { SignInOtp } from '@kobato/server/infra/email/templates/SignInOtp.tsx'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 // End-to-end template renders per family: the copy inside the HTML comes from

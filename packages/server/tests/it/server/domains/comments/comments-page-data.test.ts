@@ -1,8 +1,8 @@
 import type { Database } from '@kobato/server/infra/db/database.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { seedMetric } from '@kobato/test-helpers/db.ts'
-import { regularSession } from '@kobato/test-helpers/session.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { seedMetric } from '@kobato/test/db.ts'
+import { regularSession } from '@kobato/test/session.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The comments/critical split must keep `loadComments`, `queryLikes`,

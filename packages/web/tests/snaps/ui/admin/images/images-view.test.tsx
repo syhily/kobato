@@ -1,8 +1,8 @@
 import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 import type { ActiveImageFilter } from '@kobato/web/ui/admin/images/useImagesReducer.ts'
 
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { ImageDetailDialog } from '@kobato/web/ui/admin/images/ImageDetailDialog.tsx'
 import { ImagesFilterBar } from '@kobato/web/ui/admin/images/ImagesFilterBar.tsx'
 import { ImagesView } from '@kobato/web/ui/admin/images/ImagesView.tsx'

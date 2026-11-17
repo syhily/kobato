@@ -16,7 +16,7 @@ import {
 import { buildLogPipeline } from '@kobato/server/infra/trace/logs-runtime.ts'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
 import { TRACE_LOG_STREAM } from '@kobato/shared/contracts/trace-logs.ts'
-import { TestMetricReader } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
 import { SeverityNumber } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs'

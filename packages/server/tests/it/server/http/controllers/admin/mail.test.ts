@@ -1,4 +1,4 @@
-import { makeAuthedCtx } from '@kobato/test-helpers/mock-ctx.ts'
+import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 

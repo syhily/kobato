@@ -5,8 +5,8 @@ import type { BrandingObjectRef } from '@kobato/shared/config/types.ts'
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { findSettingByScope, upsertSetting } from '@kobato/server/infra/db/operations/setting.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/test-helpers/memory-storage.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mem = makeMemoryBackend()

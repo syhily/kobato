@@ -1,5 +1,5 @@
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // The revision is `<bootId>:<zero-padded counter>`: boot-unique (a restart can

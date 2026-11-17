@@ -1,6 +1,6 @@
 import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER, toProjectionState } from '@kobato/shared/lexical/projection-state.ts'
 import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 // The transform operates on validated states (the save pipeline canonicalizes

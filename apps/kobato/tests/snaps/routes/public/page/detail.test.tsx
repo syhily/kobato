@@ -1,7 +1,7 @@
 import { toDetailPageShell } from '@kobato/shared/types/catalog.ts'
-import { makePage } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
-import { asRoute } from '@kobato/test-helpers/route-test-utils.tsx'
+import { makePage } from '@kobato/test/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
 import PageDetailRoute from '@/routes/public/page/detail'

@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
@@ -15,7 +15,7 @@ import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
 import { mailDefaults } from '@kobato/server/domains/settings/sections/mail.ts'
 import { projectMailForAdmin } from '@kobato/shared/config/projection.ts'
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { MailForm } from '@kobato/web/ui/admin/settings/MailForm.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

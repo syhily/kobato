@@ -9,7 +9,7 @@ import {
   resolveAppLocalization,
 } from '@kobato/shared/i18n/app-localization.ts'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/shared/i18n/locales.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 const withIdentity = (locale: AppLocale, timeZone: string, timeFormat: string | null = null): BlogSettingsBundle => ({

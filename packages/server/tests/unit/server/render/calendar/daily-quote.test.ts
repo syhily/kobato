@@ -2,7 +2,7 @@ import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/
 
 import { getDailyQuote, pickForDate } from '@kobato/server/render/calendar/daily-quote.ts'
 import { LOCAL_QUOTES } from '@kobato/server/render/calendar/local-quotes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { parseISO } from 'date-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

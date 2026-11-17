@@ -3,9 +3,9 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
 import type { ReactNode } from 'react'
 
-import { makeAdminComment } from '@kobato/test-helpers/catalog.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { tZhCN } from '@kobato/test-helpers/i18n.ts'
+import { makeAdminComment } from '@kobato/test/catalog.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { tZhCN } from '@kobato/test/i18n.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'

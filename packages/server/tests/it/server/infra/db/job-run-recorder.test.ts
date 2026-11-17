@@ -12,7 +12,7 @@ import {
 } from '@kobato/server/infra/db/job-run-recorder.ts'
 import { jobRun } from '@kobato/server/infra/db/schema/job-run.ts'
 import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/shared/contracts/jobs.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

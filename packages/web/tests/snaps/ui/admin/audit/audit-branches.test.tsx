@@ -2,9 +2,9 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/shared/contracts
 import type { AuditLogFilterFieldKey } from '@kobato/web/ui/admin/audit/filter-fields.tsx'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
-import { tZhCN } from '@kobato/test-helpers/i18n.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { tZhCN } from '@kobato/test/i18n.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { AuditLogView } from '@kobato/web/ui/admin/audit/AuditLogView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

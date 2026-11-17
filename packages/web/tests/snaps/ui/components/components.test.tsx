@@ -1,7 +1,7 @@
 import type { ClientPostWithMetadata } from '@kobato/shared/types/catalog.ts'
 
-import { makePost } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter, renderToHtml } from '@kobato/test-helpers/render.tsx'
+import { makePost } from '@kobato/test/catalog.ts'
+import { renderInRouter, renderToHtml } from '@kobato/test/render.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
 import { Input } from '@kobato/web/ui/components/input.tsx'
 import { Pagination } from '@kobato/web/ui/public/post/Pagination.tsx'

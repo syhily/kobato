@@ -3,8 +3,8 @@ import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/dom
 import { migrateLegacySiteIdentityLocale } from '@kobato/server/domains/settings/services/locale-migration.ts'
 import { findSettingByScope, upsertSetting } from '@kobato/server/infra/db/operations/setting.ts'
 import { setting } from '@kobato/server/infra/db/schema/config.ts'
-import { resetBlogSettingsForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

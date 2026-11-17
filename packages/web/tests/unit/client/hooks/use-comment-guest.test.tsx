@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { readProfile, useCommentGuest, type CommentGuestProfile } from '@kobato/web/client/hooks/use-comment-guest.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

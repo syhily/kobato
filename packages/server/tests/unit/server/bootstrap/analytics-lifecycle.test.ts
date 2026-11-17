@@ -12,7 +12,7 @@ import { flushAccessLog, pushAccessEvent } from '@kobato/server/domains/analytic
 import { ANALYTICS_DDL } from '@kobato/server/domains/analytics/services/schema.ts'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/server/infra/analytics/duckdb.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test-helpers/analytics-db.ts'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

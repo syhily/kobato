@@ -1,6 +1,6 @@
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { getTestDb } from '@kobato/test/integration-db.ts'
+import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -1,5 +1,5 @@
-import { makeAdminPage } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminPage } from '@kobato/test/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { PageRow } from '@kobato/web/ui/admin/pages/PageRow.tsx'
 import { PagesSkeleton } from '@kobato/web/ui/admin/pages/PagesSkeleton.tsx'
 import { PagesView } from '@kobato/web/ui/admin/pages/PagesView.tsx'

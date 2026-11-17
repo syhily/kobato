@@ -15,15 +15,15 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/test-helpers/analytics-db.ts'
+} from '@kobato/test/analytics-db.ts'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeAuthedCtx, makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/test-helpers/rpc-call.ts'
+} from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { makeAuthedCtx, makePublicCtx } from '@kobato/test/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 // The admin/me oRPC procedures over the real RPCHandler wire: real SQLite rows,

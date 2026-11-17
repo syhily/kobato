@@ -1,4 +1,4 @@
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { BaseLayout } from '@kobato/web/ui/public/chrome/BaseLayout.tsx'
 import { describe, expect, it } from 'vitest'
 

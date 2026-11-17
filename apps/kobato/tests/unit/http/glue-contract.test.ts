@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { makeRequestContext } from '@kobato/test-helpers/request-context.ts'
+import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { Hono } from 'hono'
 import { describe, expect, it, vi } from 'vitest'
 

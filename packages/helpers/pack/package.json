@@ -1,0 +1,16 @@
+{
+  "name": "@kobato/pack",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@duckdb/node-api": "catalog:",
+    "@kobato/server": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@types/node": "catalog:",
+    "bcryptjs": "catalog:",
+    "sharp": "catalog:",
+    "vite": "catalog:",
+    "zod": "catalog:"
+  }
+}

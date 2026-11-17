@@ -1,8 +1,8 @@
 import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 
-import { makeAdminFriend } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminFriend } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { EditFriendDialog } from '@kobato/web/ui/admin/friends/EditFriendDialog.tsx'
 import { FriendRow, FriendsSkeleton } from '@kobato/web/ui/admin/friends/FriendRow.tsx'
 import { FriendsView } from '@kobato/web/ui/admin/friends/FriendsView.tsx'
@@ -38,7 +38,7 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 describe('snapshot: FriendsView', () => {
   it('renders the loading skeleton while fetching', () => {

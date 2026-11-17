@@ -11,8 +11,8 @@ import {
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 
 // Real in-app fan-out + real notification rows; only the Mailgun `fetch` edge is

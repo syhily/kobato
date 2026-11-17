@@ -1,8 +1,8 @@
 import type { Comments as CommentsData } from '@kobato/shared/types/comments.ts'
 
-import { makeComment } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeComment } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { Comments } from '@kobato/web/ui/public/comments/Comments.tsx'
 import { describe, expect, it, vi } from 'vitest'
 

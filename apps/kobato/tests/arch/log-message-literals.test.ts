@@ -2,7 +2,7 @@ import {
   scanLogMessages,
   scanSourceForLogMessages,
   type LogMessageAllowlistEntry,
-} from '@kobato/test-helpers/log-message-literals.ts'
+} from '@kobato/test/log-message-literals.ts'
 import { describe, expect, it } from 'vitest'
 
 // The three designed indirections: an options property forwarded to a logger.

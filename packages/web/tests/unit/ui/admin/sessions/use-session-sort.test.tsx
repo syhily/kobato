@@ -1,7 +1,7 @@
 import type { SessionSortState } from '@kobato/shared/utils/sessions-sort.ts'
 
 import { SESSION_SORT_OPTIONS } from '@kobato/shared/utils/sessions-sort.ts'
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { useSessionSort } from '@kobato/web/ui/admin/sessions/useSessionSort.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

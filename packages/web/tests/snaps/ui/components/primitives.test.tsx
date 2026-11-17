@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 // snapshots the real `<Toaster />` primitive, so restore the actual module.
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
-import { renderToHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml } from '@kobato/test/render.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/web/ui/components/avatar.tsx'
 import { Badge } from '@kobato/web/ui/components/badge.tsx'
 import { Button } from '@kobato/web/ui/components/button.tsx'

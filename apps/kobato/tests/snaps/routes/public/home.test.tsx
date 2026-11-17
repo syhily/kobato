@@ -1,7 +1,7 @@
 import type { ClientPostWithMetadata } from '@kobato/shared/types/catalog.ts'
 
-import { makePost, makePostList, makeTag } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { makePost, makePostList, makeTag } from '@kobato/test/catalog.ts'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { HomeLayoutBody } from '@kobato/web/ui/public/post/PostListViews.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

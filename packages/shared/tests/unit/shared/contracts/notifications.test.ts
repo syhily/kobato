@@ -5,7 +5,7 @@ import {
 } from '@kobato/shared/contracts/notifications.ts'
 import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 // Validation messages are UI message IDS: the client resolves them with

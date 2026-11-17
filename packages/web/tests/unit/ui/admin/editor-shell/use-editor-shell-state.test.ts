@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 // useEditorShellState is the orchestrator that owns body / meta / revision
@@ -37,7 +37,7 @@ vi.mock('@kobato/web/client/hooks/use-create-draft.ts', () => ({
 
 import type { EntityLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { emptyLexicalBody } from '@kobato/test-helpers/lexical.ts'
+import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import { useEditorShellState } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-state.ts'
 
 interface Meta {

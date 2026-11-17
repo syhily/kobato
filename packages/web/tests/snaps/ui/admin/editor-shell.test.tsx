@@ -1,8 +1,8 @@
 import type { AdminRevisionDto } from '@kobato/shared/contracts/revision.ts'
 
-import { emptyLexicalBody } from '@kobato/test-helpers/lexical.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { emptyLexicalBody } from '@kobato/test/lexical.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { DateTimePicker } from '@kobato/web/ui/admin/editor-shell/DateTimePicker.tsx'
 import { RevisionHistoryDrawer } from '@kobato/web/ui/admin/editor-shell/RevisionsDrawer.tsx'
 import { describe, expect, it, vi } from 'vitest'

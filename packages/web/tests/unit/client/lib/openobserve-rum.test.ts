@@ -1,12 +1,7 @@
 import type { FrontendRumBootstrap } from '@kobato/shared/contracts/trace.ts'
 
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import {
-  makeResourceEvent,
-  makeViewEvent,
-  RUM_TEST_SESSION_ID,
-  RUM_TEST_TRACE_ID,
-} from '@kobato/test-helpers/rum-events.ts'
+import { makeResourceEvent, makeViewEvent, RUM_TEST_SESSION_ID, RUM_TEST_TRACE_ID } from '@kobato/test/rum-events.ts'
 import {
   __pollRumStatusForTests,
   __resetRumForTests,

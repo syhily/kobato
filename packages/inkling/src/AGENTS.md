@@ -3,7 +3,7 @@
 ## Overview
 
 - `packages/inkling/src/` is kobato's rich-text editor layer (Lexical 0.53, React 19, TS), importing nothing from other layers. Source `packages/inkling/src/`; tests
-  `packages/inkling/tests/` (own vitest project); demo `demo/`.
+  `packages/inkling/tests/` (own vitest project); demo `apps/inkling-demo/`.
 - Two entry surfaces only (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel `packages/inkling/src/index.ts`; for `client/`, `ui/`,
   `routes/`) and `@kobato/inkling/headless` (`packages/inkling/src/headless.ts`, react-free; the only surface `server/` and `shared/` may use). The barrel's top-level
   `registerCardDecorateAdapter()` call MUST stay explicit.
@@ -24,9 +24,9 @@ Run from the kobato root:
 pnpm run type        # root tsc — one pass, also covers tests/inkling
 pnpm run lint        # oxlint (root config)
 pnpm test:inkling    # vitest run --project inkling (<file> for one file; npx vitest --project inkling = watch)
-pnpm run fmt         # oxfmt --write (covers packages/inkling, demo)
+pnpm run fmt         # oxfmt --write (covers packages/inkling, apps/inkling-demo)
 pnpm run fmt:check   # oxfmt --check
-pnpm demo            # vite demo — not part of the type/test/build gates
+pnpm demo            # vite apps/inkling-demo — not part of the type/test/build gates
 ```
 
 ## Code style
@@ -34,7 +34,7 @@ pnpm demo            # vite demo — not part of the type/test/build gates
 - `oxfmt` / `oxlint` are configured ONLY at the kobato root (`oxfmt.config.ts`, `oxlint.config.ts`); this layer has no config files. The root oxlint config
   scopes inkling exceptions in a `packages/inkling/src/**` override (public barrel, intentional Lexical cycles, class+interface merging, editor-chrome a11y
   exemptions, keeper rules — eqeqeq / no-eval / no-plusplus / no-explicit-any); the root oxfmt config points Tailwind sorting at
-  `packages/inkling/packages/web/src/styles/index.css` with `clsx` via its `packages/inkling/src/**`, `demo/**` override.
+  `packages/inkling/src/styles/index.css` with `clsx` via its `packages/inkling/src/**`, `apps/inkling-demo/**` override.
 - Single quotes, no semicolons, trailing commas, print width 120; Tailwind scoped under `.inkling-lexical`; import sorting by `oxfmt`. `oxlint` is
   type-aware (oxlint-tsgolint, TS7-based, `typeCheck` on) against the single root `tsconfig.json`, `tests/inkling` included; `verbatimModuleSyntax` makes
   `import type` mandatory. A tsconfig edit that floods test files with `TS2339`-style errors means tsgolint's cached program is stale — re-run
@@ -214,7 +214,7 @@ Glossary owned here: **card** (a decorator-node block), **card adjacency**, **ca
 - Content typography is NOT owned here: the host owns `packages/web/src/styles/typeset.css` and passes `contentEditableClassName="typeset typeset-post|typeset-comment"`
   into `InklingComposableEditor`; `packages/inkling/packages/web/src/styles/components/inkling-prose.css` keeps only card rhythm, nested-editor chrome variants, the aside
   pull-quote, and the accent re-scope. The typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
-- `packages/inkling/packages/web/src/styles/index.css` is consumed as source: imported by `packages/web/src/styles/inkling-editor.css` and `packages/web/src/styles/inkling-comment-editor.css` into the
+- `packages/inkling/src/styles/index.css` is consumed as source: imported by `packages/web/src/styles/inkling-editor.css` and `packages/web/src/styles/inkling-comment-editor.css` into the
   `inkling` cascade layer, below `utilities` and above `base` via the bare `@layer` statements in `admin.css` / `public.css`. Chrome arbitrary values are
   authored in rem (0.1rem/px), never px: the canvas runs `zoom: 2/3` on a 15px root (demo: 10px-root). Both partials import `packages/web/src/styles/dark-variant.css`
   first, and bridge tokens (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`).

@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/context.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
 
-import { adminUser, makeSession } from '@kobato/test-helpers/session.ts'
+import { adminUser, makeSession } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -86,8 +86,7 @@ describe('requestContextMiddleware', () => {
     const { app } = await buildApp()
     // Same module graph as the dynamically imported middleware (resetModules
     // ran in beforeEach), so these writes reach the real snapshot slot.
-    const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } =
-      await import('@kobato/test-helpers/blog-settings.ts')
+    const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
     const { resolveAppLocalization } = await import('@kobato/shared/i18n/app-localization.ts')
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 

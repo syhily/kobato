@@ -1,4 +1,4 @@
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 // Capture the seam instead of hitting a transport: the subject and HTML are

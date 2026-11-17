@@ -2,7 +2,7 @@ import type { Env } from '@kobato/server/http/context.ts'
 
 import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 

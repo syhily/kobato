@@ -2,7 +2,7 @@
 
 import type { LoginActionData } from '@kobato/web/ui/admin/auth/AdminCredentialsForm.tsx'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { OtpForm } from '@kobato/web/ui/admin/auth/OtpForm.tsx'
 import { act, render } from '@testing-library/react'
 import { useEffect, useState } from 'react'

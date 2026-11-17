@@ -1,7 +1,7 @@
 import { reclaimSlugOnRestore } from '@kobato/server/domains/content/slug-reclaim.ts'
 import { slugRegistry } from '@kobato/server/infra/db/schema/config.ts'
 import { isUniqueConstraintError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

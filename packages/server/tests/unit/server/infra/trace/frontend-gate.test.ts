@@ -15,7 +15,7 @@ import {
   verifiedFrontendRelay,
 } from '@kobato/server/infra/trace/frontend-gate.ts'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

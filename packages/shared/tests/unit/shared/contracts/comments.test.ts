@@ -1,7 +1,7 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
 import type { AdminCommentsData, StatusCounts } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
 
-import { makeCommentBody } from '@kobato/test-helpers/catalog.ts'
+import { makeCommentBody } from '@kobato/test/catalog.ts'
 import {
   approveCommentInPages,
   removeCommentFromPages,

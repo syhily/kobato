@@ -2,11 +2,11 @@ import type { ReactNode } from 'react'
 
 import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 // SSR-render every admin route Component export with fixture loaderData and assert real
 // rendered content, so a route that degrades into the error boundary fails loudly.
-import { asRoute } from '@kobato/test-helpers/route-test-utils.tsx'
+import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { I18nProvider } from '@kobato/web/ui/lib/I18nProvider.tsx'
 import { ThemeProvider } from '@kobato/web/ui/lib/ThemeProvider.tsx'

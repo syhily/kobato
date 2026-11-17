@@ -1,5 +1,5 @@
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { LikeButton } from '@kobato/web/ui/public/LikeActions.tsx'
 import { describe, expect, it } from 'vitest'
 

@@ -3,9 +3,9 @@
 // (`#/_helpers/e2e-client` + `#/_helpers/e2e-rpc`), so the journeys never read
 // a real config or reach for a private database seam.
 
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test-helpers/e2e-client.ts'
-import { callE2eRpc } from '@kobato/test-helpers/e2e-rpc.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test/e2e-client.ts'
+import { callE2eRpc } from '@kobato/test/e2e-rpc.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 
 import type { BrowserEnv } from './env'
 

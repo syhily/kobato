@@ -1,7 +1,7 @@
 import { signUpInitialAdminWithSession } from '@kobato/server/domains/auth/services/setup.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { emptySession } from '@kobato/test-helpers/session.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { emptySession } from '@kobato/test/session.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

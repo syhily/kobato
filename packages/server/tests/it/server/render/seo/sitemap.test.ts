@@ -2,8 +2,8 @@ import { content as contentTable } from '@kobato/server/infra/db/schema/content.
 import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
 import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
 import { buildSitemapXml } from '@kobato/server/render/seo/sitemap.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

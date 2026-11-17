@@ -9,12 +9,12 @@ import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'l
  *   GENERATE_DEMO_CONTENT=1 pnpm vitest run tests/inkling/utils/gen-demo-content.test.ts
  *
  * Builds the showcase document through the real node factories so the
- * serialized shapes are guaranteed valid, and writes demo/content/content.json.
+ * serialized shapes are guaranteed valid, and writes apps/inkling-demo/content/content.json.
  */
 import { writeFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-import { musicPlayer } from '../../../../demo/components/MusicPlayerCard'
+import { musicPlayer } from '../../../../apps/inkling-demo/components/MusicPlayerCard'
 import { $createAudioNode } from '../../src/nodes/AudioNode'
 import { $createBookmarkNode } from '../../src/nodes/BookmarkNode'
 import { $createButtonNode } from '../../src/nodes/ButtonNode'
@@ -35,7 +35,7 @@ import { $createVideoNode } from '../../src/nodes/VideoNode'
 import { updateEditor } from './test-editor'
 
 describe('gen-demo-content', () => {
-  it.skipIf(!process.env.GENERATE_DEMO_CONTENT)('writes demo/content/content.json', async () => {
+  it.skipIf(!process.env.GENERATE_DEMO_CONTENT)('writes apps/inkling-demo/content/content.json', async () => {
     const editor = createEditor({
       namespace: 'gen',
       nodes: [...DEFAULT_NODES, musicPlayer.node],
@@ -191,7 +191,7 @@ describe('gen-demo-content', () => {
     })
 
     const state = editor.getEditorState().toJSON()
-    writeFileSync('demo/content/content.json', `${JSON.stringify(state, null, 2)}\n`)
+    writeFileSync('apps/inkling-demo/content/content.json', `${JSON.stringify(state, null, 2)}\n`)
     expect(state.root.children.length).toBeGreaterThan(15)
   })
 })

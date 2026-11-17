@@ -5,7 +5,7 @@ import {
   TEST_BLOG_SETTINGS_BUNDLE,
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
-} from '@kobato/test-helpers/blog-settings.ts'
+} from '@kobato/test/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const clientMock = vi.hoisted(() => ({

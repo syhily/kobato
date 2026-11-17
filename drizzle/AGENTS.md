@@ -4,7 +4,7 @@ SQLite migrations for the content database. Layout (drizzle-kit 1.0 rc): one `<t
 folder per migration holding `migration.sql` + `snapshot.json`; there is NO `meta/_journal.json`.
 The runtime migrator (`src/server/infra/db/migrate.ts`) applies every folder's `migration.sql` in
 folder-name order and records it in `__drizzle_migrations`; `snapshot.json` is drizzle-kit's diff
-input only and is never read at runtime (the SEA build even excludes it — `scripts/sea/assets.ts`).
+input only and is never read at runtime (the SEA build even excludes it — `packages/helpers/pack/src/sea/assets.ts`).
 
 ## Rules
 

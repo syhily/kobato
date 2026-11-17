@@ -3,7 +3,7 @@ import { image as imageTable } from '@kobato/server/infra/db/schema/media.ts'
 import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
 import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
 import { category as categoryTable, tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq, sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

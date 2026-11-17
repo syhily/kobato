@@ -1,6 +1,6 @@
 import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { makeAdminUser } from '@kobato/test-helpers/catalog.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { makeAdminUser } from '@kobato/test/catalog.ts'
 import { UsersTable } from '@kobato/web/ui/admin/users/UsersTable.tsx'
 import { I18nProvider } from '@kobato/web/ui/lib/I18nProvider.tsx'
 // @vitest-environment jsdom

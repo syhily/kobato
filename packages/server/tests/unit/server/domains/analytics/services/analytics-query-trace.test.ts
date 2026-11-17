@@ -7,7 +7,7 @@ import { runAnalyticsQuery } from '@kobato/server/domains/analytics/services/ana
 import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
 import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

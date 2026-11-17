@@ -15,7 +15,7 @@ import {
   seoForPost,
 } from '@kobato/shared/seo/meta.ts'
 import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
-import { setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // `routeMeta` and `pageTitle` read the site title / website / OG defaults

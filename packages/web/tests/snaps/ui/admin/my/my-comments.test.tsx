@@ -1,4 +1,4 @@
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { MyCommentsView } from '@kobato/web/ui/admin/my/MyCommentsView.tsx'
 import { MyEditCommentDialog } from '@kobato/web/ui/admin/my/MyEditCommentDialog.tsx'
 import { describe, expect, it, vi } from 'vitest'

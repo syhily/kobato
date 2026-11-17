@@ -3,7 +3,7 @@ import { comment } from '@kobato/server/infra/db/schema/comment.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Stub the email boundary so the module graph never reaches the network.
@@ -13,7 +13,7 @@ vi.mock('@kobato/server/infra/email/sender.ts', () => ({
   invalidateMailTransportCache: vi.fn(),
 }))
 
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test-helpers/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
 
 const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
   await import('@kobato/server/domains/comments/services/moderate.ts')

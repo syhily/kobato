@@ -8,8 +8,8 @@ import type {
 } from '@kobato/shared/config/types.ts'
 import type { AdminCacheStatsDto } from '@kobato/shared/contracts/cache.ts'
 
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { CacheView } from '@kobato/web/ui/admin/settings/CacheView.tsx'
 import { FontsForm } from '@kobato/web/ui/admin/settings/FontsForm.tsx'
 import { NavigationEditor } from '@kobato/web/ui/admin/settings/NavigationEditor.tsx'
@@ -29,7 +29,7 @@ cacheQueryMocks.mutation = {
   isPending: false,
 }
 
-// The inert `useSettingsMutation` stub from `@kobato/test-helpers/setup/snaps.ts` keeps forms network-free.
+// The inert `useSettingsMutation` stub from `@kobato/test/setup/snaps.ts` keeps forms network-free.
 
 // `FontsForm` reads a csrf token off the root loader; supply a stable one.
 vi.mock('react-router', async () => {

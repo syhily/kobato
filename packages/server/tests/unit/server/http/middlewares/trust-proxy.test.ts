@@ -5,7 +5,7 @@ import {
   TEST_BLOG_SETTINGS_BUNDLE,
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
-} from '@kobato/test-helpers/blog-settings.ts'
+} from '@kobato/test/blog-settings.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 

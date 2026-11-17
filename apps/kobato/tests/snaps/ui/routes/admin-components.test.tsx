@@ -1,7 +1,7 @@
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 // SSR-render a selection of admin route Component exports; each is pure given loaderData,
 // so fixtures suffice and no loader/DB chain is needed.
-import { asRoute } from '@kobato/test-helpers/route-test-utils.tsx'
+import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
 import MentionsRouteRaw from '@/routes/admin/analytics/mentions'

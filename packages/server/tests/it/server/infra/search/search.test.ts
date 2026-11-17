@@ -3,7 +3,7 @@ import { get } from '@kobato/server/infra/cache/registry.ts'
 import { postSearchIndex } from '@kobato/server/infra/db/schema/content.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { likeCacheKeyParts } from '@kobato/server/infra/search/like.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,8 +16,8 @@ const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobat
 const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query.ts')
 const { searchPostOptions } = await import('@kobato/server/infra/search/options.ts')
 const { liveContentWhere } = await import('@kobato/server/domains/content/schemas/live-gate.ts')
-const { setBlogSettingsBundleForTests } = await import('@kobato/test-helpers/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test-helpers/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/test/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
 
 /** The same caller-supplied live gate the production search loader passes. */
 function liveWhere() {

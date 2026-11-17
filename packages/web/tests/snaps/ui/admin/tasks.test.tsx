@@ -2,8 +2,8 @@ import type { JobRunDto, JobSummaryDto, JobsListDto } from '@kobato/shared/contr
 import type { StorageMigrationStatus } from '@kobato/shared/contracts/storage.ts'
 
 import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/shared/contracts/jobs.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { RunHistoryRow, RunHistorySheet } from '@kobato/web/ui/admin/tasks/RunHistorySheet.tsx'
 import { TaskCard } from '@kobato/web/ui/admin/tasks/TaskCard.tsx'
 import { TasksView } from '@kobato/web/ui/admin/tasks/TasksView.tsx'

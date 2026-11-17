@@ -1,4 +1,4 @@
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
 import { SettingsCloseButton } from '@kobato/web/ui/admin/settings/shell/SettingsHeader.tsx'

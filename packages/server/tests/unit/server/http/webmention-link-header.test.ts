@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
 import { webmentionLinkHeader } from '@kobato/server/http/webmention-link-header.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 // `webmentionLinkHeader` is pure: bundle in, Link-header value (or null)

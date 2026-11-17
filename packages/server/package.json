@@ -17,7 +17,7 @@
     "@kobato/inkling": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/shared": "workspace:*",
-    "@kobato/test-helpers": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@kobato/web": "workspace:*",
     "@maxmind/geoip2-node": "catalog:",
     "@napi-rs/canvas": "catalog:",

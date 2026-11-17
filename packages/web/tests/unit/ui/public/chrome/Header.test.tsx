@@ -1,6 +1,6 @@
 import type { NavigationItem } from '@kobato/shared/config/types.ts'
 
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { Header } from '@kobato/web/ui/public/chrome/Header.tsx'
 import { describe, expect, it } from 'vitest'
 

@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The hook uses `useSyncExternalStore`; the SSR harness fires one server

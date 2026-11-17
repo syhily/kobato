@@ -1,4 +1,4 @@
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The renderers are the only heavy seam — canvas/font/quote work is

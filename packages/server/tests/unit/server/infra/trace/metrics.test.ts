@@ -10,12 +10,7 @@ import {
   recordSsrPhase,
 } from '@kobato/server/infra/trace/metrics.ts'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import {
-  TestMetricReader,
-  dataPointsOf,
-  metricByName,
-  pointValue,
-} from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader, dataPointsOf, metricByName, pointValue } from '@kobato/test/in-memory-metric-reader.ts'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

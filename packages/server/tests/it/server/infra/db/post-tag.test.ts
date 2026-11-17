@@ -5,7 +5,7 @@ import {
 } from '@kobato/server/infra/db/operations/post-tag.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { tag } from '@kobato/server/infra/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { describe, expect, it, beforeEach } from 'vitest'
 
 const db = getTestDb()

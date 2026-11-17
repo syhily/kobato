@@ -1,7 +1,7 @@
 import type { AdminPageDetailDto } from '@kobato/shared/contracts/pages.ts'
 import type { PageMetaDraft } from '@kobato/shared/types/pages.ts'
 
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { MetaSidebar } from '@kobato/web/ui/admin/pages/MetaSidebar.tsx'
 import { PageEditorRoute } from '@kobato/web/ui/admin/pages/PageEditorRoute.tsx'
 import { PageEditorShell } from '@kobato/web/ui/admin/pages/PageEditorShell.tsx'

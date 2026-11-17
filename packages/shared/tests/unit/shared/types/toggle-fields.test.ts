@@ -2,7 +2,7 @@ import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import { PAGE_META_TOGGLE_FIELDS } from '@kobato/shared/types/pages.ts'
 import { POST_META_TOGGLE_FIELDS } from '@kobato/shared/types/posts.ts'
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 // The editor toggle rows are neutral registries: ToggleOptionsCard resolves

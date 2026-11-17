@@ -1,7 +1,7 @@
 import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { escapeCdataPayload, sanitizeFeedHtml } from '@kobato/server/render/feed/generator.tsx'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('feed-safety', () => {

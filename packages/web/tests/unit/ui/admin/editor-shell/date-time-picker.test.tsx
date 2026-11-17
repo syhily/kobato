@@ -1,4 +1,4 @@
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { DateTimePicker } from '@kobato/web/ui/admin/editor-shell/DateTimePicker.tsx'
 import { Calendar } from '@kobato/web/ui/components/calendar.tsx'
 import { renderToStaticMarkup } from 'react-dom/server'

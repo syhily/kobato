@@ -6,7 +6,7 @@ import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
@@ -14,7 +14,7 @@ import {
   lexicalMusicPlayer,
   lexicalParagraph,
   stubMusicResolver,
-} from '@kobato/test-helpers/lexical.ts'
+} from '@kobato/test/lexical.ts'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

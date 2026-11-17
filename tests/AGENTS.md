@@ -11,19 +11,19 @@ Eleven Vitest projects (see the root `vitest.config.ts`) plus two live-instance 
 - **`packages/web/tests/{unit,snaps,contract}/`** (`web-unit`, `web-snaps`) — hooks/components, SSR snapshots, and CSS/token contract guards (the `contract/` tree runs inside `web-unit`). `packages/web/src/ui/public/post/PostListViews.tsx` → `packages/web/tests/snaps/ui/public/post/post-list-views.test.tsx`.
 - **`packages/inkling/tests/`** (`inkling`) — the inkling editor suite (jsdom, globals off), mirroring `packages/inkling/src`. Carries its own `vitest.config.ts`; run
   `npx vitest run --project inkling` (alias `pnpm test:inkling`). Helpers live in `packages/inkling/tests/utils/` — including the `test-editor.ts`
-  harness that registers the card decorate adapter — NOT in `@kobato/test-helpers`.
+  harness that registers the card decorate adapter — NOT in `@kobato/test`.
 - **`apps/kobato/tests/{unit,it,snaps}/`** (`app-unit`, `app-it`, `app-snaps`) — route-module tests mirroring `apps/kobato/src/routes/`.
 - **`apps/kobato/tests/arch/`** — the architecture/contract guards (package DAG, client-bundle, i18n boundaries, log-message literals); runs inside `app-unit`.
 - **`duckdb`** (`apps/kobato/tests/vitest.duckdb.config.ts`) — every test file that spins up the real DuckDB native engine, wherever it lives. Membership
-  is owned by `@kobato/test-helpers/duckdb-files.ts` and pinned by `apps/kobato/tests/arch/duckdb-project-files.test.ts`; the `unit`/`it` projects exclude the same
+  is owned by `@kobato/test/duckdb-files.ts` and pinned by `apps/kobato/tests/arch/duckdb-project-files.test.ts`; the `unit`/`it` projects exclude the same
   list. Files run sequentially, each in a fresh fork (`pool: 'forks'` + `fileParallelism: false`), so a native crash kills only its own worker.
   Run with `pnpm test:duckdb`.
-- **`apps/kobato/tests/e2e/`** — true HTTP e2e: tests drive a real kobato instance (the SEA binary booted by `scripts/sea/e2e.ts`) over plain `fetch`. No
+- **`apps/kobato/tests/e2e/`** — true HTTP e2e: tests drive a real kobato instance (the SEA binary booted by `packages/helpers/pack/src/sea/e2e.ts`) over plain `fetch`. No
   in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`** (the root config lists projects explicitly); run `pnpm run sea:e2e`, which
   boots the instance and injects the `KOBATO_E2E_BASE_URL` / `KOBATO_E2E_ADMIN_EMAIL` / `KOBATO_E2E_ADMIN_PASSWORD` env contract, plus
   `KOBATO_E2E_DATABASE` (the throwaway per-run SQLite path) as the one sanctioned seam for state no HTTP surface can stage (e.g. flipping
   `user.login_method` for the magic-link journey) — use it only when no admin RPC exists, and always restore what you flip. Mail never leaves
-  the machine: mail journeys point the `mail` settings at the in-process SMTP capture server in `@kobato/test-helpers/e2e-mail.ts` and extract secrets (OTP code, signin link) from the captured bytes.
+  the machine: mail journeys point the `mail` settings at the in-process SMTP capture server in `@kobato/test/e2e-mail.ts` and extract secrets (OTP code, signin link) from the captured bytes.
 - **`apps/kobato/tests/browser/`** — real-Chromium journeys (Playwright) for behavior jsdom cannot prove: admin sidebar edge alignment, toolbar-control
   sizing, the settings language switch (dirty-card flush veto, Portal focus, cross-tab sparse save), locale-change state retention on a
   non-settings document, cold-load public popups (no state reset, static flash, or DOM replacement), the public comment composer loading only
@@ -56,7 +56,7 @@ Cross-cutting integration tests live inside the owning package's `tests/it/` und
 
 Zero services. The `it` projects run on a shared in-memory SQLite database per test file (`createTestDatabase()` returns the lifecycle global); flows
 that need a real file (backup/restore, WAL assertions) opt into `createTestDatabaseFile()` explicitly. Analytics tests use a per-run DuckDB sidecar
-file (`@kobato/test-helpers/analytics-db.ts`). The `unit` and `snaps` projects skip the DB bootstrap entirely.
+file (`@kobato/test/analytics-db.ts`). The `unit` and `snaps` projects skip the DB bootstrap entirely.
 
 ### Local development
 
@@ -98,7 +98,7 @@ Both install Chromium with `pnpm exec playwright install --with-deps chromium` a
   graph's. `clearAllTables(db)` also resets `sqlite_sequence` so seeded ids restart at 1, wipes the per-process filesystem cache
   (`file-store::wipeCache`) AND its L1 memory tier (`memory-store::__resetMemoryCacheForTests`), and drops the generation memo.
 - **File-backed flows**: `createTestDatabaseFile()` returns a fresh migrated temp file — required for backup/restore (VACUUM INTO, file swaps) and WAL/pragma assertions.
-- **DuckDB**: open a per-run sidecar file with `createTestAnalyticsDb()` from `@kobato/test-helpers/analytics-db.ts` and close it with
+- **DuckDB**: open a per-run sidecar file with `createTestAnalyticsDb()` from `@kobato/test/analytics-db.ts` and close it with
   `closeTestAnalyticsDb(handle)`; these files run in the dedicated `duckdb` project (see Layout). `closeTestAnalyticsDb` first joins any in-flight
   batcher flush (`settleAllBatchers`) — closing connections under an in-flight append is a native use-after-free. For the same reason a
   `resetAllBatchers()` that precedes a handle close MUST be awaited (`reset` detaches instances synchronously; its promise joins their flushes).
@@ -115,15 +115,15 @@ Test code verifies behavior, not perfect types; inside test trees (mocks, spies,
 
 ## Imports
 
-- **All shared test utilities live in `@kobato/test-helpers`** (`packages/test-helpers/src/`) — there are no per-project helpers directories. The one exception is
+- **All shared test utilities live in `@kobato/test`** (`packages/helpers/test/src/`) — there are no per-project helpers directories. The one exception is
   `packages/inkling/tests/`, which keeps its own `tests/utils/` harness (see Layout).
-- Import helpers as `@kobato/test-helpers/<name>.ts`:
+- Import helpers as `@kobato/test/<name>.ts`:
   - `catalog` — mock data factories
   - `render` / `i18n-render` — SSR render helpers (snapshots)
   - `mock-react-query` — `mockTanstackQuery()`, the canonical `@tanstack/react-query` module mock. Import it before the component
     imports, call once at module scope, rebind slots on the returned control singleton per test. Hand-roll a `vi.mock` only when the mock must
     BEHAVE (call-order routing, option capture, `initialData` pass-through).
-  - `stubs/dialog` — SSR-safe dialog double: `vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))`
+  - `stubs/dialog` — SSR-safe dialog double: `vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))`
   - `blog-settings` — test settings bundle
   - `lexical` — Lexical editor-state fixtures (`emptyLexicalBody`, `lexicalBodyWith`, `lexicalParagraph`, `lexicalHeading`,
     `lexicalImage`, `lexicalMusicPlayer`) + `stubMusicResolver` for `saveBody` inputs
@@ -144,7 +144,7 @@ Test code verifies behavior, not perfect types; inside test trees (mocks, spies,
     context), `rpc-call` (oRPC test caller), `session` (session fixtures), `fetch` (fetch mocks)
   - E2e-only helpers: `e2e-client` (cookie-jar HTTP client + real signin), `e2e-rpc` (oRPC-over-HTTP caller),
     `e2e-mail` (loopback SMTP capture server + mail decoders for OTP code / magic-link extraction)
-- Setup stubs the noise, `@kobato/test-helpers` owns the doubles. `setup/unit.ts` and `setup/snaps.ts` register inert global stubs for `sonner` and
+- Setup stubs the noise, `@kobato/test` owns the doubles. `setup/unit.ts` and `setup/snaps.ts` register inert global stubs for `sonner` and
   `@kobato/web/ui/admin/settings/useSettingsMutation` — do NOT copy those `vi.mock` blocks into new test files. A file declares its own mock only when it
   asserts on `toast` or programs `commit` (a file-level `vi.mock` overrides the setup-level one). The real `useDebouncedSearch` returns
   `['', setter]` under SSR — never stub it with that exact value; stub it only when a test drives the search text.

@@ -1,6 +1,6 @@
 import { findTagBySlug, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service.ts'
 import { tag } from '@kobato/server/infra/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

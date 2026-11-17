@@ -2,7 +2,7 @@
 
 import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/shared/contracts/update.ts'
 
-import { renderWithI18n, wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { renderWithI18n, wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

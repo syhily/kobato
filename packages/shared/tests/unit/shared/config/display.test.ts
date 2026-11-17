@@ -1,6 +1,6 @@
 import { NAV_GROUP_LABEL_KEYS, SECTION_DISPLAY } from '@kobato/shared/config/display.ts'
 import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 const tZhCN = makeTranslator('zh-CN')

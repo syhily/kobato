@@ -1,6 +1,6 @@
 import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
 
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { CategoriesView } from '@kobato/web/ui/admin/categories/CategoriesView.tsx'
 import { toast } from 'sonner'
@@ -82,7 +82,7 @@ vi.mock('@dnd-kit/modifiers', () => ({
   restrictToVerticalAxis: () => ({}),
 }))
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function makeCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
   return {

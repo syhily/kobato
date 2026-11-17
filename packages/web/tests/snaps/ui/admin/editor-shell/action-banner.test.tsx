@@ -1,4 +1,4 @@
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { ActionBanner } from '@kobato/web/ui/admin/editor-shell/ActionBanner.tsx'
 import { describe, expect, it } from 'vitest'
 

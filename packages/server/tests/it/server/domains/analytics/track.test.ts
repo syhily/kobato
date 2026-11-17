@@ -14,9 +14,9 @@ import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batch
 import { ensureMetric, findMetricByTarget } from '@kobato/server/infra/db/operations/metric.ts'
 import { metric } from '@kobato/server/infra/db/schema/metric.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAccessEvents, closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test-helpers/analytics-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAccessEvents, closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // `trackPageView` gates both signals (per-entity counter + time-series)

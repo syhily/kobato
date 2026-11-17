@@ -13,7 +13,7 @@ vi.mock('@kobato/server/infra/db/job-run-recorder.ts', () => ({
 import { scheduleJob, stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',

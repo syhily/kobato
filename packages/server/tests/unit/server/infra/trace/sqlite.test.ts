@@ -10,7 +10,7 @@ import {
   startSqliteQueryTrace,
   stopSqliteQueryTrace,
 } from '@kobato/server/infra/trace/sqlite.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

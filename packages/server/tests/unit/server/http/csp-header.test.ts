@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 
 import { buildCspHeader } from '@kobato/server/http/middleware-pipeline.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 // Exercises the real production `buildCspHeader` (bundle + nonce + dev flag

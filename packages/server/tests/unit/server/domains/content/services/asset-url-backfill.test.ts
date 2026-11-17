@@ -2,7 +2,7 @@ import {
   rewriteAssetReference,
   rewriteLexicalBodyAssetUrls,
 } from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { lexicalBodyWith, lexicalImage } from '@kobato/test-helpers/lexical.ts'
+import { lexicalBodyWith, lexicalImage } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 const CDN = 'https://cdn.example.com'

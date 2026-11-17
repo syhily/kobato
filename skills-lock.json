@@ -1,23 +1,24 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
     "react-router-framework-mode": {
       "source": "remix-run/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-router-framework-mode/SKILL.md",
-      "computedHash": "26c5bdac2f686c47eb4c4b48b6cb52401cde1dc833e6d26408ddfb22ea83c5ca"
+      "computedHash": "aee6b24c178c335eb9eb65a8b06a2a0df69bc8a9ecf3a38111e9ca902b7d26d0"
     },
     "vercel-geist-design-system": {
       "source": "joe-simo/skills",
       "sourceType": "github",
       "skillPath": "skills/vercel-geist-design-system/SKILL.md",
-      "computedHash": "0fb25fb0abe8eb8a7da2aed591b6755397ed95dbe22c0ab3ad749178aa71a779"
+      "computedHash": "4b39222946f055df348e27c354b48d9f70af0416c3362abd8296f33dfa212e19",
+      "commit": "7e7e9ab5ee704b2e69a37b459c4de449713be0ba"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
-      "computedHash": "3219a1944e404ffc14d1d9d6aef6dd2e3855b81387ee0a044ccbfe14d34c2357"
+      "computedHash": ""
     }
   }
 }

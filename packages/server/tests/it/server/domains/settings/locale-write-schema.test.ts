@@ -4,8 +4,8 @@ import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/dom
 import { findSettingByScope } from '@kobato/server/infra/db/operations/setting.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/shared/i18n/locales.ts'
-import { resetBlogSettingsForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

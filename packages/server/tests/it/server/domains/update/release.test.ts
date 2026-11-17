@@ -1,6 +1,6 @@
 import { get } from '@kobato/server/infra/cache/registry.ts'
-import { installFetch, jsonResponse } from '@kobato/test-helpers/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // fetchLatestRelease against the real file cache; only the network is mocked.

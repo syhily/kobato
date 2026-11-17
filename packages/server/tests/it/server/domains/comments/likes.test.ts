@@ -14,7 +14,7 @@ import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batch
 import { comment } from '@kobato/server/infra/db/schema/comment.ts'
 import { like, metric } from '@kobato/server/infra/db/schema/metric.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Likes against the real in-memory engine: insert+bump, token lifecycle, purge cutoff.

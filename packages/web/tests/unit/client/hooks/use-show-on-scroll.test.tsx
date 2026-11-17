@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { useShowOnScroll } from '@kobato/web/client/hooks/use-show-on-scroll.ts'
 import { describe, expect, it } from 'vitest'
 

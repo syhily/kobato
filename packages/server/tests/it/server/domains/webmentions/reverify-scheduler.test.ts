@@ -15,9 +15,9 @@ import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { webmention } from '@kobato/server/infra/db/schema/webmention.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { htmlResponse, installFetch } from '@kobato/test-helpers/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
 // The daily re-verification job against the real engine; the registered job is
 // started explicitly, like server.ts.

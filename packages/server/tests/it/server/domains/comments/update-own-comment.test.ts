@@ -1,8 +1,8 @@
 import { comment } from '@kobato/server/infra/db/schema/comment.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
-import { makeCommentBody } from '@kobato/test-helpers/catalog.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { makeCommentBody } from '@kobato/test/catalog.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

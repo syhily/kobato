@@ -1,8 +1,8 @@
 import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
 
-import { makeAdminCategory } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminCategory } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { CategoriesView } from '@kobato/web/ui/admin/categories/CategoriesView.tsx'
 import { CategoriesSkeleton, CategoryRow } from '@kobato/web/ui/admin/categories/CategoryRow.tsx'
 import { EditCategoryDialog } from '@kobato/web/ui/admin/categories/EditCategoryDialog.tsx'
@@ -74,7 +74,7 @@ vi.mock('@dnd-kit/utilities', () => ({
   },
 }))
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 describe('snapshot: CategoriesView', () => {
   beforeEach(() => {

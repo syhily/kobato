@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { QuickActions } from '@kobato/web/ui/admin/dashboard/QuickActions.tsx'
 import { RecentDraftsCard } from '@kobato/web/ui/admin/dashboard/RecentDraftsCard.tsx'
 import { RecentPublishedCard } from '@kobato/web/ui/admin/dashboard/RecentPublishedCard.tsx'

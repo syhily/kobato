@@ -23,7 +23,7 @@ vi.mock('@kobato/web/client/api/client.ts', () => ({
   },
 }))
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { dedupeSearchHits, useMetingMusicSearch } from '@kobato/web/ui/admin/musics/useMetingMusicSearch.ts'
 
 // The hook owns a `useInfiniteQuery` + `useQueryClient`, so tests need a real

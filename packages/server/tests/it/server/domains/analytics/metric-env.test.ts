@@ -1,4 +1,4 @@
-import type { SeedAccessEvent, SeedDeviceEnvClientRow } from '@kobato/test-helpers/analytics-db.ts'
+import type { SeedAccessEvent, SeedDeviceEnvClientRow } from '@kobato/test/analytics-db.ts'
 
 import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
 import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-filter.ts'
@@ -8,7 +8,7 @@ import {
   createTestAnalyticsDb,
   seedAccessEvents,
   seedDeviceEnvClientRows,
-} from '@kobato/test-helpers/analytics-db.ts'
+} from '@kobato/test/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 // Environment dimensions against the real engine: the metric query INNER JOINs

@@ -1,4 +1,4 @@
-import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
 import { Input } from '@kobato/web/ui/components/input.tsx'
 import { describe, expect, it } from 'vitest'

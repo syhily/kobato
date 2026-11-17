@@ -2,8 +2,8 @@
 
 import type { ReactElement } from 'react'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 // These forms read the UI translator and the site identity; mount both
@@ -15,7 +15,7 @@ import type { AnalyticsSettings } from '@kobato/shared/config/types.ts'
 import type { UseFileUploadOptions } from '@kobato/web/client/hooks/use-file-upload.ts'
 
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The GeoIP rows read status / fire mutations through orpc + TanStack Query;

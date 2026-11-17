@@ -10,8 +10,8 @@ import { content as contentTable } from '@kobato/server/infra/db/schema/content.
 import { page as pageMetaTable } from '@kobato/server/infra/db/schema/page.ts'
 import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

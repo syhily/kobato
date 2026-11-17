@@ -1,9 +1,9 @@
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { webmention } from '@kobato/server/infra/db/schema/webmention.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { htmlResponse, installFetch } from '@kobato/test-helpers/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Notification seam only: when to notify; the email mapping is covered by its unit suite.

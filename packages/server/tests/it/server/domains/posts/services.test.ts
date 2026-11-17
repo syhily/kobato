@@ -6,10 +6,10 @@ import { content as contentTable } from '@kobato/server/infra/db/schema/content.
 import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
 import { post as postMetaTable } from '@kobato/server/infra/db/schema/post.ts'
 import { category as categoryTable, tag as tagTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/test-helpers/lexical.ts'
-import { adminUser } from '@kobato/test-helpers/session.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/test/lexical.ts'
+import { adminUser } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -498,7 +498,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
   })
   it('returns pinned posts first when featureEnabled=true', async () => {
     const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/shared/config/snapshot.ts')
-    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test-helpers/blog-settings.ts')
+    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: {
@@ -520,7 +520,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
   })
   it('falls back to recent posts when fewer than 3 are pinned', async () => {
     const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/shared/config/snapshot.ts')
-    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test-helpers/blog-settings.ts')
+    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: {

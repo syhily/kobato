@@ -1,8 +1,8 @@
 import type { SettingsSection } from '@kobato/shared/config/sections.ts'
 import type { SiteIdentitySettings } from '@kobato/shared/config/types.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { GeneralForm } from '@kobato/web/ui/admin/settings/GeneralForm.tsx'
 import { SettingsFlushProvider } from '@kobato/web/ui/admin/settings/shell/SettingsFlushProvider.tsx'
 import { SettingsPanel } from '@kobato/web/ui/admin/settings/shell/SettingsPanel.tsx'

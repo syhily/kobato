@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { renderWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { renderWithI18n } from '@kobato/test/i18n-render.tsx'
 import { SETTINGS_SKIP_COMMIT } from '@kobato/web/ui/admin/settings/shell/settings-change-verdict.ts'
 import { SettingsCombobox } from '@kobato/web/ui/admin/settings/shell/SettingsCombobox.tsx'
 import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@kobato/web/ui/components/combobox.tsx'

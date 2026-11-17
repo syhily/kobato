@@ -28,7 +28,7 @@ const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web': 'packages/web/src',
   '@kobato/shared': 'packages/shared/src',
   '@kobato/inkling': 'packages/inkling/src',
-  '@kobato/test-helpers': 'packages/test-helpers/src',
+  '@kobato/test': 'packages/helpers/test/src',
 }
 
 /** Route trees whose modules render public documents. */

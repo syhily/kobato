@@ -1,9 +1,9 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
 import type { CommentActions } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
 
-import { makeAdminComment } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminComment } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { AdminCommentRow } from '@kobato/web/ui/admin/comments/AdminCommentRow.tsx'
 import { CommentsView } from '@kobato/web/ui/admin/comments/CommentsView.tsx'
 import { EditUserDialog } from '@kobato/web/ui/admin/comments/EditUserDialog.tsx'

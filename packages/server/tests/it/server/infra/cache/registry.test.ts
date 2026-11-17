@@ -12,8 +12,8 @@ import {
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
 import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

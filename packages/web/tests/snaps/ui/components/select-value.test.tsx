@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml } from '@kobato/test/render.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/web/ui/components/select.tsx'
 import { describe, expect, it } from 'vitest'
 

@@ -2,7 +2,7 @@ import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/shared/contracts/
 // Pure save-planner tests: every wire-payload and status-transition decision
 // the persist module makes, verified without rendering React.
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import {
   planBodySave,
   planCreatePublishedAt,

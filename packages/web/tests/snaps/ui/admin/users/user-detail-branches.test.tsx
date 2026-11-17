@@ -1,8 +1,8 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
 import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
 
-import { makeCommentBody } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeCommentBody } from '@kobato/test/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { UserDetailView } from '@kobato/web/ui/admin/users/UserDetailView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

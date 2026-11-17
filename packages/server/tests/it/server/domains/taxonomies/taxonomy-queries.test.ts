@@ -2,7 +2,7 @@ import { image } from '@kobato/server/infra/db/schema/media.ts'
 import { postTag } from '@kobato/server/infra/db/schema/post-tag.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { category, tag } from '@kobato/server/infra/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

@@ -1,7 +1,7 @@
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/shared/contracts/comments.ts'
 
 import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@kobato/shared/contracts/dashboard.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { PendingModerationPanel } from '@kobato/web/ui/admin/welcome/PendingModerationPanel.tsx'
 import { VisitSummaryCard } from '@kobato/web/ui/admin/welcome/VisitSummaryCard.tsx'
 import { describe, expect, it, vi } from 'vitest'

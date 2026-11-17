@@ -1,9 +1,9 @@
 import type { NavigateFunction } from 'react-router'
 
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@kobato/shared/types/posts.ts'
-import { makeAdminPost } from '@kobato/test-helpers/catalog.ts'
-import { emptyLexicalBody } from '@kobato/test-helpers/lexical.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminPost } from '@kobato/test/catalog.ts'
+import { emptyLexicalBody } from '@kobato/test/lexical.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { localInputValueToIso } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
 import { EditorMetaPanel } from '@kobato/web/ui/admin/editor-shell/EditorMetaPanel.tsx'
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web/ui/admin/posts/PostMetaSidebar.tsx'

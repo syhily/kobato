@@ -12,8 +12,8 @@ import type {
   SocialsSettings,
 } from '@kobato/shared/config/types.ts'
 
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { AnalyticsForm } from '@kobato/web/ui/admin/settings/AnalyticsForm.tsx'
 import { AssetsForm } from '@kobato/web/ui/admin/settings/AssetsForm.tsx'
 import { CacheView } from '@kobato/web/ui/admin/settings/CacheView.tsx'

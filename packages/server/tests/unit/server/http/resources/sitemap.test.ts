@@ -2,7 +2,7 @@ import type { Env } from '@kobato/server/http/context.ts'
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
 import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

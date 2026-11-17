@@ -1,7 +1,7 @@
 import type { BookmarkEmbedOptions, BookmarkEmbedResponse, SnippetItem } from '../../src/index'
 
-import { fetchEmbed } from '../../../../demo/utils/fetchEmbed'
-import { useSnippets } from '../../../../demo/utils/useSnippets'
+import { fetchEmbed } from '../../../../apps/inkling-demo/utils/fetchEmbed'
+import { useSnippets } from '../../../../apps/inkling-demo/utils/useSnippets'
 
 type IsExact<Left, Right> =
   (<Value>(_: Value) => Value extends Left ? 1 : 2) extends <Value>(_: Value) => Value extends Right ? 1 : 2

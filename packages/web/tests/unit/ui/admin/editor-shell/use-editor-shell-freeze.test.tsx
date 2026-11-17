@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { renderHookWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/test/i18n-render.tsx'
 import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -62,7 +62,7 @@ vi.mock('@kobato/web/ui/admin/editor-shell/use-editor-keyboard-shortcuts.ts', ()
 import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
 import type { EditorShellDetail, EntityLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { emptyLexicalBody } from '@kobato/test-helpers/lexical.ts'
+import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import { useAutosave } from '@kobato/web/client/hooks/use-autosave.ts'
 import { useEditorShellState } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-state.ts'
 

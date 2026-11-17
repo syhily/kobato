@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { tZhCN } from '@kobato/test-helpers/i18n.ts'
+import { tZhCN } from '@kobato/test/i18n.ts'
 import {
   SettingsSecretInput,
   secretFieldPatch,

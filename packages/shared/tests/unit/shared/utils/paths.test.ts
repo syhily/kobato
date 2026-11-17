@@ -5,7 +5,7 @@ import {
   searchRootPath,
   trimSiteSuffix,
 } from '@kobato/shared/utils/paths.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 // `canonicalPostPath` drives alias-slug 301s; `searchRootPath` is the only query encoder.

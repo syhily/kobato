@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { AdminInstallForm } from '@kobato/web/ui/admin/auth/AdminInstallForm.tsx'
 import { describe, expect, it, vi } from 'vitest'
 

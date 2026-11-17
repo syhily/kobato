@@ -4,9 +4,9 @@ import { comment } from '@kobato/server/infra/db/schema/comment.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { adminSession, regularSession } from '@kobato/test-helpers/session.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { adminSession, regularSession } from '@kobato/test/session.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // Everything runs against the real in-memory engine; only the settings

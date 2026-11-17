@@ -15,8 +15,8 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/test-helpers/analytics-db.ts'
-import { makeRequestContext as makeBaseRequestContext } from '@kobato/test-helpers/request-context.ts'
+} from '@kobato/test/analytics-db.ts'
+import { makeRequestContext as makeBaseRequestContext } from '@kobato/test/request-context.ts'
 import { Hono } from 'hono'
 import { createSession } from 'react-router'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'

@@ -1,5 +1,5 @@
 import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const query = await import('@kobato/server/domains/content/revisions.ts')

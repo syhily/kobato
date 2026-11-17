@@ -1,7 +1,7 @@
 import type { PostMetaRow } from '@kobato/server/infra/db/types.ts'
 
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
-import { adminUser, authorUser, regularUser } from '@kobato/test-helpers/session.ts'
+import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'
 import { describe, expect, it } from 'vitest'
 
 // Pins CONTEXT.md "Draft preview": posts require author+ AND ownership —

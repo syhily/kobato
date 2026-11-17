@@ -6,7 +6,7 @@ import {
   requireBlogSettingsSection,
 } from '@kobato/shared/config/getters.ts'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { afterEach, describe, expect, it } from 'vitest'
 
 const SECTION_KEYS = Object.keys(TEST_BLOG_SETTINGS_BUNDLE) as Array<keyof typeof TEST_BLOG_SETTINGS_BUNDLE>

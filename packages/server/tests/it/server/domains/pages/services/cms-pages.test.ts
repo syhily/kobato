@@ -5,14 +5,14 @@ import * as mutate from '@kobato/server/domains/pages/services/mutate.ts'
 import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
 import { page as pageMetaTable } from '@kobato/server/infra/db/schema/page.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalHeading,
   lexicalImage,
   stubMusicResolver,
-} from '@kobato/test-helpers/lexical.ts'
+} from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -29,7 +29,7 @@ vi.mock('@number-flow/react', () => ({
   default: ({ value }: { value: number }) => <span>{value}</span>,
 }))
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { LikeButton } from '@kobato/web/ui/public/LikeActions.tsx'
 
 const PERMALINK = '/posts/hello'

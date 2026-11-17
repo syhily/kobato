@@ -1,10 +1,10 @@
-import { DUCKDB_TEST_FILES } from '@kobato/test-helpers/duckdb-files.ts'
-import { routeWarmupScriptStubPlugin } from '@kobato/test-helpers/virtual-modules.ts'
-import { testDefine } from '@kobato/test-helpers/vitest.define.ts'
+import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files.ts'
+import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules.ts'
+import { testDefine } from '@kobato/test/vitest.define.ts'
 import { defineConfig } from 'vitest/config'
 
 // The DuckDB native-engine suite: files that open a real sidecar (list owned by
-// `@kobato/test-helpers/duckdb-files`). Files run sequentially, each in its own fresh fork, so a DuckDB
+// `@kobato/test/duckdb-files`). Files run sequentially, each in its own fresh fork, so a DuckDB
 // segfault kills only that file's worker and the failure is scoped to this project.
 export default defineConfig({
   plugins: [routeWarmupScriptStubPlugin()],
@@ -22,7 +22,7 @@ export default defineConfig({
     ),
     // Both trees are required: unit/setup (stubs + DOM cleanup) and it/setup
     // (in-memory SQLite env).
-    setupFiles: ['@kobato/test-helpers/setup/unit.ts', '@kobato/test-helpers/setup/it.ts'],
+    setupFiles: ['@kobato/test/setup/unit.ts', '@kobato/test/setup/it.ts'],
     testTimeout: 30_000,
     hookTimeout: 120_000,
     pool: 'forks',

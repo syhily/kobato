@@ -39,7 +39,7 @@ export default defineConfig({
     {
       // Inkling's canvas classes sort against its own stylesheet, and the
       // editor layer wraps class strings with `clsx` instead of kobato's `cn`.
-      files: ['packages/inkling/src/**', 'demo/**'],
+      files: ['packages/inkling/src/**', 'apps/inkling-demo/**'],
       sortTailwindcss: {
         stylesheet: './packages/inkling/src/styles/index.css',
         functions: ['clsx'],

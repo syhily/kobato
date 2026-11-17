@@ -7,7 +7,7 @@ import {
   representationRevisionsFor,
 } from '@kobato/shared/config/representation-scopes.ts'
 import { SECTION_TO_BUNDLE_KEY } from '@kobato/shared/config/sections.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'

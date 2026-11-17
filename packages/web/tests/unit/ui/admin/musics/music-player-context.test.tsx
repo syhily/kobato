@@ -1,6 +1,6 @@
 import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import {
   MusicPlayerProvider,
   useMusicPlayerActions,

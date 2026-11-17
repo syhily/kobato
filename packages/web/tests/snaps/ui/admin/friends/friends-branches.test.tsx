@@ -1,7 +1,7 @@
 import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { FriendsView } from '@kobato/web/ui/admin/friends/FriendsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -33,7 +33,7 @@ vi.mock('@kobato/web/ui/admin/shared/useDebouncedSearch.ts', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 const debouncedSearch = vi.hoisted(() => ({
   value: '',

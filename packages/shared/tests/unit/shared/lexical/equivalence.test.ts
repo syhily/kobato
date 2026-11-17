@@ -6,7 +6,7 @@ import {
   lexicalImage,
   lexicalMusicPlayer,
   lexicalParagraph,
-} from '@kobato/test-helpers/lexical.ts'
+} from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 // Both sides MUST be zod-parsed states (the parse strips unknown keys and

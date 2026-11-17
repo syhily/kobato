@@ -3,7 +3,7 @@
 // Behavioral pins for the friend-apply dialog; `motion/react` is stubbed
 // as a pass-through so AnimatePresence mounts/unmounts synchronously.
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { FriendApplyForm } from '@kobato/web/ui/public/friends/FriendApplyForm.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'

@@ -16,7 +16,7 @@ vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
 import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
 import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
 
 const { WorkerPool, __setWorkerFactory, __resetWorkerFactory } =
   await import('@kobato/server/infra/image/process-pool.ts')

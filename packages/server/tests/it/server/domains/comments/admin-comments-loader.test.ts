@@ -6,7 +6,7 @@ import { metric } from '@kobato/server/infra/db/schema/metric.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // `loadAllComments` against the real engine: filter propagation is pinned

@@ -1,7 +1,7 @@
 import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/test-helpers/mock-ctx.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

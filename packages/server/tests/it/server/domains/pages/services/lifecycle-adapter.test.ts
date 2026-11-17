@@ -1,7 +1,7 @@
 import type { PageMetaRow } from '@kobato/server/infra/db/types.ts'
 
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
-import { adminUser, authorUser, regularUser } from '@kobato/test-helpers/session.ts'
+import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'
 import { describe, expect, it } from 'vitest'
 
 // Pin for the draft-preview access rule (CONTEXT.md: pages allow admin

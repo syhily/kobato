@@ -1,9 +1,9 @@
 import { isWordPressDecoyPath } from '@kobato/server/http/middlewares/wp-decoy.ts'
 import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
 import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test-helpers/context.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { regularSession } from '@kobato/test-helpers/session.ts'
+import { makeLoaderArgs, unwrapLoaderData } from '@kobato/test/context.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

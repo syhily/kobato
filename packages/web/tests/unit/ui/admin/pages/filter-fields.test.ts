@@ -1,4 +1,4 @@
-import { tZhCN } from '@kobato/test-helpers/i18n.ts'
+import { tZhCN } from '@kobato/test/i18n.ts'
 import {
   buildPageFilterFields as buildPageFilterFieldsBase,
   deriveStatusFields,

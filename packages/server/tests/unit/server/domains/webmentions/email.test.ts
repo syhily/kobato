@@ -1,7 +1,7 @@
 import type { WebmentionRow } from '@kobato/server/infra/db/types.ts'
 
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 // Capture the seam call instead of rendering/sending: these tests pin the data mapping

@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml } from '@kobato/test/render.tsx'
 import { LikeShare } from '@kobato/web/ui/public/LikeActions.tsx'
 import { describe, expect, it } from 'vitest'
 

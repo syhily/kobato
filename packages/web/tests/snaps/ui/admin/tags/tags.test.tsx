@@ -1,8 +1,8 @@
 import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
 
-import { makeAdminTag } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminTag } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { EditTagDialog } from '@kobato/web/ui/admin/tags/EditTagDialog.tsx'
 import { TagRow, TagsSkeleton } from '@kobato/web/ui/admin/tags/TagRows.tsx'
 import { TagsView } from '@kobato/web/ui/admin/tags/TagsView.tsx'
@@ -33,7 +33,7 @@ queryMocks.queryClient = {
 // cache via an internal `useInfiniteQuery`). The list query, delete mutation and query
 // client are stubbed through hoisted slots so each test picks the branch.
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function resetInfinite(): void {
   queryMocks.infinite = {

@@ -3,9 +3,9 @@ import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
 import type { PageFilterFieldKey } from '@kobato/web/ui/admin/pages/filter-fields.ts'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
-import { makeAdminPage } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminPage } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { PagesView } from '@kobato/web/ui/admin/pages/PagesView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

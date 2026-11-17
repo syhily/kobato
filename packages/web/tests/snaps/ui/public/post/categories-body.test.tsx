@@ -1,5 +1,5 @@
-import { makeCategory } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { makeCategory } from '@kobato/test/catalog.ts'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { CategoriesBody } from '@kobato/web/ui/public/post/CategoriesBody.tsx'
 import { describe, expect, it } from 'vitest'
 

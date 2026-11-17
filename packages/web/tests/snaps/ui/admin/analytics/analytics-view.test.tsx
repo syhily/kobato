@@ -1,8 +1,8 @@
 import type { CountersDto, MetricRow } from '@kobato/shared/contracts/analytics.ts'
 import type { ReactNode } from 'react'
 
-import { makeAnalyticsState } from '@kobato/test-helpers/analytics-state.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAnalyticsState } from '@kobato/test/analytics-state.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { AnalyticsStateProvider } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
 import { Counters } from '@kobato/web/ui/admin/analytics/Counters.tsx'
 import { DateRangePicker } from '@kobato/web/ui/admin/analytics/DateRangePicker.tsx'

@@ -1,7 +1,7 @@
 import type { MySessionItem } from '@kobato/shared/types/sessions.ts'
 import type { MyProfileUser, MyProfileCounts } from '@kobato/web/ui/admin/my/MyProfileView.tsx'
 
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { LoginMethodCard } from '@kobato/web/ui/admin/my/LoginMethodCard.tsx'
 import { MyProfileView } from '@kobato/web/ui/admin/my/MyProfileView.tsx'
 import { MySessionsView } from '@kobato/web/ui/admin/my/MySessionsView.tsx'

@@ -7,7 +7,7 @@ import {
   INLINE_DATA_CASES,
   expectedInlineLiteral,
   inlinePackageData,
-} from '../../../../../../scripts/sea/inline-package-data.ts'
+} from '../../../../../../packages/helpers/pack/src/sea/inline-package-data.ts'
 
 // Contract test: the server bundle inlines jsdom (the sanitize engine), which
 // resolves its sync-XHR worker path at module scope — a code path the server
@@ -34,7 +34,10 @@ describe('contract: inline package data', () => {
   it.each(CASE_FILES)('the installed module for "%s" still matches the rewrite shape', (name, file) => {
     const source = readFileSync(file, 'utf-8')
     const rewritten = inlinePackageData(source, file)
-    expect(rewritten, `${name}: ${file} no longer matches — update scripts/sea/inline-package-data.ts`).not.toBeNull()
+    expect(
+      rewritten,
+      `${name}: ${file} no longer matches — update packages/helpers/pack/src/sea/inline-package-data.ts`,
+    ).not.toBeNull()
     const kase = INLINE_DATA_CASES.find((entry) => entry.name === name)!
     for (const read of kase.reads) {
       expect(read.pattern.test(rewritten!), `${name}: a read survived the rewrite`).toBe(false)

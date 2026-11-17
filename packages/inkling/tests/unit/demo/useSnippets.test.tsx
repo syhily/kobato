@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { useSnippets } from '../../../../../demo/utils/useSnippets'
+import { useSnippets } from '../../../../../apps/inkling-demo/utils/useSnippets'
 
 describe('useSnippets', () => {
   afterEach(() => {

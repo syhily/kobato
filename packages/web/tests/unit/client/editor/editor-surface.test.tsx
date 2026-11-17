@@ -14,8 +14,8 @@ import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
 import { inklingLabelsFor } from '@kobato/shared/i18n/inkling-labels.ts'
 import { THEME_COOKIE } from '@kobato/shared/utils/theme-cookie.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import {
   EditorSurfaceComposer,
   type EditorSurfaceComposerProps,

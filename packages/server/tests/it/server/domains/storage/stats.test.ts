@@ -3,8 +3,8 @@ import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/shared/confi
 import { getLocalStorageMigrationStats } from '@kobato/server/domains/storage/stats.ts'
 import { backup as backupTable } from '@kobato/server/infra/db/schema/backup.ts'
 import { image, music } from '@kobato/server/infra/db/schema/media.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // Stats read real rows + the settings snapshot.

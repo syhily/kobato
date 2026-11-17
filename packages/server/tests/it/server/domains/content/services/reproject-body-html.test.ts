@@ -2,8 +2,8 @@ import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/
 import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
 import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

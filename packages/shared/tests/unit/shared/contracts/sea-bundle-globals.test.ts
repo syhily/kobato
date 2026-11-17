@@ -4,7 +4,7 @@ import {
   FORBIDDEN_BROWSER_TELEMETRY_MARKERS,
   SEA_BUNDLE_DEFINED_GLOBALS,
   scanBundleText,
-} from '../../../../../../scripts/sea/check-bundle.ts'
+} from '../../../../../../packages/helpers/pack/src/sea/check-bundle.ts'
 
 // An `__APP_*__`/`__SEA_*__` identifier missing from the bundle's define
 // table would boot into a bare ReferenceError inside the binary — pin the

@@ -1,8 +1,8 @@
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { getBlogSettingsSnapshotSync } from '@kobato/shared/config/getters.ts'
 import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/test-helpers/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/test/lexical.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

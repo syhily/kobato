@@ -2,8 +2,8 @@
 
 import type { HeaderCurrentUser } from '@kobato/web/ui/public/chrome/Header.tsx'
 
-import { diffHtmlStructures } from '@kobato/test-helpers/dom-structure.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { diffHtmlStructures } from '@kobato/test/dom-structure.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'

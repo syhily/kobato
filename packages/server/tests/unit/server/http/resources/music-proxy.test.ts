@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { adminSession, emptySession, regularSession } from '@kobato/test-helpers/session.ts'
+import { adminSession, emptySession, regularSession } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -2,7 +2,7 @@ import { recordSessionLogin } from '@kobato/server/domains/auth/repo.ts'
 import { listSessionsByUser } from '@kobato/server/domains/auth/services/sessions.ts'
 import { session as sessionTable } from '@kobato/server/infra/db/schema/session.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

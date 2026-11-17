@@ -2,12 +2,12 @@ import { comment } from '@kobato/server/infra/db/schema/comment.ts'
 import { passkeyCredential } from '@kobato/server/infra/db/schema/passkey.ts'
 import { user, verification } from '@kobato/server/infra/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/test-helpers/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test-helpers/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/test/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
 
 const emailMocks = vi.hoisted(() => ({
   sendAuthorInvite: vi.fn(),

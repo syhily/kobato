@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'

@@ -1,13 +1,13 @@
 // SEA bundle config — the single-executable pipeline (`pnpm run sea:build`,
-// see scripts/sea/). Three self-contained outputs into
+// see packages/helpers/pack/src/sea/). Three self-contained outputs into
 // dist-sea/intermediates/, one per `vite build` invocation (the Vite CLI
-// takes a single config; scripts/sea/build.ts selects the bundle via the
+// takes a single config; packages/helpers/pack/src/sea/build.ts selects the bundle via the
 // SEA_BUNDLE env var):
 //
 //   SEA_BUNDLE=server  server.mjs         — the INJECTED main of the
 //                      binary (`mainFormat: "module"`): the sea-cli /
 //                      sea-bootstrap entry shim
-//                      (scripts/sea/server-entry.ts) plus the whole
+//                      (packages/helpers/pack/src/sea/server-entry.ts) plus the whole
 //                      vite-built server inlined into ONE ESM file. Must
 //                      stay ESM: src/server.ts uses top-level await,
 //                      which no bundler can express in CJS.
@@ -15,7 +15,7 @@
 //                      a text asset and started via
 //                      `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`.
 //   SEA_BUNDLE=smoke   smoke-worker.mjs   — the `--smoke-worker` entry
-//                      (scripts/sea/smoke-worker.ts). Embedded as the
+//                      (packages/helpers/pack/src/sea/smoke-worker.ts). Embedded as the
 //                      `worker/smoke-worker.mjs` asset and dispatched by
 //                      the binary's `--smoke-worker` flag via the same
 //                      eval-worker mechanism.
@@ -35,8 +35,8 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { z } from 'zod'
 
-import { inlinePackageDataPlugin } from './scripts/sea/inline-package-data.ts'
-import { redirectNativeRequiresPlugin } from './scripts/sea/redirect-native-requires.ts'
+import { inlinePackageDataPlugin } from './packages/helpers/pack/src/sea/inline-package-data.ts'
+import { redirectNativeRequiresPlugin } from './packages/helpers/pack/src/sea/redirect-native-requires.ts'
 
 const pkgSchema = z.object({
   name: z.string(),
@@ -52,9 +52,9 @@ const pkg = pkgSchema.parse(JSON.parse(readFileSync('./apps/kobato/package.json'
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
 const BUNDLES = {
-  server: { entry: 'scripts/sea/server-entry.ts', format: 'es', fileName: 'server.mjs' },
+  server: { entry: 'packages/helpers/pack/src/sea/server-entry.ts', format: 'es', fileName: 'server.mjs' },
   worker: { entry: 'packages/server/src/infra/image/process-worker.ts', format: 'es', fileName: 'process-worker.mjs' },
-  smoke: { entry: 'scripts/sea/smoke-worker.ts', format: 'es', fileName: 'smoke-worker.mjs' },
+  smoke: { entry: 'packages/helpers/pack/src/sea/smoke-worker.ts', format: 'es', fileName: 'smoke-worker.mjs' },
 } as const
 
 function selectBundle(): { entry: string; format: 'cjs' | 'es'; fileName: string } {
@@ -90,7 +90,7 @@ export default defineConfig({
   build: {
     outDir: 'dist-sea/intermediates',
     // The three builds run sequentially into the same dir — never wipe it
-    // (scripts/sea/build.ts cleans the intermediates dir up front).
+    // (packages/helpers/pack/src/sea/build.ts cleans the intermediates dir up front).
     emptyOutDir: false,
     target: 'node26',
     // Minified single files: the bundles ship inside the binary and are

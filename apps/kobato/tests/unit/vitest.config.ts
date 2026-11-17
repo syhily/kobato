@@ -1,5 +1,5 @@
-import { duckdbTestFilesUnder } from '@kobato/test-helpers/duckdb-files.ts'
-import { testDefine } from '@kobato/test-helpers/vitest.define.ts'
+import { duckdbTestFilesUnder } from '@kobato/test/duckdb-files.ts'
+import { testDefine } from '@kobato/test/vitest.define.ts'
 import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -21,7 +21,7 @@ export default defineConfig({
     include: ['**/*.test.{ts,tsx}', '../arch/**/*.test.{ts,tsx}'],
     // DuckDB native-engine files run in the dedicated `duckdb` project.
     exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('apps/kobato/tests')],
-    setupFiles: ['@kobato/test-helpers/setup/unit.ts'],
+    setupFiles: ['@kobato/test/setup/unit.ts'],
     testTimeout: 10_000,
   },
 })

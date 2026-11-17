@@ -1,7 +1,7 @@
 import type { AdminWebmentionWire } from '@kobato/shared/contracts/webmentions.ts'
 
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { WebmentionInboxView } from '@kobato/web/ui/admin/webmentions/WebmentionInboxView.tsx'
 import { WebmentionsView } from '@kobato/web/ui/admin/webmentions/WebmentionsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

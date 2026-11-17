@@ -19,12 +19,7 @@ vi.mock('@kobato/server/infra/pt/shiki.ts', () => ({
 
 import { canonicalizeLexicalEditorState } from '@kobato/server/domains/pt/services/lexical-canonicalize.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import {
-  emptyLexicalBody,
-  lexicalBodyWith,
-  lexicalMusicPlayer,
-  lexicalParagraph,
-} from '@kobato/test-helpers/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalMusicPlayer, lexicalParagraph } from '@kobato/test/lexical.ts'
 
 describe('pt/services/lexical-canonicalize — canonicalizeLexicalEditorState', () => {
   it('returns the validated state for valid input', async () => {

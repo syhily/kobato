@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle, CustomQuote } from '@kobato/shared/config/types.ts'
 
 import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { parseISO } from 'date-fns'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'

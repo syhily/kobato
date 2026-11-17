@@ -3,13 +3,13 @@ import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
 import { music } from '@kobato/server/infra/db/schema/media.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/test-helpers/memory-storage.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/test-helpers/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test-helpers/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/test/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
 
 // Both driver slots route through the registry seam; 's3' put is a spy over the real implementation.
 const s3Memory = makeMemoryBackend({ driver: 's3' })

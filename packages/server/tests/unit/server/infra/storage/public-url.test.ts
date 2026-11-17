@@ -6,7 +6,7 @@ import {
   safeResolveAssetUrl,
 } from '@kobato/server/infra/storage/public-url.ts'
 import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const SITE = 'https://site.example.com'

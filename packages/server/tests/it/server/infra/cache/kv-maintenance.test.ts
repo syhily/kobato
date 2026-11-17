@@ -3,7 +3,7 @@ import { sweepExpiredKvEntries } from '@kobato/server/infra/cache/kv-maintenance
 import { oneTimeToken } from '@kobato/server/infra/db/schema/one-time-token.ts'
 import { session } from '@kobato/server/infra/db/schema/session.ts'
 import { user } from '@kobato/server/infra/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { mkdirSync, utimesSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'

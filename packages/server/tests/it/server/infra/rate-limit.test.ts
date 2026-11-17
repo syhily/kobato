@@ -6,7 +6,7 @@ import {
   tryRateLimit,
   __resetRateLimitsForTests,
 } from '@kobato/server/infra/rate-limit.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Pure in-process counter map: fake timers drive windows; the test-only seam resets it between cases.

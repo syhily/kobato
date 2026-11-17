@@ -48,9 +48,11 @@ const REPO_PACKAGES = [
   { name: '@kobato/shared', dir: 'packages/shared' },
   { name: '@kobato/server', dir: 'packages/server' },
   { name: '@kobato/web', dir: 'packages/web' },
-  { name: '@kobato/test-helpers', dir: 'packages/test-helpers' },
+  { name: '@kobato/test', dir: 'packages/helpers/test' },
+  { name: '@kobato/trace', dir: 'packages/helpers/trace' },
   { name: '@kobato/scripts', dir: 'scripts' },
-  { name: '@kobato/demo', dir: 'demo' },
+  { name: '@kobato/pack', dir: 'packages/helpers/pack' },
+  { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
 ] as const
 
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
@@ -63,25 +65,21 @@ const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
  */
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   // inkling is a host-agnostic island: tests borrow shared + test-helpers.
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/shared', '@kobato/test-helpers'],
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/shared', '@kobato/test'],
   // shared's server/web entries exist only for its test fixtures.
-  '@kobato/shared': ['@kobato/shared', '@kobato/inkling', '@kobato/server', '@kobato/web', '@kobato/test-helpers'],
+  '@kobato/shared': ['@kobato/shared', '@kobato/inkling', '@kobato/server', '@kobato/web', '@kobato/test'],
   // server's web entry exists only for its test fixtures.
-  '@kobato/server': ['@kobato/server', '@kobato/inkling', '@kobato/shared', '@kobato/web', '@kobato/test-helpers'],
+  '@kobato/server': ['@kobato/server', '@kobato/inkling', '@kobato/shared', '@kobato/web', '@kobato/test'],
   // web's server entry is the documented RouterClient type-only channel.
-  '@kobato/web': ['@kobato/web', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/test-helpers'],
+  '@kobato/web': ['@kobato/web', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/test'],
   // test-helpers fixtures touch every layer.
-  '@kobato/test-helpers': [
-    '@kobato/test-helpers',
-    '@kobato/inkling',
-    '@kobato/shared',
-    '@kobato/server',
-    '@kobato/web',
-  ],
+  '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
   // Orchestration and tooling layers may depend on anything internal.
   kobato: INTERNAL_SCOPES,
   '@kobato/scripts': INTERNAL_SCOPES,
-  '@kobato/demo': INTERNAL_SCOPES,
+  '@kobato/pack': INTERNAL_SCOPES,
+  '@kobato/trace': INTERNAL_SCOPES,
+  '@kobato/inkling-demo': INTERNAL_SCOPES,
 }
 
 /**
@@ -94,14 +92,12 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/shared': ['@kobato/shared', '@kobato/inkling'],
   '@kobato/server': ['@kobato/server', '@kobato/inkling', '@kobato/shared'],
   '@kobato/web': ['@kobato/web', '@kobato/inkling', '@kobato/shared', '@kobato/server'],
-  '@kobato/test-helpers': [
-    '@kobato/test-helpers',
-    '@kobato/inkling',
-    '@kobato/shared',
-    '@kobato/server',
-    '@kobato/web',
-  ],
+  '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
   kobato: INTERNAL_SCOPES,
+  // Tooling packages (SEA pipeline, OpenObserve DEV container) may reach any
+  // internal package from their src trees.
+  '@kobato/pack': INTERNAL_SCOPES,
+  '@kobato/trace': INTERNAL_SCOPES,
 }
 
 /**
@@ -124,30 +120,33 @@ const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = [
 
 /**
  * Relative imports that cross a package boundary. Every entry is a TEST
- * reaching into an unpackaged tooling tree — `scripts/**` (SEA/trace tooling:
- * no exports surface, not a declared dependency of any package) or `demo/**`
- * (inkling's playground host) — plus the one web→inkling case: the host-card
- * parity test reaches two internals the inkling exports map deliberately does
- * not expose (inkling's public surface is kept closed; the test walks the
- * source relatively until those pins move behind the barrel). Production
- * `src/**` trees have NO entry on this list.
+ * reaching into a sibling tree without going through its package surface —
+ * `packages/helpers/pack/**` (SEA tooling: no exports map, not a declared dependency
+ * of any package) or `apps/inkling-demo/**` (inkling's playground host) —
+ * plus the one web→inkling case: the host-card parity test reaches two
+ * internals the inkling exports map deliberately does not expose (inkling's
+ * public surface is kept closed; the test walks the source relatively until
+ * those pins move behind the barrel). Production `src/**` trees have exactly
+ * ONE entry: the SEA server entry imports the app's built bundle, which is
+ * a build output without a package specifier.
  */
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
   'packages/web/tests/unit/client/editor/cards/host-cards.test.tsx:../../../../../../inkling/src/labels/inkling-labels.ts',
   'packages/web/tests/unit/client/editor/cards/host-cards.test.tsx:../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
   // Contract tests pinning the SEA tooling sources textually.
-  'packages/shared/tests/unit/shared/contracts/inline-package-data.test.ts:../../../../../../scripts/sea/inline-package-data.ts',
-  'packages/shared/tests/unit/shared/contracts/native-specifiers.test.ts:../../../../../../scripts/sea/redirect-native-requires.ts',
-  'packages/shared/tests/unit/shared/contracts/sea-bundle-globals.test.ts:../../../../../../scripts/sea/check-bundle.ts',
-  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../scripts/sea/assets.ts',
-  'apps/kobato/tests/unit/scripts/trace/openobserve-assets.test.ts:../../../../../../scripts/trace/lib.ts',
-  'apps/kobato/tests/unit/scripts/trace/state.test.ts:../../../../../../scripts/trace/lib.ts',
+  'packages/shared/tests/unit/shared/contracts/inline-package-data.test.ts:../../../../../../packages/helpers/pack/src/sea/inline-package-data.ts',
+  'packages/shared/tests/unit/shared/contracts/native-specifiers.test.ts:../../../../../../packages/helpers/pack/src/sea/redirect-native-requires.ts',
+  'packages/shared/tests/unit/shared/contracts/sea-bundle-globals.test.ts:../../../../../../packages/helpers/pack/src/sea/check-bundle.ts',
+  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../packages/helpers/pack/src/sea/assets.ts',
+  // The SEA server entry pulls the app's built bundle into the single-file
+  // vite build; a build output has no package specifier to import by.
+  'packages/helpers/pack/src/sea/server-entry.ts:../../../../../apps/kobato/build/server/index.js',
   // The demo playground is inkling's host app; its glue implements the
   // host contract inkling's suite type-checks and tests against.
-  'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../demo/utils/fetchEmbed',
-  'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../demo/utils/useSnippets',
-  'packages/inkling/tests/unit/demo/useSnippets.test.tsx:../../../../../demo/utils/useSnippets',
-  'packages/inkling/tests/utils/gen-demo-content.test.ts:../../../../demo/components/MusicPlayerCard',
+  'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../apps/inkling-demo/utils/fetchEmbed',
+  'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../apps/inkling-demo/utils/useSnippets',
+  'packages/inkling/tests/unit/demo/useSnippets.test.tsx:../../../../../apps/inkling-demo/utils/useSnippets',
+  'packages/inkling/tests/utils/gen-demo-content.test.ts:../../../../apps/inkling-demo/components/MusicPlayerCard',
 ])
 
 /** The `@/` alias resolves to `apps/kobato/src` — app-package internal shorthand. */
@@ -339,9 +338,12 @@ describe('package DAG', () => {
   it('inkling is reached only through its barrel, headless, or styles entries', () => {
     // The demo playground is out of scope: its vite config aliases
     // @kobato/inkling straight at the package source and deliberately reaches
-    // internals (demo/vite.config.ts).
+    // internals (apps/inkling-demo/vite.config.ts).
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'scripts')) {
+      if (file.startsWith('apps/inkling-demo/')) {
+        continue
+      }
       for (const specifier of importSpecifiers(readSource(file))) {
         if (!specifier.startsWith('@kobato/inkling/')) {
           continue

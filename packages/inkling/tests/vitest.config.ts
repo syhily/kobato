@@ -1,4 +1,4 @@
-import { testDefine } from '@kobato/test-helpers/vitest.define.ts'
+import { testDefine } from '@kobato/test/vitest.define.ts'
 import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
 import { defineConfig } from 'vitest/config'

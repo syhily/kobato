@@ -19,7 +19,7 @@
     "@emoji-mart/data": "catalog:",
     "@kobato/inkling": "workspace:*",
     "@kobato/shared": "workspace:*",
-    "@kobato/test-helpers": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@lexical/clipboard": "catalog:",
     "@lexical/headless": "catalog:",
     "@lexical/html": "catalog:",

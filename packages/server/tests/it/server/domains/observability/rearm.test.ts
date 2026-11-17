@@ -10,8 +10,8 @@ import {
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { resetBlogSettingsForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const runtimeMock = vi.hoisted(() => ({

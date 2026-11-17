@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 // These forms read `useI18n()`; mount the root provider for every RTL render.

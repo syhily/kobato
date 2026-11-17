@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/test-helpers/render.tsx'
+import { renderToHtml } from '@kobato/test/render.tsx'
 import { WechatIcon } from '@kobato/web/ui/icons/brand.tsx'
 import { QRDialog } from '@kobato/web/ui/public/widgets/QRDialog.tsx'
 import { describe, expect, it } from 'vitest'

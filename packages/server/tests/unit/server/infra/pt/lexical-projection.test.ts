@@ -1,6 +1,6 @@
 import { computeBodyProjections, computeCommentContentProjection } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
-import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 // The projections consume the canonicalized state (artifacts already filled by the prerender

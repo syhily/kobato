@@ -373,13 +373,13 @@ export default defineConfig({
       // family and friends fire constantly without finding real bugs.
       // oxlint overrides cannot disable whole categories — only named
       // rules — so the noisy offenders are listed explicitly. The
-      // packages/test-helpers sources are the former tests/_helpers tree
+      // packages/helpers/test sources are the former tests/_helpers tree
       // and share the exemption.
       files: [
         '**/tests/**/*.ts',
         '**/tests/**/*.tsx',
-        'packages/test-helpers/src/**/*.ts',
-        'packages/test-helpers/src/**/*.tsx',
+        'packages/helpers/test/src/**/*.ts',
+        'packages/helpers/test/src/**/*.tsx',
       ],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,
@@ -436,13 +436,13 @@ export default defineConfig({
       },
     },
     {
-      files: ['scripts/**/*.ts'],
+      files: ['scripts/**/*.ts', 'packages/helpers/pack/**/*.ts', 'packages/helpers/trace/**/*.ts'],
       rules: {
         // Plain-node build scripts (executed directly with `node
-        // scripts/...`, type-stripped at runtime). Console output is the
-        // scripts' UI, and the JSON/subprocess boundaries (JSON.parse, pg
-        // rows) keep the unsafe-* family off. Non-type-aware rules still
-        // apply.
+        // packages/helpers/pack/...` or `node scripts/...`, type-stripped at
+        // runtime). Console output is the scripts' UI, and the
+        // JSON/subprocess boundaries (JSON.parse, pg rows) keep the
+        // unsafe-* family off. Non-type-aware rules still apply.
         'no-console': 'off',
         'typescript/no-unsafe-argument': 'off',
         'typescript/no-unsafe-assignment': 'off',
@@ -456,9 +456,9 @@ export default defineConfig({
       // packages/inkling keeps its former package conventions (public barrel,
       // intentional Lexical cycles, declaration merging, editor-chrome a11y
       // exemptions, and the keeper rules the rest of the repo is not yet
-      // clean under). demo/ renders the same editor chrome, so it shares
+      // clean under). apps/inkling-demo/ renders the same editor chrome, so it shares
       // the scope.
-      files: ['packages/inkling/**', 'demo/**'],
+      files: ['packages/inkling/**', 'apps/inkling-demo/**'],
       rules: {
         // packages/inkling/src/index.ts is the editor layer's public barrel
         // (its API surface for the rest of the app).

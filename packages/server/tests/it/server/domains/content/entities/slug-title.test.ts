@@ -1,7 +1,7 @@
 import { findEntitySlugTitle, resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
 import { page } from '@kobato/server/infra/db/schema/page.ts'
 import { post } from '@kobato/server/infra/db/schema/post.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

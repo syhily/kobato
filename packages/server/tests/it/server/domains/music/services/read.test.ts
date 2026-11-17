@@ -1,6 +1,6 @@
 // music/services/read against the real DB; only mock: the public-URL seam (storage is a true external).
 import { music } from '@kobato/server/infra/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const publicUrlMock = vi.hoisted(() => ({

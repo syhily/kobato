@@ -24,8 +24,8 @@ vi.mock('@kobato/web/client/lib/draft-store.ts', () => ({
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
-import { FakeBroadcastChannel } from '@kobato/test-helpers/fake-broadcast-channel.ts'
-import { emptyLexicalBody } from '@kobato/test-helpers/lexical.ts'
+import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
+import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import { draftEditKey, useDraftSession, type UseDraftSessionArgs } from '@kobato/web/client/lib/draft-session.ts'
 import { DRAFT_STORAGE_VERSION, type DraftRecord } from '@kobato/web/client/lib/draft-store.ts'
 

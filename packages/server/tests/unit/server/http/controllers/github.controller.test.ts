@@ -1,8 +1,8 @@
 import { githubRouter } from '@kobato/server/http/controllers/github.controller.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { installFetch, jsonResponse } from '@kobato/test-helpers/fetch.ts'
-import { makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
-import { parseRpcJson } from '@kobato/test-helpers/rpc-call.ts'
+import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
+import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
+import { parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 // The avatar fetch + base64 inlining lives in the comments domain (pinned in

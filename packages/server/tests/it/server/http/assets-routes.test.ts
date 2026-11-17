@@ -1,9 +1,9 @@
 import type { Env } from '@kobato/server/http/context.ts'
 import type { BrandingObjectRef } from '@kobato/shared/config/types.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
-import { getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeRequestContext } from '@kobato/test-helpers/request-context.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { getTestDb } from '@kobato/test/integration-db.ts'
+import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
 

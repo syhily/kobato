@@ -6,7 +6,7 @@ import {
   loadAllCommentsSchema,
   loadCommentsSchema,
 } from '@kobato/server/domains/comments/schema.ts'
-import { makeCommentBody } from '@kobato/test-helpers/catalog.ts'
+import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'
 
 const HELLO_BODY = makeCommentBody('Thoughtful comment.')

@@ -12,7 +12,7 @@ import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batch
 import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
 import { user as userTable } from '@kobato/server/infra/db/schema/user.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

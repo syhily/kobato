@@ -1,5 +1,5 @@
-import { makeAdminPost } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminPost } from '@kobato/test/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { PostRow } from '@kobato/web/ui/admin/posts/PostRow.tsx'
 import { describe, expect, it } from 'vitest'
 

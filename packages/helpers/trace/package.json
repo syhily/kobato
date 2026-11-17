@@ -1,0 +1,15 @@
+{
+  "name": "@kobato/trace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@kobato/shared": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "bcryptjs": "catalog:",
+    "sharp": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -13,8 +13,8 @@ import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/test-helpers/blog-settings.ts'
-import { makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
+} from '@kobato/test/blog-settings.ts'
+import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { beforeEach, describe, expect, it } from 'vitest'

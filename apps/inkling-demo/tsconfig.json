@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  // Standalone demo playground — typechecked on demand
+  // (`tsc -p apps/inkling-demo/tsconfig.json`), deliberately outside the root `pnpm type`
+  // gate. The `*.d.ts` globs ride along for the `*.svg?react` module
+  // declarations, ambient markdown-it plugin types, and app globals; the
+  // paths mirror apps/inkling-demo/vite.config.ts aliases because the playground reaches
+  // into inkling internals the package exports map does not expose.
+  "include": ["./**/*", "../../apps/kobato/src/**/*.d.ts", "../../packages/inkling/src/**/*.d.ts"],
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2024.Object"],
+    "target": "ES2022",
+    "forceConsistentCasingInFileNames": true,
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "paths": {
+      "@kobato/inkling/headless": ["../../packages/inkling/src/headless.ts"],
+      "@kobato/inkling": ["../../packages/inkling/src/index.ts"],
+      "@kobato/inkling/*": ["../../packages/inkling/src/*"],
+      "@kobato/web/*": ["../../packages/web/src/*"],
+      "@kobato/shared/*": ["../../packages/shared/src/*"]
+    },
+    "types": ["vite/client", "node"],
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true
+  }
+}

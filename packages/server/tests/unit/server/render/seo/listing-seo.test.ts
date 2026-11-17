@@ -2,7 +2,7 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { MetaDescriptor } from 'react-router'
 
 import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 // Listing pagination copy is system copy: it must come from the REQUEST

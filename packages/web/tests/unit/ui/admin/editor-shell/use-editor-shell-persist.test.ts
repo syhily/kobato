@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { renderHookWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/test/i18n-render.tsx'
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -62,7 +62,7 @@ import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 import type { EditorShellDetail, EntityLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 import type { UseEditorShellPersistArgs } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-persist.ts'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { useAutosave } from '@kobato/web/client/hooks/use-autosave.ts'
 import { useLocalDraft } from '@kobato/web/client/hooks/use-local-draft.ts'
 import { useEditorShellPersist } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-persist.ts'

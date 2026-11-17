@@ -3,7 +3,7 @@ import type { SerializedEditorState } from '@kobato/inkling/headless'
 import { lexicalStateToHtml } from '@kobato/inkling/headless'
 import { collectLexicalHeadings } from '@kobato/shared/lexical/collect.ts'
 import { createHeadingSlugTracker, slugifyHeadingText } from '@kobato/shared/lexical/heading-slug.ts'
-import { lexicalBodyWith, lexicalHeading } from '@kobato/test-helpers/lexical.ts'
+import { lexicalBodyWith, lexicalHeading } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 // The `headings` derived column written at save time must carry slugs

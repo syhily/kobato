@@ -3,7 +3,7 @@
 // Pins Popup-owned outside-click dismissal; `motion/react` is a synchronous
 // pass-through, so the tests pin dismissal wiring, not animation timing.
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { Popup } from '@kobato/web/ui/public/widgets/Popup.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'

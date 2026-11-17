@@ -5,9 +5,9 @@ import {
   __resetAnalyticsEngineForTests,
   snapshotAnalyticsTo,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '@kobato/test-helpers/analytics-db.ts'
-import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/test-helpers/memory-storage.ts'
+import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '@kobato/test/analytics-db.ts'
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/test/integration-db.ts'
+import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -21,7 +21,7 @@ import { post } from '@kobato/server/infra/db/schema/post.ts'
 import { category } from '@kobato/server/infra/db/schema/taxonomy.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { extractBackupFile, unpackBackupPayload } from '@kobato/test-helpers/backup-buffer.ts'
+import { extractBackupFile, unpackBackupPayload } from '@kobato/test/backup-buffer.ts'
 
 // In-memory backend injected as 's3' (the active backend) — no real S3 or settings.
 const mem = makeMemoryBackend()

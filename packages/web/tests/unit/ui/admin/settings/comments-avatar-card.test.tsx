@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, waitFor } from '@testing-library/react'
 
@@ -15,8 +15,8 @@ import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { projectCommentsForAdmin } from '@kobato/shared/config/projection.ts'
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test-helpers/blog-settings.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { CommentsForm } from '@kobato/web/ui/admin/settings/CommentsForm.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

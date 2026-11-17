@@ -18,8 +18,8 @@ import {
   upsertWebmentionOutbox,
 } from '@kobato/server/infra/db/operations/webmention-outbox.ts'
 import { webmentionOutbox } from '@kobato/server/infra/db/schema/webmention.ts'
-import { installFetch } from '@kobato/test-helpers/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { installFetch } from '@kobato/test/fetch.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
 const db = getTestDb()
 

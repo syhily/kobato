@@ -2,7 +2,7 @@
 
 import type { LocaleChangeAnnouncement } from '@kobato/web/client/lib/locale-sync.ts'
 
-import { FakeBroadcastChannel } from '@kobato/test-helpers/fake-broadcast-channel.ts'
+import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import {
   SETTINGS_LOCALE_CHANNEL,
   createLocaleSyncOrigin,

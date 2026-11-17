@@ -9,8 +9,8 @@ import {
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
 } from '@kobato/shared/lexical/cards/music-player.ts'
-import { diffHtmlStructures, structureFromHtml } from '@kobato/test-helpers/dom-structure.ts'
-import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { diffHtmlStructures, structureFromHtml } from '@kobato/test/dom-structure.ts'
+import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { MusicPlayerCard } from '@kobato/web/ui/public/music-player/music-player.tsx'
 import { __resetProgrammaticVolumeSupportForTests } from '@kobato/web/ui/public/music-player/use-music-playback.ts'
 import { fireEvent, render } from '@testing-library/react'

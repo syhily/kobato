@@ -11,7 +11,7 @@ vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner
 
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
-import { renderWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { renderWithI18n } from '@kobato/test/i18n-render.tsx'
 import { Dialog, DialogContent, DialogTitle } from '@kobato/web/ui/components/dialog.tsx'
 import {
   Pagination,

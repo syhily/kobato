@@ -12,10 +12,10 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/test-helpers/analytics-db.ts'
-import { makeLoaderArgs } from '@kobato/test-helpers/context.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { adminSession, authorSession } from '@kobato/test-helpers/session.ts'
+} from '@kobato/test/analytics-db.ts'
+import { makeLoaderArgs } from '@kobato/test/context.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { adminSession, authorSession } from '@kobato/test/session.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 // The dashboard loader against the real engine: real rows + the ADOPTED

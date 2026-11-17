@@ -1,8 +1,8 @@
 import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 
-import { makeAdminFriend } from '@kobato/test-helpers/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { makeAdminFriend } from '@kobato/test/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { EditFriendDialog } from '@kobato/web/ui/admin/friends/EditFriendDialog.tsx'
 import { FriendsView } from '@kobato/web/ui/admin/friends/FriendsView.tsx'
 import { useState } from 'react'
@@ -32,7 +32,7 @@ queryMocks.queryClient = {
 // FriendsView relies on an infinite-query list + delete mutation + debounced
 // search; queries are neutralized so SSR emits the loading chrome.
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 describe('snapshot: FriendsView', () => {
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test-helpers/hook.tsx'
+import { renderHook } from '@kobato/test/hook.tsx'
 import { useFocusHash } from '@kobato/web/client/hooks/use-focus-hash.ts'
 import { describe, expect, it } from 'vitest'
 

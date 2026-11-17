@@ -24,7 +24,7 @@ import { get, through } from '@kobato/server/infra/cache/registry.ts'
 import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade.ts'
 import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
 import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf, pointValue } from '@kobato/test-helpers/in-memory-metric-reader.ts'
+import { TestMetricReader, dataPointsOf, pointValue } from '@kobato/test/in-memory-metric-reader.ts'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',

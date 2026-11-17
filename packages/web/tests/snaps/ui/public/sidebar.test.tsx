@@ -1,7 +1,7 @@
 import type { LatestComment } from '@kobato/shared/types/comments.ts'
 
-import { makePostList, makeTag } from '@kobato/test-helpers/catalog.ts'
-import { renderInRouter } from '@kobato/test-helpers/render.tsx'
+import { makePostList, makeTag } from '@kobato/test/catalog.ts'
+import { renderInRouter } from '@kobato/test/render.tsx'
 import { Sidebar } from '@kobato/web/ui/public/Sidebar.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

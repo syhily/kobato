@@ -1,7 +1,7 @@
 import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
 
-import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { FriendsView } from '@kobato/web/ui/admin/friends/FriendsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -35,7 +35,7 @@ queryMocks.queryClient = {
 // The pending-review bucket: `useQuery` (pending rows) is mocked separately from the
 // main list's `useInfiniteQuery` (empty here), so the bucket renders alone.
 
-vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test-helpers/stubs/dialog.tsx'))
+vi.mock('@kobato/web/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function makePendingFriend(overrides: Partial<AdminFriendDto> = {}): AdminFriendDto {
   return {

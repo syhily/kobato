@@ -4,8 +4,8 @@ import { ACCESS_EVENTS_DDL } from '@kobato/server/domains/analytics/services/acc
 import { runAnalyticsBlobMigrationAtBoot } from '@kobato/server/domains/analytics/services/blob-migration.ts'
 import { openAnalyticsDatabase } from '@kobato/server/infra/analytics/duckdb.ts'
 import { findSettingByScope, upsertSetting } from '@kobato/server/infra/db/operations/setting.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test-helpers/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 // Legacy access_log → access_events boot migration against a real temp-file

@@ -1,4 +1,4 @@
-import { makeTranslator } from '@kobato/test-helpers/i18n.ts'
+import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 // `listingSeo` (owned by the HTTP slice) renders paginated listing titles from

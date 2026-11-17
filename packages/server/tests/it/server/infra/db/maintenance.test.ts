@@ -12,7 +12,7 @@ import {
   seedAccessEvents,
   seedDeviceEnvClientRows,
   seedDeviceEnvServerRows,
-} from '@kobato/test-helpers/analytics-db.ts'
+} from '@kobato/test/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {

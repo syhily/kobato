@@ -17,6 +17,7 @@ export default defineConfig({
       'packages/web/tests/unit/vitest.config.ts',
       'packages/web/tests/snaps/vitest.config.ts',
       'packages/inkling/tests/vitest.config.ts',
+      'packages/helpers/trace/tests/unit/vitest.config.ts',
       'apps/kobato/tests/unit/vitest.config.ts',
       'apps/kobato/tests/it/vitest.config.ts',
       'apps/kobato/tests/snaps/vitest.config.ts',

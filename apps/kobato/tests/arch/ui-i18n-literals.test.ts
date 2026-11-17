@@ -19,7 +19,7 @@ import {
   scanI18nLiterals,
   scanSourceForI18nLiterals,
   type ScanAllowlistEntry,
-} from '@kobato/test-helpers/i18n-literals.ts'
+} from '@kobato/test/i18n-literals.ts'
 import { describe, expect, it } from 'vitest'
 
 // The whole production source tree across the workspace packages. An allowlist

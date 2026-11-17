@@ -1,7 +1,7 @@
 import { music } from '@kobato/server/infra/db/schema/media.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
-import { makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
+import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
