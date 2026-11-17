@@ -6,7 +6,7 @@ import type { RouteHandle } from '@/root.tsx'
 
 // Login / install share the admin Tailwind entry (`admin.css`), keeping the public site's `public.css` out of
 // this route's chunk.
-import '@kobato/shared/styles/cards.css'
+import '@kobato/pt/styles/cards.css'
 import '@kobato/ui/styles/ui.css'
 import '@kobato/web/styles/admin.css'
 

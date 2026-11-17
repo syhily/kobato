@@ -1,5 +1,5 @@
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 
 import {
   findAdminImageRowById,

@@ -1,6 +1,6 @@
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 
-import { compactLexicalEditorState } from '@kobato/shared/lexical/dialect.ts'
+import { compactLexicalEditorState } from '@kobato/pt/dialect.ts'
 import { describe, expect, it } from 'vitest'
 
 import { createEditor } from '../transforms/utils'

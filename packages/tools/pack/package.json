@@ -8,8 +8,9 @@
   },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
+    "@kobato/contracts": "workspace:*",
     "@kobato/server": "workspace:*",
-    "@kobato/shared": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
     "sharp": "catalog:",

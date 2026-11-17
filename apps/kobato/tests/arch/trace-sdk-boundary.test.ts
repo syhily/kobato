@@ -14,7 +14,7 @@
  * solely as a client chunk. This scan proves no other source module imports an
  * SDK.
  */
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -26,7 +26,15 @@ const SOURCE_DIRS = [
   'packages/inkling/src',
   'packages/db/src',
   'packages/server/src',
-  'packages/shared/src',
+  'packages/shared/contracts/src',
+  'packages/shared/seo/src',
+  'packages/shared/pt/src',
+  'packages/shared/utils/src',
+  'packages/shared/i18n/src',
+  'packages/shared/cache/src',
+  'packages/shared/settings/src',
+  'packages/shared/assets/src',
+  'packages/shared/sanitize/src',
   'packages/ui/src',
   'packages/web/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
@@ -41,6 +49,11 @@ export const APPROVED_SDK_ENTRIES = [
 const TELEMETRY_PACKAGE_PATTERN = /^@(?:opentelemetry|openobserve)\//
 
 function walk(dir: string, callback: (filePath: string) => void): void {
+  // Split-package roots are registered ahead of their sources landing; a
+  // missing directory simply has nothing to scan.
+  if (!existsSync(dir)) {
+    return
+  }
   for (const entry of readdirSync(dir)) {
     const fullPath = join(dir, entry)
     const stat = statSync(fullPath)
@@ -117,7 +130,7 @@ describe('trace SDK source boundary', () => {
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/resource.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/log-record.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/logger/sink.ts'),
-      join(PROJECT_ROOT, 'packages/shared/src/contracts/trace.ts'),
+      join(PROJECT_ROOT, 'packages/shared/contracts/src/trace.ts'),
     ]
 
     expect(collectTelemetryViolations(protectedModules)).toEqual([])

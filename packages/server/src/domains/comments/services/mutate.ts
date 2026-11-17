@@ -1,9 +1,9 @@
+import type { CommentAndUser, CommentReq } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { NewComment } from '@kobato/db/types.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { MetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
-import type { CommentAndUser, CommentReq } from '@kobato/shared/types/comments.ts'
 
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@kobato/db/operations/user.ts'
 import { userSession } from '@kobato/server/domains/auth/primitives.ts'
@@ -29,8 +29,8 @@ import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notificati
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.loader')

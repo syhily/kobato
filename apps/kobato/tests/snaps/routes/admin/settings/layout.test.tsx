@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 import type { RouteObject } from 'react-router'
 
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, Outlet, RouterProvider, useOutletContext } from 'react-router'

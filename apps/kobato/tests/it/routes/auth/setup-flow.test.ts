@@ -153,7 +153,7 @@ describe('integration: /admin/setup full install flow', () => {
     }
 
     // The real refreshBlogSettings: the in-process snapshot reflects the rows just written.
-    const { getBlogSettingsBundleSync } = await import('@kobato/shared/config/getters.ts')
+    const { getBlogSettingsBundleSync } = await import('@kobato/settings/getters.ts')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.locale).toBe('en-US')
 

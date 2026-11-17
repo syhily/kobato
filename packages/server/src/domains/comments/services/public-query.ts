@@ -1,8 +1,8 @@
+import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@kobato/shared/types/comments.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { userSession } from '@kobato/server/domains/auth/primitives.ts'
 import { toLatestComment } from '@kobato/server/domains/comments/projection.ts'
@@ -20,10 +20,10 @@ import {
 } from '@kobato/server/domains/comments/repos/public-query/threads.ts'
 import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { getSidebarWidgetCount } from '@kobato/shared/config/utils.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { getSidebarWidgetCount } from '@kobato/settings/utils.ts'
+import { idFromString } from '@kobato/utils/id.ts'
+import { hasAtLeast } from '@kobato/utils/roles.ts'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.parse')

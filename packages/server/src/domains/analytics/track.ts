@@ -6,8 +6,8 @@ import { buildDeviceEnvServerRow, enrichEvent } from '@kobato/server/domains/ana
 import { pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher.ts'
 import { bumpPageView } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { isBot } from '@kobato/shared/utils/is-bot.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { isBot } from '@kobato/utils/is-bot.ts'
 
 // Single owner of "what counts as a view": one call fans out to the per-entity
 // counter and the time-series access log. Every gate is synchronous; only the

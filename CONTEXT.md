@@ -27,7 +27,7 @@ _Avoid_: post draft service / page draft service (dual tracks)
 **Scheduled**: published with a future `publishedAt` — not live, 404 until its time.
 _Avoid_: future-dated, timed
 
-**Lexical**: the storage format for post/page/comment bodies (`packages/shared/src/lexical/`); public
+**Lexical**: the storage format for post/page/comment bodies (`packages/shared/pt/src/`); public
 bodies render the saved `bodyHtml` projection.
 _Avoid_: MDX, InklingDocument (vendor experiment, not the shipping store)
 
@@ -86,7 +86,7 @@ _Avoid_: full-section snapshot, loader shape as write base
 ## Internationalization
 
 **UI locale**: `siteIdentity.locale`, one of `en-US`, `zh-HK`, `zh-TW`, `zh-CN`
-(`@kobato/shared/i18n/locales.ts`); drives every system surface (public/admin/auth/editor copy, validation and
+(`@kobato/i18n/locales.ts`); drives every system surface (public/admin/auth/editor copy, validation and
 error messages, emails, notifications, SEO, feeds, formatting) and is emitted as `<html lang>` /
 `Content-Language`; it is never the content's language.
 _Avoid_: site language, i18n locale, language code (a tag canonicalized from legacy aliases)
@@ -101,7 +101,7 @@ _Avoid_: treating it as the UI locale, using it to pick a message catalog, an en
 
 **Message catalog**: one typed ICU module per locale per namespace — `messages/ui/<locale>` (client
 copy, via the root loader) and `messages/server/<locale>` (email, notifications, jobs). English defines
-the message-id type, others `satisfies` it; `@kobato/shared/i18n/catalog.ts` aggregates, merges the English
+the message-id type, others `satisfies` it; `@kobato/i18n/catalog.ts` aggregates, merges the English
 baseline, and validates the ICU contract (variables, argument kinds, legal plural categories, select
 coverage). New copy goes into all four locales, never inline.
 _Avoid_: translations file, messages JSON (TS modules in the SEA bundle), "just the Chinese strings"
@@ -120,7 +120,7 @@ _Avoid_: saving the locale first, reloading on a commit failure, a per-field sav
 ## Cache
 
 **Cache declaration**: one named bucket (og, calendar, avatar, imageMeta, searchResult, feed, sitemap,
-categories, tags, comments, githubRelease, githubAvatar): metadata in `@kobato/shared/cache/registry.ts` (label,
+categories, tags, comments, githubRelease, githubAvatar): metadata in `@kobato/cache/registry.ts` (label,
 description, default prefix + TTL, tunable flag), behavior in `@kobato/server/infra/cache/registry.ts` (key
 shape, codec, write policy). Consumers use its db-free verbs (`through`, `get`/`set`/`remove`/`clear`,
 `throughMany`, generation counters), never `file-store`. Storage is `<storage.data>/cache`; content
@@ -132,7 +132,7 @@ generation: `feed`/`calendar` on `locale:APP_VERSION:settingsRevision:<content k
 theme), `og` on `settingsRevision:<slug>-<input hash>`, `comments` on `<commentsRevision>:<limit>`,
 `sitemap` on its site-origin generation. Responses (plus `manifest.webmanifest`) are
 `Cache-Control: public, no-cache` with a strong ETag over the exact served bytes. `settingsRevision` is
-the SECTION-SCOPED, content-addressed generation (`@kobato/shared/config/representation-scopes.ts`): one hash per
+the SECTION-SCOPED, content-addressed generation (`@kobato/settings/representation-scopes.ts`): one hash per
 `detail`/`listing`/`feed`/`calendar`/`og`/`manifest`/`comments` over exactly the sections that surface
 renders (secrets excluded), so unrelated saves or credential rotation move nothing; the boot-unique
 `revision` is request identity / locale sync only. Bucket deletes by the

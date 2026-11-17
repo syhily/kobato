@@ -1,6 +1,6 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 
 /**
  * Cross-tab settings-locale announcements. The channel carries an

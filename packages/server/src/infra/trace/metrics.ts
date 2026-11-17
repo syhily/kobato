@@ -6,6 +6,7 @@
 // so a URL, a trace/session id, a slug, or an entity id is dropped before it
 // reaches an SDK.
 
+import type { CacheBucketId } from '@kobato/cache/types.ts'
 import type { MetricAttributes } from '@kobato/server/infra/trace/facade.ts'
 import type {
   DbEngine,
@@ -14,11 +15,10 @@ import type {
   ImageSizeBucket,
   RumRelayOutcome,
 } from '@kobato/server/infra/trace/sanitize.ts'
-import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
 
+import { TRACE_METRIC_NAMES } from '@kobato/contracts/trace-metrics.ts'
 import { counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade.ts'
 import { sanitizeAttributeValue } from '@kobato/server/infra/trace/sanitize.ts'
-import { TRACE_METRIC_NAMES } from '@kobato/shared/contracts/trace-metrics.ts'
 
 export const METRIC = TRACE_METRIC_NAMES
 

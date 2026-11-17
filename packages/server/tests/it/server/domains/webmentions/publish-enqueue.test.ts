@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 
 import { pickDueWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
 import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'

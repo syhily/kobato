@@ -1,8 +1,8 @@
+import type { AdminTagDto } from '@kobato/contracts/tags.ts'
+import type { Tag } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { TagRow } from '@kobato/db/types.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
-import type { Tag } from '@kobato/shared/types/catalog.ts'
 
 import {
   type AdminTagsListFilters,
@@ -25,7 +25,7 @@ import {
 } from '@kobato/server/domains/taxonomies/shared.ts'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { hasAtLeast } from '@kobato/utils/roles.ts'
 import { asc, eq, inArray } from 'drizzle-orm'
 
 // Wire-format DTO; `postCount` is projected by the caller (like categories).

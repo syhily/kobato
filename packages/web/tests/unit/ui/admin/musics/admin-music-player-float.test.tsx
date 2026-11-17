@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

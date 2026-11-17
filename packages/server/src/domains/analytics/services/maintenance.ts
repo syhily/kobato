@@ -3,7 +3,7 @@ import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 import { ACCESS_EVENTS_RETENTION_DAYS } from '@kobato/server/domains/analytics/services/access-log.ts'
 import { ANALYTICS_TABLES } from '@kobato/server/domains/analytics/services/schema.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { stat } from 'node:fs/promises'
 
 const log = getLogger('analytics.maintenance')

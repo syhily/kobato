@@ -11,9 +11,9 @@
  * `zodIssueParams` in `useSettingsCard`.
  */
 
-import type { UiMessages } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { render } from '@testing-library/react'

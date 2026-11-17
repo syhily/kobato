@@ -1,5 +1,5 @@
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Role } from '@kobato/shared/utils/roles.ts'
+import type { Role } from '@kobato/utils/roles.ts'
 
 import {
   createNotificationWithRecipients,
@@ -8,6 +8,7 @@ import {
 } from '@kobato/db/operations/notification.ts'
 import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'
 import { user } from '@kobato/db/schema/user.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import {
   getThread,
@@ -22,7 +23,6 @@ import {
   unreadCount,
 } from '@kobato/server/domains/notifications/service.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

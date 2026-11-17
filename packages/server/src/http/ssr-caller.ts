@@ -1,13 +1,9 @@
+import type { ContentNotModifiedSignal, ContentRedirectSignal, ContentSignal } from '@kobato/contracts/content.ts'
+import type { DetailPageComments } from '@kobato/contracts/types/comments.ts'
+import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { ApiRouter } from '@kobato/server/http/api-router.ts'
-import type {
-  ContentNotModifiedSignal,
-  ContentRedirectSignal,
-  ContentSignal,
-} from '@kobato/shared/contracts/content.ts'
-import type { PublicWebmentionWire } from '@kobato/shared/contracts/webmentions.ts'
-import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
-import type { DetailPageComments } from '@kobato/shared/types/comments.ts'
+import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { LoaderFunctionArgs } from 'react-router'
 
 import { apiRouter } from '@kobato/server/http/api-router.ts'

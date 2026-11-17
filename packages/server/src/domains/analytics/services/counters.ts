@@ -1,5 +1,5 @@
+import type { CountersDto, ResolvedAnalyticsQuery } from '@kobato/contracts/analytics.ts'
 import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import type { CountersDto, ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
 
 import { visitAggregates } from '@kobato/server/domains/analytics/services/aggregates.ts'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'

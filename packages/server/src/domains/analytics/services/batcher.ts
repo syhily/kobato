@@ -15,7 +15,7 @@ import {
 } from '@kobato/server/infra/db/insert-batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@kobato/server/infra/paths.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { randomUUID } from 'node:crypto'
 
 const BATCHER_NAME = 'AccessLogBatcher'

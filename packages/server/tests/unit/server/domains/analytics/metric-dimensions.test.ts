@@ -1,10 +1,10 @@
+import { METRIC_TYPES } from '@kobato/contracts/analytics.ts'
 import {
   compileAnalyticsQuery,
   createAnalyticsQuery,
   createEnvMetricQuery,
 } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/server/domains/analytics/services/metric-dimensions.ts'
-import { METRIC_TYPES } from '@kobato/shared/contracts/analytics.ts'
 import { describe, expect, it } from 'vitest'
 
 // One registry entry per MetricType (a new type cannot compile without one); user values

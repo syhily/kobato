@@ -1,14 +1,18 @@
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
-import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import type { CommentTokenCookie } from '@kobato/shared/utils/comment-token.ts'
+import type { AppLocalization } from '@kobato/settings/app-localization.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 import type { z } from 'zod'
 
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
+import {
+  parseCommentTokensCookie,
+  serializeCommentTokensCookie,
+} from '@kobato/server/domains/comments/services/comment-token.ts'
 import {
   apiErrorData,
   summarizeApiError,
@@ -23,8 +27,7 @@ import {
   tryNotificationReplyRateLimit,
   tryResourceRateLimit,
 } from '@kobato/server/infra/rate-limit.ts'
-import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@kobato/shared/utils/comment-token.ts'
-import { hasAtLeast, type Role } from '@kobato/shared/utils/roles.ts'
+import { hasAtLeast, type Role } from '@kobato/utils/roles.ts'
 import { ORPCError, os } from '@orpc/server'
 
 // Context every oRPC procedure sees — `responseHeaders` merges onto the final `Response`.

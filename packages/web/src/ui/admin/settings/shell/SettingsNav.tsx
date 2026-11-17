@@ -1,7 +1,7 @@
-import type { SettingsNavGroup } from '@kobato/shared/config/display.ts'
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
+import type { SettingsNavGroup } from '@kobato/settings/display.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
 
-import { NAV_GROUP_LABEL_KEYS } from '@kobato/shared/config/display.ts'
+import { NAV_GROUP_LABEL_KEYS } from '@kobato/settings/display.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { useScrollSpyContext, useScrollSpyNav } from '@kobato/web/ui/admin/settings/shell/useSettingsScrollSpy.tsx'

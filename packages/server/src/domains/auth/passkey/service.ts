@@ -1,7 +1,7 @@
+import type { LoginMethod } from '@kobato/contracts/users.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { SafeUser } from '@kobato/db/operations/user.ts'
 import type { PasskeyCredentialRow } from '@kobato/db/types.ts'
-import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
@@ -17,10 +17,10 @@ import { user } from '@kobato/db/schema/user.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsBundle } from '@kobato/shared/config/getters.ts'
-import { isValidPasskeyDomain, tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { requireBlogSettingsBundle } from '@kobato/settings/getters.ts'
+import { isValidPasskeyDomain, tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import {
   generateAuthenticationOptions as swaGenerateAuthenticationOptions,
   generateRegistrationOptions as swaGenerateRegistrationOptions,

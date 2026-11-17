@@ -1,6 +1,6 @@
+import type { AdminFontDto } from '@kobato/contracts/fonts.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { FontRow } from '@kobato/db/schema/font.ts'
-import type { AdminFontDto } from '@kobato/shared/contracts/fonts.ts'
 
 import { font } from '@kobato/db/schema/font.ts'
 import { eq, inArray } from 'drizzle-orm'

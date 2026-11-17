@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { formatWallClockDateTime } from '@kobato/web/ui/admin/editor-shell/wall-clock.ts'

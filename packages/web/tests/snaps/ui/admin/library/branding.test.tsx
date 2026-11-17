@@ -1,4 +1,4 @@
-import type { AssetsLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { AssetsLoaderShape } from '@kobato/settings/projection.ts'
 
 import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { BrandingView } from '@kobato/web/ui/admin/library/BrandingView.tsx'

@@ -3,7 +3,7 @@
 // the SERVER during the admin connection test; this command only observes them,
 // so a missing asset means the panel has not been configured and tested yet.
 
-import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/shared/contracts/trace-pipeline.ts'
+import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/contracts/trace-pipeline.ts'
 
 import {
   containerExists,

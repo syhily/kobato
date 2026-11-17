@@ -18,7 +18,7 @@ const settings = vi.hoisted(() => ({ keepBotRows: false }))
 vi.mock('@kobato/server/domains/analytics/enrich.ts', () => enrichMock)
 vi.mock('@kobato/server/domains/analytics/services/batcher.ts', () => batcherMock)
 vi.mock('@kobato/server/domains/analytics/services/pv-batcher.ts', () => pvMock)
-vi.mock('@kobato/shared/config/getters.ts', () => ({
+vi.mock('@kobato/settings/getters.ts', () => ({
   getBlogSettingsBundleSync: () => ({
     analytics: { analytics: { trackAdmin: false, keepBotRows: settings.keepBotRows } },
   }),

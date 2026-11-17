@@ -1,7 +1,8 @@
+import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
-import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@kobato/shared/types/catalog.ts'
 
+import { toListingPostCard } from '@kobato/contracts/types/catalog.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { queryMetadata } from '@kobato/server/domains/comments/services/likes.ts'
 import { applyLimitOffset } from '@kobato/server/domains/content/pagination.ts'
@@ -9,8 +10,7 @@ import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
 import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
 import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'
 import { buildPublicPostsWhere, type ListPublicPostsFilters } from '@kobato/server/domains/posts/repos/shared.ts'
-import { toListingPostCard } from '@kobato/shared/types/catalog.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { and, desc, inArray, isNull, sql } from 'drizzle-orm'
 
 export async function listPublicPosts(

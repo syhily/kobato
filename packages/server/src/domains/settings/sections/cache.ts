@@ -1,16 +1,12 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { FIXED_CACHE_PREFIXES } from '@kobato/shared/cache/registry.ts'
-import {
-  CACHE_BUCKET_FALLBACKS,
-  type TunableCacheBucketId,
-  TUNABLE_CACHE_BUCKET_IDS,
-} from '@kobato/shared/types/cache.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { FIXED_CACHE_PREFIXES } from '@kobato/cache/registry.ts'
+import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@kobato/cache/types.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
 // Per-bucket cache configuration: only tunable buckets own a settings slot (derived
-// from `@/shared/cache/registry`), and the prefix must end with `:` so a prefix scan
+// from `@kobato/cache/registry`), and the prefix must end with `:` so a prefix scan
 // can never reach into a neighbouring bucket. RESERVED_CACHE_PREFIXES must NEVER be
 // editor-overwritable — session/rate-limit caches depend on stable key shapes.
 export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status:']

@@ -87,7 +87,7 @@ describe('requestContextMiddleware', () => {
     // Same module graph as the dynamically imported middleware (resetModules
     // ran in beforeEach), so these writes reach the real snapshot slot.
     const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
-    const { resolveAppLocalization } = await import('@kobato/shared/i18n/app-localization.ts')
+    const { resolveAppLocalization } = await import('@kobato/settings/app-localization.ts')
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
     app.get('/', (c) => {

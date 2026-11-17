@@ -1,8 +1,9 @@
 // Shared blog settings fixtures. Seed the in-process snapshot before the
 // import chain reaches `requireBlogSettingsSection()`. Registry-identical
 // sections are imported from the seeds, the rest frozen for snapshot stability.
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { CACHE_BUCKET_FALLBACKS } from '@kobato/cache/types.ts'
 import { analyticsDefaults } from '@kobato/server/domains/settings/sections/analytics.ts'
 import { backupDefaults } from '@kobato/server/domains/settings/sections/backup.ts'
 import { limitsDefaults } from '@kobato/server/domains/settings/sections/limits.ts'
@@ -11,9 +12,8 @@ import { newsletterDefaults } from '@kobato/server/domains/settings/sections/new
 import { observabilityDefaults } from '@kobato/server/domains/settings/sections/observability.ts'
 import { securityDefaults } from '@kobato/server/domains/settings/sections/security.ts'
 import { seoDefaults } from '@kobato/server/domains/settings/sections/seo.ts'
-import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot.ts'
-import { CACHE_BUCKET_FALLBACKS } from '@kobato/shared/types/cache.ts'
+import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
 import { deepFreeze } from '@kobato/test/deep-freeze.ts'
 
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {

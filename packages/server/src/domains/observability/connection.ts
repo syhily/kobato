@@ -15,7 +15,7 @@ import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
-} from '@kobato/shared/config/observability.ts'
+} from '@kobato/server/infra/observability.ts'
 
 export interface ConnectionProbeResult {
   organization: 'created' | 'exists'

@@ -16,7 +16,7 @@
       "@kobato/inkling/*": ["../../packages/inkling/src/*"],
       "@kobato/web/*": ["../../packages/web/src/*"],
       "@kobato/ui/*": ["../../packages/ui/src/*"],
-      "@kobato/shared/*": ["../../packages/shared/src/*"]
+      "@kobato/pt/*": ["../../packages/shared/pt/src/*"]
     },
     "types": ["vite/client", "node"]
   }

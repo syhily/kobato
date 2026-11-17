@@ -11,13 +11,13 @@ import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@kobato/server/infra/cache/registry.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
-import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/shared/config/getters.ts'
-import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
+import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 
 // The job against the real engine: real rows drive next-due and the effect
 // is real filesystem cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.

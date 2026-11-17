@@ -1,8 +1,8 @@
 // The four wire mutations — declaration order is test-pinned — plus their
 // note* interpreters.
 
-import type { SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type {
   EditorShellStatus,
   EntityLike,

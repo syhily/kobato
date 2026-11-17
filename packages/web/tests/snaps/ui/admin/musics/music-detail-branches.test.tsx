@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
 import { makeAdminMusic } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

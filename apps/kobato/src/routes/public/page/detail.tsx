@@ -1,6 +1,6 @@
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@kobato/seo/meta.ts'
 import { detailHeaders } from '@kobato/server/http/loaders/route-exports.ts'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller.ts'
-import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@kobato/shared/seo/meta.ts'
 import { FriendApplyForm } from '@kobato/web/ui/public/friends/FriendApplyForm.tsx'
 import { Friends } from '@kobato/web/ui/public/friends/Friends.tsx'
 import { PageDetailBody } from '@kobato/web/ui/public/post/PageDetailBody.tsx'

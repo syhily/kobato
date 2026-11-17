@@ -1,5 +1,6 @@
 import { comment } from '@kobato/db/schema/comment.ts'
 import { like, metric } from '@kobato/db/schema/metric.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { bumpPageView, flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import {
@@ -13,7 +14,6 @@ import {
   validateLikeToken,
 } from '@kobato/server/domains/comments/services/likes.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

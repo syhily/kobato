@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/settings/types.ts'
 
 import { auditLog } from '@kobato/db/schema/config.ts'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'

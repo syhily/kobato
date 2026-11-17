@@ -5,7 +5,7 @@ import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
 import { through } from '@kobato/server/infra/cache/registry.ts'
 import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'
 import { generateFeeds } from '@kobato/server/render/feed/generator.tsx'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { Hono } from 'hono'
 
 const CONTENT_TYPES = {

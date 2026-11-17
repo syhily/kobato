@@ -1,6 +1,6 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 // The public comment composer fetches its label table on demand. Each locale
 // lives in its own module, so the bundler emits FOUR small chunks and a visitor
 // downloads exactly the active UI locale's one — never all four. This pins the
@@ -10,19 +10,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const imports = vi.hoisted(() => ({ loaded: [] as string[] }))
 
-vi.mock('@kobato/shared/i18n/inkling-labels/en-US.ts', () => {
+vi.mock('@kobato/i18n/inkling-labels/en-US.ts', () => {
   imports.loaded.push('en-US')
   return { kobatoInklingLabelsEnUS: { 'placeholder.editor': 'EN labels' } }
 })
-vi.mock('@kobato/shared/i18n/inkling-labels/zh-CN.ts', () => {
+vi.mock('@kobato/i18n/inkling-labels/zh-CN.ts', () => {
   imports.loaded.push('zh-CN')
   return { kobatoInklingLabelsZhCN: { 'placeholder.editor': 'ZH-CN labels' } }
 })
-vi.mock('@kobato/shared/i18n/inkling-labels/zh-HK.ts', () => {
+vi.mock('@kobato/i18n/inkling-labels/zh-HK.ts', () => {
   imports.loaded.push('zh-HK')
   return { kobatoInklingLabelsZhHK: { 'placeholder.editor': 'ZH-HK labels' } }
 })
-vi.mock('@kobato/shared/i18n/inkling-labels/zh-TW.ts', () => {
+vi.mock('@kobato/i18n/inkling-labels/zh-TW.ts', () => {
   imports.loaded.push('zh-TW')
   return { kobatoInklingLabelsZhTW: { 'placeholder.editor': 'ZH-TW labels' } }
 })

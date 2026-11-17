@@ -1,5 +1,11 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 
+import {
+  auditLogActorsOutput,
+  auditLogExportInput,
+  auditLogListInput,
+  auditLogListOutput,
+} from '@kobato/contracts/audit.ts'
 import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv.ts'
 import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight.ts'
 import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection.ts'
@@ -11,13 +17,7 @@ import {
   type AuditLogFilterInput,
 } from '@kobato/server/domains/audit/services/query.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import {
-  auditLogActorsOutput,
-  auditLogExportInput,
-  auditLogListInput,
-  auditLogListOutput,
-} from '@kobato/shared/contracts/audit.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 function assertValidActorId(context: HandlerContext, actorId: string | undefined): void {

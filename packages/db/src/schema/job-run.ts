@@ -1,9 +1,4 @@
-import {
-  JOB_RUN_STATUSES,
-  JOB_RUN_TRIGGERS,
-  type JobRunStatus,
-  type JobRunTrigger,
-} from '@kobato/shared/contracts/jobs.ts'
+import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS, type JobRunStatus, type JobRunTrigger } from '@kobato/contracts/jobs.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 

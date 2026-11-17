@@ -1,9 +1,9 @@
+import { adminFontDto, listFontsOutputDto, setFontSlotInputDto } from '@kobato/contracts/fonts.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate.ts'
 import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services/read.ts'
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
-import { adminFontDto, listFontsOutputDto, setFontSlotInputDto } from '@kobato/shared/contracts/fonts.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 // Admin font procedures. `upload` lives in a separate Hono resource route

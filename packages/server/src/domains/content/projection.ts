@@ -1,8 +1,8 @@
+import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
 import type { ContentRow } from '@kobato/db/types.ts'
-import type { AdminRevisionDto } from '@kobato/shared/contracts/revision.ts'
 
 import { readHeadings, readLexicalBody } from '@kobato/server/domains/content/projection-helpers.ts'
-import { readStringArray } from '@kobato/shared/utils/tools.ts'
+import { readStringArray } from '@kobato/utils/tools.ts'
 
 export function toAdminRevisionDto(row: ContentRow): AdminRevisionDto {
   return {

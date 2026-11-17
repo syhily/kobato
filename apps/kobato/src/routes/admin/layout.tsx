@@ -1,6 +1,6 @@
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { hasAtLeast } from '@kobato/utils/roles.ts'
 import { useDetachPublicCss } from '@kobato/web/client/hooks/use-detach-public-css.ts'
 import { AdminErrorFallback } from '@kobato/web/ui/admin/shell/AdminErrorFallback.tsx'
 import { AdminShell } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
@@ -13,7 +13,7 @@ import type { Route } from './+types/layout'
 // `admin.css` shares the token partial with the public site but scans only admin-rendered sources, so this
 // bundle excludes the public cascade; `useDetachPublicCss` covers SPA navigations arriving with `public.css`
 // still in <head>.
-import '@kobato/shared/styles/cards.css'
+import '@kobato/pt/styles/cards.css'
 import '@kobato/ui/styles/ui.css'
 import '@kobato/web/styles/admin.css'
 

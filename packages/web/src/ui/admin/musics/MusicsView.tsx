@@ -1,6 +1,5 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,8 +8,9 @@ import {
 } from '@kobato/ui/components/dropdown-menu.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { useInfiniteScrollSentinel } from '@kobato/web/client/hooks/use-infinite-scroll-sentinel.ts'
 import { AlbumCard } from '@kobato/web/ui/admin/musics/AlbumCard.tsx'
 import { MusicLibraryHero } from '@kobato/web/ui/admin/musics/MusicLibraryHero.tsx'
 import { useMusicPlayerActions } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'

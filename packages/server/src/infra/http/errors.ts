@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
 export const DOMAIN_ERROR_CODES = [
   'BAD_REQUEST',

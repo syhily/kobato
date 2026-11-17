@@ -1,4 +1,4 @@
-import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle, CustomQuote } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle, CustomQuote } from '@kobato/settings/types.ts'
 
 import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'

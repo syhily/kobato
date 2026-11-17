@@ -1,4 +1,4 @@
-import type { MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'

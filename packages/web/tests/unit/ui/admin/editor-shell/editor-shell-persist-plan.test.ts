@@ -1,4 +1,4 @@
-import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
+import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
 // Pure save-planner tests: every wire-payload and status-transition decision
 // the persist module makes, verified without rendering React.
 

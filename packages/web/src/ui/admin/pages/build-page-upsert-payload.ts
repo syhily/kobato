@@ -1,6 +1,6 @@
-import type { PageMetaDraft, UpsertPageMetaInput } from '@kobato/shared/types/pages.ts'
+import type { PageMetaDraft, UpsertPageMetaInput } from '@kobato/web/ui/admin/pages/page-meta.ts'
 
-import { isContentLanguageInput } from '@kobato/shared/i18n/content-language.ts'
+import { isContentLanguageInput } from '@kobato/i18n/content-language.ts'
 
 export function buildPageUpsertPayload({
   meta,

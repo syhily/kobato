@@ -1,7 +1,7 @@
+import type { WebmentionStatusCounts } from '@kobato/contracts/webmentions.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { NewWebmention, WebmentionRow } from '@kobato/db/types.ts'
-import type { WebmentionStatusCounts } from '@kobato/shared/contracts/webmentions.ts'
 
 import { isUniqueConstraintError } from '@kobato/db/errors.ts'
 import { webmention } from '@kobato/db/schema/webmention.ts'

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
@@ -8,6 +7,7 @@ import { asRoute } from '@kobato/test/route-test-utils.tsx'
 // context). The TipTap editors cannot fully SSR, so assert the wrapper renders without
 // throwing.
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'

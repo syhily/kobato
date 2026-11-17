@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 import type { ReactNode } from 'react'
 

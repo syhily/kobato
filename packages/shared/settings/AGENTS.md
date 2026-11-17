@@ -1,0 +1,7 @@
+# `@kobato/settings`
+
+The settings model — everything the `blog.<section>` setting table projects into, before any wire shape. Owner of: `sections` (the section registry) + `defaults` + `getters` + `projection` (the `BlogSettingsBundle` in `types`), `snapshot` (the process-wide snapshot slot; `snapshot.revision` = `<bootId>:<counter>` is request identity / locale sync only, never a cache generation), `representation-scopes` (the section→scope dependency table + the content-addressed per-scope generation hash), `app-localization` (`resolveAppLocalization` + `createLazyAppSnapshot` — the per-request capture pinning bundle AND localization), `rum-client-identity` (`anonymous | forward`), `rate-limit-bucket`, `display`, `socials`, `footnotes-section-title`.
+
+- Allowed deps: `@kobato/i18n`, `@kobato/cache`, `@kobato/utils`. NEVER `@kobato/contracts` — settings sits below the wire layer; contracts imports settings, not the reverse (the settings write-schema contract-pinning fixtures are tests-only).
+- Bans: no React, no persistence, no server runtime — server hydration/merge lives in `@kobato/server/src/domains/settings`, UI per-section hooks in `@kobato/web`.
+- Tests: `tests/unit/` (umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`).

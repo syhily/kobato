@@ -30,7 +30,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['packages/*/src/**', 'apps/kobato/src/**'],
+      include: ['packages/*/src/**', 'packages/shared/*/src/**', 'apps/kobato/src/**'],
       exclude: [
         'packages/*/src/**/*.d.ts',
         'apps/kobato/src/**/*.d.ts',

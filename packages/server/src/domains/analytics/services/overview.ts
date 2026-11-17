@@ -1,14 +1,14 @@
+import type {
+  AnalyticsOverviewData,
+  MetricRow,
+  MetricType,
+  ResolvedAnalyticsQuery,
+} from '@kobato/contracts/analytics.ts'
 import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import type { CountersDto, MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
 
+import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'
 import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
 import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
-import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/shared/contracts/analytics.ts'
-
-export interface AnalyticsOverviewData {
-  counters: CountersDto
-  initialMetrics: Partial<Record<MetricType, MetricRow[]>>
-}
 
 /**
  * First-paint fan-out: counters plus the first tab of every metric group. The

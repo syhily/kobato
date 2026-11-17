@@ -1,5 +1,11 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
+import {
+  accountProfileOutputSchema,
+  accountSessionsOutputSchema,
+  accountUpdateProfileInput,
+} from '@kobato/contracts/admin.ts'
+import { loginMethodSchema } from '@kobato/contracts/users.ts'
 import { findSafeUserById } from '@kobato/db/operations/user.ts'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
@@ -29,14 +35,8 @@ import {
   tryPasskeySetForceRateLimit,
   tryRateLimit,
 } from '@kobato/server/infra/rate-limit.ts'
-import {
-  accountProfileOutputSchema,
-  accountSessionsOutputSchema,
-  accountUpdateProfileInput,
-} from '@kobato/shared/contracts/admin.ts'
-import { loginMethodSchema } from '@kobato/shared/contracts/users.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { idFromString } from '@kobato/utils/id.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { z } from 'zod'
 
 function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {
@@ -53,7 +53,7 @@ function isRegistrationResponseJSON(value: unknown): value is RegistrationRespon
   return typeof resp.clientDataJSON === 'string' && typeof resp.attestationObject === 'string'
 }
 
-// The profile-edit wire schema lives in `@kobato/shared/contracts/admin.ts`
+// The profile-edit wire schema lives in `@kobato/contracts/admin.ts`
 // (`accountUpdateProfileInput`) so the web form derives its payload type from
 // the contract instead of the router; schemas with no cross-layer consumer
 // stay next to the procedure that owns them.

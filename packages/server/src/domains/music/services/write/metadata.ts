@@ -1,6 +1,6 @@
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
 import { findAdminMusicRowById, findMusicById, updateMusic } from '@kobato/db/operations/music.ts'
 import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'

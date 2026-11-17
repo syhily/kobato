@@ -13,8 +13,8 @@ import {
 } from '@kobato/server/infra/db/insert-batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/paths.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { idFromString } from '@kobato/utils/id.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 const log = getLogger('audit.batcher')
 

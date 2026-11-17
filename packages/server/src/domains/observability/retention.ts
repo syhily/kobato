@@ -16,13 +16,13 @@
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { O2StreamType } from '@kobato/server/domains/observability/o2-client.ts'
 
+import { TRACE_LOG_STREAM } from '@kobato/contracts/trace-logs.ts'
+import { isTraceMetricStreamName } from '@kobato/contracts/trace-metrics.ts'
+import { RUM_STREAM_NAME } from '@kobato/contracts/trace-pipeline.ts'
 import { isObservabilityConnectionVerified } from '@kobato/server/domains/observability/connection.ts'
 import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { TRACE_LOG_STREAM } from '@kobato/shared/contracts/trace-logs.ts'
-import { isTraceMetricStreamName } from '@kobato/shared/contracts/trace-metrics.ts'
-import { RUM_STREAM_NAME } from '@kobato/shared/contracts/trace-pipeline.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
 const log = getLogger('observability.retention')
 

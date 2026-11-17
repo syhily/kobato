@@ -1,8 +1,8 @@
-import type { SaveBodyInput, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
-import type { CreateDraftConfig } from '@kobato/web/client/hooks/use-create-draft.ts'
-import type { LocalDraftConfig } from '@kobato/web/client/hooks/use-local-draft.ts'
+import type { SaveBodyInput, SaveBodyOutput } from '@kobato/contracts/revision.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { CreateDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-create-draft.ts'
+import type { LocalDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import type {
   EntityLike,
   RevisionLike,

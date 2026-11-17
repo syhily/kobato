@@ -1,4 +1,4 @@
-import { WEBMENTION_OUTBOX_STATUSES, WEBMENTION_STATUSES } from '@kobato/shared/contracts/webmentions.ts'
+import { WEBMENTION_OUTBOX_STATUSES, WEBMENTION_STATUSES } from '@kobato/contracts/webmentions.ts'
 import { z } from 'zod'
 
 // W3C receive payload — form-encoded `source` + `target`; the caps stop a

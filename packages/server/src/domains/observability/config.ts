@@ -4,7 +4,7 @@
 // Basic header) and the two fingerprints that gate activation and hot restarts.
 
 import type { TraceRuntimeSettings } from '@kobato/server/infra/trace/config.ts'
-import type { ObservabilitySettings } from '@kobato/shared/config/types.ts'
+import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
 import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
 

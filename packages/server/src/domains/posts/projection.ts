@@ -1,11 +1,11 @@
+import type { AdminPostDto } from '@kobato/contracts/posts.ts'
+import type { Post } from '@kobato/contracts/types/catalog.ts'
 import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
-import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
-import type { Post } from '@kobato/shared/types/catalog.ts'
 
 import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection.ts'
 import { readRevisionProjection } from '@kobato/server/domains/content/projection-helpers.ts'
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared.ts'
-import { readStringArray } from '@kobato/shared/utils/tools.ts'
+import { readStringArray } from '@kobato/utils/tools.ts'
 
 // `toCmsPost` returns the shared `Post` DTO directly — no server-side variant.
 export function toCmsPost(

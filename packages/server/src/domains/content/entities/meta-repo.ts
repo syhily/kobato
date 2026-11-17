@@ -8,7 +8,7 @@ import type { LimitOffset } from '@kobato/server/domains/content/pagination.ts'
 import { likeEscape } from '@kobato/db/like-escape.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { applyLimitOffset } from '@kobato/server/domains/content/pagination.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { and, eq, getColumns, isNotNull, isNull, or, sql, type Column, type SQL } from 'drizzle-orm'
 
 /** The two meta tables — type-only union; the generic queries bind shared columns structurally, never entity extras. */

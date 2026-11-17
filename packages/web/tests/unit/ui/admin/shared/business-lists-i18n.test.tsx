@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
-import type { MetingSearchHit } from '@kobato/shared/contracts/music.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
+import type { MetingSearchHit } from '@kobato/contracts/music.ts'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { PendingFriendRow } from '@kobato/web/ui/admin/friends/PendingFriendRow.tsx'

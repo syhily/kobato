@@ -7,9 +7,9 @@
  * The same scan enforces the i18n bundle boundary: message catalogs and the
  * server translator are SERVER-ONLY value imports. The browser receives the
  * current locale's UI catalog as root-loader data (`content.bootstrap`), and
- * `@kobato/shared/i18n/fallback-messages` is the single synchronous exception.
+ * `@kobato/i18n/fallback-messages` is the single synchronous exception.
  */
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -20,7 +20,15 @@ const CLIENT_LAYERS = [
   'packages/web/src/client',
   'packages/ui/src',
   'apps/kobato/src/routes',
-  'packages/shared/src',
+  'packages/shared/contracts/src',
+  'packages/shared/seo/src',
+  'packages/shared/pt/src',
+  'packages/shared/utils/src',
+  'packages/shared/i18n/src',
+  'packages/shared/cache/src',
+  'packages/shared/settings/src',
+  'packages/shared/assets/src',
+  'packages/shared/sanitize/src',
 ]
 
 const NODE_BUILTINS = [
@@ -80,7 +88,7 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
     name: 'jsdom',
     reason: 'server-side DOM for the sanitize engine and inkling headless projections',
     // Swapped client-side to the browser engine by the `sanitize-html-engine-alias` plugin (vite.config.ts).
-    allowedIn: ['packages/shared/src/sanitize/engine.node.ts'],
+    allowedIn: ['packages/shared/sanitize/src/engine.node.ts'],
   },
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
@@ -99,6 +107,11 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
 ]
 
 function walk(dir: string, callback: (filePath: string) => void) {
+  // Split-package roots are registered ahead of their sources landing; a
+  // missing directory simply has nothing to scan.
+  if (!existsSync(dir)) {
+    return
+  }
   for (const entry of readdirSync(dir)) {
     const fullPath = join(dir, entry)
     const stat = statSync(fullPath)
@@ -258,7 +271,15 @@ const I18N_SCANNED_ROOTS = [
   'packages/web/src/client',
   'packages/ui/src',
   'apps/kobato/src/routes',
-  'packages/shared/src',
+  'packages/shared/contracts/src',
+  'packages/shared/seo/src',
+  'packages/shared/pt/src',
+  'packages/shared/utils/src',
+  'packages/shared/i18n/src',
+  'packages/shared/cache/src',
+  'packages/shared/settings/src',
+  'packages/shared/assets/src',
+  'packages/shared/sanitize/src',
 ]
 /** Root route module: part of the client bundle, so it must not pin the catalogs. */
 const I18N_SCANNED_ROOT_FILES = ['apps/kobato/src/root.tsx']
@@ -274,7 +295,7 @@ function collectScannedFiles(): string[] {
   return files
 }
 
-// `@kobato/shared/i18n/messages/**` are the four catalogs (they also TYPE the
+// `@kobato/i18n/messages/**` are the four catalogs (they also TYPE the
 // message ids, so `import type` is fine); `catalog` aggregates them;
 // `server/infra/i18n` is the server translator. All three must stay out of the
 // client static graph.
@@ -288,7 +309,7 @@ const I18N_CATALOG_RULE: ServerOnlyImportRule = {
     /(^|\/)server\/infra\/i18n(\.ts)?$/,
   ],
   /** The aggregator itself may import the per-locale catalogs — that is its job. */
-  owners: ['packages/shared/src/i18n/catalog.ts'],
+  owners: ['packages/shared/i18n/src/catalog.ts'],
 }
 
 function collectI18nViolations(filePaths: readonly string[]): string[] {
@@ -308,25 +329,24 @@ describe('i18n bundle boundary', () => {
       writeFileSync(
         leak,
         [
-          "import { uiMessagesFor } from '@kobato/shared/i18n/catalog.ts'",
-          "import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'",
+          "import { uiMessagesFor } from '@kobato/i18n/catalog.ts'",
+          "import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'",
           "import { createServerTranslator } from '@kobato/server/infra/i18n.ts'",
-          'export const send = () => import("@kobato/shared/i18n/catalog.ts")',
+          'export const send = () => import("@kobato/i18n/catalog.ts")',
         ].join('\n'),
       )
       writeFileSync(
         typesOnly,
-        [
-          "import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'",
-          'export type Id = UiMessageId',
-        ].join('\n'),
+        ["import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'", 'export type Id = UiMessageId'].join(
+          '\n',
+        ),
       )
 
       const violations = collectI18nViolations([leak, typesOnly])
       expect(violations).toHaveLength(4)
       for (const specifier of [
-        '@kobato/shared/i18n/catalog.ts',
-        '@kobato/shared/i18n/messages/ui/zh-CN.ts',
+        '@kobato/i18n/catalog.ts',
+        '@kobato/i18n/messages/ui/zh-CN.ts',
         '@kobato/server/infra/i18n.ts',
       ]) {
         expect(
@@ -358,7 +378,7 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
     /^\.\/inkling-labels\//,
   ],
   owners: [
-    'packages/shared/src/i18n/inkling-labels.ts',
+    'packages/shared/i18n/src/inkling-labels.ts',
     // The client seam owns the ONE sanctioned dynamic per-locale load for
     // public documents (each locale is its own chunk).
     'packages/web/src/client/editor/inkling-labels.ts',
@@ -380,7 +400,7 @@ describe('inkling label bundle boundary', () => {
     // locale (four chunks; a visitor downloads only the active one).
     expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
     for (const locale of ['en-US', 'zh-CN', 'zh-HK', 'zh-TW']) {
-      expect(source).toContain(`import('@kobato/shared/i18n/inkling-labels/${locale}.ts')`)
+      expect(source).toContain(`import('@kobato/i18n/inkling-labels/${locale}.ts')`)
     }
   })
 
@@ -392,17 +412,17 @@ describe('inkling label bundle boundary', () => {
       writeFileSync(
         leak,
         [
-          "import { kobatoInklingLabelsZhTW } from '@kobato/shared/i18n/inkling-labels/zh-TW.ts'",
-          "import { inklingLabelsFor } from '@kobato/shared/i18n/inkling-labels.ts'",
+          "import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'",
+          "import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'",
           "import { kobatoInklingLabelsZhCN } from './i18n/inkling-labels/zh-CN'",
-          'export const load = () => import("@kobato/shared/i18n/inkling-labels/zh-HK.ts")',
+          'export const load = () => import("@kobato/i18n/inkling-labels/zh-HK.ts")',
           'export const label = () => [kobatoInklingLabelsZhTW, inklingLabelsFor, kobatoInklingLabelsZhCN]',
         ].join('\n'),
       )
       writeFileSync(
         typesOnly,
         [
-          "import type { KobatoInklingLabelKey } from '@kobato/shared/i18n/inkling-labels/en-US.ts'",
+          "import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'",
           'export type Key = KobatoInklingLabelKey',
         ].join('\n'),
       )
@@ -410,10 +430,10 @@ describe('inkling label bundle boundary', () => {
       const violations = collectServerOnlyImportViolations([leak, typesOnly], INKLING_LABEL_RULE)
       expect(violations).toHaveLength(4)
       for (const specifier of [
-        '@kobato/shared/i18n/inkling-labels/zh-TW.ts',
-        '@kobato/shared/i18n/inkling-labels.ts',
+        '@kobato/i18n/inkling-labels/zh-TW.ts',
+        '@kobato/i18n/inkling-labels.ts',
         './i18n/inkling-labels/zh-CN',
-        '@kobato/shared/i18n/inkling-labels/zh-HK.ts',
+        '@kobato/i18n/inkling-labels/zh-HK.ts',
       ]) {
         expect(
           violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),

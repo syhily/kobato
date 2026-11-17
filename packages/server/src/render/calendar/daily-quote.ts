@@ -1,10 +1,10 @@
-import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/settings/types.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
 import { LOCAL_QUOTES } from '@kobato/server/render/calendar/local-quotes.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { format } from 'date-fns'
 
 // Daily-quote sources (sidebar `dailyQuote.source`): shanbay/one/hitokoto remote, with

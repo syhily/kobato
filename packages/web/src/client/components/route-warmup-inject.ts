@@ -1,4 +1,4 @@
-import { CHUNKS_SENTINEL } from '@kobato/shared/constants/route-warmup.ts'
+import { CHUNKS_SENTINEL } from '@kobato/contracts/constants/route-warmup.ts'
 
 // Matches the sentinel literal under any quote style (the oxc minifier emits
 // backticks) so a minifier change can't break replacement.

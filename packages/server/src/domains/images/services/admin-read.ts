@@ -1,11 +1,11 @@
+import type { ListImagesInput } from '@kobato/assets/images.ts'
+import type { AdminImageDto, ListImagesOutput } from '@kobato/contracts/images.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ImageRow } from '@kobato/db/types.ts'
-import type { AdminImageDto, ListImagesOutput } from '@kobato/shared/contracts/images.ts'
-import type { ListImagesInput } from '@kobato/shared/types/images.ts'
 
+import { classifyImageKind } from '@kobato/assets/images.ts'
 import { type AdminImagesListFilters, countAdminImages, listAdminImageRows } from '@kobato/db/operations/image.ts'
 import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
-import { classifyImageKind } from '@kobato/shared/types/images.ts'
 
 export async function listImagesForAdmin(db: Database, input: ListImagesInput = {}): Promise<ListImagesOutput> {
   const offset = clampOffset(input.offset)

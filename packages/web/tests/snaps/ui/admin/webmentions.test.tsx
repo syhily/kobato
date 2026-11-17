@@ -1,4 +1,4 @@
-import type { AdminWebmentionWire } from '@kobato/shared/contracts/webmentions.ts'
+import type { AdminWebmentionWire } from '@kobato/contracts/webmentions.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'

@@ -1,16 +1,16 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { NotificationRow } from '@kobato/db/types.ts'
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { SystemNotificationMessage } from '@kobato/server/domains/notifications/message.ts'
-import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type {
   NotificationDto,
   NotificationKind,
   NotificationSenderDto,
   NotificationTab,
   ThreadMessageDto,
-} from '@kobato/shared/contracts/notifications.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+} from '@kobato/contracts/notifications.ts'
+import type { Database } from '@kobato/db/database.ts'
+import type { NotificationRow } from '@kobato/db/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { SystemNotificationMessage } from '@kobato/server/domains/notifications/message.ts'
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 
 import {
   countUnreadNotifications,
@@ -28,6 +28,7 @@ import {
   recallNotification,
   type NewNotificationRow,
 } from '@kobato/db/operations/notification.ts'
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
 import { queueNotificationEmail } from '@kobato/server/domains/notifications/email.ts'
 import {
   encodeNotificationDescriptor,
@@ -36,7 +37,6 @@ import {
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
 
 // DTO mapping
 

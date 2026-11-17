@@ -6,7 +6,7 @@
 import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { resolveAppLocalization } from '@kobato/shared/i18n/app-localization.ts'
+import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
 
 /** Translator for the current site locale (the site's configured language). */
 export function emailTranslator(): ServerTranslator {

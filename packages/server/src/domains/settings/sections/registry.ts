@@ -1,6 +1,6 @@
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { Assert, Equals } from '@kobato/shared/contracts/primitives.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 import type { z } from 'zod'
 
 import { analyticsSection } from '@kobato/server/domains/settings/sections/analytics.ts'
@@ -23,8 +23,8 @@ import { sidebarSection } from '@kobato/server/domains/settings/sections/sidebar
 import { socialsSection } from '@kobato/server/domains/settings/sections/socials.ts'
 import { webmentionsSection } from '@kobato/server/domains/settings/sections/webmentions.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export interface SectionMeta<
   S extends z.ZodType = z.ZodType,

@@ -1,8 +1,7 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 
-import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/shared/lexical/comment-schema.ts'
-import { idStr } from '@kobato/shared/utils/tools.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/pt/comment-schema.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
@@ -14,8 +13,9 @@ import {
 } from '@kobato/ui/components/dialog.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { idStr } from '@kobato/utils/tools.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { LazyCommentBodyEditor } from '@kobato/web/ui/public/comments/LazyCommentBodyEditor.tsx'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'

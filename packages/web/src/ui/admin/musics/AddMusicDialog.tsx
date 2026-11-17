@@ -1,4 +1,4 @@
-import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/contracts/music.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
@@ -15,13 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { useInfiniteScrollSentinel } from '@kobato/web/client/hooks/use-infinite-scroll-sentinel.ts'
-import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@kobato/web/ui/admin/musics/meting-search.ts'
 import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
 import { SearchResultItem } from '@kobato/web/ui/admin/musics/SearchResultItem.tsx'
 import { useMetingMusicSearch } from '@kobato/web/ui/admin/musics/useMetingMusicSearch.ts'
+import { toastApiError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'

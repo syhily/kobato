@@ -1,5 +1,5 @@
 import type { ObjectVisibility } from '@kobato/server/infra/storage/key-policy.ts'
-import type { StorageDriver } from '@kobato/shared/config/types.ts'
+import type { StorageDriver } from '@kobato/settings/types.ts'
 import type { Readable } from 'node:stream'
 
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'

@@ -1,8 +1,8 @@
+import { CACHE_BUCKET_IDS } from '@kobato/cache/types.ts'
+import { adminCacheStatsDto, clearCacheResultDto } from '@kobato/contracts/cache.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { clearAdminCache, getAdminCacheStats } from '@kobato/server/infra/cache/admin-ops.ts'
-import { adminCacheStatsDto, clearCacheResultDto } from '@kobato/shared/contracts/cache.ts'
-import { CACHE_BUCKET_IDS } from '@kobato/shared/types/cache.ts'
 import { z } from 'zod'
 const getStats = adminProc
   .route({ method: 'GET', path: '/admin/cache/get-stats' })

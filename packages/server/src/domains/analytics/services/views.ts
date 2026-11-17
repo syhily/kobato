@@ -1,9 +1,9 @@
+import type { ResolvedAnalyticsQuery, TimeUnit, ViewsDto, ViewsPoint } from '@kobato/contracts/analytics.ts'
 import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import type { ResolvedAnalyticsQuery, TimeUnit, ViewsDto, ViewsPoint } from '@kobato/shared/contracts/analytics.ts'
 
+import { pickTimeUnit } from '@kobato/contracts/analytics.ts'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/server/domains/analytics/services/query-filter.ts'
-import { pickTimeUnit } from '@kobato/shared/contracts/analytics.ts'
 import { sql } from 'kysely'
 
 /** strftime bucket format per unit — server-side, timezone-aware bucketing. */

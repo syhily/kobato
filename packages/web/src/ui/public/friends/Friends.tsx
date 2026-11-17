@@ -1,7 +1,7 @@
-import type { Friend } from '@kobato/shared/types/catalog.ts'
+import type { Friend } from '@kobato/contracts/types/catalog.ts'
 
-import { shuffle } from '@kobato/shared/utils/tools.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { shuffle } from '@kobato/utils/tools.ts'
 import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { useMemo } from 'react'
 

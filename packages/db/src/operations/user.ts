@@ -1,9 +1,9 @@
+import type { LoginMethod } from '@kobato/contracts/users.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { NewUser, User } from '@kobato/db/types.ts'
-import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 
 import { user } from '@kobato/db/schema/user.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import bcrypt from 'bcryptjs'
 import { and, count, eq, inArray, isNull, ne, or } from 'drizzle-orm'
 

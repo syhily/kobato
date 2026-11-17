@@ -1,5 +1,5 @@
-import type { AdminFontDto, FontSlot } from '@kobato/shared/contracts/fonts.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { AdminFontDto, FontSlot } from '@kobato/contracts/fonts.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import {
   closestCorners,
@@ -12,13 +12,12 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { formatBytes } from '@kobato/shared/i18n/format.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatBytes } from '@kobato/utils/format.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import {
   isDragData,
   isSlotDropData,
@@ -40,6 +39,7 @@ import {
   useSortableRow,
   useSortableSensors,
 } from '@kobato/web/ui/admin/shared/sortable.tsx'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVerticalIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'

@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
 import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
-import { hasAtLeast, type Role } from '@kobato/shared/utils/roles.ts'
+import { hasAtLeast, type Role } from '@kobato/utils/roles.ts'
 import { createMiddleware } from 'hono/factory'
 
 // RBAC for native Hono resource routes outside the oRPC surface; oRPC gates through

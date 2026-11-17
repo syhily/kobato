@@ -7,10 +7,10 @@
 // import, session, or intake batch until the persisted decision is `accepted`,
 // and a later `declined` fully stops a running SDK.
 
-import type { FrontendRumBootstrap } from '@kobato/shared/contracts/trace.ts'
+import type { FrontendRumBootstrap } from '@kobato/contracts/trace.ts'
 import type { RumConsent } from '@kobato/web/client/lib/rum-consent.ts'
 
-import { frontendRumBootstrapSchema } from '@kobato/shared/contracts/trace.ts'
+import { frontendRumBootstrapSchema } from '@kobato/contracts/trace.ts'
 import { rumRouteContextFromMatches } from '@kobato/web/client/lib/rum-route.ts'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'

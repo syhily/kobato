@@ -1,8 +1,8 @@
+import { adminTagDto } from '@kobato/contracts/tags.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@kobato/server/domains/taxonomies/tags/service.ts'
 import { adminProc, authorProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { adminTagDto } from '@kobato/shared/contracts/tags.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const list = authorProc

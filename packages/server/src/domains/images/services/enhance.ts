@@ -2,8 +2,8 @@
 // sparse dims + thumbhash (no public URL); `hydrateImageRefs` rewrites
 // cover/poster fields on list DTOs.
 
+import type { ResolvedImageMeta } from '@kobato/assets/images.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { ResolvedImageMeta } from '@kobato/shared/types/images.ts'
 
 import { resolveImageRefs, type ResolvedImageRef } from '@kobato/server/domains/images/services/resolve.ts'
 

@@ -2,10 +2,10 @@
 // normalized onto UTC and formatted in UTC, so SSR and the first client render
 // agree on any host. The zone is fixed, never the site zone.
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { formatDate, formatDateTime } from '@kobato/shared/i18n/format.ts'
 import { calendarWallClockDate } from '@kobato/ui/components/calendar.tsx'
+import { formatDate, formatDateTime } from '@kobato/utils/format.ts'
 
 export const WALL_CLOCK_ZONE = 'Etc/UTC'
 

@@ -1,5 +1,5 @@
 import type { Env } from '@kobato/server/http/context.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 import type { Context, Hono } from 'hono'
 
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
@@ -35,7 +35,7 @@ import { webmentionLinkHeader } from '@kobato/server/http/webmention-link-header
 import { root } from '@kobato/server/infra/logger.ts'
 import { sanitizeReqHeaders, resBindings } from '@kobato/server/infra/logger/sanitizer.ts'
 import { devTraceRequestMiddleware } from '@kobato/server/infra/trace/middleware.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { pinoLogger } from 'hono-pino'
 import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'

@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
-import type { ObservabilitySettings } from '@kobato/shared/config/types.ts'
-import type { ObservabilityStatusOutput } from '@kobato/shared/contracts/observability.ts'
+import type { ObservabilityStatusOutput } from '@kobato/contracts/observability.ts'
+import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
-import { mergeSectionPatch } from '@kobato/shared/config/merge-section-patch.ts'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

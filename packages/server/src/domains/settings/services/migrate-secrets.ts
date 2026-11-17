@@ -6,7 +6,7 @@ import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/regis
 import { isVitest } from '@kobato/server/infra/config.ts'
 import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 
 const log = getLogger('settings.migrate-secrets')
 

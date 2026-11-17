@@ -1,4 +1,4 @@
-import type { StorageMigrationDirection, StorageMigrationPersistedPhase } from '@kobato/shared/contracts/storage.ts'
+import type { StorageMigrationDirection, StorageMigrationPersistedPhase } from '@kobato/contracts/storage.ts'
 
 import { sql } from 'drizzle-orm'
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'

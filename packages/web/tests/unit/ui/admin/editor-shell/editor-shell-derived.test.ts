@@ -4,7 +4,7 @@ import type {
   RevisionLike,
 } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/shared/lexical/schema.ts'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/pt/schema.ts'
 import { localInputValueToIso, parseLocalDateTimeInput } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
 import {
   deriveBaselineRevision,

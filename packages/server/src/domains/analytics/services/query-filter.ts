@@ -1,7 +1,5 @@
 import type { RawBuilder } from 'kysely'
 
-import { index1Of } from '@kobato/server/domains/analytics/services/access-log.ts'
-import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/server/domains/analytics/services/metric-dimensions.ts'
 import {
   METRIC_TYPES,
   analyticsQuerySchema,
@@ -9,7 +7,9 @@ import {
   type AnalyticsQuery,
   type DateRange,
   type ResolvedAnalyticsQuery,
-} from '@kobato/shared/contracts/analytics.ts'
+} from '@kobato/contracts/analytics.ts'
+import { index1Of } from '@kobato/server/domains/analytics/services/access-log.ts'
+import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/server/domains/analytics/services/metric-dimensions.ts'
 import { sql } from 'kysely'
 
 /**

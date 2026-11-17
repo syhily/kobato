@@ -1,4 +1,4 @@
-import type { MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
 
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
+import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { ReactElement, ReactNode } from 'react'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'

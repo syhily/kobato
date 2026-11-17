@@ -17,7 +17,7 @@ import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler.t
 import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 const log = getLogger('webmentions.outbox')
 

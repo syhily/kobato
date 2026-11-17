@@ -12,7 +12,7 @@ import {
   representationFromLocalization,
   weakEtag,
 } from '@kobato/server/infra/http/etag.ts'
-import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('server/infra/http/etag — weakEtag', () => {

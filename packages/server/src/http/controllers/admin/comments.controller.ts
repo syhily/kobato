@@ -1,3 +1,6 @@
+import { adminCommentsPendingCountOutputSchema } from '@kobato/contracts/admin.ts'
+import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@kobato/contracts/comments.ts'
+import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
 import {
@@ -15,10 +18,7 @@ import {
   updateComment,
 } from '@kobato/server/domains/comments/services/moderate.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { adminCommentsPendingCountOutputSchema } from '@kobato/shared/contracts/admin.ts'
-import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const approve = adminProc

@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 

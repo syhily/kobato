@@ -1,6 +1,6 @@
-import type { SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
-import type { LocalDraftConfig } from '@kobato/web/client/hooks/use-local-draft.ts'
+import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LocalDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import type {
   ConflictFreezeSource,
   EditorShellDetail,
@@ -10,10 +10,14 @@ import type {
 } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 import type { NavigateFunction } from 'react-router'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/shared/lexical/equivalence.ts'
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/shared/lexical/schema.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/pt/equivalence.ts'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/pt/schema.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useAutosave, type AutosaveFlushOutcome, type AutosaveStatus } from '@kobato/web/client/hooks/use-autosave.ts'
+import {
+  useAutosave,
+  type AutosaveFlushOutcome,
+  type AutosaveStatus,
+} from '@kobato/web/ui/admin/editor-shell/drafts/use-autosave.ts'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,

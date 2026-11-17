@@ -1,7 +1,7 @@
-import { PUBLIC_MESSAGE_PREFIXES, isPublicMessageKey } from '@kobato/shared/i18n/catalog-scope.ts'
-import { uiMessagesForScope } from '@kobato/shared/i18n/catalog.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import { PUBLIC_MESSAGE_PREFIXES, isPublicMessageKey } from '@kobato/i18n/catalog-scope.ts'
+import { uiMessagesForScope } from '@kobato/i18n/catalog.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 /**
  * Public message-namespace architecture guard.
  *
@@ -27,7 +27,15 @@ const APP_SRC = join(REPO_ROOT, 'apps/kobato/src')
 const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web': 'packages/web/src',
   '@kobato/ui': 'packages/ui/src',
-  '@kobato/shared': 'packages/shared/src',
+  '@kobato/contracts': 'packages/shared/contracts/src',
+  '@kobato/seo': 'packages/shared/seo/src',
+  '@kobato/pt': 'packages/shared/pt/src',
+  '@kobato/utils': 'packages/shared/utils/src',
+  '@kobato/i18n': 'packages/shared/i18n/src',
+  '@kobato/cache': 'packages/shared/cache/src',
+  '@kobato/settings': 'packages/shared/settings/src',
+  '@kobato/assets': 'packages/shared/assets/src',
+  '@kobato/sanitize': 'packages/shared/sanitize/src',
   '@kobato/inkling': 'packages/inkling/src',
   '@kobato/test': 'packages/tools/test/src',
 }

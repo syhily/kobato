@@ -1,6 +1,6 @@
+import type { AdminPageDetailDto, AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ListPagesFilters } from '@kobato/server/domains/pages/repo.ts'
-import type { AdminPageDetailDto, AdminPageDto } from '@kobato/shared/contracts/pages.ts'
 
 import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query.ts'
 import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'

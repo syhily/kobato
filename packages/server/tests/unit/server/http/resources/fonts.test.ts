@@ -96,7 +96,7 @@ describe('fontsRouter', () => {
         register: (_buffer: Buffer, family: string) => void registered.add(family),
       },
     }))
-    vi.doMock('@kobato/shared/config/getters.ts', () => ({
+    vi.doMock('@kobato/settings/getters.ts', () => ({
       requireBlogSettingsSection: vi.fn((section: string) => {
         if (section === 'fonts') {
           return {

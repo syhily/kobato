@@ -1,11 +1,12 @@
-import { DEFAULT_FONT_STACKS } from '@kobato/shared/config/font-stacks.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { DEFAULT_FONT_STACKS } from '@kobato/ui/lib/font-stacks.ts'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 // The locale default font chains exist twice by necessity — once in CSS
-// (`:lang()` branches in tailwind.css) and once in the shared map
-// root.tsx prepends custom families to. This contract keeps them identical.
+// (`:lang()` branches in tailwind.css) and once in the UI map
+// (`@kobato/ui/lib/font-stacks.ts`, which root.tsx prepends custom families
+// to). This contract keeps them identical.
 
 const CSS = readFileSync('packages/ui/src/styles/tailwind.css', 'utf8')
 const ROOT = readFileSync('apps/kobato/src/root.tsx', 'utf8')

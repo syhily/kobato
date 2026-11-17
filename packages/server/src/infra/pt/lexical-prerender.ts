@@ -1,5 +1,6 @@
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/pt/schema.ts'
 
+import { visitLexicalNodes } from '@kobato/pt/walk.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
 import {
@@ -8,9 +9,8 @@ import {
   createShikiHighlighter,
   shikiTransformers,
 } from '@kobato/server/infra/pt/shiki.ts'
-import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
-import { createPromiseMemo } from '@kobato/shared/utils/memo.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { createPromiseMemo } from '@kobato/utils/memo.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import katex from 'katex'
 
 const log = getLogger('pt.lexical-prerender')

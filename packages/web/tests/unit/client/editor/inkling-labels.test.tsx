@@ -7,8 +7,8 @@
 // Pinned by `apps/kobato/tests/arch/client-bundle.test.ts`; this suite pins the
 // payload read + the degraded no-payload path.
 
-import { kobatoInklingLabelsZhCN } from '@kobato/shared/i18n/inkling-labels/zh-CN.ts'
-import { kobatoInklingLabelsZhTW } from '@kobato/shared/i18n/inkling-labels/zh-TW.ts'
+import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
+import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'
 import { useKobatoInklingLabels } from '@kobato/web/client/editor/inkling-labels.ts'
 import { render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'

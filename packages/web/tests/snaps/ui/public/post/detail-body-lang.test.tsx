@@ -1,4 +1,4 @@
-import type { DetailPageComments } from '@kobato/shared/types/comments.ts'
+import type { DetailPageComments } from '@kobato/contracts/types/comments.ts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { renderInRouter } from '@kobato/test/render.tsx'

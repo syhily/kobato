@@ -1,5 +1,5 @@
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 import type { MusicRow } from '@kobato/db/types.ts'
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
 
 import { resolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 

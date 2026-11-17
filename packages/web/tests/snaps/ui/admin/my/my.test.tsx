@@ -1,4 +1,4 @@
-import type { MySessionItem } from '@kobato/shared/types/sessions.ts'
+import type { MySessionItem } from '@kobato/contracts/types/sessions.ts'
 import type { MyProfileUser, MyProfileCounts } from '@kobato/web/ui/admin/my/MyProfileView.tsx'
 
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'

@@ -1,5 +1,8 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow } from '@kobato/db/types.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type {
   ContentType,
@@ -7,10 +10,9 @@ import type {
   SaveDraftResult,
 } from '@kobato/server/domains/content/schemas/revision.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/pt/embeds.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { AdminRevisionDto } from '@kobato/shared/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/pt/collect.ts'
+import { compactLexicalEditorState } from '@kobato/pt/dialect.ts'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
 import {
   isEquivalentToPublishedLatest,
@@ -25,8 +27,6 @@ import { canonicalizeLexicalEditorState } from '@kobato/server/domains/pt/servic
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { getLogger, type Logger } from '@kobato/server/infra/logger.ts'
 import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
-import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/shared/lexical/collect.ts'
-import { compactLexicalEditorState } from '@kobato/shared/lexical/dialect.ts'
 
 const log = getLogger('content.lifecycle')
 

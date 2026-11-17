@@ -3,7 +3,7 @@ import {
   SECTION_REGISTRY,
   validateSectionDefaults,
 } from '@kobato/server/domains/settings/sections/registry.ts'
-import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
+import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
 import { describe, expect, it } from 'vitest'
 
 const CORRUPT_LIMITS_MESSAGE =

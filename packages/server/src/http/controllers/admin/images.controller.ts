@@ -1,3 +1,4 @@
+import { adminImageDto, listImagesOutputDto } from '@kobato/contracts/images.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { userSession } from '@kobato/server/domains/auth/primitives.ts'
 import { uploadImageMetadataSchema } from '@kobato/server/domains/images/schema.ts'
@@ -9,9 +10,8 @@ import {
 import { listImagesForAdmin } from '@kobato/server/domains/images/services/admin-read.ts'
 import { checkImageUpload, uploadImage } from '@kobato/server/domains/images/services/upload.ts'
 import { authorProc, localizedOrpcError, localizedOrpcErrorDescriptor } from '@kobato/server/http/orpc-base.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { adminImageDto, listImagesOutputDto } from '@kobato/shared/contracts/images.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const list = authorProc

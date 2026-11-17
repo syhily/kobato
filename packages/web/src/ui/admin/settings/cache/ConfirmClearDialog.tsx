@@ -1,5 +1,5 @@
-import type { CacheBucketStats } from '@kobato/shared/contracts/cache.ts'
-import type { ClearCacheTarget } from '@kobato/shared/types/cache.ts'
+import type { ClearCacheTarget } from '@kobato/cache/types.ts'
+import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
 
 import {
   AlertDialog,

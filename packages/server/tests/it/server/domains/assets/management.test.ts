@@ -1,4 +1,4 @@
-import type { BrandingObjectRef } from '@kobato/shared/config/types.ts'
+import type { BrandingObjectRef } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 // Real settings table + storage registry seam; only the favicon-pack

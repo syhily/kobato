@@ -1,5 +1,5 @@
 // Constants shared across the cache settings UI (form, validators, display) without circular imports.
-import { FIXED_CACHE_PREFIXES } from '@kobato/shared/cache/registry.ts'
+import { FIXED_CACHE_PREFIXES } from '@kobato/cache/registry.ts'
 
 export const SECONDS_PER_HOUR = 60 * 60
 export const MIN_TTL_HOURS = 1

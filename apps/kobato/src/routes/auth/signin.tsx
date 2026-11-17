@@ -1,6 +1,6 @@
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 
 import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf.ts'
 import { signInWithPasskey } from '@kobato/server/domains/auth/passkey/signin.ts'
@@ -14,10 +14,9 @@ import { hasApprovedComments } from '@kobato/server/domains/comments/services/pu
 import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate.ts'
 import { handleSigninLogout, loadSigninData } from '@kobato/server/http/loaders/signin.ts'
 import { getRequestContext } from '@kobato/server/http/request-context.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
-import { safeRedirectPath } from '@kobato/shared/utils/safe-url.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import { safeRedirectPath } from '@kobato/utils/safe-url.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { LoginForm } from '@kobato/web/ui/admin/auth/AdminCredentialsForm.tsx'
 import { LostPasswordForm } from '@kobato/web/ui/admin/auth/LostPasswordForm.tsx'
 import { MagicLinkConfirmForm } from '@kobato/web/ui/admin/auth/MagicLinkConfirmForm.tsx'
@@ -25,6 +24,8 @@ import { OtpForm } from '@kobato/web/ui/admin/auth/OtpForm.tsx'
 import { ResetPasswordForm } from '@kobato/web/ui/admin/auth/ResetPasswordForm.tsx'
 import { BrandLogo } from '@kobato/web/ui/public/chrome/BrandLogo.tsx'
 import { data, redirect, useNavigation } from 'react-router'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 import type { Route } from './+types/signin'
 

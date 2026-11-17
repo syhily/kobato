@@ -2,7 +2,6 @@
 // platform-specifier requires — absolute paths from the flat natives dir
 // under SEA, embedded `natives-meta/*` metadata, node_modules otherwise.
 
-import { getEmbeddedAsset, requireExternal } from '@kobato/server/infra/sea.ts'
 import {
   SEA_NATIVE_ASSET_PREFIX,
   SEA_NATIVE_DUCKDB_ADDON_KEY,
@@ -12,8 +11,9 @@ import {
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
-} from '@kobato/shared/sea/assets.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+} from '@kobato/contracts/sea/assets.ts'
+import { getEmbeddedAsset, requireExternal } from '@kobato/server/infra/sea.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { join } from 'node:path'
 
 /** Mirrors sharp's `runtimePlatformArch()`: `${platform}${libc}-${arch}`, libc=`musl` on non-glibc linux. */

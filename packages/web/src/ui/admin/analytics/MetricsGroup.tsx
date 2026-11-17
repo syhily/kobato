@@ -1,6 +1,6 @@
-import type { MetricGroup, MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricGroup, MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
 
-import { METRIC_GROUP_TABS } from '@kobato/shared/contracts/analytics.ts'
+import { METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'
 import { Card } from '@kobato/ui/components/card.tsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'

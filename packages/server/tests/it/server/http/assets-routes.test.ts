@@ -1,5 +1,5 @@
 import type { Env } from '@kobato/server/http/context.ts'
-import type { BrandingObjectRef } from '@kobato/shared/config/types.ts'
+import type { BrandingObjectRef } from '@kobato/settings/types.ts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { getTestDb } from '@kobato/test/integration-db.ts'

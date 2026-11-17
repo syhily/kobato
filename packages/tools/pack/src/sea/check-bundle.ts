@@ -15,7 +15,7 @@ const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `no
 // keep in sync with the define block there; exported for the contract test.
 export const SEA_BUNDLE_DEFINED_GLOBALS = [
   '__SEA_APP_VERSION__',
-  // The six `__APP_*__` globals `@/shared/config/version` consumes.
+  // The six `__APP_*__` globals `@kobato/utils/version` consumes.
   '__APP_NAME__',
   '__APP_VERSION__',
   '__APP_DESCRIPTION__',

@@ -1,8 +1,3 @@
-import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration.ts'
-import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats.ts'
-import { adminProc } from '@kobato/server/http/orpc-base.ts'
-import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils.ts'
 import {
   TASK_CATALOG,
   jobHistoryInput,
@@ -12,7 +7,12 @@ import {
   type JobRunDto,
   type JobSummaryDto,
   type JobsListDto,
-} from '@kobato/shared/contracts/jobs.ts'
+} from '@kobato/contracts/jobs.ts'
+import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration.ts'
+import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder.ts'
+import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils.ts'
 
 // Admin task center — read-only aggregation over the task catalog, the
 // scheduler's live states, the job_run history, and the webmention queue

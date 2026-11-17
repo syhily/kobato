@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { TableCell, TableRow } from '@kobato/ui/components/table.tsx'

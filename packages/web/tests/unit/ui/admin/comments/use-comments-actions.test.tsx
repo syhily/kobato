@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
 import type { ReactNode } from 'react'
 
 import { makeAdminComment } from '@kobato/test/catalog.ts'

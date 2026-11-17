@@ -1,3 +1,4 @@
+import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type {
@@ -8,12 +9,11 @@ import type {
 import type { MetaListQueries } from '@kobato/server/domains/content/entities/meta-repo.ts'
 import type { LimitOffset } from '@kobato/server/domains/content/pagination.ts'
 import type { AdminListEngagement, AdminListResult } from '@kobato/server/domains/content/services/admin-list.ts'
-import type { AdminRevisionDto } from '@kobato/shared/contracts/revision.ts'
 
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
 import { findContentById, findLatestRevision, listRevisions } from '@kobato/server/domains/content/revisions.ts'
 import { listForAdmin } from '@kobato/server/domains/content/services/admin-list.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export interface EntityAdminDetail<TAdminDto> {
   meta: TAdminDto

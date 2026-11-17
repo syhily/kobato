@@ -5,7 +5,7 @@ import type { SendResult } from '@kobato/server/infra/email/types.ts'
 import { sendAdminNotification } from '@kobato/server/infra/email/admin-notification.ts'
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
 import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { createElement } from 'react'
 
 // Sent to the administrator on a friend-link application. Fire-and-forget —

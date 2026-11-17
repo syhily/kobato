@@ -1,6 +1,6 @@
 // Trimmed inkling comment composer — no cards, slash menu, or card insert; kobato glue
-// (node set, markdown transformers, labels, legacy math downgrade) lives in `@/client/editor/`.
-// Load only through `./LazyCommentBodyEditor`: this module, the inkling island, and
+// (node set, markdown transformers, legacy math downgrade) lives in `./editor/`. Load only
+// through `./LazyCommentBodyEditor`: this module, the inkling island, and
 // `inkling-comment-editor.css` must stay in a lazy chunk so the public post page's static
 // import graph stays editor-free. `isEmojiEnabled={false}` keeps the emoji-mart chunk out of
 // nested editors; `codeEditor="plain"` avoids the CodeMirror chunk here.
@@ -8,16 +8,16 @@
 import '@kobato/inkling/styles/index.css'
 import '@kobato/web/styles/inkling-comment-editor.css'
 import type { InklingLabelsInput } from '@kobato/inkling'
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 
 import { InklingSurface, ListPlugin } from '@kobato/inkling'
-import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/pt/comment-schema.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { blockQuoteAsideCycle } from '@kobato/web/client/editor/block-quote-aside-cycle.ts'
-import { COMMENT_EDITOR_NODES } from '@kobato/web/client/editor/comment-editor-nodes.ts'
-import { downgradeLegacyCommentMath } from '@kobato/web/client/editor/comment-legacy-math.ts'
-import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/web/client/editor/comment-markdown-transformers.ts'
 import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web/client/editor/editor-surface.tsx'
+import { COMMENT_EDITOR_NODES } from '@kobato/web/ui/public/comments/editor/comment-editor-nodes.ts'
+import { downgradeLegacyCommentMath } from '@kobato/web/ui/public/comments/editor/comment-legacy-math.ts'
+import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/web/ui/public/comments/editor/comment-markdown-transformers.ts'
 import { useCallback } from 'react'
 
 export interface CommentBodyEditorProps {

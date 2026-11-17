@@ -6,7 +6,7 @@ import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
 import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 
 const log = getLogger('branding.http')
 

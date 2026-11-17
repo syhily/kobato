@@ -1,7 +1,6 @@
+import type { LoginMethod } from '@kobato/contracts/users.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { User } from '@kobato/db/types.ts'
-import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
-import type { UserSortOrder } from '@kobato/shared/types/users.ts'
 
 import {
   countAdmins,
@@ -30,6 +29,8 @@ import { tryPasswordResetByTargetRateLimit } from '@kobato/server/infra/rate-lim
 import { count } from 'drizzle-orm'
 
 const log = getLogger('users.admin')
+
+export type UserSortOrder = 'recent' | 'commentCount'
 
 export async function countUsers(db: Database): Promise<number> {
   const rows = await db.select({ count: count() }).from(user)

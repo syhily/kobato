@@ -1,12 +1,12 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { coerceBoolean } from '@kobato/server/domains/settings/sections/shared.ts'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
-} from '@kobato/shared/config/observability.ts'
-import { rumClientIdentitySchema } from '@kobato/shared/contracts/trace.ts'
+} from '@kobato/server/infra/observability.ts'
+import { rumClientIdentitySchema } from '@kobato/settings/rum-client-identity.ts'
 import { z } from 'zod'
 
 /** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */

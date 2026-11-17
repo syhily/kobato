@@ -2,7 +2,7 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts
 
 import { serverConfig } from '@kobato/server/infra/config.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 const CSRF_SESSION_KEY = 'csrfToken'

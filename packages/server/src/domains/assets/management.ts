@@ -1,5 +1,5 @@
 import type { Database } from '@kobato/db/database.ts'
-import type { BrandingObjectRef } from '@kobato/shared/config/types.ts'
+import type { BrandingObjectRef } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 import { type BinarySlot } from '@kobato/server/assets/defaults.ts'
@@ -16,7 +16,7 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { activeBackend } from '@kobato/server/infra/storage/registry.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 const log = getLogger('branding.management')
 

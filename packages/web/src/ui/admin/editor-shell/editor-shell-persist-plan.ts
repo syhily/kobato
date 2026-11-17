@@ -1,8 +1,8 @@
-import type { SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type { EditorShellStatus, RevisionLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/shared/lexical/equivalence.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/pt/equivalence.ts'
 import { localInputValueToIso } from '@kobato/web/ui/admin/editor-shell/editor-datetime.ts'
 
 // Pure save planners for the editor persist module: wire-payload and

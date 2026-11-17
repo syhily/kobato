@@ -44,7 +44,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
-vi.mock('@kobato/web/client/hooks/use-autosave.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-autosave.ts', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
@@ -53,18 +53,18 @@ const localDraftState = vi.hoisted(() => ({
   loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
 
-vi.mock('@kobato/web/client/hooks/use-local-draft.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts', () => ({
   useLocalDraft: vi.fn(() => ({ loadedDraft: localDraftState.loadedDraft, clearDraft: vi.fn() })),
 }))
 
-import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/shared/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type { EditorShellDetail, EntityLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 import type { UseEditorShellPersistArgs } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-persist.ts'
 
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
-import { useAutosave } from '@kobato/web/client/hooks/use-autosave.ts'
-import { useLocalDraft } from '@kobato/web/client/hooks/use-local-draft.ts'
+import { useAutosave } from '@kobato/web/ui/admin/editor-shell/drafts/use-autosave.ts'
+import { useLocalDraft } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import { useEditorShellPersist } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-persist.ts'
 
 // The editor shell hooks call `useI18n()`, so every render needs the provider.

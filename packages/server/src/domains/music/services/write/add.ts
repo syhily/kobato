@@ -1,8 +1,8 @@
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { MusicRow, NewMusic } from '@kobato/db/types.ts'
 import type { ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
-import type { StorageDriver } from '@kobato/shared/config/types.ts'
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+import type { StorageDriver } from '@kobato/settings/types.ts'
 
 import { findMusicById, findMusicBySourceAndId, insertMusic, restoreMusic } from '@kobato/db/operations/music.ts'
 import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'

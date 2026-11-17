@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
-import { SiGooglechrome, SiMacos } from '@kobato/ui/icons/metric-brands.tsx'
+import { SiGooglechrome, SiMacos } from '@kobato/web/ui/admin/analytics/metric-brands.tsx'
 import { MetricName, flagEmojiFor, regionDisplayName } from '@kobato/web/ui/admin/analytics/MetricName.tsx'
 import { Globe, MonitorCheck } from 'lucide-react'
 import { renderToStaticMarkup } from 'react-dom/server'

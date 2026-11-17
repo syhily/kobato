@@ -1,5 +1,5 @@
 import type { Database } from '@kobato/db/database.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { findSettingByScope } from '@kobato/db/operations/setting.ts'
 import { setting } from '@kobato/db/schema/config.ts'
@@ -8,7 +8,7 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { decryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'

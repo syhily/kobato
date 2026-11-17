@@ -4,13 +4,13 @@ import {
   CHUNKS_SENTINEL,
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
-} from '@kobato/shared/constants/route-warmup.ts'
+} from '@kobato/contracts/constants/route-warmup.ts'
 import {
   collectManifestChunks,
   parseClientManifest,
   type WarmupManifest,
-} from '@kobato/shared/route-warmup/manifest.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/warmup-manifest.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'

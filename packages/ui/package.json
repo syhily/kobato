@@ -15,9 +15,11 @@
   },
   "devDependencies": {
     "@base-ui/react": "catalog:",
-    "@kobato/shared": "workspace:*",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/ui": "workspace:*",
+    "@kobato/utils": "workspace:*",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

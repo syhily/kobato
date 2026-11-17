@@ -1,9 +1,9 @@
+import type { AdminPostDetailDto } from '@kobato/contracts/posts.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type { ListPostsFilters } from '@kobato/server/domains/posts/repos/shared.ts'
 import type { AdminPostsListResult } from '@kobato/server/domains/posts/services/shared.ts'
-import type { AdminPostDetailDto } from '@kobato/shared/contracts/posts.ts'
 
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query.ts'

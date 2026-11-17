@@ -1,4 +1,4 @@
-import { toDetailPageShell } from '@kobato/shared/types/catalog.ts'
+import { toDetailPageShell } from '@kobato/contracts/types/catalog.ts'
 import { makePage } from '@kobato/test/catalog.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'

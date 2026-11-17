@@ -1,11 +1,11 @@
+import type { PublicMusicMeta } from '@kobato/contracts/music.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/pt/embeds.ts'
-import type { PublicMusicMeta } from '@kobato/shared/contracts/music.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
 // Lexical editor-state fixtures pinning the storage wire format the inkling composer
 // produces: element nodes always carry children/direction/format/indent, text nodes
 // detail/format/mode/style/text (lexical 0.53 exporters). Mirrored from
-// tests/unit/shared/lexical/schema.test.ts — keep both in sync.
+// packages/shared/pt/tests/unit/schema.test.ts — keep both in sync.
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }

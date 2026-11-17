@@ -1,6 +1,6 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { honeypotField } from '@kobato/shared/utils/schema.ts'
+import { honeypotField } from '@kobato/utils/schema.ts'
 import { z } from 'zod'
 
 // Typed catalog id (never prose): the boundary maps it into a wire descriptor.

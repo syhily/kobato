@@ -1,6 +1,6 @@
+import type { Page } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
-import type { Page } from '@kobato/shared/types/catalog.ts'
 
 import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
 import { makeMetaCrud } from '@kobato/server/domains/content/entities/meta-repo.ts'

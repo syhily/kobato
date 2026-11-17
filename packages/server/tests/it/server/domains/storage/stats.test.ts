@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/settings/types.ts'
 
 import { backup as backupTable } from '@kobato/db/schema/backup.ts'
 import { image, music } from '@kobato/db/schema/media.ts'

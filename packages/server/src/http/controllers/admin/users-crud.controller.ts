@@ -1,3 +1,10 @@
+import {
+  adminUserUpdateInput,
+  adminUsersCountOutputSchema,
+  adminUsersPasskeyFlagOutputSchema,
+} from '@kobato/contracts/admin.ts'
+import { splitMergePatch } from '@kobato/contracts/merge-patch.ts'
+import { adminUserDto } from '@kobato/contracts/users.ts'
 import { restoreUserById, updateUserById } from '@kobato/db/operations/user.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
@@ -9,14 +16,7 @@ import {
   toAdminUserDto,
 } from '@kobato/server/domains/users/services/admin.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import {
-  adminUserUpdateInput,
-  adminUsersCountOutputSchema,
-  adminUsersPasskeyFlagOutputSchema,
-} from '@kobato/shared/contracts/admin.ts'
-import { splitMergePatch } from '@kobato/shared/contracts/merge-patch.ts'
-import { adminUserDto } from '@kobato/shared/contracts/users.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const idInput = z.object({ id: z.string().min(1) })

@@ -1,4 +1,4 @@
-import { thumbHashToDataURL } from '@kobato/shared/utils/thumbhash.ts'
+import { thumbHashToDataURL } from '@kobato/utils/thumbhash.ts'
 import { type RefObject, useEffect } from 'react'
 
 // In-process cache of decoded thumbhash data URLs — many images share decodes.

@@ -1,4 +1,4 @@
-import type { ClearCacheTarget } from '@kobato/shared/types/cache.ts'
+import type { ClearCacheTarget } from '@kobato/cache/types.ts'
 
 import { session } from '@kobato/db/schema/session.ts'
 import { clearAdminCache, getAdminCacheStats } from '@kobato/server/infra/cache/admin-ops.ts'

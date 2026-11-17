@@ -839,7 +839,7 @@ pre.shiki span {
  * AppLocale). A configured custom family still wins: root.tsx sets it as an
  * inline style on <html>, which outranks these rules.
  *
- * Contract-pinned against src/shared/config/font-stacks.ts
+ * Contract-pinned against src/lib/font-stacks.ts
  * (tests/unit/contract/font-stacks.test.ts) — change both or neither.
  */
 :lang(en-US) {

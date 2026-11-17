@@ -1,5 +1,5 @@
-import type { AdminMusicDto, MetingSearchHit } from '@kobato/shared/contracts/music.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { AdminMusicDto, MetingSearchHit } from '@kobato/contracts/music.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 export const SOURCE_OPTIONS: { value: string; labelId: UiMessageId }[] = [
   { value: 'netease', labelId: 'admin.musics.source.netease' },

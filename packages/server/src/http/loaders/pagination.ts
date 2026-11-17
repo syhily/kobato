@@ -1,5 +1,5 @@
+import { pagePath } from '@kobato/server/domains/content/urls.ts'
 import { notFound } from '@kobato/server/infra/http/status.ts'
-import { pagePath } from '@kobato/shared/utils/paths.ts'
 import { redirect } from 'react-router'
 
 // 404s when the segment isn't numeric — `/page/abc` must not match page 1.

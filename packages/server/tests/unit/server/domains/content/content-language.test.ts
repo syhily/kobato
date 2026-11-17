@@ -1,12 +1,12 @@
-import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields.ts'
-import { upsertPageMetaSchema } from '@kobato/server/domains/pages/schema.ts'
-import { upsertPostMetaSchema } from '@kobato/server/domains/posts/schema.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import {
   CONTENT_LANGUAGE_MAX_LENGTH,
   canonicalContentLanguage,
   isContentLanguageInput,
-} from '@kobato/shared/i18n/content-language.ts'
+} from '@kobato/i18n/content-language.ts'
+import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields.ts'
+import { upsertPageMetaSchema } from '@kobato/server/domains/pages/schema.ts'
+import { upsertPostMetaSchema } from '@kobato/server/domains/posts/schema.ts'
+import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { describe, expect, it } from 'vitest'
 
 // The content language is author metadata, not a UI locale: any well-formed BCP 47 tag

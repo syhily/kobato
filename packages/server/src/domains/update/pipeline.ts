@@ -2,14 +2,14 @@
 // chmod → backup → swap, with best-effort restore and `.bak` rollback.
 // Sidecars: archive hash checked pre-extraction, binary hash post-extraction.
 
-import type { UpdateJobState } from '@kobato/shared/contracts/update.ts'
+import type { UpdateJobState } from '@kobato/contracts/update.ts'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { APP_REPOSITORY } from '@kobato/shared/config/version.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { APP_REPOSITORY } from '@kobato/utils/version.ts'
 import { createHash } from 'node:crypto'
 import { createReadStream, createWriteStream } from 'node:fs'
 import { chmod, mkdir, open, rename, rm } from 'node:fs/promises'

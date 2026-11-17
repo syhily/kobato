@@ -4,7 +4,7 @@ import { render } from '@kobato/server/infra/email/render.tsx'
 import { sendEmail } from '@kobato/server/infra/email/sender.ts'
 import ConfirmSubscription from '@kobato/server/infra/email/templates/ConfirmSubscription.tsx'
 import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { createElement } from 'react'
 
 // The only mail a `pending` subscriber ever receives.

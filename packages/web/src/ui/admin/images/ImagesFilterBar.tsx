@@ -1,5 +1,5 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import type { AdminImageKind } from '@kobato/shared/types/images.ts'
+import type { AdminImageKind } from '@kobato/assets/images.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ActiveImageFilter, ImageFilterField } from '@kobato/web/ui/admin/images/useImagesReducer.ts'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'

@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
+import type { AdminUserDto } from '@kobato/contracts/users.ts'
 
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { UserDetailView } from '@kobato/web/ui/admin/users/UserDetailView.tsx'

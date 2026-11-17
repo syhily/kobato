@@ -1,8 +1,8 @@
 import { resolveAvatarForEmail } from '@kobato/server/domains/comments/services/avatar.ts'
 import { publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
-import { joinUrl } from '@kobato/shared/utils/urls.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { avatarImageUrl } from '@kobato/utils/avatar.ts'
+import { joinUrl } from '@kobato/utils/urls.ts'
 import { z } from 'zod'
 
 const findAvatar = publicProc

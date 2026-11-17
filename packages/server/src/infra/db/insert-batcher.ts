@@ -1,9 +1,9 @@
 import type { Database } from '@kobato/db/database.ts'
 
+import { toJsonSafe } from '@kobato/server/infra/json.ts'
 import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle.ts'
 import { getLogger, type Logger } from '@kobato/server/infra/logger.ts'
-import { toJsonSafe } from '@kobato/shared/utils/to-json-safe.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 
 export interface InsertBatcherOptions {

@@ -1,4 +1,4 @@
-import type { AssetsSettings, BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { AssetsSettings, BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { Readable } from 'node:stream'
@@ -55,11 +55,11 @@ vi.mock('@aws-sdk/client-s3', () => {
   }
 })
 
-let snapshotSlot: (typeof import('@kobato/shared/config/snapshot.ts'))['BLOG_SETTINGS_SNAPSHOT_SLOT'] | null = null
+let snapshotSlot: (typeof import('@kobato/settings/snapshot.ts'))['BLOG_SETTINGS_SNAPSHOT_SLOT'] | null = null
 
 async function importBackend() {
   vi.resetModules()
-  const snapshot = await import('@kobato/shared/config/snapshot.ts')
+  const snapshot = await import('@kobato/settings/snapshot.ts')
   snapshotSlot = snapshot.BLOG_SETTINGS_SNAPSHOT_SLOT
   snapshot.BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
   snapshot.BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(Promise.resolve(TEST_BLOG_SETTINGS_BUNDLE))

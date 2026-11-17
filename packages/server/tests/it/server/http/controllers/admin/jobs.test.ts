@@ -1,3 +1,4 @@
+import { TASK_CATALOG } from '@kobato/contracts/jobs.ts'
 import { markWebmentionInboxRetry, upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox.ts'
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
 import { webmentionInbox, webmentionOutbox } from '@kobato/db/schema/webmention.ts'
@@ -8,7 +9,6 @@ import {
   scheduleJob,
   stopAllScheduledJobs,
 } from '@kobato/server/infra/scheduler-utils.ts'
-import { TASK_CATALOG } from '@kobato/shared/contracts/jobs.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'

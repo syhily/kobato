@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 import type { FilterFieldSpec } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { resolveSingleDateFilterBounds } from '@kobato/web/ui/admin/shared/date-filter.ts'
 import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web/ui/admin/shared/filter-bar/text-filter.ts'

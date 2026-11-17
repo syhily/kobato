@@ -1,5 +1,5 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 import type { Buffer } from 'node:buffer'
 
 import { compressImage } from '@kobato/server/infra/image/compress.ts'

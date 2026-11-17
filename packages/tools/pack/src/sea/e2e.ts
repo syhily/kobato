@@ -5,7 +5,7 @@
 
 // The one src import: the canonical bucket table, so the relaxed row below
 // can never drift out of the section schema.
-import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
+import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'

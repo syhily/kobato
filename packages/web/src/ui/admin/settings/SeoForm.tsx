@@ -1,4 +1,4 @@
-import type { SeoSettings } from '@kobato/shared/config/types.ts'
+import type { SeoSettings } from '@kobato/settings/types.ts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'

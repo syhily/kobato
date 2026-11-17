@@ -1,7 +1,7 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { AVATAR_SOURCES } from '@kobato/shared/utils/avatar.ts'
-import { isAllowedMirrorUrl } from '@kobato/shared/utils/safe-url.ts'
+import { AVATAR_SOURCES } from '@kobato/utils/avatar.ts'
+import { isAllowedMirrorUrl } from '@kobato/utils/safe-url.ts'
 import { z } from 'zod'
 
 /** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */

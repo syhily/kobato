@@ -3,9 +3,8 @@ import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/d
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import {
   emptyLexicalBody,
@@ -15,6 +14,7 @@ import {
   lexicalParagraph,
   stubMusicResolver,
 } from '@kobato/test/lexical.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

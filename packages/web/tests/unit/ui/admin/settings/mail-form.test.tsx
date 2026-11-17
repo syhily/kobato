@@ -1,4 +1,4 @@
-import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
@@ -7,9 +7,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
-vi.mock('@kobato/shared/lib/blog-config-context.tsx', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/shared/lib/blog-config-context.tsx')>(
-    '@kobato/shared/lib/blog-config-context.tsx',
+vi.mock('@kobato/web/client/settings/blog-settings-context.tsx', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/web/client/settings/blog-settings-context.tsx')>(
+    '@kobato/web/client/settings/blog-settings-context.tsx',
   )
   return {
     ...actual,

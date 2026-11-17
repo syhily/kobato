@@ -1,20 +1,20 @@
-import type { NotificationDto, NotificationTab } from '@kobato/shared/contracts/notifications.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@kobato/ui/components/sheet.tsx'
 import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import {
-  useInvalidateNotifications,
-  usePatchNotificationReadState,
-} from '@kobato/web/client/hooks/use-notifications.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { ComposeNotificationDialog } from '@kobato/web/ui/shared/notifications/ComposeNotificationDialog.tsx'
 import { NotificationBadge } from '@kobato/web/ui/shared/notifications/NotificationBadge.tsx'
 import { NotificationDetailPane } from '@kobato/web/ui/shared/notifications/NotificationDetailPane.tsx'
 import { NotificationListPane } from '@kobato/web/ui/shared/notifications/NotificationListPane.tsx'
+import {
+  useInvalidateNotifications,
+  usePatchNotificationReadState,
+} from '@kobato/web/ui/shared/notifications/use-notifications.ts'
 import { useMutation } from '@tanstack/react-query'
 import { CheckCheckIcon, SquarePenIcon } from 'lucide-react'
 import { useState } from 'react'

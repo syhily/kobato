@@ -1,5 +1,5 @@
+import type { LoginMethod } from '@kobato/contracts/users.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 
 import { likeEscape } from '@kobato/db/like-escape.ts'
 import { comment } from '@kobato/db/schema/comment.ts'

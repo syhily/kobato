@@ -2,8 +2,8 @@
 // Each gate returns `null` to allow or a `GateFailure`. The failure carries a
 // typed descriptor (never prose): the transports localize it per request.
 
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { DomainErrorCode } from '@kobato/server/infra/http/errors.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
 export interface GateFailure {
   code: DomainErrorCode

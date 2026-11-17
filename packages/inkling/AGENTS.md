@@ -5,7 +5,7 @@
 - `packages/inkling/src/` is kobato's rich-text editor layer (Lexical 0.53, React 19, TS), importing nothing from other layers. Source `packages/inkling/src/`; tests
   `packages/inkling/tests/` (own vitest project); demo `apps/inkling-demo/`.
 - Two entry surfaces only (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel `packages/inkling/src/index.ts`; for `client/`, `ui/`,
-  `routes/`) and `@kobato/inkling/headless` (`packages/inkling/src/headless.ts`, react-free; the only surface `server/` and `shared/` may use). The barrel's top-level
+  `routes/`) and `@kobato/inkling/headless` (`packages/inkling/src/headless.ts`, react-free; the only surface `server/` and `pt/` may use). The barrel's top-level
   `registerCardDecorateAdapter()` call MUST stay explicit.
 - Composer: the Lexical EXTENSION API, not `LexicalComposer`. `InklingComposerBase` (also the card-free composer) mounts `LexicalExtensionComposer` with the
   root extension from `packages/inkling/src/components/inkling-root-extension.ts` (namespace/theme/html/nodes/onError plus `$initialEditorState`: `null` when

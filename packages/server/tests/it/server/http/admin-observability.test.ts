@@ -14,7 +14,7 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
 import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'

@@ -1,11 +1,11 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
-import { idStr } from '@kobato/shared/utils/tools.ts'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
+import { idStr } from '@kobato/utils/tools.ts'
 import { AdminCommentRow } from '@kobato/web/ui/admin/comments/AdminCommentRow.tsx'
 import { EditCommentDialog } from '@kobato/web/ui/admin/comments/EditCommentDialog.tsx'
 import { EditUserDialog } from '@kobato/web/ui/admin/comments/EditUserDialog.tsx'

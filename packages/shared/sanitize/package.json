@@ -1,0 +1,16 @@
+{
+  "name": "@kobato/sanitize",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/sanitize": "workspace:*",
+    "@types/jsdom": "catalog:",
+    "dompurify": "catalog:",
+    "jsdom": "catalog:",
+    "vitest": "catalog:"
+  }
+}

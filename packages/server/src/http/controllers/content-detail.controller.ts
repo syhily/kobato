@@ -1,5 +1,11 @@
 import type { EntityTarget } from '@kobato/db/target.ts'
 
+import {
+  contentPageBySlugInputSchema,
+  contentPageBySlugOutputSchema,
+  contentPostBySlugInputSchema,
+  contentPostBySlugOutputSchema,
+} from '@kobato/contracts/content.ts'
 import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html.ts'
 import { listAllFriends } from '@kobato/server/domains/friends/service.ts'
 import { selectSidebarPosts } from '@kobato/server/domains/posts/services/featured.ts'
@@ -16,14 +22,8 @@ import {
   postEtag,
   representationFromLocalization,
 } from '@kobato/server/infra/http/etag.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import {
-  contentPageBySlugInputSchema,
-  contentPageBySlugOutputSchema,
-  contentPostBySlugInputSchema,
-  contentPostBySlugOutputSchema,
-} from '@kobato/shared/contracts/content.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 
 // `/posts/:slug`. The decision tree (draft fallback → 404 → canonical 301)
 // lives in `loadPostPreview`, which throws Responses translated here. The

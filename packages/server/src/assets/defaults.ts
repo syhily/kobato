@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { createHash } from 'node:crypto'
 
 // Fallback site assets bundled via Vite's glob import: SVGs inlined as raw text,

@@ -1,4 +1,4 @@
-import type { SecretMasks, SettingsBundle } from '@kobato/shared/config/types.ts'
+import type { SecretMasks, SettingsBundle } from '@kobato/settings/types.ts'
 
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

@@ -1,10 +1,10 @@
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { DomainErrorWire } from '@kobato/server/infra/http/errors.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { domainErrorFromWire } from '@kobato/server/infra/http/errors.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { WorkerDomainError } from '@kobato/server/infra/image/process-worker.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { describe, expect, it } from 'vitest'
 
 // The image worker crosses a `worker_threads` postMessage boundary: the error

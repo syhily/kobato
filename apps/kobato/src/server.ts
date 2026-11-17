@@ -18,8 +18,8 @@ import { getProcessPool } from '@kobato/server/infra/image/process-pool.ts'
 import { startAllRegisteredJobs } from '@kobato/server/infra/job-registry.ts'
 import { setHttpServer, setRestartApp, setServerPhase } from '@kobato/server/infra/lifecycle.ts'
 import { root } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 // Load-bearing: each job module self-registers on the registry at import time; `startAllRegisteredJobs()` below
 // arms them. Registration order is irrelevant — each job computes its own delay.
 import '@kobato/server/domains/analytics/geoip-scheduler.ts'
@@ -67,7 +67,7 @@ if (!hmr?.secretsMigrated) {
 
 // Runs after settings hydration and before the schedulers start, so background jobs are traced from their first
 // run; failures are isolated inside the domain and never block the site.
-// HMR can re-evaluate `shared/config/snapshot` (module-level state), so a fresh snapshot module reads back empty;
+// HMR can re-evaluate `@kobato/settings/snapshot` (module-level state), so a fresh snapshot module reads back empty;
 // `hydrateBlogSettings` is single-flight — cached when the snapshot survived, DB re-read when the module was
 // re-created.
 await hydrateBlogSettings(getDb())

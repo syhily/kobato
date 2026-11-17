@@ -10,7 +10,7 @@ import {
 import { Input } from '@kobato/ui/components/input.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { useFileUpload } from '@kobato/web/client/hooks/use-file-upload.ts'
+import { useFileUpload } from '@kobato/web/ui/admin/shared/use-file-upload.ts'
 import { useQueryClient } from '@tanstack/react-query'
 import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'

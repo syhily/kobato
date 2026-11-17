@@ -1,4 +1,4 @@
-import type { StorageDriver } from '@kobato/shared/config/types.ts'
+import type { StorageDriver } from '@kobato/settings/types.ts'
 
 import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
 import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'

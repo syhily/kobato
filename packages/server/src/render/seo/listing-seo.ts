@@ -1,10 +1,10 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 import type { MetaDescriptor } from 'react-router'
 
+import { type FeedLinkOptions, routeMeta } from '@kobato/seo/meta.ts'
+import { pagePath } from '@kobato/server/domains/content/urls.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { type FeedLinkOptions, routeMeta } from '@kobato/shared/seo/meta.ts'
-import { pagePath } from '@kobato/shared/utils/paths.ts'
 
 export interface ListingSeoProps {
   title?: string

@@ -1,7 +1,7 @@
 import type { Database } from '@kobato/db/database.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 
 import { comment } from '@kobato/db/schema/comment.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
@@ -25,7 +25,7 @@ import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notificati
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 
 const adminLog = getLogger('comments.admin')

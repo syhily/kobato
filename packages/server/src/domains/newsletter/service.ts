@@ -14,7 +14,7 @@ import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 const log = getLogger('newsletter.service')
 

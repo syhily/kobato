@@ -9,7 +9,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { NavigationSettings } from '@kobato/shared/config/types.ts'
+import type { NavigationSettings } from '@kobato/settings/types.ts'
 
 import { NavigationEditor } from '@kobato/web/ui/admin/settings/NavigationEditor.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,10 +1,11 @@
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller, isOrpcNotFound } from '@kobato/server/http/ssr-caller.ts'
 import { notFound } from '@kobato/server/infra/http/status.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { PostAnalyticsHeader, PostAnalyticsView } from '@kobato/web/ui/admin/analytics/PostAnalyticsView.tsx'
 import { useAnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 import type { Route } from './+types/analytics'
 

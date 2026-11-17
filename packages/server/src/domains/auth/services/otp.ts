@@ -1,7 +1,7 @@
 // OTP signin flow. The `pendingOtpUser` / `otpFailCount` session keys are read and written ONLY here.
 
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { BlogSession, PendingOtpUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
 import { findUserById } from '@kobato/db/operations/user.ts'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
@@ -23,7 +23,7 @@ import {
   tryOtpVerifyByEmailRateLimit,
   tryOtpVerifyRateLimit,
 } from '@kobato/server/infra/rate-limit.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 
 const log = getLogger('auth.signin')
 

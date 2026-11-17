@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
 import { buildMusicUpdate, splitArtistDraft } from '@kobato/web/ui/admin/musics/music-update.ts'
 import { describe, expect, it } from 'vitest'

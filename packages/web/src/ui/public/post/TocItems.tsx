@@ -1,4 +1,4 @@
-import type { TocItem } from '@kobato/shared/utils/toc.ts'
+import type { TocItem } from '@kobato/utils/toc.ts'
 
 import { memo } from 'react'
 

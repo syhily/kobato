@@ -1,7 +1,7 @@
 /**
  * The client seam for Kobato's Inkling label overlay.
  *
- * The four per-locale tables live in `@/shared/i18n/inkling-labels/**` and stay
+ * The four per-locale tables live in `@kobato/i18n/inkling-labels/**` and stay
  * out of the browser's static graph. WORKSPACE documents (`/admin`, `/editor`)
  * read the active locale's table from the root payload
  * (`content.bootstrap.i18n.inklingLabels`) through {@link useKobatoInklingLabels};
@@ -20,10 +20,10 @@
  * is the fallback.
  */
 
+import type { ContentBootstrapI18n } from '@kobato/contracts/content.ts'
+import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { InklingHostMenuLabelKey, InklingLabels, InklingLabelsInput } from '@kobato/inkling'
-import type { ContentBootstrapI18n } from '@kobato/shared/contracts/content.ts'
-import type { KobatoInklingLabelKey } from '@kobato/shared/i18n/inkling-labels/en-US.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { useRouteLoaderData } from 'react-router'
 
@@ -51,10 +51,10 @@ export function useKobatoInklingLabels(): InklingLabelsInput | undefined {
  * registry's cached namespace; a rejected import may be retried on the next mount.
  */
 const LABEL_TABLE_LOADERS = {
-  'en-US': () => import('@kobato/shared/i18n/inkling-labels/en-US.ts').then((table) => table.kobatoInklingLabelsEnUS),
-  'zh-CN': () => import('@kobato/shared/i18n/inkling-labels/zh-CN.ts').then((table) => table.kobatoInklingLabelsZhCN),
-  'zh-HK': () => import('@kobato/shared/i18n/inkling-labels/zh-HK.ts').then((table) => table.kobatoInklingLabelsZhHK),
-  'zh-TW': () => import('@kobato/shared/i18n/inkling-labels/zh-TW.ts').then((table) => table.kobatoInklingLabelsZhTW),
+  'en-US': () => import('@kobato/i18n/inkling-labels/en-US.ts').then((table) => table.kobatoInklingLabelsEnUS),
+  'zh-CN': () => import('@kobato/i18n/inkling-labels/zh-CN.ts').then((table) => table.kobatoInklingLabelsZhCN),
+  'zh-HK': () => import('@kobato/i18n/inkling-labels/zh-HK.ts').then((table) => table.kobatoInklingLabelsZhHK),
+  'zh-TW': () => import('@kobato/i18n/inkling-labels/zh-TW.ts').then((table) => table.kobatoInklingLabelsZhTW),
 } as const satisfies Record<AppLocale, () => Promise<InklingLabelsInput>>
 
 /** Load the active locale's table for an interaction-gated public composer. */

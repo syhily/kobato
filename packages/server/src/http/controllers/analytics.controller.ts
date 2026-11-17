@@ -1,17 +1,8 @@
-import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
-import { queryExportCsv } from '@kobato/server/domains/analytics/services/export.ts'
-import { queryHeatmap } from '@kobato/server/domains/analytics/services/heatmap.ts'
-import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
-import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
-import { parseAnalyticsSearch, resolveAnalyticsRange } from '@kobato/server/domains/analytics/services/query-filter.ts'
-import { queryViews } from '@kobato/server/domains/analytics/services/views.ts'
-import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import {
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
   adminAnalyticsSearchInputSchema,
-} from '@kobato/shared/contracts/admin.ts'
+} from '@kobato/contracts/admin.ts'
 import {
   METRIC_TYPE_VALUES,
   analyticsQuerySchema,
@@ -21,7 +12,16 @@ import {
   viewsDto,
   type AnalyticsQuery,
   type ResolvedAnalyticsQuery,
-} from '@kobato/shared/contracts/analytics.ts'
+} from '@kobato/contracts/analytics.ts'
+import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
+import { queryExportCsv } from '@kobato/server/domains/analytics/services/export.ts'
+import { queryHeatmap } from '@kobato/server/domains/analytics/services/heatmap.ts'
+import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
+import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
+import { parseAnalyticsSearch, resolveAnalyticsRange } from '@kobato/server/domains/analytics/services/query-filter.ts'
+import { queryViews } from '@kobato/server/domains/analytics/services/views.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { z } from 'zod'
 
 function resolve(input: AnalyticsQuery): ResolvedAnalyticsQuery {

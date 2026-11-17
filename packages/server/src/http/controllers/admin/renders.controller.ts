@@ -1,5 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { RenderMathOutput } from '@kobato/shared/types/pages.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html.ts'
@@ -9,6 +8,17 @@ import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/e
 import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
 import katex from 'katex'
 import { z } from 'zod'
+
+interface RenderMathOutput {
+  /** KaTeX-rendered MathML, or an empty string when KaTeX threw. */
+  mathml: string
+  /**
+   * Failure descriptor: `admin.editor.math.renderFailed` for the non-Error
+   * fallback, `error.api.rawMessage` carrying KaTeX's own technical text.
+   * The client's render-math adapter resolves it with the active locale.
+   */
+  error: ErrorMessageDescriptor | null
+}
 
 const MAX_RENDER_INPUT_LENGTH = 10_000
 

@@ -1,8 +1,8 @@
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { formatNumber } from '@kobato/shared/i18n/format.ts'
 import { Card, CardContent } from '@kobato/ui/components/card.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatNumber } from '@kobato/utils/format.ts'
 import { DateRangePicker } from '@kobato/web/ui/admin/analytics/DateRangePicker.tsx'
 import { useAnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 

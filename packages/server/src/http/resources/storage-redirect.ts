@@ -1,11 +1,11 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { getPublicBaseUrl } from '@kobato/server/infra/storage/public-url.ts'
 import { isS3Primary } from '@kobato/server/infra/storage/registry.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 /**
  * Redirect branch for the site-owned asset routes (`/storage/*`,
@@ -17,7 +17,7 @@ import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
  * The CDN transform template (`assets.storage.urlTemplate`) is applied HERE,
  * at this boundary — not inline in the browser. Clients signal transform
  * intent with `w`/`h`/`q` query params on the site-owned URL (see
- * `@/shared/types/images`); a templated redirect substitutes them into the
+ * `@kobato/assets/images`); a templated redirect substitutes them into the
  * template and consumes them, preserving unrelated params (`?v=`). No
  * template or no valid transform params → plain object redirect.
  */
@@ -43,7 +43,7 @@ const MAX_TRANSFORM_QUALITY = 100
 /**
  * `<publicBase>/<key>` plus the query string, with `w`/`h`/`q` substituted into
  * the configured CDN template — the server-side twin of `getImageUrl`/
- * `getImageSrcset` in `packages/shared/src/types/images.ts`; keep the two semantics in
+ * `getImageSrcset` in `packages/shared/assets/src/images.ts`; keep the two semantics in
  * sync. Template rules: `{src}` → the object URL, a template without `{src}`
  * appended to it; `w`/`h` are a pair. Transform params are consumed; the rest
  * (e.g. `?v=`) survives.

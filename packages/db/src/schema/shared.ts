@@ -1,7 +1,7 @@
 // Shared column enums. SQLite has no CREATE TYPE — `text({ enum })`
 // constrains at the app layer, and drizzle-kit emits a CHECK into the
 // migration SQL (DB-perimeter guard). The webmention lists are NOT here —
-// their canonical home is `@/shared/contracts/webmentions` (single source
+// their canonical home is `@kobato/contracts/webmentions` (single source
 // for the drizzle columns, the CHECK literals, and the zod enums).
 
 export const USER_ROLES = ['admin', 'author', 'visitor'] as const

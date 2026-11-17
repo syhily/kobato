@@ -1,6 +1,6 @@
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 
-import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/shared/lexical/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/pt/comment-schema.ts'
 import { commentBodyPlainText } from '@kobato/web/ui/public/comments/comment-body-helpers.ts'
 import { describe, expect, it } from 'vitest'
 

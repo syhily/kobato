@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/context.ts'
 import type { MiddlewareHandler } from 'hono'
 
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { cors } from 'hono/cors'
 
 // CORS from `security` settings, read live. No-op when disabled or pre-install; when

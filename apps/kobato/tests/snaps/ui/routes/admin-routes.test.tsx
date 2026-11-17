@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 // SSR-render every admin route Component export with fixture loaderData and assert real
@@ -10,6 +9,7 @@ import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'

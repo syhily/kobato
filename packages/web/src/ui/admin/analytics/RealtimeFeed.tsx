@@ -1,4 +1,4 @@
-import type { RealtimeEvent } from '@kobato/shared/contracts/analytics.ts'
+import type { RealtimeEvent } from '@kobato/contracts/analytics.ts'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'

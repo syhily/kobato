@@ -1,13 +1,12 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
-import { idStr } from '@kobato/shared/utils/tools.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { idStr } from '@kobato/utils/tools.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import {
   type CommentFilterFieldKey,
   type CommentsFilterQuery,
@@ -22,6 +21,7 @@ import {
   singleDateFilterLabel,
 } from '@kobato/web/ui/admin/shared/date-filter.ts'
 import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'
 import { useSearchParams } from 'react-router'

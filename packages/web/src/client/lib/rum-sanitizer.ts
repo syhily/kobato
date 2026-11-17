@@ -13,7 +13,7 @@ import type { RumBudgetStore } from '@kobato/web/client/lib/rum-budget.ts'
 import type { RumRouteContext } from '@kobato/web/client/lib/rum-route.ts'
 import type { RumBeforeSend, RumEvent, RumEventDomainContext } from '@openobserve/browser-rum-slim'
 
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { createRumSessionBudget } from '@kobato/web/client/lib/rum-budget.ts'
 import { sanitizeResourceUrl } from '@kobato/web/client/lib/rum-url-policy.ts'
 

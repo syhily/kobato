@@ -22,7 +22,7 @@ vi.mock('@tanstack/react-query', () => ({
 // Shared autosave engine handles; same pattern as use-editor-shell-persist.test.
 const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
-vi.mock('@kobato/web/client/hooks/use-autosave.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-autosave.ts', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
@@ -31,11 +31,11 @@ const localDraftState = vi.hoisted(() => ({
   loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
 
-vi.mock('@kobato/web/client/hooks/use-local-draft.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts', () => ({
   useLocalDraft: vi.fn(() => ({ loadedDraft: localDraftState.loadedDraft, clearDraft: vi.fn() })),
 }))
 
-vi.mock('@kobato/web/client/hooks/use-create-draft.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-create-draft.ts', () => ({
   useCreateDraft: vi.fn(() => ({
     sessionId: 'sess-1',
     loadedDraft: null,

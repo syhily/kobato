@@ -18,7 +18,7 @@ export const content = sqliteTable(
     ownerId: integer('owner_id').notNull(),
     revisionNo: integer('revision_no').notNull(),
     status: text('status').notNull().default('draft'),
-    // Lexical editor state (`@/shared/lexical/schema`); every writer passes it
+    // Lexical editor state (`@kobato/pt/schema`); every writer passes it
     // explicitly, so no default — a missing body fails loudly.
     body: text('body', { mode: 'json' }).notNull(),
     imageSources: text('image_sources', { mode: 'json' })

@@ -1,7 +1,6 @@
-import type { AdminUserUpdateInput } from '@kobato/shared/contracts/admin.ts'
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { AdminUserUpdateInput } from '@kobato/contracts/admin.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
 
-import { idStr } from '@kobato/shared/utils/tools.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
 import {
@@ -15,9 +14,10 @@ import {
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { idStr } from '@kobato/utils/tools.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { buildUserUpdatePayload } from '@kobato/web/ui/admin/users/user-update-payload.ts'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

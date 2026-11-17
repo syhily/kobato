@@ -1,8 +1,8 @@
-import type { MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
 
-import { formatNumber } from '@kobato/shared/i18n/format.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatNumber } from '@kobato/utils/format.ts'
 import { MetricName } from '@kobato/web/ui/admin/analytics/MetricName.tsx'
 
 // `total` is the caller-computed FULL-set visit sum, so the card's sliced

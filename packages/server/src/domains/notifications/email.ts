@@ -12,7 +12,7 @@ import { sendEmail } from '@kobato/server/infra/email/sender.ts'
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
 import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { createElement } from 'react'
 
 const log = getLogger('notifications.email')

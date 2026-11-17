@@ -1,10 +1,10 @@
-import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Input } from '@kobato/ui/components/input.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpc } from '@kobato/web/client/api/client.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'

@@ -1,3 +1,4 @@
+import { adminCategoryDto } from '@kobato/contracts/categories.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import {
   deleteAdminCategory,
@@ -6,8 +7,7 @@ import {
 } from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
 import { listCategoriesForAdmin } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { adminCategoryDto } from '@kobato/shared/contracts/categories.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const list = adminProc

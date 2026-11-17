@@ -1,8 +1,8 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
 import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
-import { rateLimitBucketMessages } from '@kobato/shared/config/rate-limit-bucket.ts'
+import { rateLimitBucketMessages } from '@kobato/settings/rate-limit-bucket.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { MetingSearchHit, SearchMusicOutput } from '@kobato/shared/contracts/music.ts'
+import type { MetingSearchHit, SearchMusicOutput } from '@kobato/contracts/music.ts'
 import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

@@ -1,7 +1,7 @@
 import { content as contentTable } from '@kobato/db/schema/content.ts'
+import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html.ts'
 import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
-import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'

@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/settings/types.ts'
 
 import { session as sessionTable } from '@kobato/db/schema/session.ts'
 import { user as userTable } from '@kobato/db/schema/user.ts'

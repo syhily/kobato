@@ -1,7 +1,7 @@
-import { EMPTY_PAGE_META_DRAFT } from '@kobato/shared/types/pages.ts'
-import { EMPTY_POST_META_DRAFT } from '@kobato/shared/types/posts.ts'
 import { buildPageUpsertPayload } from '@kobato/web/ui/admin/pages/build-page-upsert-payload.ts'
+import { EMPTY_PAGE_META_DRAFT } from '@kobato/web/ui/admin/pages/page-meta.ts'
 import { buildPostUpsertPayload } from '@kobato/web/ui/admin/posts/build-post-upsert-payload.ts'
+import { EMPTY_POST_META_DRAFT } from '@kobato/web/ui/admin/posts/post-meta.ts'
 import { describe, expect, it } from 'vitest'
 
 // The editor never sends a tag the server would reject: one bad field must not

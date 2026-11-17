@@ -1,7 +1,17 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
-import type { AssetsSettings, StorageDriver } from '@kobato/shared/config/types.ts'
+import type { AssetsSettings, StorageDriver } from '@kobato/settings/types.ts'
 
+import {
+  isStorageMigrationInFlightPhase,
+  storageMigrationVerificationDto,
+  type StorageMigrationDirection,
+  type StorageMigrationInFlightPhase,
+  type StorageMigrationPersistedPhase,
+  type StorageMigrationPhase,
+  type StorageMigrationStatus,
+  type StorageMigrationVerification,
+} from '@kobato/contracts/storage.ts'
 import { backup as backupTable } from '@kobato/db/schema/backup.ts'
 import { font as fontTable } from '@kobato/db/schema/font.ts'
 import { image, music } from '@kobato/db/schema/media.ts'
@@ -19,18 +29,8 @@ import {
 } from '@kobato/server/infra/storage/backends/s3.ts'
 import { contentTypeForKey, visibilityForKey } from '@kobato/server/infra/storage/key-policy.ts'
 import { backendFor } from '@kobato/server/infra/storage/registry.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import {
-  isStorageMigrationInFlightPhase,
-  storageMigrationVerificationDto,
-  type StorageMigrationDirection,
-  type StorageMigrationInFlightPhase,
-  type StorageMigrationPersistedPhase,
-  type StorageMigrationPhase,
-  type StorageMigrationStatus,
-  type StorageMigrationVerification,
-} from '@kobato/shared/contracts/storage.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { eq } from 'drizzle-orm'
 
 /**

@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { commentFlags } from '@kobato/web/ui/public/comments/comment-item/comment-flags.ts'

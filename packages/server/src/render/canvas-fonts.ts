@@ -1,8 +1,8 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { FONT_DIR } from '@kobato/server/infra/paths.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { access, readFile } from 'node:fs/promises'

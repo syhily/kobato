@@ -1,6 +1,6 @@
+import type { AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared.ts'
-import type { AdminPageDto } from '@kobato/shared/contracts/pages.ts'
 
 import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate.ts'
 import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'

@@ -1,6 +1,6 @@
-import type { SocialItem, SocialsSettings } from '@kobato/shared/config/types.ts'
+import type { SocialItem, SocialsSettings } from '@kobato/settings/types.ts'
 
-import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@kobato/shared/config/socials.ts'
+import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@kobato/settings/socials.ts'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

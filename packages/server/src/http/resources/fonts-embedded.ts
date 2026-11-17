@@ -1,9 +1,9 @@
 import type { Env } from '@kobato/server/http/context.ts'
 
+import { EMBEDDED_FONT_ROUTE_PREFIX, parseAssetUrlPath } from '@kobato/assets/asset-url.ts'
 import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@kobato/server/http/resources/serve-local-file.ts'
 import { s3StorageRedirect } from '@kobato/server/http/resources/storage-redirect.ts'
 import { contentTypeForKey } from '@kobato/server/infra/storage/key-policy.ts'
-import { EMBEDDED_FONT_ROUTE_PREFIX, parseAssetUrlPath } from '@kobato/shared/types/asset-url.ts'
 import { Hono } from 'hono'
 
 /**
@@ -24,7 +24,7 @@ fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
     return c.body(null, 400)
   }
   // URL → storage-key inverse of `resolveAssetUrl`'s route override; both
-  // directions share the path grammar in `@/shared/types/asset-url`.
+  // directions share the path grammar in `@kobato/assets/asset-url`.
   const parsed = parseAssetUrlPath(pathname)
   if (parsed === null || parsed.route !== EMBEDDED_FONT_ROUTE_PREFIX) {
     return c.body(null, 400)

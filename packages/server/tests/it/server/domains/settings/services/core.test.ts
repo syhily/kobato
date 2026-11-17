@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { setting } from '@kobato/db/schema/config.ts'
 import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
@@ -14,7 +14,7 @@ import {
 } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'

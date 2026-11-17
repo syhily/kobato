@@ -1,7 +1,7 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { isWebmentionReceiveEnabled } from '@kobato/shared/config/getters.ts'
-import { tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
+import { isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
+import { tryParseUrl } from '@kobato/utils/safe-url.ts'
 
 /** W3C Webmention discovery via the Link header (twin of the root `<link>`); null when
  *  the receive switch is off or no site URL is configured. */

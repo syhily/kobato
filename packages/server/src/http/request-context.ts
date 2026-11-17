@@ -1,9 +1,9 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
-import type { Role } from '@kobato/shared/utils/roles.ts'
+import type { AppLocalization } from '@kobato/settings/app-localization.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Role } from '@kobato/utils/roles.ts'
 import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'

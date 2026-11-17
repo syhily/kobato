@@ -1,12 +1,11 @@
-import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
-import type { PostMetaDraft } from '@kobato/shared/types/posts.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
 } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
+import type { PostMetaDraft } from '@kobato/web/ui/admin/posts/post-meta.ts'
 
-import { POST_META_TOGGLE_FIELDS } from '@kobato/shared/types/posts.ts'
 import { BasicInfoCard } from '@kobato/web/ui/admin/editor-shared/BasicInfoCard.tsx'
 import { ContentLanguageField } from '@kobato/web/ui/admin/editor-shared/ContentLanguageField.tsx'
 import { CoverOgCard } from '@kobato/web/ui/admin/editor-shared/CoverOgCard.tsx'
@@ -15,6 +14,7 @@ import { futureLocalInputValueOrEmpty } from '@kobato/web/ui/admin/editor-shell/
 import { AliasField } from '@kobato/web/ui/admin/posts/meta/AliasField.tsx'
 import { CategoryField } from '@kobato/web/ui/admin/posts/meta/CategoryField.tsx'
 import { TagsField } from '@kobato/web/ui/admin/posts/meta/TagsField.tsx'
+import { POST_META_TOGGLE_FIELDS } from '@kobato/web/ui/admin/posts/post-meta.ts'
 import { type ReactNode } from 'react'
 
 export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {

@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 // `<Toaster />` container label, so restore the actual module.
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { renderWithI18n } from '@kobato/test/i18n-render.tsx'
 import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog.tsx'

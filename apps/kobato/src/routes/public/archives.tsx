@@ -1,8 +1,9 @@
 import { listingHeaders } from '@kobato/server/http/loaders/route-exports.ts'
 import { createSsrCaller, unwrapListingPayload } from '@kobato/server/http/ssr-caller.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
 import { ArchivesBody } from '@kobato/web/ui/public/post/ArchivesBody.tsx'
 import { data } from 'react-router'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 import type { Route } from './+types/archives'
 

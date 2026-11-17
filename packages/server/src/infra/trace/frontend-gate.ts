@@ -7,8 +7,8 @@
 // runtime-scoped: an HMR-disposed runtime can never clear the gate installed by
 // its replacement.
 
+import type { FrontendRumBootstrap } from '@kobato/contracts/trace.ts'
 import type { FrontendRumRelay } from '@kobato/server/infra/trace/config.ts'
-import type { FrontendRumBootstrap } from '@kobato/shared/contracts/trace.ts'
 
 interface GateEntry {
   token: object

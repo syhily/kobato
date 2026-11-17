@@ -1,6 +1,6 @@
+import type { DetailCriticalPayload } from '@kobato/contracts/content.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
-import type { DetailCriticalPayload } from '@kobato/shared/contracts/content.ts'
 
 import { trackPageView } from '@kobato/server/domains/analytics/track.ts'
 import { loadDetailPageCritical } from '@kobato/server/http/loaders/comments.ts'

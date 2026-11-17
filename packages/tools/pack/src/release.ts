@@ -51,6 +51,11 @@ function workspacePackagePaths(): string[] {
       paths.push(`packages/tools/${entry.name}/package.json`)
     }
   }
+  for (const entry of readdirSync(resolve(ROOT, 'packages', 'shared'), { withFileTypes: true })) {
+    if (entry.isDirectory() && existsSync(resolve(ROOT, 'packages', 'shared', entry.name, 'package.json'))) {
+      paths.push(`packages/shared/${entry.name}/package.json`)
+    }
+  }
   return paths.sort()
 }
 

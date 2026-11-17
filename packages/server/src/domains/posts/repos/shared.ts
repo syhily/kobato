@@ -1,14 +1,14 @@
+import type { ClientPost } from '@kobato/contracts/types/catalog.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
-import type { ClientPost } from '@kobato/shared/types/catalog.ts'
 
 import { postTag } from '@kobato/db/schema/post-tag.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { tag } from '@kobato/db/schema/taxonomy.ts'
 import { buildMetaListWhere, type MetaListFiltersBase } from '@kobato/server/domains/content/entities/meta-repo.ts'
 import { livePostWhere, promotedPostWhere } from '@kobato/server/domains/posts/live-gate.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
-import { readStringArray } from '@kobato/shared/utils/tools.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { readStringArray } from '@kobato/utils/tools.ts'
 import { and, asc, desc, eq, not, sql, type SQL } from 'drizzle-orm'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }

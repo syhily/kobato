@@ -1,4 +1,4 @@
-import type { ObservabilitySettings } from '@kobato/shared/config/types.ts'
+import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { ObservabilityAssetsCard } from '@kobato/web/ui/admin/settings/ObservabilityAssetsCard.tsx'

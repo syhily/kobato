@@ -6,7 +6,7 @@
 
 import type { SpanAttributeValue, SpanAttributes } from '@kobato/server/infra/trace/facade.ts'
 
-import { CACHE_BUCKET_IDS } from '@kobato/shared/types/cache.ts'
+import { CACHE_BUCKET_IDS } from '@kobato/cache/types.ts'
 
 /**
  * Closed set of span attributes. A new boundary adds its own low-cardinality

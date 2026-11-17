@@ -1,14 +1,15 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { Setting } from '@kobato/db/types.ts'
 import type { SectionMeta } from '@kobato/server/domains/settings/sections/registry.ts'
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 import { SECTION_REGISTRY, validateSectionDefaults } from '@kobato/server/domains/settings/sections/registry.ts'
 import { securitySection } from '@kobato/server/domains/settings/sections/security.ts'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
 import { applySectionPatch, encryptSecretsInRow } from '@kobato/server/domains/settings/services/secrets-write.ts'
 import { sectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
 import {
@@ -20,10 +21,9 @@ import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { validateS3Config } from '@kobato/server/infra/storage/backends/s3.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { mergeSectionPatch } from '@kobato/shared/config/merge-section-patch.ts'
-import { isValidPasskeyDomain } from '@kobato/shared/utils/safe-url.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { isValidPasskeyDomain } from '@kobato/utils/safe-url.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 const log = getLogger('settings.service')
 

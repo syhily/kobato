@@ -4,7 +4,7 @@
 // so `保存 ${name}` is still copy; a `=== 'admin'` comparison operand is not.
 // Exemptions are file/rule/snippet exact — never a blanket directory skip.
 
-import { isKnownLocaleValue } from '@kobato/shared/i18n/locales.ts'
+import { isKnownLocaleValue } from '@kobato/i18n/locales.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { parseAst } from 'vite'
@@ -60,15 +60,15 @@ const HAN_TEXT = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 // Copy stores: string values ARE the localized catalog. The prefixes stay in the
 // parse set for keys and identifiers, but `han-literal` is off by design.
 const COPY_STORE_PREFIXES = [
-  'packages/shared/src/i18n/messages/',
-  'packages/shared/src/i18n/inkling-labels/',
+  'packages/shared/i18n/src/messages/',
+  'packages/shared/i18n/src/inkling-labels/',
   'packages/web/src/client/editor/inkling-labels/',
 ]
 
 // Whole-file content libraries: every string is data, so skip before reading or
 // parsing — a 1.3 MB quote bank must not cost an AST walk or thousands of findings.
 const COPY_STORE_FILES = new Set([
-  'packages/shared/src/i18n/fallback-messages.ts',
+  'packages/shared/i18n/src/fallback-messages.ts',
   'packages/server/src/render/calendar/local-quotes.ts',
 ])
 

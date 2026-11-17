@@ -1,9 +1,9 @@
-import type { TimeUnit, ViewsPoint } from '@kobato/shared/contracts/analytics.ts'
+import type { TimeUnit, ViewsPoint } from '@kobato/contracts/analytics.ts'
 
-import { formatNumber } from '@kobato/shared/i18n/format.ts'
-import { escapeHtml } from '@kobato/shared/utils/security.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatNumber } from '@kobato/utils/format.ts'
+import { escapeHtml } from '@kobato/utils/security.ts'
 import { formatTimeLabel, parseTimeLabel } from '@kobato/web/ui/admin/analytics/time-labels.ts'
 import { getClientTimezone } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { VisArea, VisAxis, VisCrosshair, VisGroupedBar, VisLine, VisTooltip, VisXYContainer } from '@unovis/react'

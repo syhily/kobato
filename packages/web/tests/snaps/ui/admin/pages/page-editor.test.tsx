@@ -1,5 +1,5 @@
-import type { AdminPageDetailDto } from '@kobato/shared/contracts/pages.ts'
-import type { PageMetaDraft } from '@kobato/shared/types/pages.ts'
+import type { AdminPageDetailDto } from '@kobato/contracts/pages.ts'
+import type { PageMetaDraft } from '@kobato/web/ui/admin/pages/page-meta.ts'
 
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { MetaSidebar } from '@kobato/web/ui/admin/pages/MetaSidebar.tsx'

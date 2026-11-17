@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@kobato/i18n": "workspace:*",
     "@kobato/server": "workspace:*",
-    "@kobato/shared": "workspace:*",
+    "@kobato/settings": "workspace:*",
+    "@kobato/utils": "workspace:*",
     "@types/node": "catalog:"
   }
 }

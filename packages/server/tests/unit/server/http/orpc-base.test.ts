@@ -1,3 +1,4 @@
+import { parseCommentTokensCookie } from '@kobato/server/domains/comments/services/comment-token.ts'
 import {
   authedProc,
   commentTokenCookie,
@@ -8,7 +9,6 @@ import {
 } from '@kobato/server/http/orpc-base.ts'
 import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { parseCommentTokensCookie } from '@kobato/shared/utils/comment-token.ts'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,

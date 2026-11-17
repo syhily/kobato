@@ -1,7 +1,7 @@
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { SiteIdentitySettings } from '@kobato/shared/config/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
 
-import { mergeSectionPatch } from '@kobato/shared/config/merge-section-patch.ts'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
@@ -22,7 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // server) → useLocaleSwitch (announce) → LocaleSyncProvider (receive) →
 // SettingsFlushProvider (transaction + flush).
 //
-// The mock server deep-merges exactly like `packages/shared/src/config/merge-section-patch`
+// The mock server deep-merges exactly like `packages/server/src/domains/settings/services/merge-section-patch`
 // and answers with the merged section, so assertions read the PERSISTED state,
 // not only the call arguments.
 

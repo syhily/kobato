@@ -9,7 +9,7 @@ import {
 } from '@kobato/server/assets/defaults.ts'
 import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@kobato/server/domains/assets/services/storage.ts'
 import { NODE_ENV } from '@kobato/server/infra/config.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
 interface SvgRoute {
   kind: 'svg'

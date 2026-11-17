@@ -1,3 +1,4 @@
+import { frontendRumBootstrapSchema } from '@kobato/contracts/trace.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import {
   deriveOtlpUrls,
@@ -6,7 +7,6 @@ import {
   resolveTraceConfig,
   type TraceRuntimeSettings,
 } from '@kobato/server/infra/trace/config.ts'
-import { frontendRumBootstrapSchema } from '@kobato/shared/contracts/trace.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const BASE: TraceRuntimeSettings = {

@@ -2,6 +2,7 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'packages/tools/*'
+  - 'packages/shared/*'
 
 # Single version source for every dependency. package.json references these
 # entries as "catalog:" — taze updates this table (catalogs are first-class

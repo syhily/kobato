@@ -1,6 +1,6 @@
-import type { CountersDto, MetricGroup, MetricRow, MetricType } from '@kobato/shared/contracts/analytics.ts'
+import type { CountersDto, MetricGroup, MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
 
-import { METRIC_GROUPS } from '@kobato/shared/contracts/analytics.ts'
+import { METRIC_GROUPS } from '@kobato/contracts/analytics.ts'
 import { Card } from '@kobato/ui/components/card.tsx'
 import { Switch } from '@kobato/ui/components/switch.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'

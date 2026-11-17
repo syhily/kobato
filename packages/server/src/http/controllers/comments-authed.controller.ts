@@ -1,3 +1,10 @@
+import {
+  commentsMyCountsOutputSchema,
+  commentsResolveEntityInputSchema,
+  commentsResolveEntityOutputSchema,
+} from '@kobato/contracts/admin.ts'
+import { ownCommentMutationDto } from '@kobato/contracts/comments.ts'
+import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
 import { asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
 import {
   countMyComments,
@@ -11,15 +18,8 @@ import {
 } from '@kobato/server/domains/comments/services/moderate.ts'
 import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
 import { authedProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import {
-  commentsMyCountsOutputSchema,
-  commentsResolveEntityInputSchema,
-  commentsResolveEntityOutputSchema,
-} from '@kobato/shared/contracts/admin.ts'
-import { ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/shared/utils/comments.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/utils/comments.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const updateOwn = authedProc

@@ -5,7 +5,7 @@ import type { Plugin, UserConfig, ViteDevServer } from 'vite'
 import honoDevServer, { type DevServerOptions } from '@hono/vite-dev-server'
 import nodeAdapter from '@hono/vite-dev-server/node'
 import { setViteDevServer } from '@kobato/server/infra/hono/dev-server-ref.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import fs from 'node:fs'
 import path from 'node:path'
 

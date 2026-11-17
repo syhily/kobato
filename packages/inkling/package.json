@@ -18,7 +18,7 @@
     "@codemirror/view": "catalog:",
     "@emoji-mart/data": "catalog:",
     "@kobato/inkling": "workspace:*",
-    "@kobato/shared": "workspace:*",
+    "@kobato/pt": "workspace:*",
     "@kobato/test": "workspace:*",
     "@lexical/clipboard": "catalog:",
     "@lexical/headless": "catalog:",

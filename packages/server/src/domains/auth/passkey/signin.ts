@@ -6,7 +6,7 @@ import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts
 import { authFlowError } from '@kobato/server/domains/auth/services/shared.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryPasskeyAuthFinishRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export async function signInWithPasskey(
   ctx: SigninFlowContext,

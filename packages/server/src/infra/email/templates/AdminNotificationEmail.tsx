@@ -4,7 +4,7 @@ import { Hr, Link, Text } from '@kobato/server/infra/email/render.tsx'
 import { RawEmailHtml } from '@kobato/server/infra/email/safe-html.tsx'
 import { EmailLayout } from '@kobato/server/infra/email/templates/layout/EmailLayout.tsx'
 import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 // One card line: text rows render `{label}{value}` (first emphasised, rest muted);
 // `html` rows carry a pre-sanitised comment body — see `RawEmailHtml`.

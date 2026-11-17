@@ -1,6 +1,6 @@
+import type { Post } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types.ts'
-import type { Post } from '@kobato/shared/types/catalog.ts'
 
 import { findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
 import { findTagNamesByPostId } from '@kobato/db/operations/post-tag.ts'

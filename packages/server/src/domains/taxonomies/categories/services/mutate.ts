@@ -1,8 +1,8 @@
+import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { CategoryRow } from '@kobato/db/types.ts'
 import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup.ts'
 import type { UpsertCategoryInputs } from '@kobato/server/domains/taxonomies/categories/projection.ts'
-import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
 
 import {
   deleteCategory as deleteCategoryRow,
@@ -27,8 +27,8 @@ import {
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 
 // Warm key must match the OG route's inputs: `cat-` slug, empty description → site description.
 function categoryOgTarget(row: CategoryRow): OgWarmTarget {

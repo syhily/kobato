@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'

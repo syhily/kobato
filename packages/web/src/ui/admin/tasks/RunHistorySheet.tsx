@@ -1,7 +1,6 @@
-import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/shared/contracts/jobs.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/contracts/jobs.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { formatDuration } from '@kobato/shared/i18n/format.ts'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty.tsx'
@@ -14,6 +13,7 @@ import {
   SheetTrigger,
 } from '@kobato/ui/components/sheet.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatDuration } from '@kobato/utils/format.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { AdminInfiniteListFooter } from '@kobato/web/ui/admin/shared/AdminInfiniteListFooter.tsx'
 import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'

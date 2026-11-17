@@ -1,9 +1,9 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { ServerMessageId } from '@kobato/shared/i18n/messages/server/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { serverMessagesEnUS } from '@kobato/shared/i18n/messages/server/en-US.ts'
 import { createElement, Fragment } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'

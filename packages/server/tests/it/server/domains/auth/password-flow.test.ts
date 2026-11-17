@@ -1,6 +1,6 @@
 import type { SigninFlowContext } from '@kobato/server/domains/auth/services/shared.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { auditLog } from '@kobato/db/schema/config.ts'
 import { passkeyCredential } from '@kobato/db/schema/passkey.ts'

@@ -11,11 +11,11 @@ import { fireEvent, render, screen } from '@testing-library/react'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(<BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{ui}</BlogSettingsProvider>))
 }
-import type { AnalyticsSettings } from '@kobato/shared/config/types.ts'
-import type { UseFileUploadOptions } from '@kobato/web/client/hooks/use-file-upload.ts'
+import type { AnalyticsSettings } from '@kobato/settings/types.ts'
+import type { UseFileUploadOptions } from '@kobato/web/ui/admin/shared/use-file-upload.ts'
 
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The GeoIP rows read status / fire mutations through orpc + TanStack Query;
@@ -30,7 +30,7 @@ const hookMock = vi.hoisted(() => ({
   pending: false,
 }))
 
-vi.mock('@kobato/web/client/hooks/use-file-upload.ts', () => ({
+vi.mock('@kobato/web/ui/admin/shared/use-file-upload.ts', () => ({
   useFileUpload: (options: UseFileUploadOptions) => {
     hookMock.options = options
     return { upload: hookMock.upload, pending: hookMock.pending }

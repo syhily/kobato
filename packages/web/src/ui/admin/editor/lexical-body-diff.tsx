@@ -1,7 +1,7 @@
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/pt/schema.ts'
 
-import { lexicalNodeFingerprint } from '@kobato/shared/lexical/equivalence.ts'
-import { lexicalNodeTextContent } from '@kobato/shared/lexical/walk.ts'
+import { lexicalNodeFingerprint } from '@kobato/pt/equivalence.ts'
+import { lexicalNodeTextContent } from '@kobato/pt/walk.ts'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

@@ -1,6 +1,6 @@
+import type { MetingSource } from '@kobato/contracts/music.ts'
 import type { MusicProvider, ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
 import type { Env } from '@kobato/server/http/context.ts'
-import type { MetingSource } from '@kobato/shared/contracts/music.ts'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
@@ -8,7 +8,7 @@ import { getProvider } from '@kobato/server/domains/music/providers/registry.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { Hono } from 'hono'
 
 const SOURCE_REFERERS: Record<MetingSource, string> = {

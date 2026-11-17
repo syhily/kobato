@@ -1,4 +1,4 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import {
   apiErrorData,

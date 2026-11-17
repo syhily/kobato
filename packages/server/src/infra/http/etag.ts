@@ -1,8 +1,8 @@
-import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
+import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 
 import { CACHE_PROFILES } from '@kobato/server/infra/http/headers.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { createHash } from 'node:crypto'
 
 /**
@@ -135,7 +135,7 @@ export function pageEtag(input: DetailEtagInput): string {
  * Listing representation fingerprint: locale + site zone + display format +
  * the LISTING generation + APP_VERSION. The listing generation is hashed from
  * exactly the settings sections the listing shell renders (see
- * `shared/config/representation-scopes`), so an unrelated settings save never
+ * `@kobato/settings/representation-scopes`), so an unrelated settings save never
  * invalidates a listing ETag.
  */
 export function listingRepresentation(localization: AppLocalization): RepresentationFingerprint {

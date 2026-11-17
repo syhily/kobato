@@ -1,13 +1,13 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionStatus } from '@kobato/db/operations/webmention.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
 import type {
   AdminWebmentionOutboxWire,
   AdminWebmentionWire,
   PublicWebmentionWire,
   WebmentionOutboxStatusCounts,
   WebmentionStatusCounts,
-} from '@kobato/shared/contracts/webmentions.ts'
+} from '@kobato/contracts/webmentions.ts'
+import type { Database } from '@kobato/db/database.ts'
+import type { WebmentionStatus } from '@kobato/db/operations/webmention.ts'
+import type { EntityTarget } from '@kobato/db/target.ts'
 
 import { countWebmentionOutboxByStatus, listWebmentionOutboxForAdmin } from '@kobato/db/operations/webmention-outbox.ts'
 import {
@@ -27,8 +27,8 @@ import {
 } from '@kobato/server/domains/webmentions/projection.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { eq } from 'drizzle-orm'
 
 export interface AdminWebmentionList {

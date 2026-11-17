@@ -1,3 +1,4 @@
+import { adminUsersListSessionsOutputSchema } from '@kobato/contracts/admin.ts'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { listAllSessions } from '@kobato/server/domains/auth/services/sessions.ts'
@@ -8,8 +9,7 @@ import {
 } from '@kobato/server/domains/comments/services/moderate.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { adminUsersListSessionsOutputSchema } from '@kobato/shared/contracts/admin.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const userIdInput = z.object({ userId: z.string().min(1) })

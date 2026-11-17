@@ -1,6 +1,6 @@
-import type { CacheSettings } from '@kobato/shared/config/types.ts'
-import type { ReservedCacheBucketStats } from '@kobato/shared/contracts/cache.ts'
-import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/shared/types/cache.ts'
+import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/cache/types.ts'
+import type { ReservedCacheBucketStats } from '@kobato/contracts/cache.ts'
+import type { CacheSettings } from '@kobato/settings/types.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

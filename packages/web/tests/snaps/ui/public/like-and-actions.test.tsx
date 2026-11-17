@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
 import { makeComment, makeCommentBody } from '@kobato/test/catalog.ts'
 import { makeLeafContext } from '@kobato/test/comments-leaf.tsx'
@@ -16,7 +16,7 @@ queryMocks.mutation = { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() 
 // useMutation is stubbed to an inert pending-toggleable singleton (musics-view pattern) so the pending branch is reachable per-test.
 
 // useCommentGuest reads localStorage — stub a no-guest default for SSR.
-vi.mock('@kobato/web/client/hooks/use-comment-guest.ts', () => ({
+vi.mock('@kobato/web/ui/public/comments/use-comment-guest.ts', () => ({
   useCommentGuest: () => ({
     profile: null,
     saveProfile: vi.fn(),

@@ -1,6 +1,6 @@
 // SEA asset collection: build the embedded-asset map for `--build-sea` (see
 // blob.ts) and write manifest.json, the codec/integrity registry the runtime
-// reads. Asset keys come from `packages/shared/src/sea/assets.ts` — never hardcode one.
+// reads. Asset keys come from `packages/shared/contracts/src/sea/assets.ts` — never hardcode one.
 
 // Relative import: this script runs under plain `node` — no path aliases.
 import {
@@ -21,7 +21,7 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
   type SeaAssetCodec,
-} from '@kobato/shared/sea/assets.ts'
+} from '@kobato/contracts/sea/assets.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'

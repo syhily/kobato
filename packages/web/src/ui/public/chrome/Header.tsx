@@ -1,12 +1,7 @@
-import type { SocialNetwork } from '@kobato/shared/config/socials.ts'
-import type { NavigationItem } from '@kobato/shared/config/types.ts'
+import type { SocialNetwork } from '@kobato/settings/socials.ts'
+import type { NavigationItem } from '@kobato/settings/types.ts'
 
-import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
-import {
-  useAssetsSettingsOptional,
-  useSiteIdentity,
-  useSocialsSettings,
-} from '@kobato/shared/lib/blog-config-context.tsx'
+import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
 import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand.tsx'
@@ -14,6 +9,11 @@ import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { safeRel } from '@kobato/ui/lib/link.ts'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import {
+  useAssetsSettingsOptional,
+  useSiteIdentity,
+  useSocialsSettings,
+} from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { BrandLogo } from '@kobato/web/ui/public/chrome/BrandLogo.tsx'
 import { LazyUserMenu } from '@kobato/web/ui/public/chrome/LazyUserMenu.tsx'
 import { ThemeToggle } from '@kobato/web/ui/public/chrome/ThemeToggle.tsx'

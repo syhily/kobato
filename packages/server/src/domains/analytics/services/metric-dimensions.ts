@@ -1,4 +1,4 @@
-import type { MetricType } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricType } from '@kobato/contracts/analytics.ts'
 import type { RawBuilder } from 'kysely'
 
 import { sql } from 'kysely'

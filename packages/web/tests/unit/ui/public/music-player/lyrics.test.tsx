@@ -1,4 +1,5 @@
-import { LyricsPanel, parseLrc } from '@kobato/web/ui/public/music-player/lyrics.tsx'
+import { LyricsPanel } from '@kobato/web/ui/public/music-player/lyrics.tsx'
+import { parseLrc } from '@kobato/web/ui/shared/music/lrc.ts'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
@@ -10,6 +11,10 @@ describe('ui/public/music-player/lyrics', () => {
 
     it('returns empty array for empty string', () => {
       expect(parseLrc('')).toEqual([])
+    })
+
+    it('returns empty array for null input', () => {
+      expect(parseLrc(null)).toEqual([])
     })
 
     it('parses a single line with one timestamp', () => {

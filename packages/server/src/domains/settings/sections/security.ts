@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { coerceBoolean } from '@kobato/server/domains/settings/sections/shared.ts'
 import { z } from 'zod'

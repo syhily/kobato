@@ -1,4 +1,4 @@
-import type { RestoreProgressDto } from '@kobato/shared/types/backup.ts'
+import type { RestoreProgressDto } from '@kobato/contracts/types/backup.ts'
 
 import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
 

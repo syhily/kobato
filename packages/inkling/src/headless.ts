@@ -23,6 +23,13 @@ export type {
   LexicalStateToPlainTextOptions,
 } from './html/headless-html'
 
+/* The heading-anchor policy the HTML export stamps on `<hN>` ids: `slugify`
+ * names the id, `createHeadingIdTracker` dedups repeats per pass — hosts
+ * deriving heading anchors (TOC, `headings` columns) import the pair so their
+ * slugs stay byte-identical to the exported ids. */
+export { createHeadingIdTracker } from './utils/heading-id-tracker'
+export { slugify } from './utils/slugify'
+
 /* The DOM injection port named by the HTML options' `options.dom`. */
 export type { ExportDOMDom } from './nodes/base'
 

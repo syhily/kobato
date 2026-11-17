@@ -8,7 +8,6 @@
 @source '../ui/public/comments/*.{ts,tsx}';
 @source '../ui/public/widgets';
 @source '../ui/public/Search.tsx';
-@source '../client/editor';
 
 @layer utilities {
   .medium-zoom-overlay,

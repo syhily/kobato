@@ -1,7 +1,6 @@
-import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
-import type { UpsertCategoryInput } from '@kobato/shared/types/categories.ts'
+import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
-import { isSafeImageSegment } from '@kobato/shared/types/images.ts'
+import { isSafeImageSegment } from '@kobato/assets/images.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
@@ -34,6 +33,17 @@ const EMPTY_DRAFT = {
   cover: '',
   og: '',
   description: '',
+}
+
+// `admin.categories.upsert` wire input: `id` absent → create; present → update.
+// `slug` omitted/empty → derived from `name`, matching the tag and page flows.
+interface UpsertCategoryInput {
+  id?: string
+  name: string
+  slug?: string
+  cover: string
+  og?: string
+  description?: string
 }
 
 export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryDialogProps) {

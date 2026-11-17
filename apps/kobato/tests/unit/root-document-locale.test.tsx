@@ -1,9 +1,9 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhTW } from '@kobato/shared/i18n/messages/ui/zh-TW.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
 // @vitest-environment jsdom

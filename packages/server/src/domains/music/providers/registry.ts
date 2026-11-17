@@ -2,7 +2,7 @@ import type { MusicProvider } from '@kobato/server/domains/music/providers/types
 
 import { neteaseProvider } from '@kobato/server/domains/music/providers/netease.ts'
 import { tencentProvider } from '@kobato/server/domains/music/providers/tencent.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 type MetingSource = 'netease' | 'tencent'
 

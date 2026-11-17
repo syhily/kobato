@@ -6,7 +6,7 @@ import {
 import { confirm, subscribe, unsubscribe } from '@kobato/server/domains/newsletter/service.ts'
 import { localizedOrpcError, publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 // Uniform `{ ok: true }` — must not reveal whether an address was ever seen.

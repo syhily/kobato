@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { RoleFilter, SortOrder } from '@kobato/web/ui/admin/users/useUsersFilters.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'

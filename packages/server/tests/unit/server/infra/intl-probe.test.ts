@@ -1,3 +1,4 @@
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import {
   INTL_LOCALE_EXPECTATIONS,
   INTL_PROBE_DURATION_MS,
@@ -5,8 +6,7 @@ import {
   probeIntlLocale,
   runIntlProbe,
 } from '@kobato/server/infra/intl-probe.ts'
-import { formatDuration } from '@kobato/shared/i18n/format.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { formatDuration } from '@kobato/utils/format.ts'
 import { describe, expect, it } from 'vitest'
 
 // The probe is what `kobato --smoke-intl` runs inside the SEA binary. These

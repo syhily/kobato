@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ReactNode } from 'react'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'

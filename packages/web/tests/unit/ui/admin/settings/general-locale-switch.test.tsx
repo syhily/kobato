@@ -1,5 +1,5 @@
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { SiteIdentitySettings } from '@kobato/shared/config/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'

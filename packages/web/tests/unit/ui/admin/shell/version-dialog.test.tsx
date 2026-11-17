@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/shared/contracts/update.ts'
+import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/contracts/update.ts'
 
 import { renderWithI18n, wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
@@ -35,7 +35,7 @@ vi.mock('@tanstack/react-query', async () => {
   }
 })
 
-vi.mock('@kobato/shared/config/version.ts', () => ({
+vi.mock('@kobato/utils/version.ts', () => ({
   APP_NAME: 'kobato',
   APP_VERSION: '6.4.0',
   APP_DESCRIPTION: 'a test blog',

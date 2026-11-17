@@ -1,5 +1,5 @@
-import type { AdminPageDto } from '@kobato/shared/contracts/pages.ts'
-import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
+import type { AdminPageDto } from '@kobato/contracts/pages.ts'
+import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { PageFilterFieldKey } from '@kobato/web/ui/admin/pages/filter-fields.ts'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 

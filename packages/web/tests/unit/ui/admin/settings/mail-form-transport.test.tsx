@@ -10,12 +10,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { mailDefaults } from '@kobato/server/domains/settings/sections/mail.ts'
-import { projectMailForAdmin } from '@kobato/shared/config/projection.ts'
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
+import { projectMailForAdmin } from '@kobato/settings/projection.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { MailForm } from '@kobato/web/ui/admin/settings/MailForm.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

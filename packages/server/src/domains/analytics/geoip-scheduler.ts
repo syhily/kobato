@@ -2,7 +2,7 @@ import { runScheduledGeoipUpdate } from '@kobato/server/domains/analytics/geoip-
 import { registerJob, scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { computeNextRun } from '@kobato/server/infra/scheduler-utils.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
 const log = getLogger('analytics.geoip-scheduler')
 

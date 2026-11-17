@@ -1,7 +1,7 @@
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpc } from '@kobato/web/client/api/client.ts'
-import { toastApiError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { toastApiError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

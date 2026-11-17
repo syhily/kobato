@@ -66,7 +66,7 @@ import {
 import { traceResourceAttributes } from '@kobato/server/infra/trace/resource.ts'
 import { projectError, sanitizeSpanAttribute, sanitizeSpanAttributes } from '@kobato/server/infra/trace/sanitize.ts'
 import { startSqliteQueryTrace, stopSqliteQueryTrace } from '@kobato/server/infra/trace/sqlite.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { context, SpanKind as OtelSpanKind, SpanStatusCode, trace } from '@opentelemetry/api'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { W3CTraceContextPropagator } from '@opentelemetry/core'

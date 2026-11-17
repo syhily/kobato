@@ -1,4 +1,3 @@
-import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import {
   DropdownMenu,
@@ -10,8 +9,9 @@ import {
 } from '@kobato/ui/components/dropdown-menu.tsx'
 import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@kobato/ui/components/sidebar.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useLogout } from '@kobato/web/client/hooks/use-logout.ts'
+import { avatarImageUrl } from '@kobato/utils/avatar.ts'
 import { VersionDialog } from '@kobato/web/ui/admin/shell/VersionDialog.tsx'
+import { useLogout } from '@kobato/web/ui/shared/auth/use-logout.ts'
 import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'

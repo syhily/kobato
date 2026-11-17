@@ -1,3 +1,4 @@
+import type { AdminCacheStatsDto } from '@kobato/contracts/cache.ts'
 import type {
   CacheSettings,
   FontsSettings,
@@ -5,8 +6,7 @@ import type {
   NavigationSettings,
   SecuritySettings,
   SocialItem,
-} from '@kobato/shared/config/types.ts'
-import type { AdminCacheStatsDto } from '@kobato/shared/contracts/cache.ts'
+} from '@kobato/settings/types.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'

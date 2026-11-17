@@ -1,9 +1,11 @@
+import type { Page, Post } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { Page, Post } from '@kobato/shared/types/catalog.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { findCategoriesByNames } from '@kobato/db/operations/category.ts'
+import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html.ts'
+import { ogImagePathForSlug } from '@kobato/seo/og-image.ts'
 import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html.ts'
 import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed.ts'
 import {
@@ -12,11 +14,9 @@ import {
 } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
 import { getTagsByNames, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
-import { sanitizeHtmlString } from '@kobato/shared/sanitize/sanitize-html.ts'
-import { ogImagePathForSlug } from '@kobato/shared/seo/og-image.ts'
-import { joinUrl } from '@kobato/shared/utils/urls.ts'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { joinUrl } from '@kobato/utils/urls.ts'
 import { Feed } from 'feed'
 
 export interface FeedOptions {
@@ -31,7 +31,7 @@ export interface FeedOptions {
 }
 
 // Allowlist HTML sanitizer for feed output — a thin wrapper over the shared DOMPurify
-// 'feed' strategy; `packages/shared/src/sanitize/config.ts` owns the tag/attribute allowlist, which
+// 'feed' strategy; `packages/shared/sanitize/src/config.ts` owns the tag/attribute allowlist, which
 // mirrors the feed-variant projection's real output (inkling exportDOM, artifacts
 // stripped).
 export function sanitizeFeedHtml(html: string): string {

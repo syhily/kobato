@@ -1,16 +1,16 @@
 import type { ServerTraceRuntimeConfig } from '@kobato/server/infra/trace/config.ts'
 
 import {
+  RUM_PRIVACY_FUNCTION_NAME,
+  RUM_PRIVACY_PIPELINE_DESCRIPTION,
+  RUM_PRIVACY_PIPELINE_NAME,
+} from '@kobato/contracts/trace-pipeline.ts'
+import {
   __pipelineVerification,
   canonicalFunctionBody,
   sha256Text,
   verifyRumPrivacyPipeline,
 } from '@kobato/server/infra/trace/pipeline-verify.ts'
-import {
-  RUM_PRIVACY_FUNCTION_NAME,
-  RUM_PRIVACY_PIPELINE_DESCRIPTION,
-  RUM_PRIVACY_PIPELINE_NAME,
-} from '@kobato/shared/contracts/trace-pipeline.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'

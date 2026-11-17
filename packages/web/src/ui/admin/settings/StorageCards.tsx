@@ -1,4 +1,4 @@
-import type { AssetsLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { AssetsLoaderShape } from '@kobato/settings/projection.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { FieldLabel } from '@kobato/ui/components/field.tsx'

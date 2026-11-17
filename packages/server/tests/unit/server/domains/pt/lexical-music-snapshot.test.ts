@@ -1,5 +1,5 @@
+import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
 import { snapshotMusicPlayerMeta } from '@kobato/server/domains/pt/lexical-music-snapshot.ts'
-import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { lexicalBodyWith, lexicalMusicPlayer, lexicalParagraph, stubMusicResolver } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 

@@ -1,14 +1,14 @@
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { Env } from '@kobato/server/http/context.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { get } from '@kobato/server/infra/cache/registry.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -1,6 +1,6 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { BinarySlot, SvgSlot } from '@kobato/server/assets/defaults.ts'
-import type { BrandingObjectRef, StorageDriver } from '@kobato/shared/config/types.ts'
+import type { BrandingObjectRef, StorageDriver } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 import { BINARY_SLOTS, SVG_SLOTS } from '@kobato/server/assets/defaults.ts'
@@ -11,8 +11,8 @@ import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
 import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
-import { createBoundedMap } from '@kobato/shared/utils/memo.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { createBoundedMap } from '@kobato/utils/memo.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('branding.storage')

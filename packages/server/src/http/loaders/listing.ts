@@ -1,14 +1,14 @@
+import type { ListingPostCard } from '@kobato/contracts/types/catalog.ts'
+import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { FeedLinkOptions } from '@kobato/shared/seo/meta.ts'
-import type { ListingPostCard } from '@kobato/shared/types/catalog.ts'
-import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/shared/types/listing.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { FeedLinkOptions } from '@kobato/seo/meta.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { getClientPostsWithMetadata } from '@kobato/server/domains/posts/services/public-query.ts'
 import { parseListingPage, redirectListingOverflow } from '@kobato/server/http/loaders/pagination.ts'
 import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 // Per-page metadata fan-out; home overrides to also pull comment counts (card badges).
 export interface ListingMetadataFlags {

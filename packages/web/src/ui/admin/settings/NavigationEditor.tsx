@@ -6,11 +6,11 @@ import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
-import type { SocialNetwork } from '@kobato/shared/config/socials.ts'
-import type { FooterNavItem, NavigationSettings, SocialItem } from '@kobato/shared/config/types.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { SocialNetwork } from '@kobato/settings/socials.ts'
+import type { FooterNavItem, NavigationSettings, SocialItem } from '@kobato/settings/types.ts'
 
-import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/shared/config/socials.ts'
+import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Field, FieldLabel } from '@kobato/ui/components/field.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'

@@ -1,7 +1,7 @@
+import type { CommentAndUser, MyCommentsStatus } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget, EntityType } from '@kobato/db/target.ts'
-import type { Assert, Equals } from '@kobato/shared/contracts/primitives.ts'
-import type { CommentAndUser, MyCommentsStatus } from '@kobato/shared/types/comments.ts'
+import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 
 import { likeEscape } from '@kobato/db/like-escape.ts'
 import { comment } from '@kobato/db/schema/comment.ts'

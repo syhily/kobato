@@ -1,4 +1,4 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { MetaDescriptor } from 'react-router'
 
 import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'

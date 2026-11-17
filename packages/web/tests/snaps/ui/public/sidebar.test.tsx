@@ -1,4 +1,4 @@
-import type { LatestComment } from '@kobato/shared/types/comments.ts'
+import type { LatestComment } from '@kobato/contracts/types/comments.ts'
 
 import { makePostList, makeTag } from '@kobato/test/catalog.ts'
 import { renderInRouter } from '@kobato/test/render.tsx'

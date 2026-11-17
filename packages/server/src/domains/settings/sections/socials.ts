@@ -1,7 +1,7 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/shared/config/socials.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/shared/utils/safe-url.ts'
+import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials.ts'
+import { httpUrlOrEmptyStringSchema } from '@kobato/utils/safe-url.ts'
 import { z } from 'zod'
 
 /** Custom validation messages: typed ids; provider names ride `params`, never translated. */

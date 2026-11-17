@@ -1,6 +1,7 @@
+import type { RealtimeEvent } from '@kobato/contracts/analytics.ts'
 import type { Env } from '@kobato/server/http/context.ts'
-import type { RealtimeEvent } from '@kobato/shared/contracts/analytics.ts'
 
+import { deviceEnvBeaconSchema } from '@kobato/contracts/analytics.ts'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { pushDeviceEnvBeacon } from '@kobato/server/domains/analytics/services/env-beacon.ts'
 import {
@@ -11,7 +12,6 @@ import {
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { tryDeviceEnvBeaconRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { deviceEnvBeaconSchema } from '@kobato/shared/contracts/analytics.ts'
 import { Hono, type Context } from 'hono'
 
 const POLL_INTERVAL_MS = 2_000

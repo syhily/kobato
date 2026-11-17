@@ -6,7 +6,7 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { redactUrlForLog } from '@kobato/shared/utils/safe-url.ts'
+import { redactUrlForLog } from '@kobato/utils/safe-url.ts'
 import { randomBytes } from 'node:crypto'
 
 const log = getLogger('music.service')

@@ -1,5 +1,5 @@
 import type { Database } from '@kobato/db/database.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { setting } from '@kobato/db/schema/config.ts'
 import { content as contentTable } from '@kobato/db/schema/content.ts'
@@ -12,7 +12,7 @@ import { updateBlogSettingsSection } from '@kobato/server/domains/settings/servi
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { DEFAULT_PRIVATE_CACHE_CONTROL, DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalImage } from '@kobato/test/lexical.ts'

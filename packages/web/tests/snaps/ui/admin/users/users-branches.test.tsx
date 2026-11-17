@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
+import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { UsersFilters } from '@kobato/web/ui/admin/users/useUsersFilters.ts'
 
 import { makeAdminUser } from '@kobato/test/catalog.ts'

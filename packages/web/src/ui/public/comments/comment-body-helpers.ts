@@ -1,9 +1,9 @@
-// Comment bodies are stored as a Lexical editor state (`@/shared/lexical/comment-schema`).
+// Comment bodies are stored as a Lexical editor state (`@kobato/pt/comment-schema`).
 
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 
-import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/pt/walk.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 /**
  * Plain-text projection for snippets and the reply overlay. Lexical states walk

@@ -1,12 +1,12 @@
 // The admin-only label registry for the Gravatar mirror presets. Preset URLs
-// live in `@/shared/utils/safe-url` (the public avatar graph imports it, so it
+// live in `@kobato/utils/safe-url` (the public avatar graph imports it, so it
 // must not carry workspace catalog ids); `satisfies Record<GravatarMirrorUrl, …>`
 // keeps the mapping exhaustive — a new preset URL without its label fails `pnpm run type`.
 
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import type { GravatarMirrorUrl } from '@kobato/shared/utils/safe-url.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { GravatarMirrorUrl } from '@kobato/utils/safe-url.ts'
 
-import { GRAVATAR_MIRROR_URLS } from '@kobato/shared/utils/safe-url.ts'
+import { GRAVATAR_MIRROR_URLS } from '@kobato/utils/safe-url.ts'
 
 const MIRROR_LABEL_KEYS = {
   'https://www.gravatar.com/avatar': 'admin.settings.comments.avatar.mirrorPreset.gravatarOfficial',

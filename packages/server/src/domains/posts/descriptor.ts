@@ -1,9 +1,9 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts.ts'
+import type { Post } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types.ts'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
-import type { Post } from '@kobato/shared/types/catalog.ts'
 
 import { findCategoryById, findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
 import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag.ts'
@@ -38,8 +38,8 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { computeBodyText } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
-import { hasAtLeast } from '@kobato/shared/utils/roles.ts'
+import { idFromString } from '@kobato/utils/id.ts'
+import { hasAtLeast } from '@kobato/utils/roles.ts'
 
 const log = getLogger('posts.service')
 

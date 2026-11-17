@@ -1,11 +1,12 @@
-import type { MyCommentsStatus } from '@kobato/shared/types/comments.ts'
+import type { MyCommentsStatus } from '@kobato/contracts/types/comments.ts'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/shared/utils/comments.ts'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/utils/comments.ts'
 import { MyCommentsView } from '@kobato/web/ui/admin/my/MyCommentsView.tsx'
 import { data, useOutletContext } from 'react-router'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 import type { Route } from './+types/comments'
 

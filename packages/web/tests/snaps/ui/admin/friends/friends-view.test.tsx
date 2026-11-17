@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 
 import { makeAdminFriend } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

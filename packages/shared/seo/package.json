@@ -1,0 +1,18 @@
+{
+  "name": "@kobato/seo",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/i18n": "workspace:*",
+    "@kobato/seo": "workspace:*",
+    "@kobato/settings": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/utils": "workspace:*",
+    "react-router": "catalog:",
+    "vitest": "catalog:"
+  }
+}

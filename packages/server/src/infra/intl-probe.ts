@@ -10,10 +10,10 @@
 // same module works against a full-ICU or a small-ICU SEA target and fails
 // loudly (rather than degrading to English) when the data is missing.
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { formatDuration } from '@kobato/shared/i18n/format.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { formatDuration } from '@kobato/utils/format.ts'
 
 /** Fixed instant so the expected strings never depend on the wall clock. */
 export const INTL_PROBE_INSTANT = new Date('2026-01-02T15:04:05.000Z')

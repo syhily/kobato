@@ -1,0 +1,16 @@
+{
+  "name": "@kobato/cache",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/cache": "workspace:*",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/utils": "workspace:*",
+    "vitest": "catalog:"
+  }
+}

@@ -7,7 +7,7 @@ import type {
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
 const log = getLogger('music.tencent')

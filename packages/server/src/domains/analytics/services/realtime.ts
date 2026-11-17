@@ -1,5 +1,5 @@
+import type { RealtimeEvent } from '@kobato/contracts/analytics.ts'
 import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import type { RealtimeEvent } from '@kobato/shared/contracts/analytics.ts'
 
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import { sql } from 'kysely'

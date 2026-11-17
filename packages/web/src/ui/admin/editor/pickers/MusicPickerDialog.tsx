@@ -1,4 +1,4 @@
-import type { AdminMusicDto, ListMusicOutput } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto, ListMusicOutput } from '@kobato/contracts/music.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'

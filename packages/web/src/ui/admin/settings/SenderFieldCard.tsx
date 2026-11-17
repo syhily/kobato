@@ -1,4 +1,4 @@
-import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'

@@ -1,15 +1,14 @@
-import type { ListMusicOutput } from '@kobato/shared/contracts/music.ts'
+import type { ListMusicOutput } from '@kobato/contracts/music.ts'
 import type { NavigateFunction } from 'react-router'
 
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '@kobato/ui/components/lazy-motion.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { transitions } from '@kobato/web/client/lib/motion.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { LyricsDisplay } from '@kobato/web/ui/admin/musics/LyricsDisplay.tsx'
 import { buildMusicUpdate } from '@kobato/web/ui/admin/musics/music-update.ts'
 import {
@@ -18,6 +17,7 @@ import {
   useMusicPlayerTime,
 } from '@kobato/web/ui/admin/musics/MusicPlayerContext.tsx'
 import { ConfirmDialog, type ConfirmState } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { Image } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { type InfiniteData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'

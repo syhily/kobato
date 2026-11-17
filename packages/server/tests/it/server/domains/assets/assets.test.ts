@@ -1,4 +1,4 @@
-import type { BrandingObjectRef, SiteAssetBranding } from '@kobato/shared/config/types.ts'
+import type { BrandingObjectRef, SiteAssetBranding } from '@kobato/settings/types.ts'
 
 import { resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
 import { fetchBrandingObject } from '@kobato/server/domains/assets/services/storage.ts'

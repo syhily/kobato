@@ -1,6 +1,6 @@
-import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
-import { HTTP_URL_MESSAGE, isHttpUrl } from '@kobato/shared/utils/safe-url.ts'
-import { honeypotField } from '@kobato/shared/utils/schema.ts'
+import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
+import { HTTP_URL_MESSAGE, isHttpUrl } from '@kobato/utils/safe-url.ts'
+import { honeypotField } from '@kobato/utils/schema.ts'
 import { z } from 'zod'
 
 // Trim; blank or null → `undefined` so optional fields never store ''. Null

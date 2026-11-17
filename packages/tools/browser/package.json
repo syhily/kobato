@@ -5,7 +5,7 @@
   "type": "module",
   "devDependencies": {
     "@kobato/pack": "workspace:*",
-    "@kobato/shared": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:"
   }

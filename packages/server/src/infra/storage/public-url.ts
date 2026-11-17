@@ -1,7 +1,7 @@
+import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/assets/asset-url.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/shared/types/asset-url.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 /**
  * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null while
@@ -103,7 +103,7 @@ function stripQueryAndFragment(url: string): string {
  * origin-relative forms (`/storage/<key>`, `/fonts/embedded/<hash>/<file>`) and — per
  * `options` — the absolute form, with any query/fragment stripped. Returns `null` for
  * CDN URLs, foreign origins, malformed URLs, and anything outside the grammar owned by
- * `@/shared/types/asset-url`; this wrapper adds the origin policy.
+ * `@kobato/assets/asset-url`; this wrapper adds the origin policy.
  */
 export function parseAssetUrl(url: string, options: ParseAssetUrlOptions = {}): ParsedAssetUrl | null {
   if (url.startsWith('/') && !url.startsWith('//')) {

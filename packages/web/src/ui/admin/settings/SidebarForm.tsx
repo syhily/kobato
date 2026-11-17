@@ -8,20 +8,20 @@ import { toast } from 'sonner'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type {
   CustomQuote,
   DailyQuoteSource,
   SidebarSettings,
   SidebarWidget,
   SidebarWidgetType,
-} from '@kobato/shared/config/types.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+} from '@kobato/settings/types.ts'
 
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'

@@ -1,10 +1,10 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { applyFriendSchema } from '@kobato/server/domains/friends/schema.ts'
 import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/shared/utils/safe-url.ts'
+import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/utils/safe-url.ts'
 import { describe, expect, it } from 'vitest'
 
 // The shared http(s)-URL rule states a catalog id, not prose: every schema reusing it

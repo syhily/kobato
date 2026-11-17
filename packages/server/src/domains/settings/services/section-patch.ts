@@ -1,5 +1,5 @@
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
 
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'

@@ -1,5 +1,5 @@
+import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
 import type { MailTransport, SendOptions, SendResult } from '@kobato/server/infra/email/types.ts'
-import type { ServerMessageId } from '@kobato/shared/i18n/messages/server/en-US.ts'
 
 import { render } from '@kobato/server/infra/email/render.tsx'
 import AuthorInvite from '@kobato/server/infra/email/templates/AuthorInvite.tsx'
@@ -10,8 +10,8 @@ import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { MailgunTransport } from '@kobato/server/infra/email/transports/mailgun.ts'
 import { SmtpTransport } from '@kobato/server/infra/email/transports/smtp.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { escapeHtml } from '@kobato/shared/utils/security.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { escapeHtml } from '@kobato/utils/security.ts'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('email')

@@ -1,3 +1,10 @@
+import {
+  addMusicOutputDto,
+  getMusicOutputDto,
+  listMusicOutputDto,
+  searchMusicOutputDto,
+  updateMusicOutputDto,
+} from '@kobato/contracts/music.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read.ts'
 import { searchMusic } from '@kobato/server/domains/music/services/search.ts'
@@ -5,14 +12,7 @@ import { addMusic } from '@kobato/server/domains/music/services/write/add.ts'
 import { deleteMusic } from '@kobato/server/domains/music/services/write/delete.ts'
 import { updateMusicMetadata } from '@kobato/server/domains/music/services/write/metadata.ts'
 import { authorProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import {
-  addMusicOutputDto,
-  getMusicOutputDto,
-  listMusicOutputDto,
-  searchMusicOutputDto,
-  updateMusicOutputDto,
-} from '@kobato/shared/contracts/music.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const list = authorProc

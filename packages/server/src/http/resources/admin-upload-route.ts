@@ -1,7 +1,7 @@
+import type { ErrorMessageParams } from '@kobato/contracts/api-error.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { AuditEventInput } from '@kobato/server/domains/audit/types.ts'
 import type { Env } from '@kobato/server/http/context.ts'
-import type { ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import type { Context } from 'hono'
 import type { BodyData } from 'hono/utils/body'
 
@@ -10,7 +10,7 @@ import { errorJsonResponse } from '@kobato/server/http/errors.ts'
 import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 

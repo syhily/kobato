@@ -14,7 +14,7 @@ import { decrementMetricVotes } from '@kobato/db/operations/metric.ts'
 import { targetKey } from '@kobato/db/target.ts'
 import { pendingViewDelta } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { makeToken } from '@kobato/shared/utils/security.ts'
+import { makeToken } from '@kobato/utils/security.ts'
 import { startOfDay, subDays } from 'date-fns'
 
 const log = getLogger('comments.likes')

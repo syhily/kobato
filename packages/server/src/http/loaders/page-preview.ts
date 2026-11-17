@@ -1,6 +1,6 @@
+import type { DetailPageShell, DraftMarker, Page } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type { DetailPageShell, DraftMarker, Page } from '@kobato/shared/types/catalog.ts'
 
 import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle.ts'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'

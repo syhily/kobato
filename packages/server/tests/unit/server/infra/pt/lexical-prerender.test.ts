@@ -19,8 +19,8 @@ vi.mock('@kobato/server/infra/pt/shiki.ts', () => ({
   shikiTransformers: () => [],
 }))
 
+import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
 import { prerenderLexicalEditorState } from '@kobato/server/infra/pt/lexical-prerender.ts'
-import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 
 // zod parse clones — always assert against the PARSED state's nodes.

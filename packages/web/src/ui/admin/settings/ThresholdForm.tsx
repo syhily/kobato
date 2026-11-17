@@ -1,12 +1,12 @@
-import type { RateLimitBucket, RateLimitSettings } from '@kobato/shared/config/types.ts'
+import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types.ts'
 
-import { rateLimitBounds, rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
-import { rateLimitBucketSchema } from '@kobato/shared/config/rate-limit-bucket.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { rateLimitBounds, rateLimitDefaults } from '@kobato/settings/defaults.ts'
+import { rateLimitBucketSchema } from '@kobato/settings/rate-limit-bucket.ts'
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@kobato/ui/components/table.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import {
   ADVANCED_GROUPS,
   ALL_KEYS,

@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
 import { renderHook } from '@kobato/test/hook.tsx'
 import {

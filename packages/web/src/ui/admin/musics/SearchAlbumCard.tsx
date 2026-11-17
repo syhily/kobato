@@ -1,4 +1,4 @@
-import type { MetingSearchHit } from '@kobato/shared/contracts/music.ts'
+import type { MetingSearchHit } from '@kobato/contracts/music.ts'
 
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

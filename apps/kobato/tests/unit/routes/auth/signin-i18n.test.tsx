@@ -6,7 +6,7 @@ vi.mock('@simplewebauthn/browser', () => ({
   startRegistration: vi.fn(),
 }))
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { renderInRouter } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'

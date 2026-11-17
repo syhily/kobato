@@ -2,10 +2,10 @@
 // (minute '%Y-%m-%d %H:%M', hour '%Y-%m-%d %H', day '%Y-%m-%d'); analytics
 // bucketing stays BROWSER-zoned, never the site zone.
 
-import type { TimeUnit } from '@kobato/shared/contracts/analytics.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { TimeUnit } from '@kobato/contracts/analytics.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { formatDate, formatDateTime } from '@kobato/shared/i18n/format.ts'
+import { formatDate, formatDateTime } from '@kobato/utils/format.ts'
 
 /** Parse a bucket label to a LOCAL-time timestamp (ms); NaN when malformed. */
 export function parseTimeLabel(unit: TimeUnit, label: string): number {

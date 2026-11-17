@@ -4,7 +4,7 @@ const require = createRequire(import.meta.url)
 const pkg = require('../../../../apps/kobato/package.json')
 
 // Compile-time app globals mirroring the root vite.config.ts define block, shared by the
-// unit/it/snaps project configs: route modules that import `@/shared/config/version`
+// unit/it/snaps project configs: route modules that import `@kobato/utils/version`
 // resolve them under the test bundler instead of throwing ReferenceError. Change the
 // shape here, not in three configs.
 export const testDefine = {

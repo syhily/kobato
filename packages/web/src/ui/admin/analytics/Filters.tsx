@@ -1,4 +1,4 @@
-import { METRIC_TYPES, type Filters, type MetricType } from '@kobato/shared/contracts/analytics.ts'
+import { METRIC_TYPES, type Filters, type MetricType } from '@kobato/contracts/analytics.ts'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'

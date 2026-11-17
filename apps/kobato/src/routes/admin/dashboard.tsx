@@ -1,10 +1,9 @@
+import { computeDateRange } from '@kobato/contracts/analytics.ts'
+import { pickEmptyStateLineId } from '@kobato/contracts/dashboard.ts'
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { computeDateRange } from '@kobato/shared/contracts/analytics.ts'
-import { pickEmptyStateLineId } from '@kobato/shared/contracts/dashboard.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
-import { ROLE_LABEL_KEYS } from '@kobato/shared/utils/roles.ts'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { ROLE_LABEL_KEYS } from '@kobato/utils/roles.ts'
 import { BodyProjectionCard } from '@kobato/web/ui/admin/dashboard/BodyProjectionCard.tsx'
 import { QuickActions } from '@kobato/web/ui/admin/dashboard/QuickActions.tsx'
 import { RecentDraftsCard } from '@kobato/web/ui/admin/dashboard/RecentDraftsCard.tsx'
@@ -15,6 +14,8 @@ import { PendingModerationPanel } from '@kobato/web/ui/admin/welcome/PendingMode
 import { VisitSummaryCard } from '@kobato/web/ui/admin/welcome/VisitSummaryCard.tsx'
 import { Suspense, use, useState } from 'react'
 import { browser } from 'react-dom'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 import type { Route } from './+types/dashboard'
 

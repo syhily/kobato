@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'

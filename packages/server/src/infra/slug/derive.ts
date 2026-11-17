@@ -1,4 +1,4 @@
-import { Slugger } from '@kobato/shared/slug.ts'
+import { Slugger } from '@kobato/utils/slug.ts'
 import { pinyin } from 'pinyin-pro'
 
 // Server-only (`pinyin-pro` must not reach the client); fresh Slugger per call.

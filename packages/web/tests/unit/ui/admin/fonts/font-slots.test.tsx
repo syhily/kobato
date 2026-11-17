@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { FontsSettings } from '@kobato/shared/config/types.ts'
+import type { FontsSettings } from '@kobato/settings/types.ts'
 import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

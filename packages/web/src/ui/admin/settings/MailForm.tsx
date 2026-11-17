@@ -1,4 +1,4 @@
-import type { MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { MailgunConfigCard } from '@kobato/web/ui/admin/settings/MailgunConfigCard.tsx'
 import { MailTestCard } from '@kobato/web/ui/admin/settings/MailTestCard.tsx'

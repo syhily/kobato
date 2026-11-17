@@ -1,8 +1,8 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { WebmentionInboxRow } from '@kobato/db/types.ts'
 
+import { escapeLikePattern } from '@kobato/db/like-escape.ts'
 import { webmentionInbox } from '@kobato/db/schema/webmention.ts'
-import { escapeLikePattern } from '@kobato/shared/utils/escape-like.ts'
 import { asc, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm'
 
 // Receive-side verification queue (mirror of webmention-outbox.ts).

@@ -1,6 +1,6 @@
+import { publicMusicMetaDto } from '@kobato/contracts/music.ts'
 import { getMusicMetaForPlayer } from '@kobato/server/domains/music/services/read.ts'
 import { localizedOrpcError, publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
-import { publicMusicMetaDto } from '@kobato/shared/contracts/music.ts'
 import { z } from 'zod'
 
 const get = publicProc

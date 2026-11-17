@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { STORAGE_DIR } from '@kobato/server/infra/paths.ts'
 import { localBackend, resolveLocalPath } from '@kobato/server/infra/storage/backends/local.ts'

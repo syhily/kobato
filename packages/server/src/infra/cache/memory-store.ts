@@ -1,4 +1,4 @@
-import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
+import type { CacheBucketId } from '@kobato/cache/types.ts'
 
 import { Buffer } from 'node:buffer'
 

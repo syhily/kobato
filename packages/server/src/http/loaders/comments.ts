@@ -1,9 +1,9 @@
+import type { CommentFormUser } from '@kobato/contracts/types/catalog.ts'
+import type { DetailPageComments } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { CommentFormUser } from '@kobato/shared/types/catalog.ts'
-import type { DetailPageComments } from '@kobato/shared/types/comments.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { userSession } from '@kobato/server/domains/auth/primitives.ts'
 import { asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'

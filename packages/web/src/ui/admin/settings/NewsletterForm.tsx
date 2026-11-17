@@ -1,4 +1,4 @@
-import type { NewsletterSettings } from '@kobato/shared/config/types.ts'
+import type { NewsletterSettings } from '@kobato/settings/types.ts'
 
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

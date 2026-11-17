@@ -25,7 +25,7 @@ vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
 const { sweepExpiredKvEntries } = await import('@kobato/server/infra/cache/kv-maintenance.ts')
 const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
-const { CACHE_DECLARATIONS } = await import('@kobato/shared/cache/registry.ts')
+const { CACHE_DECLARATIONS } = await import('@kobato/cache/registry.ts')
 
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 

@@ -1,13 +1,13 @@
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
-import type { SidebarSettings } from '@kobato/shared/config/types.ts'
-import type { AppLocalization } from '@kobato/shared/i18n/app-localization.ts'
+import type { AppLocalization } from '@kobato/settings/app-localization.ts'
+import type { SidebarSettings } from '@kobato/settings/types.ts'
 
 import {
   selectSidebarTags,
   sidebarSelection,
   sidebarSelectionSeed,
 } from '@kobato/server/http/loaders/sidebar-select.ts'
-import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { makePost, makeTag } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'

@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'

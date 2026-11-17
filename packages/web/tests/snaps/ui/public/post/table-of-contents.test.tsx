@@ -1,4 +1,4 @@
-import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
+import type { MarkdownHeading } from '@kobato/utils/toc.ts'
 
 import { renderToHtml } from '@kobato/test/render.tsx'
 import { TableOfContents } from '@kobato/web/ui/public/post/TableOfContents.tsx'

@@ -1,5 +1,5 @@
-import type { BackupLoaderShape } from '@kobato/shared/config/projection.ts'
-import type { CacheBucketStats } from '@kobato/shared/contracts/cache.ts'
+import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
+import type { BackupLoaderShape } from '@kobato/settings/projection.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'

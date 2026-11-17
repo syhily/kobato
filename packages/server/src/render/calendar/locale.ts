@@ -8,7 +8,7 @@
 // The date/URL machine format (`/images/calendar/:year/:MMdd.png`) is locale-independent
 // and lives outside this module.
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 export interface LunarCopy {
   /** Month label by 1-based lunar month (leap months reuse the base name). */

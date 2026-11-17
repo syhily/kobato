@@ -1,13 +1,13 @@
-import type { CacheSettings } from '@kobato/shared/config/types.ts'
-import type { CacheBucketStats } from '@kobato/shared/contracts/cache.ts'
-import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
+import type { CacheBucketId } from '@kobato/cache/types.ts'
+import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
+import type { CacheSettings } from '@kobato/settings/types.ts'
 import type { ClearStatus } from '@kobato/web/ui/admin/settings/cache/cache-status.ts'
 
-import { formatBytes } from '@kobato/shared/i18n/format.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Input } from '@kobato/ui/components/input.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatBytes } from '@kobato/utils/format.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@kobato/web/ui/admin/settings/cache/cache-constants.ts'
 import { clamp, formatTtl, hoursToSeconds } from '@kobato/web/ui/admin/settings/cache/cache-formatters.ts'
 import {

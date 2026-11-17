@@ -6,12 +6,12 @@
 
 import type { Database } from '@kobato/db/database.ts'
 import type { ImageRow } from '@kobato/db/types.ts'
-import type { StorageDriver } from '@kobato/shared/config/types.ts'
+import type { StorageDriver } from '@kobato/settings/types.ts'
 
+import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
 import { findImagesByStoragePaths } from '@kobato/db/operations/image.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { getPublicBaseUrl, parseAssetUrl, safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
-import { STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
 
 const log = getLogger('images.render-enhance')
 

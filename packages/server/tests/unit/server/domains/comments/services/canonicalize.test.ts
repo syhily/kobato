@@ -1,8 +1,8 @@
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { makeCommentBody } from '@kobato/test/catalog.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { describe, expect, it } from 'vitest'
 
 // One paragraph whose text is wrapped in a link node with the given URL.

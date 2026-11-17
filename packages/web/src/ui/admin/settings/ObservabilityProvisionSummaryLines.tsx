@@ -1,4 +1,4 @@
-import type { ObservabilityProvisionSummary } from '@kobato/shared/contracts/observability.ts'
+import type { ObservabilityProvisionSummary } from '@kobato/contracts/observability.ts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 

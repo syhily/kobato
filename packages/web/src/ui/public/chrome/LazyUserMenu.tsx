@@ -1,9 +1,9 @@
 import type { HeaderCurrentUser } from '@kobato/web/ui/public/chrome/Header.tsx'
 
-import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { avatarImageUrl } from '@kobato/utils/avatar.ts'
 import { Suspense, lazy, useState } from 'react'
 
 // The dropdown chrome (Base UI menu, logout, notification entries) rides a lazy chunk so

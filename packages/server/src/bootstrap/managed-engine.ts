@@ -1,6 +1,6 @@
 import { registerShutdownHook } from '@kobato/server/infra/lifecycle.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 /** Shared holder mechanics for the engine lifecycles: module-scope handle, HMR-safe
  *  reuse, idempotent close, priority-0 shutdown hook (batchers flush at 100). Per-engine

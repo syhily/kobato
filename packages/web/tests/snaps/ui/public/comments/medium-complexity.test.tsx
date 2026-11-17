@@ -1,6 +1,6 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
-import type { CommentFormUser } from '@kobato/shared/types/catalog.ts'
-import type { Comments as CommentsData } from '@kobato/shared/types/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentFormUser } from '@kobato/contracts/types/catalog.ts'
+import type { Comments as CommentsData } from '@kobato/contracts/types/comments.ts'
 
 import { makeComment, makeCommentBody } from '@kobato/test/catalog.ts'
 import { makeLeafContext } from '@kobato/test/comments-leaf.tsx'

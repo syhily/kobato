@@ -1,4 +1,4 @@
-import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
+import type { LoginMethod } from '@kobato/contracts/users.ts'
 
 import { USER_ROLES } from '@kobato/db/schema/shared.ts'
 import { sql } from 'drizzle-orm'

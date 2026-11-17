@@ -1,7 +1,8 @@
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Role } from '@kobato/shared/utils/roles.ts'
+import type { Role } from '@kobato/utils/roles.ts'
 
 import { user } from '@kobato/db/schema/user.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import {
   notifyAdmins,
   replyToThread,
@@ -10,7 +11,6 @@ import {
   unreadCount,
 } from '@kobato/server/domains/notifications/service.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'

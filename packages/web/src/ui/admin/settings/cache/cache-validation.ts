@@ -1,4 +1,4 @@
-import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
+import type { CacheBucketId } from '@kobato/cache/types.ts'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
 import {

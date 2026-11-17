@@ -1,7 +1,6 @@
-import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
-import type { UpsertFriendInput } from '@kobato/shared/types/friends.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 
-import { extractFriendHostSafe } from '@kobato/shared/types/images.ts'
+import { extractFriendHostSafe } from '@kobato/assets/images.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
 import {
@@ -37,6 +36,18 @@ const EMPTY_DRAFT = {
   poster: '',
   rssUrl: '',
   visible: true,
+}
+
+// `admin.friends.upsert` wire input: `id` absent → create; present → update.
+// `visible` defaults to true on create; explicit values always override on update.
+interface UpsertFriendInput {
+  id?: string
+  website: string
+  description?: string | null
+  homepage: string
+  poster: string
+  rssUrl?: string | null
+  visible?: boolean
 }
 
 export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogProps) {

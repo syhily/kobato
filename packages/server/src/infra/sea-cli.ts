@@ -10,6 +10,13 @@
 // shared display formatter (for the real `formatDuration` output), reads no
 // configuration and touches no database (`packages/server/src/infra/intl-probe.ts`).
 
+import {
+  SEA_CLIENT_ASSET_PREFIX,
+  SEA_DRIZZLE_ASSET_PREFIX,
+  SEA_MANIFEST_KEY,
+  SEA_NATIVE_ASSET_PREFIX,
+  SEA_SMOKE_WORKER_BUNDLE_KEY,
+} from '@kobato/contracts/sea/assets.ts'
 import { rollbackBinary } from '@kobato/server/infra/binary-rollback.ts'
 import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
 import {
@@ -23,14 +30,7 @@ import { bootstrapSeaRuntime } from '@kobato/server/infra/sea-natives.ts'
 import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea-vfs-fs-patch.ts'
 import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea.ts'
 import { evaluateSelfUpdateGate } from '@kobato/server/infra/self-update-gate.ts'
-import {
-  SEA_CLIENT_ASSET_PREFIX,
-  SEA_DRIZZLE_ASSET_PREFIX,
-  SEA_MANIFEST_KEY,
-  SEA_NATIVE_ASSET_PREFIX,
-  SEA_SMOKE_WORKER_BUNDLE_KEY,
-} from '@kobato/shared/sea/assets.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
 import { createWriteStream, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'

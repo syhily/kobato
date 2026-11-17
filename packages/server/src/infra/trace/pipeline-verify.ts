@@ -16,8 +16,8 @@ import {
   RUM_PRIVACY_VRL_SHA256,
   RUM_STREAM_NAME,
   RUM_PRIVACY_VERSION_MARKER,
-} from '@kobato/shared/contracts/trace-pipeline.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+} from '@kobato/contracts/trace-pipeline.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { createHash } from 'node:crypto'
 
 export const RUM_PRIVACY_VERIFY_TIMEOUT_MS = 1500

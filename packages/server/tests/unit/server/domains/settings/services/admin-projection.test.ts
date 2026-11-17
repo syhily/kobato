@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { projectSectionForAdmin } from '@kobato/server/domains/settings/services/admin-projection.ts'
 import { computeSecretMasks } from '@kobato/server/domains/settings/services/masks.ts'

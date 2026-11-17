@@ -17,7 +17,7 @@ import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/targ
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 
 const log = getLogger('webmentions.reverify')
 

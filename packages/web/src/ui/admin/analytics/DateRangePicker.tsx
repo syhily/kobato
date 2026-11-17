@@ -1,14 +1,14 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { DateRange as DayPickerRange } from 'react-day-picker'
 
-import { type DateRange, type PresetKey, PRESET_KEYS } from '@kobato/shared/contracts/analytics.ts'
-import { formatDate } from '@kobato/shared/i18n/format.ts'
+import { type DateRange, type PresetKey, PRESET_KEYS } from '@kobato/contracts/analytics.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Calendar } from '@kobato/ui/components/calendar.tsx'
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatDate } from '@kobato/utils/format.ts'
 import { getClientTimezone } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
 import { useState } from 'react'
 

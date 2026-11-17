@@ -1,5 +1,5 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
-import type { CommentFormUser } from '@kobato/shared/types/catalog.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentFormUser } from '@kobato/contracts/types/catalog.ts'
 
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { renderInRouter } from '@kobato/test/render.tsx'

@@ -29,7 +29,7 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-import type { RouteManifest } from '@kobato/shared/constants/route-warmup.ts'
+import type { RouteManifest } from '@kobato/contracts/constants/route-warmup.ts'
 
 import {
   deriveTier2RouteIds,

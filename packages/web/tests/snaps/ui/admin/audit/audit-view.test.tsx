@@ -1,4 +1,4 @@
-import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/shared/contracts/audit.ts'
+import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/contracts/audit.ts'
 import type { AuditLogFilterFieldKey } from '@kobato/web/ui/admin/audit/filter-fields.tsx'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 

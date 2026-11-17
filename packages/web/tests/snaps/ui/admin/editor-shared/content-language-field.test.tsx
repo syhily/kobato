@@ -1,5 +1,5 @@
-import { uiMessagesFor } from '@kobato/shared/i18n/catalog.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
+import { uiMessagesFor } from '@kobato/i18n/catalog.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { renderInRouter } from '@kobato/test/render.tsx'
 import { ContentLanguageField } from '@kobato/web/ui/admin/editor-shared/ContentLanguageField.tsx'
 import { describe, expect, it } from 'vitest'

@@ -9,7 +9,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { SocialsSettings } from '@kobato/shared/config/types.ts'
+import type { SocialsSettings } from '@kobato/settings/types.ts'
 
 import { SocialsEditor } from '@kobato/web/ui/admin/settings/SocialsEditor.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

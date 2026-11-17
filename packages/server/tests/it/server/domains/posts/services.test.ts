@@ -1,5 +1,5 @@
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
-import type { SidebarSettings } from '@kobato/shared/config/types.ts'
+import type { SidebarSettings } from '@kobato/settings/types.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { postTag } from '@kobato/db/schema/post-tag.ts'
@@ -497,7 +497,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
     expect(out).toEqual([])
   })
   it('returns pinned posts first when featureEnabled=true', async () => {
-    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/shared/config/snapshot.ts')
+    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
     const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -519,7 +519,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
     }
   })
   it('falls back to recent posts when fewer than 3 are pinned', async () => {
-    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/shared/config/snapshot.ts')
+    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
     const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,

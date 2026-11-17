@@ -5,7 +5,8 @@
       "source": "remix-run/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-router-framework-mode/SKILL.md",
-      "computedHash": "aee6b24c178c335eb9eb65a8b06a2a0df69bc8a9ecf3a38111e9ca902b7d26d0"
+      "computedHash": "aee6b24c178c335eb9eb65a8b06a2a0df69bc8a9ecf3a38111e9ca902b7d26d0",
+      "commit": "33578aae4aa36a90c9f8f602105a1ccb0f4efe45"
     },
     "vercel-geist-design-system": {
       "source": "joe-simo/skills",

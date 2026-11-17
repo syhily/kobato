@@ -9,7 +9,7 @@ const DI_MODULES = [
   'packages/db/src/database.ts',
   'packages/db/src/migrate.ts',
   'packages/server/src/infra/storage/backends/s3.ts',
-  'packages/shared/src/config/snapshot.ts',
+  'packages/shared/settings/src/snapshot.ts',
 ] as const
 
 const GLOBAL_THIS_CAST = /globalThis\s+as\s+typeof\s+globalThis\s*&/

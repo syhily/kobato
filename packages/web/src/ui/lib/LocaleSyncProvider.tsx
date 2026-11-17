@@ -6,7 +6,7 @@
 // reloaded behind the user's back — it gets a localized notice with an explicit Reload,
 // and a failed flush keeps the edits and offers Retry.
 
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { LocaleChangeAnnouncement } from '@kobato/web/client/lib/locale-sync.ts'
 import type { ReactNode } from 'react'
 

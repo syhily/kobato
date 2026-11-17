@@ -1,6 +1,7 @@
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
 import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf.ts'
 import { signUpAdminSchema } from '@kobato/server/domains/auth/schema.ts'
 import { signUpInitialAdminWithSession } from '@kobato/server/domains/auth/services/setup.ts'
@@ -14,8 +15,6 @@ import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@kobato/ser
 import { ensureNoAdminOrRedirect } from '@kobato/server/domains/settings/install-gate.ts'
 import { getRequestContext } from '@kobato/server/http/request-context.ts'
 import { tryKeyedRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { DEFAULT_LOCALE } from '@kobato/shared/i18n/locales.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { AdminInstallForm } from '@kobato/web/ui/admin/auth/AdminInstallForm.tsx'
 import { SetupLocaleSelect } from '@kobato/web/ui/admin/auth/SetupLocaleSelect.tsx'
@@ -23,6 +22,8 @@ import { SetupTokenVerifyForm } from '@kobato/web/ui/admin/auth/SetupTokenVerify
 import { BrandLogo } from '@kobato/web/ui/public/chrome/BrandLogo.tsx'
 import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 import type { Route } from './+types/index'
 

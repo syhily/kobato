@@ -1,9 +1,9 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { formatNumber } from '@kobato/shared/i18n/format.ts'
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatNumber } from '@kobato/utils/format.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { useAnalyticsDashboardState } from '@kobato/web/ui/admin/analytics/analytics-state-context.tsx'
 import { AnalyticsQueryState } from '@kobato/web/ui/admin/analytics/AnalyticsQueryState.tsx'

@@ -1,4 +1,4 @@
-import { CONTENT_LANGUAGE_MAX_LENGTH, isContentLanguageInput } from '@kobato/shared/i18n/content-language.ts'
+import { CONTENT_LANGUAGE_MAX_LENGTH, isContentLanguageInput } from '@kobato/i18n/content-language.ts'
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

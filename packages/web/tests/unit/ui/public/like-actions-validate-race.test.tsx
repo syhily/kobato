@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { ValidateLikeTokenOutput } from '@kobato/shared/types/likes.ts'
+import type { ValidateLikeTokenOutput } from '@kobato/web/ui/public/LikeActions.tsx'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'

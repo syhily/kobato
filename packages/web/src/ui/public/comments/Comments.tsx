@@ -1,11 +1,11 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
-import type { CommentFormUser } from '@kobato/shared/types/catalog.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentFormUser } from '@kobato/contracts/types/catalog.ts'
 import type {
   Comments as CommentsData,
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,
-} from '@kobato/shared/types/comments.ts'
+} from '@kobato/contracts/types/comments.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

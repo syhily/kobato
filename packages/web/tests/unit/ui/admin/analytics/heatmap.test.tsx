@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { HeatmapCell } from '@kobato/shared/contracts/analytics.ts'
+import type { HeatmapCell } from '@kobato/contracts/analytics.ts'
 
 import { makeAnalyticsState } from '@kobato/test/analytics-state.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'

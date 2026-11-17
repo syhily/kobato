@@ -1,5 +1,5 @@
 import type { NotificationRow } from '@kobato/db/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,7 +19,7 @@ vi.mock('@kobato/server/infra/logger.ts', async (importOriginal) => {
 const { __resetNotificationMessageWarningsForTests, encodeNotificationDescriptor, resolveNotificationMessage } =
   await import('@kobato/server/domains/notifications/message.ts')
 const { createServerTranslator } = await import('@kobato/server/infra/i18n.ts')
-const { SUPPORTED_LOCALES } = await import('@kobato/shared/i18n/locales.ts')
+const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales.ts')
 
 // The resolver is the single read-side seam for every notification surface (inbox,
 // thread, email): these tests pin the fallback contract and write-time validation.

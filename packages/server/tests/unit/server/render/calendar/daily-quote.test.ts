@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/settings/types.ts'
 
 import { getDailyQuote, pickForDate } from '@kobato/server/render/calendar/daily-quote.ts'
 import { LOCAL_QUOTES } from '@kobato/server/render/calendar/local-quotes.ts'

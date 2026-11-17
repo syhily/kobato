@@ -1,7 +1,8 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
 import { PostEditorShell } from '@kobato/web/ui/admin/posts/PostEditorShell.tsx'
 import { useNavigate } from 'react-router'
+
+import { titleMeta } from '@/seo/title-meta.ts'
 
 export const loader = guardOnlyLoader('author')
 

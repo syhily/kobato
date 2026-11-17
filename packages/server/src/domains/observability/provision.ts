@@ -7,6 +7,12 @@
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
 
+import {
+  RUM_PRIVACY_FUNCTION_NAME,
+  RUM_PRIVACY_PIPELINE_DESCRIPTION,
+  RUM_PRIVACY_PIPELINE_NAME,
+  RUM_STREAM_NAME,
+} from '@kobato/contracts/trace-pipeline.ts'
 import { getObservabilityAssets } from '@kobato/server/domains/observability/assets.ts'
 import { isObservabilityConnectionVerified } from '@kobato/server/domains/observability/connection.ts'
 import { throwO2Failure } from '@kobato/server/domains/observability/errors.ts'
@@ -14,12 +20,6 @@ import { createO2Client, O2ClientError } from '@kobato/server/domains/observabil
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import {
-  RUM_PRIVACY_FUNCTION_NAME,
-  RUM_PRIVACY_PIPELINE_DESCRIPTION,
-  RUM_PRIVACY_PIPELINE_NAME,
-  RUM_STREAM_NAME,
-} from '@kobato/shared/contracts/trace-pipeline.ts'
 
 const log = getLogger('observability.provision')
 

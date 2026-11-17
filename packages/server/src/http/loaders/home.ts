@@ -1,10 +1,10 @@
+import type { HomeExtra } from '@kobato/contracts/content.ts'
+import type { ClientPost, ListingPostCard } from '@kobato/contracts/types/catalog.ts'
+import type { ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
 import type { Database } from '@kobato/db/database.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { HomeExtra } from '@kobato/shared/contracts/content.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { ClientPost, ListingPostCard } from '@kobato/shared/types/catalog.ts'
-import type { ListingPageLoaderData } from '@kobato/shared/types/listing.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { selectFeaturePosts, selectSidebarPosts } from '@kobato/server/domains/posts/services/featured.ts'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@kobato/server/domains/posts/services/public-query.ts'
@@ -13,9 +13,9 @@ import { listAllTags } from '@kobato/server/domains/taxonomies/tags/service.ts'
 import { listingLoader } from '@kobato/server/http/loaders/listing.ts'
 import { selectSidebarTags, sidebarSelectionSeed } from '@kobato/server/http/loaders/sidebar-select.ts'
 import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { isSidebarWidgetEnabled } from '@kobato/shared/config/utils.ts'
-import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { isSidebarWidgetEnabled } from '@kobato/settings/utils.ts'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
 
 // Tail-merge guard: an orphan last page (< pageSize − 2 posts) merges into
 // its predecessor (clamped at 0 for tiny page sizes). See `listingLoader`.

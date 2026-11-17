@@ -1,19 +1,19 @@
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 
 import { lexicalStateToPlainText } from '@kobato/inkling/headless'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/pt/artifacts.ts'
+import {
+  commentEditorStateSchema,
+  commentEditorStateTextLength,
+  isCommentEditorStateBlank,
+} from '@kobato/pt/comment-schema.ts'
+import { compactLexicalEditorState } from '@kobato/pt/dialect.ts'
+import { visitLexicalNodes } from '@kobato/pt/walk.ts'
 import { decideContentLengthGate } from '@kobato/server/domains/comments/services/policy.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { prerenderLexicalEditorState } from '@kobato/server/infra/pt/lexical-prerender.ts'
 import { computeCommentContentProjection } from '@kobato/server/infra/pt/lexical-projection.ts'
-import { SERVER_FILLED_NODE_FIELDS } from '@kobato/shared/lexical/artifacts.ts'
-import {
-  commentEditorStateSchema,
-  commentEditorStateTextLength,
-  isCommentEditorStateBlank,
-} from '@kobato/shared/lexical/comment-schema.ts'
-import { compactLexicalEditorState } from '@kobato/shared/lexical/dialect.ts'
-import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
 import { z } from 'zod'
 
 const COMMENT_MAX_BLOCKS = 200
@@ -74,7 +74,7 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   } catch {
     content = lexicalStateToPlainText(revalidated.data)
   }
-  // Persist the compact dialect (src/shared/lexical/dialect.ts) — readers
+  // Persist the compact dialect (packages/shared/pt/src/dialect.ts) — readers
   // heal through the schema's normalize preprocess or the editor's own parse.
   return { body: compactLexicalEditorState(revalidated.data), content }
 }

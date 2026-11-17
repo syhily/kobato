@@ -20,8 +20,10 @@
     "./drizzle/*": "./drizzle/*"
   },
   "devDependencies": {
+    "@kobato/contracts": "workspace:*",
     "@kobato/db": "workspace:*",
-    "@kobato/shared": "workspace:*",
+    "@kobato/pt": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",

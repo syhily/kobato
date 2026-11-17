@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { PostFilterFieldKey } from '@kobato/web/ui/admin/posts/filter-fields.ts'
 import type { ActiveFilter } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 

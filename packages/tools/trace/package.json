@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@kobato/shared": "workspace:*",
+    "@kobato/contracts": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/utils": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",

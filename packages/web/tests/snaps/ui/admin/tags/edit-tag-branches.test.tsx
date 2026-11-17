@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
 import { makeAdminTag } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
+import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { Tooltip } from '@kobato/ui/components/tooltip.tsx'

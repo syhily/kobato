@@ -1,6 +1,6 @@
+import type { ClearCacheTarget } from '@kobato/cache/types.ts'
+import type { AdminCacheStatsDto, ClearCacheResultDto } from '@kobato/contracts/cache.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { AdminCacheStatsDto, ClearCacheResultDto } from '@kobato/shared/contracts/cache.ts'
-import type { ClearCacheTarget } from '@kobato/shared/types/cache.ts'
 
 import {
   clearAllBuckets,

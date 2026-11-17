@@ -18,15 +18,15 @@ vi.mock('@tanstack/react-query', () => ({
   })),
 }))
 
-vi.mock('@kobato/web/client/hooks/use-autosave.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-autosave.ts', () => ({
   useAutosave: vi.fn(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() })),
 }))
 
-vi.mock('@kobato/web/client/hooks/use-local-draft.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts', () => ({
   useLocalDraft: vi.fn(() => ({ loadedDraft: null, clearDraft: vi.fn() })),
 }))
 
-vi.mock('@kobato/web/client/hooks/use-create-draft.ts', () => ({
+vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-create-draft.ts', () => ({
   useCreateDraft: vi.fn(() => ({
     sessionId: 'sess-1',
     loadedDraft: null,

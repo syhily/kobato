@@ -9,8 +9,8 @@ import { fireEvent, render, screen } from '@testing-library/react'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { FontsSettings } from '@kobato/shared/config/types.ts'
-import type { UseFileUploadOptions } from '@kobato/web/client/hooks/use-file-upload.ts'
+import type { FontsSettings } from '@kobato/settings/types.ts'
+import type { UseFileUploadOptions } from '@kobato/web/ui/admin/shared/use-file-upload.ts'
 
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,7 +23,7 @@ const hookMock = vi.hoisted(() => ({
   pending: false,
 }))
 
-vi.mock('@kobato/web/client/hooks/use-file-upload.ts', () => ({
+vi.mock('@kobato/web/ui/admin/shared/use-file-upload.ts', () => ({
   useFileUpload: (options: UseFileUploadOptions) => {
     hookMock.calls.push(options)
     return { upload: hookMock.upload, pending: hookMock.pending }

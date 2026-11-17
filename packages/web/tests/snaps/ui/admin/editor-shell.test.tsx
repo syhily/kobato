@@ -1,4 +1,4 @@
-import type { AdminRevisionDto } from '@kobato/shared/contracts/revision.ts'
+import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
 
 import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

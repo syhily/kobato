@@ -1,8 +1,6 @@
-import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
-import type { UpsertTagInput } from '@kobato/shared/types/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
-import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
-import { useAssetsSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
+import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
@@ -16,6 +14,7 @@ import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useAssetsSettingsOptional } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { CoverInputRow } from '@kobato/web/ui/admin/shared/CoverInputRow.tsx'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
@@ -32,6 +31,15 @@ const EMPTY_DRAFT = {
   name: '',
   slug: '',
   ogImage: '',
+}
+
+// `admin.tags.upsert` wire input: `id` absent → create; present → update.
+// Blank `slug` → derived from `name`.
+interface UpsertTagInput {
+  id?: string
+  name: string
+  slug?: string
+  ogImage?: string
 }
 
 export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {

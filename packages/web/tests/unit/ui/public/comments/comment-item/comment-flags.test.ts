@@ -1,6 +1,6 @@
-import type { CommentItemWire } from '@kobato/shared/contracts/comments.ts'
+import type { CommentItemWire } from '@kobato/contracts/comments.ts'
 
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
 import { commentFlags, type CommentIdentity } from '@kobato/web/ui/public/comments/comment-item/comment-flags.ts'
 import { describe, expect, it } from 'vitest'
 

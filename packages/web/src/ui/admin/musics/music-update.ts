@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
 // Edit draft: the single `/`-separated artist string splits back into the list shape the update expects.
 export interface MusicEditDraft {

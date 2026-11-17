@@ -1,4 +1,4 @@
-import { NOTIFICATION_KINDS, type NotificationKind } from '@kobato/shared/contracts/notifications.ts'
+import { NOTIFICATION_KINDS, type NotificationKind } from '@kobato/contracts/notifications.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 

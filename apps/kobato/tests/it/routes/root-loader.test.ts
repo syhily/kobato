@@ -1,5 +1,5 @@
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { makeLoaderArgs } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

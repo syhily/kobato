@@ -6,16 +6,16 @@
 // HMAC stored as `provisionedFingerprint`; touching any asset makes every
 // installation re-provision at boot.
 
-import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
-import { RUM_PRIVACY_VRL_SHA256 } from '@kobato/shared/contracts/trace-pipeline.ts'
 import {
   OBSERVABILITY_DASHBOARD_FILES,
   SEA_OBSERVABILITY_DASHBOARD_PREFIX,
   SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY,
-} from '@kobato/shared/sea/assets.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+} from '@kobato/contracts/sea/assets.ts'
+import { RUM_PRIVACY_VRL_SHA256 } from '@kobato/contracts/trace-pipeline.ts'
+import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 

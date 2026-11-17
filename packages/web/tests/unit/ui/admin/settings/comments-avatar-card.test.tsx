@@ -10,13 +10,13 @@ import { fireEvent, render, waitFor } from '@testing-library/react'
 function renderUi(ui: ReactElement, locale: AppLocale = 'zh-CN') {
   return render(wrapWithI18n(ui, { locale }))
 }
-import type { CommentsLoaderShape } from '@kobato/shared/config/projection.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { CommentsLoaderShape } from '@kobato/settings/projection.ts'
 
-import { projectCommentsForAdmin } from '@kobato/shared/config/projection.ts'
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
+import { projectCommentsForAdmin } from '@kobato/settings/projection.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { CommentsForm } from '@kobato/web/ui/admin/settings/CommentsForm.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

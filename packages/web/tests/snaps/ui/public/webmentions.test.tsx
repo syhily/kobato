@@ -1,4 +1,4 @@
-import type { PublicWebmentionWire } from '@kobato/shared/contracts/webmentions.ts'
+import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
 
 import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { WebmentionList } from '@kobato/web/ui/public/webmentions/WebmentionList.tsx'

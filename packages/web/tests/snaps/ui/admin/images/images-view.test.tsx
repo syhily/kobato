@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 import type { ActiveImageFilter } from '@kobato/web/ui/admin/images/useImagesReducer.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

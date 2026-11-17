@@ -1,5 +1,5 @@
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { page as pageTable } from '@kobato/db/schema/page.ts'

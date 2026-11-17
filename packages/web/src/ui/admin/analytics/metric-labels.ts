@@ -1,5 +1,5 @@
-import type { MetricType } from '@kobato/shared/contracts/analytics.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { MetricType } from '@kobato/contracts/analytics.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 export type HeatmapMetricKey = 'visits' | 'visitors'
 

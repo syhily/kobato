@@ -2,17 +2,17 @@
 // backfill: all 19 rows validated BEFORE any write, then persisted on the caller's
 // transaction so they commit atomically with the first admin row.
 
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { AssetsSettings, SiteIdentitySettings } from '@kobato/shared/config/types.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { AssetsSettings, SiteIdentitySettings } from '@kobato/settings/types.ts'
 
 import { upsertSetting } from '@kobato/db/operations/setting.ts'
+import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
 import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@kobato/server/domains/settings/sections/assets.ts'
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { descriptorFor, messageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DEFAULT_LOCALE, type AppLocale } from '@kobato/shared/i18n/locales.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export interface InstallSeedInput {
   title: string

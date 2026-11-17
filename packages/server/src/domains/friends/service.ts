@@ -1,7 +1,7 @@
+import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
+import type { Friend } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { FriendRow } from '@kobato/db/types.ts'
-import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
-import type { Friend } from '@kobato/shared/types/catalog.ts'
 
 import {
   type AdminFriendsListFilters,
@@ -23,7 +23,7 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('friends.service')
 
-// Public projection matching `Friend` in `@/shared/types/catalog`.
+// Public projection matching `Friend` in `@kobato/contracts/types/catalog`.
 export interface PublicFriend {
   website: string
   description?: string

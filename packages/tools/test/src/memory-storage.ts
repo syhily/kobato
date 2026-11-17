@@ -5,7 +5,7 @@ import type {
   StoredObjectMeta,
   StreamWithMeta,
 } from '@kobato/server/infra/storage/backend.ts'
-import type { StorageDriver } from '@kobato/shared/config/types.ts'
+import type { StorageDriver } from '@kobato/settings/types.ts'
 
 import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
 import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy.ts'

@@ -1,4 +1,4 @@
-import type { MetricRow } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricRow } from '@kobato/contracts/analytics.ts'
 
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'

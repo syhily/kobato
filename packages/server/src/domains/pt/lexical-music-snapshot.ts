@@ -1,17 +1,17 @@
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/pt/embeds.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
+import { collectLexicalMusicPlayerIds } from '@kobato/pt/collect.ts'
+import { visitLexicalNodes } from '@kobato/pt/walk.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { parseAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
-import { collectLexicalMusicPlayerIds } from '@kobato/shared/lexical/collect.ts'
-import { visitLexicalNodes } from '@kobato/shared/lexical/walk.ts'
 
 const log = getLogger('pt.lexical-music-snapshot')
 
 // The Lexical music contract resolves metas at SAVE time and embeds a snapshot
 // in the node dataset: the headless HTML projection is synchronous and has no
 // resolver. The snapshot goes stale when the library row changes — the accepted
-// trade-off. Field names: `MUSIC_PLAYER_META_KEYS` (`@/shared/lexical/artifacts`).
+// trade-off. Field names: `MUSIC_PLAYER_META_KEYS` (`@kobato/pt/artifacts`).
 //
 // Media URLs (`cover` / `audioUrl`) are stored ORIGIN-RELATIVE
 // (`/storage/<key>`), never absolute: an absolute URL bakes the save-time

@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
 import { CommentRow } from '@kobato/web/ui/public/comments/comment-item/CommentRow.tsx'
 import { asKey, childrenListClass } from '@kobato/web/ui/public/comments/comment-item/helpers.ts'

@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/shared/utils/safe-url.ts'
-import { MIN_PASSWORD_LENGTH } from '@kobato/shared/utils/security.ts'
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { httpUrlOrEmptyStringSchema } from '@kobato/utils/safe-url.ts'
+import { MIN_PASSWORD_LENGTH } from '@kobato/utils/security.ts'
 import { z } from 'zod'
 
 /** Maximum password length to prevent DoS via oversized payloads. */

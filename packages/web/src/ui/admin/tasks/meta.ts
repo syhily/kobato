@@ -1,10 +1,10 @@
-import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@kobato/shared/contracts/jobs.ts'
-import type { StorageMigrationStatus } from '@kobato/shared/contracts/storage.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@kobato/contracts/jobs.ts'
+import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { BadgeProps } from '@kobato/ui/components/badge.tsx'
 
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 
 // Shared presentation meta for the admin task center (TasksView + TaskCard + RunHistorySheet).
 

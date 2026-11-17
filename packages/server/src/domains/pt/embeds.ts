@@ -1,4 +1,4 @@
-import type { PublicMusicMeta } from '@kobato/shared/contracts/music.ts'
+import type { PublicMusicMeta } from '@kobato/contracts/music.ts'
 
 // PT-owned seam for `musicPlayer` embeds: player ids in, public metas out.
 // PT must not depend on the music domain — callers wire the implementation

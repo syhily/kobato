@@ -1,10 +1,10 @@
-import type { ErrorMessageParams } from '@kobato/shared/contracts/api-error.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { ErrorMessageParams } from '@kobato/contracts/api-error.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { describe, expect, it } from 'vitest'
 
 // Audit log filter/export validation across all four locales.

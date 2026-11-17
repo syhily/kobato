@@ -1,4 +1,4 @@
-import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/shared/lexical/node-whitelist.ts'
+import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/pt/node-whitelist.ts'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'

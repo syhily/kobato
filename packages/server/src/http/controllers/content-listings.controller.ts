@@ -1,10 +1,23 @@
+import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/contracts/content.ts'
 import type { Database } from '@kobato/db/database.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/shared/contracts/content.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import {
+  contentArchivesInputSchema,
+  contentArchivesOutputSchema,
+  contentCategoriesListInputSchema,
+  contentCategoriesListOutputSchema,
+  contentHomeInputSchema,
+  contentHomeOutputSchema,
+  contentPostsListInputSchema,
+  contentPostsListOutputSchema,
+  contentSearchInputSchema,
+  contentSearchOutputSchema,
+} from '@kobato/contracts/content.ts'
+import { toListingPostCard } from '@kobato/contracts/types/catalog.ts'
 import { trackPageView } from '@kobato/server/domains/analytics/track.ts'
 import {
   countPublicPosts,
@@ -25,19 +38,6 @@ import {
   listingEtag,
   listingRepresentation,
 } from '@kobato/server/infra/http/etag.ts'
-import {
-  contentArchivesInputSchema,
-  contentArchivesOutputSchema,
-  contentCategoriesListInputSchema,
-  contentCategoriesListOutputSchema,
-  contentHomeInputSchema,
-  contentHomeOutputSchema,
-  contentPostsListInputSchema,
-  contentPostsListOutputSchema,
-  contentSearchInputSchema,
-  contentSearchOutputSchema,
-} from '@kobato/shared/contracts/content.ts'
-import { toListingPostCard } from '@kobato/shared/types/catalog.ts'
 import { ORPCError } from '@orpc/server'
 
 type ListingOutput<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }

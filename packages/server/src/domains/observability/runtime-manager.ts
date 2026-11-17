@@ -18,8 +18,8 @@ import { syncObservabilityRetention } from '@kobato/server/domains/observability
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { logTraceDiagnostics, resolveTraceConfig, traceEnvironment } from '@kobato/server/infra/trace/config.ts'
 import { lastExportFailure } from '@kobato/server/infra/trace/export-health.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 
 const log = getLogger('observability')
 

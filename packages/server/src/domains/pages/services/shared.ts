@@ -5,7 +5,7 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 // Server-side write shape (number ids / Dates) — distinct from the wire
-// `UpsertPageMetaInput` in `@/shared/types/pages` (string ids / ISO dates).
+// upsert-meta input (string ids / ISO dates).
 export interface PageMetaWriteInput extends UpsertMetaInputBase {
   showFriends?: boolean
 }

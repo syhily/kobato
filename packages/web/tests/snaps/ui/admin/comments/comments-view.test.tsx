@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
 import type { CommentActions } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
 
 import { makeAdminComment } from '@kobato/test/catalog.ts'

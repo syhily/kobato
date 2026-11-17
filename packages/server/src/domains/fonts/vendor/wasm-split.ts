@@ -1,9 +1,9 @@
 import { create, toBinary } from '@bufbuild/protobuf'
+import { SEA_WASM_CNFS_KEY } from '@kobato/contracts/sea/assets.ts'
 import initWasm from '@kobato/server/domains/fonts/vendor/cnfs.wasm?init'
 import { InputTemplateSchema } from '@kobato/server/domains/fonts/vendor/gen/api_pb.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { isSea, seaAssetPath } from '@kobato/server/infra/sea.ts'
-import { SEA_WASM_CNFS_KEY } from '@kobato/shared/sea/assets.ts'
 import { randomBytes } from 'node:crypto'
 import { mkdtemp, mkdir, writeFile, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -12,7 +12,7 @@ import { WASI } from 'node:wasi'
 
 const log = getLogger('fonts.wasm')
 
-// Under SEA the wasm bytes are a file in the mounted VFS (see `@/shared/sea/assets`); instantiate per call like `?init`.
+// Under SEA the wasm bytes are a file in the mounted VFS (see `@kobato/contracts/sea/assets`); instantiate per call like `?init`.
 async function instantiateEmbeddedWasm(imports: WebAssembly.Imports): Promise<WebAssembly.Instance> {
   const path = seaAssetPath(SEA_WASM_CNFS_KEY)
   if (path === null) {

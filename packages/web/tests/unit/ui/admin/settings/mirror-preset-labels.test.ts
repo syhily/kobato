@@ -1,9 +1,9 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
 import { GRAVATAR_MIRROR_PRESETS } from '@kobato/web/ui/admin/settings/gravatar-mirror-presets.ts'
 import { describe, expect, it } from 'vitest'
 

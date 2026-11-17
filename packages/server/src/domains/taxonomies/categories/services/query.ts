@@ -1,7 +1,7 @@
+import type { Category } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { CategoryRow } from '@kobato/db/types.ts'
 import type { AdminCategoriesListResult } from '@kobato/server/domains/taxonomies/categories/projection.ts'
-import type { Category } from '@kobato/shared/types/catalog.ts'
 
 import {
   type AdminCategoriesListFilters,

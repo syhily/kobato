@@ -1,3 +1,4 @@
+import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import {
   getPublicBaseUrl,
@@ -5,7 +6,6 @@ import {
   resolveAssetUrl,
   safeResolveAssetUrl,
 } from '@kobato/server/infra/storage/public-url.ts'
-import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/shared/types/asset-url.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -127,7 +127,7 @@ describe('resolveAssetUrl — route override (font options bag)', () => {
 })
 
 // Inverse grammar: parseAssetUrl is the exact counterpart of resolveAssetUrl
-// above — same module, shared path grammar in `@/shared/types/asset-url`.
+// above — same module, shared path grammar in `@kobato/assets/asset-url`.
 describe('parseAssetUrl — origin-relative forms', () => {
   it('parses both route shapes', () => {
     expect(parseAssetUrl('/storage/images/2026/05/x.jpg')).toEqual({

@@ -1,6 +1,7 @@
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { BlogSettingsBundle, SettingsBundle } from '@kobato/shared/config/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { BlogSettingsBundle, SettingsBundle } from '@kobato/settings/types.ts'
 
+import { adminSettingsBootstrapOutputSchema } from '@kobato/contracts/admin.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { projectSectionForAdmin } from '@kobato/server/domains/settings/services/admin-projection.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
@@ -10,10 +11,9 @@ import { getSupportedTimeZones } from '@kobato/server/domains/settings/timezones
 import { isStorageMigrationActive } from '@kobato/server/domains/storage/s3-migration.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SETTINGS_SECTIONS } from '@kobato/shared/config/sections.ts'
-import { adminSettingsBootstrapOutputSchema } from '@kobato/shared/contracts/admin.ts'
-import { safeBigInt } from '@kobato/shared/utils/tools.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { safeBigInt } from '@kobato/utils/tools.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
 const update = adminProc

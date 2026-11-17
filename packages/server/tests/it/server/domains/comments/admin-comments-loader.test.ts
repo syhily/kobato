@@ -1,11 +1,11 @@
-import type { AdminCommentsResult } from '@kobato/shared/types/comments.ts'
+import type { AdminCommentsResult } from '@kobato/contracts/types/comments.ts'
 
 import { comment } from '@kobato/db/schema/comment.ts'
 import { metric } from '@kobato/db/schema/metric.ts'
 import { post } from '@kobato/db/schema/post.ts'
 import { user } from '@kobato/db/schema/user.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
 import { loadAllComments } from '@kobato/server/domains/comments/services/admin-query.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 

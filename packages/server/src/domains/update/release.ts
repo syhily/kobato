@@ -4,8 +4,8 @@
 import { through } from '@kobato/server/infra/cache/registry.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { APP_REPOSITORY } from '@kobato/shared/config/version.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
+import { APP_REPOSITORY } from '@kobato/utils/version.ts'
 
 export interface LatestRelease {
   tagName: string

@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/shared/utils/roles.ts'
+import type { Role } from '@kobato/utils/roles.ts'
 
 import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/operations/notification.ts'
 import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'

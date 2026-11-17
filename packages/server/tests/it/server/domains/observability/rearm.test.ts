@@ -9,7 +9,7 @@ import {
 } from '@kobato/server/domains/observability/runtime-manager.ts'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -72,7 +72,7 @@ afterEach(() => {
   __resetObservabilityRuntimeForTests()
 })
 
-// HMR can re-evaluate `shared/config/snapshot` (module-level state), so a fresh
+// HMR can re-evaluate `@kobato/settings/snapshot` (module-level state), so a fresh
 // module graph reads back an empty settings snapshot. The boot path hydrates
 // before syncing precisely so the runtime re-arms without waiting for the next
 // admin save or the first browser request.

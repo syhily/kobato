@@ -1,5 +1,5 @@
 import { EDITOR_BASE_NODES } from '@kobato/inkling'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { excludeBaseNodes } from '@kobato/web/client/editor/base-node-filter.ts'
 import { describe, expect, it } from 'vitest'
 

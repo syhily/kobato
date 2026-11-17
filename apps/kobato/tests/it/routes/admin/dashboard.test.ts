@@ -1,12 +1,12 @@
 import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
+import { EMPTY_STATE_LINE_IDS } from '@kobato/contracts/dashboard.ts'
 import { comment as commentTable } from '@kobato/db/schema/comment.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { EMPTY_STATE_LINE_IDS } from '@kobato/shared/contracts/dashboard.ts'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,

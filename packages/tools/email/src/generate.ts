@@ -1,7 +1,7 @@
 #!/usr/bin/env node
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 // Renders every email template to a standalone HTML file under
 // `packages/tools/email/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
@@ -30,9 +30,9 @@ const { PasswordReset } = await import('@kobato/server/infra/email/templates/Pas
 const { SignInLink } = await import('@kobato/server/infra/email/templates/SignInLink.tsx')
 const { SignInOtp } = await import('@kobato/server/infra/email/templates/SignInOtp.tsx')
 const { createServerTranslator } = await import('@kobato/server/infra/i18n.ts')
-const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/shared/config/snapshot.ts')
-const { SUPPORTED_LOCALES } = await import('@kobato/shared/i18n/locales.ts')
-const { unsafeCast } = await import('@kobato/shared/utils/unsafe-cast.ts')
+const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
+const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales.ts')
+const { unsafeCast } = await import('@kobato/utils/unsafe-cast.ts')
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, '..', 'emails')

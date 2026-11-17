@@ -20,9 +20,11 @@ import {
   scanSourceForI18nLiterals,
   type ScanAllowlistEntry,
 } from '@kobato/test/i18n-literals.ts'
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// The whole production source tree across the workspace packages. An allowlist
+// The whole production source tree across the workspace packages, including
+// the shared split's leaf roots as their sources land. An allowlist
 // entry is the only way to skip a finding, and it must name the exact file,
 // rule and (usually) snippet with a written reason.
 const SCAN_ROOTS = [
@@ -30,7 +32,15 @@ const SCAN_ROOTS = [
   'packages/inkling/src',
   'packages/db/src',
   'packages/server/src',
-  'packages/shared/src',
+  'packages/shared/contracts/src',
+  'packages/shared/seo/src',
+  'packages/shared/pt/src',
+  'packages/shared/utils/src',
+  'packages/shared/i18n/src',
+  'packages/shared/cache/src',
+  'packages/shared/settings/src',
+  'packages/shared/assets/src',
+  'packages/shared/sanitize/src',
   'packages/ui/src',
   'packages/web/src',
 ] as const
@@ -39,12 +49,12 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // The locale module names every supported tag and alias by design — it IS
   // the single source of truth the rule checks against.
   // Endonyms are deliberately each locale's own script, never translated.
-  { path: 'packages/shared/src/i18n/locales.ts', rules: ['hardcoded-locale', 'han-literal'] },
+  { path: 'packages/shared/i18n/src/locales.ts', rules: ['hardcoded-locale', 'han-literal'] },
   // The catalog aggregator keys its per-locale maps and its English fallback
   // by tag; those literals are the catalog identity, not UI copy.
-  { path: 'packages/shared/src/i18n/catalog.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/shared/i18n/src/catalog.ts', rules: ['hardcoded-locale'] },
   // The display facade maps app locales onto date-fns locales — same identity role.
-  { path: 'packages/shared/src/i18n/format.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/shared/utils/src/format.ts', rules: ['hardcoded-locale'] },
   // Weibo's share widget takes a hardcoded `language=zh_cn` PROTOCOL parameter;
   // it is never rendered to a reader.
   { path: 'packages/web/src/ui/public/LikeActions.tsx', rules: ['hardcoded-locale'], text: 'zh_cn' },
@@ -115,7 +125,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // label tables themselves are a copy store (the editor chrome's catalog; the
   // scanner exempts `inkling-labels/` from han-literal by design). The
   // revision-number sigil and the image-dimension separator are glyphs, not copy.
-  { path: 'packages/shared/src/i18n/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
   // The client's dynamic `locale → label-table import` map: the tags are the
   // mapping's identity (the counterpart of the aggregator above), not copy.
   { path: 'packages/web/src/client/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
@@ -138,7 +148,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // These maps ARE the locale identity (calendar copy / default font
   // chains) — the exact tags are their contract, not UI copy to translate.
   { path: 'packages/server/src/render/calendar/locale.ts', rules: ['hardcoded-locale', 'han-literal'] },
-  { path: 'packages/shared/src/config/font-stacks.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/ui/src/lib/font-stacks.ts', rules: ['hardcoded-locale'] },
   // Producer guard: both a category AND a tag filter is a programming error,
   // never reachable from the public feed URLs. Technical diagnostic, kept raw.
   {
@@ -176,7 +186,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   },
   // Transliteration table data: single letters ('Zh', 'zh', 'en', …) are
   // slug-mapping values, not locale choices or copy.
-  { path: 'packages/shared/src/slug-char-map.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/shared/utils/src/slug-char-map.ts', rules: ['hardcoded-locale'] },
   // The SEA Intl probe's expectation table is KEYED by the locale identity — the
   // tags are the probe's index and the expected ICU output is technical data.
   { path: 'packages/server/src/infra/intl-probe.ts', rules: ['hardcoded-locale', 'han-literal'] },
@@ -185,20 +195,20 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/server/src/infra/config.ts', rules: ['han-literal'] },
   { path: 'packages/server/src/infra/binary-rollback.ts', rules: ['han-literal'] },
   // Slash-menu search aliases: match keys, never rendered as interface copy.
-  { path: 'packages/shared/src/lexical/cards/menu-matches.ts', rules: ['han-literal'] },
+  { path: 'packages/web/src/ui/admin/editor/cards/menu-matches.ts', rules: ['han-literal'] },
   // Default content seeds and the content projection are spec'd as
   // untranslatable (they are stored/rendered content, not app chrome).
-  { path: 'packages/shared/src/lexical/cards/solution.ts', rules: ['han-literal'], text: '解：' },
+  { path: 'packages/shared/pt/src/cards/solution.ts', rules: ['han-literal'], text: '解：' },
   {
-    path: 'packages/shared/src/lexical/projection-state.ts',
+    path: 'packages/shared/pt/src/projection-state.ts',
     rules: ['han-literal'],
     text: '🎵 此文章包含音乐播放器，请访问原文收听。',
   },
-  { path: 'packages/shared/src/utils/footnotes-section-title.ts', rules: ['han-literal'], text: '尾声礼记' },
+  { path: 'packages/shared/settings/src/footnotes-section-title.ts', rules: ['han-literal'], text: '尾声礼记' },
   // Social rows seed user-editable content: `brandName` holds the
   // locale-neutral form verbatim; the translated label is `labelId`.
-  { path: 'packages/shared/src/config/socials.ts', rules: ['han-literal'], text: '微博' },
-  { path: 'packages/shared/src/config/socials.ts', rules: ['han-literal'], text: '微信' },
+  { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微博' },
+  { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微信' },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -206,10 +216,15 @@ function rules(source: string, file = 'fixture.tsx'): string[] {
 }
 
 // Parsing the whole tree is the expensive part; both full-tree assertions read
-// the SAME result (the second only needs `scannedFiles`).
+// the SAME result (the second only needs `scannedFiles`). Roots whose split has
+// not started yet may not exist on disk — the scanner deliberately throws on a
+// missing root (a silent skip would mask typos), so they are filtered here.
 let productionScan: ReturnType<typeof scanI18nLiterals> | null = null
 function scanProduction(): ReturnType<typeof scanI18nLiterals> {
-  productionScan ??= scanI18nLiterals({ roots: SCAN_ROOTS, allowlist: ALLOWLIST })
+  productionScan ??= scanI18nLiterals({
+    roots: SCAN_ROOTS.filter((root) => existsSync(root)),
+    allowlist: ALLOWLIST,
+  })
   return productionScan
 }
 
@@ -227,9 +242,9 @@ describe('production sources', () => {
     // Every exemption below is a documented, exact file/rule/snippet entry.
     expect(new Set(result.allowlisted.map((violation) => violation.file))).toEqual(
       new Set([
-        'packages/shared/src/i18n/locales.ts',
-        'packages/shared/src/i18n/catalog.ts',
-        'packages/shared/src/i18n/format.ts',
+        'packages/shared/i18n/src/locales.ts',
+        'packages/shared/i18n/src/catalog.ts',
+        'packages/shared/utils/src/format.ts',
         'packages/web/src/ui/public/LikeActions.tsx',
         'packages/web/src/ui/public/comments/CommentReplyForm.tsx',
         'packages/web/src/ui/public/friends/FriendApplyForm.tsx',
@@ -252,7 +267,7 @@ describe('production sources', () => {
         'packages/web/src/ui/admin/users/UserDetailView.tsx',
         'packages/web/src/ui/admin/users/UserEditForm.tsx',
         // The locale→label-table maps and the two glyph sites.
-        'packages/shared/src/i18n/inkling-labels.ts',
+        'packages/shared/i18n/src/inkling-labels.ts',
         'packages/web/src/client/editor/inkling-labels.ts',
         'packages/web/src/ui/admin/editor-shell/RevisionsDrawer.tsx',
         'packages/web/src/ui/admin/editor/pickers/ImageLibraryPicker.tsx',
@@ -266,7 +281,7 @@ describe('production sources', () => {
         'packages/server/src/domains/webmentions/verify.ts',
         // Locale-keyed static maps and the feed producer guard.
         'packages/server/src/render/calendar/locale.ts',
-        'packages/shared/src/config/font-stacks.ts',
+        'packages/ui/src/lib/font-stacks.ts',
         'packages/server/src/render/feed/generator.tsx',
         'packages/inkling/src/components/ui/LibrarySelector.tsx',
         'packages/inkling/src/nodes/FootnoteDefinitionNodeComponent.tsx',
@@ -274,15 +289,15 @@ describe('production sources', () => {
         'packages/inkling/src/components/ui/EmojiPickerPortal.tsx',
         'packages/server/src/domains/auth/primitives.ts',
         'packages/server/src/domains/settings/services/admin-projection.ts',
-        'packages/shared/src/slug-char-map.ts',
+        'packages/shared/utils/src/slug-char-map.ts',
         'packages/server/src/infra/intl-probe.ts',
         'packages/server/src/infra/config.ts',
         'packages/server/src/infra/binary-rollback.ts',
-        'packages/shared/src/lexical/cards/menu-matches.ts',
-        'packages/shared/src/lexical/cards/solution.ts',
-        'packages/shared/src/lexical/projection-state.ts',
-        'packages/shared/src/utils/footnotes-section-title.ts',
-        'packages/shared/src/config/socials.ts',
+        'packages/web/src/ui/admin/editor/cards/menu-matches.ts',
+        'packages/shared/pt/src/cards/solution.ts',
+        'packages/shared/pt/src/projection-state.ts',
+        'packages/shared/settings/src/footnotes-section-title.ts',
+        'packages/shared/settings/src/socials.ts',
       ]),
     )
   })
@@ -295,28 +310,28 @@ describe('production sources', () => {
     // needs an allowlist entry.
     expect(skippedFiles).toEqual([
       'packages/server/src/render/calendar/local-quotes.ts',
-      'packages/shared/src/i18n/fallback-messages.ts',
+      'packages/shared/i18n/src/fallback-messages.ts',
     ])
     // Skipped means not scanned: the quote bank never reaches the parser, so
     // its thousands of quotes need no allowlist exemption either.
     expect(scannedFiles).not.toContain('packages/server/src/render/calendar/local-quotes.ts')
-    expect(scannedFiles).not.toContain('packages/shared/src/i18n/fallback-messages.ts')
+    expect(scannedFiles).not.toContain('packages/shared/i18n/src/fallback-messages.ts')
   })
 
   it('reaches every file under the roots, including nested catalogs', { timeout: 120_000 }, () => {
     const { scannedFiles } = scanProduction()
 
-    expect(scannedFiles).toContain('packages/shared/src/i18n/locales.ts')
-    expect(scannedFiles).toContain('packages/shared/src/i18n/messages/ui/en-US.ts')
-    expect(scannedFiles).toContain('packages/shared/src/i18n/messages/server/zh-TW.ts')
+    expect(scannedFiles).toContain('packages/shared/i18n/src/locales.ts')
+    expect(scannedFiles).toContain('packages/shared/i18n/src/messages/ui/en-US.ts')
+    expect(scannedFiles).toContain('packages/shared/i18n/src/messages/server/zh-TW.ts')
     // Formatting and registry modules.
     expect(scannedFiles).toEqual(
       expect.arrayContaining([
-        'packages/shared/src/config/display.ts',
-        'packages/shared/src/cache/registry.ts',
-        'packages/shared/src/types/cache.ts',
-        'packages/shared/src/utils/roles.ts',
-        'packages/shared/src/utils/formatter.ts',
+        'packages/shared/settings/src/display.ts',
+        'packages/shared/cache/src/registry.ts',
+        'packages/shared/cache/src/types.ts',
+        'packages/shared/utils/src/roles.ts',
+        'packages/shared/utils/src/formatter.ts',
         'packages/web/src/ui/admin/analytics/time-labels.ts',
         'packages/web/src/ui/admin/editor-shell/wall-clock.ts',
         'packages/web/src/ui/admin/settings/cache/cache-formatters.ts',
@@ -336,8 +351,8 @@ describe('production sources', () => {
         'packages/web/src/ui/admin/editor/PageBodyEditor.tsx',
         'packages/web/src/ui/admin/editor-shell/EditorToolbar.tsx',
         'packages/web/src/ui/admin/editor-shared/BasicInfoCard.tsx',
-        'packages/web/src/client/editor/cards/music-player.tsx',
-        'packages/web/src/client/editor/page-editor-card-config.ts',
+        'packages/web/src/ui/admin/editor/cards/music-player.tsx',
+        'packages/web/src/ui/admin/editor/page-editor-card-config.ts',
         // The server error protocol modules.
         'packages/server/src/infra/http/errors.ts',
         'packages/server/src/infra/http/error-descriptor.ts',
@@ -416,7 +431,7 @@ describe('production sources', () => {
         // GeoIP updates, the self-update pipeline, safe-url ids.
         'packages/server/src/domains/analytics/geoip-update.ts',
         'packages/server/src/domains/update/pipeline.ts',
-        'packages/shared/src/utils/safe-url.ts',
+        'packages/shared/utils/src/safe-url.ts',
         // The Gravatar mirror preset labels render through `t()`.
         'packages/web/src/ui/admin/settings/CommentsForm.tsx',
         // Email templates/senders render server-catalog copy.
@@ -444,7 +459,7 @@ describe('production sources', () => {
         'packages/server/src/http/resources/images.ts',
         'packages/server/src/http/resources/assets.ts',
         'packages/server/src/http/middleware-pipeline.ts',
-        'packages/shared/src/config/font-stacks.ts',
+        'packages/ui/src/lib/font-stacks.ts',
         'apps/kobato/src/entry.server.tsx',
         'apps/kobato/src/root.tsx',
       ]),
@@ -573,7 +588,7 @@ describe('scanner rules', () => {
     const invalid = 'this is not valid TypeScript {{{'
     expect(() => scanSourceForI18nLiterals(invalid, 'src/not-a-content-store.ts')).toThrow()
     expect(scanSourceForI18nLiterals(invalid, 'packages/server/src/render/calendar/local-quotes.ts')).toEqual([])
-    expect(scanSourceForI18nLiterals(invalid, 'packages/shared/src/i18n/fallback-messages.ts')).toEqual([])
+    expect(scanSourceForI18nLiterals(invalid, 'packages/shared/i18n/src/fallback-messages.ts')).toEqual([])
   })
 
   // No wall-clock assertion: the fixture is big enough (thousands of hits late
@@ -602,12 +617,12 @@ describe('scanner rules', () => {
 describe('allowlist', () => {
   const violations = scanSourceForI18nLiterals(
     "export const a = 'zh-CN'\nexport const b = 'zh-TW'\nexport function C() { return <p>保存</p> }\n",
-    'packages/shared/src/i18n/sample.tsx',
+    'packages/shared/i18n/src/sample.tsx',
   )
 
   it('exempts only the listed rule for a path', () => {
     const result = applyAllowlist(violations, [
-      { path: 'packages/shared/src/i18n/sample.tsx', rules: ['hardcoded-locale'] },
+      { path: 'packages/shared/i18n/src/sample.tsx', rules: ['hardcoded-locale'] },
     ])
 
     expect(result.allowlisted).toHaveLength(2)
@@ -622,7 +637,7 @@ describe('allowlist', () => {
 
   it('narrows to an exact snippet when one is given', () => {
     const result = applyAllowlist(violations, [
-      { path: 'packages/shared/src/i18n', rules: ['hardcoded-locale'], text: 'zh-TW' },
+      { path: 'packages/shared/i18n/src', rules: ['hardcoded-locale'], text: 'zh-TW' },
     ])
 
     expect(result.allowlisted.map((violation) => violation.text)).toEqual(['zh-TW'])

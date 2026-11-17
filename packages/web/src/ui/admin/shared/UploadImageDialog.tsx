@@ -1,7 +1,6 @@
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 import type { LockedAspect } from '@kobato/web/ui/admin/shared/ImageEditorCanvas.tsx'
 
-import { formatBytes } from '@kobato/shared/i18n/format.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
@@ -14,6 +13,7 @@ import {
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatBytes } from '@kobato/utils/format.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
 import { Suspense, type SubmitEventHandler, lazy, useCallback, useEffect, useRef, useState } from 'react'

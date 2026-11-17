@@ -1,10 +1,10 @@
 {
-  "name": "@kobato/i18n",
+  "name": "@kobato/i18n-tools",
   "version": "8.0.3-dev",
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@kobato/shared": "workspace:*",
+    "@kobato/i18n": "workspace:*",
     "@types/node": "catalog:"
   }
 }

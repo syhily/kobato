@@ -1,13 +1,13 @@
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service.ts'
-import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import {
   adminRecallNotificationInput,
   adminRecallNotificationOutput,
   adminSendBroadcastInput,
   adminSendDirectInput,
   adminSendOutput,
-} from '@kobato/shared/contracts/notifications.ts'
+} from '@kobato/contracts/notifications.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service.ts'
+import { adminProc } from '@kobato/server/http/orpc-base.ts'
 
 const sendDirect = adminProc
   .route({ method: 'POST', path: '/admin/notifications/send-direct' })

@@ -3,8 +3,8 @@ import type { Database } from '@kobato/db/database.ts'
 import { backup as backupTable } from '@kobato/db/schema/backup.ts'
 import { image, music } from '@kobato/db/schema/media.ts'
 import { BRANDING_SLOTS } from '@kobato/server/domains/assets/services/storage.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { and, eq, isNull } from 'drizzle-orm'
 
 export interface MigrationStats {

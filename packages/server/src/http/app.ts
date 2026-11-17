@@ -8,7 +8,7 @@ import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'
 import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit.ts'
 import { orpcInputValidationInterceptor } from '@kobato/server/http/orpc-base.ts'
 import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
 

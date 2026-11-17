@@ -1,5 +1,5 @@
+import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/contracts/analytics.ts'
 import type { AnalyticsDatabase, AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
 
 import {
   createAnalyticsQuery,

@@ -1,4 +1,4 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { auditLog, setting } from '@kobato/db/schema/config.ts'
 import { storageMigration } from '@kobato/db/schema/storage-migration.ts'

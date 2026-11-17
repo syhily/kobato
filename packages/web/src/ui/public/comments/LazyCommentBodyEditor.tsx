@@ -1,5 +1,5 @@
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { InklingLabelsInput } from '@kobato/inkling'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 import type { CommentBodyEditorProps } from '@kobato/web/ui/public/comments/CommentBodyEditor.tsx'
 
 import { cn } from '@kobato/ui/lib/cn.ts'

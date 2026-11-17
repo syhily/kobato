@@ -1,9 +1,9 @@
-import type { HomeExtra } from '@kobato/shared/contracts/content.ts'
-import type { PublicListingLoaderData } from '@kobato/shared/types/listing.ts'
+import type { HomeExtra } from '@kobato/contracts/content.ts'
+import type { PublicListingLoaderData } from '@kobato/contracts/types/listing.ts'
 
+import { metaWithFallback } from '@kobato/seo/meta.ts'
 import { listingHeaders } from '@kobato/server/http/loaders/route-exports.ts'
 import { createSsrCaller, unwrapListing } from '@kobato/server/http/ssr-caller.ts'
-import { metaWithFallback } from '@kobato/shared/seo/meta.ts'
 import { HomeLayoutBody } from '@kobato/web/ui/public/post/PostListViews.tsx'
 import { data } from 'react-router'
 

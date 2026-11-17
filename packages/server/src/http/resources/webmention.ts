@@ -4,7 +4,7 @@ import { enqueueWebmention } from '@kobato/server/domains/webmentions/inbox-enqu
 import { webmentionReceiveSchema } from '@kobato/server/domains/webmentions/schema.ts'
 import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit.ts'
 import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
-import { isWebmentionReceiveEnabled } from '@kobato/shared/config/getters.ts'
+import { isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
 import { Hono } from 'hono'
 
 // Form bodies carry exactly two URLs — anything larger is junk. dynamicBodyLimit

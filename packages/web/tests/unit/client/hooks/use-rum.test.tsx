@@ -1,4 +1,4 @@
-import type { FrontendRumBootstrap } from '@kobato/shared/contracts/trace.ts'
+import type { FrontendRumBootstrap } from '@kobato/contracts/trace.ts'
 import type { RumConsent } from '@kobato/web/client/lib/rum-consent.ts'
 
 import {

@@ -1,5 +1,5 @@
+import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/contracts/sea/assets.ts'
 import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea.ts'
-import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/shared/sea/assets.ts'
 import { createHash } from 'node:crypto'
 import { zstdDecompressSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'

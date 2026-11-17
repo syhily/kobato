@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser'
 
 import { Button } from '@kobato/ui/components/button.tsx'

@@ -15,7 +15,7 @@ import {
   waitForHttp,
 } from '@kobato/pack/sea/instance.ts'
 import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths.ts'
-import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
+import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'

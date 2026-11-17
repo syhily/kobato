@@ -22,7 +22,7 @@
 
 ## Locale font chains
 
-`tailwind.css` owns the default `--font-body` / `--font-serif` chains: zh-CN at `:root`, with `:lang(en-US)` / `:lang(zh-TW)` / `:lang(zh-HK)` overrides. The app root may prepend configured families to the same locale tail. Keep the CSS branches in lockstep with `DEFAULT_FONT_STACKS` in `packages/shared/src/config/font-stacks.ts`.
+`tailwind.css` owns the default `--font-body` / `--font-serif` chains: zh-CN at `:root`, with `:lang(en-US)` / `:lang(zh-TW)` / `:lang(zh-HK)` overrides. The app root may prepend configured families to the same locale tail. Keep the CSS branches in lockstep with `DEFAULT_FONT_STACKS` in `packages/ui/src/lib/font-stacks.ts`.
 
 ## Shadow tiers
 

@@ -1,7 +1,7 @@
 import { detailHeaders, listingHeaders } from '@kobato/server/http/loaders/route-exports.ts'
 import { notModifiedResponse } from '@kobato/server/infra/http/etag.ts'
 import { documentHeaders } from '@kobato/server/infra/http/headers.ts'
-import { representationRevisionsFor } from '@kobato/shared/config/representation-scopes.ts'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'

@@ -1,7 +1,5 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +13,9 @@ import {
 } from '@kobato/ui/components/alert-dialog.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { commentFlags } from '@kobato/web/ui/public/comments/comment-item/comment-flags.ts'
 import { commentFooterButtonClass } from '@kobato/web/ui/public/comments/comment-item/helpers.ts'
 import { useCommentsActions, useCommentsIdentity } from '@kobato/web/ui/public/comments/comments-context.ts'

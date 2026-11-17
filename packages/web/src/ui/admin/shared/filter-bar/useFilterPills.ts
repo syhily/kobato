@@ -9,7 +9,7 @@ import type {
 } from '@kobato/web/ui/admin/shared/filter-bar/types.ts'
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import {
   type DateFilterValue,
   parseDateFilter,

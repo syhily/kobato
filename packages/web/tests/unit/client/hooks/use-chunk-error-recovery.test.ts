@@ -1,12 +1,12 @@
-import { isChunkLoadError } from '@kobato/shared/utils/chunk-error.ts'
 import { renderHook } from '@kobato/test/hook.tsx'
 import { subscribeChunkReload, useReloadOnChunkError } from '@kobato/web/client/hooks/use-chunk-error-recovery.ts'
+import { isChunkLoadError } from '@kobato/web/client/lib/chunk-error.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The hooks attach listeners in useEffect, which the SSR harness does
 // not fire; the exported helpers are testable in isolation.
 
-describe('shared/utils/chunk-error — isChunkLoadError', () => {
+describe('client/lib/chunk-error — isChunkLoadError', () => {
   it('returns false for null / undefined', () => {
     expect(isChunkLoadError(null)).toBe(false)
     expect(isChunkLoadError(undefined)).toBe(false)

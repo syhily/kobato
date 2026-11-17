@@ -2,7 +2,7 @@
 
 `apps/kobato/src/routes/` holds route modules — loader / action / meta / component orchestration. Read session/context at
 the perimeter, call orchestrators (`@kobato/server/http/loaders/*`, domain-surface services), project DTOs through
-`@kobato/shared`, render with `@kobato/web` components. No DB queries, cache access, or markdown parsing inline — never import
+the shared leaves (`@kobato/{contracts,settings,i18n,...}`), render with `@kobato/web` components. No DB queries, cache access, or markdown parsing inline — never import
 `@kobato/db/operations/*` (package-dag contract test). `routes.ts` is the URL contract, route ids derive from
 the file path; URLs and physical paths stay stable. Non-page requests (API, feeds, sitemap, generated images) are
 Hono routes in `server.ts`, not resource routes; components take plain props, never `server/*` in JSX.
@@ -63,7 +63,7 @@ introduce a new pattern.
   token (the browser posts to the same-origin `/api/rum/intake` relay). `App` mounts
   `useRum(loaderData.rum ?? null)` once; it runs the DNT/GPC check before the dynamic SDK import.
 - **Admin SSR data goes through oRPC too.** `routes/admin/**` and `routes/editor/**` loaders compose
-  `account.*`, `comments.*`, `analytics.*`, `admin.*` (`shared/contracts/admin.ts`) via the same
+  `account.*`, `comments.*`, `analytics.*`, `admin.*` (`@kobato/contracts/admin.ts`) via the same
   `createSsrCaller`, which also returns `viewer`/`session` for `requireRole` gates and `isCurrent`.
 - Admin loaders keep `requireRole`, compose with their own `Promise.all` (role-conditional branches) and map
   `ORPCError` codes (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts); no

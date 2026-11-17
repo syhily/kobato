@@ -1,4 +1,4 @@
-import type { DeviceEnvBeacon } from '@kobato/shared/contracts/analytics.ts'
+import type { DeviceEnvBeacon } from '@kobato/contracts/analytics.ts'
 
 // Every browser API is read defensively: a missing / non-finite value is
 // OMITTED from the payload (the wire contract makes every dimension optional),

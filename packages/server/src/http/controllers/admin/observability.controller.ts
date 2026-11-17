@@ -1,8 +1,16 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ObservabilityProvisionOutcome } from '@kobato/contracts/observability.ts'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { AuthedHandlerContext } from '@kobato/server/http/orpc-base.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { ObservabilityProvisionOutcome } from '@kobato/shared/contracts/observability.ts'
 
+import {
+  observabilityProvisionInputSchema,
+  observabilityProvisionOutputSchema,
+  observabilityStatusInputSchema,
+  observabilityStatusOutputSchema,
+  observabilityTestConnectionInputSchema,
+  observabilityTestConnectionOutputSchema,
+} from '@kobato/contracts/observability.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { currentObservabilityAssetFingerprint } from '@kobato/server/domains/observability/assets.ts'
 import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
@@ -22,15 +30,7 @@ import { updateBlogSettingsSection } from '@kobato/server/domains/settings/servi
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { carriesErrorMessageDescriptor, descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import {
-  observabilityProvisionInputSchema,
-  observabilityProvisionOutputSchema,
-  observabilityStatusInputSchema,
-  observabilityStatusOutputSchema,
-  observabilityTestConnectionInputSchema,
-  observabilityTestConnectionOutputSchema,
-} from '@kobato/shared/contracts/observability.ts'
-import { safeBigInt } from '@kobato/shared/utils/tools.ts'
+import { safeBigInt } from '@kobato/utils/tools.ts'
 
 function readSavedSite(context: AuthedHandlerContext): ObservabilitySettingsSlice | null {
   return context.settings?.observability?.observability ?? null

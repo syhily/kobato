@@ -1,6 +1,6 @@
+import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor.ts'
-import type { AdminPostDto } from '@kobato/shared/contracts/posts.ts'
 
 import { canEditPost, type ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
@@ -12,7 +12,7 @@ export interface AdminPostsListResult {
 }
 
 // Server-side write shape (number ids / Dates) — distinct from the wire
-// `UpsertPostMetaInput` in `@/shared/types/posts` (string ids / ISO dates).
+// upsert-meta input (string ids / ISO dates).
 export interface PostMetaWriteInput extends UpsertMetaInputBase {
   visible?: boolean
   pinnedAt?: Date | null

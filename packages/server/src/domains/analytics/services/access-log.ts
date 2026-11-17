@@ -13,7 +13,7 @@ import {
   type DuckDBType,
   type DuckDBValue,
 } from '@duckdb/node-api'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 /**
  * The access_events table shape — owned here, passed to the infra DuckDB

@@ -1,23 +1,22 @@
-import '@kobato/shared/zod-config.ts'
-import type { ContentBootstrapI18n } from '@kobato/shared/contracts/content.ts'
+import '@/zod-config.ts'
+import type { ContentBootstrapI18n } from '@kobato/contracts/content.ts'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
+import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope.ts'
+import { fallbackMessages } from '@kobato/i18n/fallback-messages.ts'
+import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
+import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/seo/meta.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
 import { documentHeaders } from '@kobato/server/infra/http/headers.ts'
 import { activeFrontendRum } from '@kobato/server/infra/trace/config.ts'
 import { traceRouteMiddleware } from '@kobato/server/infra/trace/react-router.ts'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@kobato/server/render/warmup/manifest.ts'
-import { defaultFontStackFor } from '@kobato/shared/config/font-stacks.ts'
-import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/shared/config/getters.ts'
-import { catalogScopeForPathname } from '@kobato/shared/i18n/catalog-scope.ts'
-import { fallbackMessages } from '@kobato/shared/i18n/fallback-messages.ts'
-import { DEFAULT_LOCALE, type AppLocale } from '@kobato/shared/i18n/locales.ts'
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
-import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/shared/seo/meta.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
 import { LazyMotionConfig } from '@kobato/ui/components/lazy-motion.tsx'
+import { defaultFontStackFor } from '@kobato/ui/lib/font-stacks.ts'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { setCsrfToken } from '@kobato/web/client/api/client.ts'
 import { makeQueryClient } from '@kobato/web/client/api/query-client.ts'
 import { RouteWarmupScript } from '@kobato/web/client/components/RouteWarmupScript.tsx'
@@ -27,6 +26,7 @@ import { useIosNoZoomOnFocus } from '@kobato/web/client/hooks/use-ios-no-zoom.ts
 import { useRumConsent } from '@kobato/web/client/hooks/use-rum-consent.ts'
 import { useRum, isRumDenied } from '@kobato/web/client/hooks/use-rum.ts'
 import { defaultTransition } from '@kobato/web/client/lib/motion.ts'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { LocaleSyncProvider } from '@kobato/web/ui/lib/LocaleSyncProvider.tsx'
 import { ChunkReloadOverlay } from '@kobato/web/ui/public/chrome/ChunkReloadOverlay.tsx'
 import { ErrorView } from '@kobato/web/ui/public/chrome/ErrorView.tsx'
@@ -38,7 +38,7 @@ import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
 const PublicErrorLayout = lazy(() =>
   Promise.all([
-    import('@kobato/shared/styles/cards.css'),
+    import('@kobato/pt/styles/cards.css'),
     import('@kobato/ui/styles/ui.css'),
     import('@/styles/public.css'),
     import('@kobato/web/ui/public/chrome/BaseLayout.tsx'),

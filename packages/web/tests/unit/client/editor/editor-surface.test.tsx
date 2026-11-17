@@ -8,15 +8,15 @@
 
 // @vitest-environment happy-dom
 
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { InklingComposerProps } from '@kobato/inkling'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/pt/schema.ts'
 
-import { inklingLabelsFor } from '@kobato/shared/i18n/inkling-labels.ts'
-import { THEME_COOKIE } from '@kobato/shared/utils/theme-cookie.ts'
+import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
+import { THEME_COOKIE } from '@kobato/utils/theme-cookie.ts'
 import {
   EditorSurfaceComposer,
   type EditorSurfaceComposerProps,

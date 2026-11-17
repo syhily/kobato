@@ -2,8 +2,8 @@
 // closed kind/operation/status; this module is the single place that decides
 // which admin-readable message the transport localizes.
 
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { DomainErrorCode } from '@kobato/server/infra/http/errors.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
 import { O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'

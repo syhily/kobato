@@ -1,4 +1,4 @@
-import { sanitizeHtml } from '@kobato/shared/sanitize/sanitize-html.ts'
+import { sanitizeHtml } from '@kobato/sanitize/sanitize-html.ts'
 import { useMemo } from 'react'
 
 // Renders the saved comment `content` column (the inkling feed-variant HTML projection).

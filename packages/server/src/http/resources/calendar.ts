@@ -1,11 +1,11 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { through } from '@kobato/server/infra/cache/registry.ts'
 import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'
 import { pngResponse } from '@kobato/server/infra/http/status.ts'
 import { type CalendarTheme, renderCalendar } from '@kobato/server/render/calendar/render.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { format, isValid, parse } from 'date-fns'
 import { HTTPException } from 'hono/http-exception'
 

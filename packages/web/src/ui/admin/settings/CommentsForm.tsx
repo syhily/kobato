@@ -1,6 +1,6 @@
-import type { CommentsLoaderShape } from '@kobato/shared/config/projection.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
-import type { AvatarSource } from '@kobato/shared/utils/avatar.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { CommentsLoaderShape } from '@kobato/settings/projection.ts'
+import type { AvatarSource } from '@kobato/utils/avatar.ts'
 
 import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'

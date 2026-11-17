@@ -1,10 +1,10 @@
-import { nativeRequire } from '@kobato/server/infra/native-require.ts'
 import {
   SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY,
   SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
-} from '@kobato/shared/sea/assets.ts'
+} from '@kobato/contracts/sea/assets.ts'
+import { nativeRequire } from '@kobato/server/infra/native-require.ts'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

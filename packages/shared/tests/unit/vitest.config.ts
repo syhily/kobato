@@ -1,8 +1,19 @@
-import { duckdbTestFilesUnder } from '@kobato/test/duckdb-files.ts'
-import { testDefine } from '@kobato/test/vitest.define.ts'
+import { fileURLToPath } from 'node:url'
 import { configDefaults, defineConfig } from 'vitest/config'
 
+import { duckdbTestFilesUnder } from '../../../../packages/tools/test/src/duckdb-files.ts'
+import { testDefine } from '../../../../packages/tools/test/src/vitest.define.ts'
+
+// This file sits four levels below the repository root
+// (packages/shared/tests/unit) while the suites it owns span the nine split
+// leaf packages' trees (packages/shared/{utils,i18n,...}/tests/unit) — anchor
+// at the repo root. The @kobato/test imports above are relative file paths:
+// with packages/shared no longer a workspace package, the bare specifiers
+// would not resolve from here.
+const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
+
 export default defineConfig({
+  root: REPO_ROOT,
   resolve: {
     tsconfigPaths: true,
   },
@@ -16,10 +27,15 @@ export default defineConfig({
     // option — the root config's maxWorkers is not inherited by projects.)
     maxWorkers: 4,
     environment: 'node',
-    include: ['**/*.test.{ts,tsx}'],
+    include: [
+      'packages/shared/{utils,i18n,cache,settings,assets,pt,sanitize,contracts,seo}/tests/unit/**/*.test.{ts,tsx}',
+    ],
     // DuckDB native-engine files run in the dedicated `duckdb` project.
     exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('packages/server/tests')],
-    setupFiles: ['@kobato/test/setup/unit.ts'],
+    // Package specifiers don't resolve from the repo root (the root
+    // package.json declares no @kobato/test link), so pin the file path —
+    // '@kobato/test/setup/unit.ts' through @kobato/test's exports map.
+    setupFiles: ['packages/tools/test/src/setup/unit.ts'],
     testTimeout: 10_000,
   },
 })

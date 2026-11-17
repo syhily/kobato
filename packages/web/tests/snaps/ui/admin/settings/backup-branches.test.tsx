@@ -1,4 +1,4 @@
-import type { BackupLoaderShape } from '@kobato/shared/config/projection.ts'
+import type { BackupLoaderShape } from '@kobato/settings/projection.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'

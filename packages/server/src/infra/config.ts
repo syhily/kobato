@@ -6,7 +6,7 @@
 import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
 import { isValidTrustedProxyEntry } from '@kobato/server/infra/ip-match.ts'
 import { isSea } from '@kobato/server/infra/sea.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'

@@ -1,10 +1,10 @@
-import type { ListingPostCardWithMetadata } from '@kobato/shared/types/catalog.ts'
+import type { ListingPostCardWithMetadata } from '@kobato/contracts/types/catalog.ts'
 
-import { formatDate } from '@kobato/shared/i18n/format.ts'
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { localDateParts } from '@kobato/shared/utils/formatter.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatDate } from '@kobato/utils/format.ts'
+import { localDateParts } from '@kobato/utils/formatter.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { postTitleClass } from '@kobato/web/ui/public/post/postChrome.ts'
 import { PostSquare } from '@kobato/web/ui/public/post/PostListViews.tsx'
 

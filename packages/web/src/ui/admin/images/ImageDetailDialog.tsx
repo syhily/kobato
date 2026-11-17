@@ -1,8 +1,6 @@
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { formatBytes, formatDateTime } from '@kobato/shared/i18n/format.ts'
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
@@ -16,6 +14,8 @@ import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatBytes, formatDateTime } from '@kobato/utils/format.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 

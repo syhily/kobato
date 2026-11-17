@@ -1,13 +1,13 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { contentBootstrapOutputSchema } from '@kobato/contracts/content.ts'
+import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope.ts'
+import { uiMessagesForScope } from '@kobato/i18n/catalog.ts'
+import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { resolveFontsForRender } from '@kobato/server/domains/fonts/services/render.ts'
 import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks.ts'
 import { publicProc } from '@kobato/server/http/orpc-base.ts'
-import { contentBootstrapOutputSchema } from '@kobato/shared/contracts/content.ts'
-import { catalogScopeForPathname } from '@kobato/shared/i18n/catalog-scope.ts'
-import { uiMessagesForScope } from '@kobato/shared/i18n/catalog.ts'
-import { inklingLabelsFor } from '@kobato/shared/i18n/inkling-labels.ts'
-import { parseThemeCookie } from '@kobato/shared/utils/theme-cookie.ts'
+import { parseThemeCookie } from '@kobato/utils/theme-cookie.ts'
 
 /**
  * The document-scope settings projection: redacted secrets, and the

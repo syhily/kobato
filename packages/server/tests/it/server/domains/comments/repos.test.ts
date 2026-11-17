@@ -2,6 +2,7 @@ import { comment } from '@kobato/db/schema/comment.ts'
 import { metric } from '@kobato/db/schema/metric.ts'
 import { post } from '@kobato/db/schema/post.ts'
 import { user } from '@kobato/db/schema/user.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
 import {
   countAllComments,
   countAdminComments,
@@ -60,7 +61,6 @@ import {
   requestDeleteComment,
   softDeleteCommentById,
 } from '@kobato/server/domains/comments/services/moderate.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'

@@ -1,6 +1,6 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
 import { isUniqueConstraintError } from '@kobato/db/errors.ts'
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@kobato/db/operations/slug-registry.ts'

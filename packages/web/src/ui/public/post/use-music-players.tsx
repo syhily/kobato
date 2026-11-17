@@ -1,7 +1,7 @@
 import type { MusicPlayerCardProps } from '@kobato/web/ui/public/music-player/music-player.tsx'
 
-import { isHttpUrl } from '@kobato/shared/utils/safe-url.ts'
 import { I18nProvider, type I18nMessages, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { isHttpUrl } from '@kobato/utils/safe-url.ts'
 import { type RefObject, useContext, useEffect, useEffectEvent } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { IntlContext } from 'react-intl'
@@ -28,7 +28,7 @@ export function safeMediaSrc(value: string | null | undefined): string | undefin
 // a static fallback card); this hook upgrades every mount point with a URL to the real player
 // after hydration. Mount points without `data-url` (missing music meta at save time) keep
 // their placeholder. The mount-point markup comes from the shared card spec
-// (`@/shared/lexical/cards/music-player`), and the fallback mirrors the player's paused
+// (`@kobato/pt/cards/music-player`), and the fallback mirrors the player's paused
 // initial render so the swap does not shift layout.
 //
 // `bodyHtml` is the effect's re-scan key: the container div is REUSED across client

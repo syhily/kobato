@@ -1,4 +1,4 @@
-import type { SocialNetwork } from '@kobato/shared/config/socials.ts'
+import type { SocialNetwork } from '@kobato/settings/socials.ts'
 import type { LucideIcon } from '@kobato/ui/icons/types.ts'
 
 import { createIcon } from '@kobato/ui/icons/create-icon.tsx'

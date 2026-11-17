@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-import type { NotificationDto } from '@kobato/shared/contracts/notifications.ts'
+import type { NotificationDto } from '@kobato/contracts/notifications.ts'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 
-import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { BlogSettingsProvider } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

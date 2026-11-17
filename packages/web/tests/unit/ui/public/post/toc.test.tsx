@@ -1,6 +1,6 @@
-import type { MarkdownHeading } from '@kobato/shared/utils/toc.ts'
+import type { MarkdownHeading } from '@kobato/utils/toc.ts'
 
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { TableOfContents } from '@kobato/web/ui/public/post/TableOfContents.tsx'

@@ -1,10 +1,10 @@
 import { documentHeaders } from '@kobato/server/infra/http/headers.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { useReloadOnChunkError } from '@kobato/web/client/hooks/use-chunk-error-recovery.ts'
 import { useDeviceEnvBeacon } from '@kobato/web/client/hooks/use-device-env-beacon.ts'
 import { BaseLayout } from '@kobato/web/ui/public/chrome/BaseLayout.tsx'
 import { ErrorView } from '@kobato/web/ui/public/chrome/ErrorView.tsx'
-import '@kobato/shared/styles/cards.css'
+import '@kobato/pt/styles/cards.css'
 import '@kobato/ui/styles/ui.css'
 
 import '@/styles/public.css'

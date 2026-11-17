@@ -1,18 +1,18 @@
 // Zod 4.5 auto-compilation (3–9x parse on objects/unions) must evaluate before any module that constructs schemas.
-// Server-only: the browser bundle keeps `jitless` (see `@/shared/zod-config`), under which compile stands down.
+// Server-only: the browser bundle keeps `jitless` (see `@/zod-config`), under which compile stands down.
 import 'zod/compile'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { RenderToPipeableStreamOptions } from 'react-dom/server'
 import type { EntryContext, RouterContextProvider } from 'react-router'
 
-import '@kobato/shared/zod-config.ts'
+import '@/zod-config.ts'
+import { DEFAULT_LOCALE, isSupportedLocale } from '@kobato/i18n/locales.ts'
 import { requestContext } from '@kobato/server/http/request-context.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { startSpan, type Span } from '@kobato/server/infra/trace/facade.ts'
 import { recordSsrPhase } from '@kobato/server/infra/trace/metrics.ts'
-import { DEFAULT_LOCALE, isSupportedLocale } from '@kobato/shared/i18n/locales.ts'
-import { isBot } from '@kobato/shared/utils/is-bot.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { isBot } from '@kobato/utils/is-bot.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 import { createReadableStreamFromReadable } from '@react-router/node'
 import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'

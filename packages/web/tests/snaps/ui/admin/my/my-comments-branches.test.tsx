@@ -1,4 +1,4 @@
-import type { MyCommentItem } from '@kobato/shared/types/comments.ts'
+import type { MyCommentItem } from '@kobato/contracts/types/comments.ts'
 
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

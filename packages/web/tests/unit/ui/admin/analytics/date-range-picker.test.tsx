@@ -5,7 +5,7 @@
 // commits it. Regression test for react-day-picker v10 completing a
 // same-day range on the first click without `resetOnSelect`.
 
-import type { DateRange } from '@kobato/shared/contracts/analytics.ts'
+import type { DateRange } from '@kobato/contracts/analytics.ts'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { calendarMachineDay } from '@kobato/ui/components/calendar.tsx'

@@ -1,8 +1,8 @@
+import { publicWebmentionDto } from '@kobato/contracts/webmentions.ts'
 import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
 import { webmentionPublicListSchema } from '@kobato/server/domains/webmentions/schema.ts'
 import { loadPublicWebmentionsForTarget } from '@kobato/server/domains/webmentions/service.ts'
 import { publicProc } from '@kobato/server/http/orpc-base.ts'
-import { publicWebmentionDto } from '@kobato/shared/contracts/webmentions.ts'
 import { z } from 'zod'
 
 // Headless surface for the「引用与回应」block: `page_key` resolves through

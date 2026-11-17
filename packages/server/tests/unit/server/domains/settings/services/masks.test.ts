@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
 import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks.ts'

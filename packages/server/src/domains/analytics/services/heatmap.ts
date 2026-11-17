@@ -1,5 +1,5 @@
+import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/contracts/analytics.ts'
 import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
 
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/server/domains/analytics/services/query-filter.ts'

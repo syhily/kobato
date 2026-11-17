@@ -5,7 +5,7 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { registerShutdownHook } from '@kobato/server/infra/lifecycle.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { isTraceActive, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { addDays, addMonths, isAfter } from 'date-fns'
 
 export function computeNextRun(
@@ -97,7 +97,7 @@ export function nextDailyMaintenanceDelayMs(): number {
 
 /** Catalog task binding — opt-in live-state tracking plus optional history. */
 export interface ScheduledJobTask {
-  /** Catalog task key (`shared/contracts/jobs`). */
+  /** Catalog task key (`@kobato/contracts/jobs`). */
   key: string
   /** Persist each fire to `job_run` via the recorder. */
   recordHistory?: boolean

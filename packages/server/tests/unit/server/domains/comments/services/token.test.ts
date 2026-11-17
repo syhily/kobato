@@ -1,4 +1,7 @@
-import type { CommentTokenCookie, CommentTokenCookieEntry } from '@kobato/shared/utils/comment-token.ts'
+import type {
+  CommentTokenCookie,
+  CommentTokenCookieEntry,
+} from '@kobato/server/domains/comments/services/comment-token.ts'
 
 import { appendCommentToken } from '@kobato/server/domains/comments/services/token.ts'
 import { describe, expect, it } from 'vitest'

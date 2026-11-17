@@ -1,8 +1,10 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { CacheBucketId } from '@kobato/shared/types/cache.ts'
-import type { JsonValue } from '@kobato/shared/utils/json-value.ts'
+import type { CacheBucketId } from '@kobato/cache/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { JsonValue } from '@kobato/server/infra/json.ts'
 import type { ZodType } from 'zod'
 
+import { CACHE_DECLARATIONS } from '@kobato/cache/registry.ts'
+import { isTunableCacheBucket } from '@kobato/cache/types.ts'
 import {
   bumpGeneration,
   getItemRawWithExpiry,
@@ -25,10 +27,8 @@ import {
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { recordCacheLookup } from '@kobato/server/infra/trace/metrics.ts'
-import { CACHE_DECLARATIONS } from '@kobato/shared/cache/registry.ts'
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
-import { isTunableCacheBucket } from '@kobato/shared/types/cache.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 

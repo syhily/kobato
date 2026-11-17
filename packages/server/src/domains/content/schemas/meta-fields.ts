@@ -1,7 +1,7 @@
+import { CONTENT_LANGUAGE_MAX_LENGTH, canonicalContentLanguage } from '@kobato/i18n/content-language.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { CONTENT_LANGUAGE_MAX_LENGTH, canonicalContentLanguage } from '@kobato/shared/i18n/content-language.ts'
-import { safeBoolean } from '@kobato/shared/utils/schema.ts'
+import { safeBoolean } from '@kobato/utils/schema.ts'
 import { z } from 'zod'
 
 /**

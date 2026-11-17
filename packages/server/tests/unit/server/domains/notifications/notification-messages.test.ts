@@ -1,9 +1,9 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { ServerMessageId } from '@kobato/shared/i18n/messages/server/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US.ts'
 import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
-import { serverMessagesEnUS } from '@kobato/shared/i18n/messages/server/en-US.ts'
 import { describe, expect, it } from 'vitest'
 
 // `notification.*` keys are persisted in notification rows, so the set is append-only:

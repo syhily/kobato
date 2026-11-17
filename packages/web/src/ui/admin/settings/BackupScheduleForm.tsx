@@ -1,5 +1,5 @@
-import type { BackupSettings } from '@kobato/shared/config/types.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { BackupSettings } from '@kobato/settings/types.ts'
 
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'

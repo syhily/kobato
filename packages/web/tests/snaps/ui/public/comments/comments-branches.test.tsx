@@ -1,4 +1,4 @@
-import type { Comments as CommentsData } from '@kobato/shared/types/comments.ts'
+import type { Comments as CommentsData } from '@kobato/contracts/types/comments.ts'
 
 import { makeComment } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

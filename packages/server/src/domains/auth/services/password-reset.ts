@@ -22,8 +22,8 @@ import {
 import { consumeToken, issueResetToken, revokeTokensFor } from '@kobato/server/domains/auth/verification-tokens.ts'
 import { sendPasswordReset } from '@kobato/server/infra/email/sender.ts'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { resolveSiteOrigin } from '@kobato/shared/config/site-origin.ts'
-import { MIN_PASSWORD_LENGTH } from '@kobato/shared/utils/security.ts'
+import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
+import { MIN_PASSWORD_LENGTH } from '@kobato/utils/security.ts'
 import bcrypt from 'bcryptjs'
 
 /**

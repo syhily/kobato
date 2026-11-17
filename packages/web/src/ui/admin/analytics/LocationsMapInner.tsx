@@ -1,9 +1,9 @@
-import type { MetricRow } from '@kobato/shared/contracts/analytics.ts'
+import type { MetricRow } from '@kobato/contracts/analytics.ts'
 
-import { formatNumber } from '@kobato/shared/i18n/format.ts'
-import { escapeHtml } from '@kobato/shared/utils/security.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatNumber } from '@kobato/utils/format.ts'
+import { escapeHtml } from '@kobato/utils/security.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { regionDisplayName } from '@kobato/web/ui/admin/analytics/MetricName.tsx'
 import { VisSingleContainer, VisTooltip, VisTopoJSONMap, VisTopoJSONMapSelectors } from '@unovis/react'
 import { WorldMapTopoJSON } from '@unovis/ts/maps.js'

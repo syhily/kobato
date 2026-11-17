@@ -1,5 +1,5 @@
+import type { QueueTaskStatsDto } from '@kobato/contracts/jobs.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { QueueTaskStatsDto } from '@kobato/shared/contracts/jobs.ts'
 
 import { countWebmentionInbox, findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox.ts'
 import {

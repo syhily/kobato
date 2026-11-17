@@ -14,7 +14,7 @@ import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/doma
 import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/target.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
 
 const log = getLogger('webmentions.inbox')
 

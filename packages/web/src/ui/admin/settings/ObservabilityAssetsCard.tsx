@@ -1,16 +1,13 @@
-import type {
-  ObservabilityProvisionSummary,
-  ObservabilityStatusOutput,
-} from '@kobato/shared/contracts/observability.ts'
+import type { ObservabilityProvisionSummary, ObservabilityStatusOutput } from '@kobato/contracts/observability.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { ObservabilityProvisionSummaryLines } from '@kobato/web/ui/admin/settings/ObservabilityProvisionSummaryLines.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web/ui/admin/settings/shell/SettingGroupContent.tsx'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation } from '@tanstack/react-query'
 import { RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'

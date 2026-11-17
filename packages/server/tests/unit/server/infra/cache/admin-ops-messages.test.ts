@@ -1,8 +1,8 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { describe, expect, it } from 'vitest'
 
 // The admin cache card maps a rejected target back to a descriptor; the client

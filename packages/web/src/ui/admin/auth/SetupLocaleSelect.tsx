@@ -1,4 +1,4 @@
-import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@kobato/shared/i18n/locales.ts'
+import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales.ts'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

@@ -1,5 +1,5 @@
+import type { AccountProfile } from '@kobato/contracts/users.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { LoginMethod } from '@kobato/shared/contracts/users.ts'
 
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user.ts'
 import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
@@ -16,21 +16,6 @@ export interface AccountProfileInput {
   badgeColor?: string | null
   badgeTextColor?: string | null
   receiveEmail?: boolean
-}
-
-// Self-service profile projection; a missing row degrades to empty fields.
-export interface AccountProfile {
-  id: string
-  name: string
-  email: string
-  link: string
-  role: 'admin' | 'author' | 'visitor' | null
-  badgeName: string
-  badgeColor: string
-  createdAt: string | null
-  lastIp: string | null
-  lastUa: string | null
-  loginMethod: LoginMethod
 }
 
 export async function getAccountProfile(db: Database, userId: number): Promise<AccountProfile> {

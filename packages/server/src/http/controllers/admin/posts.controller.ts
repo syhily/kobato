@@ -1,3 +1,14 @@
+import {
+  adminPostAnalyticsInputSchema,
+  adminPostAnalyticsOutputSchema,
+  adminPostsMySummaryOutputSchema,
+} from '@kobato/contracts/admin.ts'
+import {
+  adminPostDetailDto,
+  adminPostDto,
+  listPostRevisionsOutputDto,
+  listPostsOutputDto,
+} from '@kobato/contracts/posts.ts'
 import { findTagNamesByPostId } from '@kobato/db/operations/post-tag.ts'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
@@ -26,18 +37,7 @@ import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revisi
 import { authorProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import {
-  adminPostAnalyticsInputSchema,
-  adminPostAnalyticsOutputSchema,
-  adminPostsMySummaryOutputSchema,
-} from '@kobato/shared/contracts/admin.ts'
-import {
-  adminPostDetailDto,
-  adminPostDto,
-  listPostRevisionsOutputDto,
-  listPostsOutputDto,
-} from '@kobato/shared/contracts/posts.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const idInput = z.object({ id: z.string().min(1) })

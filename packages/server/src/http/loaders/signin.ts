@@ -8,7 +8,7 @@ import { destroySession } from '@kobato/server/domains/auth/session-storage.ts'
 import { peekToken } from '@kobato/server/domains/auth/verification-tokens.ts'
 import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate.ts'
 import { getRequestContext, type RequestContext } from '@kobato/server/http/request-context.ts'
-import { safeRedirectPath } from '@kobato/shared/utils/safe-url.ts'
+import { safeRedirectPath } from '@kobato/utils/safe-url.ts'
 import { data, redirect } from 'react-router'
 
 // Flow routing behind `routes/auth/signin.tsx`: token peek and OTP-session

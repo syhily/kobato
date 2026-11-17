@@ -1,5 +1,5 @@
-import type { SettingsSection } from '@kobato/shared/config/sections.ts'
-import type { BlogSettingsBundle, SecretMasks } from '@kobato/shared/config/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
 import type { z } from 'zod'
 
 import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
@@ -15,8 +15,8 @@ import {
   projectBackupForAdmin,
   projectCommentsForAdmin,
   projectMailForAdmin,
-} from '@kobato/shared/config/projection.ts'
-import { SECTION_TO_BUNDLE_KEY } from '@kobato/shared/config/sections.ts'
+} from '@kobato/settings/projection.ts'
+import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
 
 // Per-section runtime gate for the admin display shape: assets/mail/comments validate
 // against their loader-shape Zod twins, every other section against the registry schema.

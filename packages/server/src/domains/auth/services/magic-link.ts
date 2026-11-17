@@ -1,7 +1,7 @@
 // Magic-link signin: send the one-time link (identify step) and consume it (confirm
 // step). Only the POST consumes the token, so mail-client prefetchers never burn it.
 
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
 import { findUserById } from '@kobato/db/operations/user.ts'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
@@ -17,7 +17,7 @@ import { sendSignInLink } from '@kobato/server/infra/email/sender.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { resolveSiteOrigin } from '@kobato/shared/config/site-origin.ts'
+import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
 
 const log = getLogger('auth.magic-link')
 

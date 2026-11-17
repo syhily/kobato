@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'

@@ -1,12 +1,12 @@
 // Self-update gate — each failed check appends one English technical reason
 // (doctor/log output) plus its typed admin-facing descriptor.
 
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { isSea } from '@kobato/server/infra/sea.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 

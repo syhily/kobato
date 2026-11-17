@@ -1,4 +1,4 @@
-import type { NavigationItem } from '@kobato/shared/config/types.ts'
+import type { NavigationItem } from '@kobato/settings/types.ts'
 
 import { renderInRouter } from '@kobato/test/render.tsx'
 import { Header } from '@kobato/web/ui/public/chrome/Header.tsx'

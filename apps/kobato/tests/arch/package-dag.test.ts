@@ -42,11 +42,35 @@ const IGNORE_DIRS = new Set([
   'tmp',
 ])
 
+/**
+ * The former `@kobato/shared` package: nine leaf packages under
+ * `packages/shared/*`, each importable by name (`@kobato/utils`, …).
+ */
+const SHARED_SPLIT = [
+  '@kobato/utils',
+  '@kobato/i18n',
+  '@kobato/cache',
+  '@kobato/settings',
+  '@kobato/assets',
+  '@kobato/pt',
+  '@kobato/sanitize',
+  '@kobato/contracts',
+  '@kobato/seo',
+] as const
+
 /** The workspace's package roots (name = the package.json `name`). */
 const REPO_PACKAGES = [
   { name: 'kobato', dir: 'apps/kobato' },
   { name: '@kobato/inkling', dir: 'packages/inkling' },
-  { name: '@kobato/shared', dir: 'packages/shared' },
+  { name: '@kobato/utils', dir: 'packages/shared/utils' },
+  { name: '@kobato/i18n', dir: 'packages/shared/i18n' },
+  { name: '@kobato/cache', dir: 'packages/shared/cache' },
+  { name: '@kobato/settings', dir: 'packages/shared/settings' },
+  { name: '@kobato/assets', dir: 'packages/shared/assets' },
+  { name: '@kobato/pt', dir: 'packages/shared/pt' },
+  { name: '@kobato/sanitize', dir: 'packages/shared/sanitize' },
+  { name: '@kobato/contracts', dir: 'packages/shared/contracts' },
+  { name: '@kobato/seo', dir: 'packages/shared/seo' },
   { name: '@kobato/db', dir: 'packages/db' },
   { name: '@kobato/server', dir: 'packages/server' },
   { name: '@kobato/ui', dir: 'packages/ui' },
@@ -55,7 +79,7 @@ const REPO_PACKAGES = [
   { name: '@kobato/test', dir: 'packages/tools/test' },
   { name: '@kobato/trace', dir: 'packages/tools/trace' },
   { name: '@kobato/email', dir: 'packages/tools/email' },
-  { name: '@kobato/i18n', dir: 'packages/tools/i18n' },
+  { name: '@kobato/i18n-tools', dir: 'packages/tools/i18n' },
   { name: '@kobato/pack', dir: 'packages/tools/pack' },
   { name: '@kobato/browser', dir: 'packages/tools/browser' },
   { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
@@ -70,38 +94,82 @@ const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
  * the stricter SRC_TARGETS map.
  */
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
-  // inkling is a host-agnostic island: tests borrow shared + test-helpers.
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/shared', '@kobato/test'],
-  // shared's server/web entries exist only for its test fixtures.
-  '@kobato/shared': ['@kobato/shared', '@kobato/inkling', '@kobato/server', '@kobato/web', '@kobato/test'],
-  '@kobato/db': ['@kobato/db', '@kobato/shared', '@kobato/test'],
-  // server's web entry exists only for its test fixtures.
-  '@kobato/server': [
-    '@kobato/server',
-    '@kobato/db',
-    '@kobato/inkling',
-    '@kobato/shared',
-    '@kobato/web',
+  // inkling is a host-agnostic island: tests borrow pt fixtures + test-helpers.
+  // `@kobato/pt` is a tests-only edge (its fixtures pin the storage format).
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/pt', '@kobato/test'],
+  // The split leaf packages. `@kobato/test` is the suite-utility convention;
+  // the remaining edges mirror SRC_TARGETS below, except the tests-only ones:
+  // settings → contracts (contract-pinning fixtures),
+  // i18n → inkling (the label-table suite pins the barrel's DEFAULT_LABELS).
+  '@kobato/utils': ['@kobato/utils', '@kobato/i18n', '@kobato/test'],
+  '@kobato/i18n': ['@kobato/i18n', '@kobato/inkling', '@kobato/test'],
+  '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/settings': [
+    '@kobato/settings',
+    '@kobato/i18n',
+    '@kobato/cache',
+    '@kobato/utils',
+    '@kobato/contracts',
     '@kobato/test',
   ],
-  '@kobato/ui': ['@kobato/ui', '@kobato/shared', '@kobato/test'],
+  '@kobato/assets': ['@kobato/assets', '@kobato/test'],
+  // pt → inkling is a real src edge (the heading-slug save pipeline composes
+  // inkling's own `slugify`/tracker through `@kobato/inkling/headless`).
+  '@kobato/pt': [
+    '@kobato/pt',
+    '@kobato/inkling',
+    '@kobato/sanitize',
+    '@kobato/assets',
+    '@kobato/utils',
+    '@kobato/test',
+  ],
+  '@kobato/sanitize': ['@kobato/sanitize', '@kobato/test'],
+  '@kobato/contracts': [
+    '@kobato/contracts',
+    '@kobato/settings',
+    '@kobato/i18n',
+    '@kobato/utils',
+    '@kobato/pt',
+    '@kobato/assets',
+    '@kobato/cache',
+    '@kobato/test',
+  ],
+  '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/db': ['@kobato/db', '@kobato/contracts', '@kobato/settings', '@kobato/pt', '@kobato/test'],
+  // server's web entry exists only for its test fixtures.
+  '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', '@kobato/web', '@kobato/test', ...SHARED_SPLIT],
+  '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
   // web's server entry is the documented RouterClient type-only channel.
-  '@kobato/web': ['@kobato/web', '@kobato/ui', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/test'],
+  '@kobato/web': [
+    '@kobato/web',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/server',
+    '@kobato/test',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/cache',
+    '@kobato/settings',
+    '@kobato/assets',
+    '@kobato/pt',
+    '@kobato/sanitize',
+    '@kobato/contracts',
+  ],
   // test-helpers fixtures touch every layer.
   '@kobato/test': [
     '@kobato/test',
     '@kobato/db',
     '@kobato/inkling',
-    '@kobato/shared',
     '@kobato/server',
     '@kobato/ui',
     '@kobato/web',
+    ...SHARED_SPLIT,
   ],
   '@kobato/config': [],
   // Orchestration and tooling layers may depend on anything internal.
   kobato: INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
-  '@kobato/i18n': INTERNAL_SCOPES,
+  '@kobato/i18n-tools': INTERNAL_SCOPES,
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
@@ -115,19 +183,49 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 const SRC_TARGETS: Record<string, readonly string[]> = {
   // The editor island imports no @kobato/* package at all.
   '@kobato/inkling': [],
-  '@kobato/shared': ['@kobato/shared', '@kobato/inkling'],
-  '@kobato/db': ['@kobato/db', '@kobato/shared'],
-  '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', '@kobato/shared'],
-  '@kobato/ui': ['@kobato/ui', '@kobato/shared'],
-  '@kobato/web': ['@kobato/web', '@kobato/ui', '@kobato/inkling', '@kobato/shared', '@kobato/server'],
+  '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
+  '@kobato/i18n': ['@kobato/i18n'],
+  '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils'],
+  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/utils'],
+  '@kobato/assets': ['@kobato/assets'],
+  '@kobato/pt': ['@kobato/pt', '@kobato/inkling', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
+  '@kobato/sanitize': ['@kobato/sanitize'],
+  '@kobato/contracts': [
+    '@kobato/contracts',
+    '@kobato/settings',
+    '@kobato/i18n',
+    '@kobato/utils',
+    '@kobato/pt',
+    '@kobato/assets',
+    '@kobato/cache',
+  ],
+  '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
+  '@kobato/db': ['@kobato/db', '@kobato/contracts', '@kobato/settings', '@kobato/pt'],
+  '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
+  '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
+  // web's server entry is the documented RouterClient type-only channel.
+  '@kobato/web': [
+    '@kobato/web',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/server',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/cache',
+    '@kobato/settings',
+    '@kobato/assets',
+    '@kobato/pt',
+    '@kobato/sanitize',
+    '@kobato/contracts',
+  ],
   '@kobato/test': [
     '@kobato/test',
     '@kobato/db',
     '@kobato/inkling',
-    '@kobato/shared',
     '@kobato/server',
     '@kobato/ui',
     '@kobato/web',
+    ...SHARED_SPLIT,
   ],
   '@kobato/config': [],
   kobato: INTERNAL_SCOPES,
@@ -138,24 +236,16 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
-  '@kobato/i18n': INTERNAL_SCOPES,
+  '@kobato/i18n-tools': INTERNAL_SCOPES,
 }
 
 /**
  * Documented src-tree exceptions to SRC_TARGETS — every one type-only, so no
  * runtime graph ever crosses the DAG backwards:
- *  · shared/contracts/admin.ts pins its `z.custom<T>()` SSR wire outputs to
- *    the server's loader-data types (historical, pre-dating the split; the
- *    primary consumer is the in-process SSR caller, see shared/AGENTS.md);
  *  · web's api client needs the router type to build the typed RouterClient —
  *    the single sanctioned web→server channel.
  */
 const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = [
-  {
-    file: 'packages/shared/src/contracts/admin.ts',
-    specifier: '@kobato/server/domains/analytics/services/overview.ts',
-  },
-  { file: 'packages/shared/src/contracts/admin.ts', specifier: '@kobato/server/domains/users/services/account.ts' },
   { file: 'packages/web/src/client/api/client.ts', specifier: '@kobato/server/http/api-router.ts' },
 ]
 
@@ -172,12 +262,12 @@ const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = [
  * a build output without a package specifier.
  */
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
-  'packages/web/tests/unit/client/editor/cards/host-cards.test.tsx:../../../../../../inkling/src/labels/inkling-labels.ts',
-  'packages/web/tests/unit/client/editor/cards/host-cards.test.tsx:../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
+  'packages/web/tests/unit/ui/admin/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/labels/inkling-labels.ts',
+  'packages/web/tests/unit/ui/admin/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
   // Contract tests pinning the SEA tooling sources textually.
-  'packages/shared/tests/unit/shared/contracts/inline-package-data.test.ts:../../../../../../packages/tools/pack/src/sea/inline-package-data.ts',
-  'packages/shared/tests/unit/shared/contracts/native-specifiers.test.ts:../../../../../../packages/tools/pack/src/sea/redirect-native-requires.ts',
-  'packages/shared/tests/unit/shared/contracts/sea-bundle-globals.test.ts:../../../../../../packages/tools/pack/src/sea/check-bundle.ts',
+  'packages/shared/contracts/tests/unit/sea/inline-package-data.test.ts:../../../../../../packages/tools/pack/src/sea/inline-package-data.ts',
+  'packages/shared/contracts/tests/unit/sea/native-specifiers.test.ts:../../../../../../packages/tools/pack/src/sea/redirect-native-requires.ts',
+  'packages/shared/contracts/tests/unit/sea/bundle-globals.test.ts:../../../../../../packages/tools/pack/src/sea/check-bundle.ts',
   'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../packages/tools/pack/src/sea/assets.ts',
   // The SEA server entry pulls the app's built bundle into the single-file
   // vite build; a build output has no package specifier to import by.
@@ -396,7 +486,7 @@ describe('package DAG', () => {
   it('product source trees use package-root imports', () => {
     const rootAnchored = new Set([
       'kobato',
-      '@kobato/shared',
+      ...SHARED_SPLIT,
       '@kobato/db',
       '@kobato/server',
       '@kobato/ui',

@@ -3,9 +3,9 @@ import { through } from '@kobato/server/infra/cache/registry.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
 import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
-import { getBlogSettingsSnapshotSync } from '@kobato/shared/config/getters.ts'
-import { APP_VERSION } from '@kobato/shared/config/version.ts'
-import { resolveAppLocalization } from '@kobato/shared/i18n/app-localization.ts'
+import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
+import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
+import { APP_VERSION } from '@kobato/utils/version.ts'
 import { format } from 'date-fns'
 
 const log = getLogger('render.warmup')

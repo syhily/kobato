@@ -1,4 +1,4 @@
-import { sanitizeHtml } from '@kobato/shared/sanitize/sanitize-html.ts'
+import { sanitizeHtml } from '@kobato/sanitize/sanitize-html.ts'
 import { type RefObject, useEffect } from 'react'
 
 // Hovering or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)

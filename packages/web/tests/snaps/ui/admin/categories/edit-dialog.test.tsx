@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
+import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
 import { makeAdminCategory } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

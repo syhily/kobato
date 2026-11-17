@@ -1,0 +1,19 @@
+{
+  "name": "@kobato/utils",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@date-fns/tz": "catalog:",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/utils": "workspace:*",
+    "date-fns": "catalog:",
+    "sharp": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

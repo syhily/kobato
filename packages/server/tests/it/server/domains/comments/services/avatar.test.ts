@@ -1,4 +1,4 @@
-import type { AvatarSource } from '@kobato/shared/utils/avatar.ts'
+import type { AvatarSource } from '@kobato/utils/avatar.ts'
 
 import { user } from '@kobato/db/schema/user.ts'
 import {
@@ -20,10 +20,10 @@ import { type AvatarEntry, AvatarStatus, get, set } from '@kobato/server/infra/c
 import { imageWidth } from '@kobato/server/infra/image/compress.ts'
 // Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { GRAVATAR_MIRROR_URLS } from '@kobato/shared/utils/safe-url.ts'
-import { encodedEmail } from '@kobato/shared/utils/security.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { GRAVATAR_MIRROR_URLS } from '@kobato/utils/safe-url.ts'
+import { encodedEmail } from '@kobato/utils/security.ts'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

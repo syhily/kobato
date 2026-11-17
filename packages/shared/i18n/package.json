@@ -1,0 +1,17 @@
+{
+  "name": "@kobato/i18n",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@formatjs/icu-messageformat-parser": "catalog:",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/inkling": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "happy-dom": "catalog:",
+    "vitest": "catalog:"
+  }
+}

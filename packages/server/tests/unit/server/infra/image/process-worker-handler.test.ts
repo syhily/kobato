@@ -57,7 +57,7 @@ const sharpMock = vi.hoisted(() => {
 
 vi.mock('sharp', () => ({ default: sharpMock.fn }))
 
-vi.mock('@kobato/shared/utils/thumbhash.ts', () => ({
+vi.mock('@kobato/utils/thumbhash.ts', () => ({
   rgbaToThumbHash: () => new Uint8Array([0, 1, 2, 3]),
 }))
 

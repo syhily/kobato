@@ -1,6 +1,6 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityType } from '@kobato/db/target.ts'
-import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
 
 import { likeEscape } from '@kobato/db/like-escape.ts'
 import { comment } from '@kobato/db/schema/comment.ts'
@@ -16,7 +16,7 @@ import {
   type MyCommentsFilters,
 } from '@kobato/server/domains/comments/repos/shared.ts'
 import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
-import { entityPermalink } from '@kobato/shared/utils/paths.ts'
+import { entityPermalink } from '@kobato/server/domains/content/urls.ts'
 import { and, count, eq, sql } from 'drizzle-orm'
 
 export interface MineCommentItem {

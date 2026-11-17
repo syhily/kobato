@@ -1,5 +1,5 @@
 import { deriveSlug } from '@kobato/server/infra/slug/derive.ts'
-import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/shared/slug.ts'
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug.ts'
 import { describe, expect, it } from 'vitest'
 
 // Pins the pinyin-pro -> github-slugger pipeline: a swap of either

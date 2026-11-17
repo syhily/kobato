@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 // Shared status-filter projection: the deleted/normal split lives here
 // exactly once; caller-owned leg maps add the per-list fields.

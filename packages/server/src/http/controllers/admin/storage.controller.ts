@@ -1,5 +1,6 @@
-import type { StorageMigrationStatus } from '@kobato/shared/contracts/storage.ts'
+import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
 
+import { storageMigrationStatusDto } from '@kobato/contracts/storage.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import {
   STORAGE_ENDPOINT_HTTPS_MESSAGE,
@@ -16,7 +17,6 @@ import {
 import { getLocalStorageMigrationStats, type MigrationStats } from '@kobato/server/domains/storage/stats.ts'
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { isS3Primary } from '@kobato/server/infra/storage/registry.ts'
-import { storageMigrationStatusDto } from '@kobato/shared/contracts/storage.ts'
 import { z } from 'zod'
 
 const statsOutput = z.object({

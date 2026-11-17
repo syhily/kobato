@@ -1,3 +1,4 @@
+import { commentItemDto } from '@kobato/contracts/comments.ts'
 import { asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
 import { findCommentsByIds } from '@kobato/server/domains/comments/services/lookup.ts'
 import { parseComments } from '@kobato/server/domains/comments/services/public-query.ts'
@@ -7,8 +8,7 @@ import {
   verifyCommentOwnership,
 } from '@kobato/server/domains/comments/services/token.ts'
 import { commentTokenCookie, publicProc } from '@kobato/server/http/orpc-base.ts'
-import { commentItemDto } from '@kobato/shared/contracts/comments.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const successOutput = z.object({ success: z.boolean() })

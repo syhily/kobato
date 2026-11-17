@@ -1,5 +1,6 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { render } from '@kobato/server/infra/email/render.tsx'
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
 import { ApprovedComment } from '@kobato/server/infra/email/templates/ApprovedComment.tsx'
@@ -11,7 +12,6 @@ import { PasswordReset } from '@kobato/server/infra/email/templates/PasswordRese
 import { SignInLink } from '@kobato/server/infra/email/templates/SignInLink.tsx'
 import { SignInOtp } from '@kobato/server/infra/email/templates/SignInOtp.tsx'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { SUPPORTED_LOCALES } from '@kobato/shared/i18n/locales.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 

@@ -1,16 +1,16 @@
-import type { AdminPageDetailDto, AdminPageDto } from '@kobato/shared/contracts/pages.ts'
-import type { PageMetaDraft, UpsertPageMetaInput, UpsertPageMetaOutput } from '@kobato/shared/types/pages.ts'
+import type { AdminPageDetailDto, AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { EditorAdapterConfig } from '@kobato/web/ui/admin/editor-shell/make-editor-adapter.ts'
+import type { PageMetaDraft, UpsertPageMetaInput, UpsertPageMetaOutput } from '@kobato/web/ui/admin/pages/page-meta.ts'
 import type { NavigateFunction } from 'react-router'
 
-import { lexicalEditorStateSchema } from '@kobato/shared/lexical/schema.ts'
-import { EMPTY_PAGE_META_DRAFT, pageMetaDraftsEqual } from '@kobato/shared/types/pages.ts'
+import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { EditorScreen } from '@kobato/web/ui/admin/editor-shell/EditorScreen.tsx'
 import { makeEditorAdapter } from '@kobato/web/ui/admin/editor-shell/make-editor-adapter.ts'
 import { buildPageUpsertPayload } from '@kobato/web/ui/admin/pages/build-page-upsert-payload.ts'
 import { metaDraftFromPage, MetaSidebar } from '@kobato/web/ui/admin/pages/MetaSidebar.tsx'
+import { EMPTY_PAGE_META_DRAFT, pageMetaDraftsEqual } from '@kobato/web/ui/admin/pages/page-meta.ts'
 import { useQueryClient } from '@tanstack/react-query'
 
 export interface PageEditorShellProps {

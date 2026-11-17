@@ -1,7 +1,7 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ImageRow } from '@kobato/db/types.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
 
 import { findImagesByStoragePaths, insertImage, upsertImageByStoragePath } from '@kobato/db/operations/image.ts'
 import { type ImageKindSpec, buildObjectKey } from '@kobato/server/domains/images/key.ts'
@@ -11,8 +11,8 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { processImageBuffer } from '@kobato/server/infra/image/process.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { activeBackend } from '@kobato/server/infra/storage/registry.ts'
-import { resolveAppLocalization } from '@kobato/shared/i18n/app-localization.ts'
-import { formatBytes } from '@kobato/shared/i18n/format.ts'
+import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
+import { formatBytes } from '@kobato/utils/format.ts'
 
 const log = getLogger('images.service')
 

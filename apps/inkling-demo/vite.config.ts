@@ -20,7 +20,7 @@ export default defineConfig({
       '@kobato/inkling': resolve(import.meta.dirname, '../../packages/inkling/src'),
       '@kobato/web': resolve(import.meta.dirname, '../../packages/web/src'),
       '@kobato/ui': resolve(import.meta.dirname, '../../packages/ui/src'),
-      '@kobato/shared': resolve(import.meta.dirname, '../../packages/shared/src'),
+      '@kobato/pt': resolve(import.meta.dirname, '../../packages/shared/pt/src'),
       // Prevents double-bundling of yjs due to cjs/esm mismatch
       // (see https://github.com/facebook/lexical/issues/2153).
       yjs: require.resolve('yjs/src/index.js'),

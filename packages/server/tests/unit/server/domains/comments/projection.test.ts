@@ -1,11 +1,11 @@
-import type { CommentAndUser, CommentItem } from '@kobato/shared/types/comments.ts'
+import type { CommentAndUser, CommentItem } from '@kobato/contracts/types/comments.ts'
 
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
 import {
   asAdminCommentsWire,
   asCommentItemsWire,
   asCommentItemWire,
 } from '@kobato/server/domains/comments/projection.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/shared/lexical/comment-schema.ts'
 import { describe, expect, it } from 'vitest'
 
 // Wire helpers bridge `CommentAndUser` (number ids, Date timestamps) to

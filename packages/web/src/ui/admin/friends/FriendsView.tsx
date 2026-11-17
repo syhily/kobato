@@ -1,5 +1,4 @@
-import type { AdminFriendDto } from '@kobato/shared/contracts/friends.ts'
-import type { DeleteFriendInput } from '@kobato/shared/types/friends.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
@@ -8,7 +7,6 @@ import { Input } from '@kobato/ui/components/input.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { EditFriendDialog } from '@kobato/web/ui/admin/friends/EditFriendDialog.tsx'
 import { FriendRow, FriendsSkeleton } from '@kobato/web/ui/admin/friends/FriendRow.tsx'
 import { PendingFriendRow } from '@kobato/web/ui/admin/friends/PendingFriendRow.tsx'
@@ -17,6 +15,7 @@ import { AdminListPage } from '@kobato/web/ui/admin/shared/AdminListPage.tsx'
 import { type ConfirmState, ConfirmDialog } from '@kobato/web/ui/admin/shared/ConfirmDialog.tsx'
 import { useAdminInfiniteList } from '@kobato/web/ui/admin/shared/useAdminInfiniteList.ts'
 import { useDebouncedSearch } from '@kobato/web/ui/admin/shared/useDebouncedSearch.ts'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { Fragment, useCallback, useState } from 'react'
@@ -28,6 +27,11 @@ const PAGE_SIZE = 30
 const PENDING_LIMIT = 50
 
 type EditTarget = AdminFriendDto | null | undefined
+
+// `admin.friends.delete` wire input.
+interface DeleteFriendInput {
+  id: string
+}
 
 export function FriendsView() {
   const { t } = useI18n()

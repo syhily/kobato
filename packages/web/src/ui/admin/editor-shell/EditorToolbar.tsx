@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { EditorToolbarState } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'

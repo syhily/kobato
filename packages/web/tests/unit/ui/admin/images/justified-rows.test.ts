@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/shared/contracts/images.ts'
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
 
 import { buildJustifiedRows } from '@kobato/web/ui/admin/images/JustifiedImageGrid.tsx'
 import { describe, expect, it } from 'vitest'

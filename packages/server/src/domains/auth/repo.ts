@@ -2,7 +2,7 @@
 
 import type { Database } from '@kobato/db/database.ts'
 import type { SessionRow } from '@kobato/db/types.ts'
-import type { Role } from '@kobato/shared/utils/roles.ts'
+import type { Role } from '@kobato/utils/roles.ts'
 
 import { session as sessionTable } from '@kobato/db/schema/session.ts'
 import { resolveSessionMaxAge } from '@kobato/server/domains/auth/session-storage.ts'

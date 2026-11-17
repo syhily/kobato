@@ -1,4 +1,4 @@
-import type { SessionSortDirection, SessionSortOption, SessionSortState } from '@kobato/shared/utils/sessions-sort.ts'
+import type { SessionSortDirection, SessionSortOption, SessionSortState } from '@kobato/utils/sessions-sort.ts'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'

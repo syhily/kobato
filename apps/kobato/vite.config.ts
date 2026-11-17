@@ -47,7 +47,15 @@ for (const dir of [
   'packages/web',
   'packages/ui',
   'packages/server',
-  'packages/shared',
+  'packages/shared/utils',
+  'packages/shared/i18n',
+  'packages/shared/cache',
+  'packages/shared/settings',
+  'packages/shared/assets',
+  'packages/shared/pt',
+  'packages/shared/sanitize',
+  'packages/shared/contracts',
+  'packages/shared/seo',
   'packages/inkling',
 ]) {
   const manifest = JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8')) as {
@@ -78,10 +86,10 @@ function optimizeIncludeHints(entries: readonly string[]): string[] {
   })
 }
 
-// The sanitize facade (packages/shared/src/sanitize/sanitize-html.ts) imports
-// the node engine (DOMPurify over a process-cached JSDOM). For the browser
-// bundle this plugin swaps that specifier to the browser engine, keeping
-// jsdom's Node-only dependency chain out of the client — per-environment
+// The sanitize facade (@kobato/sanitize/sanitize-html.ts) imports the node
+// engine (DOMPurify over a process-cached JSDOM). For the browser bundle this
+// plugin swaps that specifier to the browser engine, keeping jsdom's
+// Node-only dependency chain out of the client — per-environment
 // `resolve.alias` is not a thing in vite, so it takes a plugin.
 const sanitizeEngineAliasPlugin = (): Plugin => ({
   name: 'sanitize-html-engine-alias',
@@ -92,7 +100,7 @@ const sanitizeEngineAliasPlugin = (): Plugin => ({
     filter: { id: /(^|\/)engine\.node(\.ts)?$/ },
     handler() {
       if (this.environment.name === 'client') {
-        return resolve(repoRoot, 'packages/shared/src/sanitize/engine.browser.ts')
+        return resolve(repoRoot, 'packages/shared/sanitize/src/engine.browser.ts')
       }
       return null
     },

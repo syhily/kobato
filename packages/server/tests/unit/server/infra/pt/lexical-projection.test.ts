@@ -1,5 +1,5 @@
+import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/pt/schema.ts'
 import { computeBodyProjections, computeCommentContentProjection } from '@kobato/server/infra/pt/lexical-projection.ts'
-import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
@@ -80,7 +80,7 @@ describe('infra/pt/lexical-projection — full-fidelity HTML', () => {
     const { bodyHtml } = await computeBodyProjections(RICH_STATE)
 
     // Heading ids come from inkling's export (slug parity contract-tested in
-    // tests/unit/shared/contracts/lexical-heading-slug.test.ts).
+    // packages/shared/pt/tests/unit/heading-slug.test.ts).
     expect(bodyHtml).toContain('<h2 id="%E4%BD%A0%E5%A5%BD-%E4%B8%96%E7%95%8C">你好 世界</h2>')
     expect(bodyHtml).toContain('<p>Hello &lt;world&gt; &amp; 你好</p>')
     // Server-prerendered artifacts pass through (sanitized).

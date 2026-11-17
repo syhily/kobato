@@ -3,7 +3,7 @@ import {
   WEBMENTION_STATUSES,
   WEBMENTION_TYPES,
   WEBMENTION_VERIFY_STATUSES,
-} from '@kobato/shared/contracts/webmentions.ts'
+} from '@kobato/contracts/webmentions.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 

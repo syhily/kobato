@@ -1,3 +1,4 @@
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type {
@@ -5,7 +6,6 @@ import type {
   MetaRowBase,
   UpsertMetaInputBase,
 } from '@kobato/server/domains/content/entities/descriptor.ts'
-import type { ErrorMessageDescriptor } from '@kobato/shared/contracts/api-error.ts'
 
 import {
   deleteSlugRegistryByEntity,
@@ -20,7 +20,7 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation.ts'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> {
   create: (db: Database, input: TInput, authorId: number | null, viewer?: ViewerIdentity) => Promise<TAdminDto>

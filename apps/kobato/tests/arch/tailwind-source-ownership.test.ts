@@ -8,7 +8,7 @@ const SOURCE_ROOTS = [
   { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo' },
   { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
   { packageRoot: 'packages/web', sourceRoot: 'packages/web/src' },
-  { packageRoot: 'packages/shared', sourceRoot: 'packages/shared/src' },
+  { packageRoot: 'packages/shared/pt', sourceRoot: 'packages/shared/pt/src' },
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
 
@@ -51,14 +51,14 @@ describe('Tailwind source ownership', () => {
         'packages/ui/src/styles/ui.css',
         'packages/web/src/styles/public.css',
         'packages/web/src/styles/admin.css',
-        'packages/shared/src/styles/cards.css',
+        'packages/shared/pt/src/styles/cards.css',
         'packages/inkling/src/styles/index.css',
       ]),
     )
   })
 
   it('pins shared card compile tokens to the UI runtime contract', () => {
-    const shared = readFileSync('packages/shared/src/styles/cards.css', 'utf8')
+    const shared = readFileSync('packages/shared/pt/src/styles/cards.css', 'utf8')
     const ui = readFileSync('packages/ui/src/styles/tailwind.css', 'utf8')
     for (const match of shared.matchAll(/^\s*(--color-[\w-]+:\s*var\(--[\w-]+\));/gm)) {
       expect(ui).toContain(match[1])

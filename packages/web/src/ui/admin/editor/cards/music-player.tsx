@@ -1,0 +1,243 @@
+// The `music-player` host card's editing-side assembly, with the same dual-entry
+// contract as `./solution`. The card has no nested editors: the dataset is
+// `playerId` plus the meta snapshot (server-owned keys, see
+// `@kobato/pt/artifacts`), so the canvas renders the real playable
+// `MusicPlayerCard` — WYSIWYG with the public hydration-enhanced render, whose
+// static no-JS fallback mirrors its paused initial state.
+//
+// The picker is declared on the spec's pick seam: the slash menu inserts an EMPTY
+// card and `autoOpenOnInsert` opens `MusicPickerDialog` on the fresh node; the
+// placeholder click and the resolved card's replace affordance are the re-entry
+// paths (`useCardPicker`). The pick writes `playerId` AND the full meta snapshot so
+// the card turns playable immediately; the save-time snapshot
+// (`@/server/domains/pt/lexical-music-snapshot`) stays the authority refresh.
+
+import type { AdminMusicDto } from '@kobato/contracts/music.ts'
+
+import {
+  CardActionToolbar,
+  type CardPickerRenderProps,
+  type CardToolbarItem,
+  defineCard,
+  DELETE_CARD_COMMAND,
+  generateDecoratorNode,
+  useCardChrome,
+  useCardPicker,
+} from '@kobato/inkling'
+import {
+  hasMusicPlayerMeta,
+  MUSIC_PLAYER_CARD_CLASSES,
+  MUSIC_PLAYER_CARD_PROPERTIES,
+  type MusicPlayerCardMeta,
+  renderMusicPlayerCard,
+} from '@kobato/pt/cards/music-player.ts'
+import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/pt/node-whitelist.ts'
+import { isSafeUrl } from '@kobato/sanitize/sanitize-url.ts'
+import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import { inklingHostCardMatches } from '@kobato/web/ui/admin/editor/cards/menu-matches.ts'
+import { MusicPickerDialog } from '@kobato/web/ui/admin/editor/pickers/MusicPickerDialog.tsx'
+import { MusicPlayerCard } from '@kobato/web/ui/public/music-player/music-player.tsx'
+import { Music2Icon } from 'lucide-react'
+
+export const BaseMusicPlayerNode = class extends generateDecoratorNode({
+  nodeType: MUSIC_PLAYER_NODE_TYPE,
+  properties: MUSIC_PLAYER_CARD_PROPERTIES,
+  defaultRenderFn: renderMusicPlayerCard,
+}) {}
+
+export type MusicPlayerCardNode = InstanceType<typeof BaseMusicPlayerNode>
+
+// The card write seam's guard: the assembled class subclasses this base
+// (assembleCardNodeOnce), so instanceof narrows editor-state nodes.
+function isMusicPlayerCardNode(node: unknown): node is MusicPlayerCardNode {
+  return node instanceof BaseMusicPlayerNode
+}
+
+/** Maps the admin DTO onto the node's meta snapshot. `artist` joins into the
+ *  library's packed ' / ' form, and `coverUrl`/`audioUrl` land on `cover`/
+ *  `audioUrl` verbatim — the meta keys are stripped from client input at save and
+ *  excluded from the dirty-check, so this write is display-only and the save-time
+ *  snapshot re-resolves them (origin-relative) regardless. */
+export function musicPickMeta(music: AdminMusicDto): MusicPlayerCardMeta {
+  return {
+    playerId: music.playerId,
+    name: music.name,
+    artist: music.artist.join(' / '),
+    cover: music.coverUrl,
+    audioUrl: music.audioUrl,
+    lyric: music.lyric ?? '',
+  }
+}
+
+/** The picker render the card's spec declares: mounts the host-owned
+ *  `MusicPickerDialog` against the requesting node. The write goes through the card
+ *  write seam, which resolves the latest node instance by key inside
+ *  `editor.update()`, so a card deleted while the dialog was open no-ops. On the
+ *  insert-triggered open the write merges into the insert's history entry, so one
+ *  Cmd+Z retracts insert and pick together; the replace affordance opens without
+ *  the marker and stays a discrete undo entry. */
+export function MusicCardPicker({ nodeKey, close, fromInsert }: CardPickerRenderProps) {
+  const { write } = useCardChrome(nodeKey, isMusicPlayerCardNode)
+  return (
+    <MusicPickerDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          close()
+        }
+      }}
+      onPick={(music) => {
+        const meta = musicPickMeta(music)
+        write(
+          (node) => {
+            node.playerId = meta.playerId
+            node.name = meta.name
+            node.artist = meta.artist
+            node.cover = meta.cover
+            node.audioUrl = meta.audioUrl
+            node.lyric = meta.lyric
+          },
+          { mergeHistory: fromInsert === true },
+        )
+        close()
+      }}
+    />
+  )
+}
+
+/** The resolved card's selection chrome: replace (reopens the picker for the same
+ *  node) and remove (the shared DELETE_CARD_COMMAND choreography). */
+export function musicCardToolbarItems(
+  {
+    onReplace,
+    onRemove,
+  }: {
+    onReplace: () => void
+    onRemove: () => void
+  },
+  t: I18nValue['t'],
+): CardToolbarItem[] {
+  return [
+    {
+      kind: 'custom',
+      icon: 'replace',
+      label: t('admin.editor.cards.music.replace'),
+      dataTestId: 'replace-music-track',
+      onClick: (event) => {
+        event.stopPropagation()
+        onReplace()
+      },
+    },
+    {
+      kind: 'custom',
+      icon: 'trash',
+      label: t('admin.editor.cards.music.remove'),
+      dataTestId: 'remove-music-card',
+      onClick: (event) => {
+        event.stopPropagation()
+        onRemove()
+      },
+    },
+  ]
+}
+
+// The component renders from a PLAIN meta snapshot and never touches the node
+// instance: the generated property getters call getLatest(), which throws when
+// React re-renders outside Lexical's commit or against a node instance a later edit
+// already replaced (Lexical #195). Reading the dataset inside `render(node)` below
+// is safe because decorate() runs inside the reconciler's active read. Everything
+// the pick seam and the chrome need crosses as the node KEY.
+export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerCardMeta; nodeKey: string }) {
+  const { t } = useI18n()
+  const picker = useCardPicker()
+  const { editor } = useCardChrome(nodeKey, isMusicPlayerCardNode)
+
+  if (!hasMusicPlayerMeta(meta)) {
+    // Unresolved card: the placeholder IS the pick entry (the picker host is a core
+    // plugin on every editable top-level surface).
+    const label =
+      meta.playerId === ''
+        ? t('admin.editor.cards.music.placeholder')
+        : t('admin.editor.cards.music.placeholderResolved', { playerId: meta.playerId })
+    return (
+      <div className={MUSIC_PLAYER_CARD_CLASSES.wrapper}>
+        <button
+          type="button"
+          className="flex h-20 w-full items-center justify-center rounded-md border border-dashed border-border text-sm text-ink-3 transition hover:border-brand/60 hover:text-ink-1"
+          // Keep the click from double-firing the card wrapper's selection.
+          onClick={(event) => {
+            event.stopPropagation()
+            picker.open(nodeKey)
+          }}
+        >
+          {label}
+        </button>
+      </div>
+    )
+  }
+  // Resolved card: the same component the public page hydrates into. Its controls
+  // stopPropagation internally so they never trigger the card chrome's selection/drag.
+  return (
+    <>
+      <div className={MUSIC_PLAYER_CARD_CLASSES.wrapper}>
+        <MusicPlayerCard
+          artist={meta.artist}
+          cover={isSafeUrl(meta.cover) ? meta.cover : undefined}
+          lrc={meta.lyric || undefined}
+          name={meta.name}
+          url={isSafeUrl(meta.audioUrl) ? meta.audioUrl : ''}
+        />
+      </div>
+      <CardActionToolbar
+        nodeKey={nodeKey}
+        items={musicCardToolbarItems(
+          {
+            onReplace: () => picker.open(nodeKey),
+            onRemove: () => {
+              editor.dispatchCommand(DELETE_CARD_COMMAND, { cardKey: nodeKey })
+            },
+          },
+          t,
+        )}
+      />
+    </>
+  )
+}
+
+export const musicPlayerCard = defineCard({
+  nodeType: MUSIC_PLAYER_NODE_TYPE,
+  baseNode: BaseMusicPlayerNode,
+  decorateTarget: { width: 'regular' },
+  insert: {},
+  picker: {
+    autoOpenOnInsert: true,
+    render: (props) => <MusicCardPicker {...props} />,
+  },
+  menu: [
+    {
+      // English fallback; the overlay localizes through `labelKey`.
+      label: 'Music player',
+      labelKey: 'host.music-player',
+      desc: 'Embed a song from the music library',
+      icon: Music2Icon,
+      command: 'insert',
+      insertParams: {},
+      matches: [...inklingHostCardMatches.musicPlayer],
+      priority: 19,
+    },
+  ],
+  toolbarLabel: MUSIC_PLAYER_NODE_TYPE,
+  render(node) {
+    // Reads happen HERE, inside decorate()'s reconciler read — see the
+    // MusicPlayerCardComponent note.
+    const meta: MusicPlayerCardMeta = {
+      playerId: node.playerId,
+      name: node.name,
+      artist: node.artist,
+      cover: node.cover,
+      audioUrl: node.audioUrl,
+      lyric: node.lyric,
+    }
+    return <MusicPlayerCardComponent meta={meta} nodeKey={node.getKey()} />
+  },
+})

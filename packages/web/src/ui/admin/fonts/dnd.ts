@@ -1,4 +1,4 @@
-import type { FontSlot } from '@kobato/shared/contracts/fonts.ts'
+import type { FontSlot } from '@kobato/contracts/fonts.ts'
 
 // Fonts drag protocol: discriminated `.data` payloads + type guards over dnd-kit's arbitrary `.data`.
 export type LibraryDragData = { type: 'library'; fontId: string }

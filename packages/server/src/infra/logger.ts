@@ -4,7 +4,7 @@
 
 import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from '@kobato/server/infra/config.ts'
 import { pushLogLine } from '@kobato/server/infra/logger/sink.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { Writable } from 'node:stream'
 import pino from 'pino'
 

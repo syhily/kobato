@@ -1,7 +1,7 @@
+import type { FontSlot } from '@kobato/contracts/fonts.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { FontRow } from '@kobato/db/schema/font.ts'
-import type { FontsSettings } from '@kobato/shared/config/types.ts'
-import type { FontSlot } from '@kobato/shared/contracts/fonts.ts'
+import type { FontsSettings } from '@kobato/settings/types.ts'
 
 import { findSettingByScope } from '@kobato/db/operations/setting.ts'
 import { font } from '@kobato/db/schema/font.ts'
@@ -10,7 +10,7 @@ import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/regis
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { eq, inArray } from 'drizzle-orm'
 
 // Mutation side of the fonts domain: slot assignment and direct delete. Slot

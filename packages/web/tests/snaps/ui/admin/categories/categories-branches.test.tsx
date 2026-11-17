@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/shared/contracts/categories.ts'
+import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'

@@ -1,8 +1,9 @@
-import type { MetricType } from '@kobato/shared/contracts/analytics.ts'
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { MetricType } from '@kobato/contracts/analytics.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { ComponentType } from 'react'
 
-import { formatDisplayName } from '@kobato/shared/i18n/format.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatDisplayName } from '@kobato/utils/format.ts'
 import {
   SiAcer,
   SiAndroid,
@@ -80,8 +81,7 @@ import {
   SiX,
   SiXiaomi,
   SiYandexcloud,
-} from '@kobato/ui/icons/metric-brands.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+} from '@kobato/web/ui/admin/analytics/metric-brands.tsx'
 import { metricValueLabelId } from '@kobato/web/ui/admin/analytics/metric-labels.ts'
 import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
 

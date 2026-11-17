@@ -1,9 +1,9 @@
-import type { PublicWebmentionWire } from '@kobato/shared/contracts/webmentions.ts'
+import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
 
-import { useSiteIdentity } from '@kobato/shared/lib/blog-config-context.tsx'
-import { formatLocalDate } from '@kobato/shared/utils/formatter.ts'
-import { tryParseUrl } from '@kobato/shared/utils/safe-url.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { useSiteIdentity } from '@kobato/web/client/settings/blog-settings-context.tsx'
 
 /** Author line falls back to the source hostname when the source page
  *  exposed no author metadata. */

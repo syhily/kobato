@@ -75,7 +75,7 @@ export default defineConfig({
     // no package.json to read at runtime (see `@/server/infra/sea-cli`).
     __SEA_APP_VERSION__: JSON.stringify(pkg.version),
     // The same six `__APP_*__` globals vite.config.ts defines for the
-    // regular build: `@/shared/config/version` is consumed by the server
+    // regular build: `@kobato/utils/version` is consumed by the server
     // graph (self-update domain, `kobato rollback` / `kobato doctor` via
     // binary-rollback.ts and self-update-gate.ts), so the binary needs
     // them too.

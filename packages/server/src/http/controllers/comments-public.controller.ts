@@ -1,9 +1,15 @@
-import type { CommentReq } from '@kobato/shared/types/comments.ts'
+import type { CommentReq } from '@kobato/contracts/types/comments.ts'
 
+import { commentItemDto, ownCommentMutationDto } from '@kobato/contracts/comments.ts'
+import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
 import { commentReplySchema, commentRidSchema } from '@kobato/server/domains/comments/schema.ts'
 import { verifyCommentAccess } from '@kobato/server/domains/comments/services/access.ts'
+import {
+  parseCommentTokensCookie,
+  serializeCommentTokensCookie,
+} from '@kobato/server/domains/comments/services/comment-token.ts'
 import { findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup.ts'
 import { applyOwnCommentEdit } from '@kobato/server/domains/comments/services/moderate.ts'
 import { createComment } from '@kobato/server/domains/comments/services/mutate.ts'
@@ -19,11 +25,8 @@ import {
 } from '@kobato/server/http/orpc-base.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { tryCommentPostRateLimitByEmail } from '@kobato/server/infra/rate-limit.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { commentItemDto, ownCommentMutationDto } from '@kobato/shared/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/shared/lexical/comment-schema.ts'
-import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@kobato/shared/utils/comment-token.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { z } from 'zod'
 
 const replyComment = publicProc

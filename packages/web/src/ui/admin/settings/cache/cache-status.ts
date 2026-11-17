@@ -1,4 +1,4 @@
-import type { ClearCacheTarget } from '@kobato/shared/types/cache.ts'
+import type { ClearCacheTarget } from '@kobato/cache/types.ts'
 
 // Status reducer state for the "clear cache" buttons; `CacheView` owns one, per-bucket cards read it.
 export interface ClearStatus {

@@ -3,6 +3,7 @@ import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 
 import { hasAdmin, hashAdminPassword, insertAdmin } from '@kobato/db/operations/user.ts'
+import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
 import { authFlowError } from '@kobato/server/domains/auth/services/shared.ts'
 import { invalidateSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
@@ -10,8 +11,7 @@ import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { DEFAULT_LOCALE, type AppLocale } from '@kobato/shared/i18n/locales.ts'
-import { idFromString } from '@kobato/shared/utils/id.ts'
+import { idFromString } from '@kobato/utils/id.ts'
 import { sql } from 'drizzle-orm'
 
 export interface SignUpAdminSeed {

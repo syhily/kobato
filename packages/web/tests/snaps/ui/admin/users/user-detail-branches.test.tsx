@@ -1,5 +1,5 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/shared/contracts/comments.ts'
-import type { AdminUserDto } from '@kobato/shared/contracts/users.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
+import type { AdminUserDto } from '@kobato/contracts/users.ts'
 
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'

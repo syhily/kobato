@@ -1,7 +1,5 @@
 import type { HeaderCurrentUser } from '@kobato/web/ui/public/chrome/Header.tsx'
 
-import { avatarImageUrl } from '@kobato/shared/utils/avatar.ts'
-import { ROLE_LABEL_KEYS } from '@kobato/shared/utils/roles.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
@@ -13,7 +11,9 @@ import {
   DropdownMenuTrigger,
 } from '@kobato/ui/components/dropdown-menu.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useLogout } from '@kobato/web/client/hooks/use-logout.ts'
+import { avatarImageUrl } from '@kobato/utils/avatar.ts'
+import { ROLE_LABEL_KEYS } from '@kobato/utils/roles.ts'
+import { useLogout } from '@kobato/web/ui/shared/auth/use-logout.ts'
 import { warmNotificationsDrawerChunk } from '@kobato/web/ui/shared/notifications/LazyNotificationsDrawer.tsx'
 import { NotificationBadge } from '@kobato/web/ui/shared/notifications/NotificationBadge.tsx'
 import { BellIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, SettingsIcon, UserIcon } from 'lucide-react'

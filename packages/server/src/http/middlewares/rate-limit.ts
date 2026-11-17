@@ -1,5 +1,5 @@
 import type { Env } from '@kobato/server/http/context.ts'
-import type { RateLimitBucket, RateLimitSettings } from '@kobato/shared/config/types.ts'
+import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types.ts'
 import type { Context } from 'hono'
 
 import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'

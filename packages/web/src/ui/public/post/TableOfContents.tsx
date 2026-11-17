@@ -1,7 +1,5 @@
-import type { MarkdownHeading, TocOpts } from '@kobato/shared/utils/toc.ts'
+import type { MarkdownHeading, TocOpts } from '@kobato/utils/toc.ts'
 
-import { useSeoSettingsOptional } from '@kobato/shared/lib/blog-config-context.tsx'
-import { generateToC } from '@kobato/shared/utils/toc.ts'
 import {
   LazyAnimatePresence,
   LazyMotionButton,
@@ -10,7 +8,9 @@ import {
 } from '@kobato/ui/components/lazy-motion.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { generateToC } from '@kobato/utils/toc.ts'
 import { transitions } from '@kobato/web/client/lib/motion.ts'
+import { useSeoSettingsOptional } from '@kobato/web/client/settings/blog-settings-context.tsx'
 import { TocItems } from '@kobato/web/ui/public/post/TocItems.tsx'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'

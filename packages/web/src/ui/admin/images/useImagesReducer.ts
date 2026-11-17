@@ -1,4 +1,4 @@
-import type { AdminImageKind } from '@kobato/shared/types/images.ts'
+import type { AdminImageKind } from '@kobato/assets/images.ts'
 
 import {
   filterPillsReducer,

@@ -1,5 +1,5 @@
-import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { EditorToolbarState } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'

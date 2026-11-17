@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'

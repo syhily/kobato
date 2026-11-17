@@ -3,7 +3,7 @@ import {
   type SessionSortState,
   parseSessionSort,
   serializeSessionSort,
-} from '@kobato/shared/utils/sessions-sort.ts'
+} from '@kobato/utils/sessions-sort.ts'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 

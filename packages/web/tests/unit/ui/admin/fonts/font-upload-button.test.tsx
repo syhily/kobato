@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { UseFileUploadOptions } from '@kobato/web/client/hooks/use-file-upload.ts'
+import type { UseFileUploadOptions } from '@kobato/web/ui/admin/shared/use-file-upload.ts'
 import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -14,7 +14,7 @@ const hookMock = vi.hoisted(() => ({
   upload: vi.fn(),
 }))
 
-vi.mock('@kobato/web/client/hooks/use-file-upload.ts', () => ({
+vi.mock('@kobato/web/ui/admin/shared/use-file-upload.ts', () => ({
   useFileUpload: (options: UseFileUploadOptions) => {
     hookMock.options = options
     return { upload: hookMock.upload, pending: false }

@@ -4,7 +4,7 @@ import type { EnrichedAccessEvent, RawAccessEvent } from '@kobato/server/domains
 import { lookupCity } from '@kobato/server/domains/analytics/geoip.ts'
 import { getDailySalt } from '@kobato/server/domains/analytics/salt.ts'
 import { parseUaFields } from '@kobato/server/domains/analytics/ua-parse.ts'
-import { isBot } from '@kobato/shared/utils/is-bot.ts'
+import { isBot } from '@kobato/utils/is-bot.ts'
 import { createHash } from 'node:crypto'
 
 function hashIp(ip: string): string {

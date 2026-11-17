@@ -1,14 +1,10 @@
-import type { ObservabilitySettings } from '@kobato/shared/config/types.ts'
-import type {
-  ObservabilityStatusOutput,
-  ObservabilityTestConnectionOutput,
-} from '@kobato/shared/contracts/observability.ts'
+import type { ObservabilityStatusOutput, ObservabilityTestConnectionOutput } from '@kobato/contracts/observability.ts'
+import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web/client/lib/toast-api-error.ts'
 import { ObservabilityProvisionSummaryLines } from '@kobato/web/ui/admin/settings/ObservabilityProvisionSummaryLines.tsx'
 import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web/ui/admin/settings/shell/SettingGroup.tsx'
@@ -20,6 +16,7 @@ import {
   secretFieldStrings,
 } from '@kobato/web/ui/admin/settings/shell/SettingsSecretInput.tsx'
 import { useSettingsCard } from '@kobato/web/ui/admin/settings/shell/useSettingsCard.tsx'
+import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { useMutation } from '@tanstack/react-query'
 import { PlugZapIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'

@@ -7,17 +7,14 @@
 // ~2.5MB editor into the SEA binary.
 //
 // Host cards register here as BASE classes from the shared React-free specs
-// (`@/shared/lexical/cards/`); solution / two-column override `getTextContent` because the
+// (`@kobato/pt/cards/`); solution / two-column override `getTextContent` because the
 // generated one would leak raw markup into `body_text`.
 
 import type { LexicalStateToHtmlOptions } from '@kobato/inkling/headless'
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/shared/lexical/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/pt/schema.ts'
 
 import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@kobato/inkling/headless'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { FEED_VARIANT_META_KIND } from '@kobato/shared/lexical/cards/card-html.ts'
+import { FEED_VARIANT_META_KIND } from '@kobato/pt/cards/card-html.ts'
 import {
   IMAGE_RENDER_ENV_META_KIND,
   type KobatoImageRenderEnv,
@@ -25,27 +22,26 @@ import {
   kobatoImageImportSpec,
   kobatoImageTextContent,
   renderKobatoImageNode,
-} from '@kobato/shared/lexical/cards/kobato-image.ts'
-import { MUSIC_PLAYER_CARD_PROPERTIES, renderMusicPlayerCard } from '@kobato/shared/lexical/cards/music-player.ts'
-import {
-  renderSolutionCard,
-  SOLUTION_CARD_PROPERTIES,
-  solutionCardTextContent,
-} from '@kobato/shared/lexical/cards/solution.ts'
+} from '@kobato/pt/cards/kobato-image.ts'
+import { MUSIC_PLAYER_CARD_PROPERTIES, renderMusicPlayerCard } from '@kobato/pt/cards/music-player.ts'
+import { renderSolutionCard, SOLUTION_CARD_PROPERTIES, solutionCardTextContent } from '@kobato/pt/cards/solution.ts'
 import {
   renderTwoColumnCard,
   TWO_COLUMN_CARD_PROPERTIES,
   twoColumnCardTextContent,
-} from '@kobato/shared/lexical/cards/two-column.ts'
+} from '@kobato/pt/cards/two-column.ts'
 import {
   KOBATO_HOST_CARD_NODE_TYPES,
   MUSIC_PLAYER_NODE_TYPE,
   SOLUTION_NODE_TYPE,
   TWO_COLUMN_NODE_TYPE,
-} from '@kobato/shared/lexical/node-whitelist.ts'
-import { toProjectionState } from '@kobato/shared/lexical/projection-state.ts'
-import { resolveFootnotesSectionTitle } from '@kobato/shared/utils/footnotes-section-title.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+} from '@kobato/pt/node-whitelist.ts'
+import { toProjectionState } from '@kobato/pt/projection-state.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
+import { resolveFootnotesSectionTitle } from '@kobato/settings/footnotes-section-title.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import katex from 'katex'
 
 export interface BodyProjections {

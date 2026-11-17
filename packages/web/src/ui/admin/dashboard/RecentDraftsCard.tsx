@@ -1,4 +1,4 @@
-import type { DraftSummary } from '@kobato/shared/contracts/dashboard.ts'
+import type { DraftSummary } from '@kobato/contracts/dashboard.ts'
 import type { ReactNode } from 'react'
 
 import { Button } from '@kobato/ui/components/button.tsx'

@@ -1,4 +1,4 @@
-import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
 export function isPasskeyEnabled(): boolean {
   return getBlogSettingsBundleSync()?.security?.passkey?.enabled === true

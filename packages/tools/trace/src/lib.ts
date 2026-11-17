@@ -7,11 +7,11 @@
 // token, privacy pipeline, and dashboards are installed by the SERVER during
 // the admin connection test.
 
-import { TRACE_LOG_STREAM } from '@kobato/shared/contracts/trace-logs.ts'
-import { isTraceMetricStreamName } from '@kobato/shared/contracts/trace-metrics.ts'
-import { RUM_STREAM_NAME } from '@kobato/shared/contracts/trace-pipeline.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { TRACE_LOG_STREAM } from '@kobato/contracts/trace-logs.ts'
+import { isTraceMetricStreamName } from '@kobato/contracts/trace-metrics.ts'
+import { RUM_STREAM_NAME } from '@kobato/contracts/trace-pipeline.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -28,10 +28,10 @@ export const DEFAULT_O2_PORT = 5080
 export const DEFAULT_APP_PORT = 4321
 export const DEFAULT_APPLICATION_ID = 'kobato-dev'
 export const RETENTION_DAYS = 1
-/** The RUM intake stream, owned by `packages/shared/src/contracts/trace-pipeline.ts`. */
+/** The RUM intake stream, owned by `packages/shared/contracts/src/trace-pipeline.ts`. */
 export const RUM_STREAM = RUM_STREAM_NAME
 export const TRACE_STREAM = 'default'
-/** The application log stream, owned by `packages/shared/src/contracts/trace-logs.ts`. */
+/** The application log stream, owned by `packages/shared/contracts/src/trace-logs.ts`. */
 export const LOG_STREAM = TRACE_LOG_STREAM
 
 /** Streams this tooling owns for retention/status: RUM, traces, server logs, metric streams. */

@@ -1,4 +1,3 @@
-import { computePageWindow } from '@kobato/shared/utils/pagination.ts'
 import {
   Pagination,
   PaginationContent,
@@ -6,6 +5,7 @@ import {
   PaginationItem,
   PaginationLink,
 } from '@kobato/ui/components/pagination.tsx'
+import { computePageWindow } from '@kobato/ui/lib/pagination.ts'
 import { useMemo } from 'react'
 
 interface AdminPaginationProps {

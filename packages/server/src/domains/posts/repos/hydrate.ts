@@ -1,7 +1,7 @@
+import type { Post, PostVisibilityOptions } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { ListPublicPostsFilters } from '@kobato/server/domains/posts/repos/shared.ts'
-import type { Post, PostVisibilityOptions } from '@kobato/shared/types/catalog.ts'
 
 import { findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
 import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag.ts'

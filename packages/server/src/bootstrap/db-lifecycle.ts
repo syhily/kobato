@@ -1,5 +1,7 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
+import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications.ts'
+import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/contracts/sea/assets.ts'
 import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
 import { migrateDatabase } from '@kobato/db/migrate.ts'
 import {
@@ -59,16 +61,14 @@ import {
   setRestartRefreshSettings,
   setServerPhase,
 } from '@kobato/server/infra/lifecycle.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { seaAssetPath } from '@kobato/server/infra/sea.ts'
 // Load-bearing: each batcher module self-registers on the registry at import time.
 import '@kobato/server/domains/analytics/services/batcher.ts'
 import '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import '@kobato/server/domains/audit/services/batcher.ts'
-import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
-import { NOTIFICATION_SOURCES } from '@kobato/shared/contracts/notifications.ts'
-import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/shared/sea/assets.ts'
-import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { seaAssetPath } from '@kobato/server/infra/sea.ts'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { isRecord } from '@kobato/utils/type-guards.ts'
 
 // HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
 // The engine owns the 'handle' slot; this module owns only 'migrationsRan'.

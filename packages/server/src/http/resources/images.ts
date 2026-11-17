@@ -10,12 +10,12 @@ import { rateLimitByIp, rateLimitByRequestKey } from '@kobato/server/http/middle
 import { serveCalendar } from '@kobato/server/http/resources/calendar.ts'
 import { through } from '@kobato/server/infra/cache/registry.ts'
 import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
-import { requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 // Side-effect: wires render-layer warmup into the content domain's slot
 // (this module owns the OG/calendar request path it mirrors).
 import '@kobato/server/render/warmup/content-cache.ts'
-import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
-import { joinUrl } from '@kobato/shared/utils/urls.ts'
+import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { joinUrl } from '@kobato/utils/urls.ts'
 import { Hono } from 'hono'
 
 // Slug-keyed OG URLs outlive the image content — `immutable` would pin stale cards; short max-age revalidates.

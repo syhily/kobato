@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/shared/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 import type { MyCommentOwnership } from '@kobato/web/ui/public/comments/comments-context.ts'
 
 import { asKey } from '@kobato/web/ui/public/comments/comment-item/helpers.ts'
