@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // The canonical `mockTanstackQuery()` cannot express this suite: the patch
 // path needs a REAL QueryClient (cache writes against oRPC's infinite-key
 // shape) and a mutation double that actually runs `onSuccess`. Behavioural
-// mock by design — see tests/AGENTS.md.
+// mock by design — see packages/helpers/test/AGENTS.md.
 const harness = vi.hoisted(() => ({
   client: null as any,
   invalidate: null as any,
