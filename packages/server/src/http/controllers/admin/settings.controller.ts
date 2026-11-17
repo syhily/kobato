@@ -10,9 +10,9 @@ import { computeSecretMasks, redactSecretsFromBundle } from '@kobato/server/doma
 import { getSupportedTimeZones } from '@kobato/server/domains/settings/timezones.ts'
 import { isStorageMigrationActive } from '@kobato/server/domains/storage/s3-migration.ts'
 import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { safeBigInt } from '@kobato/server/infra/coerce.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
-import { safeBigInt } from '@kobato/utils/tools.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 

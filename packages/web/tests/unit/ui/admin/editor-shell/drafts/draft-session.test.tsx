@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,7 +23,7 @@ vi.mock('@kobato/web/ui/admin/editor-shell/drafts/draft-store.ts', () => ({
 
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import {

@@ -5,7 +5,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/component
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
-import { idStr } from '@kobato/utils/tools.ts'
+import { idStr } from '@kobato/utils/id.ts'
 import { AdminCommentRow } from '@kobato/web/ui/admin/comments/AdminCommentRow.tsx'
 import { EditCommentDialog } from '@kobato/web/ui/admin/comments/EditCommentDialog.tsx'
 import { EditUserDialog } from '@kobato/web/ui/admin/comments/EditUserDialog.tsx'

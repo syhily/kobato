@@ -289,7 +289,7 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
 
     // Server-only boundary for feed XML output (`render/feed/generator`). The
     // tag set mirrors the feed-variant projection's real output
-    // (`infra/pt/lexical-projection` — inkling exportDOM, artifacts stripped):
+    // (`infra/lexical/lexical-projection` — inkling exportDOM, artifacts stripped):
     // inline marks, sup/sub footnote refs, the footnotes <section>, media
     // figure/figcaption/audio, and the table family. `id` on `*` covers
     // headings, footnote anchors, and the footnotes section. img's data: scheme

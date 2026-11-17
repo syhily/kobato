@@ -1,5 +1,5 @@
 import type { AdminPostAnalyticsData } from '@kobato/contracts/admin.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
 // Parity net: both analytics shells must return identical loader data for the same post. Real
 // engine: real rows + the seeded DuckDB sidecar adopted into the lifecycle; only the view module

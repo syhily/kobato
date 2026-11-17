@@ -1,4 +1,4 @@
-import type { Page, Post } from '@kobato/contracts/types/catalog.ts'
+import type { Page, Post } from '@kobato/contracts/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
@@ -15,7 +15,7 @@ import {
 import { getTagsByNames, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 import { Feed } from 'feed'
 

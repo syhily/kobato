@@ -1,6 +1,6 @@
 # Client conventions
 
-`packages/web/src/client/` is the browser platform layer. May import the shared leaves (`@kobato/{utils,i18n,cache,settings,assets,pt,sanitize,contracts}`), `@kobato/ui`, sibling `client/` modules, and the `@kobato/inkling` barrel. Must NOT import `packages/web/src/ui/` — the direction is strictly ui → client (`apps/kobato/tests/arch/web-direction.test.ts`, no exceptions); a client module that needs a ui module moves to ui. Must not value-import any `@kobato/server` module or use Node-only APIs — the single sanctioned edge is the type-only `RouterClient<ApiRouter>` in `client/api/client.ts`.
+`packages/web/src/client/` is the browser platform layer. May import the shared leaves (`@kobato/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts}`), `@kobato/ui`, sibling `client/` modules, and the `@kobato/inkling` barrel. Must NOT import `packages/web/src/ui/` — the direction is strictly ui → client (`apps/kobato/tests/arch/web-direction.test.ts`, no exceptions); a client module that needs a ui module moves to ui. Must not value-import any `@kobato/server` module or use Node-only APIs — the single sanctioned edge is the type-only `RouterClient<ApiRouter>` in `client/api/client.ts`.
 
 ## Structure
 

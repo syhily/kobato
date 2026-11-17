@@ -28,7 +28,7 @@ const SOURCE_DIRS = [
   'packages/server/src',
   'packages/shared/contracts/src',
   'packages/shared/seo/src',
-  'packages/shared/pt/src',
+  'packages/shared/lexical/src',
   'packages/shared/utils/src',
   'packages/shared/i18n/src',
   'packages/shared/cache/src',

@@ -1,6 +1,6 @@
 // The `two-column` host card's editing-side assembly — same dual-entry contract as
 // `./solution`: the base class is built from the shared spec
-// (`@kobato/pt/cards/two-column`) through the `.` entry's factory, and the
+// (`@kobato/lexical/cards/two-column`) through the `.` entry's factory, and the
 // decorate chrome shares the spec's class constants with the exportDOM markup (the
 // WYSIWYG gate).
 
@@ -23,8 +23,8 @@ import {
   TWO_COLUMN_CARD_CLASSES,
   TWO_COLUMN_CARD_PROPERTIES,
   TWO_COLUMN_NESTED_EDITORS,
-} from '@kobato/pt/cards/two-column.ts'
-import { TWO_COLUMN_NODE_TYPE } from '@kobato/pt/node-whitelist.ts'
+} from '@kobato/lexical/cards/two-column.ts'
+import { TWO_COLUMN_NODE_TYPE } from '@kobato/lexical/node-whitelist.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { inklingHostCardMatches } from '@kobato/web/ui/admin/editor/cards/menu-matches.ts'
 import { Columns2Icon } from 'lucide-react'

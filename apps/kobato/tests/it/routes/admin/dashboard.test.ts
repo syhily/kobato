@@ -1,4 +1,4 @@
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
 import { EMPTY_STATE_LINE_IDS } from '@kobato/contracts/dashboard.ts'
 import { comment as commentTable } from '@kobato/db/schema/comment.ts'

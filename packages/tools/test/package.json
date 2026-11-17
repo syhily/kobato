@@ -13,7 +13,7 @@
     "@kobato/db": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
-    "@kobato/pt": "workspace:*",
+    "@kobato/lexical": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",

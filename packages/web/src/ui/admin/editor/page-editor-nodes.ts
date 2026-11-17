@@ -2,7 +2,7 @@
 // projection (`getHostCardNodes`); the side-effect imports below run each card's
 // top-level `defineCard`, so registration order here is projection order. Every
 // mounted type must stay inside FULL_EDITOR_NODE_TYPES
-// (`@kobato/pt/node-whitelist`) — the editor must never produce a node the
+// (`@kobato/lexical/node-whitelist`) — the editor must never produce a node the
 // storage schema rejects; the contract test
 // (tests/unit/shared/contracts/lexical-node-whitelist.test.ts) pins the list
 // against the whitelist and ARTICLE_COMPOSER_NODE_TYPES.

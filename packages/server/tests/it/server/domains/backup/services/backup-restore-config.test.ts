@@ -23,10 +23,6 @@ vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => ({
 vi.mock('@kobato/server/infra/db/paths.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@kobato/server/infra/db/paths.ts')>()),
   resolveDatabasePath: () => holder.dbPath,
-}))
-
-vi.mock('@kobato/server/infra/analytics/duckdb.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/analytics/duckdb.ts')>()),
   resolveAnalyticsPath: () => holder.analyticsPath,
 }))
 

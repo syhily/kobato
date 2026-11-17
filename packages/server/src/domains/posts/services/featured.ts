@@ -1,9 +1,9 @@
-import type { ClientPost, SidebarPostLink } from '@kobato/contracts/types/catalog.ts'
+import type { ClientPost, SidebarPostLink } from '@kobato/contracts/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { SidebarSettings } from '@kobato/settings/types.ts'
 
-import { toSidebarPostLink } from '@kobato/contracts/types/catalog.ts'
+import { toSidebarPostLink } from '@kobato/contracts/catalog.ts'
 import { findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
 import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
@@ -11,8 +11,8 @@ import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
 import { hydratePostImages, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { getSidebarWidgetCount } from '@kobato/settings/utils.ts'
-import { shuffle } from '@kobato/utils/tools.ts'
+import { getSidebarWidgetCount } from '@kobato/settings/presentation.ts'
+import { shuffle } from '@kobato/utils/sampling.ts'
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 
 const FEATURE_POST_COUNT = 3

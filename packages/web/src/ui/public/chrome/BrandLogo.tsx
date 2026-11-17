@@ -1,6 +1,6 @@
 import type { ImgHTMLAttributes } from 'react'
 
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useAssetsSettingsOptional } from '@kobato/web/client/settings/blog-settings-context.tsx'
 

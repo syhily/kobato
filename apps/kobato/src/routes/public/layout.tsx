@@ -4,15 +4,13 @@ import { useReloadOnChunkError } from '@kobato/web/client/hooks/use-chunk-error-
 import { useDeviceEnvBeacon } from '@kobato/web/client/hooks/use-device-env-beacon.ts'
 import { BaseLayout } from '@kobato/web/ui/public/chrome/BaseLayout.tsx'
 import { ErrorView } from '@kobato/web/ui/public/chrome/ErrorView.tsx'
-import '@kobato/pt/styles/cards.css'
-import '@kobato/ui/styles/ui.css'
-
-import '@/styles/public.css'
 import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-router'
 
 import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/layout'
+
+import '@/styles/public.css'
 
 // This app-owned entry statically imports `public.css`, so SSR emits it for every public URL while
 // the admin SPA stays outside this layout and never pulls `public.css` into admin chunks.

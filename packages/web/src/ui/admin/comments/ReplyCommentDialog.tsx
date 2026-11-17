@@ -1,7 +1,7 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
-import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/pt/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/lexical/comment-schema.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
 } from '@kobato/ui/components/dialog.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { idStr } from '@kobato/utils/tools.ts'
+import { idStr } from '@kobato/utils/id.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { onMutationError } from '@kobato/web/ui/lib/toast-api-error.ts'
 import { LazyCommentBodyEditor } from '@kobato/web/ui/public/comments/LazyCommentBodyEditor.tsx'

@@ -1,19 +1,18 @@
 import type { Database } from '@kobato/db/database.ts'
-import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
+import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration.ts'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
+import { runAccessLogRetention } from '@kobato/db/duckdb/maintenance.ts'
+import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema.ts'
 import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine.ts'
+import { wireAnalyticsQueryTelemetry } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
 import { wireAccessLogBatcher } from '@kobato/server/domains/analytics/services/batcher.ts'
-import { runAnalyticsBlobMigrationAtBoot } from '@kobato/server/domains/analytics/services/blob-migration.ts'
 import { wireDeviceEnvBeaconBatcher } from '@kobato/server/domains/analytics/services/env-beacon.ts'
-import { runAccessLogRetention } from '@kobato/server/domains/analytics/services/maintenance.ts'
-import { ANALYTICS_DDL } from '@kobato/server/domains/analytics/services/schema.ts'
-import {
-  type AnalyticsHandle,
-  closeAnalyticsDatabase,
-  openAnalyticsDatabase,
-  resolveAnalyticsPath,
-} from '@kobato/server/infra/analytics/duckdb.ts'
 import { getBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
+import { resolveAnalyticsPath } from '@kobato/server/infra/db/paths.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@kobato/server/infra/scheduler-utils.ts'
 import { copyFile } from 'node:fs/promises'
 
@@ -22,7 +21,7 @@ import { copyFile } from 'node:fs/promises'
  *  the priority-100 batcher flushes. */
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
-    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ANALYTICS_DDL),
+    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ANALYTICS_DDL, getLogger('analytics.duckdb')),
     close: closeAnalyticsDatabase,
   },
   'analyticsHandle',
@@ -58,7 +57,7 @@ export async function runAnalyticsMaintenance(): Promise<void> {
   if (handle === null) {
     return
   }
-  await withAnalyticsMutationLock(() => runAccessLogRetention(handle))
+  await withAnalyticsMutationLock(() => runAccessLogRetention(handle, getLogger('analytics.maintenance')))
 }
 
 export function scheduleNextAnalyticsMaintenance(): void {
@@ -72,10 +71,16 @@ export function scheduleNextAnalyticsMaintenance(): void {
 }
 
 export async function initAnalyticsDatabase(db: Database): Promise<void> {
+  // Dashboard queries executed inside @kobato/db carry the db.duckdb.query boundary.
+  // Wired here (before engine.init) rather than at import time: importing this
+  // module must stay side-effect-free.
+  wireAnalyticsQueryTelemetry()
   await engine.init()
   // Legacy `access_log` → `access_events` conversion: once per database, before the
   // maintenance scheduler arms and before requests can push into the batcher.
-  await withAnalyticsMutationLock(() => runAnalyticsBlobMigrationAtBoot(db, engine.get()))
+  await withAnalyticsMutationLock(() =>
+    runAnalyticsBlobMigrationAtBoot(db, engine.get(), getLogger('analytics.blob-migration')),
+  )
   scheduleNextAnalyticsMaintenance()
 }
 

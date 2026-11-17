@@ -1,6 +1,8 @@
-/* Demo-owned utilities. Dependencies compile and scan their own stylesheets. */
+/* Demo-owned public surface: one Tailwind compile composing the per-package partials in fixed order. */
 @layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import '@kobato/ui/styles/tailwind.css' reference;
+@import '@kobato/lexical/styles/cards.css';
+@import '@kobato/web/styles/public.css';
 
 @source '../**/*.{ts,tsx}';

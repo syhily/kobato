@@ -1,4 +1,4 @@
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
 import { createHeadlessEditor, type SerializedEditorState } from '@kobato/inkling'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'

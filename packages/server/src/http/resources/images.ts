@@ -14,7 +14,7 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 // Side-effect: wires render-layer warmup into the content domain's slot
 // (this module owns the OG/calendar request path it mirrors).
 import '@kobato/server/render/warmup/content-cache.ts'
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 import { Hono } from 'hono'
 

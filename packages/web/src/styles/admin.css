@@ -1,8 +1,7 @@
-@layer theme, base, inkling, components, utilities;
-@import 'tailwindcss' source(none);
-@import '@kobato/ui/styles/tailwind.css' reference;
-
+/* Partial: composed by a surface entry's single Tailwind compile (apps/kobato/src/styles/admin.css), never compiled alone. */
 @source '../ui/admin';
+@source '../ui/shared';
+@source '../ui/lib';
 @source '../ui/public/music-player';
 @source '../ui/public/chrome';
 @source '../ui/public/comments/*.{ts,tsx}';

@@ -1,4 +1,4 @@
-import type { ClientPostWithMetadata } from '@kobato/contracts/types/catalog.ts'
+import type { ClientPostWithMetadata } from '@kobato/contracts/catalog.ts'
 
 import { makePost } from '@kobato/test/catalog.ts'
 import { renderInRouter } from '@kobato/test/render.tsx'

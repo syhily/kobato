@@ -68,7 +68,7 @@ environment data stays in aggregate panels.
 ## Consequences
 
 - DDL sits beside `access_events` DDL in
-  `src/server/domains/analytics/services/device-env.ts`; a boot-time idempotent
+  `packages/db/src/duckdb/device-env.ts`; a boot-time idempotent
   migration creates both tables, registered in `ANALYTICS_TABLES`.
 - Enrich appends a second row keyed by the same id; the batcher stays append-only.
   The beacon has its own batcher and dead-letter path.

@@ -1,4 +1,4 @@
-import type { Post, PostVisibilityOptions } from '@kobato/contracts/types/catalog.ts'
+import type { Post, PostVisibilityOptions } from '@kobato/contracts/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 
 import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'

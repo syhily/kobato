@@ -5,8 +5,8 @@
   "scripts": {
     "build": "pnpm -C apps/kobato build",
     "bump": "taze && pnpm update",
-    "db:gen": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:gen": "pnpm -C packages/db db:gen",
+    "db:migrate": "pnpm -C packages/db db:migrate",
     "demo": "vite apps/inkling-demo",
     "dev": "pnpm -C apps/kobato dev",
     "emails:generate": "vite-node packages/tools/email/src/generate.ts",
@@ -52,7 +52,6 @@
     "@types/node": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "drizzle-kit": "catalog:",
     "husky": "catalog:",
     "lint-staged": "catalog:",
     "oxc-transform-react": "catalog:",

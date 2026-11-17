@@ -1,5 +1,6 @@
-import type { DeviceEnvServerRow } from '@kobato/server/domains/analytics/services/device-env.ts'
-import type { EnrichedAccessEvent, RawAccessEvent } from '@kobato/server/domains/analytics/types.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
+import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
+import type { RawAccessEvent } from '@kobato/server/domains/analytics/types.ts'
 
 import { lookupCity } from '@kobato/server/domains/analytics/geoip.ts'
 import { getDailySalt } from '@kobato/server/domains/analytics/salt.ts'

@@ -10,7 +10,7 @@ import type {
   ListingPostCard,
   ListingPostCardWithMetadata,
   SidebarPostLink,
-} from '@kobato/contracts/types/catalog.ts'
+} from '@kobato/contracts/catalog.ts'
 import type { DetailPageComments, LatestComment } from '@kobato/contracts/types/comments.ts'
 import type { ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
 import type { KobatoInklingLabelTable } from '@kobato/i18n/inkling-labels/en-US.ts'

@@ -1,7 +1,9 @@
 import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files.ts'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
+
+import duckdbConfig from '../vitest.duckdb.config.ts'
 
 const REPO_ROOT = process.cwd()
 
@@ -23,6 +25,8 @@ const ENGINE_MARKERS = [
 const TEST_TREES = [
   'apps/kobato/tests/it',
   'apps/kobato/tests/unit',
+  'packages/db/tests/it',
+  'packages/db/tests/unit',
   'packages/server/tests/it',
   'packages/server/tests/unit',
 ] as const
@@ -41,7 +45,7 @@ function walk(dir: string): string[] {
 }
 
 function fullyMocksDuckdbModule(source: string): boolean {
-  return source.includes(`vi.mock('@kobato/server/infra/analytics/duckdb.ts'`) && !source.includes('importOriginal')
+  return source.includes(`vi.mock('@kobato/db/duckdb/database.ts'`) && !source.includes('importOriginal')
 }
 
 describe('duckdb project membership', () => {
@@ -64,5 +68,13 @@ describe('duckdb project membership', () => {
     }
     // Mismatch? Update packages/tools/test/src/duckdb-files.ts.
     expect(actual.sort()).toEqual([...DUCKDB_TEST_FILES].sort())
+  })
+
+  it('collects the same files from the repository-root Vitest project', () => {
+    expect(duckdbConfig.test?.root).toBe(REPO_ROOT)
+    expect(duckdbConfig.test?.include).toEqual(DUCKDB_TEST_FILES)
+    for (const setupFile of duckdbConfig.test?.setupFiles ?? []) {
+      expect(existsSync(setupFile), setupFile).toBe(true)
+    }
   })
 })

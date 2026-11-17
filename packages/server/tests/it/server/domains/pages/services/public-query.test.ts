@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { page as pageTable } from '@kobato/db/schema/page.ts'

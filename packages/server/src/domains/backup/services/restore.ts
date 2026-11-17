@@ -7,14 +7,13 @@ import {
   isEncryptedBackup,
 } from '@kobato/server/domains/backup/services/crypto.ts'
 import { isTarArchive, listTarEntriesInFile } from '@kobato/server/domains/backup/services/tar.ts'
-import { resolveAnalyticsPath } from '@kobato/server/infra/analytics/duckdb.ts'
 import {
   ConfigFileError,
   CONFIG_FILE_NAME,
   parseRestorableConfigJson,
   resolveConfigFilePath,
 } from '@kobato/server/infra/config.ts'
-import { resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
+import { resolveAnalyticsPath, resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'

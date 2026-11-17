@@ -1,9 +1,9 @@
 import type { Database } from '@kobato/db/database.ts'
 
 import { content } from '@kobato/db/schema/content.ts'
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 import { count, eq } from 'drizzle-orm'
 
 // The admin "重建文章缓存" recovery hatch (dashboard button →

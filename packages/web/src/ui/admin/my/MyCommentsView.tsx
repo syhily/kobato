@@ -2,7 +2,7 @@ import type { MyCommentItem, MyCommentsStatus } from '@kobato/contracts/types/co
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 import type { ReactNode } from 'react'
 
-import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'

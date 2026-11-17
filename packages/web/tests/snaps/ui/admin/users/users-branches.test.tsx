@@ -47,7 +47,7 @@ queryMocks.infinite = {
 }
 
 // File-level stub: one test drives the search term (real hook's SSR default is empty).
-vi.mock('@kobato/web/ui/admin/shared/useDebouncedSearch.ts', () => ({
+vi.mock('@kobato/web/ui/shared/use-debounced-search.ts', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 

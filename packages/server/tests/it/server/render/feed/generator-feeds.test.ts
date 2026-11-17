@@ -1,10 +1,10 @@
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { postTag } from '@kobato/db/schema/post-tag.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
 import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
+import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { generateFeeds } from '@kobato/server/render/feed/generator.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'

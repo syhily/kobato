@@ -3,10 +3,10 @@
 // draft rotates with every clean save; a stored draft diverging from the opening
 // body surfaces as the `local` autosave freeze leg until the dialog resolves it.
 
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { LocalDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/pt/equivalence.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/lexical/equivalence.ts'
 import { useLocalDraft } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import { useCallback, useState } from 'react'
 

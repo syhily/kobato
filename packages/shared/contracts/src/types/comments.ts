@@ -9,7 +9,7 @@ export interface LatestComment {
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
 import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@kobato/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
 // Canonical comment row shape in select-map naming (`createAt` / `deleteAt`, not
 // the DB's `createdAt` / `deletedAt`). Hand-written because `@kobato/contracts`

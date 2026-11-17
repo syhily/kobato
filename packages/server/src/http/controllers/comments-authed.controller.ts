@@ -4,7 +4,7 @@ import {
   commentsResolveEntityOutputSchema,
 } from '@kobato/contracts/admin.ts'
 import { ownCommentMutationDto } from '@kobato/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
 import { asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
 import {
   countMyComments,

@@ -1,6 +1,6 @@
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import {
   Dialog,

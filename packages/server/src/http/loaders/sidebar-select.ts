@@ -1,11 +1,11 @@
-import type { ClientTag } from '@kobato/contracts/types/catalog.ts'
+import type { ClientTag } from '@kobato/contracts/catalog.ts'
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { SidebarSettings } from '@kobato/settings/types.ts'
 
-import { getSidebarWidgetCount } from '@kobato/settings/utils.ts'
+import { getSidebarWidgetCount } from '@kobato/settings/presentation.ts'
 import { formatLocalDate } from '@kobato/utils/formatter.ts'
-import { sampleSize } from '@kobato/utils/tools.ts'
+import { sampleSize } from '@kobato/utils/sampling.ts'
 
 export interface SidebarSeedInput {
   /** Entity/URL scope: `post:<id>`, `page:<id>`, `home`. */

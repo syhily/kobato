@@ -12,7 +12,6 @@ import { ThemeToggle } from '@kobato/web/ui/public/chrome/ThemeToggle.tsx'
 import { LazyNotificationsDrawer } from '@kobato/web/ui/shared/notifications/LazyNotificationsDrawer.tsx'
 import { useUnreadNotificationCount } from '@kobato/web/ui/shared/notifications/use-notifications.ts'
 import { useState } from 'react'
-import '@kobato/web/styles/public.css'
 
 export interface BaseLayoutProps {
   navigation?: NavigationItem[]

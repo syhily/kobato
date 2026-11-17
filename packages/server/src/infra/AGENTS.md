@@ -2,6 +2,8 @@
 
 `packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from `domains/`, `http/`, or `render/`. Layer rules live in `../../AGENTS.md`.
 
+- `db/paths.ts` resolves validated config into BOTH embedded engines' paths (`resolveDatabasePath` / `resolveAnalyticsPath`) through the shared `resolveEnginePath` over `@kobato/db/database::resolveStoragePath` (`:memory:` passes through). The engines themselves open in `@kobato/db` (SQLite driver + DuckDB handle); infra owns no engine code.
+
 ## Config file
 
 - `kobato.config.json` is auto-created with defaults when missing. `config.ts`'s `CONFIG_TABLE` maps nested config paths to Zod schemas; consumers read the validated `serverConfig` export. Env var names derive by convention (`__` join → `storage__database`).

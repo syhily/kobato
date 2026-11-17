@@ -2,17 +2,17 @@ import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type {
   ContentType,
   PublishLatestResult,
   SaveDraftResult,
 } from '@kobato/server/domains/content/schemas/revision.ts'
-import type { MusicEmbedResolver } from '@kobato/server/domains/pt/embeds.ts'
+import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
 
-import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/pt/collect.ts'
-import { compactLexicalEditorState } from '@kobato/pt/dialect.ts'
+import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/lexical/collect.ts'
+import { compactLexicalEditorState } from '@kobato/lexical/dialect.ts'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
 import {
   isEquivalentToPublishedLatest,
@@ -22,11 +22,11 @@ import {
 import { findContentById, findLatestDraft, findLatestRevision } from '@kobato/server/domains/content/revisions.ts'
 import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish.ts'
 import { syncLibraryImageBlocks } from '@kobato/server/domains/content/services/image-sync.ts'
-import { snapshotMusicPlayerMeta } from '@kobato/server/domains/pt/lexical-music-snapshot.ts'
-import { canonicalizeLexicalEditorState } from '@kobato/server/domains/pt/services/lexical-canonicalize.ts'
+import { canonicalizeLexicalEditorState } from '@kobato/server/domains/content/services/lexical/canonicalize.ts'
+import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { getLogger, type Logger } from '@kobato/server/infra/logger.ts'
-import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
 
 const log = getLogger('content.lifecycle')
 
@@ -76,7 +76,7 @@ export interface SaveBodyInput {
   entityId: number
   body: unknown
   /**
-   * Music-domain resolver wired by the controller (pt must not depend on music);
+   * Music-domain resolver wired by the controller (lexical must not depend on music);
    * resolves `music-player` playerIds into the snapshot embedded at save time.
    */
   resolveMusicEmbeds: MusicEmbedResolver

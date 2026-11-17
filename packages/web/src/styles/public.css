@@ -1,8 +1,7 @@
-@layer theme, base, inkling, components, utilities;
-@import 'tailwindcss' source(none);
-@import '@kobato/ui/styles/tailwind.css' reference;
-
+/* Partial: composed by a surface entry's single Tailwind compile (apps/kobato/src/styles/public.css), never compiled alone. */
 @source '../ui/public';
+@source '../ui/shared';
+@source '../ui/lib';
 
 .medium-zoom-overlay,
 .medium-zoom-image--opened {

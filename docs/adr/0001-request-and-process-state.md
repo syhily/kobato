@@ -30,7 +30,7 @@ invalidation channel. The Redis version counter (`settings:snapshot:version`,
 `src/shared/utils/memo.ts` holds the two consolidated shapes:
 
 - `createPromiseMemo(loader)` — share-in-flight async memo; a rejected bootstrap is dropped so
-  the next call retries. Used by the Shiki highlighter singletons (`infra/pt/prerender`,
+  the next call retries. Used by the Shiki highlighter singletons (`infra/lexical/prerender`,
   `domains/audit/highlight`).
 - `createBoundedMap(cap)` — FIFO-evict map: an insert past the cap evicts the oldest key. Used by
   the `Intl.DateTimeFormat` cache (`shared/utils/formatter`), the branding-byte cache

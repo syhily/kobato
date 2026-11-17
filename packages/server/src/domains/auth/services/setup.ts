@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/database.ts'
 import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 
+import { analyzeDatabase } from '@kobato/db/operations/maintenance.ts'
 import { hasAdmin, hashAdminPassword, insertAdmin } from '@kobato/db/operations/user.ts'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
@@ -12,7 +13,6 @@ import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/dom
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { sql } from 'drizzle-orm'
 
 export interface SignUpAdminSeed {
   title: string
@@ -71,7 +71,7 @@ export async function signUpInitialAdminWithSession(
   await invalidateSetupToken(db)
 
   // Bulk-load install seed; refresh planner statistics.
-  db.run(sql`ANALYZE`)
+  analyzeDatabase(db)
 
   return {
     type: 'redirect',

@@ -2,13 +2,13 @@ import type { RealtimeEvent } from '@kobato/contracts/analytics.ts'
 import type { Env } from '@kobato/server/http/context.ts'
 
 import { deviceEnvBeaconSchema } from '@kobato/contracts/analytics.ts'
+import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime.ts'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { pushDeviceEnvBeacon } from '@kobato/server/domains/analytics/services/env-beacon.ts'
 import {
   acquireRealtimeConnection,
-  queryRealtimeTail,
   realtimeConnectionKey,
-} from '@kobato/server/domains/analytics/services/realtime.ts'
+} from '@kobato/server/domains/analytics/services/realtime-connections.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { tryDeviceEnvBeaconRateLimit } from '@kobato/server/infra/rate-limit.ts'

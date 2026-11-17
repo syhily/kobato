@@ -1,0 +1,13 @@
+/* Partial: composed by a surface entry's single Tailwind compile; the dark variant stays UI-owned. */
+/* Compile-only semantic colors used by projected cards. Runtime values stay UI-owned. */
+@theme inline {
+  --color-brand: var(--brand);
+  --color-canvas: var(--canvas);
+  --color-surface-dim: var(--surface-dim);
+  --color-line-muted: var(--line-muted);
+  --color-ink-1: var(--ink-1);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+}
+
+@source '../cards';

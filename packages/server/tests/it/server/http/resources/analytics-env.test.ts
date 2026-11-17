@@ -1,5 +1,5 @@
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 import type { Env } from '@kobato/server/http/context.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
 import {
   __adoptAnalyticsHandleForTests,

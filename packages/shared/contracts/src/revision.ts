@@ -1,5 +1,5 @@
 import { idString, isoDateTime, markdownHeadingDto } from '@kobato/contracts/primitives.ts'
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { safeBoolean } from '@kobato/utils/schema.ts'
 import { z } from 'zod'
 

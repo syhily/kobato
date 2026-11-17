@@ -1,5 +1,5 @@
 import type { SaveBodyInput, SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { CreateDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-create-draft.ts'
 import type { LocalDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import type { NavigateFunction } from 'react-router'

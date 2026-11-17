@@ -58,7 +58,7 @@ vi.mock('@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts', () => ({
 }))
 
 import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { EditorShellDetail, EntityLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 import type { UseEditorShellPersistArgs } from '@kobato/web/ui/admin/editor-shell/use-editor-shell-persist.ts'
 

@@ -1,4 +1,4 @@
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
 import {
   __adoptAnalyticsHandleForTests,
@@ -135,8 +135,8 @@ describe('backup and restore integration', () => {
       closeDatabase(restored)
     }
 
-    const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@kobato/server/infra/analytics/duckdb.ts')
-    const { ACCESS_EVENTS_DDL } = await import('@kobato/server/domains/analytics/services/access-log.ts')
+    const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@kobato/db/duckdb/database.ts')
+    const { ACCESS_EVENTS_DDL } = await import('@kobato/db/duckdb/access-events.ts')
     writeFileSync(join(dir, 'restored.duckdb'), payload.analytics!)
     const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'), ACCESS_EVENTS_DDL)
     try {

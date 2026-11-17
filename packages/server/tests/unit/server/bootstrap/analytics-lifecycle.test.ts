@@ -1,6 +1,8 @@
-import type { EnrichedAccessEvent } from '@kobato/server/domains/analytics/types.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
+import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema.ts'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
@@ -9,8 +11,6 @@ import {
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAccessLog, pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher.ts'
-import { ANALYTICS_DDL } from '@kobato/server/domains/analytics/services/schema.ts'
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/server/infra/analytics/duckdb.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
 import { randomUUID } from 'node:crypto'

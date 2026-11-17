@@ -1,7 +1,9 @@
-/* App-owned route utilities. Every dependency compiles and scans its own stylesheet. */
+/* App-owned public surface: one Tailwind compile composing the per-package partials in fixed order. */
 @layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import '@kobato/ui/styles/tailwind.css' reference;
+@import '@kobato/lexical/styles/cards.css';
+@import '@kobato/web/styles/public.css';
 @import './cursors.css';
 
 @source '../routes/public';

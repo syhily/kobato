@@ -17,13 +17,13 @@
 // host these classes.
 
 import { $isImageNode, createHeadlessEditor, ImageNode, type LexicalEditor } from '@kobato/inkling'
-import { FEED_VARIANT_META_KIND } from '@kobato/pt/cards/card-html.ts'
+import { FEED_VARIANT_META_KIND } from '@kobato/lexical/cards/card-html.ts'
 import {
   IMAGE_RENDER_ENV_META_KIND,
   KOBATO_IMAGE_IMG_CLASS,
   KOBATO_IMAGE_PROPERTIES,
   normalizeKobatoImageLayout,
-} from '@kobato/pt/cards/kobato-image.ts'
+} from '@kobato/lexical/cards/kobato-image.ts'
 import { KobatoImageNode } from '@kobato/web/ui/admin/editor/kobato-image-node.ts'
 import { DARK_IMAGE_DIM_CLASS } from '@kobato/web/ui/public/widgets/Image.tsx'
 import { JSDOM } from 'jsdom'
@@ -184,7 +184,7 @@ describe('KobatoImageNode — dataset persistence', () => {
 })
 
 describe('KobatoImageNode — exportDOM markup', () => {
-  it('exports the PT figure markup with the kobato extras (full variant)', () => {
+  it('exports the shared figure markup with the kobato extras (full variant)', () => {
     const html = exportHtmlFor(FULL_DATASET, false)
     expect(html).toContain('<figure class="block max-w-full mr-auto ml-0 w-fit" data-layout="left">')
     expect(html).toContain('data-thumbhash="th-abcd"')
@@ -216,7 +216,7 @@ describe('KobatoImageNode — exportDOM markup', () => {
     expect(plain).not.toContain('data-zoom-src')
   })
 
-  it('exports the bare PT rssMode figure for the feed variant', () => {
+  it('exports the bare rssMode figure for the feed variant', () => {
     const html = exportHtmlFor({ ...FULL_DATASET, caption: '题注 <strong>粗体</strong>' }, true)
     expect(html).toBe(
       '<figure><img src="https://example.com/storage/posts/cover.png" alt="cover" width="800" height="600"><figcaption>题注 粗体</figcaption></figure>',

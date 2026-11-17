@@ -1,7 +1,7 @@
 import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
 import type { EditorAdapterConfig } from '@kobato/web/ui/admin/editor-shell/make-editor-adapter.ts'
 
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import { makeEditorAdapter } from '@kobato/web/ui/admin/editor-shell/make-editor-adapter.ts'
 import { QueryClient } from '@tanstack/react-query'

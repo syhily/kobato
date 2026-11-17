@@ -1,6 +1,6 @@
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/lexical/comment-schema.ts'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const comment = sqliteTable(

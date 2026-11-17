@@ -16,7 +16,7 @@
       "@kobato/inkling/*": ["../../packages/inkling/src/*"],
       "@kobato/web/*": ["../../packages/web/src/*"],
       "@kobato/ui/*": ["../../packages/ui/src/*"],
-      "@kobato/pt/*": ["../../packages/shared/pt/src/*"]
+      "@kobato/lexical/*": ["../../packages/shared/lexical/src/*"]
     },
     "types": ["vite/client", "node"]
   }

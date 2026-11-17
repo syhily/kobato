@@ -3,8 +3,8 @@ import {
   commentEditorStateSchema,
   EMPTY_COMMENT_EDITOR_STATE,
   type CommentEditorState,
-} from '@kobato/pt/comment-schema.ts'
-import { visitLexicalNodes } from '@kobato/pt/walk.ts'
+} from '@kobato/lexical/comment-schema.ts'
+import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { COMMENT_EDITOR_NODES } from '@kobato/web/ui/public/comments/editor/comment-editor-nodes.ts'
 import { downgradeLegacyCommentMath } from '@kobato/web/ui/public/comments/editor/comment-legacy-math.ts'

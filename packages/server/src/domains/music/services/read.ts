@@ -13,7 +13,7 @@ import {
 import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'
 import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 
 export interface ListMusicInput {
   q?: string
@@ -94,7 +94,7 @@ export async function getMusicMetaForPlayer(db: Database, playerId: string): Pro
 
 /**
  * Batch variant of `getMusicMetaForPlayer` — one query per page. Callers
- * wire it into the PT embed seam (`@/server/domains/pt/embeds`).
+ * wire it into the Lexical embed seam (`@/server/domains/content/services/lexical/embeds`).
  */
 export async function getPublicMusicMetasByIds(
   db: Database,

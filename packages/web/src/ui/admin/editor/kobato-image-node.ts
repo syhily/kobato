@@ -3,7 +3,7 @@
 // `thumbhash` / `storagePath` / `imageId` (the image-library pass-through keys,
 // consumed by the save-time `syncLibraryImageBlocks` relink) and `layout` (the
 // legacy float vocabulary `cardWidth` has no equivalent of). The shared React-free spec
-// (`@kobato/pt/cards/kobato-image`) owns the property list, the exportDOM
+// (`@kobato/lexical/cards/kobato-image`) owns the property list, the exportDOM
 // renderer, and the import spec; the server projection builds its own class from it.
 //
 // Subclassing instead of re-declaring keeps the assembled class's caption nested
@@ -16,7 +16,7 @@
 // type-gated or `instanceof BaseImageNode`-gated, so only the two CLASS-identity
 // gates stand down and `image-insert-override` re-supplies them.
 
-import type { CardRenderOutput } from '@kobato/pt/cards/card-html.ts'
+import type { CardRenderOutput } from '@kobato/lexical/cards/card-html.ts'
 
 import { createRenderContext, type ExportDOMOptions, ImageNode, type LexicalEditor } from '@kobato/inkling'
 import {
@@ -24,7 +24,7 @@ import {
   kobatoImageImportSpec,
   normalizeKobatoImageLayout,
   renderKobatoImageNode,
-} from '@kobato/pt/cards/kobato-image.ts'
+} from '@kobato/lexical/cards/kobato-image.ts'
 
 export class KobatoImageNode extends ImageNode {
   __thumbhash: string

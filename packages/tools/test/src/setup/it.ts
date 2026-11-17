@@ -5,6 +5,7 @@
 // Run the suite against Zod 4.5's compiled parsers, mirroring production
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
+import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query.ts'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import '@kobato/test/env.ts'
 import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
@@ -24,4 +25,7 @@ vi.mock('node:dns/promises', () => ({
 // Auto-reset the snapshot after every test to prevent isolation leaks.
 afterEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  // Analytics queries run untraced in tests: a boot path that wired the
+  // executor must not leak it into later files in this worker.
+  setAnalyticsQueryExecutor(null)
 })

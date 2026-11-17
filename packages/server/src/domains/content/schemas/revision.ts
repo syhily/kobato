@@ -4,7 +4,7 @@
  */
 
 import type { ContentRow } from '@kobato/db/types.ts'
-import type { BodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
+import type { BodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 
 export type ContentType = 'page' | 'post'
 

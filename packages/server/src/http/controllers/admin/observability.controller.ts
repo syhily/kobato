@@ -28,9 +28,9 @@ import {
 } from '@kobato/server/domains/observability/runtime-manager.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { safeBigInt } from '@kobato/server/infra/coerce.ts'
 import { carriesErrorMessageDescriptor, descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { safeBigInt } from '@kobato/utils/tools.ts'
 
 function readSavedSite(context: AuthedHandlerContext): ObservabilitySettingsSlice | null {
   return context.settings?.observability?.observability ?? null

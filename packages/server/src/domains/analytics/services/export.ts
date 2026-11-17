@@ -1,19 +1,9 @@
 import type { ResolvedAnalyticsQuery } from '@kobato/contracts/analytics.ts'
-import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
-import { visitAggregates } from '@kobato/server/domains/analytics/services/aggregates.ts'
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
-import { buildAnalyticsFilter } from '@kobato/server/domains/analytics/services/query-filter.ts'
-import { sql } from 'kysely'
+import { queryExportRows } from '@kobato/db/duckdb/queries/export.ts'
 
 const CSV_COLUMNS = ['path', 'views', 'visitors', 'referers'] as const
-
-interface ExportRow {
-  path?: string
-  views?: number
-  visitors?: number
-  referers?: number
-}
 
 // Spreadsheet formula triggers: a cell starting (after leading TAB/CR/space) with
 // = + - @ executes as a formula in Excel/LibreOffice — prefix it with a quote.
@@ -30,18 +20,7 @@ export function csvCell(value: string | number | null | undefined): string {
 
 /** CSV text export grouped by path: views, distinct visitors, distinct referer hosts. */
 export async function queryExportCsv(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<string> {
-  const rows = (await runAnalyticsQuery(
-    reader,
-    createAnalyticsQuery()
-      .select([sql.ref('blob1').as('path'), ...visitAggregates('views')])
-      .where(buildAnalyticsFilter(input))
-      .groupBy('path')
-      .orderBy('views', 'desc')
-      // The wire schema already clamps `limit` to ≤500.
-      .limit(input.limit ?? 500),
-    'export',
-  )) as ExportRow[]
-
+  const rows = await queryExportRows(reader, input)
   const lines = [CSV_COLUMNS.join(',')]
   for (const row of rows) {
     lines.push(CSV_COLUMNS.map((column) => csvCell(row[column])).join(','))

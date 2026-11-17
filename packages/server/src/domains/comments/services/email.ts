@@ -2,7 +2,7 @@ import type { CommentAndUser } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { Comment, User } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { SendResult } from '@kobato/server/infra/email/types.ts'
 
 import { lexicalStateToPlainText } from '@kobato/inkling/headless'

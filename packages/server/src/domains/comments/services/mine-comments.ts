@@ -1,6 +1,6 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityType } from '@kobato/db/target.ts'
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
 import { likeEscape } from '@kobato/db/like-escape.ts'
 import { comment } from '@kobato/db/schema/comment.ts'

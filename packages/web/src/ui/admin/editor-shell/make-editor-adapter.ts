@@ -1,6 +1,6 @@
 import type { AdminRevisionDto, SaveBodyInput, SaveBodyOutput } from '@kobato/contracts/revision.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { CreateDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-create-draft.ts'
 import type { LocalDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import type { RevisionLike } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'

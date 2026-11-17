@@ -1,8 +1,8 @@
 import type { DatabaseHandle } from '@kobato/db/database.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
 import type { AccessLogItem } from '@kobato/server/domains/analytics/services/batcher.ts'
-import type { DeviceEnvServerRow } from '@kobato/server/domains/analytics/services/device-env.ts'
-import type { EnrichedAccessEvent } from '@kobato/server/domains/analytics/types.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
 import {
   __adoptAnalyticsHandleForTests,

@@ -13,14 +13,15 @@ import {
   type AnalyticsQuery,
   type ResolvedAnalyticsQuery,
 } from '@kobato/contracts/analytics.ts'
+import { queryCounters } from '@kobato/db/duckdb/queries/counters.ts'
+import { queryHeatmap } from '@kobato/db/duckdb/queries/heatmap.ts'
+import { queryMetric } from '@kobato/db/duckdb/queries/metric.ts'
+import { resolveAnalyticsRange } from '@kobato/db/duckdb/queries/query-filter.ts'
+import { queryViews } from '@kobato/db/duckdb/queries/views.ts'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
 import { queryExportCsv } from '@kobato/server/domains/analytics/services/export.ts'
-import { queryHeatmap } from '@kobato/server/domains/analytics/services/heatmap.ts'
-import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
 import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
-import { parseAnalyticsSearch, resolveAnalyticsRange } from '@kobato/server/domains/analytics/services/query-filter.ts'
-import { queryViews } from '@kobato/server/domains/analytics/services/views.ts'
+import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input.ts'
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { z } from 'zod'
 

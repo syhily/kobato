@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { CardRenderContext } from '@kobato/pt/cards/card-html.ts'
+import type { CardRenderContext } from '@kobato/lexical/cards/card-html.ts'
 
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import {
@@ -8,7 +8,7 @@ import {
   type MusicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
-} from '@kobato/pt/cards/music-player.ts'
+} from '@kobato/lexical/cards/music-player.ts'
 import { diffHtmlStructures, structureFromHtml } from '@kobato/test/dom-structure.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { MusicPlayerCard } from '@kobato/web/ui/public/music-player/music-player.tsx'

@@ -10,7 +10,8 @@ const log = getLogger('db.maintenance')
 
 /**
  * SQLite half of the daily DB maintenance job (the DuckDB half lives in
- * `@/server/bootstrap/analytics-lifecycle`): incremental vacuum, optimize,
+ * `@kobato/db/duckdb/maintenance.ts`, scheduled by analytics-lifecycle):
+ * incremental vacuum, optimize,
  * page stats, `job_run` history pruning, notification retention. Full VACUUM
  * is never scheduled.
  */

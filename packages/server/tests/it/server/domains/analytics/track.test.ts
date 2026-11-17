@@ -1,6 +1,6 @@
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { TrackPageViewOptions } from '@kobato/server/domains/analytics/track.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 
 import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric.ts'

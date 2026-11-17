@@ -1,13 +1,13 @@
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { Env } from '@kobato/server/http/context.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { __getRealtimeConnectionCountForTests } from '@kobato/server/domains/analytics/services/realtime.ts'
+import { __getRealtimeConnectionCountForTests } from '@kobato/server/domains/analytics/services/realtime-connections.ts'
 import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import {

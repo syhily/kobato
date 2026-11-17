@@ -37,7 +37,7 @@ export interface UseEditorSurfaceArgs<TBody extends SerializedEditorState> {
   /** Fired on every editor update with the freshly-serialized body. */
   onBodyChange: (body: TBody) => void
   /** Shapes the seed before the composer parses it (the comment surface's
-   *  legacy-PT fallback + math-fence downgrade); the page surface seeds as-is. */
+   *  unparseable-seed fallback + math-fence downgrade); the page surface seeds as-is. */
   prepareSeed?: (body: TBody) => TBody
 }
 

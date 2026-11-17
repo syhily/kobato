@@ -1,8 +1,8 @@
-import type { DetailPostShell, DraftMarker, Post } from '@kobato/contracts/types/catalog.ts'
+import type { DetailPostShell, DraftMarker, Post } from '@kobato/contracts/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 
-import { toClientPost, toDetailPostShell } from '@kobato/contracts/types/catalog.ts'
+import { toClientPost, toDetailPostShell } from '@kobato/contracts/catalog.ts'
 import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle.ts'
 import { canonicalPostPath } from '@kobato/server/domains/content/urls.ts'
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'

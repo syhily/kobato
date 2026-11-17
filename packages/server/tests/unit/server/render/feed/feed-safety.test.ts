@@ -1,5 +1,5 @@
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
-import { computeBodyProjections } from '@kobato/server/infra/pt/lexical-projection.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { escapeCdataPayload, sanitizeFeedHtml } from '@kobato/server/render/feed/generator.tsx'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'

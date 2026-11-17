@@ -1,7 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { configDefaults, defineConfig } from 'vitest/config'
 
-import { duckdbTestFilesUnder } from '../../../../packages/tools/test/src/duckdb-files.ts'
 import { testDefine } from '../../../../packages/tools/test/src/vitest.define.ts'
 
 // This file sits four levels below the repository root
@@ -28,10 +27,9 @@ export default defineConfig({
     maxWorkers: 4,
     environment: 'node',
     include: [
-      'packages/shared/{utils,i18n,cache,settings,assets,pt,sanitize,contracts,seo}/tests/unit/**/*.test.{ts,tsx}',
+      'packages/shared/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts,seo}/tests/unit/**/*.test.{ts,tsx}',
     ],
-    // DuckDB native-engine files run in the dedicated `duckdb` project.
-    exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('packages/server/tests')],
+    exclude: [...configDefaults.exclude],
     // Package specifiers don't resolve from the repo root (the root
     // package.json declares no @kobato/test link), so pin the file path —
     // '@kobato/test/setup/unit.ts' through @kobato/test's exports map.

@@ -10,3 +10,8 @@ export function resolveEnginePath(configured: string, fallbackName: string): str
 export function resolveDatabasePath(): string {
   return resolveEnginePath(serverConfig.storage.database, 'kobato.db')
 }
+
+/** The DuckDB analytics sidecar path (also a `:memory:` pass-through). */
+export function resolveAnalyticsPath(): string {
+  return resolveEnginePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
+}

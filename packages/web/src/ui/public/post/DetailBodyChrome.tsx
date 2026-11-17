@@ -1,4 +1,4 @@
-import type { CommentFormUser, DraftMarker } from '@kobato/contracts/types/catalog.ts'
+import type { CommentFormUser, DraftMarker } from '@kobato/contracts/catalog.ts'
 import type { DetailPageComments } from '@kobato/contracts/types/comments.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { SiteIdentitySettings } from '@kobato/settings/types.ts'

@@ -26,7 +26,7 @@ export default defineConfig({
     maxWorkers: 4,
     environment: 'node',
     include: [
-      'packages/shared/{utils,i18n,cache,settings,assets,pt,sanitize,contracts,seo}/tests/snaps/**/*.test.{ts,tsx}',
+      'packages/shared/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts,seo}/tests/snaps/**/*.test.{ts,tsx}',
     ],
     // Package specifiers don't resolve from the repo root (the root
     // package.json declares no @kobato/test link), so pin the file path —

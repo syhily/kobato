@@ -1,5 +1,5 @@
+import type { Tag } from '@kobato/contracts/catalog.ts'
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
-import type { Tag } from '@kobato/contracts/types/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { TagRow } from '@kobato/db/types.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'

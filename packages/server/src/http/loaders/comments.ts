@@ -1,4 +1,4 @@
-import type { CommentFormUser } from '@kobato/contracts/types/catalog.ts'
+import type { CommentFormUser } from '@kobato/contracts/catalog.ts'
 import type { DetailPageComments } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'

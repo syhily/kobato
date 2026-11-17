@@ -1,6 +1,6 @@
 # Backup domain conventions
 
-- Gzipped tar of exactly three payloads: `kobato.db` (content), `analytics.duckdb` (analytics sidecar), env-converged `kobato.config.json`; the disposable `<storage.data>/cache` tree is NOT included. A sidecar carrying the legacy named-column `access_log` schema is converted to `access_events` by the boot-time blob migration (`packages/server/src/domains/analytics/services/blob-migration.ts`, flag `system.analytics-blob-migration`) on the first boot after restore.
+- Gzipped tar of exactly three payloads: `kobato.db` (content), `analytics.duckdb` (analytics sidecar), env-converged `kobato.config.json`; the disposable `<storage.data>/cache` tree is NOT included. A sidecar carrying the legacy named-column `access_log` schema is converted to `access_events` by the boot-time blob migration (`@kobato/db/duckdb/blob-migration.ts`, flag `system.analytics-blob-migration`) on the first boot after restore.
 
 ## Encryption
 

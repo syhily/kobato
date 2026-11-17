@@ -20,3 +20,8 @@ export function idFromString(value: string | number): number {
   }
   return parsed
 }
+
+// Render a numeric/string id as a plain decimal string (the wire id shape).
+export function idStr(value: number | string): string {
+  return String(value)
+}

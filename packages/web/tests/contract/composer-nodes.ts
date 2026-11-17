@@ -1,4 +1,4 @@
-import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/pt/node-whitelist.ts'
+import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/lexical/node-whitelist.ts'
 
 // Composer-mounted node-set manifests — a TEST-ONLY helper (no production
 // consumer): the real composers mount their node lists directly, and the

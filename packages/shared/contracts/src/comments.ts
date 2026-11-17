@@ -2,7 +2,7 @@ import type { CommentAndUser } from '@kobato/contracts/types/comments.ts'
 import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 
 import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
-import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
 import { z } from 'zod'
 
 // Welcome-dashboard moderation inbox row. Same shape for both queues —

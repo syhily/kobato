@@ -599,7 +599,7 @@ export const uiMessagesZhTW = {
   'admin.settings.content.sort.dir.asc': '最舊優先（asc）',
   'admin.settings.content.footnotes.title': '腳註彙總標題',
   'admin.settings.content.footnotes.description':
-    'Portable Text 頁面文末腳註清單上方的標題，預設為「尾聲禮記」。文章頁一律使用預設標題，不受此設定影響。',
+    'Lexical 頁面文末腳註清單上方的標題，預設為「尾聲禮記」。文章頁一律使用預設標題，不受此設定影響。',
   'admin.settings.content.footnotes.label': '標題文案',
   'admin.settings.comments.pagination.title': '留言分頁',
   'admin.settings.comments.pagination.description': '控制文章頁面下方的留言清單載入行為。',

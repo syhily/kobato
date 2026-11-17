@@ -1,8 +1,8 @@
 import type { DeviceEnvBeacon } from '@kobato/contracts/analytics.ts'
-import type { DeviceEnvClientRow } from '@kobato/server/domains/analytics/services/device-env.ts'
+import type { DeviceEnvClientRow } from '@kobato/db/duckdb/device-env.ts'
 
 import { type DuckDBConnection } from '@duckdb/node-api'
-import { appendDeviceEnvClientRows } from '@kobato/server/domains/analytics/services/device-env.ts'
+import { appendDeviceEnvClientRows, existingDeviceEnvEventIds } from '@kobato/db/duckdb/device-env.ts'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
 import {
   deserializeDeadLetterJsonLine,
@@ -95,13 +95,7 @@ async function filterAlreadyStored(
   if (rows.length === 0) {
     return rows
   }
-  const uniqueIds = [...new Set(rows.map((row) => row.eventId))]
-  const placeholders = uniqueIds.map(() => '?').join(', ')
-  const result = await writer.runAndReadAll(
-    `SELECT event_id::VARCHAR AS id FROM device_env_client WHERE event_id IN (${placeholders})`,
-    uniqueIds,
-  )
-  const stored = new Set(result.getRowObjects().map((row) => String(row.id)))
+  const stored = await existingDeviceEnvEventIds(writer, [...new Set(rows.map((row) => row.eventId))])
 
   const fresh: DeviceEnvClientRow[] = []
   const seen = new Set<string>()

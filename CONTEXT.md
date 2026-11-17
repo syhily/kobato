@@ -27,9 +27,12 @@ _Avoid_: post draft service / page draft service (dual tracks)
 **Scheduled**: published with a future `publishedAt` — not live, 404 until its time.
 _Avoid_: future-dated, timed
 
-**Lexical**: the storage format for post/page/comment bodies (`packages/shared/pt/src/`); public
+**Lexical**: the storage format for post/page/comment bodies (`packages/shared/lexical/src/`); public
 bodies render the saved `bodyHtml` projection.
-_Avoid_: MDX, InklingDocument (vendor experiment, not the shipping store)
+_Avoid_: MDX, Portable Text, PT, InklingDocument (vendor experiment, not the shipping store)
+
+**Inkling**: the rich-text editing experience for Lexical documents.
+_Avoid_: using Lexical as the name of the editor product
 
 **Revision**: one row in the content revision pipeline: every draft save adds a revision with a
 monotonic `revisionNo`; publishing points the entity's `publishedRevisionId` at one.
@@ -168,7 +171,7 @@ _Avoid_: `viewer.userId` (the field is `id`)
 
 ## Structure
 
-**Core domain**: one of the language-backed concepts — `content`, `posts`, `pages`, `pt`, `settings` —
+**Core domain**: one of the language-backed concepts — `content`, `posts`, `pages`, `settings` —
 whose terms appear here; changing a core concept (e.g. the Live gate) changes the language itself.
 _Avoid_: treating every folder in `domains/` as equally "core"
 

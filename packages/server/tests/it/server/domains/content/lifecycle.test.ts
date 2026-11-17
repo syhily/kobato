@@ -3,7 +3,7 @@ import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/d
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import {
@@ -22,13 +22,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // the SUT's declared seam. image-sync is spied to force one rejection no real state produces.
 vi.mock('@kobato/server/domains/content/services/image-sync.ts', { spy: true })
 vi.mock('@kobato/server/domains/content/revisions.ts', { spy: true })
-vi.mock('@kobato/server/infra/pt/lexical-projection.ts', { spy: true })
+vi.mock('@kobato/server/infra/lexical/lexical-projection.ts', { spy: true })
 
 const { loadDraftPreviewBySlug, saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
 const { syncLibraryImageBlocks } = await import('@kobato/server/domains/content/services/image-sync.ts')
 const { findLatestRevision } = await import('@kobato/server/domains/content/revisions.ts')
-const { computeBodyProjections } = await import('@kobato/server/infra/pt/lexical-projection.ts')
-const { canonicalizeLexicalEditorState } = await import('@kobato/server/domains/pt/services/lexical-canonicalize.ts')
+const { computeBodyProjections } = await import('@kobato/server/infra/lexical/lexical-projection.ts')
+const { canonicalizeLexicalEditorState } =
+  await import('@kobato/server/domains/content/services/lexical/canonicalize.ts')
 
 const db = getTestDb()
 
@@ -510,7 +511,7 @@ describe('content/lifecycle — host card projections', () => {
     expect(rows[0]!.bodyHtml).toContain('class="aplayer"')
     expect(rows[0]!.bodyHtml).toContain('data-name="Song"')
     expect(rows[0]!.bodyHtml).toContain('data-url="/storage/music/song.mp3"')
-    // Feed: solution unwraps, two-column flattens, music renders the PT rssMode figure.
+    // Feed: solution unwraps, two-column flattens, music renders the rssMode figure.
     expect(rows[0]!.bodyHtmlFeed).toContain('<p>答案 42</p>')
     expect(rows[0]!.bodyHtmlFeed).not.toContain('solution-begin')
     expect(rows[0]!.bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')

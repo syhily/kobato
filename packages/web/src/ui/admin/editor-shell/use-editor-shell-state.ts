@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type {
   EntityLike,
   PublishState,
@@ -7,7 +7,7 @@ import type {
   UseEditorShellStateOutput,
 } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/pt/schema.ts'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/lexical/schema.ts'
 import { useCreateDraft } from '@kobato/web/ui/admin/editor-shell/drafts/use-create-draft.ts'
 import {
   deriveBaselineRevision,

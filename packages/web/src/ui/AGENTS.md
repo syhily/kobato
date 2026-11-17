@@ -14,7 +14,11 @@
 - **`ui/shared/`** — used by BOTH the public chrome and the admin shell (currently `notifications/` — the global drawer opened
   from the admin sidebar and the public user menu, whose lists stay live through the `use-now.ts` minute clock;
   `auth/use-logout.ts` — POST + CSRF logout followed by a hard navigation so client caches drop with the session;
-  `music/lrc.ts` — the LRC lyric parser shared by the public music player and the admin lyrics display).
+  `music/lrc.ts` — the LRC lyric parser shared by the public music player and the admin lyrics display;
+  `use-debounced-search.ts` — the debounced search-input hook (trailing-edge window, ref-stable `onChange`,
+  external-`initial` reset for URL back/forward) behind the admin list searches, the music picker, and the
+  notification recipient search). Modules here NEVER import `ui/admin/*` or `ui/public/*` — that direction would
+  invert the tier; a hook both sides need belongs here, not in `admin/shared/`.
   `notification-meta.ts` owns kind/source → icon, `kindLabelId` ids, and `formatNotificationTime({ locale, timeZone, now })`
   — the consumer resolves the id with its own `t`. Anything only one side uses stays in that tier.
 - **`ui/admin/`** — grouped by domain, plus `shared/` and `shell/`.
@@ -46,7 +50,7 @@
     the active catalog does not know the key — a raw catalog key never reaches the editor), `use-focus-mode` (the
     writing-focus preference toggle), `cards/menu-matches` (the slash-menu matcher constants over the shared
     specs), and `cards/` — the host-card assemblies (solution / two-column / music-player): each module builds its
-    base node class from the shared spec (`@kobato/pt/cards/`) through the `@kobato/inkling` barrel's
+    base node class from the shared spec (`@kobato/lexical/cards/`) through the `@kobato/inkling` barrel's
     `generateDecoratorNode` — a DISTINCT class object from the server projection's, since client and server each
     assemble their own class from the shared spec — then registers it via top-level `defineCard`. Decorate chrome
     and `exportDOM` markup share the spec's class/copy constants; `packages/web/tests/unit/ui/admin/editor/cards/`
@@ -121,7 +125,7 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
 
 ## Content editors
 
-- Storage: Lexical editor states (`@kobato/pt/schema` posts/pages, `@kobato/pt/comment-schema`
+- Storage: Lexical editor states (`@kobato/lexical/schema` posts/pages, `@kobato/lexical/comment-schema`
   comments). The friends grid is NOT a body block — it is the `page.show_friends` toggle.
 - Public SSR: bodies render the saved `bodyHtml` projection (NULL falls back to an on-the-fly headless projection
   server-side — `packages/server/AGENTS.md` → Content) through `DetailBodyChrome` and the hooks above; heading anchor ids

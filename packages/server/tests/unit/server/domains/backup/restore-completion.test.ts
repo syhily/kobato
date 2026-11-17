@@ -26,20 +26,18 @@ import { createRestoreCompletion } from '@kobato/server/domains/backup/restore-c
 function makeDeps(): RestoreCompletionDeps & {
   reopenDatabase: ReturnType<typeof vi.fn>
   getDb: ReturnType<typeof vi.fn>
-  getDatabaseHandle: ReturnType<typeof vi.fn>
+  dbRun: ReturnType<typeof vi.fn>
   wipeCache: ReturnType<typeof vi.fn>
   notifyCacheWipeFailed: ReturnType<typeof vi.fn>
-  clientExec: ReturnType<typeof vi.fn>
 } {
-  const clientExec = vi.fn()
+  const dbRun = vi.fn()
   return {
-    reopenDatabase: vi.fn().mockResolvedValue({ db: {}, client: { exec: clientExec } }),
-    getDb: vi.fn().mockReturnValue({ id: 'db' }),
-    getDatabaseHandle: vi.fn().mockReturnValue({ client: { exec: clientExec } }),
+    reopenDatabase: vi.fn().mockResolvedValue({ db: {}, client: { exec: vi.fn() } }),
+    getDb: vi.fn().mockReturnValue({ run: dbRun }),
     migrateDatabase: mockMigrateDatabase,
     wipeCache: vi.fn().mockResolvedValue(undefined),
     notifyCacheWipeFailed: vi.fn<() => void>(),
-    clientExec,
+    dbRun,
   }
 }
 
@@ -56,7 +54,7 @@ describe('backup/restore-completion', () => {
     await createRestoreCompletion(deps)(true, undefined)
 
     expect(mockMigrateDatabase).toHaveBeenCalledTimes(1)
-    expect(deps.clientExec).toHaveBeenCalledWith('ANALYZE')
+    expect(deps.dbRun).toHaveBeenCalledTimes(1)
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
     expect(deps.wipeCache).toHaveBeenCalledTimes(1)
     expect(deps.notifyCacheWipeFailed).not.toHaveBeenCalled()

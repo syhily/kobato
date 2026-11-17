@@ -1,7 +1,7 @@
 /*
- * Shared token partial, NOT a standalone Tailwind entry. Imported by the two
- * real entries, `public.css` and `admin.css`, each of which owns its own
- * `@import 'tailwindcss' source(none)` and `@source` scope. Content typography
+ * Shared token partial, NOT a standalone Tailwind entry. Imported by UI's
+ * `ui.css` and the consuming `public.css` / `admin.css` surface entries, each
+ * of which owns its compile and package-local source graph. Content typography
  * lives in `./typeset.css`.
  */
 

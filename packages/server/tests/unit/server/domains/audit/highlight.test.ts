@@ -7,7 +7,7 @@ const createHighlighterMock = vi.fn(() =>
   }),
 )
 
-vi.mock('@kobato/server/infra/pt/shiki.ts', () => ({
+vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
   SHIKI_THEMES: { light: 'solarized-light', dark: 'solarized-dark' },
   createShikiHighlighter: createHighlighterMock,
 }))

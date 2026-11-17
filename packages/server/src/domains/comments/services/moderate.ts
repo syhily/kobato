@@ -1,5 +1,5 @@
 import type { Database } from '@kobato/db/database.ts'
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 

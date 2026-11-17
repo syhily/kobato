@@ -1,4 +1,4 @@
-import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace'
 import type { Compilable } from 'kysely'

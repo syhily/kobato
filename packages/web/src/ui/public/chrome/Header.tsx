@@ -1,7 +1,7 @@
 import type { SocialNetwork } from '@kobato/settings/socials.ts'
 import type { NavigationItem } from '@kobato/settings/types.ts'
 
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
 import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand.tsx'

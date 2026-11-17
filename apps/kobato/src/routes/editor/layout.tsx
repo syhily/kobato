@@ -7,10 +7,6 @@ import { data, Outlet, redirect } from 'react-router'
 import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/layout'
-import '@kobato/pt/styles/cards.css'
-import '@kobato/ui/styles/ui.css'
-import '@kobato/web/styles/admin.css'
-
 import '@/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }

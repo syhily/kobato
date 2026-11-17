@@ -1,9 +1,10 @@
 # App style-entry conventions
 
-`apps/kobato/src/styles/` owns only app-route Tailwind compilation and app-specific CSS. Every package compiles and scans its own stylesheet; cross-package `@source` is forbidden by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts`.
+`apps/kobato/src/styles/` owns the app's two surface Tailwind compilations and app-specific CSS. Every package owns only its own `@source` partial; a surface runs exactly one Tailwind compile that composes those partials via CSS `@import`. Cross-package `@source` is forbidden by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts`, which also pins that partials carry no `@import 'tailwindcss'` and that no module imports them directly.
 
-- `public.css` scans `routes/public` and `root.tsx`, and imports local `cursors.css`. `admin.css` scans admin/auth/editor routes and `root.tsx`.
-- Both entries use `@kobato/ui/styles/tailwind.css` as a `reference` compile contract, so token rules are emitted only by UI's own `ui.css`.
-- Public composition imports UI `ui.css`, shared `cards.css`, app `public.css`, and web `public.css` through `BaseLayout`. Admin/auth/editor composition imports UI, shared cards, web `admin.css`, and app `admin.css` independently.
-- The root public-error lazy branch loads the same public entries in parallel with `BaseLayout`.
-- Add route-local classes to the owning app entry. Never add downstream package paths here; extend that package's own entry instead.
+- `admin.css` is the admin/auth/editor surface entry: after its Tailwind import and UI reference it composes `@kobato/lexical/styles/cards.css` + `@kobato/web/styles/admin.css`, then scans `routes/admin`, `routes/auth`, `routes/editor`, and `root.tsx`. `public.css` composes cards + `@kobato/web/styles/public.css` + local `cursors.css`, and scans `routes/public` and `root.tsx`.
+- One compile per surface is the cascade contract: base utilities and their responsive variants (`hidden` vs `lg:flex`) that once lived in separate cards/web/app sheets are now sorted by a single generator instead of racing across independent stylesheet links, where a later base utility silently beat an earlier responsive one.
+- Both entries use `@kobato/ui/styles/tailwind.css` as a `reference` compile contract, so tokens and the UI-owned `dark` variant (`dark-variant.css`) affect the compile while UI emits rules only from its own `ui.css`. Partials never re-declare `@custom-variant`.
+- UI `ui.css` is the document's single global entry: `root.tsx` imports it eagerly, once per document. React Router emits the root route's stylesheet links ahead of every nested route sheet, so UI's generic utilities (`.p-2`, `.hidden`, …) always precede the surface sheets — an overriding product rule wins the cascade on source order, never `!important`. Never add ui.css to a route module or lazy branch; `apps/kobato/tests/arch/tailwind-source-ownership.test.ts` pins the invariant.
+- Route modules and components import only `@/styles/admin.css` or `@/styles/public.css` — never cards.css, web partials, or ui.css. Root's public-error lazy branch loads `@/styles/public.css` in parallel with `BaseLayout` (ui.css already rides the root); `BaseLayout` itself carries no stylesheet import.
+- Add route-local classes to the owning app entry. Never add downstream package paths here; extend that package's own partial instead.

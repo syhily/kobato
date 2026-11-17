@@ -36,13 +36,16 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
+// UI's design tokens, base styles and primitive utilities are the document's FIRST stylesheet: React Router
+// emits the root route's links ahead of every nested route sheet, so generic UI utilities can never outrun
+// the product sheets (cards / web / app) that deliberately override them. Eager — root is SSR-critical and
+// must not lazy its CSS. Never re-import ui.css at route level; the single entry lives here.
+import '@kobato/ui/styles/ui.css'
+
 const PublicErrorLayout = lazy(() =>
-  Promise.all([
-    import('@kobato/pt/styles/cards.css'),
-    import('@kobato/ui/styles/ui.css'),
-    import('@/styles/public.css'),
-    import('@kobato/web/ui/public/chrome/BaseLayout.tsx'),
-  ]).then(([, , , module]) => ({ default: module.BaseLayout })),
+  Promise.all([import('@/styles/public.css'), import('@kobato/web/ui/public/chrome/BaseLayout.tsx')]).then(
+    ([, module]) => ({ default: module.BaseLayout }),
+  ),
 )
 
 import type { Route } from './+types/root'

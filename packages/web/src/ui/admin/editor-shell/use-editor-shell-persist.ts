@@ -1,5 +1,5 @@
 import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { LocalDraftConfig } from '@kobato/web/ui/admin/editor-shell/drafts/use-local-draft.ts'
 import type {
   ConflictFreezeSource,
@@ -10,8 +10,8 @@ import type {
 } from '@kobato/web/ui/admin/editor-shell/editor-shell-types.ts'
 import type { NavigateFunction } from 'react-router'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/pt/equivalence.ts'
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/pt/schema.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/lexical/equivalence.ts'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/lexical/schema.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import {
   useAutosave,

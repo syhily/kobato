@@ -1,5 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
+import { analyzeDatabase } from '@kobato/db/operations/maintenance.ts'
 import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@kobato/server/domains/backup/services/restore.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { restartServer } from '@kobato/server/infra/lifecycle.ts'
@@ -15,10 +16,8 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 export interface RestoreCompletionDeps {
   /** Idempotent reopen of BOTH engines on the (possibly swapped) files. */
   reopenDatabase(): Promise<DatabaseHandle>
-  /** The live content-db handle for the post-restore migration. */
+  /** The live content-db handle (post-restore migration + ANALYZE). */
   getDb(): Database
-  /** The live handle whose sqlite client runs the post-bulk-load ANALYZE. */
-  getDatabaseHandle(): DatabaseHandle
   /** Run package-owned content migrations through the composition root's adapters. */
   migrateDatabase(db: Database): Promise<void>
   /** Drop the restored-instance file cache; may reject with a partial-wipe failure. */
@@ -77,7 +76,7 @@ export function createRestoreCompletion(
         await deps.migrateDatabase(deps.getDb())
         log.info('Database migrations completed after restore')
         // Bulk-loaded file — refresh planner statistics.
-        deps.getDatabaseHandle().client.exec('ANALYZE')
+        analyzeDatabase(deps.getDb())
       } catch (migrateErr) {
         log.error('Database migrations failed after restore', {
           err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr),

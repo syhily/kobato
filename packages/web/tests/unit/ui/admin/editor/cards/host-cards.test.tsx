@@ -1,7 +1,7 @@
 // The WYSIWYG parity gate for the host cards: each card's decorate chrome
 // (what the canvas shows) must match the exportDOM markup the shared spec
 // renderers produce for the save-time projection (`body_html`). Both sides
-// derive from the same class/copy constants in `@kobato/pt/cards/`; this
+// derive from the same class/copy constants in `@kobato/lexical/cards/`; this
 // file proves the assembly by rendering the React chrome
 // (renderToStaticMarkup) and the shared renderers (a stub RenderContext over
 // jsdom) and comparing the DOM-normalized markup.
@@ -22,8 +22,8 @@ import type { ReactElement } from 'react'
 
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { createHeadlessEditor } from '@kobato/inkling'
-import { MUSIC_PLAYER_META_KEYS } from '@kobato/pt/artifacts.ts'
-import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/pt/cards/card-html.ts'
+import { MUSIC_PLAYER_META_KEYS } from '@kobato/lexical/artifacts.ts'
+import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/lexical/cards/card-html.ts'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   MUSIC_PLAYER_CARD_PROPERTIES,
@@ -31,20 +31,20 @@ import {
   musicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
-} from '@kobato/pt/cards/music-player.ts'
+} from '@kobato/lexical/cards/music-player.ts'
 import {
   renderSolutionCard,
   SOLUTION_CARD_CLASSES,
   SOLUTION_CARD_PROPERTIES,
   SOLUTION_NESTED_EDITOR,
-} from '@kobato/pt/cards/solution.ts'
+} from '@kobato/lexical/cards/solution.ts'
 import {
   renderTwoColumnCard,
   TWO_COLUMN_CARD_CLASSES,
   TWO_COLUMN_CARD_PROPERTIES,
   TWO_COLUMN_NESTED_EDITORS,
-} from '@kobato/pt/cards/two-column.ts'
-import { MUSIC_PLAYER_NODE_TYPE, SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@kobato/pt/node-whitelist.ts'
+} from '@kobato/lexical/cards/two-column.ts'
+import { MUSIC_PLAYER_NODE_TYPE, SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@kobato/lexical/node-whitelist.ts'
 import { makeAdminMusic } from '@kobato/test/catalog.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { tZhCN, makeTranslator } from '@kobato/test/i18n.ts'

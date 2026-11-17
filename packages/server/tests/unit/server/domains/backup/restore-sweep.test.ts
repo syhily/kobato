@@ -7,11 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // logger is silenced; infra seams this path never touches are mocked away.
 vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => ':memory:',
-  isInMemoryPath: (path: string) => path === ':memory:',
-}))
-
-vi.mock('@kobato/server/infra/analytics/duckdb.ts', () => ({
   resolveAnalyticsPath: () => ':memory:',
+  isInMemoryPath: (path: string) => path === ':memory:',
 }))
 
 vi.mock('@kobato/server/infra/logger.ts', () => ({

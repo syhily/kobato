@@ -9,11 +9,8 @@ const paths = vi.hoisted(() => ({ db: '', analytics: '' }))
 
 vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => paths.db,
-  isInMemoryPath: (path: string) => path === ':memory:',
-}))
-
-vi.mock('@kobato/server/infra/analytics/duckdb.ts', () => ({
   resolveAnalyticsPath: () => paths.analytics,
+  isInMemoryPath: (path: string) => path === ':memory:',
 }))
 
 vi.mock('@kobato/server/infra/logger.ts', () => ({

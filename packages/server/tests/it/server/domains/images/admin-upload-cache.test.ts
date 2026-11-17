@@ -257,7 +257,7 @@ describe('images/services/resolve — resolveImageRefs', () => {
 })
 
 describe('images/services/enhance — resolveImageMetaBySources', () => {
-  it('projects resolved refs to the sparse PT-block meta (dims + thumbhash, no publicUrl)', async () => {
+  it('projects resolved refs to the sparse Lexical-block meta (dims + thumbhash, no publicUrl)', async () => {
     await seedImage({ storagePath: 'images/a.jpg', width: 10, height: 20, thumbhash: 'th' })
     const m = await enhance.resolveImageMetaBySources(db, ['https://assets.example.com/images/a.jpg'])
     expect(m.get('https://assets.example.com/images/a.jpg')).toEqual({ width: 10, height: 20, thumbhash: 'th' })

@@ -1,4 +1,4 @@
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
 // Mock fs/promises for dead-letter file I/O; the DuckDB sidecar is real
 // and adopted into the lifecycle engine.

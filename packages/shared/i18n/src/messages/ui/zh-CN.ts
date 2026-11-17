@@ -597,7 +597,7 @@ export const uiMessagesZhCN = {
   'admin.settings.content.sort.dir.asc': '最旧优先（asc）',
   'admin.settings.content.footnotes.title': '脚注汇总标题',
   'admin.settings.content.footnotes.description':
-    'Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。文章页始终使用默认标题，不受此设置影响。',
+    'Lexical 页面文末脚注列表上方的标题，默认为「尾声礼记」。文章页始终使用默认标题，不受此设置影响。',
   'admin.settings.content.footnotes.label': '标题文案',
   'admin.settings.comments.pagination.title': '评论分页',
   'admin.settings.comments.pagination.description': '控制文章页面下方的评论列表加载行为。',

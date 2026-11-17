@@ -1,5 +1,5 @@
 // The `solution` host card's editing-side assembly. The base node class is built
-// from the shared spec (`@kobato/pt/cards/solution`) through the `.` entry's
+// from the shared spec (`@kobato/lexical/cards/solution`) through the `.` entry's
 // `generateDecoratorNode` — a DISTINCT class object from the server projection's
 // (each dist entry ships its own Lexical copy, so the `defineCard` instanceof gate
 // demands the entry-local factory); the spec module keeps both sides byte-identical
@@ -27,8 +27,8 @@ import {
   SOLUTION_CARD_CLASSES,
   SOLUTION_CARD_PROPERTIES,
   SOLUTION_NESTED_EDITOR,
-} from '@kobato/pt/cards/solution.ts'
-import { SOLUTION_NODE_TYPE } from '@kobato/pt/node-whitelist.ts'
+} from '@kobato/lexical/cards/solution.ts'
+import { SOLUTION_NODE_TYPE } from '@kobato/lexical/node-whitelist.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { inklingHostCardMatches } from '@kobato/web/ui/admin/editor/cards/menu-matches.ts'
 import { ListTreeIcon } from 'lucide-react'

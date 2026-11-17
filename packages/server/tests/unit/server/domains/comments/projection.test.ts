@@ -1,6 +1,6 @@
 import type { CommentAndUser, CommentItem } from '@kobato/contracts/types/comments.ts'
 
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/pt/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/lexical/comment-schema.ts'
 import {
   asAdminCommentsWire,
   asCommentItemsWire,

@@ -5,7 +5,7 @@ import { act, renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The hydration twin of the PT CodeBlock chrome: exported
+// The hydration twin of the inkling CodeBlock chrome: exported
 // `pre > code[data-code]` markup gets a wrapper + language label + copy
 // button injected after mount.
 

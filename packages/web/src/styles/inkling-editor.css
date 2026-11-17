@@ -112,7 +112,7 @@
 }
 
 /* Host-card token restore. Host cards (KOBATO_HOST_CARD_NODE_TYPES in
-   @kobato/pt/node-whitelist) render kobato-chrome components whose
+   @kobato/lexical/node-whitelist) render kobato-chrome components whose
    utilities resolve var(--text-*) / calc(var(--spacing) * N) at RUNTIME, and
    inkling's scoped theme re-declares that environment with 10px-root values.
    Re-declaring the kobato scale on the card chrome restores the public page's

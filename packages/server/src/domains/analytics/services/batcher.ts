@@ -1,9 +1,9 @@
-import type { DeviceEnvServerRow } from '@kobato/server/domains/analytics/services/device-env.ts'
-import type { EnrichedAccessEvent } from '@kobato/server/domains/analytics/types.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
+import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
 
 import { type DuckDBConnection } from '@duckdb/node-api'
-import { appendAccessEvents } from '@kobato/server/domains/analytics/services/access-log.ts'
-import { appendDeviceEnvServerRows } from '@kobato/server/domains/analytics/services/device-env.ts'
+import { appendAccessEvents } from '@kobato/db/duckdb/access-events.ts'
+import { appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env.ts'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
 import {
   deserializeDeadLetterJsonLine,

@@ -15,19 +15,28 @@
     "./migrate.ts": "./src/migrate.ts",
     "./target.ts": "./src/target.ts",
     "./types.ts": "./src/types.ts",
+    "./duckdb/*": "./src/duckdb/*",
     "./operations/*": "./src/operations/*",
     "./schema/*": "./src/schema/*",
     "./drizzle/*": "./drizzle/*"
   },
+  "scripts": {
+    "db:gen": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
   "devDependencies": {
+    "@duckdb/node-api": "catalog:",
     "@kobato/contracts": "workspace:*",
     "@kobato/db": "workspace:*",
-    "@kobato/pt": "workspace:*",
+    "@kobato/lexical": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/utils": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
+    "drizzle-kit": "catalog:",
     "drizzle-orm": "catalog:",
+    "kysely": "catalog:",
     "vitest": "catalog:"
   }
 }

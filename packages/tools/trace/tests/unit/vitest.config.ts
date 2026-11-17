@@ -1,4 +1,3 @@
-import { duckdbTestFilesUnder } from '@kobato/test/duckdb-files.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
 import { configDefaults, defineConfig } from 'vitest/config'
 
@@ -17,8 +16,7 @@ export default defineConfig({
     maxWorkers: 4,
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],
-    // DuckDB native-engine files run in the dedicated `duckdb` project.
-    exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('packages/server/tests')],
+    exclude: [...configDefaults.exclude],
     setupFiles: ['@kobato/test/setup/unit.ts'],
     testTimeout: 10_000,
   },

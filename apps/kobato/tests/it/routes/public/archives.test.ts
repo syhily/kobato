@@ -1,4 +1,4 @@
-import type { ListingPostCardWithMetadata } from '@kobato/contracts/types/catalog.ts'
+import type { ListingPostCardWithMetadata } from '@kobato/contracts/catalog.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'

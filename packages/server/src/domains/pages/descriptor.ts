@@ -1,5 +1,5 @@
+import type { Page } from '@kobato/contracts/catalog.ts'
 import type { AdminPageDto } from '@kobato/contracts/pages.ts'
-import type { Page } from '@kobato/contracts/types/catalog.ts'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor.ts'
 

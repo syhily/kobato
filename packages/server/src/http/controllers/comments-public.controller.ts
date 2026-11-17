@@ -1,7 +1,7 @@
 import type { CommentReq } from '@kobato/contracts/types/comments.ts'
 
 import { commentItemDto, ownCommentMutationDto } from '@kobato/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
 import { commentReplySchema, commentRidSchema } from '@kobato/server/domains/comments/schema.ts'

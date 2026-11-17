@@ -1,6 +1,6 @@
 /**
  * The nine leaf packages of the former `@kobato/shared`
- * (`packages/shared/{utils,i18n,cache,settings,assets,pt,sanitize,contracts,seo}`)
+ * (`packages/shared/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts,seo}`)
  * are UI-runtime-free: they must never carry React into either bundle. The
  * product settings contexts/hooks live in `@kobato/web`
  * (`@kobato/web/client/settings/blog-settings-context`); this scan pins that
@@ -21,7 +21,7 @@ const SHARED_SRC_ROOTS = [
   'packages/shared/cache/src',
   'packages/shared/settings/src',
   'packages/shared/assets/src',
-  'packages/shared/pt/src',
+  'packages/shared/lexical/src',
   'packages/shared/sanitize/src',
   'packages/shared/contracts/src',
   'packages/shared/seo/src',

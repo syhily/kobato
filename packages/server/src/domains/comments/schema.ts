@@ -1,4 +1,4 @@
-import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/safe-url.ts'
 import { honeypotField } from '@kobato/utils/schema.ts'
 import { z } from 'zod'

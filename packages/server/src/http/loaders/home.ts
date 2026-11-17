@@ -1,5 +1,5 @@
+import type { ClientPost, ListingPostCard } from '@kobato/contracts/catalog.ts'
 import type { HomeExtra } from '@kobato/contracts/content.ts'
-import type { ClientPost, ListingPostCard } from '@kobato/contracts/types/catalog.ts'
 import type { ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
@@ -14,7 +14,7 @@ import { listingLoader } from '@kobato/server/http/loaders/listing.ts'
 import { selectSidebarTags, sidebarSelectionSeed } from '@kobato/server/http/loaders/sidebar-select.ts'
 import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { isSidebarWidgetEnabled } from '@kobato/settings/utils.ts'
+import { isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
 import { formatLocalDate } from '@kobato/utils/formatter.ts'
 
 // Tail-merge guard: an orphan last page (< pageSize − 2 posts) merges into

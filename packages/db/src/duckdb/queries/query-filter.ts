@@ -1,0 +1,76 @@
+import type { RawBuilder } from 'kysely'
+
+import {
+  METRIC_TYPES,
+  computeDateRange,
+  type AnalyticsQuery,
+  type DateRange,
+  type ResolvedAnalyticsQuery,
+} from '@kobato/contracts/analytics.ts'
+import { index1Of } from '@kobato/db/duckdb/access-events.ts'
+import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions.ts'
+import { sql } from 'kysely'
+
+/**
+ * The shared analytics WHERE builder: every dashboard query filters
+ * `is_bot = FALSE`, the resolved [startAt, endAt) range (unix seconds,
+ * bound through `to_timestamp(?)`), optional entity scoping (`index1`)
+ * and per-dimension equality filters (comma-separated → `IN (...)`).
+ * Geo-unknown events (country `blob7 = ''`) are excluded unless the query
+ * opts in via `includeUnknown` — writes always keep them. User values
+ * travel as bound parameters only.
+ *
+ * Base columns are qualified with `access_events.` so the builder is also
+ * valid on the env-dimension metric query, which INNER JOINs
+ * `device_env_client` (both share `event_id`/`timestamp`).
+ */
+
+export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<boolean> {
+  const filters: RawBuilder<boolean>[] = [
+    sql<boolean>`${sql.ref('access_events.is_bot')} = FALSE`,
+    sql<boolean>`${sql.ref('access_events.timestamp')} >= to_timestamp(${query.range.startAt})`,
+    sql<boolean>`${sql.ref('access_events.timestamp')} < to_timestamp(${query.range.endAt})`,
+  ]
+
+  if (query.entityType && query.entityId !== undefined) {
+    filters.push(sql<boolean>`${sql.ref('access_events.index1')} = ${index1Of(query.entityType, query.entityId)}`)
+  }
+
+  if (query.includeUnknown !== true) {
+    filters.push(sql<boolean>`${sql.ref('access_events.blob7')} <> ''`)
+  }
+
+  for (const type of METRIC_TYPES) {
+    const value = query[type]
+    if (typeof value !== 'string' || value === '') {
+      continue
+    }
+    const values = value.split(',').filter(Boolean)
+    if (values.length > 0) {
+      filters.push(dimensionWhere(METRIC_DIMENSIONS[type], values))
+    }
+  }
+
+  return sql<boolean>`${sql.join(filters, sql` and `)}`
+}
+
+/** Range resolution: an explicit valid [startAt, endAt) pair wins; otherwise the preset (default last-7d). */
+export function resolveAnalyticsRange(query: Pick<AnalyticsQuery, 'preset' | 'startAt' | 'endAt'>): DateRange {
+  if (query.startAt !== undefined && query.endAt !== undefined && query.endAt > query.startAt) {
+    return { startAt: query.startAt, endAt: query.endAt }
+  }
+  return computeDateRange(query.preset ?? 'last-7d')
+}
+
+export function isValidTimezone(tz: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz }).resolvedOptions()
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function getSafeTimezone(tz: string): string {
+  return isValidTimezone(tz) ? tz : 'Etc/UTC'
+}

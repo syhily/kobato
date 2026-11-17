@@ -3,7 +3,7 @@ import type { EditorAdapterConfig } from '@kobato/web/ui/admin/editor-shell/make
 import type { PageMetaDraft, UpsertPageMetaInput, UpsertPageMetaOutput } from '@kobato/web/ui/admin/pages/page-meta.ts'
 import type { NavigateFunction } from 'react-router'
 
-import { lexicalEditorStateSchema } from '@kobato/pt/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'
 import { EditorScreen } from '@kobato/web/ui/admin/editor-shell/EditorScreen.tsx'

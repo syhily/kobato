@@ -28,7 +28,7 @@ export function safeMediaSrc(value: string | null | undefined): string | undefin
 // a static fallback card); this hook upgrades every mount point with a URL to the real player
 // after hydration. Mount points without `data-url` (missing music meta at save time) keep
 // their placeholder. The mount-point markup comes from the shared card spec
-// (`@kobato/pt/cards/music-player`), and the fallback mirrors the player's paused
+// (`@kobato/lexical/cards/music-player`), and the fallback mirrors the player's paused
 // initial render so the swap does not shift layout.
 //
 // `bodyHtml` is the effect's re-scan key: the container div is REUSED across client

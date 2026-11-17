@@ -1,14 +1,11 @@
-import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@kobato/server/domains/analytics/services/device-env.ts'
-import type { EnrichedAccessEvent } from '@kobato/server/domains/analytics/types.ts'
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
 
-import { appendAccessEvents } from '@kobato/server/domains/analytics/services/access-log.ts'
-import {
-  appendDeviceEnvClientRows,
-  appendDeviceEnvServerRows,
-} from '@kobato/server/domains/analytics/services/device-env.ts'
-import { ANALYTICS_DDL } from '@kobato/server/domains/analytics/services/schema.ts'
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/server/infra/analytics/duckdb.ts'
+import { appendAccessEvents } from '@kobato/db/duckdb/access-events.ts'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
+import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env.ts'
+import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema.ts'
 import { settleAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'

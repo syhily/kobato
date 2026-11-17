@@ -216,7 +216,6 @@ wireRestoreMachine({
   complete: createRestoreCompletion({
     reopenDatabase,
     getDb,
-    getDatabaseHandle,
     migrateDatabase: migrateContentDatabase,
     // Regardless of wipe outcome, the registry wrapper drops the process-local
     // generation memo so the next counter read re-reads `_generation`. A

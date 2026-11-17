@@ -1,4 +1,4 @@
-import type { ListingPostCard } from '@kobato/contracts/types/catalog.ts'
+import type { ListingPostCard } from '@kobato/contracts/catalog.ts'
 import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'

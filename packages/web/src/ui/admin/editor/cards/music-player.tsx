@@ -1,7 +1,7 @@
 // The `music-player` host card's editing-side assembly, with the same dual-entry
 // contract as `./solution`. The card has no nested editors: the dataset is
 // `playerId` plus the meta snapshot (server-owned keys, see
-// `@kobato/pt/artifacts`), so the canvas renders the real playable
+// `@kobato/lexical/artifacts`), so the canvas renders the real playable
 // `MusicPlayerCard` — WYSIWYG with the public hydration-enhanced render, whose
 // static no-JS fallback mirrors its paused initial state.
 //
@@ -10,7 +10,7 @@
 // placeholder click and the resolved card's replace affordance are the re-entry
 // paths (`useCardPicker`). The pick writes `playerId` AND the full meta snapshot so
 // the card turns playable immediately; the save-time snapshot
-// (`@/server/domains/pt/lexical-music-snapshot`) stays the authority refresh.
+// (`@/server/domains/content/services/lexical/music-snapshot`) stays the authority refresh.
 
 import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
@@ -30,8 +30,8 @@ import {
   MUSIC_PLAYER_CARD_PROPERTIES,
   type MusicPlayerCardMeta,
   renderMusicPlayerCard,
-} from '@kobato/pt/cards/music-player.ts'
-import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/pt/node-whitelist.ts'
+} from '@kobato/lexical/cards/music-player.ts'
+import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/lexical/node-whitelist.ts'
 import { isSafeUrl } from '@kobato/sanitize/sanitize-url.ts'
 import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 import { inklingHostCardMatches } from '@kobato/web/ui/admin/editor/cards/menu-matches.ts'

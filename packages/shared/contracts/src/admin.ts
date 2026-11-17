@@ -113,8 +113,8 @@ export const adminPostsMySummaryOutputSchema = z.object({
 })
 export type AdminPostsMySummaryOutput = z.infer<typeof adminPostsMySummaryOutputSchema>
 
-// `search` carries the raw query string; `parseAnalyticsSearch` stays
-// server-side so the URL grammar lives in one place.
+// `search` carries the raw query string; the URL grammar (`parseAnalyticsSearch`)
+// stays server-side in the analytics domain (`domains/analytics/services/query-input`).
 export const adminAnalyticsSearchInputSchema = z.object({
   search: z.string().max(16_384),
 })

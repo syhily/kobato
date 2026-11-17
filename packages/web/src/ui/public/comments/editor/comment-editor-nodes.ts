@@ -1,5 +1,5 @@
 // Every mounted type must stay inside COMMENT_NODE_TYPES
-// (`@kobato/pt/node-whitelist`): the editor must never produce a node the
+// (`@kobato/lexical/node-whitelist`): the editor must never produce a node the
 // storage schema rejects. `packages/web/tests/contract/lexical-node-whitelist.test.ts`
 // pins the list against the whitelist and COMMENT_COMPOSER_NODE_TYPES.
 //

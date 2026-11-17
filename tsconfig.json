@@ -5,7 +5,6 @@
     "apps/kobato/**/*",
     "packages/**/*",
     "scripts/**/*",
-    "drizzle.config.ts",
     "oxfmt.config.ts",
     "oxlint.config.ts",
     "vite.sea.config.ts",

@@ -52,7 +52,7 @@ const SHARED_SPLIT = [
   '@kobato/cache',
   '@kobato/settings',
   '@kobato/assets',
-  '@kobato/pt',
+  '@kobato/lexical',
   '@kobato/sanitize',
   '@kobato/contracts',
   '@kobato/seo',
@@ -67,7 +67,7 @@ const REPO_PACKAGES = [
   { name: '@kobato/cache', dir: 'packages/shared/cache' },
   { name: '@kobato/settings', dir: 'packages/shared/settings' },
   { name: '@kobato/assets', dir: 'packages/shared/assets' },
-  { name: '@kobato/pt', dir: 'packages/shared/pt' },
+  { name: '@kobato/lexical', dir: 'packages/shared/lexical' },
   { name: '@kobato/sanitize', dir: 'packages/shared/sanitize' },
   { name: '@kobato/contracts', dir: 'packages/shared/contracts' },
   { name: '@kobato/seo', dir: 'packages/shared/seo' },
@@ -94,9 +94,9 @@ const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
  * the stricter SRC_TARGETS map.
  */
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
-  // inkling is a host-agnostic island: tests borrow pt fixtures + test-helpers.
-  // `@kobato/pt` is a tests-only edge (its fixtures pin the storage format).
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/pt', '@kobato/test'],
+  // inkling is a host-agnostic island: tests borrow lexical fixtures + test-helpers.
+  // `@kobato/lexical` is a tests-only edge (its fixtures pin the storage format).
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/lexical', '@kobato/test'],
   // The split leaf packages. `@kobato/test` is the suite-utility convention;
   // the remaining edges mirror SRC_TARGETS below, except the tests-only ones:
   // settings → contracts (contract-pinning fixtures),
@@ -113,10 +113,10 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
   '@kobato/assets': ['@kobato/assets', '@kobato/test'],
-  // pt → inkling is a real src edge (the heading-slug save pipeline composes
+  // lexical → inkling is a real src edge (the heading-slug save pipeline composes
   // inkling's own `slugify`/tracker through `@kobato/inkling/headless`).
-  '@kobato/pt': [
-    '@kobato/pt',
+  '@kobato/lexical': [
+    '@kobato/lexical',
     '@kobato/inkling',
     '@kobato/sanitize',
     '@kobato/assets',
@@ -129,13 +129,20 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/utils',
-    '@kobato/pt',
+    '@kobato/lexical',
     '@kobato/assets',
     '@kobato/cache',
     '@kobato/test',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  '@kobato/db': ['@kobato/db', '@kobato/contracts', '@kobato/settings', '@kobato/pt', '@kobato/test'],
+  '@kobato/db': [
+    '@kobato/db',
+    '@kobato/contracts',
+    '@kobato/settings',
+    '@kobato/lexical',
+    '@kobato/test',
+    '@kobato/utils',
+  ],
   // server's web entry exists only for its test fixtures.
   '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', '@kobato/web', '@kobato/test', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
@@ -151,7 +158,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/cache',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/pt',
+    '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
@@ -188,19 +195,19 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils'],
   '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/utils'],
   '@kobato/assets': ['@kobato/assets'],
-  '@kobato/pt': ['@kobato/pt', '@kobato/inkling', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
+  '@kobato/lexical': ['@kobato/lexical', '@kobato/inkling', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
   '@kobato/sanitize': ['@kobato/sanitize'],
   '@kobato/contracts': [
     '@kobato/contracts',
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/utils',
-    '@kobato/pt',
+    '@kobato/lexical',
     '@kobato/assets',
     '@kobato/cache',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
-  '@kobato/db': ['@kobato/db', '@kobato/contracts', '@kobato/settings', '@kobato/pt'],
+  '@kobato/db': ['@kobato/db', '@kobato/contracts', '@kobato/settings', '@kobato/lexical', '@kobato/utils'],
   '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
   // web's server entry is the documented RouterClient type-only channel.
@@ -214,7 +221,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/cache',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/pt',
+    '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
@@ -520,6 +527,18 @@ describe('package DAG', () => {
         }
         if (specifier !== '@kobato/inkling/headless' && !specifier.startsWith('@kobato/inkling/styles/')) {
           offenders.push(`${file}: ${specifier} (deep import past the entry surfaces)`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('server and lexical never reach the React inkling barrel', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles('packages/server/src', 'packages/shared/lexical/src')) {
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier === '@kobato/inkling') {
+          offenders.push(`${file}: ${specifier} (server/lexical must use @kobato/inkling/headless)`)
         }
       }
     }

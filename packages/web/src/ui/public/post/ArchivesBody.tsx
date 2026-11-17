@@ -1,4 +1,4 @@
-import type { ListingPostCardWithMetadata } from '@kobato/contracts/types/catalog.ts'
+import type { ListingPostCardWithMetadata } from '@kobato/contracts/catalog.ts'
 
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

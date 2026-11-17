@@ -12,6 +12,7 @@ import {
   listBackupRows,
   listBackupStoragePaths,
 } from '@kobato/db/operations/backup.ts'
+import { vacuumDatabaseInto } from '@kobato/db/operations/maintenance.ts'
 import { createBackupCipher } from '@kobato/server/domains/backup/services/crypto.ts'
 import { createTarReadStream } from '@kobato/server/domains/backup/services/tar.ts'
 import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@kobato/server/infra/config.ts'
@@ -20,7 +21,6 @@ import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/e
 import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { activeBackend, allBackends, backendFor } from '@kobato/server/infra/storage/registry.ts'
-import { sql } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 import { chmodSync, statSync } from 'node:fs'
 import { copyFile, unlink } from 'node:fs/promises'
@@ -226,8 +226,8 @@ async function createBackupUnchecked(
 
   log.info('Starting backup', { key })
 
-  // `VACUUM INTO`: a consistent, fully-checkpointed copy in one step.
-  db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
+  // A consistent, fully-checkpointed copy in one step.
+  vacuumDatabaseInto(db, stagingPath)
   restrictStagingFile(stagingPath)
 
   // Unwired snapshot fn is a composition-root bug — fail loudly, don't archive content only.

@@ -12,7 +12,7 @@ import {
 import { findTagNamesByPostId } from '@kobato/db/operations/post-tag.ts'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
-import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-filter.ts'
+import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { toAdminPostDto } from '@kobato/server/domains/posts/projection.ts'
 import { listPostsSchema, upsertPostMetaSchema } from '@kobato/server/domains/posts/schema.ts'

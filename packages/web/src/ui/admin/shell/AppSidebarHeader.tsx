@@ -1,4 +1,4 @@
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { SidebarHeader } from '@kobato/ui/components/sidebar.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { useAssetsSettingsOptional } from '@kobato/web/client/settings/blog-settings-context.tsx'

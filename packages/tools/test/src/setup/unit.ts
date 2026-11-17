@@ -6,6 +6,7 @@
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
 import '@testing-library/jest-dom/vitest'
+import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query.ts'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
 // Evaluate @date-fns/tz against the REAL Date constructor, before any test
@@ -52,4 +53,7 @@ setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 afterEach(() => {
   cleanup()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  // Analytics queries run untraced in tests: a boot path that wired the
+  // executor must not leak it into later files in this worker.
+  setAnalyticsQueryExecutor(null)
 })

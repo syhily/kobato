@@ -1,6 +1,6 @@
 import { adminCommentsPendingCountOutputSchema } from '@kobato/contracts/admin.ts'
 import { adminCommentDto, adminPendingDashboardDto, ownCommentMutationDto } from '@kobato/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/pt/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
 import {

@@ -5,7 +5,7 @@ import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/
 import { reindexSearchBatch } from '@kobato/server/domains/posts/services/search-reindex.ts'
 import { adminProc } from '@kobato/server/http/orpc-base.ts'
 import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { KATEX_OPTIONS } from '@kobato/server/infra/pt/katex.ts'
+import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
 import katex from 'katex'
 import { z } from 'zod'
 

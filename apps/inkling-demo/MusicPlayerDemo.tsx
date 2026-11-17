@@ -1,10 +1,8 @@
-import { MUSIC_PLAYER_CARD_CLASSES, musicPlayerFallbackHtml } from '@kobato/pt/cards/music-player'
+import { MUSIC_PLAYER_CARD_CLASSES, musicPlayerFallbackHtml } from '@kobato/lexical/cards/music-player'
 import { MusicPlayerCard } from '@kobato/web/ui/public/music-player/music-player'
 import { useMusicPlayers } from '@kobato/web/ui/public/post/use-music-players'
 import { useEffect, useRef, useState } from 'react'
-import '@kobato/pt/styles/cards.css'
 import '@kobato/ui/styles/ui.css'
-import '@kobato/web/styles/public.css'
 
 import './styles/public.css'
 

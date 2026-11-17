@@ -1,4 +1,4 @@
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
 import { makeCommentBody } from '@kobato/test/catalog.ts'

@@ -29,7 +29,7 @@ queryMocks.queryClient = {
 // rows come from useAdminInfiniteList's useInfiniteQuery and search from
 // useDebouncedSearch.
 
-vi.mock('@kobato/web/ui/admin/shared/useDebouncedSearch.ts', () => ({
+vi.mock('@kobato/web/ui/shared/use-debounced-search.ts', () => ({
   // Hoisted pair so each test drives the search-input value.
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))

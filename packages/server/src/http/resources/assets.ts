@@ -2,7 +2,7 @@ import type { Env } from '@kobato/server/http/context.ts'
 
 import { ASSET_ROUTES, resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
 import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { Hono } from 'hono'
 
 export const assetsRouter = new Hono<Env>()

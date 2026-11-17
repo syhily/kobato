@@ -1,6 +1,6 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
-import { brandingVersionSuffix } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { AvatarSkeleton } from '@kobato/ui/components/avatar.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { avatarImageUrl } from '@kobato/utils/avatar.ts'

@@ -11,7 +11,7 @@ import { ogImagePathForSlug } from '@kobato/seo/og-image.ts'
 // `@kobato/i18n/catalog`. Localized copy arrives as the root loader's `i18n`
 // payload through `matches`.
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { brandingVersionSuffix, extractXHandle } from '@kobato/settings/utils.ts'
+import { brandingVersionSuffix, extractXHandle } from '@kobato/settings/presentation.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'

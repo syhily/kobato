@@ -4,11 +4,11 @@ import type {
   MetricType,
   ResolvedAnalyticsQuery,
 } from '@kobato/contracts/analytics.ts'
-import type { AnalyticsReader } from '@kobato/server/domains/analytics/services/analytics-sql.ts'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'
-import { queryCounters } from '@kobato/server/domains/analytics/services/counters.ts'
-import { queryMetric } from '@kobato/server/domains/analytics/services/metric.ts'
+import { queryCounters } from '@kobato/db/duckdb/queries/counters.ts'
+import { queryMetric } from '@kobato/db/duckdb/queries/metric.ts'
 
 /**
  * First-paint fan-out: counters plus the first tab of every metric group. The

@@ -26,7 +26,7 @@ const PACKAGE_SRC_ROOTS: Record<string, string> = {
   server: 'packages/server/src',
   contracts: 'packages/shared/contracts/src',
   seo: 'packages/shared/seo/src',
-  pt: 'packages/shared/pt/src',
+  lexical: 'packages/shared/lexical/src',
   utils: 'packages/shared/utils/src',
   i18n: 'packages/shared/i18n/src',
   cache: 'packages/shared/cache/src',

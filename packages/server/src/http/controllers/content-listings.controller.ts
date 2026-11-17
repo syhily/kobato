@@ -5,6 +5,7 @@ import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { toListingPostCard } from '@kobato/contracts/catalog.ts'
 import {
   contentArchivesInputSchema,
   contentArchivesOutputSchema,
@@ -17,7 +18,6 @@ import {
   contentSearchInputSchema,
   contentSearchOutputSchema,
 } from '@kobato/contracts/content.ts'
-import { toListingPostCard } from '@kobato/contracts/types/catalog.ts'
 import { trackPageView } from '@kobato/server/domains/analytics/track.ts'
 import {
   countPublicPosts,

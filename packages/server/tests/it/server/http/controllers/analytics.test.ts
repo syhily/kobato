@@ -1,4 +1,4 @@
-import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
 import {
   __adoptAnalyticsHandleForTests,

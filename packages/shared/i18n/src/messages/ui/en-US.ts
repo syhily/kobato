@@ -618,7 +618,7 @@ export const uiMessagesEnUS = {
   'admin.settings.content.sort.dir.asc': 'Oldest first (asc)',
   'admin.settings.content.footnotes.title': 'Footnote section title',
   'admin.settings.content.footnotes.description':
-    'The heading above the footnote list at the end of Portable Text pages; defaults to「尾声礼记」. Article pages always use the default and ignore this setting.',
+    'The heading above the footnote list at the end of Lexical pages; defaults to「尾声礼记」. Article pages always use the default and ignore this setting.',
   'admin.settings.content.footnotes.label': 'Heading text',
   'admin.settings.comments.pagination.title': 'Comment pagination',
   'admin.settings.comments.pagination.description': 'Controls how the comment list below posts loads.',

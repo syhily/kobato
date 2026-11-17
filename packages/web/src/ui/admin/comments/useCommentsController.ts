@@ -1,9 +1,9 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/pt/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web/ui/admin/shared/filterPillsReducer.ts'
 
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { idStr } from '@kobato/utils/tools.ts'
+import { idStr } from '@kobato/utils/id.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { orpc } from '@kobato/web/client/api/client.ts'
 import { orpcQuery } from '@kobato/web/client/api/orpc-query.ts'

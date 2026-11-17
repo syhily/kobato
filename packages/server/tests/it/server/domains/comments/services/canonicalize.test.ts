@@ -1,13 +1,13 @@
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/pt/lexical-prerender.ts', () => ({
+vi.mock('@kobato/server/infra/lexical/lexical-prerender.ts', () => ({
   prerenderLexicalEditorState: vi.fn(async (state: unknown) => state),
 }))
 
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
 import { MAX_COMMENT_LENGTH } from '@kobato/server/domains/comments/services/policy.ts'
-import { prerenderLexicalEditorState } from '@kobato/server/infra/pt/lexical-prerender.ts'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
 
 // The pre-render length gate: a hostile state can carry megabytes of text
 // under the global 10 MB body cap, so the plain-text walk must reject it

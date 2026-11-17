@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/pt/schema.ts'
+import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { extractExternalLinks, MAX_OUTBOUND_LINKS_PER_POST } from '@kobato/server/domains/webmentions/enqueue.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'

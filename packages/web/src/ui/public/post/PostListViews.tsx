@@ -1,4 +1,4 @@
-import type { ListingPostCard, ListingPostCardWithMetadata } from '@kobato/contracts/types/catalog.ts'
+import type { ListingPostCard, ListingPostCardWithMetadata } from '@kobato/contracts/catalog.ts'
 import type { ReactNode } from 'react'
 
 import { Button } from '@kobato/ui/components/button.tsx'
