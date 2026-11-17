@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import InklingFavicon from './icons/inkling-favicon.svg?react'
+import KobatoFavicon from '../assets/icons/kobato-favicon.svg?react'
 
 interface EditorTypeLink {
   name: string
@@ -32,7 +32,7 @@ const Watermark = ({ editorType }: WatermarkProps) => {
         rel="nofollow ugc noopener noreferrer"
         target="_blank"
       >
-        <InklingFavicon className="mr-2 size-6" />
+        <KobatoFavicon className="mr-2 size-6" />
         <span className="pr-1 font-bold tracking-wide">Inkling</span>
         editor
       </a>
@@ -51,7 +51,7 @@ const Watermark = ({ editorType }: WatermarkProps) => {
   return (
     <>
       <div className="group absolute bottom-4 left-6 z-20 flex items-center rounded bg-white py-1 pr-2 pl-1 font-mono text-sm tracking-tight text-black">
-        <InklingFavicon className="mr-2 size-6" />
+        <KobatoFavicon className="mr-2 size-6" />
         <span className="pr-1 font-bold tracking-wide">Inkling</span>
         <span className="group-hover:font-bold">
           {editorType}
