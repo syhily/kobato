@@ -6,6 +6,6 @@
 // Zod 4.5 auto-compilation first, so even the config-graph schemas constructed
 // by sea-cli/sea-bootstrap get compiled on first parse.
 import 'zod/compile'
-import '@/server/infra/sea-cli'
-import '@/server/infra/sea-bootstrap'
-import '../../build/server/index.js'
+import '@kobato/server/infra/sea-cli.ts'
+import '@kobato/server/infra/sea-bootstrap.ts'
+import '../../apps/kobato/build/server/index.js'

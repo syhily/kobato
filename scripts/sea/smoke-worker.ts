@@ -3,11 +3,10 @@
 // The flag pulls the config-validated server graph, so it needs the full server
 // configuration — validates, never connects.
 
+import { __setWorkerFactory, getProcessPool, stopProcessPool } from '@kobato/server/infra/image/process-pool.ts'
+import { isSea } from '@kobato/server/infra/sea.ts'
 import { parentPort, Worker, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
-
-import { __setWorkerFactory, getProcessPool, stopProcessPool } from '@/server/infra/image/process-pool'
-import { isSea } from '@/server/infra/sea'
 
 const SOURCE_WIDTH = 64
 const SOURCE_HEIGHT = 48
@@ -19,7 +18,7 @@ export async function run(): Promise<void> {
   // Non-SEA convenience: point the pool at the vite-built worker file — no
   // worker file sits next to this bundle. SEA keeps the embedded eval worker.
   if (!isSea()) {
-    __setWorkerFactory(() => new Worker(new URL('../../build/server/process-worker.js', import.meta.url)))
+    __setWorkerFactory(() => new Worker(new URL('../../apps/kobato/build/server/process-worker.js', import.meta.url)))
   }
 
   // Deterministic gradient — real entropy for the JPEG re-encode.

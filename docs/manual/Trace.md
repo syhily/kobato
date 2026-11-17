@@ -180,7 +180,7 @@ hostname column, because the projection never emits them.
 
 ## RUM privacy pipeline
 
-`src/server/domains/observability/assets/rum-privacy.vrl` is installed by the SERVER
+`packages/server/src/domains/observability/assets/rum-privacy.vrl` is installed by the SERVER
 as the `after_flatten` function `kobato_rum_privacy_drop`, wired into the realtime
 pipeline `kobato_rum_privacy` on `_rumdata`. It is the authoritative, fail-closed
 storage boundary: the VRL builds a fresh `safe` object from an explicit allowlist and
@@ -218,7 +218,7 @@ new field requires an allowlist change plus a smoke rerun.
 ## Dashboards
 
 Four versioned OpenObserve v8 dashboards live in
-`src/server/domains/observability/assets/dashboards/`, bundled into the server and
+`packages/server/src/domains/observability/assets/dashboards/`, bundled into the server and
 installed/upserted by title during the connection test (retry via the
 `admin.observability.provision` procedure):
 

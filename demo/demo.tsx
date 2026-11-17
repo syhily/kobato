@@ -1,5 +1,5 @@
 import './styles/demo.css'
-import '@/inkling/styles/variants.css'
+import '@kobato/inkling/styles/variants.css'
 import './styles/inkling.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'

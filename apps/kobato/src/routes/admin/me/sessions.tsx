@@ -1,0 +1,56 @@
+import type { MySessionItem } from '@kobato/shared/types/sessions.ts'
+
+import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
+import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
+import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
+import {
+  DEFAULT_MY_SORT,
+  MY_SESSION_SORT_OPTIONS,
+  parseSessionSort,
+  type SessionSortState,
+} from '@kobato/shared/utils/sessions-sort.ts'
+import { MySessionsView } from '@kobato/web/ui/admin/my/MySessionsView.tsx'
+import { data } from 'react-router'
+
+import type { Route } from './+types/sessions'
+
+export const meta = titleMeta('meta.title.admin.mySessions')
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { caller, viewer, session } = createSsrCaller({ request, context })
+  // admin.layout already gates visitor+; assert here to narrow `viewer` to non-null.
+  requireRole(viewer ?? undefined, 'visitor')
+  const url = new URL(request.url)
+  const sort: SessionSortState<'lastActive' | 'loginTime'> = parseSessionSort(
+    url.searchParams.get('sort'),
+    MY_SESSION_SORT_OPTIONS,
+    DEFAULT_MY_SORT,
+  )
+  const sessions = await caller.account.sessions()
+  const sorted = [...sessions].sort((a, b) => {
+    let cmp = 0
+    switch (sort.field) {
+      case 'loginTime':
+        cmp = a.loginAt.getTime() - b.loginAt.getTime()
+        break
+      case 'lastActive':
+        cmp = a.lastActiveAt.getTime() - b.lastActiveAt.getTime()
+        break
+    }
+    return sort.direction === 'asc' ? cmp : -cmp
+  })
+  const items: MySessionItem[] = sorted.map((s) => ({
+    sid: s.sid,
+    label: s.label,
+    ip: s.ip,
+    loginAtIso: s.loginAt.toISOString(),
+    lastActiveAtIso: s.lastActiveAt.toISOString(),
+    expiresAtIso: s.expiresAt.toISOString(),
+    isCurrent: s.sid === session.id,
+  }))
+  return data({ items })
+}
+
+export default function WpAdminMySessionsRoute({ loaderData }: Route.ComponentProps) {
+  return <MySessionsView items={loaderData.items} />
+}

@@ -1,0 +1,153 @@
+import { signInSchema, signUpAdminSchema, updateUserSchema } from '@kobato/server/domains/auth/schema.ts'
+import { zodIssueParams } from '@kobato/shared/utils/zod-issue-bounds.ts'
+import { describe, expect, it } from 'vitest'
+
+describe('auth/schema — password complexity', () => {
+  const base = { title: 'Blog', name: 'Admin', email: 'admin@example.com' }
+
+  it('accepts a password with uppercase, lowercase, and digit', async () => {
+    const result = await signUpAdminSchema.parseAsync({ ...base, password: 'CorrectHorse1' })
+    expect(result.password).toBe('CorrectHorse1')
+  })
+
+  it('rejects a password without an uppercase letter', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: 'correcthorse1' })).rejects.toBeTruthy()
+  })
+
+  it('rejects a password without a lowercase letter', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: 'CORRECTHORSE1' })).rejects.toBeTruthy()
+  })
+
+  it('rejects a password without a digit', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: 'CorrectHorse' })).rejects.toBeTruthy()
+  })
+
+  it('rejects a password shorter than 10 characters even with complexity', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: 'Ab1' })).rejects.toBeTruthy()
+  })
+
+  it('rejects an all-numeric password', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: '1234567890' })).rejects.toBeTruthy()
+  })
+
+  it('rejects a common weak password pattern', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: 'password123' })).rejects.toBeTruthy()
+  })
+
+  it('accepts a password of exactly 72 bytes', async () => {
+    const password = 'Aa1'.repeat(24)
+    expect(new TextEncoder().encode(password).byteLength).toBe(72)
+    const result = await signUpAdminSchema.parseAsync({ ...base, password })
+    expect(result.password).toBe(password)
+  })
+
+  it('rejects a password past 72 bytes even under the old 128-char cap', async () => {
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: `${'Aa1'.repeat(24)}x` })).rejects.toBeTruthy()
+  })
+
+  it('counts multi-byte runes fully against the byte cap', async () => {
+    // 3 ASCII + 24 × 3-byte runes = 75 bytes.
+    await expect(signUpAdminSchema.parseAsync({ ...base, password: `Aa1${'密'.repeat(24)}` })).rejects.toBeTruthy()
+  })
+
+  it('signin keeps accepting long passwords (bcrypt truncates both sides of a compare)', async () => {
+    const data = await signInSchema.parseAsync({ email: 'admin@example.com', password: 'x'.repeat(100) })
+    expect(data.password).toHaveLength(100)
+  })
+})
+
+describe('auth/schema — typed validation messages', () => {
+  const base = { title: 'Blog', name: 'Admin', email: 'admin@example.com', password: 'CorrectHorse1' }
+
+  it('tags an empty site title with the typed required message', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, title: '' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toBe('auth.validation.siteNameRequired')
+  })
+
+  it('tags an empty nickname with the typed required message', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, name: '' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toBe('auth.validation.nameRequired')
+  })
+
+  it('tags a malformed email with the typed invalid message', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, email: 'not-an-email' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.message).toBe('auth.validation.emailInvalid')
+  })
+
+  it('tags a short password with the typed message and the {min} bound', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, password: 'Ab1' })
+    expect(parsed.success).toBe(false)
+    const issue = parsed.error?.issues[0]
+    expect(issue?.message).toBe('auth.validation.passwordTooShort')
+    expect(zodIssueParams(issue)).toEqual({ min: 10 })
+  })
+
+  it('tags a past-72-byte password with the typed message and the {max} param', () => {
+    const parsed = signUpAdminSchema.safeParse({ ...base, password: `${'Aa1'.repeat(24)}x` })
+    expect(parsed.success).toBe(false)
+    const issue = parsed.error?.issues.find((i) => i.message === 'auth.validation.passwordTooLong')
+    expect(issue).toBeDefined()
+    expect(zodIssueParams(issue)).toEqual({ max: 72 })
+  })
+})
+
+describe('signInSchema', () => {
+  it('accepts valid credentials', async () => {
+    const data = await signInSchema.parseAsync({ email: 'admin@example.com', password: 'Password123' })
+    expect(data.email).toBe('admin@example.com')
+  })
+
+  it('rejects an invalid email', async () => {
+    await expect(signInSchema.parseAsync({ email: 'not-an-email', password: 'Password123' })).rejects.toBeTruthy()
+  })
+
+  it('rejects a missing password', async () => {
+    await expect(signInSchema.parseAsync({ email: 'admin@example.com' })).rejects.toBeTruthy()
+  })
+})
+
+describe('updateUserSchema', () => {
+  const base = { userId: '1' }
+
+  it('accepts a name patch', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, name: 'New' })
+    expect(data.name).toBe('New')
+  })
+
+  it('rejects a bare userId patch — an absent optional key no longer flows through preprocess (Zod 4.5)', async () => {
+    await expect(updateUserSchema.parseAsync(base)).rejects.toBeTruthy()
+  })
+
+  it('accepts an explicit empty-string link (normalised, counts as a provided field)', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, link: '' })
+    expect(data).toEqual({ userId: '1', link: '' })
+  })
+
+  it('leaves undefined badgeTextColor unchanged', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, name: 'New' })
+    expect(data.badgeTextColor).toBeUndefined()
+  })
+
+  it('normalises null badgeTextColor to null', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, badgeTextColor: null })
+    expect(data.badgeTextColor).toBeNull()
+  })
+
+  it('normalises an empty string badgeTextColor to null', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, badgeTextColor: '' })
+    expect(data.badgeTextColor).toBeNull()
+  })
+
+  it('normalises a whitespace-only badgeTextColor to null', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, badgeTextColor: '   ' })
+    expect(data.badgeTextColor).toBeNull()
+  })
+
+  it('preserves a non-empty badgeTextColor', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, badgeTextColor: '#ffffff' })
+    expect(data.badgeTextColor).toBe('#ffffff')
+  })
+})

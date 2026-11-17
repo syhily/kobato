@@ -1,0 +1,218 @@
+import { tZhCN } from '@kobato/test-helpers/i18n.ts'
+import {
+  DEFAULT_TEXT_OPERATOR,
+  isTextFilterOperator,
+  parseTextFilter,
+  TEXT_FILTER_OPERATORS,
+  textFilterLabel as textFilterLabelBase,
+} from '@kobato/web/ui/admin/comments/filter-fields.ts'
+import {
+  DEFAULT_SINGLE_DATE_OPERATOR,
+  isSingleDateFilterOperator,
+  parseSingleDateFilter,
+  resolveSingleDateFilterBounds,
+  SINGLE_DATE_FILTER_OPERATORS,
+  singleDateFilterLabel as singleDateFilterLabelBase,
+} from '@kobato/web/ui/admin/shared/date-filter.ts'
+import { describe, expect, it } from 'vitest'
+
+const textFilterLabel = (value: Parameters<typeof textFilterLabelBase>[0]) => textFilterLabelBase(value, tZhCN)
+const singleDateFilterLabel = (value: Parameters<typeof singleDateFilterLabelBase>[0]) =>
+  singleDateFilterLabelBase(value, tZhCN)
+
+describe('parseSingleDateFilter', () => {
+  it('returns null for undefined or empty input', () => {
+    expect(parseSingleDateFilter(undefined)).toBeNull()
+    expect(parseSingleDateFilter('')).toBeNull()
+  })
+
+  it('returns null for malformed JSON', () => {
+    expect(parseSingleDateFilter('not-json')).toBeNull()
+    expect(parseSingleDateFilter('{')).toBeNull()
+  })
+
+  it('returns null when the date or op is missing', () => {
+    expect(parseSingleDateFilter('{}')).toBeNull()
+    expect(parseSingleDateFilter(JSON.stringify({ op: 'is-less' }))).toBeNull()
+    expect(parseSingleDateFilter(JSON.stringify({ date: '2026-06-01' }))).toBeNull()
+  })
+
+  it('returns null for an unknown operator', () => {
+    expect(parseSingleDateFilter(JSON.stringify({ date: '2026-06-01', op: 'bogus' }))).toBeNull()
+  })
+
+  it('parses a well-formed {date, op} payload', () => {
+    expect(parseSingleDateFilter(JSON.stringify({ date: '2026-06-01', op: 'is-or-less' }))).toEqual({
+      date: '2026-06-01',
+      op: 'is-or-less',
+    })
+  })
+})
+
+describe('isSingleDateFilterOperator', () => {
+  it('accepts the four Ghost operators', () => {
+    for (const op of SINGLE_DATE_FILTER_OPERATORS) {
+      expect(isSingleDateFilterOperator(op.value)).toBe(true)
+    }
+  })
+
+  it('rejects anything else', () => {
+    expect(isSingleDateFilterOperator('is')).toBe(false)
+    expect(isSingleDateFilterOperator(null)).toBe(false)
+    expect(isSingleDateFilterOperator(undefined)).toBe(false)
+    expect(isSingleDateFilterOperator(42)).toBe(false)
+  })
+})
+
+describe('singleDateFilterLabel', () => {
+  it('renders `<operator-label> <date>` for the four operators', () => {
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-less' })).toBe('之前 2026-06-01')
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-or-less' })).toBe('不晚于 2026-06-01')
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-greater' })).toBe('之后 2026-06-01')
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-or-greater' })).toBe('不早于 2026-06-01')
+  })
+})
+
+describe('resolveSingleDateFilterBounds', () => {
+  // Bounds are local-timezone; mirror the SUT's construction so the test passes in any TZ.
+  function expectedBounds(date: string) {
+    const start = new Date(date)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(date)
+    end.setHours(23, 59, 59, 999)
+    return { startIso: start.toISOString(), endIso: end.toISOString() }
+  }
+
+  it('returns no bounds for a null filter', () => {
+    expect(resolveSingleDateFilterBounds(null)).toEqual({ after: undefined, before: undefined })
+  })
+
+  it('maps is-less to < start-of-day (the day is the exclusive ceiling)', () => {
+    const { startIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-less' })
+    expect(bounds.after).toBeUndefined()
+    expect(bounds.before).toBe(startIso)
+  })
+
+  it('maps is-or-less to <= end-of-day (the default — Ghost behaviour)', () => {
+    const { endIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-or-less' })
+    expect(bounds.after).toBeUndefined()
+    expect(bounds.before).toBe(endIso)
+  })
+
+  it('maps is-greater to > end-of-day (the day is the exclusive floor)', () => {
+    const { endIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-greater' })
+    expect(bounds.after).toBe(endIso)
+    expect(bounds.before).toBeUndefined()
+  })
+
+  it('maps is-or-greater to >= start-of-day', () => {
+    const { startIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-or-greater' })
+    expect(bounds.after).toBe(startIso)
+    expect(bounds.before).toBeUndefined()
+  })
+
+  it('returns no bounds when the date is empty (operator-only chip)', () => {
+    // Operator-first chips may commit `{ date: '', op }` — resolve to undefined bounds, not crash.
+    expect(resolveSingleDateFilterBounds({ date: '', op: 'is-greater' })).toEqual({
+      after: undefined,
+      before: undefined,
+    })
+    expect(resolveSingleDateFilterBounds({ date: '', op: 'is-or-less' })).toEqual({
+      after: undefined,
+      before: undefined,
+    })
+  })
+
+  it('returns no bounds when the date is unparseable', () => {
+    // Defensive: an `Invalid Date`'s `toISOString` would throw.
+    expect(resolveSingleDateFilterBounds({ date: 'not-a-date', op: 'is-less' })).toEqual({
+      after: undefined,
+      before: undefined,
+    })
+  })
+
+  it('keeps the default operator aligned with Ghost (is-or-less)', () => {
+    expect(DEFAULT_SINGLE_DATE_OPERATOR).toBe('is-or-less')
+  })
+})
+
+describe('parseTextFilter', () => {
+  it('returns null for undefined or empty input', () => {
+    expect(parseTextFilter(undefined)).toBeNull()
+    expect(parseTextFilter('')).toBeNull()
+  })
+
+  it('returns null for malformed JSON', () => {
+    expect(parseTextFilter('not-json')).toBeNull()
+    expect(parseTextFilter('{')).toBeNull()
+  })
+
+  it('returns null when the op or value is missing / wrong type', () => {
+    expect(parseTextFilter('{}')).toBeNull()
+    expect(parseTextFilter(JSON.stringify({ op: 'contains' }))).toBeNull()
+    expect(parseTextFilter(JSON.stringify({ value: 'foo' }))).toBeNull()
+    expect(parseTextFilter(JSON.stringify({ op: 'contains', value: 42 }))).toBeNull()
+  })
+
+  it('returns null for an unknown operator', () => {
+    expect(parseTextFilter(JSON.stringify({ op: 'equals', value: 'foo' }))).toBeNull()
+  })
+
+  it('parses a well-formed {op, value} payload', () => {
+    expect(parseTextFilter(JSON.stringify({ op: 'contains', value: 'foo' }))).toEqual({
+      op: 'contains',
+      value: 'foo',
+    })
+    expect(parseTextFilter(JSON.stringify({ op: 'does-not-contain', value: 'bar' }))).toEqual({
+      op: 'does-not-contain',
+      value: 'bar',
+    })
+  })
+
+  it('parses an empty value as a valid chip state', () => {
+    // A default-operator chip with no text is legal — round-trip it, don't drop it.
+    expect(parseTextFilter(JSON.stringify({ op: 'contains', value: '' }))).toEqual({
+      op: 'contains',
+      value: '',
+    })
+  })
+})
+
+describe('isTextFilterOperator', () => {
+  it('accepts the two Ghost operators', () => {
+    for (const op of TEXT_FILTER_OPERATORS) {
+      expect(isTextFilterOperator(op.value)).toBe(true)
+    }
+  })
+
+  it('rejects anything else', () => {
+    expect(isTextFilterOperator('contains-not')).toBe(false)
+    expect(isTextFilterOperator(null)).toBe(false)
+    expect(isTextFilterOperator(undefined)).toBe(false)
+    expect(isTextFilterOperator(42)).toBe(false)
+  })
+
+  it('keeps the default operator aligned with Ghost (contains)', () => {
+    expect(DEFAULT_TEXT_OPERATOR).toBe('contains')
+  })
+})
+
+describe('textFilterLabel', () => {
+  it('renders `<operator-label>「<excerpt>」` for non-empty values', () => {
+    expect(textFilterLabel({ op: 'contains', value: 'foo' })).toBe('包含「foo」')
+    expect(textFilterLabel({ op: 'does-not-contain', value: 'bar' })).toBe('不包含「bar」')
+  })
+
+  it('truncates long values to 8 characters with an ellipsis', () => {
+    expect(textFilterLabel({ op: 'contains', value: 'abcdefghij' })).toBe('包含「abcdefgh…」')
+  })
+
+  it('drops the excerpt entirely when the value is blank', () => {
+    expect(textFilterLabel({ op: 'contains', value: '' })).toBe('包含')
+    expect(textFilterLabel({ op: 'contains', value: '   ' })).toBe('包含')
+  })
+})

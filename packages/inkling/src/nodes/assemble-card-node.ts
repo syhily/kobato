@@ -1,0 +1,160 @@
+import type { LexicalNode } from 'lexical'
+import type { ReactNode } from 'react'
+
+import type { CardSpecAccessorMap, CardSpecFieldMap, NestedEditorSpec, TransientPropSpec } from './base/card-specs'
+import type { CardImportSpec } from './base/import-spec'
+import type { CardDeclaration } from './cards/card-declaration'
+
+import { getTransientPropPrivateName } from './base/card-specs'
+import { ensureLexicalNodeOwnMethods } from './base/ensure-node-own-methods'
+import { defineFieldAccessor } from './base/generate-decorator-node'
+import { decorateCardNode } from './card-decorate-slot'
+
+/**
+ * The class type `assembleCardNode` returns: the declaration's base node class with
+ * the spec statics adopted and `decorate()` added, and the spec-derived `__*` field
+ * map folded into the instance side — a shim's `InstanceType` carries the full
+ * transient/nested-editor vocabulary without a hand-written map or cast. TypeScript
+ * can't see statics inherited through a class-expression base, so the Lexical static
+ * side is spelled out via the mapped type — at runtime every member is genuinely
+ * present on the assembled class. The static side deliberately carries no extra
+ * construct signature (`KlassConstructor` intersection): `InstanceType` over one
+ * folds `LexicalNode`'s construct return into the instance type first, degrading the
+ * base node's method types (e.g. `exportJSON()` collapsing to `SerializedLexicalNode`).
+ */
+export type CardNodeClass<TNode extends LexicalNode, D = unknown> = {
+  [k in keyof typeof LexicalNode]: (typeof LexicalNode)[k]
+} & {
+  // oxlint-disable-next-line typescript/no-explicit-any
+  new (...args: any[]): TNode & { decorate(): ReactNode } & CardSpecFieldMap<D> &
+    CardSpecAccessorMap<D> & {
+      // inherited from the generateDecoratorNode base the assembled class
+      // extends (getDataset is an instance member, the statics below class-side)
+      getDataset(): Record<string, unknown>
+    }
+  prototype: TNode & { decorate(): ReactNode } & CardSpecFieldMap<D> &
+    CardSpecAccessorMap<D> & {
+      getDataset(): Record<string, unknown>
+    }
+  readonly nestedEditors: readonly NestedEditorSpec[] | undefined
+  readonly transientProps: readonly TransientPropSpec[] | undefined
+  getPropertyDefaults(): Record<string, unknown>
+  readonly importSpec?: CardImportSpec
+  readonly urlTransformMap: Record<string, string | Record<string, string>>
+}
+
+/**
+ * The declaration facts assembly actually reads: node type, React-free base class,
+ * and the two spec statics adopted on the assembled class. Menu/dragIcon/markdown
+ * feed the derived views, not assembly — host card specs satisfy this shape too, so
+ * `defineCard` assembles through the same memoized path.
+ */
+export type CardAssemblyDeclaration = Pick<
+  CardDeclaration,
+  'nodeType' | 'baseNode' | 'nestedEditors' | 'transientProps'
+>
+
+/**
+ * The one wrapper-layer assembly helper: builds the registered node class for a card
+ * from its declaration. The assembled class subclasses the declaration's React-free
+ * base node and adopts the spec statics — `nestedEditors`/`transientProps` (read off
+ * `this.constructor` by the generated node machinery). Its only method is
+ * `decorate()`, delegated through the injection port
+ * (`@/inkling/nodes/card-decorate-slot`) the wrapper layer registers into — the
+ * inversion keeps this module off the React component tree, so card shims (and the
+ * markdown round-trip built on them) stay importable from the `./headless` entry.
+ *
+ * Behaviour the spec language can't express is NOT assembled here: gallery image
+ * helpers and the isEmpty()/getCardWidth() overrides live on the base node classes.
+ * The transient accessors ARE spec language — one get/set pair per `accessor: true`
+ * entry, defined on the assembled prototype below.
+ *
+ * The base class's `getType`/`clone`/`importJSON`/`exportJSON` are inherited, not
+ * own properties, so the assembled class runs through `ensureLexicalNodeOwnMethods`
+ * at assembly time.
+ */
+export function assembleCardNode<
+  TNode extends LexicalNode,
+  D extends CardAssemblyDeclaration = CardAssemblyDeclaration,
+  // oxlint-disable-next-line typescript/no-explicit-any
+>(declaration: D & { baseNode: new (...args: any[]) => TNode }): CardNodeClass<TNode, D> {
+  // oxlint-disable-next-line typescript/no-explicit-any
+  const baseNode = declaration.baseNode as new (...args: any[]) => LexicalNode
+
+  class AssembledCardNode extends baseNode {
+    static nestedEditors = declaration.nestedEditors
+    static transientProps = declaration.transientProps
+
+    // Stamped at assembly, not inherited from the generated base: every card built
+    // through the declaration pipeline — built-in or host-defined, generated or
+    // hand-written base — passes the $isInklingCard gate with no per-class ceremony.
+    isInklingCard(): true {
+      return true
+    }
+
+    decorate(): ReactNode {
+      return decorateCardNode(this)
+    }
+  }
+
+  // the spec's accessor entries: one get/set pair per `accessor: true`
+  // transient prop, reading/writing its private field
+  for (const spec of declaration.transientProps ?? []) {
+    if (!spec.accessor) {
+      continue
+    }
+    defineFieldAccessor(AssembledCardNode.prototype, spec.name, getTransientPropPrivateName(spec))
+  }
+
+  ensureLexicalNodeOwnMethods(AssembledCardNode)
+
+  // Every CardNodeClass member is genuinely present on the assembled class (the
+  // Lexical statics through the base, the spec statics and accessors adopted
+  // above), but a class extending an expression-typed base cannot be proven
+  // against the mapped interface — and no runtime check can prove a generic class
+  // shape either.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the assembled class carries every member at runtime
+  return AssembledCardNode as unknown as CardNodeClass<TNode, D>
+}
+
+// `var` hoists: a shim reached through the wrapper-layer import cycle (shim →
+// card-wrappers → assemble-card-node → decorate tree → plugins/components →
+// shim) calls `assembleCardNodeOnce` while this module is still evaluating, so
+// the cache binding must exist before any module body runs — a `const` would
+// still be in its TDZ.
+// oxlint-disable-next-line no-var
+var assembledCardNodeCache: WeakMap<object, CardNodeClass<LexicalNode>> | undefined
+
+/**
+ * The single-site card assembler: every caller — the wrapper-layer projection
+ * (`card-wrappers`), the shim modules (`AudioNode` and friends), and `defineCard`
+ * for host cards — assembles through this memoized helper, so exactly one class
+ * object exists per declaration and importDOM/clone identity is coherent across
+ * every consumer. Keyed on the declaration object itself: the declarations never
+ * import the wrapper layer, so the same object reaches every caller.
+ *
+ * Memoization must live behind a hoisted function (never a module-level `const`
+ * map read): the wrapper layer's import closure contains the React decorate tree,
+ * whose components/plugins value-import the shim modules — when a shim is
+ * evaluated mid-cycle it calls this function before the wrapper-layer module
+ * bodies have run.
+ */
+export function assembleCardNodeOnce<
+  TNode extends LexicalNode,
+  D extends CardAssemblyDeclaration = CardAssemblyDeclaration,
+  // oxlint-disable-next-line typescript/no-explicit-any
+>(declaration: D & { baseNode: new (...args: any[]) => TNode }): CardNodeClass<TNode, D> {
+  assembledCardNodeCache ??= new WeakMap()
+  const cached = assembledCardNodeCache.get(declaration)
+  if (cached) {
+    // The WeakMap is keyed on the declaration object itself, so a hit IS the
+    // CardNodeClass<TNode, D> this call would assemble — the cache value type
+    // is deliberately widened to the shared base, and TS cannot recover the
+    // per-declaration type from the key.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- memoization cache; the key identity carries the type
+    return cached as unknown as CardNodeClass<TNode, D>
+  }
+  const assembled = assembleCardNode(declaration)
+  assembledCardNodeCache.set(declaration, assembled)
+  return assembled
+}

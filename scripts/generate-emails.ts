@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+
 // Renders every email template to a standalone HTML file under
 // `scripts/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
 // The snapshot data is entirely fake — no real addresses or secrets.
@@ -6,10 +10,6 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import type { ServerTranslator } from '@/server/infra/i18n'
-import type { BlogSettingsBundle } from '@/shared/config/types'
-import type { AppLocale } from '@/shared/i18n/locales'
 
 // The server modules below load the validated config table on import. Point it
 // at a THROWAWAY file outside the repo and satisfy the two required secrets
@@ -20,19 +20,19 @@ process.argv.push('--config', CONFIG_PATH)
 process.env.security__sessionSecret = 'email-preview-only-session-secret-000000'
 process.env.security__encryptionKey = 'email-preview-only-encryption-key-000000'
 
-const { render } = await import('@/server/infra/email/render')
-const { AdminNotificationEmail } = await import('@/server/infra/email/templates/AdminNotificationEmail')
-const { ApprovedComment } = await import('@/server/infra/email/templates/ApprovedComment')
-const { AuthorInvite } = await import('@/server/infra/email/templates/AuthorInvite')
-const { ConfirmSubscription } = await import('@/server/infra/email/templates/ConfirmSubscription')
-const { NewReply } = await import('@/server/infra/email/templates/NewReply')
-const { PasswordReset } = await import('@/server/infra/email/templates/PasswordReset')
-const { SignInLink } = await import('@/server/infra/email/templates/SignInLink')
-const { SignInOtp } = await import('@/server/infra/email/templates/SignInOtp')
-const { createServerTranslator } = await import('@/server/infra/i18n')
-const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
-const { SUPPORTED_LOCALES } = await import('@/shared/i18n/locales')
-const { unsafeCast } = await import('@/shared/utils/unsafe-cast')
+const { render } = await import('@kobato/server/infra/email/render.tsx')
+const { AdminNotificationEmail } = await import('@kobato/server/infra/email/templates/AdminNotificationEmail.tsx')
+const { ApprovedComment } = await import('@kobato/server/infra/email/templates/ApprovedComment.tsx')
+const { AuthorInvite } = await import('@kobato/server/infra/email/templates/AuthorInvite.tsx')
+const { ConfirmSubscription } = await import('@kobato/server/infra/email/templates/ConfirmSubscription.tsx')
+const { NewReply } = await import('@kobato/server/infra/email/templates/NewReply.tsx')
+const { PasswordReset } = await import('@kobato/server/infra/email/templates/PasswordReset.tsx')
+const { SignInLink } = await import('@kobato/server/infra/email/templates/SignInLink.tsx')
+const { SignInOtp } = await import('@kobato/server/infra/email/templates/SignInOtp.tsx')
+const { createServerTranslator } = await import('@kobato/server/infra/i18n.ts')
+const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/shared/config/snapshot.ts')
+const { SUPPORTED_LOCALES } = await import('@kobato/shared/i18n/locales.ts')
+const { unsafeCast } = await import('@kobato/shared/utils/unsafe-cast.ts')
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, 'emails')

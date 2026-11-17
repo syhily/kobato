@@ -1,0 +1,79 @@
+import type { Post, PostVisibilityOptions } from '@kobato/shared/types/catalog.ts'
+
+import type { Database } from '../../../infra/db/database'
+
+import { buildPublicPostFilters, hydratePostList } from '../repos/hydrate'
+import { listPublicPosts } from './public-query'
+
+/**
+ * Like {@link listClientPosts} but loads bodies + headings from the published
+ * `content` revision — use for feeds, {@link listClientPosts} for metadata only.
+ */
+export async function listPublicPostsWithContent(
+  db: Database,
+  options?: PostVisibilityOptions & {
+    categoryId?: number
+    tag?: string
+    sortBy?: 'publishedAt' | 'updatedAt'
+    limit?: number
+  },
+): Promise<Post[]> {
+  const filters = buildPublicPostFilters(options)
+  const metas = await listPublicPosts(db, {
+    ...filters,
+    categoryId: options?.categoryId,
+    tag: options?.tag,
+    sortBy: options?.sortBy,
+    limit: options?.limit,
+  })
+  return hydratePostList(db, metas, { revision: 'published' })
+}
+
+export interface FeedPostSelection {
+  category?: string
+  tag?: string
+  limit?: number
+}
+
+/**
+ * Taxonomy resolution for feed scoping, caller-wired by the renderer —
+ * importing the taxonomies resolvers would close the domain DAG.
+ */
+export interface FeedTaxonomyResolvers {
+  resolveCategory: (db: Database, value: string) => Promise<{ id: number } | null>
+  resolveTag: (db: Database, value: string) => Promise<{ name: string } | null>
+}
+
+/**
+ * Post selection for the feed channel: `visible=false` posts stay listed,
+ * scheduled posts do not; an unresolvable scope yields an empty feed.
+ */
+export async function selectFeedPosts(
+  db: Database,
+  options: FeedPostSelection,
+  resolvers: FeedTaxonomyResolvers,
+): Promise<Post[]> {
+  const visibility = {
+    includeHidden: true,
+    includeScheduled: false,
+    limit: options.limit,
+  }
+
+  if (options.category !== undefined) {
+    const category = await resolvers.resolveCategory(db, options.category)
+    if (category === null) {
+      return []
+    }
+    return listPublicPostsWithContent(db, { ...visibility, categoryId: category.id })
+  }
+
+  if (options.tag !== undefined) {
+    const tag = await resolvers.resolveTag(db, options.tag)
+    if (tag === null) {
+      return []
+    }
+    return listPublicPostsWithContent(db, { ...visibility, tag: tag.name })
+  }
+
+  return listPublicPostsWithContent(db, visibility)
+}

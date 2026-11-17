@@ -1,0 +1,160 @@
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { Page, Post } from '@kobato/shared/types/catalog.ts'
+
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
+import { brandingVersionSuffix } from '@kobato/shared/config/utils.ts'
+import { sanitizeHtmlString } from '@kobato/shared/sanitize/sanitize-html.ts'
+import { ogImagePathForSlug } from '@kobato/shared/seo/og-image.ts'
+import { joinUrl } from '@kobato/shared/utils/urls.ts'
+import { Feed } from 'feed'
+
+import type { Database } from '../../infra/db/database'
+
+import { resolveBodyHtmlFeed } from '../../domains/content/services/body-html'
+import { selectFeedPosts } from '../../domains/posts/services/feed'
+import { listAllCategories, resolveCategoryBySlugOrName } from '../../domains/taxonomies/categories/services/query'
+import { getTagsByNames, resolveTagBySlugOrName } from '../../domains/taxonomies/tags/service'
+import { findCategoriesByNames } from '../../infra/db/operations/category'
+import { DomainError } from '../../infra/http/errors'
+
+export interface FeedOptions {
+  /** The request's AppLocale — drives `<language>` / `xml:lang`. Explicit, never inferred. */
+  locale: AppLocale
+  category?: string
+  tag?: string
+  /** The settings snapshot the caller pinned (request capture / background send-time
+   *  resolve); omitted = the current process snapshot. The feed resource always passes
+   *  it, so the rendered bytes match the cache key's `settingsRevision`. */
+  settings?: BlogSettingsBundle | null
+}
+
+// Allowlist HTML sanitizer for feed output — a thin wrapper over the shared DOMPurify
+// 'feed' strategy; `packages/shared/src/sanitize/config.ts` owns the tag/attribute allowlist, which
+// mirrors the feed-variant projection's real output (inkling exportDOM, artifacts
+// stripped).
+export function sanitizeFeedHtml(html: string): string {
+  return sanitizeHtmlString(html, 'feed')
+}
+
+// xml-js (the feed library's serializer) CDATA-wraps content but splits only the FIRST `]]>`
+// a payload contains — a second occurrence would end the CDATA early and invalidate the
+// document. Escaping every occurrence up front decodes back to `>` in the reader and always
+// yields parseable XML.
+/** Exported for unit tests. */
+export function escapeCdataPayload(value: string): string {
+  return value.replaceAll(']]>', ']]&gt;')
+}
+
+async function renderEntryContent(entry: Post | Page): Promise<string> {
+  // The saved `body_html_feed` projection already carries the rssMode degradations
+  // (math→TeX, code→plain pre, host cards flattened) and origin-absolutized media srcs;
+  // the sanitize allowlist is the last boundary before the XML.
+  const html = await resolveBodyHtmlFeed(entry)
+  return escapeCdataPayload(sanitizeFeedHtml(html))
+}
+
+export async function generateFeeds(db: Database, options: FeedOptions) {
+  const siteIdentity = requireBlogSettingsSection('siteIdentity', options.settings)
+  const content = requireBlogSettingsSection('content', options.settings)
+  const branding = (options.settings === undefined ? getBlogSettingsBundleSync() : options.settings)?.assets?.branding
+  const { category, tag, locale } = options
+  if (category !== undefined && tag !== undefined) {
+    throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
+  }
+  // Visibility policy lives in the posts domain; the renderer wires the taxonomy resolvers only.
+  const feedPosts = await selectFeedPosts(
+    db,
+    { category, tag, limit: content.feed.size },
+    { resolveCategory: resolveCategoryBySlugOrName, resolveTag: resolveTagBySlugOrName },
+  )
+
+  const feed = new Feed({
+    title: siteIdentity.title,
+    description: siteIdentity.description,
+    id: siteIdentity.website,
+    link: siteIdentity.website,
+    language: locale,
+    image: joinUrl(siteIdentity.website, `/logo.svg${brandingVersionSuffix(branding?.logoSvg)}`),
+    favicon: joinUrl(siteIdentity.website, `/favicon.svg${brandingVersionSuffix(branding?.faviconSvg)}`),
+    copyright: `All rights reserved ${siteIdentity.initialYear}, ${siteIdentity.author.name}`,
+    updated: new Date(),
+    feedLinks: {
+      rss: `${siteIdentity.website}${category ? `/cats/${category}` : ''}${tag ? `/tags/${tag}` : ''}/feed`,
+      atom: `${siteIdentity.website}${category ? `/cats/${category}` : ''}${tag ? `/tags/${tag}` : ''}/feed/atom/`,
+    },
+    author: {
+      name: siteIdentity.author.name,
+      email: siteIdentity.author.email,
+      link: siteIdentity.author.url,
+    },
+    // No XML stylesheet — browsers are deprecating XSLT for XML documents.
+  })
+
+  // Batch-resolve tags and categories to avoid N+1 queries inside the loop.
+  const allTagNames = [...new Set(feedPosts.flatMap((p) => p.tags))]
+  const allCategoryNames = [...new Set(feedPosts.map((p) => p.category).filter(Boolean))]
+
+  const [allTags, allCategories, contents] = await Promise.all([
+    getTagsByNames(db, allTagNames),
+    findCategoriesByNames(db, allCategoryNames),
+    Promise.all(feedPosts.map((post) => renderEntryContent(post))),
+  ])
+
+  const tagMap = new Map(allTags.map((t) => [t.name, t]))
+  const catMap = new Map(allCategories.filter((c): c is NonNullable<typeof c> => Boolean(c)).map((c) => [c.name, c]))
+
+  for (let i = 0; i < feedPosts.length; i++) {
+    const post = feedPosts[i]
+    const itemCategories = post.tags
+      .map((name) => tagMap.get(name))
+      .filter((t): t is NonNullable<typeof t> => Boolean(t))
+      .map((t) => ({
+        name: t.name,
+        domain: joinUrl(siteIdentity.website, `/tags/${t.slug}`),
+        term: t.name,
+      }))
+    const postCategory = post.category ? (catMap.get(post.category) ?? null) : null
+    if (postCategory !== null) {
+      itemCategories.push({
+        name: postCategory.name,
+        domain: joinUrl(siteIdentity.website, `/cats/${postCategory.slug}`),
+        term: postCategory.name,
+      })
+    }
+    feed.addItem({
+      title: escapeCdataPayload(post.title),
+      id: joinUrl(siteIdentity.website, post.permalink),
+      link: joinUrl(siteIdentity.website, post.permalink),
+      description: escapeCdataPayload(post.summary),
+      content: contents[i],
+      author: [
+        {
+          name: siteIdentity.author.name,
+          email: siteIdentity.author.email,
+          link: siteIdentity.author.url,
+        },
+      ],
+      date: post.date,
+      image: post.og
+        ? joinUrl(siteIdentity.website, post.og)
+        : joinUrl(siteIdentity.website, ogImagePathForSlug(post.slug)),
+      category: itemCategories,
+    })
+  }
+
+  const categories = await listAllCategories(db)
+  for (const cat of categories) {
+    feed.addCategory(cat.name)
+  }
+
+  return {
+    rss: feed.rss2(),
+    atom: feed
+      .atom1()
+      .replace(
+        '<feed xmlns="http://www.w3.org/2005/Atom">',
+        `<feed xml:lang="${locale}" xmlns="http://www.w3.org/2005/Atom">`,
+      ),
+  }
+}

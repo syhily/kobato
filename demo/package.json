@@ -1,0 +1,24 @@
+{
+  "name": "@kobato/demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@kobato/inkling": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@kobato/web": "workspace:*",
+    "@lexical/list": "catalog:",
+    "@lexical/react": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "lexical": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-svgr": "catalog:",
+    "yjs": "catalog:"
+  }
+}

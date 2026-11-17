@@ -1,0 +1,143 @@
+import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
+import type { ReactElement, ReactNode } from 'react'
+
+import { uiMessagesFor } from '@kobato/shared/i18n/catalog.ts'
+import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
+import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context.tsx'
+import { I18nProvider } from '@kobato/web/ui/lib/I18nProvider.tsx'
+import { ThemeProvider } from '@kobato/web/ui/lib/ThemeProvider.tsx'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Buffer } from 'node:buffer'
+import { renderToStaticMarkup, renderToString } from 'react-dom/server'
+import { prerenderToNodeStream } from 'react-dom/static'
+import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
+
+const testQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false, gcTime: 0 },
+    mutations: { retry: false },
+  },
+})
+
+// Tiny SSR helpers shared across snapshot tests — pick sync vs stream render per spec.
+
+export function renderToHtml(element: ReactElement): string {
+  return renderToString(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            {element}
+          </I18nProvider>
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+}
+
+// Render under a memory router (catch-all route) so router hooks resolve. The locale
+// defaults to zh-CN; pass `{ locale }` to pin another catalog.
+export function renderInRouter(
+  node: ReactNode,
+  initialPath: string = '/',
+  options: { locale?: AppLocale } = {},
+): string {
+  const locale = options.locale ?? 'zh-CN'
+  const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
+  const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
+  return renderToStaticMarkup(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale={locale} messages={locale === 'zh-CN' ? uiMessagesZhCN : uiMessagesFor(locale)}>
+            <RouterProvider router={router} />
+          </I18nProvider>
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+}
+
+/** Like `renderInRouter`, but the tree sits under a parent `<Outlet>`
+ *  carrying `outletContext` (for `useOutletContext` consumers). */
+export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, outletContext: unknown): string {
+  const routes: RouteObject[] = [
+    {
+      path: '/',
+      element: <Outlet context={outletContext} />,
+      children: [{ path: '*', element: <>{node}</> }],
+    },
+  ]
+  const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
+  return renderToStaticMarkup(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+}
+
+/** Stream-render like the production SSR pipeline and collect the result —
+ *  for components depending on Suspense / server-only data fetching. */
+export async function prerenderToHtml(element: ReactNode): Promise<string> {
+  const { prelude } = await prerenderToNodeStream(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            {element}
+          </I18nProvider>
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+  const chunks: Buffer[] = []
+  for await (const chunk of prelude) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer))
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
+
+/** Router-wrapped `prerenderToHtml` — use for lazily-loaded components
+ *  (the synchronous helper only renders the boundary's fallback). */
+export async function prerenderInRouter(node: ReactNode, initialPath: string = '/'): Promise<string> {
+  const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
+  const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
+  const { prelude } = await prerenderToNodeStream(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <RouterProvider router={router} />
+          </I18nProvider>
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+  const chunks: Buffer[] = []
+  for await (const chunk of prelude) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer))
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
+
+/** Strip volatile React server attributes / hydration markers so snapshots
+ *  survive React minor upgrades. Regex-based, no DOM rebuild. */
+export function stableHtml(html: string): string {
+  return (
+    html
+      .replace(/\s+data-react[\w-]+="[^"]*"/g, '')
+      .replace(/<!--\$-->|<!--\/\$-->|<!--\$\?-->|<!--\$!-->|<!---->/g, '')
+      // Base UI emits volatile useId-based ids — normalize them.
+      .replace(/id="base-ui-[^"]*"/g, 'id="base-ui-id"')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  )
+}

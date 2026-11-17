@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="src/server/assets/defaults/images/blog-poster-dark.png">
-  <img alt="Kobato" src="src/server/assets/defaults/images/blog-poster.png">
+  <source media="(prefers-color-scheme: dark)" srcset="packages/server/src/assets/defaults/images/blog-poster-dark.png">
+  <img alt="Kobato" src="packages/server/src/assets/defaults/images/blog-poster.png">
 </picture>
 
 # Kobato (こばと。)
@@ -18,7 +18,7 @@ The whole deployment is one process — content lives in an embedded **SQLite** 
 embedded **DuckDB** sidecar. There is no database server to run, back up, or upgrade.
 
 > **Contributors:** start at [AGENTS.md](AGENTS.md) — it maps the folder-scoped
-> docs covering the import boundaries, the four-layer `src/server/` graph, the
+> docs covering the import boundaries, the four-layer `packages/server/src/` graph, the
 > install contract, and the API permission matrix.
 
 Manuals: [Configuration](docs/manual/Configuration.md) ·

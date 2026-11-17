@@ -1,0 +1,565 @@
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+import type { MetaDescriptor } from 'react-router'
+
+import { fallbackMessages } from '@kobato/shared/i18n/fallback-messages.ts'
+import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
+import { uiMessagesZhTW } from '@kobato/shared/i18n/messages/ui/zh-TW.ts'
+import {
+  bundleFromMatches,
+  i18nFromMatches,
+  metaWithFallback,
+  pageTitle,
+  routeMeta,
+  seoForPage,
+  seoForPost,
+} from '@kobato/shared/seo/meta.ts'
+import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
+import { setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+// `routeMeta` and `pageTitle` read the site title / website / OG defaults
+// from the snapshot reader — there is no baked-in `DEFAULT_SETTINGS`, so
+// every test seeds an explicit fixture snapshot in `beforeEach`.
+const fixture: BlogSettingsBundle = {
+  siteIdentity: {
+    title: 'Test Blog',
+    titleSeparator: '-',
+    description: 'Test description',
+    website: 'https://test.example',
+    keywords: ['react', 'router'],
+    author: { name: 'tester', email: 'test@example.com', url: 'https://test.example' },
+    locale: 'zh-CN',
+    timeZone: 'UTC',
+    timeFormat: 'yyyy-LL-dd HH:mm',
+    initialYear: 2024,
+    icpNo: '',
+    moeIcpNo: '',
+  },
+  assets: {
+    asset: { host: 'cdn.test.example', scheme: 'https' },
+    storage: {
+      enabled: false,
+      endpoint: '',
+      region: '',
+      bucket: '',
+      accessKeyId: '',
+      secretAccessKey: '',
+      forcePathStyle: false,
+      urlTemplate: '',
+    },
+    upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
+  },
+  navigation: { navigation: { sideNav: [], footerNav: [] } },
+  socials: { socials: [] },
+  content: {
+    pagination: { posts: 12, category: 12, tags: 12, search: 12 },
+    feed: { full: false, size: 20 },
+    post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
+    footnotes: { sectionTitle: '尾声礼记' },
+  },
+  sidebar: {
+    sidebar: {
+      widgets: [
+        { type: 'search', enabled: true },
+        { type: 'recentPosts', enabled: true, count: 5 },
+        { type: 'recentComments', enabled: true, count: 5 },
+        { type: 'randomTags', enabled: true, count: 20 },
+        { type: 'todayCalendar', enabled: true },
+      ],
+      dailyQuote: { source: 'shanbay', customQuotes: [] },
+    },
+  },
+  comments: {
+    comments: {
+      size: 10,
+      avatar: { mirror: 'https://cdn.test.example/avatar', sources: ['qq', 'github', 'gravatar'] },
+      tokenTtlSeconds: 1800,
+    },
+  },
+  webmentions: {
+    webmention: { receiveEnabled: true, displayOnPosts: true },
+  },
+  seo: {
+    toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+    og: { width: 1200, height: 630 },
+  },
+
+  mail: {
+    mail: {
+      enabled: false,
+      notificationEmails: true,
+      sender: '',
+      transport: 'smtp',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+      smtpRequireTls: true,
+      smtpRejectUnauthorized: true,
+      mailgunDomain: '',
+      mailgunApiKey: '',
+    },
+  },
+  newsletter: {
+    newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
+  },
+  cache: {
+    cache: {
+      og: { prefix: 'og:', ttlSeconds: 3600 },
+      calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
+      avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+
+      searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
+    },
+  },
+  rateLimit: {
+    signIn: { windowSeconds: 60 * 30, maxAttempts: 5 },
+    comment: { windowSeconds: 60 * 60, maxAttempts: 12 },
+    like: { windowSeconds: 60 * 60, maxAttempts: 30 },
+    invite: { windowSeconds: 60 * 60, maxAttempts: 3 },
+    passwordReset: { windowSeconds: 60 * 30, maxAttempts: 3 },
+    passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
+    resource: { windowSeconds: 60, maxAttempts: 60 },
+    otpSend: { windowSeconds: 60 * 5, maxAttempts: 3 },
+    otpVerify: { windowSeconds: 60 * 5, maxAttempts: 5 },
+    passkeyAuth: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeyManage: { windowSeconds: 60 * 5, maxAttempts: 10 },
+  },
+  fonts: {
+    og: { family: '' },
+    calendar: { family: '' },
+    global: [],
+    post: [],
+    code: [],
+  },
+  backup: {
+    scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+    retention: { enabled: true, days: 30 },
+    encryption: { enabled: false, password: '' },
+  },
+  limits: {
+    maxRequestBodySize: 10 * 1024 * 1024,
+    sessionMaxAge: 60 * 60 * 24 * 30,
+    auditLogDbRetentionDays: 30,
+    auditLogArchiveRetentionDays: 180,
+  },
+  analytics: {
+    analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: false },
+  },
+  security: {
+    csrf: { enabled: true, exemptPaths: [] },
+    cors: { enabled: false, origins: [] },
+    passkey: { enabled: false },
+  },
+  observability: {
+    observability: {
+      enabled: false,
+      endpoint: '',
+      organization: '',
+      username: '',
+      password: '',
+      sampleRate: 1,
+      includeRedactedSql: false,
+      retentionDays: 0,
+      logs: { enabled: false },
+      frontend: { enabled: false, sessionSampleRate: 100, clientIdentity: 'anonymous' },
+      rumClientToken: '',
+      verifiedFingerprint: '',
+      provisionedFingerprint: '',
+    },
+  },
+}
+
+beforeEach(() => {
+  setBlogSettingsBundleForTests(fixture)
+})
+
+// routeMeta emits a heterogeneous list of `name`, `property`, and
+// `tagName: link` entries — treat it as a flat map and assert by predicate.
+type MetaEntry = MetaDescriptor & Record<string, unknown>
+
+function findByName(meta: MetaEntry[], name: string) {
+  return meta.find((m) => m.name === name) as MetaEntry | undefined
+}
+function findByProperty(meta: MetaEntry[], property: string) {
+  return meta.find((m) => m.property === property) as MetaEntry | undefined
+}
+function findLink(meta: MetaEntry[], rel: string) {
+  return meta.find((m) => m.tagName === 'link' && m.rel === rel) as MetaEntry | undefined
+}
+
+describe('services/seo/meta — pageTitle', () => {
+  it('returns the site default title when no override is supplied', () => {
+    expect(pageTitle()).toBe(`${fixture.siteIdentity!.title} - ${fixture.siteIdentity!.description}`)
+  })
+
+  it('appends the site name to per-page titles', () => {
+    expect(pageTitle('文章标题')).toBe(`文章标题 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('joins with the configured title separator', () => {
+    const custom: BlogSettingsBundle = {
+      ...fixture,
+      siteIdentity: { ...fixture.siteIdentity!, titleSeparator: '·' },
+    }
+    expect(pageTitle('文章标题', custom)).toBe('文章标题 · Test Blog')
+    expect(pageTitle(undefined, custom)).toBe('Test Blog · Test description')
+  })
+})
+
+describe('services/seo/meta — routeMeta', () => {
+  it('emits the standard base/robots/og/twitter tags by default', () => {
+    const meta = routeMeta() as MetaEntry[]
+    expect(findByName(meta, 'robots')?.content).toBe('index, follow')
+    expect(findByProperty(meta, 'og:type')?.content).toBe('website')
+    expect(findByProperty(meta, 'og:title')).toBeDefined()
+    expect(findByProperty(meta, 'twitter:card')?.content).toBe('summary_large_image')
+    expect(findLink(meta, 'alternate')).toBeDefined()
+    expect(findLink(meta, 'icon')).toBeDefined()
+  })
+
+  it('flips robots tags to noindex when noindex=true', () => {
+    const meta = routeMeta({ noindex: true }) as MetaEntry[]
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+    expect(findByName(meta, 'googlebot')?.content).toBe('noindex,follow')
+  })
+
+  it('emits article-specific tags for `kind: post` variants', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: {
+          date: new Date('2024-01-02T03:04:05.000Z'),
+          updated: new Date('2024-02-03T00:00:00.000Z'),
+          category: '默认分类',
+          tags: ['typescript', 'react'],
+        },
+      },
+    }) as MetaEntry[]
+
+    expect(findByProperty(meta, 'og:type')?.content).toBe('article')
+    expect(findByProperty(meta, 'article:published_time')?.content).toBe('2024-01-02T03:04:05.000Z')
+    expect(findByProperty(meta, 'article:modified_time')?.content).toBe('2024-02-03T00:00:00.000Z')
+    expect(findByProperty(meta, 'article:section')?.content).toBe('默认分类')
+    const tagEntries = meta.filter((m) => m.property === 'article:tag')
+    expect(tagEntries.map((entry) => entry.content)).toEqual(['typescript', 'react'])
+  })
+
+  it('omits article:section when an uncategorized post has no category', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: {
+          date: new Date('2024-01-02T03:04:05.000Z'),
+          category: '',
+          tags: [],
+        },
+      },
+    }) as MetaEntry[]
+
+    // An empty content="..." descriptor is not a section — omit the tag entirely.
+    expect(findByProperty(meta, 'article:section')).toBeUndefined()
+  })
+
+  it('still emits article:section for a categorized post', () => {
+    const meta = routeMeta({
+      title: 'Hello',
+      variant: {
+        kind: 'post',
+        article: { date: new Date('2024-01-02T03:04:05.000Z'), category: '默认分类', tags: [] },
+      },
+    }) as MetaEntry[]
+
+    expect(findByProperty(meta, 'article:section')?.content).toBe('默认分类')
+  })
+
+  it('emits canonical/prev/next links only when requested', () => {
+    const meta = routeMeta({
+      pageUrl: '/posts/hello',
+      canonical: true,
+      prevUrl: '/posts/page/1',
+      nextUrl: '/posts/page/3',
+    }) as MetaEntry[]
+
+    expect(findLink(meta, 'canonical')?.href).toBe(`${fixture.siteIdentity!.website}/posts/hello`)
+    expect(findLink(meta, 'prev')?.href).toBe(`${fixture.siteIdentity!.website}/posts/page/1`)
+    expect(findLink(meta, 'next')?.href).toBe(`${fixture.siteIdentity!.website}/posts/page/3`)
+  })
+
+  it('falls back to the default OG image when ogImageUrl is missing', () => {
+    const meta = routeMeta() as MetaEntry[]
+    const og = findByProperty(meta, 'og:image')
+    expect(og?.content).toContain('/images/open-graph.png')
+    expect(String(og?.content).startsWith('http')).toBe(true)
+  })
+})
+
+describe('services/seo/meta — pageTitle pre-install fallback', () => {
+  it('uses the shared fallback module when no bundle is hydrated', () => {
+    setBlogSettingsBundleForTests(null)
+    expect(pageTitle()).toBe(fallbackMessages['meta.preinstall'])
+    expect(pageTitle('Custom')).toBe('Custom')
+  })
+})
+
+describe('services/seo/meta — routeMeta pre-install fallback', () => {
+  it('emits a minimal title and noindex robots when the bundle is null', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = routeMeta({ title: 'X' }) as MetaEntry[]
+    expect(meta[0]).toMatchObject({ title: 'X' })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+})
+
+describe('services/seo/meta — page variant and feedLinks', () => {
+  it('localizes the page-variant article section from the i18n payload', () => {
+    const meta = routeMeta(
+      { title: 'About', variant: { kind: 'page', article: { date: new Date('2024-01-01') } } },
+      fixture,
+      { locale: 'zh-CN', messages: uiMessagesZhCN },
+    ) as MetaEntry[]
+    expect(findByProperty(meta, 'og:type')?.content).toBe('article')
+    expect(findByProperty(meta, 'article:section')?.content).toBe('页面')
+  })
+
+  it('falls back to the shared fallback module for the page section without a payload', () => {
+    const meta = routeMeta({
+      title: 'About',
+      variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
+    }) as MetaEntry[]
+
+    // Never an empty section: the fallback module is the last-resort language source.
+    expect(findByProperty(meta, 'article:section')?.content).toBe(fallbackMessages['meta.section.page'])
+  })
+
+  it('localizes the page section per locale from the matches payload', () => {
+    const meta = routeMeta(
+      {
+        titleKey: 'meta.title.public.categories',
+        variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
+      },
+      fixture,
+      { locale: 'zh-TW', messages: uiMessagesZhTW },
+    ) as MetaEntry[]
+
+    expect(findByProperty(meta, 'article:section')?.content).toBe('頁面')
+  })
+
+  it('maps og:locale to the underscore spelling', () => {
+    expect(findByProperty(routeMeta() as MetaEntry[], 'og:locale')?.content).toBe('zh_CN')
+
+    setBlogSettingsBundleForTests({
+      ...fixture,
+      siteIdentity: { ...fixture.siteIdentity!, locale: 'en-US' },
+    })
+    expect(findByProperty(routeMeta() as MetaEntry[], 'og:locale')?.content).toBe('en_US')
+  })
+
+  it('emits feed alternate links when feedLinks is supplied', () => {
+    const meta = routeMeta({
+      feedLinks: { rss: '/feed', atom: '/feed/atom/', title: 'Site Feed' },
+    }) as MetaEntry[]
+    const feeds = meta.filter((m) => m.tagName === 'link' && m.rel === 'alternate')
+    expect(feeds.map((f) => f.type)).toContain('application/rss+xml')
+    expect(feeds.map((f) => f.type)).toContain('application/atom+xml')
+  })
+
+  it('omits feed alternate links when feedLinks is undefined', () => {
+    const meta = routeMeta() as MetaEntry[]
+    const feeds = meta.filter((m) => m.tagName === 'link' && m.rel === 'alternate' && m.type === 'application/rss+xml')
+    expect(feeds.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('emits a custom OG image when ogImageUrl is an absolute URL', () => {
+    const meta = routeMeta({ ogImageUrl: 'https://cdn.example.com/og.png' }) as MetaEntry[]
+    expect(findByProperty(meta, 'og:image')?.content).toBe('https://cdn.example.com/og.png')
+  })
+
+  it('prefixes a relative ogImageUrl with the site website', () => {
+    const meta = routeMeta({ ogImageUrl: '/custom/og.png' }) as MetaEntry[]
+    expect(findByProperty(meta, 'og:image')?.content).toContain('/custom/og.png')
+  })
+
+  it('emits twitter:site only when an X handle is resolvable', () => {
+    setBlogSettingsBundleForTests({
+      ...fixture,
+      socials: { socials: [{ name: 'X', network: 'x', type: 'link', link: 'https://x.com/handle' }] },
+    })
+    const meta = routeMeta() as MetaEntry[]
+    const site = meta.find((m) => m.property === 'twitter:site')
+    expect(site).toBeDefined()
+    expect(String(site?.content).startsWith('@')).toBe(true)
+  })
+
+  it('omits twitter:site when no X handle is resolvable', () => {
+    const meta = routeMeta() as MetaEntry[]
+    const site = meta.find((m) => m.property === 'twitter:site')
+    expect(site).toBeUndefined()
+  })
+})
+
+describe('services/seo/meta — seoForPost / seoForPage', () => {
+  it('builds a post RouteSeoOptions with article variant', () => {
+    const seo = seoForPost({
+      title: 'Hello',
+      slug: 'hello',
+      summary: 'Sum',
+      permalink: '/posts/hello',
+      date: '2024-01-01',
+      category: '默认分类',
+      tags: ['a', 'b'],
+    })
+    expect(seo.title).toBe('Hello')
+    expect(seo.variant?.kind).toBe('post')
+    expect(seo.canonical).toBe(true)
+    expect(seo.ogImageUrl).toContain('/images/og/hello.png')
+  })
+
+  it('uses the post og image when provided', () => {
+    const seo = seoForPost({
+      title: 'Hello',
+      slug: 'hello',
+      summary: 'Sum',
+      permalink: '/posts/hello',
+      og: '/og/custom.png',
+      date: '2024-01-01',
+      category: 'x',
+      tags: [],
+    })
+    expect(seo.ogImageUrl).toBe('/og/custom.png')
+  })
+
+  it('builds a page RouteSeoOptions with article variant', () => {
+    const seo = seoForPage({
+      title: 'About',
+      slug: 'about',
+      summary: 'About',
+      permalink: '/about',
+      date: '2024-01-01',
+    })
+    expect(seo.variant?.kind).toBe('page')
+    expect(seo.canonical).toBe(true)
+  })
+})
+
+describe('services/seo/meta — bundleFromMatches / metaWithFallback', () => {
+  it('returns undefined when no root match is found', () => {
+    expect(bundleFromMatches([])).toBeUndefined()
+    expect(bundleFromMatches([{ id: 'other' }])).toBeUndefined()
+  })
+
+  it('returns undefined when the root match has no loaderData', () => {
+    expect(bundleFromMatches([{ id: 'root' }])).toBeUndefined()
+    expect(bundleFromMatches([{ id: 'root', loaderData: 'nope' }])).toBeUndefined()
+  })
+
+  it('returns null when blogSettings is explicitly null', () => {
+    expect(bundleFromMatches([{ id: 'root', loaderData: { blogSettings: null } }])).toBeNull()
+  })
+
+  it('returns the blogSettings bundle from the root match', () => {
+    const bundle = bundleFromMatches([{ id: 'root', loaderData: { blogSettings: fixture } }])
+    expect(bundle).toEqual(fixture)
+  })
+
+  it('metaWithFallback uses loader seo when present', () => {
+    const meta = metaWithFallback({ loaderData: { seo: [{ name: 'x', content: 'y' }] }, matches: [] })
+    expect(meta).toEqual([{ name: 'x', content: 'y' }])
+  })
+
+  it('metaWithFallback calls the fallback when loader seo is absent', () => {
+    const meta = metaWithFallback({
+      loaderData: { seo: undefined },
+      matches: [{ id: 'root', loaderData: { blogSettings: fixture } }],
+      fallback: () => [{ name: 'fb', content: '1' }],
+    })
+    expect(meta).toEqual([{ name: 'fb', content: '1' }])
+  })
+
+  it('metaWithFallback falls back to routeMeta when no fallback is given', () => {
+    const meta = metaWithFallback({ loaderData: {}, matches: [] }) as MetaEntry[]
+    expect(findByName(meta, 'robots')).toBeDefined()
+  })
+})
+
+const rootMatchWithI18n = (locale: 'zh-CN' | 'zh-TW' | 'en-US', bundle: typeof fixture | null = fixture) => [
+  { id: 'root', loaderData: { blogSettings: bundle, i18n: { locale, messages: MESSAGES[locale] } } },
+]
+
+const MESSAGES = {
+  'zh-CN': uiMessagesZhCN,
+  'zh-TW': uiMessagesZhTW,
+  'en-US': uiMessagesEnUS,
+}
+
+describe('services/seo/meta — i18nFromMatches', () => {
+  it('returns the root loader i18n payload', () => {
+    expect(i18nFromMatches(rootMatchWithI18n('zh-TW'))).toMatchObject({ locale: 'zh-TW' })
+  })
+
+  it('returns null without a root match, a payload or a supported locale', () => {
+    expect(i18nFromMatches([])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root' }])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root', loaderData: { i18n: null } }])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root', loaderData: { i18n: { locale: 'fr-FR', messages: {} } } }])).toBeNull()
+    expect(i18nFromMatches([{ id: 'root', loaderData: { i18n: { locale: 'zh-CN', messages: { a: 1 } } } }])).toBeNull()
+  })
+
+  it('never reads the settings snapshot (client navigation has no server section)', () => {
+    setBlogSettingsBundleForTests(null)
+    const i18n = i18nFromMatches(rootMatchWithI18n('en-US'))
+    expect(i18n?.messages['meta.title.admin.dashboard']).toBe('Welcome')
+  })
+})
+
+describe('services/seo/meta — titleKey (static route titles)', () => {
+  it('resolves a static title from the matches payload', () => {
+    const meta = routeMeta({ titleKey: 'meta.title.admin.dashboard' }, fixture, {
+      locale: 'zh-CN',
+      messages: uiMessagesZhCN,
+    }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`欢迎 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('keeps raw content titles untouched and never treats them as keys', () => {
+    const meta = routeMeta({ title: '我的第一篇文章', titleKey: 'meta.title.admin.dashboard' }, fixture, {
+      locale: 'zh-CN',
+      messages: uiMessagesZhCN,
+    }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`我的第一篇文章 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('titleMeta() resolves through matches on client navigation without any snapshot', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.signin')({ matches: rootMatchWithI18n('zh-CN') }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`用户登陆 - ${fixture.siteIdentity!.title}`)
+  })
+
+  it('uses the shared fallback module for the pre-install title without matches', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({ matches: [] }) as MetaEntry[]
+
+    expect(meta[0]).toMatchObject({ title: fallbackMessages['meta.preinstall'] })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+
+  it('localizes the pre-install title through matches', () => {
+    // Pre-install: no settings row anywhere — the payload still carries the locale's catalog.
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({
+      matches: rootMatchWithI18n('zh-TW', null),
+    }) as MetaEntry[]
+
+    // `<title>` + the two noindex robots tags; no site chrome at all.
+    expect(meta).toHaveLength(3)
+    expect(meta[0]).toMatchObject({ title: '建立網站' })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+})

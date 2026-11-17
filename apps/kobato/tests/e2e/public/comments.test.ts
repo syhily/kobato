@@ -1,0 +1,166 @@
+import {
+  E2eClient,
+  e2eEnv,
+  getAdminCsrfToken,
+  getPublicCsrfToken,
+  loginAdmin,
+} from '@kobato/test-helpers/e2e-client.ts'
+import { callE2eRpc } from '@kobato/test-helpers/e2e-rpc.ts'
+import { describe, expect, it } from 'vitest'
+
+const env = e2eEnv()
+
+// Comment and article bodies are Lexical editor states (same wire format).
+const COMMENT_BODY = {
+  root: {
+    type: 'root',
+    version: 1,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    children: [
+      {
+        type: 'paragraph',
+        version: 1,
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'extended-text',
+            version: 1,
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+            text: 'e2e 评论旅程标记',
+          },
+        ],
+      },
+    ],
+  },
+}
+
+/** Minimal one-paragraph article body (lexicalEditorStateSchema-valid). */
+function makePostBody(text: string) {
+  return {
+    root: {
+      type: 'root',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: [
+        {
+          type: 'paragraph',
+          version: 1,
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }],
+        },
+      ],
+    },
+  }
+}
+
+interface CommentListJson {
+  comments: Array<{ id: string; name: string; isPending: boolean | null }>
+}
+
+/** The post detail SSR embeds the metric public_id in the reply form's hidden input. */
+function scrapePageKey(html: string): string {
+  const input = /<input[^>]*name="page_key"[^>]*>/.exec(html)
+  const value = input?.[0].match(/value="([^"]+)"/)
+  if (!value?.[1]) {
+    throw new Error('no page_key hidden input on the post detail page')
+  }
+  return value[1]
+}
+
+describe('public comments flow (HTTP e2e)', () => {
+  it('guest reply → moderation hold → admin approve → publicly visible', async () => {
+    const admin = new E2eClient(env.baseUrl)
+    const { res } = await loginAdmin(admin, env)
+    expect(res.status).toBe(302)
+    const csrfToken = await getAdminCsrfToken(admin)
+
+    const created = await callE2eRpc<{ post: { id: string | number } }>(
+      admin,
+      '/admin/posts/upsertMeta',
+      { title: 'E2E Comments', slug: 'e2e-comments', published: true, publishedAt: new Date().toISOString() },
+      csrfToken,
+    )
+    expect(created.status).toBe(200)
+    const postId = String(created.json.post.id)
+
+    // upsertMeta alone never publishes — publish a real revision so the live gate opens.
+    const published = await callE2eRpc(
+      admin,
+      '/admin/posts/publishLatest',
+      {
+        id: postId,
+        body: makePostBody('e2e 评论宿主正文'),
+      },
+      csrfToken,
+    )
+    expect(published.status).toBe(200)
+
+    try {
+      const guest = new E2eClient(env.baseUrl)
+      const detail = await guest.get('/posts/e2e-comments')
+      expect(detail.status).toBe(200)
+      const pageKey = scrapePageKey(await detail.text())
+      // /rpc POSTs pass the csrfGuard — anonymous clients need their own session-bound token.
+      const guestCsrf = await getPublicCsrfToken(guest, '/posts/e2e-comments')
+
+      const reply = await callE2eRpc<{ comment: { id: string; isPending: boolean | null } }>(
+        guest,
+        '/comments/replyComment',
+        { page_key: pageKey, name: 'E2E Guest', email: 'e2e-guest@example.com', body: COMMENT_BODY },
+        guestCsrf,
+      )
+      expect(reply.status).toBe(200)
+      expect(reply.json.comment.id).toBeTruthy()
+      expect(reply.json.comment.isPending).toBe(true)
+      const commentId = reply.json.comment.id
+
+      const anon = new E2eClient(env.baseUrl)
+      const anonCsrf = await getPublicCsrfToken(anon, '/')
+      const hidden = await callE2eRpc<CommentListJson>(
+        anon,
+        '/comments/loadComments',
+        { page_key: pageKey, offset: 0 },
+        anonCsrf,
+      )
+      expect(hidden.status).toBe(200)
+      expect(hidden.json.comments.map((c) => c.id)).not.toContain(commentId)
+
+      const queue = await callE2eRpc<{ comments: Array<{ id: string; content: string | null }> }>(
+        admin,
+        '/admin/comments/loadAll',
+        { offset: 0, limit: 20, status: 'pending' },
+        csrfToken,
+      )
+      expect(queue.status).toBe(200)
+      expect(queue.json.comments.map((c) => c.id)).toContain(commentId)
+
+      const approved = await callE2eRpc(admin, '/admin/comments/approve', { commentId }, csrfToken)
+      expect(approved.status).toBe(200)
+
+      const visible = await callE2eRpc<CommentListJson>(
+        anon,
+        '/comments/loadComments',
+        { page_key: pageKey, offset: 0 },
+        anonCsrf,
+      )
+      expect(visible.status).toBe(200)
+      expect(visible.json.comments.map((c) => c.id)).toContain(commentId)
+
+      const rerendered = await anon.get('/posts/e2e-comments')
+      expect(await rerendered.text()).toContain('e2e 评论旅程标记')
+    } finally {
+      await callE2eRpc(admin, '/admin/posts/delete', { id: String(created.json.post.id) }, csrfToken)
+    }
+  })
+})

@@ -1,0 +1,45 @@
+import { Tabs, TabsList, TabsTrigger } from '../../components/tabs'
+import { useI18n } from '../../lib/I18nProvider'
+import { AdminListPage } from '../shared/AdminListPage'
+import { WebmentionInboxView } from './WebmentionInboxView'
+import { WebmentionOutboxView } from './WebmentionOutboxView'
+
+export type WebmentionTab = 'inbox' | 'outbox'
+
+function isWebmentionTab(value: unknown): value is WebmentionTab {
+  return value === 'inbox' || value === 'outbox'
+}
+
+// One page, both directions: the moderation queue (inbox) and the read-only
+// outbound send log (outbox). Pure-props: the route owns the tab state and
+// mirrors it into `?tab=` so a switched tab survives reload/share.
+export function WebmentionsView({
+  tab,
+  onTabChange,
+}: {
+  tab: WebmentionTab
+  onTabChange: (tab: WebmentionTab) => void
+}) {
+  const { t } = useI18n()
+  return (
+    <AdminListPage>
+      <AdminListPage.Header title={t('admin.webmentions.title')} description={t('admin.webmentions.description')} />
+
+      <Tabs
+        value={tab}
+        onValueChange={(value: unknown) => {
+          if (isWebmentionTab(value)) {
+            onTabChange(value)
+          }
+        }}
+      >
+        <TabsList>
+          <TabsTrigger value="inbox">{t('admin.webmentions.tab.inbox')}</TabsTrigger>
+          <TabsTrigger value="outbox">{t('admin.webmentions.tab.outbox')}</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {tab === 'inbox' ? <WebmentionInboxView /> : <WebmentionOutboxView />}
+    </AdminListPage>
+  )
+}

@@ -1,0 +1,128 @@
+import type { AdminMusicDto } from '@kobato/shared/contracts/music.ts'
+
+import { makeAdminMusic } from '@kobato/test-helpers/catalog.ts'
+import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { renderInRouter, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { MusicDetailView } from '@kobato/web/ui/admin/musics/MusicDetailView.tsx'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as { music: AdminMusicDto } | null,
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isError: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+  removeQueries: vi.fn(),
+}
+
+// The remaining SSR-reachable render path: driven by the music-player context, the
+// play/pause button reflects whether the viewed track is current and playback active.
+
+const playerState = vi.hoisted(() => ({
+  currentTrack: null as AdminMusicDto | null,
+  isPlaying: false,
+  currentTime: 0,
+}))
+
+vi.mock('@kobato/web/ui/admin/musics/MusicPlayerContext.tsx', () => ({
+  useMusicPlayerActions: () => ({
+    load: vi.fn(),
+    toggle: vi.fn(),
+  }),
+  useMusicPlayerState: () => ({
+    currentTrack: playerState.currentTrack,
+    isPlaying: playerState.isPlaying,
+  }),
+  useMusicPlayerTime: () => playerState.currentTime,
+}))
+
+// Local fixture defaults deliberately differ from the shared catalog factory
+// (夜的第七章 / 十一月的萧邦).
+const qingHuaCi: Partial<AdminMusicDto> = {
+  name: '青花瓷',
+  album: '我很忙',
+  lyric: '[00:01.00]素胚勾勒出青花笔锋浓转淡',
+}
+
+const navigateMock = vi.fn()
+
+function renderDetail(): string {
+  return stableHtml(
+    renderInRouter(<MusicDetailView id="music-1" navigate={navigateMock} />, '/admin/library/music/music-1'),
+  )
+}
+
+describe('snapshot: MusicDetailView player-context branches', () => {
+  beforeEach(() => {
+    playerState.currentTrack = null
+    playerState.isPlaying = false
+    playerState.currentTime = 0
+    queryMocks.query = {
+      data: null,
+      isLoading: true,
+      isPending: true,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+    queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+  })
+
+  it('renders the play button when the track is not the current track', () => {
+    const music = makeAdminMusic({ id: 'music-1', ...qingHuaCi })
+    playerState.currentTrack = makeAdminMusic({
+      id: 'music-other',
+      ...qingHuaCi,
+      name: '其他歌曲',
+    })
+    playerState.isPlaying = true
+    queryMocks.query = {
+      data: { music },
+      isLoading: false,
+      isPending: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+
+    const html = renderDetail()
+    expect(html).toContain('青花瓷')
+    expect(html).toContain('aria-label="播放"')
+    expect(html).toContain('lucide-play')
+    expect(html).not.toContain('aria-label="暂停"')
+  })
+
+  it('renders the pause button when the track is the current track and playing', () => {
+    const music = makeAdminMusic({ id: 'music-1', ...qingHuaCi })
+    playerState.currentTrack = music
+    playerState.isPlaying = true
+    queryMocks.query = {
+      data: { music },
+      isLoading: false,
+      isPending: false,
+      isFetching: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+
+    const html = renderDetail()
+    expect(html).toContain('青花瓷')
+    expect(html).toContain('aria-label="暂停"')
+    expect(html).toContain('lucide-pause')
+    expect(html).not.toContain('aria-label="播放"')
+  })
+})

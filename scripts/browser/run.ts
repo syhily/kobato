@@ -4,6 +4,7 @@
 // SEA binary against per-run temp dirs. Nothing reads a real kobato config or
 // a secret from the user's machine.
 
+import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -11,7 +12,6 @@ import { rm } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
-import { rateLimitDefaults } from '../../src/shared/config/defaults.ts'
 import { fail } from '../sea/exec.ts'
 import {
   bootServer,
@@ -62,7 +62,7 @@ function relaxRateLimits(databasePath: string) {
 }
 
 function runPlaywright(extraEnv: Record<string, string>) {
-  const args = ['exec', 'playwright', 'test', '--config', 'tests/browser/playwright.config.ts']
+  const args = ['exec', 'playwright', 'test', '--config', 'apps/kobato/tests/browser/playwright.config.ts']
   const grep = process.env.KOBATO_BROWSER_TEST_GREP
   if (grep !== undefined && grep !== '') {
     args.push('--grep', grep)

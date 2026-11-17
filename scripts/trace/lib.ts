@@ -7,17 +7,16 @@
 // token, privacy pipeline, and dashboards are installed by the SERVER during
 // the admin connection test.
 
+import { TRACE_LOG_STREAM } from '@kobato/shared/contracts/trace-logs.ts'
+import { isTraceMetricStreamName } from '@kobato/shared/contracts/trace-metrics.ts'
+import { RUM_STREAM_NAME } from '@kobato/shared/contracts/trace-pipeline.ts'
+import { isRecord } from '@kobato/shared/utils/type-guards.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { z } from 'zod'
-
-import { TRACE_LOG_STREAM } from '../../src/shared/contracts/trace-logs.ts'
-import { isTraceMetricStreamName } from '../../src/shared/contracts/trace-metrics.ts'
-import { RUM_STREAM_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
-import { isRecord } from '../../src/shared/utils/type-guards.ts'
-import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
 
 export const O2_IMAGE = 'openobserve/openobserve:v1.1.2'
 export const O2_IMAGE_VERSION = 'v1.1.2'
@@ -29,10 +28,10 @@ export const DEFAULT_O2_PORT = 5080
 export const DEFAULT_APP_PORT = 4321
 export const DEFAULT_APPLICATION_ID = 'kobato-dev'
 export const RETENTION_DAYS = 1
-/** The RUM intake stream, owned by `src/shared/contracts/trace-pipeline.ts`. */
+/** The RUM intake stream, owned by `packages/shared/src/contracts/trace-pipeline.ts`. */
 export const RUM_STREAM = RUM_STREAM_NAME
 export const TRACE_STREAM = 'default'
-/** The application log stream, owned by `src/shared/contracts/trace-logs.ts`. */
+/** The application log stream, owned by `packages/shared/src/contracts/trace-logs.ts`. */
 export const LOG_STREAM = TRACE_LOG_STREAM
 
 /** Streams this tooling owns for retention/status: RUM, traces, server logs, metric streams. */
@@ -696,7 +695,7 @@ export function resolveFromRepo(relative: string): string {
 
 /** Versioned dashboards + the RUM privacy VRL, shared with the server provisioner. */
 export function observabilityAssetDirectory(): string {
-  return resolveFromRepo('src/server/domains/observability/assets')
+  return resolveFromRepo('packages/server/src/domains/observability/assets')
 }
 
 /** One bundled OpenObserve v8 dashboard by file name (e.g. `overview.json`). */

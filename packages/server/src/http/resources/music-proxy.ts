@@ -1,0 +1,126 @@
+import type { MetingSource } from '@kobato/shared/contracts/music.ts'
+import type { Context } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
+
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { Hono } from 'hono'
+
+import type { MusicProvider, ProviderTrack } from '../../domains/music/providers/types'
+import type { Env } from '../context'
+
+import { getProvider } from '../../domains/music/providers/registry'
+import { ActionFailure } from '../../infra/http/errors'
+import { safeFetch } from '../../infra/safe-fetch'
+import { requireRoleMw } from '../middlewares/hono-rbac'
+
+const SOURCE_REFERERS: Record<MetingSource, string> = {
+  netease: 'https://music.163.com/',
+  tencent: 'https://y.qq.com/',
+}
+
+const VALID_SOURCES = new Set<string>(['netease', 'tencent'])
+
+/** Upstream payload cap: a proxied track/cover never exceeds 50 MB. */
+const MAX_PROXY_BYTES = 50 * 1024 * 1024
+
+async function proxyUpstream(targetUrl: string, referer: string): Promise<Response> {
+  // Upstream-provided URLs are schema-checked strings only — route through the
+  // SSRF-guarded fetch and cap the streamed body.
+  const result = await safeFetch(targetUrl, {
+    stream: true,
+    timeoutMs: 30000,
+    maxBytes: MAX_PROXY_BYTES,
+    operation: 'music.proxy',
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      Referer: referer,
+    },
+  })
+
+  if (!result.ok) {
+    if (result.reason === 'http-error' && result.status !== null) {
+      return new Response(`Upstream returned ${result.status}`, { status: result.status })
+    }
+    return new Response(`Upstream error: ${result.reason}`, { status: 502 })
+  }
+
+  const headers = new Headers()
+  // The payload renders in the admin browser — forward only image/audio
+  // types. Anything else (a hostile upstream answering text/html would run
+  // as first-party script) becomes an opaque download.
+  const contentType = result.response.headers.get('content-type')
+  if (contentType !== null && (contentType.startsWith('image/') || contentType.startsWith('audio/'))) {
+    headers.set('Content-Type', contentType)
+  } else {
+    headers.set('Content-Type', 'application/octet-stream')
+    headers.set('Content-Disposition', 'attachment')
+  }
+  headers.set('Cache-Control', 'private, max-age=300')
+
+  return new Response(result.response.body, { status: 200, headers })
+}
+
+function parseProxyParams(c: { req: { query: (k: string) => string | undefined } }):
+  | {
+      source: MetingSource
+      sourceId: string
+    }
+  | Response {
+  const source = c.req.query('source')
+  const sourceId = c.req.query('sourceId')
+  if (!source || !sourceId) {
+    return new Response(JSON.stringify({ error: { message: 'Missing source or sourceId parameter' } }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  if (!VALID_SOURCES.has(source)) {
+    return new Response(JSON.stringify({ error: { message: 'Invalid source' } }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  return { source: unsafeCast<MetingSource>(source), sourceId }
+}
+
+function handleError(err: unknown) {
+  const message = err instanceof ActionFailure ? err.message : 'Upstream error'
+  const status = unsafeCast<ContentfulStatusCode>(err instanceof ActionFailure ? err.status : 502)
+  return { message, status }
+}
+
+function proxyHandler(resolveUrl: (provider: MusicProvider, track: ProviderTrack) => Promise<string>) {
+  return async (c: Context<Env>) => {
+    const params = parseProxyParams(c)
+    if (params instanceof Response) {
+      return params
+    }
+
+    const provider = getProvider(params.source)
+    try {
+      const track = await provider.getTrack(params.sourceId)
+      if (track === null) {
+        return c.json({ error: { message: 'Track not found' } }, 404)
+      }
+      const url = await resolveUrl(provider, track)
+      return await proxyUpstream(url, SOURCE_REFERERS[params.source])
+    } catch (err: unknown) {
+      const { message, status } = handleError(err)
+      return c.json({ error: { message } }, status)
+    }
+  }
+}
+
+export const musicProxyRouter = new Hono<Env>()
+
+musicProxyRouter.use('/admin/music/proxy/*', requireRoleMw('author'))
+
+musicProxyRouter.get(
+  '/admin/music/proxy/cover',
+  proxyHandler((p, t) => p.resolveCoverUrl(t)),
+)
+musicProxyRouter.get(
+  '/admin/music/proxy/audio',
+  proxyHandler((p, t) => p.resolveAudioUrl(t)),
+)

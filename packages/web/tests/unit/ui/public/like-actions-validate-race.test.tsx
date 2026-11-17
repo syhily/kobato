@@ -1,0 +1,126 @@
+// @vitest-environment happy-dom
+
+import type { ValidateLikeTokenOutput } from '@kobato/shared/types/likes.ts'
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Behavioral pins for the LikeButton validate race: a slow background
+// token validation must not overwrite a newer like/unlike interaction.
+const api = vi.hoisted(() => ({
+  validate: vi.fn(),
+  increase: vi.fn(),
+  decrease: vi.fn(),
+}))
+
+vi.mock('@kobato/web/client/api/client.ts', () => ({
+  orpc: {
+    likes: {
+      validate: (input: unknown) => api.validate(input),
+      increase: (input: unknown) => api.increase(input),
+      decrease: (input: unknown) => api.decrease(input),
+    },
+  },
+}))
+
+// NumberFlow is presentation-only here.
+vi.mock('@number-flow/react', () => ({
+  default: ({ value }: { value: number }) => <span>{value}</span>,
+}))
+
+import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { LikeButton } from '@kobato/web/ui/public/LikeActions.tsx'
+
+const PERMALINK = '/posts/hello'
+const TOKENS_KEY = 'like-tokens'
+
+// happy-dom lacks localStorage; stub a Map-backed one per test.
+const store = new Map<string, string>()
+vi.stubGlobal('localStorage', {
+  getItem(key: string) {
+    return store.get(key) ?? null
+  },
+  setItem(key: string, value: string) {
+    store.set(key, value)
+  },
+  removeItem(key: string) {
+    store.delete(key)
+  },
+  clear() {
+    store.clear()
+  },
+} as unknown as Storage)
+
+function readStoredTokens(): Record<string, string> {
+  return JSON.parse(localStorage.getItem(TOKENS_KEY) ?? '{}') as Record<string, string>
+}
+
+function renderButton(likes = 5) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  })
+  render(
+    wrapWithI18n(
+      <QueryClientProvider client={queryClient}>
+        <LikeButton permalink={PERMALINK} commentKey="key-1" likes={likes} />
+      </QueryClientProvider>,
+    ),
+  )
+  return screen.getByRole('button', { name: '点赞' })
+}
+
+beforeEach(() => {
+  api.validate.mockReset()
+  api.increase.mockReset()
+  api.decrease.mockReset()
+  store.clear()
+})
+
+describe('LikeButton validate sequencing', () => {
+  it('discards a late invalid verdict that returns after the user liked — button and new token survive', async () => {
+    localStorage.setItem(TOKENS_KEY, JSON.stringify({ [PERMALINK]: 'old-token' }))
+    let resolveValidate!: (data: ValidateLikeTokenOutput) => void
+    api.validate.mockImplementation(
+      () =>
+        new Promise<ValidateLikeTokenOutput>((resolve) => {
+          resolveValidate = resolve
+        }),
+    )
+    api.increase.mockResolvedValue({ key: 'key-1', likes: 6, token: 'new-token' })
+
+    renderButton()
+    await waitFor(() => expect(api.validate).toHaveBeenCalledWith({ key: 'key-1', token: 'old-token' }))
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '点赞' }))
+    })
+    await waitFor(() => expect(screen.getByRole('button', { name: '取消点赞' }).dataset.liked).toBe('true'))
+    expect(readStoredTokens()[PERMALINK]).toBe('new-token')
+
+    // The late verdict must not flip the button back or delete the fresh token.
+    await act(async () => {
+      resolveValidate({ key: 'key-1', valid: false })
+    })
+    expect(screen.getByRole('button', { name: '取消点赞' }).dataset.liked).toBe('true')
+    expect(readStoredTokens()[PERMALINK]).toBe('new-token')
+  })
+
+  it('applies the verdict when no interaction intervenes (valid)', async () => {
+    localStorage.setItem(TOKENS_KEY, JSON.stringify({ [PERMALINK]: 'old-token' }))
+    api.validate.mockResolvedValue({ key: 'key-1', valid: true })
+
+    renderButton()
+    await waitFor(() => expect(screen.getByRole('button', { name: '取消点赞' }).dataset.liked).toBe('true'))
+    expect(readStoredTokens()[PERMALINK]).toBe('old-token')
+  })
+
+  it('applies the verdict when no interaction intervenes (invalid clears the stored token)', async () => {
+    localStorage.setItem(TOKENS_KEY, JSON.stringify({ [PERMALINK]: 'old-token' }))
+    api.validate.mockResolvedValue({ key: 'key-1', valid: false })
+
+    renderButton()
+    await waitFor(() => expect(readStoredTokens()[PERMALINK]).toBeUndefined())
+    expect(screen.getByRole('button', { name: '点赞' }).dataset.liked).toBe('false')
+  })
+})

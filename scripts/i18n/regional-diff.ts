@@ -6,18 +6,18 @@
 //   pnpm exec vite-node scripts/i18n/regional-diff.ts
 //   pnpm exec vite-node scripts/i18n/regional-diff.ts --keys
 //   pnpm exec vite-node scripts/i18n/regional-diff.ts --keys --prefix=public.comments.
-import { kobatoInklingLabelsEnUS } from '@/shared/i18n/inkling-labels/en-US'
-import { kobatoInklingLabelsZhCN } from '@/shared/i18n/inkling-labels/zh-CN'
-import { kobatoInklingLabelsZhHK } from '@/shared/i18n/inkling-labels/zh-HK'
-import { kobatoInklingLabelsZhTW } from '@/shared/i18n/inkling-labels/zh-TW'
-import { serverMessagesEnUS } from '@/shared/i18n/messages/server/en-US'
-import { serverMessagesZhCN } from '@/shared/i18n/messages/server/zh-CN'
-import { serverMessagesZhHK } from '@/shared/i18n/messages/server/zh-HK'
-import { serverMessagesZhTW } from '@/shared/i18n/messages/server/zh-TW'
-import { uiMessagesEnUS } from '@/shared/i18n/messages/ui/en-US'
-import { uiMessagesZhCN } from '@/shared/i18n/messages/ui/zh-CN'
-import { uiMessagesZhHK } from '@/shared/i18n/messages/ui/zh-HK'
-import { uiMessagesZhTW } from '@/shared/i18n/messages/ui/zh-TW'
+import { kobatoInklingLabelsEnUS } from '@kobato/shared/i18n/inkling-labels/en-US.ts'
+import { kobatoInklingLabelsZhCN } from '@kobato/shared/i18n/inkling-labels/zh-CN.ts'
+import { kobatoInklingLabelsZhHK } from '@kobato/shared/i18n/inkling-labels/zh-HK.ts'
+import { kobatoInklingLabelsZhTW } from '@kobato/shared/i18n/inkling-labels/zh-TW.ts'
+import { serverMessagesEnUS } from '@kobato/shared/i18n/messages/server/en-US.ts'
+import { serverMessagesZhCN } from '@kobato/shared/i18n/messages/server/zh-CN.ts'
+import { serverMessagesZhHK } from '@kobato/shared/i18n/messages/server/zh-HK.ts'
+import { serverMessagesZhTW } from '@kobato/shared/i18n/messages/server/zh-TW.ts'
+import { uiMessagesEnUS } from '@kobato/shared/i18n/messages/ui/en-US.ts'
+import { uiMessagesZhCN } from '@kobato/shared/i18n/messages/ui/zh-CN.ts'
+import { uiMessagesZhHK } from '@kobato/shared/i18n/messages/ui/zh-HK.ts'
+import { uiMessagesZhTW } from '@kobato/shared/i18n/messages/ui/zh-TW.ts'
 
 type Table = Record<string, string>
 

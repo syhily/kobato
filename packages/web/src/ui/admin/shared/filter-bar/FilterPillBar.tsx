@@ -1,0 +1,49 @@
+import { XIcon } from 'lucide-react'
+
+import type { FilterPillBarProps } from './types'
+
+import { useI18n } from '../../../lib/I18nProvider'
+import { FilterAddButton } from './add-button'
+import { FilterPill } from './pill'
+
+// The filter chrome shared by every admin list surface: trigger-only with no
+// active filters, pill row + add/clear actions otherwise; state comes from `useFilterPills`.
+export function FilterPillBar<K extends string>({
+  fields,
+  filters,
+  search,
+  onAddFilter,
+  onRemoveFilter,
+  onClearFilters,
+}: FilterPillBarProps<K>) {
+  const { t } = useI18n()
+  const hasFilters = filters.length > 0
+
+  if (!hasFilters) {
+    return <FilterAddButton fields={fields} filters={filters} search={search} onAddFilter={onAddFilter} />
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2.5">
+      {filters.map((filter) => (
+        <FilterPill
+          key={filter.field}
+          field={fields.find((f) => f.key === filter.field)}
+          filter={filter}
+          search={search}
+          onRemove={() => onRemoveFilter(filter.field)}
+          onValueChange={(value, label) => onAddFilter(filter.field, value, label)}
+        />
+      ))}
+      <FilterAddButton fields={fields} filters={filters} search={search} onAddFilter={onAddFilter} />
+      <button
+        type="button"
+        className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground"
+        onClick={onClearFilters}
+      >
+        <XIcon className="size-3.5" />
+        {t('admin.shared.filter.clear')}
+      </button>
+    </div>
+  )
+}

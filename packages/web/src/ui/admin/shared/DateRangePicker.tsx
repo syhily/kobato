@@ -1,0 +1,78 @@
+import type { DateRange } from 'react-day-picker'
+
+import { CalendarIcon } from 'lucide-react'
+
+import type { I18nValue } from '../../lib/I18nProvider'
+
+import { Button } from '../../components/button'
+import { Calendar } from '../../components/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/popover'
+import { useI18n } from '../../lib/I18nProvider'
+
+const TRIGGER_CLASSES =
+  'h-9 w-full justify-start gap-2 border-line-muted bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:shadow-focus'
+
+export function parseRange(from: string, to: string): DateRange | undefined {
+  const start = from ? new Date(`${from}T00:00:00`) : undefined
+  const end = to ? new Date(`${to}T00:00:00`) : undefined
+  if (!start && !end) {
+    return undefined
+  }
+  return { from: start, to: end }
+}
+
+export function toIsoDate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function formatRangeLabel(from: string, to: string, t: I18nValue['t']): string {
+  if (from && to) {
+    return `${from} → ${to}`
+  }
+  if (from) {
+    return t('admin.shared.range.from', { from })
+  }
+  if (to) {
+    return t('admin.shared.range.until', { to })
+  }
+  return ''
+}
+
+interface DateRangeCalendarPickerProps {
+  from: string
+  to: string
+  onChange: (from: string, to: string) => void
+}
+
+export function DateRangeCalendarPicker({ from, to, onChange }: DateRangeCalendarPickerProps) {
+  const { t } = useI18n()
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button type="button" variant="outline" className={TRIGGER_CLASSES}>
+            <CalendarIcon data-icon="inline-start" />
+            <span className="truncate">
+              {from || to ? formatRangeLabel(from, to, t) : t('admin.shared.range.select')}
+            </span>
+          </Button>
+        }
+      />
+      <PopoverContent align="start" className="w-auto p-0">
+        <Calendar
+          mode="range"
+          // react-day-picker v10 otherwise completes a same-day range on the first click.
+          resetOnSelect
+          selected={parseRange(from, to)}
+          onSelect={(range) => {
+            onChange(range?.from ? toIsoDate(range.from) : '', range?.to ? toIsoDate(range.to) : '')
+          }}
+          numberOfMonths={2}
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}

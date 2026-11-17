@@ -1,4 +1,4 @@
-import type { InklingLabelsInput } from '@/inkling'
+import type { InklingLabelsInput } from '@kobato/inkling'
 
 // Partial Simplified Chinese overrides for the `?labels=zh` demo toggle; unlisted keys fall back to
 // DEFAULT_LABELS (English).

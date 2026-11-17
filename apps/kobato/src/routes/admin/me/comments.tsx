@@ -1,0 +1,57 @@
+import type { MyCommentsStatus } from '@kobato/shared/types/comments.ts'
+
+import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
+import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
+import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/shared/utils/comments.ts'
+import { MyCommentsView } from '@kobato/web/ui/admin/my/MyCommentsView.tsx'
+import { data, useOutletContext } from 'react-router'
+
+import type { Route } from './+types/comments'
+
+export const meta = titleMeta('meta.title.admin.myComments')
+
+function isMyCommentsStatus(value: string): value is MyCommentsStatus {
+  return value === 'all' || value === 'pending' || value === 'deleteRequested' || value === 'deleted'
+}
+
+function parseStatus(raw: string | null): MyCommentsStatus {
+  if (raw && isMyCommentsStatus(raw)) {
+    return raw
+  }
+  return 'all'
+}
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { caller, viewer } = createSsrCaller({ request, context })
+  // Self-service path — any logged-in role can see their own comments.
+  requireRole(viewer ?? undefined, 'visitor')
+  const url = new URL(request.url)
+  const status = parseStatus(url.searchParams.get('status'))
+  const q = (url.searchParams.get('q') ?? '').trim()
+  const entity = parseCommentEntity(url.searchParams.get('entity'))
+  const entityValue = entity ? serializeCommentEntity(entity) : null
+
+  const { entities } = await caller.comments.searchMineEntities({})
+  const entityOptions = [...entities]
+
+  // The URL may pin an entity outside the result set — resolve it so the trigger can render its title.
+  if (entity && !entityOptions.some((o) => o.value === entityValue)) {
+    const resolved = await caller.comments.resolveEntity({ entity: entityValue! })
+    if (resolved !== null) {
+      entityOptions.unshift(resolved)
+    }
+  }
+
+  return data({
+    status,
+    q,
+    entity: entityValue,
+    entityOptions,
+  })
+}
+
+export default function WpAdminMyCommentsRoute({ loaderData }: Route.ComponentProps) {
+  const { currentUser } = useOutletContext<{ currentUser: { id: string; name: string; email: string } }>()
+  return <MyCommentsView {...loaderData} currentUser={currentUser} />
+}

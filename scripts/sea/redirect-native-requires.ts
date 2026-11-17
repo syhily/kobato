@@ -6,7 +6,7 @@
 import type { Plugin } from 'vite'
 
 const NATIVE_REQUIRE_BINDING = 'nativeRequire'
-const NATIVE_REQUIRE_MODULE = '@/server/infra/native-require'
+const NATIVE_REQUIRE_MODULE = '@kobato/server/infra/native-require.ts'
 
 /**
  * Modules to transform: files inside the sharp / @napi-rs/canvas /

@@ -1,8 +1,7 @@
+import { MINIMAL_NODES, RestrictContentPlugin } from '@kobato/inkling'
 import { ListItemNode, ListNode } from '@lexical/list'
 import React from 'react'
 import { useLocation } from 'react-router'
-
-import { MINIMAL_NODES, RestrictContentPlugin } from '@/inkling'
 
 import { DemoEditorShell } from './components/DemoEditorShell'
 

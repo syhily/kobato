@@ -1,0 +1,114 @@
+import { idFromString } from '@kobato/shared/utils/id.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+
+import type { Database } from '../../../infra/db/database'
+import type { AuditEventInput } from '../types'
+
+import { getBatcher, registerBatcher, requireBatcher } from '../../../infra/db/batcher-registry'
+import {
+  deserializeDeadLetterJsonLine,
+  type FlushResult,
+  InsertBatcher,
+  replayDeadLetter,
+  serializeDeadLetterJsonLines,
+  writeDeadLetter,
+} from '../../../infra/db/insert-batcher'
+import { auditLog } from '../../../infra/db/schema/config'
+import { getLogger } from '../../../infra/logger'
+import { AUDIT_DEAD_LETTER_PATH } from '../../../infra/paths'
+
+const log = getLogger('audit.batcher')
+
+const BATCHER_NAME = 'AuditLogBatcher'
+
+function deadLetterPath(): string {
+  return AUDIT_DEAD_LETTER_PATH
+}
+
+function deserializeFromDeadLetter(line: string): AuditEventInput | null {
+  return deserializeDeadLetterJsonLine(line, (raw) => {
+    if (typeof raw.createdAt === 'number') {
+      raw.createdAt = new Date(raw.createdAt)
+    }
+    return unsafeCast<AuditEventInput>(raw)
+  })
+}
+
+function toRow(e: AuditEventInput) {
+  return {
+    action: e.action,
+    actorId: e.actorId === null || e.actorId === undefined ? null : idFromString(e.actorId),
+    actorRole: e.actorRole ?? null,
+    resourceType: e.resourceType,
+    resourceId: e.resourceId ?? null,
+    details: e.details ?? null,
+    ipAddress: e.ipAddress ?? null,
+    userAgent: e.userAgent ?? null,
+    createdAt: e.createdAt ?? new Date(),
+  }
+}
+
+class AuditLogBatcher extends InsertBatcher<AuditEventInput> {
+  constructor(private readonly auditDb: Database) {
+    super({ flushIntervalMs: 500, flushThreshold: 50 }, 'audit.batcher', () => auditDb)
+  }
+
+  protected insertBatch(db: Database, events: AuditEventInput[]): void {
+    db.insert(auditLog).values(events.map(toRow)).run()
+  }
+
+  // Batch failure → per-row INSERT, then dead-letter; audit rows must not be lost.
+  protected async onInsertFailed(events: AuditEventInput[], _error: unknown): Promise<FlushResult> {
+    return insertPerRow(this.auditDb, events)
+  }
+}
+
+async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<FlushResult> {
+  const failedEvents: AuditEventInput[] = []
+  let successCount = 0
+
+  for (const e of events) {
+    try {
+      db.insert(auditLog).values(toRow(e)).run()
+      successCount++
+    } catch (rowErr) {
+      failedEvents.push(e)
+      log.error('single-row audit insert failed; queueing for dead-letter', {
+        action: e.action,
+        err: rowErr instanceof Error ? rowErr.message : String(rowErr),
+      })
+    }
+  }
+
+  if (failedEvents.length > 0) {
+    log.warn('per-row fallback completed; writing failures to dead-letter', {
+      successCount,
+      failCount: failedEvents.length,
+    })
+    await writeDeadLetter(failedEvents, serializeDeadLetterJsonLines, deadLetterPath(), log)
+  }
+
+  return { committed: successCount, deadLettered: failedEvents.length }
+}
+
+// Self-register: the bootstrap lifecycle drives batchers through the registry.
+registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(handle.db), {
+  replayDeadLetter: () => replayDeadLetterAuditLog(),
+})
+
+export function pushAuditEvent(event: AuditEventInput): void {
+  requireBatcher<AuditLogBatcher>(BATCHER_NAME).push(event)
+}
+
+export function flushAuditLog(): Promise<FlushResult> {
+  const batcher = getBatcher<AuditLogBatcher>(BATCHER_NAME)
+  if (!batcher) {
+    return Promise.resolve({ committed: 0, deadLettered: 0 })
+  }
+  return batcher.flush()
+}
+
+export async function replayDeadLetterAuditLog(path?: string): Promise<{ replayed: number; failed: number }> {
+  const batcher = requireBatcher<AuditLogBatcher>(BATCHER_NAME)
+  return replayDeadLetter(path ?? deadLetterPath(), deserializeFromDeadLetter, (events) => batcher.ingest(events), log)
+}

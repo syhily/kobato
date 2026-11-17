@@ -3,6 +3,9 @@
 // runs the tests/e2e vitest project over real HTTP. The tests receive the base URL
 // and credentials through KOBATO_E2E_* env vars only.
 
+// The one src import: the canonical bucket table, so the relaxed row below
+// can never drift out of the section schema.
+import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -12,9 +15,6 @@ import { DatabaseSync } from 'node:sqlite'
 
 import type { SmokeServer } from './instance.ts'
 
-// The one src import: the canonical bucket table, so the relaxed row below
-// can never drift out of the section schema.
-import { rateLimitDefaults } from '../../src/shared/config/defaults.ts'
 import { fail } from './exec.ts'
 import {
   bootServer,
@@ -122,7 +122,7 @@ async function main() {
     console.log('    config file converged (env written back)')
 
     console.log('==> vitest run (tests/e2e)')
-    const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'tests/e2e/vitest.config.ts'], {
+    const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'apps/kobato/tests/e2e/vitest.config.ts'], {
       cwd: repoRoot,
       stdio: 'inherit',
       // pnpm is a .cmd shim on Windows.

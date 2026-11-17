@@ -368,7 +368,19 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      // Test code gets a deliberately lighter rule set: mocks, fixtures,
+      // and deliberately-awkward components make the type-aware unsafe
+      // family and friends fire constantly without finding real bugs.
+      // oxlint overrides cannot disable whole categories — only named
+      // rules — so the noisy offenders are listed explicitly. The
+      // packages/test-helpers sources are the former tests/_helpers tree
+      // and share the exemption.
+      files: [
+        '**/tests/**/*.ts',
+        '**/tests/**/*.tsx',
+        'packages/test-helpers/src/**/*.ts',
+        'packages/test-helpers/src/**/*.tsx',
+      ],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,
         // and deliberately-awkward components make the type-aware unsafe
@@ -441,19 +453,19 @@ export default defineConfig({
       },
     },
     {
-      // src/inkling keeps its former package conventions (public barrel,
+      // packages/inkling keeps its former package conventions (public barrel,
       // intentional Lexical cycles, declaration merging, editor-chrome a11y
       // exemptions, and the keeper rules the rest of the repo is not yet
       // clean under). demo/ renders the same editor chrome, so it shares
       // the scope.
-      files: ['src/inkling/**', 'tests/inkling/**', 'demo/**'],
+      files: ['packages/inkling/**', 'demo/**'],
       rules: {
-        // src/inkling/index.ts is the editor layer's public barrel (its API
-        // surface for the rest of the app).
+        // packages/inkling/src/index.ts is the editor layer's public barrel
+        // (its API surface for the rest of the app).
         'oxc/no-barrel-file': 'off',
         // Lexical's editor/node module graph is intentionally cyclic; the
         // layering that matters is pinned by
-        // tests/inkling/unit/nodes/card-layering-imports.test.ts.
+        // packages/inkling/tests/unit/nodes/card-layering-imports.test.ts.
         'import/no-cycle': 'off',
         // Lexical DecoratorNode subclasses intentionally use
         // class+interface declaration merging — the base no-redeclare

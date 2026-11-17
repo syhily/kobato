@@ -1,4 +1,4 @@
-import type { ImageLibrarySettings, LibraryImageItem } from '@/inkling'
+import type { ImageLibrarySettings, LibraryImageItem } from '@kobato/inkling'
 
 // e2e seam: `?imageLibrary=fixture` installs a deterministic stand-in for the host's media library — local static
 // images only, never an external URL. `?imageLibrary=fixture-upload` adds the optional in-picker upload stub; the

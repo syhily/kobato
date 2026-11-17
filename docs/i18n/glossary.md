@@ -6,12 +6,12 @@ difference.
 
 ## 1. Sources and snapshot
 
-| Item                                  | Location                                                       | Entries per locale      |
-| ------------------------------------- | -------------------------------------------------------------- | ----------------------- |
-| UI messages                           | `src/shared/i18n/messages/ui/{en-US,zh-CN,zh-HK,zh-TW}.ts`     | 2793 (planned baseline) |
-| Server messages (mail, notifications) | `src/shared/i18n/messages/server/{en-US,zh-CN,zh-HK,zh-TW}.ts` | 99                      |
-| Inkling editor labels                 | `src/shared/i18n/inkling-labels/{en-US,zh-CN,zh-HK,zh-TW}.ts`  | 157                     |
-| Locale self-names                     | `src/shared/i18n/locales.ts` (`LOCALE_DISPLAY_NAMES`)          | 4                       |
+| Item                                  | Location                                                                | Entries per locale      |
+| ------------------------------------- | ----------------------------------------------------------------------- | ----------------------- |
+| UI messages                           | `packages/shared/src/i18n/messages/ui/{en-US,zh-CN,zh-HK,zh-TW}.ts`     | 2793 (planned baseline) |
+| Server messages (mail, notifications) | `packages/shared/src/i18n/messages/server/{en-US,zh-CN,zh-HK,zh-TW}.ts` | 99                      |
+| Inkling editor labels                 | `packages/shared/src/i18n/inkling-labels/{en-US,zh-CN,zh-HK,zh-TW}.ts`  | 157                     |
+| Locale self-names                     | `packages/shared/src/i18n/locales.ts` (`LOCALE_DISPLAY_NAMES`)          | 4                       |
 
 - Snapshot date: 2026-11-08; source worktree `tmp/i18n-executor`, baseline commit `bcc0ccfe` plus the
   current slice's changes.
@@ -121,7 +121,7 @@ UI side:
 | `admin.editor.titleField`        | {entity} title | {entity}标题 | {entity}標題 | {entity}標題 | The placeholder must be preserved         |
 | `admin.editor.toolbar.metadata`  | Metadata       | 元数据       | 中繼資料     | 中繼資料     | Both Traditional locales use 「中繼資料」 |
 
-Inkling label side (`src/shared/i18n/inkling-labels/*`):
+Inkling label side (`packages/shared/src/i18n/inkling-labels/*`):
 
 | Key                            | en-US                      | zh-CN         | zh-HK         | zh-TW         | Notes       |
 | ------------------------------ | -------------------------- | ------------- | ------------- | ------------- | ----------- |
@@ -150,7 +150,7 @@ expected; do not rewrite one of them into a different set of synonyms just to cr
 | `common.datetime.hourOption`                   | Hour {hour}          | {hour} 时      | {hour} 時      | {hour} 時      | The placeholder must be preserved      |
 | `common.sort.loginTime`                        | Signed in            | 登录时间       | 登入時間       | 登入時間       | Both Traditional locales use 「登入」  |
 
-Date display is not catalog copy; it is produced by `src/shared/i18n/format.ts` through
+Date display is not catalog copy; it is produced by `packages/shared/src/i18n/format.ts` through
 `Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })`.
 `timeFormat: null` means "follow the language"; only custom mode substitutes by placeholder. Sample
 `dateStyle/timeStyle: short` output for 2026-11-08 14:30 (Asia/Shanghai): en-US `11/8/26, 2:30 PM`,

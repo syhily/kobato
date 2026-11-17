@@ -33,7 +33,7 @@ function ensureNodeVersion() {
 
 /** The server build emits exactly one hashed cnfs wasm — pin it down. */
 async function locateCnfsWasm() {
-  const assetsDir = join(repoRoot, 'build', 'server', 'assets')
+  const assetsDir = join(repoRoot, 'apps', 'kobato', 'build', 'server', 'assets')
   const entries = await readdir(assetsDir)
   const matches = entries.filter((name) => /^cnfs-.+\.wasm$/.test(name))
   if (matches.length !== 1) {

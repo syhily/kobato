@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import type { SnippetItem } from '@kobato/inkling'
 
-import type { SnippetItem } from '@/inkling'
+import { useState } from 'react'
 
 function getSnippetsFromStorage(): SnippetItem[] {
   const snippetsStr = localStorage.getItem('snippets')

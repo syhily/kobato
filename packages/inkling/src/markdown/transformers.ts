@@ -1,0 +1,71 @@
+// The card-bearing transformer sets: HR and CODE_BLOCK construct card nodes
+// (their trigger bodies live in `@/inkling/markdown/card-shortcuts`), so this module
+// statically imports the card shims. The card-free sets
+// (SUBSCRIPT/SUPERSCRIPT/MINIMAL/BASIC) live in
+// `@/inkling/markdown/transformers-core` so card-free compositions take
+// markdown shortcuts without pulling the card shims — `MarkdownShortcutPlugin`
+// defaults to the card-free `MINIMAL_TRANSFORMERS` (what `InklingComposerBase`
+// compositions get), while `InklingEditor` passes this module's
+// `DEFAULT_TRANSFORMERS` explicitly.
+
+import type { ElementNode, LexicalNode } from 'lexical'
+
+import {
+  HEADING,
+  ORDERED_LIST,
+  QUOTE,
+  TEXT_FORMAT_TRANSFORMERS,
+  TEXT_MATCH_TRANSFORMERS,
+  UNORDERED_LIST,
+  type Transformer,
+} from '@lexical/markdown'
+
+import { $isCodeBlockNode, CodeBlockNode } from '../nodes/CodeBlockNode'
+import { $isHorizontalRuleNode, HorizontalRuleNode } from '../nodes/HorizontalRuleNode'
+import {
+  $insertCodeBlockForShortcut,
+  $insertHorizontalRuleForMarkdownTrigger,
+  codeBlockFence,
+  DIVIDER_REGEXP,
+} from './card-shortcuts'
+import { FENCE_TRANSFORMER_REGEXP } from './grammar'
+import { CUSTOM_TEXT_FORMAT_TRANSFORMERS } from './transformers-core'
+
+export const HR = {
+  dependencies: [HorizontalRuleNode],
+  export: (node: LexicalNode) => {
+    return $isHorizontalRuleNode(node) ? '---' : null
+  },
+  // trigger only: the regex and replace-and-select live in the card-shortcut seam
+  regExp: DIVIDER_REGEXP,
+  replace: (parentNode: ElementNode, _children: LexicalNode[], _match: string[], isImport: boolean) => {
+    $insertHorizontalRuleForMarkdownTrigger(parentNode, isImport ? 'import' : 'typing')
+  },
+  type: 'element' as const,
+}
+
+export const CODE_BLOCK = {
+  dependencies: [CodeBlockNode],
+  export: (node: LexicalNode) => {
+    if (!$isCodeBlockNode(node)) {
+      return null
+    }
+    return codeBlockFence(node.language, node.getTextContent())
+  },
+  // trigger only: the trailing `\s` in the shared grammar regex is what makes
+  // the fence fire on the space keystroke
+  regExp: FENCE_TRANSFORMER_REGEXP,
+  replace: (parentNode: ElementNode, _children: LexicalNode[], match: string[]) => {
+    $insertCodeBlockForShortcut(parentNode, match[1])
+  },
+  type: 'element' as const,
+}
+
+export const ELEMENT_TRANSFORMERS: Transformer[] = [HEADING, QUOTE, UNORDERED_LIST, ORDERED_LIST, HR, CODE_BLOCK]
+
+export const DEFAULT_TRANSFORMERS: Transformer[] = [
+  ...ELEMENT_TRANSFORMERS,
+  ...TEXT_FORMAT_TRANSFORMERS,
+  ...CUSTOM_TEXT_FORMAT_TRANSFORMERS,
+  ...TEXT_MATCH_TRANSFORMERS,
+]

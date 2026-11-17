@@ -1,0 +1,269 @@
+import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
+
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
+import { auditLog } from '@kobato/server/infra/db/schema/config.ts'
+import { passkeyCredential } from '@kobato/server/infra/db/schema/passkey.ts'
+import { user as userTable, verification } from '@kobato/server/infra/db/schema/user.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { installFetch, jsonResponse } from '@kobato/test-helpers/fetch.ts'
+import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/test-helpers/mock-ctx.ts'
+import { parseRpcJson } from '@kobato/test-helpers/rpc-call.ts'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+// users-admin router against the real engine; only double: `installFetch` at the
+// Mailgun HTTP boundary (invite / password-reset delivery).
+const { RPCHandler } = await import('@orpc/server/fetch')
+const { adminUsersAdminRouter } = await import('@kobato/server/http/controllers/admin/users-admin.controller.ts')
+const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit.ts')
+const handler = new RPCHandler(adminUsersAdminRouter)
+
+const db = getTestDb()
+const MAILGUN_URL = 'https://api.mailgun.net/v3/mail.test/messages'
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+  __resetRateLimitsForTests()
+})
+
+afterEach(async () => {
+  await flushAuditLog()
+  resetAllBatchers()
+})
+
+// audit_log.actor_id is a real FK: the acting admin must be a seeded row.
+async function seedViewer(): Promise<number> {
+  return seedUser({ name: 'Test User', email: 'test@example.com', role: 'admin' })
+}
+
+async function call(path: string, input: unknown, viewerId: number) {
+  const result = await handler.handle(
+    new Request(`http://localhost/rpc${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ json: input }),
+    }),
+    { prefix: '/rpc', context: makeAuthedCtx({ role: 'admin', userId: String(viewerId), db }) },
+  )
+  if (!result.matched) {
+    throw new Error(`No route matched for ${path}`)
+  }
+  return result.response
+}
+
+async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(userTable)
+    .values({
+      name: opts.name ?? 'Alice',
+      email: opts.email ?? `user-${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      role: opts.role ?? 'author',
+      ...opts,
+    })
+    .returning({ id: userTable.id })
+  return rows[0]!.id
+}
+
+async function userRow(id: number) {
+  const rows = await db.select().from(userTable).where(eq(userTable.id, id))
+  return rows[0]!
+}
+
+async function auditRowsFor(action: string) {
+  await flushAuditLog()
+  return db.select().from(auditLog).where(eq(auditLog.action, action))
+}
+
+/** Flip the mail section on with a Mailgun config that routes through `installFetch`. */
+function withMailEnabled(bundle: BlogSettingsBundle = TEST_BLOG_SETTINGS_BUNDLE): void {
+  setBlogSettingsBundleForTests({
+    ...bundle,
+    mail: {
+      mail: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
+        enabled: true,
+        transport: 'mailgun',
+        mailgunDomain: 'mail.test',
+        mailgunApiKey: 'test-key',
+        sender: 'noreply@example.com',
+      },
+    },
+  })
+}
+
+function mailgunPayload(init: RequestInit | undefined): { to: string; bcc: string[]; subject: string; html: string } {
+  const body = init?.body as FormData
+  return {
+    to: body.get('to') as string,
+    bcc: body.getAll('bcc') as string[],
+    subject: body.get('subject') as string,
+    html: body.get('html') as string,
+  }
+}
+
+describe('admin users-admin controller', () => {
+  it('mutes a user', async () => {
+    const viewerId = await seedViewer()
+    const id = await seedUser({ role: 'author' })
+
+    const response = await call('/mute', { id: String(id), muted: true }, viewerId)
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ user: { id: string; isMuted: boolean } }>(response)
+    expect(body.user.id).toBe(String(id))
+    expect(body.user.isMuted).toBe(true)
+
+    expect((await userRow(id)).isMuted).toBe(true)
+    const rows = await auditRowsFor('user_muted')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceId).toBe(String(id))
+  })
+
+  it('returns 404 when muting a non-existent user or an admin', async () => {
+    const viewerId = await seedViewer()
+    const adminId = await seedUser({ role: 'admin' })
+
+    const response = await call('/mute', { id: String(adminId), muted: true }, viewerId)
+    expect(response.status).toBe(404)
+
+    expect((await userRow(adminId)).isMuted).toBe(false)
+    expect(await auditRowsFor('user_muted')).toHaveLength(0)
+  })
+
+  it('updates a user role', async () => {
+    const viewerId = await seedViewer()
+    const id = await seedUser({ role: 'author' })
+
+    const response = await call('/updateRole', { id: String(id), role: 'visitor' }, viewerId)
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ user: { role: string | null } }>(response)
+    expect(body.user.role).toBe('visitor')
+
+    expect((await userRow(id)).role).toBe('visitor')
+    const rows = await auditRowsFor('user_role_changed')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceId).toBe(String(id))
+    // The audit `from` is the role BEFORE the write, not the new role.
+    expect(rows[0]!.details).toMatchObject({ from: 'author', to: 'visitor' })
+  })
+
+  it('invites an author', async () => {
+    withMailEnabled()
+    const fetchMock = installFetch()
+    fetchMock.enqueue(MAILGUN_URL, jsonResponse({ ok: true }))
+    const viewerId = await seedViewer()
+
+    const response = await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' }, viewerId)
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ success: boolean }>(response)
+    expect(body.success).toBe(true)
+
+    const rows = await db.select().from(userTable).where(eq(userTable.email, 'bob@example.com'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.role).toBe('author')
+    expect(rows[0]!.deletedAt).toBeNull()
+    const tokens = await db.select().from(verification).where(eq(verification.userId, rows[0]!.id))
+    expect(tokens).toHaveLength(1)
+
+    expect(fetchMock.calls).toHaveLength(1)
+    expect(fetchMock.calls[0]!.url).toBe(MAILGUN_URL)
+    const payload = mailgunPayload(fetchMock.calls[0]!.init)
+    expect(payload.to).toBe('bob@example.com')
+    expect(payload.bcc).toEqual(['test@example.com'])
+    expect(payload.html).toContain('https://example.com/admin/signin?action=accept-invite')
+
+    const audit = await auditRowsFor('author_invited')
+    expect(audit).toHaveLength(1)
+    expect(audit[0]!.resourceId).toBe(String(rows[0]!.id))
+  })
+
+  it('rejects an invite when rate limited', async () => {
+    // invite: 1 — the second invite exhausts the shared bucket and gets a 429.
+    withMailEnabled({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        invite: { windowSeconds: 60, maxAttempts: 1 },
+      },
+    })
+    const fetchMock = installFetch()
+    fetchMock.enqueue(MAILGUN_URL, jsonResponse({ ok: true }))
+    const viewerId = await seedViewer()
+
+    expect((await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' }, viewerId)).status).toBe(200)
+
+    const response = await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' }, viewerId)
+    expect(response.status).toBe(429)
+
+    expect(fetchMock.calls).toHaveLength(1)
+    expect(await db.select().from(userTable).where(eq(userTable.email, 'bob@example.com'))).toHaveLength(1)
+  })
+
+  it('sends a password reset', async () => {
+    withMailEnabled()
+    const id = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const fetchMock = installFetch()
+    fetchMock.enqueue(MAILGUN_URL, jsonResponse({ ok: true }))
+
+    const viewerId = await seedViewer()
+    const response = await call('/sendPasswordReset', { email: 'alice@example.com' }, viewerId)
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ success: boolean }>(response)
+    expect(body.success).toBe(true)
+
+    const tokens = await db.select().from(verification).where(eq(verification.userId, id))
+    expect(tokens).toHaveLength(1)
+
+    expect(fetchMock.calls).toHaveLength(1)
+    const payload = mailgunPayload(fetchMock.calls[0]!.init)
+    expect(payload.to).toBe('alice@example.com')
+    expect(payload.html).toContain('https://example.com/admin/signin?action=resetpassword')
+
+    const audit = await auditRowsFor('password_reset_sent')
+    expect(audit).toHaveLength(1)
+    expect(audit[0]!.resourceId).toBe(String(id))
+  })
+
+  it('clears passkeys for a user', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      security: {
+        csrf: TEST_BLOG_SETTINGS_BUNDLE.security!.csrf!,
+        cors: TEST_BLOG_SETTINGS_BUNDLE.security!.cors!,
+        passkey: { enabled: true },
+      },
+    })
+    const id = await seedUser({ role: 'author' })
+    await db.insert(passkeyCredential).values([
+      { userId: id, credentialId: 'cred-1', publicKey: Buffer.from('k1') },
+      { userId: id, credentialId: 'cred-2', publicKey: Buffer.from('k2') },
+    ])
+
+    const viewerId = await seedViewer()
+    const response = await call('/clearPasskeys', { id: String(id) }, viewerId)
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ user: { id: string; passkeyCount: number } }>(response)
+    expect(body.user.id).toBe(String(id))
+    expect(body.user.passkeyCount).toBe(0)
+
+    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, id))).toHaveLength(0)
+
+    const audit = await auditRowsFor('passkeys_cleared')
+    expect(audit).toHaveLength(1)
+    expect(audit[0]!.resourceId).toBe(String(id))
+  })
+
+  it('rejects clearPasskeys when the passkey switch is off', async () => {
+    // TEST_BLOG_SETTINGS_BUNDLE ships security.passkey.enabled = false.
+    const id = await seedUser({ role: 'author' })
+
+    const viewerId = await seedViewer()
+    const response = await call('/clearPasskeys', { id: String(id) }, viewerId)
+    expect(response.status).toBe(400)
+    expect(await auditRowsFor('passkeys_cleared')).toHaveLength(0)
+  })
+})

@@ -2,19 +2,21 @@
 
 ## Quick orientation
 
-- React Router 8 Framework Mode with SSR (`appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar; path alias `@/*` → `./src/*`.
-- Five layers under `src/`: `routes/` (orchestration), `server/` (SSR), `client/` (browser), `ui/` (components), `shared/` (isomorphic) — plus `src/inkling/`, the self-contained Lexical editor layer.
-- Distribution is a single Node.js executable (SEA); runtime infrastructure config is `kobato.config.json`, validated through `CONFIG_TABLE`.
+- pnpm monorepo. The deployable app is `apps/kobato` (React Router 8 Framework Mode with SSR, `appDirectory: 'src'`, React 19 TSX/TS only); reusable code lives in workspace packages under `packages/`; path alias `@/*` → `./apps/kobato/src/*` (app-internal only).
+- Packages: `@kobato/server` (`packages/server` — SSR, domains, infra; SQLite node:sqlite + a DuckDB analytics sidecar), `@kobato/web` (`packages/web` — browser `client/`, components `ui/`, `styles/`; client↔ui share one package because they reference each other), `@kobato/shared` (`packages/shared` — isomorphic contracts/DTOs/PT schema), `@kobato/inkling` (`packages/inkling` — the self-contained Lexical editor layer), `@kobato/test-helpers` (`packages/test-helpers` — test-only utilities).
+- Cross-package imports use the package name (`@kobato/shared/...`); intra-package imports are relative. Package dependency declarations are the layering enforcement — an undeclared cross-package import fails typecheck, not just review.
+- `pnpm dev` / `pnpm start` run the process with cwd at the REPOSITORY ROOT (vite root stays `apps/kobato` via `react-router dev apps/kobato`), so the runtime's cwd-anchored paths (`kobato.config.json`, `./data`, `./drizzle`) resolve exactly as a deployed binary expects. Build-time code must anchor paths on `import.meta.url`, never on `process.cwd()`.
+- Distribution is a single Node.js executable (SEA); runtime infrastructure config is `kobato.config.json`, validated through `CONFIG_TABLE`. The version carrier is `apps/kobato/package.json` (the root `package.json` is the version-less workspace manifest).
 - Observability (traces/metrics/logs/browser RUM) is configured only in the admin `observability` settings section and provisioned by the server; browser RUM relays through the same-origin `/api/rum/intake` endpoint so the OpenObserve address is never exposed to visitors; `scripts/trace/` is optional DEV container tooling (retention + smoke).
 
 ## Subdirectory conventions
 
 Agents load these additively as they move through the codebase:
 
-- `src/routes/AGENTS.md` route modules, loaders, actions, React Router conventions; `src/server/AGENTS.md` server layers, API procedures, auth, databases, content; `src/server/infra/AGENTS.md` config file contract, SEA runtime rules; `src/server/domains/storage/AGENTS.md` S3 config locking, storage migration, asset URLs.
-- `src/server/domains/backup/AGENTS.md` backup archive, encryption, restore; `src/client/AGENTS.md` browser hooks, oRPC client, React.lazy patterns; `src/ui/AGENTS.md` pure-props components, shadcn, PT renderer, component architecture; `src/ui/admin/settings/AGENTS.md` settings autosave model, card wrappers.
-- `src/styles/AGENTS.md` Tailwind tokens, design-system CSS, `@theme` conventions; `src/shared/AGENTS.md` isomorphic modules, Zod contracts, DTOs, PT schema; `src/inkling/AGENTS.md` the Lexical editor layer: card pipeline, headless surface, labels.
-- `tests/AGENTS.md` test utilities, naming conventions, coverage rules; `scripts/sea/AGENTS.md` SEA packaging, build/smoke/probe/e2e, self-update; `scripts/trace/README.md` optional OpenObserve DEV container, dev retention, privacy assets, smoke.
+- `apps/kobato/src/routes/AGENTS.md` route modules, loaders, actions, React Router conventions; `packages/server/src/AGENTS.md` server layers, API procedures, auth, databases, content; `packages/server/src/infra/AGENTS.md` config file contract, SEA runtime rules; `packages/server/src/domains/storage/AGENTS.md` S3 config locking, storage migration, asset URLs.
+- `packages/server/src/domains/backup/AGENTS.md` backup archive, encryption, restore; `packages/web/src/client/AGENTS.md` browser hooks, oRPC client, React.lazy patterns; `packages/web/src/ui/AGENTS.md` pure-props components, shadcn, PT renderer, component architecture; `packages/web/src/ui/admin/settings/AGENTS.md` settings autosave model, card wrappers.
+- `packages/web/src/styles/AGENTS.md` Tailwind tokens, design-system CSS, `@theme` conventions; `packages/shared/src/AGENTS.md` isomorphic modules, Zod contracts, DTOs, PT schema; `packages/inkling/src/AGENTS.md` the Lexical editor layer: card pipeline, headless surface, labels.
+- `tests/AGENTS.md` test utilities, naming conventions, coverage rules (tests live next to their package: `apps/kobato/tests/`, `packages/*/tests/`); `scripts/sea/AGENTS.md` SEA packaging, build/smoke/probe/e2e, self-update; `scripts/trace/README.md` optional OpenObserve DEV container, dev retention, privacy assets, smoke.
 
 ## Skills
 
@@ -42,32 +44,35 @@ Use `/release <version> <next-version>` (e.g., `/release 6.3.0 6.4.0-dev`). No P
 
 ## Defensive constraints
 
-Banned paths: `src/actions`, `src/middleware`, `src/layouts`, `src/services`, `src/hooks`, `src/db`, `src/assets/scripts`, `src/content/`. `src/assets/scripts` is intentionally absent; all interactivity lives in React hooks/components under `src/client/` and `src/ui/`.
+Banned layer-root directories (in any package): `actions/`, `middleware/`, `layouts/`, `services/`, `hooks/`, `db/`, `content/` at a source root, and `assets/scripts/`. There is no `assets/scripts/`; all interactivity lives in React hooks/components under `packages/web/src/client/` and `packages/web/src/ui/`.
 
-- `src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, the per-section "reset to defaults" action, and a monolithic `BlogConfigContext`/`<BlogConfigProvider>` — use per-section hooks.
-- `data-admin-shell` selector; `src/lib/` parallel to `@/ui/lib`; `@/ui/admin/shadcn/components/ui/` nesting.
+- `apps/kobato/src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, the per-section "reset to defaults" action, and a monolithic `BlogConfigContext`/`<BlogConfigProvider>` — use per-section hooks.
+- `data-admin-shell` selector; a `packages/web/src/lib/` parallel to `packages/web/src/ui/lib`; `@kobato/web/ui/admin/shadcn/components/ui/` nesting.
 - Preserve public URLs, feed URLs, image endpoints, WordPress compatibility routes, and pagination routes.
-- `*.server.ts` suffix is redundant inside `src/server/`.
-- Streamed loader promises (a loader returning an un-awaited promise) require the process-level `unhandledRejection` handler in `src/server/infra/lifecycle.ts` — do not remove it.
+- `*.server.ts` suffix is redundant inside `packages/server/src/`.
+- Streamed loader promises (a loader returning an un-awaited promise) require the process-level `unhandledRejection` handler in `packages/server/src/infra/lifecycle.ts` — do not remove it.
 - Never wrap the whole app (or any SSR-critical DOM that must match between server and client) in a lazy `<Suspense>` boundary whose fallback differs from the resolved content — on a cold visit the chunk is still loading at hydration time and the whole tree mismatches (React error #418). The root `LazyMotionConfig` imports its provider eagerly so a late chunk cannot replace the app tree and reset its state; other SSR-critical DOM uses a hydration-safe `useSyncExternalStore` gate or an eager import.
-- Hydration-enhancement mount points in the projected `body_html` follow the same rule: the static fallback must mirror the enhanced component's initial render (the music-player card's `musicPlayerFallbackHtml` ⇔ `MusicPlayerCard` paused state, parity-pinned by `tests/unit/ui/public/music-player/music-player.test.tsx`).
-- JS-driven animation goes only through the `@/ui/components/lazy-motion` facade (`LazyMotion*` / `LazyAnimatePresence` / `LazyMotionConfig`, or the `EagerMotion*` / `EagerAnimatePresence` browser-only nodes) — never a direct runtime `motion/react` import outside that module. Shared easing/duration constants live in `@/client/lib/motion`; simple hover/state styling stays on CSS `transition-*` utilities.
-- Never use React `<ViewTransition>` / `addTransitionType` / `document.startViewTransition` for element or navigation animation — named captures paint in the `::view-transition` overlay above every z-index; the theme-switch wipe in `src/ui/lib/ThemeProvider.tsx` is the sole `startViewTransition` consumer.
+- Hydration-enhancement mount points in the projected `body_html` follow the same rule: the static fallback must mirror the enhanced component's initial render (the music-player card's `musicPlayerFallbackHtml` ⇔ `MusicPlayerCard` paused state, parity-pinned by `packages/web/tests/unit/ui/public/music-player/music-player.test.tsx`).
+- JS-driven animation goes only through the `@kobato/web/ui/components/lazy-motion` facade (`LazyMotion*` / `LazyAnimatePresence` / `LazyMotionConfig`, or the `EagerMotion*` / `EagerAnimatePresence` browser-only nodes) — never a direct runtime `motion/react` import outside that module. Shared easing/duration constants live in `@kobato/web/client/lib/motion`; simple hover/state styling stays on CSS `transition-*` utilities.
+- Never use React `<ViewTransition>` / `addTransitionType` / `document.startViewTransition` for element or navigation animation — named captures paint in the `::view-transition` overlay above every z-index; the theme-switch wipe in `packages/web/src/ui/lib/ThemeProvider.tsx` is the sole `startViewTransition` consumer.
 
 ## Dependencies
 
-- Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table (the root `package.json` references entries as `"catalog:"`); `taze` edits the catalog in place. Version-exact pins (the drizzle rc pair) stay exact inside the catalog — taze treats range-less entries as locked and skips them; every other entry carries a `^` range so `pnpm bump` keeps it current.
-- Only packages required at production runtime AND shipping a native dynamic library belong in `package.json`'s `dependencies`: `@napi-rs/canvas` and `sharp` (per-platform binaries), `@duckdb/node-api` (`duckdb.node` + libduckdb per platform).
-- Every other dependency belongs in `devDependencies`, even if the server or client bundle imports it in production: `react`, `hono`, `drizzle-orm`, `nodemailer`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser`.
-- Distribution ships only the SEA binary built on CI with the full dev install (see `scripts/sea/AGENTS.md`): no node runtime, no node_modules, no `pnpm install --prod` step. Native packages must stay in `dependencies` so the build installs their platform binaries; the SEA pipeline bundles their JS and embeds the platform `.node` / libvips library files (`scripts/sea/assets.ts`).
+- Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table (every `package.json` references entries as `"catalog:"`); `taze` edits the catalog in place. Version-exact pins (the drizzle rc pair) stay exact inside the catalog — taze treats range-less entries as locked and skips them; every other entry carries a `^` range so `pnpm bump` keeps it current.
+- Each package declares every external package it imports — the declarations are the layering enforcement, so an undeclared import fails typecheck. Workspace links go in `dependencies`/`devDependencies` as `"workspace:*"` (a package's self-link lives in its own devDependencies).
+- Only packages required at production runtime AND shipping a native dynamic library belong in the ROOT `package.json`'s `dependencies`: `@napi-rs/canvas` and `sharp` (per-platform binaries), `@duckdb/node-api` (`duckdb.node` + libduckdb per platform).
+- Every other dependency belongs in `devDependencies` (of the package that imports it), even if the server or client bundle imports it in production: `react`, `hono`, `drizzle-orm`, `nodemailer`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser`.
+- Distribution ships only the SEA binary built on CI with the full dev install (see `scripts/sea/AGENTS.md`): no node runtime, no node_modules, no `pnpm install --prod` step. Native packages must stay in the root `dependencies` so the build installs their platform binaries; the SEA pipeline bundles their JS and embeds the platform `.node` / libvips library files (`scripts/sea/assets.ts`).
 - `drizzle-orm` / `drizzle-kit` stay pinned at `1.0.0-rc.5` (pre-release); when drizzle 1.0 stable ships, evaluate upgrading the pair together and re-run the migration contract tests before unpinning.
 
 ## Layering
 
-- `server/*` → `shared/*`, `server/*`. Not `client/*` or `ui/*`.
-- `client/*`, `ui/*` → `shared/*`, `ui/*`, `client/*`. Not `server/*`.
-- `shared/*` → `shared/*` only.
-- `inkling/*` → `inkling/*` only (host-agnostic editor island). The rest of the app imports it ONLY through two entry surfaces: `@/inkling` (the React barrel, client/ui/routes) and `@/inkling/headless` (react-free; the ONLY surface `server/*` and `shared/*` may use). Pinned by the boundaries test.
-- `routes/*` wire only: extract request context, call orchestrators, render. No DB imports or business logic inline.
-- Cross-domain imports under `server/domains/` must stay acyclic (DAG, pinned by contract test).
-- No barrel `index.ts` files. No `export { X } from 'y'` re-exports — import directly from the source module (`src/inkling/` is the deliberate exception: its barrel IS the public surface). Refactor from architectural correctness, not minimal diff size.
+Package dependency declarations enforce these rules physically; `apps/kobato/tests/arch/package-dag.test.ts` pins the exceptions.
+
+- `@kobato/server` (`packages/server`) → `@kobato/shared`. Never `@kobato/web` or the `@kobato/inkling` React barrel.
+- `@kobato/web` (`packages/web`) → `@kobato/shared`, `@kobato/inkling` (barrel). Never value-imports `@kobato/server` — the single sanctioned channel is the type-only `RouterClient<ApiRouter>` in `packages/web/src/client/api/client.ts`; every other shared shape comes from `@kobato/shared` contracts.
+- `@kobato/shared` (`packages/shared`) → itself only.
+- `@kobato/inkling` (`packages/inkling`) → itself only (host-agnostic editor island). The rest of the app imports it ONLY through two entry surfaces: `@kobato/inkling` (the React barrel — app routes and web) and `@kobato/inkling/headless` (react-free; the ONLY surface `@kobato/server` and `@kobato/shared` may use). Pinned by the package-dag test.
+- `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render. No DB imports or business logic inline.
+- Cross-domain imports under `packages/server/src/domains/` must stay acyclic (DAG, pinned by the package-dag test).
+- No barrel `index.ts` files. No `export { X } from 'y'` re-exports — import directly from the source module (`packages/inkling/` is the deliberate exception: its barrel IS the public surface). Refactor from architectural correctness, not minimal diff size.

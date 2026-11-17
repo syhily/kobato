@@ -1,0 +1,52 @@
+import type { ResolvedAnalyticsQuery } from '@kobato/shared/contracts/analytics.ts'
+
+import { sql } from 'kysely'
+
+import type { AnalyticsReader } from './analytics-sql'
+
+import { visitAggregates } from './aggregates'
+import { createAnalyticsQuery, runAnalyticsQuery } from './analytics-sql'
+import { buildAnalyticsFilter } from './query-filter'
+
+const CSV_COLUMNS = ['path', 'views', 'visitors', 'referers'] as const
+
+interface ExportRow {
+  path?: string
+  views?: number
+  visitors?: number
+  referers?: number
+}
+
+// Spreadsheet formula triggers: a cell starting (after leading TAB/CR/space) with
+// = + - @ executes as a formula in Excel/LibreOffice — prefix it with a quote.
+const FORMULA_PREFIX = /^[\t\r ]*[=+\-@]/
+
+/** RFC 4180 cell escaping: quote values carrying a comma, quote, or newline. */
+export function csvCell(value: string | number | null | undefined): string {
+  let text = value === null || value === undefined ? '' : String(value)
+  if (FORMULA_PREFIX.test(text)) {
+    text = `'${text}`
+  }
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
+}
+
+/** CSV text export grouped by path: views, distinct visitors, distinct referer hosts. */
+export async function queryExportCsv(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<string> {
+  const rows = (await runAnalyticsQuery(
+    reader,
+    createAnalyticsQuery()
+      .select([sql.ref('blob1').as('path'), ...visitAggregates('views')])
+      .where(buildAnalyticsFilter(input))
+      .groupBy('path')
+      .orderBy('views', 'desc')
+      // The wire schema already clamps `limit` to ≤500.
+      .limit(input.limit ?? 500),
+    'export',
+  )) as ExportRow[]
+
+  const lines = [CSV_COLUMNS.join(',')]
+  for (const row of rows) {
+    lines.push(CSV_COLUMNS.map((column) => csvCell(row[column])).join(','))
+  }
+  return `${lines.join('\r\n')}\r\n`
+}

@@ -1,0 +1,181 @@
+import type { AdminTagDto } from '@kobato/shared/contracts/tags.ts'
+
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { PlusIcon, SearchIcon } from 'lucide-react'
+import { Fragment, useCallback, useState } from 'react'
+
+import { orpc } from '../../../client/api/client'
+import { orpcQuery } from '../../../client/api/orpc-query'
+import { Button } from '../../components/button'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../components/empty'
+import { Input } from '../../components/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/table'
+import { useI18n } from '../../lib/I18nProvider'
+import { AdminInfiniteListFooter } from '../shared/AdminInfiniteListFooter'
+import { AdminListPage } from '../shared/AdminListPage'
+import { type ConfirmState, ConfirmDialog } from '../shared/ConfirmDialog'
+import { useAdminInfiniteList } from '../shared/useAdminInfiniteList'
+import { useDebouncedSearch } from '../shared/useDebouncedSearch'
+import { EditTagDialog } from './EditTagDialog'
+import { TagRow, TagsSkeleton } from './TagRows'
+
+const PAGE_SIZE = 30
+
+type EditTarget = AdminTagDto | null | undefined
+
+export function TagsView() {
+  const { t } = useI18n()
+  const [q, setQ] = useState('')
+  const queryClient = useQueryClient()
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+  const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
+
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.tags.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      q: q || undefined,
+      offset,
+      limit: PAGE_SIZE,
+    }),
+    selectRows: (page) => page.tags,
+    noun: 'admin.list.noun.tags',
+  })
+
+  // Whole-namespace invalidation, no local mirror; a rejected delete (409) surfaces through the confirm dialog.
+  const deleteApi = useMutation({
+    mutationFn: (id: string) => orpc.admin.tags.delete({ id }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.tags.list.key() })
+      setEditTarget(undefined)
+    },
+    onError: (error) => {
+      setConfirm({
+        title: t('admin.tags.deleteBlockedTitle'),
+        description: error.message,
+        actionLabel: t('admin.categories.acknowledge'),
+        destructive: false,
+        onConfirm: () => undefined,
+      })
+    },
+  })
+
+  const [qInput, setQInput] = useDebouncedSearch({
+    delayMs: 300,
+    onChange: setQ,
+  })
+
+  const isDialogOpen = editTarget !== undefined
+
+  const handleDelete = useCallback(
+    (row: AdminTagDto) => {
+      setConfirm({
+        title: t('admin.tags.deleteTitle', { name: row.name }),
+        description: t('admin.tags.deleteBody'),
+        actionLabel: t('common.action.delete'),
+        destructive: true,
+        onConfirm: () => {
+          deleteApi.mutate(row.id)
+        },
+      })
+    },
+    [deleteApi, t],
+  )
+
+  return (
+    <>
+      <AdminListPage>
+        <AdminListPage.Header
+          title={
+            <>
+              {t('admin.tags.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
+            </>
+          }
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-56">
+              <SearchIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                size="sm"
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
+                placeholder={t('admin.tags.searchPlaceholder')}
+                aria-label={t('admin.tags.searchAria')}
+                className="pl-9"
+              />
+            </div>
+            <Button type="button" size="sm" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
+              <PlusIcon data-icon />
+              {t('admin.tags.new')}
+            </Button>
+          </div>
+        </AdminListPage.Header>
+
+        <AdminListPage.Body>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[28%]">{t('admin.tags.table.name')}</TableHead>
+                <TableHead>{t('admin.tags.table.slug')}</TableHead>
+                <TableHead className="w-24">{t('admin.tags.table.posts')}</TableHead>
+                <TableHead className="w-[60px] pr-4 text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TagsSkeleton />
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="p-0">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <SearchIcon />
+                        </EmptyMedia>
+                        <EmptyTitle>{t('admin.tags.empty')}</EmptyTitle>
+                      </EmptyHeader>
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((row, index) => {
+                  const tagRow = (
+                    <TagRow
+                      tag={row}
+                      disabled={isDialogOpen}
+                      onEdit={() => setEditTarget(row)}
+                      onDelete={() => handleDelete(row)}
+                    />
+                  )
+                  return index === rows.length - 1 ? (
+                    <Fragment key={row.id} ref={sentinelRef}>
+                      {tagRow}
+                    </Fragment>
+                  ) : (
+                    <Fragment key={row.id}>{tagRow}</Fragment>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+
+          <AdminInfiniteListFooter
+            noun={t('admin.list.noun.tags')}
+            rowCount={rows.length}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+        </AdminListPage.Body>
+      </AdminListPage>
+
+      <EditTagDialog
+        tag={editTarget}
+        onClose={() => setEditTarget(undefined)}
+        onSaved={() => setEditTarget(undefined)}
+      />
+
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+    </>
+  )
+}

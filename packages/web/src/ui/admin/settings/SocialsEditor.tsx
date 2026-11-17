@@ -1,0 +1,138 @@
+import type { SocialItem, SocialsSettings } from '@kobato/shared/config/types.ts'
+
+import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@kobato/shared/config/socials.ts'
+import { useFieldArray, useWatch } from 'react-hook-form'
+
+import { Label } from '../../components/label'
+import { SOCIAL_NETWORK_ICONS } from '../../icons/brand'
+import { useI18n } from '../../lib/I18nProvider'
+import { SettingGroup } from './shell/SettingGroup'
+import { SettingsInput } from './shell/SettingsInput'
+import { useSettingsCard } from './shell/useSettingsCard'
+
+interface SocialsEditorProps {
+  socials: SocialsSettings
+}
+
+interface SocialRow {
+  network: SocialNetwork
+  name: string
+  title: string
+  link: string
+}
+
+function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
+  const sourceMap = new Map(source.socials.map((s) => [s.network, s]))
+  const rows: SocialRow[] = SOCIAL_NETWORKS.map((network) => {
+    const item = sourceMap.get(network)
+    const meta = getSocialNetworkMeta(network)
+    if (item) {
+      const customName = item.name && item.name !== meta.defaultName ? item.name : ''
+      return { network, name: customName, title: item.title ?? '', link: item.link }
+    }
+    return { network, name: '', title: '', link: '' }
+  })
+  return { rows }
+}
+
+export function SocialsEditor({ socials }: SocialsEditorProps) {
+  const { t } = useI18n()
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
+    section: 'socials',
+    source: socials,
+    toState: toFormState,
+    fromState: (state) => ({
+      socials: state.rows
+        .filter((row) => row.link.trim() !== '')
+        .map((row) => {
+          const meta = getSocialNetworkMeta(row.network)
+          const customName = row.name.trim()
+          const item: SocialItem = {
+            name: customName || meta.defaultName,
+            network: row.network,
+            type: meta.type,
+            link: row.link.trim(),
+          }
+          if (meta.type === 'qrcode' && row.title.trim()) {
+            item.title = row.title.trim()
+          }
+          return item
+        }),
+    }),
+  })
+
+  const { fields } = useFieldArray({ control: form.control, name: 'rows' })
+  const rows = useWatch({ control: form.control, name: 'rows' })
+
+  const patch = (index: number, update: Partial<SocialRow>) => {
+    const current = form.getValues(`rows.${index}`)
+    form.setValue(`rows.${index}`, { ...current, ...update }, { shouldDirty: true })
+  }
+
+  return (
+    <SettingGroup
+      title={t('admin.settings.section.socials.label')}
+      description={t('admin.settings.socials.description')}
+      {...settingGroupProps}
+    >
+      <div className="flex flex-col gap-3">
+        {fields.map((field, index) => {
+          const row = rows[index] ?? field
+          const meta = getSocialNetworkMeta(row.network)
+          const Icon = SOCIAL_NETWORK_ICONS[row.network]
+          return (
+            <div key={field.id} className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                <span className="flex size-8 items-center justify-center rounded-xl border bg-background text-foreground [&_svg]:size-4">
+                  <Icon />
+                </span>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm font-medium">{t(meta.labelId)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {meta.type === 'qrcode'
+                      ? t('admin.settings.socials.qrcodeHint')
+                      : t('admin.settings.socials.linkHint')}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor={`social-name-${row.network}`}>{t('admin.settings.socials.name')}</Label>
+                <SettingsInput
+                  flushOnBlur={flushOnBlur}
+                  id={`social-name-${row.network}`}
+                  value={row.name}
+                  onChange={(e) => patch(index, { name: e.target.value })}
+                  maxLength={60}
+                  placeholder={meta.defaultName}
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor={`social-link-${row.network}`}>{t(meta.linkLabelId)}</Label>
+                <SettingsInput
+                  flushOnBlur={flushOnBlur}
+                  id={`social-link-${row.network}`}
+                  value={row.link}
+                  onChange={(e) => patch(index, { link: e.target.value })}
+                  placeholder={meta.linkPlaceholder}
+                />
+              </div>
+              {meta.type === 'qrcode' ? (
+                <div className="flex flex-col gap-3">
+                  <Label htmlFor={`social-title-${row.network}`}>{t('admin.settings.socials.qrcodeTitle')}</Label>
+                  <SettingsInput
+                    flushOnBlur={flushOnBlur}
+                    id={`social-title-${row.network}`}
+                    value={row.title}
+                    onChange={(e) => patch(index, { title: e.target.value })}
+                    maxLength={120}
+                    placeholder={t('admin.settings.socials.qrcodePlaceholder', { label: t(meta.labelId) })}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+    </SettingGroup>
+  )
+}

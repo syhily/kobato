@@ -67,12 +67,12 @@ jobs:
         if: github.event_name == 'pull_request'
       # The ordinary test job runs before any build and therefore skips this
       # proof by design. Run it explicitly against the real production output
-      # in the build job (push: `build/server`; PR: `sea:build`).
+      # in the build job (push: `apps/kobato/build/server`; PR: `sea:build`).
       - name: production trace/rum bundle guard
         run: |
-          test -d build/client
-          test -d build/server
-          pnpm exec vitest run --project unit tests/unit/arch/production-rum-bundle.test.ts
+          test -d apps/kobato/build/client
+          test -d apps/kobato/build/server
+          pnpm exec vitest run --project app-unit apps/kobato/tests/arch/production-rum-bundle.test.ts
         env:
           KOBATO_REQUIRE_PRODUCTION_BUILD: '1'
       # Real-Chromium journeys (tests/browser). CI uses Playwright's bundled

@@ -94,7 +94,7 @@ jobs:
       - name: Package Ubuntu x64 deb with checksum
         if: matrix.target == 'linux-x64'
         run: |
-          version="$(node -p "require('./package.json').version" | tr '-' '~')"
+          version="$(node -p "require('./apps/kobato/package.json').version" | tr '-' '~')"
           bash scripts/deploy/build-deb.sh dist-sea/kobato-linux-x64 "$version" "dist-sea/kobato_${version}_amd64.deb"
           (cd dist-sea && sha256sum "kobato_${version}_amd64.deb" > "kobato_${version}_amd64.deb.sha256")
           (cd dist-sea && sha256sum -c "kobato_${version}_amd64.deb.sha256")

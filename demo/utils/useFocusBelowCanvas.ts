@@ -1,9 +1,8 @@
+import type { ExternalControlAPI } from '@kobato/inkling'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 
 import { $getRoot, $isDecoratorNode } from 'lexical'
 import React from 'react'
-
-import type { ExternalControlAPI } from '@/inkling'
 
 // Focus-below-canvas guard attributes: a gesture that starts on any of these must not be followed by a re-focus on
 // mouseup (a mousedown can select a node which deselects another, so the mouseup lands somewhere unintended).

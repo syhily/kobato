@@ -1,0 +1,45 @@
+// @vitest-environment happy-dom
+
+import { wrapWithI18n } from '@kobato/test-helpers/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/web/client/hooks/use-logout.ts', () => ({
+  useLogout: () => vi.fn(),
+}))
+
+// VersionDialog (inside the footer) queries the GitHub avatar through
+// react-query, so the shared mock supplies its slots — the unread count
+// arrives as a prop.
+mockTanstackQuery()
+
+const { AppSidebarFooter } = await import('@kobato/web/ui/admin/shell/AppSidebarFooter.tsx')
+
+function footer(unreadCount = 0) {
+  return (
+    <MemoryRouter initialEntries={['/admin']}>
+      <AppSidebarFooter id="1" name="管理员" email="admin@example.com" unreadCount={unreadCount} />
+    </MemoryRouter>
+  )
+}
+
+function renderFooter(unreadCount = 0) {
+  return render(wrapWithI18n(footer(unreadCount)))
+}
+
+describe('ui/admin/shell/AppSidebarFooter', () => {
+  it('shows the unread dot on the avatar only with unread messages', () => {
+    const { container, rerender } = renderFooter(5)
+    expect(container.querySelector('.bg-destructive')).not.toBeNull()
+
+    rerender(wrapWithI18n(footer(0)))
+    expect(container.querySelector('.bg-destructive')).toBeNull()
+  })
+
+  it('announces the unread count through the trigger aria-label', () => {
+    renderFooter(3)
+    expect(screen.getByLabelText('用户菜单，3 条未读消息')).toBeTruthy()
+  })
+})

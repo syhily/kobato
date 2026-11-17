@@ -6,34 +6,42 @@ export default defineConfig({
   },
   test: {
     silent: 'passed-only',
-    // Explicit list — tests/e2e needs a live SEA-booted instance (it is
-    // driven by `pnpm run sea:e2e`) and must never join the default run.
+    // Explicit list — apps/kobato/tests/e2e needs a live SEA-booted instance
+    // (it is driven by `pnpm run sea:e2e`) and must never join the default
+    // run; packages/inkling brings its own project config.
     projects: [
-      'tests/unit/vitest.config.ts',
-      'tests/it/vitest.config.ts',
-      'tests/vitest.duckdb.config.ts',
-      'tests/snaps/vitest.config.ts',
-      'tests/inkling/vitest.config.ts',
+      'packages/shared/tests/unit/vitest.config.ts',
+      'packages/shared/tests/snaps/vitest.config.ts',
+      'packages/server/tests/unit/vitest.config.ts',
+      'packages/server/tests/it/vitest.config.ts',
+      'packages/web/tests/unit/vitest.config.ts',
+      'packages/web/tests/snaps/vitest.config.ts',
+      'packages/inkling/tests/vitest.config.ts',
+      'apps/kobato/tests/unit/vitest.config.ts',
+      'apps/kobato/tests/it/vitest.config.ts',
+      'apps/kobato/tests/snaps/vitest.config.ts',
+      'apps/kobato/tests/vitest.duckdb.config.ts',
     ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/**/*.{ts,tsx}'],
+      include: ['packages/*/src/**', 'apps/kobato/src/**'],
       exclude: [
-        'src/**/*.d.ts',
-        'src/server/infra/db/schema/**',
-        'src/server/infra/db/types/**',
-        'src/ui/**',
+        'packages/*/src/**/*.d.ts',
+        'apps/kobato/src/**/*.d.ts',
+        'packages/server/src/infra/db/schema/**',
+        'packages/server/src/infra/db/types/**',
+        'packages/web/src/ui/**',
         // The inkling editor tree is covered by its own vitest project
-        // (tests/inkling, jsdom) whose historical thresholds (~56/54/49)
-        // sit below the root 60 — excluding it here keeps the root gate
-        // measuring only the layers it was calibrated for.
-        'src/inkling/**',
-        'src/env.d.ts',
-        'src/routes.ts',
-        'src/entry.client.tsx',
-        'src/entry.server.tsx',
-        'src/root.tsx',
+        // (packages/inkling/tests, jsdom) whose historical thresholds
+        // (~56/54/49) sit below the root 60 — excluding it here keeps the
+        // root gate measuring only the layers it was calibrated for.
+        'packages/inkling/**',
+        'apps/kobato/src/env.d.ts',
+        'apps/kobato/src/routes.ts',
+        'apps/kobato/src/entry.client.tsx',
+        'apps/kobato/src/entry.server.tsx',
+        'apps/kobato/src/root.tsx',
       ],
       thresholds: {
         lines: 60,

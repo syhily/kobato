@@ -1,0 +1,579 @@
+import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
+import { act, render, renderHook } from '@testing-library/react'
+import {
+  $createParagraphNode,
+  $getNodeByKey,
+  $getRoot,
+  HISTORY_MERGE_TAG,
+  UNDO_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+} from 'lexical'
+import { readFileSync } from 'node:fs'
+import { useMemo, type ContextType, type ReactNode } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { CardPickerRenderProps } from '../../../src/nodes/cards/host-card-registry'
+
+import { useCardPicker } from '../../../src/hooks/useCardPicker'
+import { useCardWriter } from '../../../src/hooks/useCardWriter'
+import { AudioNode } from '../../../src/nodes/AudioNode'
+import { generateDecoratorNode } from '../../../src/nodes/base/generate-decorator-node'
+import { resolveCardInsertCommand } from '../../../src/nodes/cards/card-commands'
+import { getCardInsertRegistrations } from '../../../src/nodes/cards/card-insert-commands'
+import { getHostCard, registerCardPicker, resolveCardPicker } from '../../../src/nodes/cards/host-card-registry'
+import { defineCard } from '../../../src/nodes/cards/host-cards'
+import { createCardPickerStore } from '../../../src/plugins/behaviour/cardPickerStore'
+import { createCardSelectionStore } from '../../../src/plugins/behaviour/cardSelectionStore'
+import { INSERT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
+import { registerCardCommands } from '../../../src/plugins/behaviour/registerCardCommands'
+import { CardInsertPlugin } from '../../../src/plugins/CardInsertPlugin'
+import { CardPickerHostPlugin } from '../../../src/plugins/CardPickerHostPlugin'
+import { CORE_PLUGINS, type CorePluginScope } from '../../../src/plugins/CorePlugins'
+import { createCardPickerStoreWrapper } from '../../utils/card-picker-store'
+import { mockComposerContext } from '../../utils/composer-context'
+import { createTestEditor, tick, updateEditor } from '../../utils/test-editor'
+
+vi.mock('@lexical/react/LexicalComposerContext', () => ({
+  useLexicalComposerContext: vi.fn(),
+}))
+
+// Fixture cards, registered at module top level mirroring the host idiom
+// (defineCard before any composer mounts).
+const pickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="picker-dialog" />)
+
+const pickerWidget = defineCard({
+  nodeType: 'pickerWidget',
+  baseNode: generateDecoratorNode({
+    nodeType: 'pickerWidget',
+    properties: [{ name: 'src', default: '' }] as const,
+  }),
+  insert: {},
+  toolbarLabel: 'picker-widget',
+  picker: { render: pickerRender, autoOpenOnInsert: true },
+  render: () => null,
+})
+
+const manualPickerWidget = defineCard({
+  nodeType: 'manualPickerWidget',
+  baseNode: generateDecoratorNode({ nodeType: 'manualPickerWidget' }),
+  insert: {},
+  toolbarLabel: 'manual-picker-widget',
+  picker: { render: () => null },
+  render: () => null,
+})
+
+const pickerlessWidget = defineCard({
+  nodeType: 'pickerlessWidget',
+  baseNode: generateDecoratorNode({ nodeType: 'pickerlessWidget' }),
+  insert: {},
+  toolbarLabel: 'pickerless-widget',
+  render: () => null,
+})
+
+const FIXTURE_NODES = [pickerWidget.node, manualPickerWidget.node, pickerlessWidget.node]
+
+async function appendCard(editor: LexicalEditor, card: (typeof FIXTURE_NODES)[number], dataset = {}): Promise<NodeKey> {
+  let key: NodeKey = ''
+  await updateEditor(editor, () => {
+    const node = new card(dataset)
+    $getRoot().append(node)
+    key = node.getKey()
+  })
+  return key
+}
+
+describe('the pick seam registration', () => {
+  it('stores the picker spec verbatim on the host registry record', () => {
+    expect(getHostCard('pickerWidget')?.spec.picker).toEqual({
+      render: pickerRender,
+      autoOpenOnInsert: true,
+    })
+    expect(getHostCard('manualPickerWidget')?.spec.picker?.autoOpenOnInsert).toBeUndefined()
+    expect(getHostCard('pickerlessWidget')?.spec.picker).toBeUndefined()
+  })
+
+  it('projects pickerAutoOpen onto the host card insert registrations only', () => {
+    const registrations = getCardInsertRegistrations()
+    expect(registrations.find((registration) => registration.nodeType === 'pickerWidget')?.pickerAutoOpen).toBe(true)
+    expect(registrations.find((registration) => registration.nodeType === 'manualPickerWidget')?.pickerAutoOpen).toBe(
+      false,
+    )
+    // built-in cards never carry the flag — pickers are host-only
+    expect(registrations.filter((registration) => registration.pickerAutoOpen).map((r) => r.nodeType)).toEqual([
+      'pickerWidget',
+    ])
+  })
+})
+
+describe('useCardPicker', () => {
+  let editor: LexicalEditor
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editor = createTestEditor({ nodes: FIXTURE_NODES })
+    mockComposerContext(editor)
+  })
+
+  it('opens the picker for a card that declares one and closes it again', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
+    const { result } = renderHook(() => useCardPicker(), { wrapper })
+
+    act(() => result.current.open(nodeKey))
+    expect(store.getState().request).toEqual({ nodeKey, nodeType: 'pickerWidget' })
+
+    act(() => result.current.close())
+    expect(store.getState().request).toBeNull()
+  })
+
+  it('no-ops for a pickerless card and for a missing node', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const pickerlessKey = await appendCard(editor, pickerlessWidget.node)
+    const { result } = renderHook(() => useCardPicker(), { wrapper })
+
+    act(() => result.current.open(pickerlessKey))
+    act(() => result.current.open('missing-key'))
+    expect(store.getState().request).toBeNull()
+  })
+
+  it('no-ops on a read-only editor — a read-only surface never originates pick requests', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
+    const { result } = renderHook(() => useCardPicker(), { wrapper })
+
+    editor.setEditable(false)
+    act(() => result.current.open(nodeKey))
+    expect(store.getState().request).toBeNull()
+
+    editor.setEditable(true)
+    act(() => result.current.open(nodeKey))
+    expect(store.getState().request).toEqual({ nodeKey, nodeType: 'pickerWidget' })
+  })
+})
+
+describe('CardPickerHostPlugin', () => {
+  let editor: LexicalEditor
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editor = createTestEditor({ nodes: FIXTURE_NODES, headless: false })
+    mockComposerContext(editor)
+  })
+
+  it('renders the picker spec exactly once for the active request, with editor/nodeKey/close', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
+    const view = render(<CardPickerHostPlugin />, { wrapper })
+
+    expect(view.queryByTestId('picker-dialog')).toBeNull()
+    expect(pickerRender).not.toHaveBeenCalled()
+
+    act(() => {
+      store.setState({ request: { nodeKey, nodeType: 'pickerWidget' } })
+    })
+    expect(view.getAllByTestId('picker-dialog')).toHaveLength(1)
+    expect(pickerRender).toHaveBeenCalledWith({ editor, nodeKey, close: expect.any(Function), fromInsert: false })
+
+    const close = pickerRender.mock.calls[0]?.[0].close as () => void
+    act(() => close())
+    expect(store.getState().request).toBeNull()
+    expect(view.queryByTestId('picker-dialog')).toBeNull()
+  })
+
+  it('drops the request when the card is deleted while the picker is open', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
+    render(<CardPickerHostPlugin />, { wrapper })
+
+    act(() => {
+      store.setState({ request: { nodeKey, nodeType: 'pickerWidget' } })
+    })
+    expect(store.getState().request).not.toBeNull()
+
+    await act(async () => {
+      await updateEditor(editor, () => {
+        $getNodeByKey(nodeKey)?.remove()
+      })
+      await tick()
+    })
+    expect(store.getState().request).toBeNull()
+  })
+
+  it('drops the request immediately when the node is already gone at registration', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
+    // the deletion commits BEFORE the host attaches its listener — the
+    // forward update listener alone would never observe it
+    await updateEditor(editor, () => {
+      $getNodeByKey(nodeKey)?.remove()
+    })
+
+    store.setState({ request: { nodeKey, nodeType: 'pickerWidget' } })
+    render(<CardPickerHostPlugin />, { wrapper })
+    expect(store.getState().request).toBeNull()
+  })
+
+  it('drops the active request on unmount — the readOnly toggle must not strand it', async () => {
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
+    const view = render(<CardPickerHostPlugin />, { wrapper })
+
+    act(() => {
+      store.setState({ request: { nodeKey, nodeType: 'pickerWidget' } })
+    })
+    expect(view.queryByTestId('picker-dialog')).not.toBeNull()
+
+    view.unmount()
+    expect(store.getState().request).toBeNull()
+  })
+})
+
+describe('autoOpenOnInsert', () => {
+  let editor: LexicalEditor
+  // One picker store shared by registerCardCommands (writes the openPicker
+  // flag) and the registrar's context wrapper — both halves of the seam must
+  // observe the same store.
+  let pickerStore: ReturnType<typeof createCardPickerStore>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editor = createTestEditor({ nodes: FIXTURE_NODES })
+    pickerStore = createCardPickerStore()
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore })
+    mockComposerContext(editor)
+  })
+
+  async function mountRegistrar() {
+    const harness = createCardPickerStoreWrapper({ store: pickerStore })
+    renderHook(() => CardInsertPlugin(), { wrapper: harness.wrapper })
+    await tick()
+    return harness.store
+  }
+
+  async function seedSelection() {
+    await updateEditor(editor, () => {
+      const paragraph = $createParagraphNode()
+      $getRoot().append(paragraph)
+      paragraph.select()
+    })
+  }
+
+  it('opens the picker on the freshly inserted node', async () => {
+    const store = await mountRegistrar()
+    await seedSelection()
+
+    act(() => {
+      editor.dispatchCommand(resolveCardInsertCommand('pickerWidget'), {})
+    })
+
+    const request = store.getState().request
+    expect(request?.nodeType).toBe('pickerWidget')
+    // Lexical commits the insert on a microtask — drain before reading
+    await tick()
+    // the node landed under the request's key — the pick write resolves it
+    editor.getEditorState().read(() => {
+      expect($getNodeByKey(request?.nodeKey ?? '')?.getType()).toBe('pickerWidget')
+    })
+  })
+
+  it('does not open the picker for an insert without the flag', async () => {
+    const store = await mountRegistrar()
+    await seedSelection()
+
+    act(() => {
+      editor.dispatchCommand(resolveCardInsertCommand('manualPickerWidget'), {})
+    })
+
+    expect(store.getState().request).toBeNull()
+  })
+
+  it('never opens the picker on an editor-state load — only the insert command triggers it', async () => {
+    const source = createTestEditor({ nodes: FIXTURE_NODES })
+    await updateEditor(source, () => {
+      $getRoot().append(new pickerWidget.node({ src: 'x' }))
+    })
+    const serialized = JSON.stringify(source.getEditorState().toJSON())
+
+    editor = createTestEditor({ nodes: FIXTURE_NODES })
+    mockComposerContext(editor)
+    editor.setEditorState(editor.parseEditorState(serialized))
+    const store = await mountRegistrar()
+    await tick()
+
+    expect(store.getState().request).toBeNull()
+    // the loaded card answers a manual open (the placeholder re-entry path)
+    editor.getEditorState().read(() => {
+      expect($getRoot().getFirstChild()?.getType()).toBe('pickerWidget')
+    })
+  })
+})
+
+describe('the variant picker channel (registerCardPicker)', () => {
+  // The picker-override channel: a picker for a card type without a host
+  // spec — a same-type variant of a built-in card. 'audio' stands in as the
+  // built-in type; registered at module scope, mirroring the defineCard idiom.
+  const audioPickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="audio-picker" />)
+  registerCardPicker('audio', { render: audioPickerRender })
+
+  it('resolves the override for a picker-less built-in type, host spec first', () => {
+    expect(resolveCardPicker('audio')?.render).toBe(audioPickerRender)
+    // the host spec's own picker wins its channel; a picker-less card resolves nothing
+    expect(resolveCardPicker('pickerWidget')?.render).toBe(pickerRender)
+    expect(resolveCardPicker('pickerlessWidget')).toBeUndefined()
+  })
+
+  it('enforces one picker per node type across both channels', () => {
+    expect(() => registerCardPicker('audio', { render: () => null })).toThrow(/already registered/)
+    expect(() => registerCardPicker('pickerWidget', { render: () => null })).toThrow(/already registered/)
+    expect(
+      () =>
+        defineCard({
+          nodeType: 'audio',
+          baseNode: generateDecoratorNode({ nodeType: 'audioClone' }),
+          toolbarLabel: 'audio-clone',
+          picker: { render: () => null },
+          render: () => null,
+        }),
+      // 'audio' collides with the built-in declaration before the picker
+      // check runs — the defineCard collision guard stays the first door
+    ).toThrow(/already declared/)
+    expect(() =>
+      defineCard({
+        nodeType: 'audioVariantWithPicker',
+        baseNode: generateDecoratorNode({ nodeType: 'audioVariantWithPicker' }),
+        toolbarLabel: 'audio-variant',
+        picker: { render: () => null },
+        render: () => null,
+      }),
+    ).not.toThrow()
+    // …but a host card WITH a picker now blocks the override channel for its type
+    expect(() => registerCardPicker('audioVariantWithPicker', { render: () => null })).toThrow(/already registered/)
+  })
+
+  it('opens the override picker from useCardPicker for a built-in card node', async () => {
+    const editor = createTestEditor({ nodes: [AudioNode] })
+    mockComposerContext(editor)
+    let nodeKey: NodeKey = ''
+    await updateEditor(editor, () => {
+      const node = new AudioNode({ src: 'https://example.com/song.mp3' })
+      $getRoot().append(node)
+      nodeKey = node.getKey()
+    })
+
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const { result } = renderHook(() => useCardPicker(), { wrapper })
+    act(() => result.current.open(nodeKey))
+    expect(store.getState().request).toEqual({ nodeKey, nodeType: 'audio' })
+  })
+
+  it('renders the override picker in the host plugin', async () => {
+    const editor = createTestEditor({ nodes: [AudioNode], headless: false })
+    mockComposerContext(editor)
+    let nodeKey: NodeKey = ''
+    await updateEditor(editor, () => {
+      const node = new AudioNode({ src: 'https://example.com/song.mp3' })
+      $getRoot().append(node)
+      nodeKey = node.getKey()
+    })
+
+    const { store, wrapper } = createCardPickerStoreWrapper()
+    const view = render(<CardPickerHostPlugin />, { wrapper })
+    act(() => {
+      store.setState({ request: { nodeKey, nodeType: 'audio' } })
+    })
+    expect(view.getAllByTestId('audio-picker')).toHaveLength(1)
+    expect(audioPickerRender).toHaveBeenCalledWith({ editor, nodeKey, close: expect.any(Function), fromInsert: false })
+  })
+
+  it('rejects autoOpenOnInsert on the variant channel — dispatch the insert with openPicker instead', () => {
+    // Variant inserts ride the built-in insert registration, which never
+    // projects the flag — it would compile, register, and never fire.
+    expect(() => registerCardPicker('audioAutoOpenVariant', { render: () => null, autoOpenOnInsert: true })).toThrow(
+      /autoOpenOnInsert/,
+    )
+    // the throw precedes registration — the type stays unregistered
+    expect(resolveCardPicker('audioAutoOpenVariant')).toBeUndefined()
+  })
+
+  it('writes the pick request when INSERT_CARD_COMMAND carries openPicker: true', async () => {
+    const editor = createTestEditor({ nodes: FIXTURE_NODES })
+    mockComposerContext(editor)
+    const pickerStore = createCardPickerStore()
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore })
+    await updateEditor(editor, () => {
+      const paragraph = $createParagraphNode()
+      $getRoot().append(paragraph)
+      paragraph.select()
+    })
+
+    // The variant trigger path: a host's intent command inserts an empty card
+    // and flags the payload. The node constructs inside the update — Lexical
+    // keys need an active editor.
+    await updateEditor(editor, () => {
+      editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}), openPicker: true })
+    })
+    // the insert-channel marker: the pick write merges into the insert entry
+    expect(pickerStore.getState().request).toMatchObject({ nodeType: 'pickerWidget', fromInsert: true })
+
+    pickerStore.setState({ request: null })
+    await updateEditor(editor, () => {
+      editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}) })
+    })
+    expect(pickerStore.getState().request).toBeNull()
+  })
+})
+
+describe('the picker host mount gate', () => {
+  it('mounts only on non-nested, editable surfaces', () => {
+    const entry = CORE_PLUGINS.find((plugin) => plugin.key === 'card-picker-host')
+    expect(entry?.when).toBeDefined()
+    const scope = { isNested: false, readOnly: false } as CorePluginScope
+    expect(entry?.when?.(scope)).toBe(true)
+    expect(entry?.when?.({ ...scope, readOnly: true })).toBe(false)
+    expect(entry?.when?.({ ...scope, isNested: true })).toBe(false)
+  })
+})
+
+describe('the insert-then-pick undo entry (fromInsert)', () => {
+  let editor: LexicalEditor
+  let pickerStore: ReturnType<typeof createCardPickerStore>
+
+  // The assembled class type doesn't thread the dataset properties (the host
+  // registry stores LexicalNode), so the guard declares the field slice.
+  type PickerWidgetNode = LexicalNode & { src: string }
+  const isPickerWidgetNode = (node: unknown): node is PickerWidgetNode => node instanceof pickerWidget.node
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editor = createTestEditor({ nodes: FIXTURE_NODES })
+    pickerStore = createCardPickerStore()
+    registerCardCommands(editor, { store: createCardSelectionStore(), pickerStore })
+    mockComposerContext(editor)
+  })
+
+  async function mountHistoryAndRegistrar() {
+    const harness = createCardPickerStoreWrapper({ store: pickerStore })
+    // HistoryPlugin resolves useLexicalComposerContext through the REAL module
+    // (a relative import inside @lexical/react bypasses this file's mock), so
+    // it mounts against a real provider; the inkling hooks keep the mocked one.
+    const actual = await vi.importActual<typeof import('@lexical/react/LexicalComposerContext')>(
+      '@lexical/react/LexicalComposerContext',
+    )
+    function HistoryWrapper({ children }: { children: ReactNode }) {
+      const contextValue = useMemo<ContextType<typeof actual.LexicalComposerContext>>(
+        () => [editor, actual.createLexicalComposerContext(null, {})],
+        [],
+      )
+      return (
+        <actual.LexicalComposerContext.Provider value={contextValue}>{children}</actual.LexicalComposerContext.Provider>
+      )
+    }
+    const historyState = createEmptyHistoryState()
+    await act(async () => {
+      renderHook(() => HistoryPlugin({ externalHistoryState: historyState }), { wrapper: HistoryWrapper })
+      renderHook(() => CardInsertPlugin(), { wrapper: harness.wrapper })
+      await tick()
+    })
+  }
+
+  async function insertWithAutoOpen(): Promise<NodeKey> {
+    await updateEditor(editor, () => {
+      const paragraph = $createParagraphNode()
+      $getRoot().append(paragraph)
+      paragraph.select()
+    })
+    await act(async () => {
+      editor.dispatchCommand(resolveCardInsertCommand('pickerWidget'), {})
+      // Lexical commits the insert on a microtask — drain before reading
+      await tick()
+    })
+    const request = pickerStore.getState().request
+    expect(request?.nodeType).toBe('pickerWidget')
+    expect(request?.fromInsert).toBe(true)
+    return request?.nodeKey ?? ''
+  }
+
+  function readCardSrc(nodeKey: NodeKey): string | null {
+    return editor.getEditorState().read(() => {
+      const node = $getNodeByKey(nodeKey)
+      return isPickerWidgetNode(node) ? node.src : null
+    })
+  }
+
+  function cardExists(nodeKey: NodeKey): boolean {
+    return editor.getEditorState().read(() => $getNodeByKey(nodeKey) !== null)
+  }
+
+  async function undo() {
+    await act(async () => {
+      editor.dispatchCommand(UNDO_COMMAND, undefined)
+      await tick()
+    })
+  }
+
+  it('merges a from-insert pick write into the insert entry — one undo retracts both', async () => {
+    await mountHistoryAndRegistrar()
+    const nodeKey = await insertWithAutoOpen()
+
+    // The write seam's mergeHistory option applies Lexical's HISTORY_MERGE_TAG.
+    // The block body matters: Lexical treats a listener's return value as a
+    // cleanup registration — an expression body returning push()'s length
+    // would break the next commit.
+    const seenTags: string[][] = []
+    editor.registerUpdateListener(({ tags }) => {
+      seenTags.push([...tags])
+    })
+    const { result } = renderHook(() => useCardWriter(nodeKey, isPickerWidgetNode))
+    await act(async () => {
+      result.current(
+        (node) => {
+          node.src = 'picked'
+        },
+        { mergeHistory: true },
+      )
+      await tick()
+    })
+    expect(readCardSrc(nodeKey)).toBe('picked')
+    expect(seenTags.some((tags) => tags.includes(HISTORY_MERGE_TAG))).toBe(true)
+
+    // one undo retracts insert AND pick — no stranded empty placeholder
+    await undo()
+    expect(cardExists(nodeKey)).toBe(false)
+  })
+
+  it('keeps an unflagged pick write a discrete undo entry (the replace path)', async () => {
+    await mountHistoryAndRegistrar()
+    const nodeKey = await insertWithAutoOpen()
+
+    const { result } = renderHook(() => useCardWriter(nodeKey, isPickerWidgetNode))
+    await act(async () => {
+      result.current((node) => {
+        node.src = 'picked'
+      })
+      await tick()
+    })
+    expect(readCardSrc(nodeKey)).toBe('picked')
+
+    // first undo reverts only the pick write — the empty card stays
+    await undo()
+    expect(cardExists(nodeKey)).toBe(true)
+    expect(readCardSrc(nodeKey)).toBe('')
+    // second undo retracts the insert
+    await undo()
+    expect(cardExists(nodeKey)).toBe(false)
+  })
+})
+
+describe('headless purity', () => {
+  it('the headless surface never references the pick seam', () => {
+    // `@/inkling/headless` is the react-free server surface (pinned by
+    // tests/unit/shared/contracts/boundaries.test.ts); the seam's React
+    // halves (hook, host plugin, context) must never leak into it. The
+    // registry's picker fact is type-only — the card-layering-imports guard
+    // pins host-card-registry's runtime imports React-free.
+    const headless = readFileSync('packages/inkling/src/headless.ts', 'utf8')
+    expect(headless).not.toMatch(/useCardPicker|CardPickerHostPlugin|cardPickerStore|CardPickerStoreContext/)
+  })
+})

@@ -1,21 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
   "include": [
-    "src/**/*",
-    "tests/**/*",
+    "apps/**/*",
+    "packages/**/*",
     "scripts/**/*",
     "drizzle.config.ts",
-    "react-router.config.ts",
     "oxfmt.config.ts",
     "oxlint.config.ts",
     "vite.sea.config.ts",
-    "vite.config.ts",
+    "vitest.config.ts",
+    "apps/kobato/.react-router/types/**/*",
     "**/.server/**/*",
     "**/.client/**/*",
-    ".react-router/types/**/*",
     // Ambient ImportMetaEnv/CSSProperties augmentations for the demo sources
-    // that tests/inkling imports — the file itself is imported by nobody, so
-    // it must be named here (the rest of demo/ stays out of the program).
+    // that packages/inkling tests import — the file itself is imported by
+    // nobody, so it must be named here (the rest of demo/ stays out of the
+    // program).
     "demo/types/vite-env.d.ts"
   ],
   "compilerOptions": {
@@ -25,10 +25,9 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "rootDirs": [".", "./.react-router/types"],
+    "rootDirs": [".", "./apps/kobato", "./apps/kobato/.react-router/types"],
     "paths": {
-      "@/*": ["./src/*"],
-      "#/*": ["./tests/*"]
+      "@/*": ["./apps/kobato/src/*"]
     },
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
@@ -39,5 +38,5 @@
     "strict": true,
     "strictNullChecks": true
   },
-  "exclude": ["build", "dist"]
+  "exclude": ["build", "dist", "node_modules", "apps/kobato/build"]
 }

@@ -1,0 +1,64 @@
+import { BaseImageNode, imageNestedEditors, imageTransientProps } from '../base/nodes/image/ImageNode'
+import { decorateCardWidth } from '../base/utils/card-widths'
+import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+
+export const imageDeclaration = checkedCardDeclaration({
+  nodeType: 'image',
+  baseNode: BaseImageNode,
+  nestedEditors: imageNestedEditors,
+  transientProps: imageTransientProps,
+  decorateTarget: {
+    width: decorateCardWidth,
+  },
+  menu: [
+    {
+      label: 'Image',
+      labelKey: 'image',
+      desc: 'Upload, or embed with /image [url]',
+      icon: 'image',
+      command: 'insert',
+      insertParams: {
+        triggerFileDialog: true,
+      },
+      matches: ['image', 'img'],
+      queryParams: ['src'],
+      priority: 1,
+      shortcut: '/image',
+    },
+    {
+      label: 'GIF',
+      labelKey: 'gif',
+      desc: 'Search and embed gifs',
+      icon: 'gif',
+      command: 'openGifSelector',
+      insertParams: {
+        triggerFileDialog: false,
+      },
+      matches: ['gif', 'giphy', 'tenor', 'klipy'],
+      priority: 17,
+      queryParams: ['src'],
+      isHidden: ({ config }) => !config?.tenor && !config?.klipy,
+      shortcut: '/gif',
+    },
+    {
+      label: 'Image library',
+      labelKey: 'imageLibrary',
+      desc: 'Pick from your media library',
+      icon: 'image',
+      command: 'openImageLibrary',
+      insertParams: {
+        triggerFileDialog: false,
+      },
+      matches: ['library', 'media'],
+      priority: 18,
+      isHidden: ({ config }) => !config?.imageLibrary,
+      shortcut: '/library',
+    },
+  ],
+  insert: { claimsMediaInsert: true },
+  uploadType: 'image',
+  toolbarLabel: 'image',
+  // Markdown-eligible without a card fence: `IMAGE_CARD_TRANSFORMER` in
+  // `@/inkling/nodes/cards/card-markdown-transformers` owns `![alt](src)`.
+  markdown: { kind: 'exempt' },
+} satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)

@@ -1,0 +1,219 @@
+import type { Readable } from 'node:stream'
+
+import { randomBytes } from 'node:crypto'
+import { createReadStream, createWriteStream } from 'node:fs'
+import { access, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { pipeline } from 'node:stream/promises'
+
+import { descriptorFor } from '../../http/error-descriptor'
+import { ActionFailure } from '../../http/errors'
+import { getLogger } from '../../logger'
+import { isPathInside, STORAGE_DIR } from '../../paths'
+import {
+  MAX_OBJECT_BUFFER_SIZE,
+  type PutObjectInput,
+  type PutStreamInput,
+  type StorageBackend,
+  StorageObjectNotFound,
+  type StoredObjectMeta,
+} from '../backend'
+
+const log = getLogger('storage.local')
+
+// Reject ASCII control characters (NUL–US, DEL) anywhere in a key.
+// eslint-disable-next-line no-control-regex -- intentional security guard
+const UNSAFE_KEY_CHARS = /[\x00-\x1f\x7f]/
+
+function errnoCode(error: unknown): string | undefined {
+  if (error instanceof Error && 'code' in error && typeof error.code === 'string') {
+    return error.code
+  }
+  return undefined
+}
+
+function metaFromStat(key: string, st: { size: number; mtimeMs: number; mtime: Date }): StoredObjectMeta {
+  return { key, size: st.size, etag: `${st.size}-${Math.floor(st.mtimeMs)}`, lastModified: st.mtime }
+}
+
+/**
+ * Resolve a backend key to an absolute path inside `STORAGE_DIR`, rejecting
+ * escapes (absolute keys, `..`, control chars). Shared by `/storage/*` and migration.
+ */
+export function resolveLocalPath(key: string): string {
+  if (key === '' || key.startsWith('/') || UNSAFE_KEY_CHARS.test(key)) {
+    throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
+  }
+  // `path.resolve` normalises `..` — hence the `isPathInside` re-check.
+  const abs = path.resolve(STORAGE_DIR, key)
+  if (!isPathInside(abs, STORAGE_DIR)) {
+    throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
+  }
+  return abs
+}
+
+// Private namespaces (backup/, branding/, audit-log/ — DB dumps, originals) are
+// owner-only on disk so a shared host or readable volume cannot expose them through
+// default 0644/0755 permissions. Public objects keep the process defaults.
+const PRIVATE_FILE_MODE = 0o600
+const PRIVATE_DIR_MODE = 0o700
+
+function isPrivate(visibility: PutObjectInput['visibility']): boolean {
+  return visibility === 'private'
+}
+
+/**
+ * Write via a sibling temp file + atomic rename, so readers never see a partial file.
+ * The temp lives in the same directory to keep the rename on one filesystem. A private
+ * object's directory is created 0700 (existing dirs keep their mode) and the file 0600.
+ */
+async function atomicWrite(
+  abs: string,
+  visibility: PutObjectInput['visibility'],
+  write: (tmp: string, mode: number | undefined) => Promise<void>,
+): Promise<void> {
+  const privateObject = isPrivate(visibility)
+  await mkdir(path.dirname(abs), { recursive: true, ...(privateObject ? { mode: PRIVATE_DIR_MODE } : {}) })
+  const tmp = `${abs}.tmp-${randomBytes(6).toString('hex')}`
+  try {
+    await write(tmp, privateObject ? PRIVATE_FILE_MODE : undefined)
+    await rename(tmp, abs)
+  } catch (error) {
+    await rm(tmp, { force: true })
+    throw error
+  }
+}
+
+/** Recursive directory walk returning `StoredObjectMeta` with `/`-joined keys relative to `base`. */
+async function walk(dir: string, base: string): Promise<StoredObjectMeta[]> {
+  let entries: import('node:fs').Dirent[]
+  try {
+    entries = await readdir(dir, { withFileTypes: true })
+  } catch {
+    return []
+  }
+  const out: StoredObjectMeta[] = []
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      out.push(...(await walk(full, base)))
+    } else if (entry.isFile()) {
+      const st = await stat(full)
+      const rel = path.relative(base, full).split(path.sep).join('/')
+      out.push(metaFromStat(rel, st))
+    }
+  }
+  return out
+}
+
+/**
+ * Local-filesystem backend under `$DATA_PATH/storage/<key>`, same key namespace
+ * as S3 (migration is a verbatim copy). Always available — the S3 fallback.
+ */
+export const localBackend: StorageBackend = {
+  driver: 'local',
+
+  isAvailable(): boolean {
+    return true
+  },
+
+  async put(input: PutObjectInput): Promise<StoredObjectMeta> {
+    const abs = resolveLocalPath(input.key)
+    await atomicWrite(abs, input.visibility, (tmp, mode) => writeFile(tmp, input.body, { mode }))
+    return metaFromStat(input.key, await stat(abs))
+  },
+
+  async putStream(input: PutStreamInput): Promise<StoredObjectMeta> {
+    const abs = resolveLocalPath(input.key)
+    await atomicWrite(abs, input.visibility, (tmp, mode) => pipeline(input.body, createWriteStream(tmp, { mode })))
+    return metaFromStat(input.key, await stat(abs))
+  },
+
+  async get(key: string): Promise<Buffer> {
+    const abs = resolveLocalPath(key)
+    let st
+    try {
+      st = await stat(abs)
+    } catch (error) {
+      throw errnoCode(error) === 'ENOENT' ? new StorageObjectNotFound(key) : error
+    }
+    // A directory key is not a readable object — surface the seam's not-found instead of EISDIR.
+    if (!st.isFile()) {
+      throw new StorageObjectNotFound(key)
+    }
+    if (st.size > MAX_OBJECT_BUFFER_SIZE) {
+      throw new ActionFailure(
+        413,
+        descriptorFor('storage.error.localFileTooLarge', { size: st.size, max: MAX_OBJECT_BUFFER_SIZE }),
+      )
+    }
+    return readFile(abs)
+  },
+
+  async getStream(key: string): Promise<Readable> {
+    const abs = resolveLocalPath(key)
+    let st
+    try {
+      st = await stat(abs)
+    } catch (error) {
+      throw errnoCode(error) === 'ENOENT' ? new StorageObjectNotFound(key) : error
+    }
+    if (!st.isFile()) {
+      throw new StorageObjectNotFound(key)
+    }
+    return createReadStream(abs)
+  },
+
+  async exists(key: string): Promise<boolean> {
+    try {
+      await access(resolveLocalPath(key))
+      return true
+    } catch {
+      return false
+    }
+  },
+
+  async delete(key: string): Promise<void> {
+    // Best-effort: a missing object is not an error (matches the S3 delete contract).
+    try {
+      await unlink(resolveLocalPath(key))
+    } catch (error) {
+      if (errnoCode(error) !== 'ENOENT') {
+        log.warn('Failed to delete local object', { key, error })
+      }
+    }
+  },
+
+  async deleteMany(keys: string[]): Promise<void> {
+    // Reference the object directly: `this` is lost when the method is destructured.
+    await Promise.all(keys.map((key) => localBackend.delete(key)))
+  },
+
+  async deletePrefix(prefix: string): Promise<void> {
+    try {
+      const dir = path.resolve(STORAGE_DIR, prefix)
+      if (!isPathInside(dir, STORAGE_DIR)) {
+        return
+      }
+      await rm(dir, { recursive: true, force: true })
+    } catch (error) {
+      log.warn('Failed to delete local prefix', { prefix, error })
+    }
+  },
+
+  async list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]> {
+    const base = path.resolve(STORAGE_DIR, prefix)
+    if (!isPathInside(base, STORAGE_DIR)) {
+      return []
+    }
+    // Sort before slicing so `maxKeys` is a deterministic prefix (matches S3's lexicographic order).
+    // Code-unit order on purpose — a locale collation would reorder object keys.
+    const walked = await walk(base, STORAGE_DIR)
+    let items = walked.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    if (opts?.startAfter !== undefined) {
+      const startAfter = opts.startAfter
+      items = items.filter((item) => item.key > startAfter)
+    }
+    return opts?.maxKeys !== undefined ? items.slice(0, opts.maxKeys) : items
+  },
+}

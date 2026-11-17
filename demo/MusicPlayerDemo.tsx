@@ -1,9 +1,8 @@
+import { MUSIC_PLAYER_CARD_CLASSES, musicPlayerFallbackHtml } from '@kobato/shared/lexical/cards/music-player'
+import { MusicPlayerCard } from '@kobato/web/ui/public/music-player/music-player'
+import { useMusicPlayers } from '@kobato/web/ui/public/post/use-music-players'
 import { useEffect, useRef, useState } from 'react'
-
-import { MUSIC_PLAYER_CARD_CLASSES, musicPlayerFallbackHtml } from '@/shared/lexical/cards/music-player'
-import { MusicPlayerCard } from '@/ui/public/music-player/music-player'
-import { useMusicPlayers } from '@/ui/public/post/use-music-players'
-import '@/styles/public.css'
+import '@kobato/web/styles/public.css'
 
 // Minimal article-page demo for MusicPlayerCard (`/#/music-player`). External media fixtures (SoundHelix audio,
 // picsum covers) require network access; the LRC fixtures are inline.

@@ -1,0 +1,31 @@
+{
+  "name": "@kobato/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@date-fns/tz": "catalog:",
+    "@formatjs/icu-messageformat-parser": "catalog:",
+    "@kobato/inkling": "workspace:*",
+    "@kobato/server": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@kobato/test-helpers": "workspace:*",
+    "@kobato/web": "workspace:*",
+    "@types/jsdom": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "date-fns": "catalog:",
+    "dompurify": "catalog:",
+    "happy-dom": "catalog:",
+    "jsdom": "catalog:",
+    "react": "catalog:",
+    "react-router": "catalog:",
+    "sharp": "catalog:",
+    "undici": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

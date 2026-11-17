@@ -31,7 +31,6 @@
 // automatically for SSR builds — no externals config is needed.
 
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { z } from 'zod'
@@ -48,13 +47,13 @@ const pkgSchema = z.object({
   repository: z.object({ url: z.string() }),
 })
 
-const pkg = pkgSchema.parse(JSON.parse(readFileSync('./package.json', 'utf-8')))
+const pkg = pkgSchema.parse(JSON.parse(readFileSync('./apps/kobato/package.json', 'utf-8')))
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
 const BUNDLES = {
   server: { entry: 'scripts/sea/server-entry.ts', format: 'es', fileName: 'server.mjs' },
-  worker: { entry: 'src/server/infra/image/process-worker.ts', format: 'es', fileName: 'process-worker.mjs' },
+  worker: { entry: 'packages/server/src/infra/image/process-worker.ts', format: 'es', fileName: 'process-worker.mjs' },
   smoke: { entry: 'scripts/sea/smoke-worker.ts', format: 'es', fileName: 'smoke-worker.mjs' },
 } as const
 
@@ -71,9 +70,6 @@ const bundle = selectBundle()
 export default defineConfig({
   root: projectRoot,
   logLevel: 'info',
-  resolve: {
-    alias: { '@': join(projectRoot, 'src') },
-  },
   define: {
     // Baked into the bundle from package.json — a single executable has
     // no package.json to read at runtime (see `@/server/infra/sea-cli`).

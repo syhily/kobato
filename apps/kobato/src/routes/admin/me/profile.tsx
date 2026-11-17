@@ -1,0 +1,33 @@
+import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
+import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
+import { titleMeta } from '@kobato/shared/seo/title-meta.ts'
+import { MyProfileView } from '@kobato/web/ui/admin/my/MyProfileView.tsx'
+import { data } from 'react-router'
+
+import type { Route } from './+types/profile'
+
+export const meta = titleMeta('meta.title.admin.profile')
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { caller, viewer } = createSsrCaller({ request, context })
+  // Any logged-in role can edit their own row; admin.layout already rejects anonymous visitors.
+  requireRole(viewer ?? undefined, 'visitor')
+  const [profile, myCounts] = await Promise.all([caller.account.profile(), caller.comments.myCounts()])
+  return data({
+    user: profile.user,
+    counts: myCounts,
+    passkeyEnabled: profile.passkeyEnabled,
+    mailReady: profile.mailReady,
+  })
+}
+
+export default function WpAdminMyProfileRoute({ loaderData }: Route.ComponentProps) {
+  return (
+    <MyProfileView
+      user={loaderData.user}
+      counts={loaderData.counts}
+      passkeyEnabled={loaderData.passkeyEnabled}
+      mailReady={loaderData.mailReady}
+    />
+  )
+}

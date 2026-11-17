@@ -1,14 +1,6 @@
 // SEA asset collection: build the embedded-asset map for `--build-sea` (see
 // blob.ts) and write manifest.json, the codec/integrity registry the runtime
-// reads. Asset keys come from `src/shared/sea/assets.ts` — never hardcode one.
-
-import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
-import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { availableParallelism } from 'node:os'
-import { dirname, join, relative } from 'node:path'
-import { constants as zlibConstants, zstdCompressSync } from 'node:zlib'
+// reads. Asset keys come from `packages/shared/src/sea/assets.ts` — never hardcode one.
 
 // Relative import: this script runs under plain `node` — no path aliases.
 import {
@@ -29,7 +21,15 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
   type SeaAssetCodec,
-} from '../../src/shared/sea/assets.ts'
+} from '@kobato/shared/sea/assets.ts'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import { availableParallelism } from 'node:os'
+import { dirname, join, relative } from 'node:path'
+import { constants as zlibConstants, zstdCompressSync } from 'node:zlib'
+
 import { fail, run } from './exec.ts'
 import {
   repoRoot,
@@ -387,7 +387,7 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   const ctx: PackContext = { packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
-  await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'build', 'client'), ctx)
+  await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'apps', 'kobato', 'build', 'client'), ctx)
 
   await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'), ctx, isDrizzleSnapshotArtifact)
 
@@ -405,13 +405,13 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
     assets,
     files,
     SEA_OBSERVABILITY_ASSET_PREFIX,
-    join(repoRoot, 'src', 'server', 'domains', 'observability', 'assets'),
+    join(repoRoot, 'packages', 'server', 'src', 'domains', 'observability', 'assets'),
     ctx,
   )
 
   await addNativeAssets(assets, files, ctx)
 
-  const pkg = await readJson(join(repoRoot, 'package.json'))
+  const pkg = await readJson(join(repoRoot, 'apps', 'kobato', 'package.json'))
   const manifest: SeaManifest = {
     version: pkg.version ?? fail('package.json has no "version" field'),
     target: `${process.platform}-${process.arch}`,

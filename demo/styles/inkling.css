@@ -5,4 +5,4 @@
    editor partials import that with `layer(inkling)`, and Tailwind rejects a
    nested `@source`. */
 @source '../../src/inkling';
-@import '@/inkling/styles/index.css';
+@import '@kobato/inkling/styles/index.css';

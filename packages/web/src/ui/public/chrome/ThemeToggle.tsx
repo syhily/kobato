@@ -1,0 +1,78 @@
+import { Moon, Sun } from 'lucide-react'
+
+import { Button } from '../../components/button'
+import { IconButtonContent } from '../../components/icon-button-content'
+import { useI18n } from '../../lib/I18nProvider'
+import { useTheme } from '../../lib/ThemeProvider'
+
+interface ThemeToggleProps {
+  mode: 'public' | 'admin'
+  variant?: 'rail' | 'floating'
+}
+
+// Glyph describes the action (Moon → dark, Sun → light); both icons stay in the DOM so
+// noscript dark-OS visitors get the right icon pre-hydration (`dark:` swaps via opacity + scale).
+const moonClass = 'm-icon-inset transition-all dark:scale-0 dark:opacity-0'
+const sunClass = 'absolute inset-0 m-auto scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100'
+
+export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
+  const { resolvedTheme, setTheme } = useTheme()
+  const { t } = useI18n()
+
+  const toggle = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+  }
+
+  if (mode === 'public') {
+    const a11y = (
+      <>
+        <span className="sr-only dark:hidden">{t('public.chrome.themeToDark')}</span>
+        <span className="sr-only hidden dark:inline">{t('public.chrome.themeToLight')}</span>
+      </>
+    )
+    const staticTitle = t('public.chrome.themeToggle')
+
+    if (variant === 'floating') {
+      return (
+        <Button variant="fab" size="iconLg" shape="pill" onClick={toggle} title={staticTitle}>
+          <IconButtonContent>
+            <Moon size="1em" aria-hidden className={moonClass} />
+            <Sun size="1em" aria-hidden className={sunClass} />
+          </IconButtonContent>
+          {a11y}
+        </Button>
+      )
+    }
+    return (
+      <Button
+        variant="dark"
+        size="iconSm"
+        shape="circle"
+        className="mr-2 max-lg:hidden"
+        onClick={toggle}
+        title={staticTitle}
+      >
+        <IconButtonContent>
+          <Sun size="1em" aria-hidden className={sunClass} />
+          <Moon size="1em" aria-hidden className={moonClass} />
+        </IconButtonContent>
+        {a11y}
+      </Button>
+    )
+  }
+
+  const adminLabel = resolvedTheme === 'dark' ? t('public.chrome.themeToLight') : t('public.chrome.themeToDark')
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggle}
+      className="relative text-foreground hover:text-primary focus-visible:text-primary"
+      title={adminLabel}
+    >
+      <Sun data-icon className="transition-all dark:scale-0 dark:opacity-0" />
+      <Moon data-icon className="absolute scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100" />
+      <span className="sr-only">{adminLabel}</span>
+    </Button>
+  )
+}

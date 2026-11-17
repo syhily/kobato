@@ -1,6 +1,3 @@
-import React, { useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router'
-
 import {
   BASIC_NODES,
   BASIC_TRANSFORMERS,
@@ -17,8 +14,10 @@ import {
   type SearchResult,
   TKCountPlugin,
   WordCountPlugin,
-} from '@/inkling'
-import EarthIcon from '@/inkling/assets/icons/inkling-earth.svg?react'
+} from '@kobato/inkling'
+import EarthIcon from '@kobato/inkling/assets/icons/inkling-earth.svg?react'
+import React, { useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router'
 
 import DollarIcon from './assets/icons/inkling-dollar.svg?react'
 import LockIcon from './assets/icons/inkling-lock.svg?react'

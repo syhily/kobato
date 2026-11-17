@@ -1,0 +1,39 @@
+import type { ExportDOMOutput } from '../export-dom'
+import type { RenderContext, SafeUrlKind } from '../render-context'
+
+/*
+ * `type: 'inner'` renders the container's inner content (nothing) in the
+ * editor's HTML renderer.
+ *
+ * @see the original upstream lexical HTML renderer package
+ */
+export type EmptyContainerOutput = ExportDOMOutput<'inner'>
+
+export function renderEmptyContainer(document: Document): EmptyContainerOutput {
+  const emptyContainer = document.createElement('span')
+  return { element: emptyContainer, type: 'inner' as const }
+}
+
+/**
+ * The blank half of the empty-source guard: a missing or whitespace-only
+ * primary source means the card exports the empty container (codeblock's
+ * `code`, file's `src`, math's `tex`).
+ */
+export function hasRenderableSource(value: string | null | undefined): value is string {
+  return !!value && value.trim() !== ''
+}
+
+/**
+ * The empty-source guard the URL-bearing renderers share: a blank primary
+ * source — or one the URL policy rejects (`safeUrl` returns `''`) — exports
+ * the empty container. One home so the "safeUrl's empty string means
+ * unsafe, and an unsafe primary source means no card" invariant is checked
+ * once, never re-derived per renderer.
+ */
+export function isSafeRenderableSource(
+  context: RenderContext,
+  kind: SafeUrlKind,
+  value: string | null | undefined,
+): boolean {
+  return hasRenderableSource(value) && context.safeUrl(kind, value) !== ''
+}

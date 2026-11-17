@@ -1,0 +1,224 @@
+import { describe, it } from 'vitest'
+
+import { ExtendedTextNode } from '../../src/nodes/base'
+import shouldRender from './utils/should-render'
+
+describe('Basic formats', function () {
+  it(
+    'bold',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong</strong></p>`,
+    }),
+  )
+
+  it(
+    'italic',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":2,"mode":"normal","style":"","text":"Italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><em>Italic</em></p>`,
+    }),
+  )
+
+  it(
+    'strikethrough',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":4,"mode":"normal","style":"","text":"Strikethrough","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><s>Strikethrough</s></p>`,
+    }),
+  )
+
+  it(
+    'underline',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":8,"mode":"normal","style":"","text":"Underline","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><u>Underline</u></p>`,
+    }),
+  )
+
+  it(
+    'code',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":16,"mode":"normal","style":"","text":"Code","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><code>Code</code></p>`,
+    }),
+  )
+
+  it(
+    'subscript',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":32,"mode":"normal","style":"","text":"Subscript","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><sub>Subscript</sub></p>`,
+    }),
+  )
+
+  it(
+    'superscript',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":64,"mode":"normal","style":"","text":"Superscript","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><sup>Superscript</sup></p>`,
+    }),
+  )
+
+  it(
+    'highlight',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":128,"mode":"normal","style":"","text":"Highlight","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"highlight","indent":0,"type":"root","version":1}}`,
+      output: `<p><mark>Highlight</mark></p>`,
+    }),
+  )
+})
+
+describe('Format combinations', function () {
+  it(
+    'plain bold',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Plain ","type":"text","version":1},{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p>Plain <strong>Strong</strong></p>`,
+    }),
+  )
+
+  it(
+    'plain bold plain',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Plain ","type":"text","version":1},{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":" Plain","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p>Plain <strong>Strong</strong> Plain</p>`,
+    }),
+  )
+
+  it(
+    'bold plain',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":" Plain","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong</strong> Plain</p>`,
+    }),
+  )
+
+  it(
+    'bold+italic',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong <em>Italic</em></strong></p>`,
+    }),
+  )
+
+  it(
+    'italic+bold',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":2,"mode":"normal","style":"","text":"Italic ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Strong","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><em>Italic <strong>Strong</strong></em></p>`,
+    }),
+  )
+
+  it(
+    'bold+italic+bold',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Italic","type":"text","version":1},{"detail":0,"format":1,"mode":"normal","style":"","text":" Strong","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong <em>Italic</em> Strong</strong></p>`,
+    }),
+  )
+
+  it(
+    'italic+bold+italic',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":2,"mode":"normal","style":"","text":"Italic ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Strong","type":"text","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":" Italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><em>Italic <strong>Strong</strong> Italic</em></p>`,
+    }),
+  )
+
+  // Tag open/close order must follow nesting, not the content-format
+  // declaration order; the pinned output guards the interleaved-tag regression
+  // (<p>(<strong><em>italic+bold</em><em> italic</em></strong>)</p>)
+  it(
+    'italic+bold different order',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"(","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"italic+bold","type":"text","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":" italic","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":")","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p>(<em><strong>italic+bold</strong> italic</em>)</p>`,
+    }),
+  )
+
+  it(
+    'bold ending before italic',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Both","type":"text","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":" Italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong <em>Both</em></strong><em> Italic</em></p>`,
+    }),
+  )
+
+  it(
+    'italic ending before bold',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":2,"mode":"normal","style":"","text":"Italic ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Both","type":"text","version":1},{"detail":0,"format":1,"mode":"normal","style":"","text":" Strong","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><em>Italic <strong>Both</strong></em><strong> Strong</strong></p>`,
+    }),
+  )
+
+  it(
+    'middle italic ending before inner underline',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"A","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"B","type":"text","version":1},{"detail":0,"format":11,"mode":"normal","style":"","text":"C","type":"text","version":1},{"detail":0,"format":9,"mode":"normal","style":"","text":"D","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>A<em>B<u>C</u></em><u>D</u></strong></p>`,
+    }),
+  )
+
+  it(
+    'bold ending before highlight',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong ","type":"text","version":1},{"detail":0,"format":129,"mode":"normal","style":"","text":"Both","type":"text","version":1},{"detail":0,"format":128,"mode":"normal","style":"","text":" Highlight","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":" Plain","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong <mark>Both</mark></strong><mark> Highlight</mark> Plain</p>`,
+    }),
+  )
+
+  it(
+    'bold ending before italic across a linebreak',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Both","type":"text","version":1},{"type":"linebreak","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":"Italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong <em>Both</em></strong><br><em>Italic</em></p>`,
+    }),
+  )
+
+  it(
+    'bold ending before italic ahead of a link',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Strong ","type":"text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Both","type":"text","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":" Italic ","type":"text","version":1},{"children":[{"detail":0,"format":2,"mode":"normal","style":"","text":"link","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"link","version":1,"rel":null,"target":null,"url":"https://example.com"}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>Strong <em>Both</em></strong><em> Italic </em><a href="https://example.com"><em>link</em></a></p>`,
+    }),
+  )
+})
+
+describe('Formats with linebreaks', function () {
+  it(
+    'bold br bold',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"First bold","type":"text","version":1},{"type":"linebreak","version":1},{"detail":0,"format":1,"mode":"normal","style":"","text":"Second bold","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>First bold<br>Second bold</strong></p>`,
+    }),
+  )
+
+  it(
+    'bold br italic',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"First bold","type":"text","version":1},{"type":"linebreak","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":"Second italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>First bold</strong><br><em>Second italic</em></p>`,
+    }),
+  )
+
+  it(
+    'bold br bold+italic',
+    shouldRender({
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"First bold","type":"text","version":1},{"type":"linebreak","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Second bold+italic","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><strong>First bold<br><em>Second bold+italic</em></strong></p>`,
+    }),
+  )
+})
+
+describe('ExtendedTextNode', function () {
+  it(
+    'italic+bold+italic',
+    shouldRender({
+      options: { nodes: [ExtendedTextNode] },
+      input: `{"root":{"children":[{"children":[{"detail":0,"format":2,"mode":"normal","style":"","text":"Italic ","type":"extended-text","version":1},{"detail":0,"format":3,"mode":"normal","style":"","text":"Strong","type":"extended-text","version":1},{"detail":0,"format":2,"mode":"normal","style":"","text":" Italic","type":"extended-text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+      output: `<p><em>Italic <strong>Strong</strong> Italic</em></p>`,
+    }),
+  )
+})

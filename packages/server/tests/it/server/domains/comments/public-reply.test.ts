@@ -1,0 +1,98 @@
+import { makeCommentBody } from '@kobato/test-helpers/catalog.ts'
+import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { makeAuthedCtx, makePublicCtx } from '@kobato/test-helpers/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/test-helpers/rpc-call.ts'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+const db = getTestDb()
+
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+describe('integration / public comments', () => {
+  it('rejects XSS payload in comment body link href', async () => {
+    const ctx = makePublicCtx({ db })
+    const res = await callRpc(
+      '/comments/replyComment',
+      {
+        page_key: 'posts/nonexistent',
+        name: 'Guest',
+        email: 'guest@example.com',
+        body: {
+          root: {
+            type: 'root',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [
+              {
+                type: 'paragraph',
+                version: 1,
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                children: [
+                  {
+                    type: 'link',
+                    version: 1,
+                    direction: 'ltr',
+                    format: '',
+                    indent: 0,
+                    url: "javascript:alert('xss')",
+                    children: [
+                      {
+                        type: 'extended-text',
+                        version: 1,
+                        detail: 0,
+                        format: 0,
+                        mode: 'normal',
+                        style: '',
+                        text: 'click',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      ctx,
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects a comment body exceeding 10,000 characters', async () => {
+    const adminCtx = makeAuthedCtx({ role: 'admin', db })
+    const publicCtx = makePublicCtx({ db })
+
+    const pageRes = await callRpc(
+      '/admin/pages/upsertMeta',
+      { title: 'Commentable Page', summary: '', slug: 'commentable' },
+      adminCtx,
+    )
+    expect(pageRes.status).toBe(200)
+
+    const listRes = await callRpc('/admin/pages/list', { offset: 0, limit: 1 }, adminCtx)
+    expect(listRes.status).toBe(200)
+    const list = await parseRpcJson<{ pages: { id: string; commentPublicId: string }[]; total: number }>(listRes)
+    const page = list.pages[0]!
+
+    const longText = 'a'.repeat(10_001)
+    const res = await callRpc(
+      '/comments/replyComment',
+      {
+        page_key: page.commentPublicId,
+        name: 'Guest',
+        email: 'guest@example.com',
+        body: makeCommentBody(longText),
+      },
+      publicCtx,
+    )
+    expect(res.status).toBe(400)
+    const body = await res.text()
+    expect(body).toContain('最多')
+  })
+})

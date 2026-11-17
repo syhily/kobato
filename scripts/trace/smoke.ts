@@ -14,6 +14,12 @@
 import type { BrowserContext, Page } from '@playwright/test'
 import type { ChildProcess } from 'node:child_process'
 
+import { TRACE_METRIC_STREAMS } from '@kobato/shared/contracts/trace-metrics.ts'
+import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/shared/contracts/trace-pipeline.ts'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast.ts'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test-helpers/e2e-client.ts'
+import { callE2eRpc } from '@kobato/test-helpers/e2e-rpc.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/test-helpers/lexical.ts'
 import { chromium } from '@playwright/test'
 import bcrypt from 'bcryptjs'
 import { spawn } from 'node:child_process'
@@ -28,12 +34,6 @@ import sharp from 'sharp'
 
 import type { O2Context, TraceState } from './lib.ts'
 
-import { TRACE_METRIC_STREAMS } from '../../src/shared/contracts/trace-metrics.ts'
-import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '../../src/shared/contracts/trace-pipeline.ts'
-import { unsafeCast } from '../../src/shared/utils/unsafe-cast.ts'
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '../../tests/_helpers/e2e-client.ts'
-import { callE2eRpc } from '../../tests/_helpers/e2e-rpc.ts'
-import { lexicalBodyWith, lexicalParagraph } from '../../tests/_helpers/lexical.ts'
 import {
   buildState,
   docker,
@@ -50,6 +50,7 @@ import {
   o2Json,
   observabilityDashboardPath,
   RETENTION_DAYS,
+  resolveFromRepo,
   search,
   upsertFunction,
   startOpenObserve,
@@ -697,13 +698,16 @@ async function loginAsAdmin(page: Page, fx: SmokeFixtures): Promise<void> {
 
 async function uploadLargeImage(page: Page, jpeg: Buffer): Promise<number> {
   const base64 = jpeg.toString('base64')
+  // Vite dev serves modules outside the app root through `/@fs` URLs; the API
+  // client now lives in the web package, not under the app's own src/.
+  const clientModulePath = resolveFromRepo('packages/web/src/client/api/client.ts')
   await page.goto('/admin', { waitUntil: 'networkidle' })
   const started = Date.now()
   await page.evaluate((encoded: string) => {
     const script = document.createElement('script')
     script.type = 'module'
     script.textContent = `
-      import('/src/client/api/client.ts')
+      import('/@fs' + ${JSON.stringify(clientModulePath)})
         .then(async (module) => {
           const bytes = Uint8Array.from(atob(${JSON.stringify(encoded)}), (char) => char.charCodeAt(0))
           const file = new File([bytes], 'trace-smoke.jpg', { type: 'image/jpeg' })

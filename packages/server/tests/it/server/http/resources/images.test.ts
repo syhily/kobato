@@ -1,0 +1,252 @@
+import type { Env } from '@kobato/server/http/context.ts'
+
+import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
+import { content as contentTable } from '@kobato/server/infra/db/schema/content.ts'
+import { page as pageTable } from '@kobato/server/infra/db/schema/page.ts'
+import { post as postTable } from '@kobato/server/infra/db/schema/post.ts'
+import { category as categoryTable } from '@kobato/server/infra/db/schema/taxonomy.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test-helpers/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/test-helpers/integration-db.ts'
+import { makeRequestContext } from '@kobato/test-helpers/request-context.ts'
+import { eq } from 'drizzle-orm'
+import { Hono } from 'hono'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// `imagesRouter` outcome mapping against the real engine (seeded rows, live gate,
+// rate limiter, file cache, real serveCalendar); seams: avatar fetch, OG canvas, calendar renderer.
+
+vi.mock('@kobato/server/render/calendar/render.ts', () => ({
+  renderCalendar: vi.fn(),
+}))
+
+vi.mock('@kobato/server/domains/comments/services/avatar.ts', async (importActual) => {
+  const actual = await importActual<typeof import('@kobato/server/domains/comments/services/avatar.ts')>()
+  return {
+    ...actual,
+    serveAvatar: vi.fn(),
+  }
+})
+
+vi.mock('@kobato/server/render/og/render.ts', () => ({
+  drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from('png')),
+}))
+
+import { serveAvatar } from '@kobato/server/domains/comments/services/avatar.ts'
+import { onErrorHandler } from '@kobato/server/http/errors.ts'
+import { imagesRouter } from '@kobato/server/http/resources/images.ts'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
+import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
+
+const db = getTestDb()
+
+function requestImages(url: string, headers?: Record<string, string>) {
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', makeRequestContext({ request: new Request(url), db }))
+    await next()
+  })
+  app.route('/', imagesRouter)
+  app.onError(onErrorHandler)
+  // Sentinel SSR-style route that must never count against the images bucket.
+  app.get('/sitemap.xml', (c) => c.text('sitemap'))
+  return app.request(url, { headers })
+}
+
+async function seedLivePost(slug: string): Promise<void> {
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug,
+      title: 'Post',
+      summary: 'Summary',
+      cover: 'cover.jpg',
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+      visible: true,
+    })
+    .returning({ id: postTable.id })
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: rows[0]!.id, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, rows[0]!.id))
+}
+
+async function seedLivePage(slug: string): Promise<void> {
+  const rows = await db
+    .insert(pageTable)
+    .values({
+      slug,
+      title: 'Page',
+      summary: 'Page summary',
+      cover: 'cover.jpg',
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+    })
+    .returning({ id: pageTable.id })
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'page', ownerId: rows[0]!.id, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, rows[0]!.id))
+}
+
+describe('images resource', () => {
+  beforeEach(async () => {
+    await clearAllTables(db)
+    vi.clearAllMocks()
+    // Clean counter — earlier cases already spend resource/avatar attempts from 127.0.0.1.
+    __resetRateLimitsForTests()
+    ;(renderCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('cal'))
+    // Default: "no avatar" — redirect mapping tests override per case.
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
+  })
+
+  it('renders an OG image for a post', async () => {
+    await seedLivePost('post')
+    const res = await requestImages('http://localhost/images/og/post.png')
+    expect(res.status).toBe(200)
+  })
+
+  it('renders an OG image for a page', async () => {
+    await seedLivePage('page')
+    const res = await requestImages('http://localhost/images/og/page.png')
+    expect(res.status).toBe(200)
+  })
+
+  it('falls back when no entity is found', async () => {
+    const res = await requestImages('http://localhost/images/og/missing.png')
+    expect(res.status).toBe(302)
+  })
+
+  it('never counts public non-image requests against the images bucket', async () => {
+    // Only the image routes may draw from the images bucket — never SSR pages.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        resource: { windowSeconds: 60, maxAttempts: 1 },
+      },
+    })
+    // Several hits past the bucket ceiling — none may count against it.
+    for (let i = 0; i < 3; i++) {
+      expect((await requestImages('http://localhost/sitemap.xml')).status).toBe(200)
+    }
+    // Image routes still draw from the bucket — the next hit inside the window trips it.
+    expect((await requestImages('http://localhost/images/og/missing.png')).status).toBe(302)
+    const res = await requestImages('http://localhost/images/og/missing.png')
+    expect(res.status).toBe(429)
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试。' },
+    })
+  })
+
+  it('renders an OG image for a category', async () => {
+    await db.insert(categoryTable).values({ name: 'Code', slug: 'code', description: '', cover: '' })
+    const res = await requestImages('http://localhost/images/og/cats/code.png')
+    expect(res.status).toBe(200)
+  })
+
+  it('serves a calendar image with revalidating language headers', async () => {
+    const res = await requestImages('http://localhost/images/calendar/2026/0424.png')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/png')
+    expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(res.headers.get('Content-Language')).toBe('zh-CN')
+    expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
+  })
+
+  it('answers 304 for a matching calendar If-None-Match from cache without re-rendering', async () => {
+    // Production cache semantics (the dev bypass re-runs the loader by design).
+    const env = import.meta.env as unknown as Record<string, unknown>
+    const previousProd = env.PROD
+    env.PROD = true
+    try {
+      const first = await requestImages('http://localhost/images/calendar/2026/0424.png')
+      const etag = first.headers.get('ETag')!
+      expect(renderCalendar).toHaveBeenCalledTimes(1)
+      // The miss write is fire-and-forget; wait for the cache entry before revalidating.
+      await vi.waitFor(async () => {
+        expect(await countEntryFiles('calendar')).toBe(1)
+      })
+
+      const cached = await requestImages('http://localhost/images/calendar/2026/0424.png', {
+        'if-none-match': etag,
+      })
+      expect(cached.status).toBe(304)
+      expect(cached.headers.get('ETag')).toBe(etag)
+      expect(cached.headers.get('Content-Language')).toBe('zh-CN')
+      expect(cached.headers.get('Cache-Control')).toBe('public, no-cache')
+      // The cached bytes carry the tag; no localized re-render happens.
+      expect(renderCalendar).toHaveBeenCalledTimes(1)
+    } finally {
+      env.PROD = previousProd
+    }
+  })
+
+  it('threads the request locale into the renderer and the headers', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'zh-TW' },
+    })
+    try {
+      const res = await requestImages('http://localhost/images/calendar/dark/2026/0424.png')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Language')).toBe('zh-TW')
+      expect(renderCalendar).toHaveBeenCalledWith(
+        expect.any(Date),
+        'dark',
+        'zh-TW',
+        expect.objectContaining({ siteIdentity: expect.objectContaining({ locale: 'zh-TW' }) }),
+      )
+    } finally {
+      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    }
+  })
+
+  it('serves a dark calendar image', async () => {
+    const res = await requestImages('http://localhost/images/calendar/dark/2026/0424.png')
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects an invalid MMdd calendar date with a 404 (real serveCalendar date validation)', async () => {
+    // MM 13 passes the shape regex but fails the date-fns round-trip check → 404.
+    const res = await requestImages('http://localhost/images/calendar/2026/1332.png')
+    expect(res.status).toBe(404)
+  })
+
+  it('rejects a calendar year outside the supported window with a 404', async () => {
+    // The PNG render is expensive and cache-keyed by date — the year window
+    // bounds how many distinct renders a client can ask for.
+    expect((await requestImages('http://localhost/images/calendar/1969/0424.png')).status).toBe(404)
+    expect((await requestImages('http://localhost/images/calendar/dark/2101/0424.png')).status).toBe(404)
+  })
+
+  it('maps a png outcome to a 200 image/png response', async () => {
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'png', buffer: Buffer.from('av') })
+    const res = await requestImages('http://localhost/images/avatar/abc.png')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/png')
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=604800')
+    expect(Buffer.from(await res.arrayBuffer())).toEqual(Buffer.from('av'))
+  })
+
+  it('maps a redirect outcome to the default avatar URL', async () => {
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
+    const res = await requestImages('http://localhost/images/avatar/abc.png')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/images/default-avatar.png')
+  })
+
+  it("threads the `?s=` size into the domain call, defaulting to the default's bucket", async () => {
+    const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
+    expect(res.status).toBe(302)
+    expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 256)
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockClear()
+    await requestImages('http://localhost/images/avatar/abc.png')
+    // No `?s=` → DEFAULT_AVATAR_SIZE (120) rounded up to its bucket.
+    expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 128)
+  })
+})

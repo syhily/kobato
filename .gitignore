@@ -1,10 +1,12 @@
 # React Router / Vite build output
 build/
+apps/kobato/build/
 dist/
 dist-sea/
 
 # generated framework/content artifacts
 .react-router/
+apps/kobato/.react-router/
 .source/
 
 # local caches

@@ -1,6 +1,5 @@
+import { type CardConfig, type ExternalControlAPI, InklingComposableEditor, InklingComposer } from '@kobato/inkling'
 import React, { useState } from 'react'
-
-import { type CardConfig, type ExternalControlAPI, InklingComposableEditor, InklingComposer } from '@/inkling'
 
 import { klipyConfig, tenorConfig } from '../utils/gifConfig'
 import { fileTypes, useFileUpload } from '../utils/useFileUpload'

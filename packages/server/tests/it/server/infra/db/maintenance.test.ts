@@ -1,0 +1,187 @@
+import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb.ts'
+import type { DatabaseHandle } from '@kobato/server/infra/db/database.ts'
+
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
+import { runAccessLogRetention } from '@kobato/server/domains/analytics/services/maintenance.ts'
+import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
+import { jobRun } from '@kobato/server/infra/db/schema/job-run.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import {
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+  seedDeviceEnvClientRows,
+  seedDeviceEnvServerRows,
+} from '@kobato/test-helpers/analytics-db.ts'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
+  const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
+  const value = row === undefined ? undefined : Object.values(row)[0]
+  return typeof value === 'number' ? value : Number(value ?? 0)
+}
+
+const handle = getDatabaseHandle()
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  __clearLogCaptureForTests()
+  handle.client.exec('DROP TABLE IF EXISTS maintenance_probe')
+})
+
+describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
+  it('drains the freelist and logs page stats before and after', () => {
+    // auto_vacuum=INCREMENTAL leaves freed pages on the freelist; only incremental_vacuum reclaims them.
+    handle.client.exec('CREATE TABLE maintenance_probe (id INTEGER PRIMARY KEY, payload TEXT)')
+    const payload = 'x'.repeat(4096)
+    const insert = handle.client.prepare('INSERT INTO maintenance_probe (payload) VALUES (?)')
+    for (let i = 0; i < 256; i++) {
+      insert.run(payload)
+    }
+    handle.client.exec('DELETE FROM maintenance_probe')
+    const freelistBefore = pragmaNumber(handle, 'freelist_count')
+    expect(freelistBefore).toBeGreaterThan(0)
+
+    runDbMaintenance(handle)
+
+    expect(pragmaNumber(handle, 'freelist_count')).toBeLessThan(freelistBefore)
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'database maintenance completed',
+        ctx: expect.objectContaining({
+          pagesBefore: expect.any(Number),
+          pagesAfter: expect.any(Number),
+          freelistBefore,
+          freelistAfter: expect.any(Number),
+        }),
+      }),
+    )
+  })
+})
+
+describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () => {
+  let analyticsHandle: AnalyticsHandle
+
+  beforeEach(async () => {
+    analyticsHandle = await createTestAnalyticsDb()
+  })
+
+  afterAll(async () => {
+    // Handles are tracked by the helper and closed wholesale.
+  })
+
+  it('deletes rows past the 180-day retention, keeps recent rows, logs counts and file sizes', async () => {
+    const old = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)
+    const recent = new Date()
+    await seedAccessEvents(analyticsHandle, [
+      { ts: old, path: '/old', visitorHash: 'old-visitor' },
+      { ts: recent, path: '/recent', visitorHash: 'recent-visitor' },
+    ])
+
+    await runAccessLogRetention(analyticsHandle)
+
+    const result = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events ORDER BY blob1')
+    const paths = result.getRowObjects().map((row) => row.path)
+    expect(paths).toEqual(['/recent'])
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'analytics maintenance completed',
+        ctx: expect.objectContaining({
+          retentionDays: 180,
+          rowsBefore: 2n,
+          rowsAfter: 1n,
+          // File-backed handle → real file sizes logged (null on :memory:).
+          bytesBefore: expect.any(Number),
+          bytesAfter: expect.any(Number),
+        }),
+      }),
+    )
+
+    await closeTestAnalyticsDb(analyticsHandle)
+  })
+
+  it('cuts both device-environment sidecars at the same retention boundary', async () => {
+    const old = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)
+    const recent = new Date()
+    const oldId = '00000000-0000-4000-8000-000000000001'
+    const recentId = '00000000-0000-4000-8000-000000000002'
+
+    await seedAccessEvents(analyticsHandle, [
+      { ts: old, path: '/old' },
+      { ts: recent, path: '/recent' },
+    ])
+    await seedDeviceEnvServerRows(analyticsHandle, [
+      { eventId: oldId, timestamp: old, platform: 'macOS' },
+      { eventId: recentId, timestamp: recent, platform: 'macOS' },
+    ])
+    await seedDeviceEnvClientRows(analyticsHandle, [
+      { eventId: oldId, timestamp: old, hasStatic: true },
+      { eventId: recentId, timestamp: recent },
+    ])
+
+    await runAccessLogRetention(analyticsHandle)
+
+    const paths = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events')
+    expect(paths.getRowObjects()).toEqual([{ path: '/recent' }])
+    const server = await analyticsHandle.reader.runAndReadAll('SELECT event_id::VARCHAR AS id FROM device_env_server')
+    expect(server.getRowObjects()).toEqual([{ id: recentId }])
+    const client = await analyticsHandle.reader.runAndReadAll('SELECT event_id::VARCHAR AS id FROM device_env_client')
+    expect(client.getRowObjects()).toEqual([{ id: recentId }])
+
+    // The logged totals cover all three tables (2 events + 2 + 2).
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'analytics maintenance completed',
+        ctx: expect.objectContaining({ rowsBefore: 6n, rowsAfter: 3n }),
+      }),
+    )
+
+    await closeTestAnalyticsDb(analyticsHandle)
+  })
+
+  it('applies the same absolute cutoff regardless of the session TimeZone', async () => {
+    // Pin a non-UTC session zone on BOTH connections: the cutoff binds epoch
+    // seconds through to_timestamp(?), so TIMESTAMPTZ compares stay absolute.
+    await analyticsHandle.writer.run(`SET TimeZone='America/Los_Angeles'`)
+    await analyticsHandle.reader.run(`SET TimeZone='Pacific/Auckland'`)
+    const justOld = new Date(Date.now() - 181 * 24 * 60 * 60 * 1000)
+    const justNew = new Date(Date.now() - 179 * 24 * 60 * 60 * 1000)
+    await seedAccessEvents(analyticsHandle, [
+      { ts: justOld, path: '/past-cutoff', visitorHash: 'a' },
+      { ts: justNew, path: '/inside-cutoff', visitorHash: 'b' },
+    ])
+
+    await runAccessLogRetention(analyticsHandle)
+
+    const result = await analyticsHandle.reader.runAndReadAll('SELECT blob1 AS path FROM access_events')
+    expect(result.getRowObjects().map((row) => row.path)).toEqual(['/inside-cutoff'])
+
+    await closeTestAnalyticsDb(analyticsHandle)
+  })
+})
+
+describe('db maintenance — job_run history prune', () => {
+  it('prunes job_run rows past the retention window and logs the count', () => {
+    const db = handle.db
+    db.delete(jobRun).run()
+    const old = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
+    db.insert(jobRun).values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: old }).run()
+    db.insert(jobRun)
+      .values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: new Date() })
+      .run()
+
+    runDbMaintenance(handle)
+
+    expect(db.select().from(jobRun).all()).toHaveLength(1)
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'database maintenance completed',
+        ctx: expect.objectContaining({ jobRunsPruned: 1 }),
+      }),
+    )
+  })
+})

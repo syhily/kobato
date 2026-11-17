@@ -1,0 +1,335 @@
+import type { AssetsLoaderShape, CommentsLoaderShape, MailLoaderShape } from '@kobato/shared/config/projection.ts'
+import type {
+  AnalyticsSettings,
+  ContentSettings,
+  LimitsSettings,
+  NavigationSettings,
+  RateLimitSettings,
+  SecuritySettings,
+  SeoSettings,
+  SidebarSettings,
+  SiteIdentitySettings,
+  SocialsSettings,
+} from '@kobato/shared/config/types.ts'
+
+import { mockTanstackQuery } from '@kobato/test-helpers/mock-react-query.ts'
+import { renderToHtml, stableHtml } from '@kobato/test-helpers/render.tsx'
+import { AnalyticsForm } from '@kobato/web/ui/admin/settings/AnalyticsForm.tsx'
+import { AssetsForm } from '@kobato/web/ui/admin/settings/AssetsForm.tsx'
+import { CacheView } from '@kobato/web/ui/admin/settings/CacheView.tsx'
+import { CommentsForm } from '@kobato/web/ui/admin/settings/CommentsForm.tsx'
+import { ContentForm } from '@kobato/web/ui/admin/settings/ContentForm.tsx'
+import { GeneralForm } from '@kobato/web/ui/admin/settings/GeneralForm.tsx'
+import { LimitsForm } from '@kobato/web/ui/admin/settings/LimitsForm.tsx'
+import { MailForm } from '@kobato/web/ui/admin/settings/MailForm.tsx'
+import { NavigationEditor } from '@kobato/web/ui/admin/settings/NavigationEditor.tsx'
+import { SecurityForm } from '@kobato/web/ui/admin/settings/SecurityForm.tsx'
+import { SeoForm } from '@kobato/web/ui/admin/settings/SeoForm.tsx'
+import { SidebarForm } from '@kobato/web/ui/admin/settings/SidebarForm.tsx'
+import { SocialsEditor } from '@kobato/web/ui/admin/settings/SocialsEditor.tsx'
+import { ThresholdForm } from '@kobato/web/ui/admin/settings/ThresholdForm.tsx'
+import { describe, expect, it, vi } from 'vitest'
+
+mockTanstackQuery()
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router')
+  return {
+    ...actual,
+    useRevalidator: () => ({ revalidate: vi.fn() }),
+    useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
+  }
+})
+
+const baseSiteIdentity: SiteIdentitySettings = {
+  title: '且听书吟',
+  titleSeparator: '-',
+  description: '诗与梦想的远方',
+  website: 'https://example.com',
+  keywords: ['雨帆'],
+  author: { name: '雨帆', email: 'syhily@gmail.com', url: 'https://example.com' },
+  locale: 'zh-CN',
+  timeZone: 'Asia/Shanghai',
+  timeFormat: 'yyyy-MM-dd',
+  initialYear: 2011,
+  icpNo: '皖ICP备2021002315号-2',
+}
+
+const baseAssets: AssetsLoaderShape = {
+  asset: { host: 'assets.example.com', scheme: 'https' },
+  storage: {
+    enabled: true,
+    endpoint: 'https://s3.example.com',
+    region: 'auto',
+    bucket: 'kobato-test',
+    accessKeyId: 'AKIA-TEST',
+    forcePathStyle: false,
+    urlTemplate: '',
+  },
+  secretAccessKeyMask: null,
+  upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
+  branding: {
+    faviconSvg: { etag: '' },
+    faviconIco: { etag: '' },
+    appleTouchIcon: { etag: '' },
+    icon192: { etag: '' },
+    icon512: { etag: '' },
+    logoSvg: { etag: '' },
+    logoDarkSvg: { etag: '' },
+    logoLargeSvg: { etag: '' },
+    logoLargeDarkSvg: { etag: '' },
+    openGraph: { etag: '' },
+    blogPoster: { etag: '' },
+    blogPosterDark: { etag: '' },
+    defaultAvatar: { etag: '' },
+    defaultMusicCover: { etag: '' },
+    robotsTxt: '',
+  },
+}
+
+const baseCache = {
+  og: { prefix: 'og:', ttlSeconds: 604800 },
+  calendar: { prefix: 'calendar:', ttlSeconds: 86400 },
+  avatar: { prefix: 'avatar:', ttlSeconds: 604800 },
+  searchResult: { prefix: 'search:', ttlSeconds: 3600 },
+}
+
+const baseComments: CommentsLoaderShape = {
+  comments: {
+    size: 10,
+    avatar: { mirror: 'https://gravatar.loli.net/avatar', sources: ['qq', 'github', 'gravatar'] },
+    githubTokenMask: null,
+    tokenTtlSeconds: 1800,
+  },
+}
+
+const baseContent: ContentSettings = {
+  pagination: { posts: 6, category: 7, tags: 7, search: 7 },
+  feed: { full: true, size: 20 },
+  post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
+  footnotes: { sectionTitle: '尾声礼记' },
+}
+
+const baseLimits: LimitsSettings = {
+  maxRequestBodySize: 10 * 1024 * 1024,
+  sessionMaxAge: 60 * 60 * 24 * 30,
+  auditLogDbRetentionDays: 30,
+  auditLogArchiveRetentionDays: 180,
+}
+
+const baseMail: MailLoaderShape = {
+  mail: {
+    enabled: false,
+    notificationEmails: true,
+    sender: 'noreply@example.com',
+    transport: 'smtp',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPassMask: null,
+    smtpSecure: false,
+    smtpRequireTls: true,
+    smtpRejectUnauthorized: true,
+    mailgunDomain: '',
+    mailgunApiKeyMask: null,
+  },
+}
+
+const baseNavigation: NavigationSettings = {
+  navigation: {
+    sideNav: [
+      { text: '首页', link: '/' },
+      { text: '分类', link: '/categories' },
+    ],
+    footerNav: [{ type: 'themeToggle' }],
+  },
+}
+
+const baseSecurity: SecuritySettings = {
+  csrf: { enabled: true, exemptPaths: [] },
+  cors: { enabled: false, origins: [] },
+  passkey: { enabled: false },
+}
+
+const baseSeo: SeoSettings = {
+  toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+  og: { width: 1200, height: 630 },
+}
+
+const baseSidebar: SidebarSettings = {
+  sidebar: {
+    widgets: [
+      { type: 'search', enabled: true },
+      { type: 'recentPosts', enabled: true, count: 5 },
+      { type: 'recentComments', enabled: true, count: 5 },
+      { type: 'randomTags', enabled: true, count: 10 },
+      { type: 'todayCalendar', enabled: true },
+    ],
+    dailyQuote: { source: 'shanbay', customQuotes: [] },
+  },
+}
+
+const baseSocials: SocialsSettings = {
+  socials: [
+    { name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/syhily' },
+    {
+      name: 'Yufan Sheng',
+      network: 'wechat',
+      type: 'qrcode',
+      title: '扫码加我微信好友',
+      link: 'https://u.wechat.com/EBpmuKmrVz4YVFnoCJdnruA',
+    },
+  ],
+}
+
+const baseRateLimit: RateLimitSettings = {
+  signIn: { windowSeconds: 1800, maxAttempts: 5 },
+  otpSend: { windowSeconds: 300, maxAttempts: 3 },
+  otpVerify: { windowSeconds: 300, maxAttempts: 5 },
+  passwordReset: { windowSeconds: 1800, maxAttempts: 3 },
+  passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
+  comment: { windowSeconds: 3600, maxAttempts: 12 },
+  like: { windowSeconds: 3600, maxAttempts: 30 },
+  invite: { windowSeconds: 3600, maxAttempts: 3 },
+  resource: { windowSeconds: 60, maxAttempts: 60 },
+  passkeyAuth: { windowSeconds: 300, maxAttempts: 10 },
+  passkeyManage: { windowSeconds: 300, maxAttempts: 10 },
+}
+
+const baseAnalytics: AnalyticsSettings = {
+  analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: true },
+}
+
+describe('snapshot: admin settings forms', () => {
+  it('AnalyticsForm renders tracking switches and upload button', () => {
+    const html = stableHtml(renderToHtml(<AnalyticsForm analytics={baseAnalytics} />))
+    expect(html).toContain('记录管理员访问')
+    expect(html).toContain('保留爬虫记录')
+    expect(html).toContain('上传 GeoLite2-City.mmdb')
+  })
+
+  it('AssetsForm renders storage, upload and robots cards', () => {
+    const html = stableHtml(renderToHtml(<AssetsForm assets={baseAssets} />))
+    expect(html).toContain('当前存储')
+    expect(html).toContain('资源域名')
+    expect(html).toContain('S3 兼容存储')
+    expect(html).toContain('上传参数')
+    expect(html).toContain('robots.txt')
+    expect(html).not.toContain('启用图片上传')
+  })
+
+  it('CacheView renders clear-all section and reserved buckets heading', () => {
+    const html = stableHtml(renderToHtml(<CacheView cache={baseCache} />))
+    expect(html).toContain('一键清空')
+    expect(html).toContain('受保护的缓存（只读）')
+    expect(html).toContain('清空全部缓存')
+  })
+
+  it('CommentsForm renders pagination, avatar and token cards', () => {
+    const html = stableHtml(renderToHtml(<CommentsForm comments={baseComments} />))
+    expect(html).toContain('评论分页')
+    expect(html).toContain('获取顺序')
+    expect(html).toContain('GitHub Token')
+    expect(html).toContain('Gravatar 镜像')
+    expect(html).toContain('匿名评论 Token')
+    expect(html).toContain('gravatar.loli.net')
+    // The sortable source rows render in the configured order — compare
+    // label positions inside the sources block, after the '获取顺序' label.
+    const sourcesBlock = html.slice(html.indexOf('获取顺序'))
+    const qqAt = sourcesBlock.indexOf('QQ 邮箱')
+    const githubAt = sourcesBlock.indexOf('GitHub')
+    const gravatarAt = sourcesBlock.indexOf('Gravatar')
+    expect(qqAt).toBeGreaterThanOrEqual(0)
+    expect(githubAt).toBeGreaterThan(qqAt)
+    expect(gravatarAt).toBeGreaterThan(githubAt)
+  })
+
+  it('ContentForm renders pagination, feed, sort and footnote cards', () => {
+    const html = stableHtml(renderToHtml(<ContentForm content={baseContent} />))
+    expect(html).toContain('分页')
+    expect(html).toContain('RSS / Atom Feed')
+    expect(html).toContain('文章排序与置顶')
+    expect(html).toContain('脚注汇总标题')
+    expect(html).toContain('尾声礼记')
+  })
+
+  it('GeneralForm renders identity, footer, author and timezone cards', () => {
+    const html = stableHtml(renderToHtml(<GeneralForm siteIdentity={baseSiteIdentity} timeZones={['Asia/Shanghai']} />))
+    expect(html).toContain('基本信息')
+    expect(html).toContain('页脚信息')
+    expect(html).toContain('作者信息')
+    expect(html).toContain('时间与本地化')
+    expect(html).toContain('id="general-title"')
+  })
+
+  it('LimitsForm renders request, session and audit cards', () => {
+    const html = stableHtml(renderToHtml(<LimitsForm limits={baseLimits} />))
+    expect(html).toContain('请求限制')
+    expect(html).toContain('会话限制')
+    expect(html).toContain('审计日志限制')
+  })
+
+  it('MailForm renders toggle, provider, sender and test cards', () => {
+    const html = stableHtml(renderToHtml(<MailForm mail={baseMail} />))
+    expect(html).toContain('邮件发送总开关')
+    expect(html).toContain('邮件服务提供商')
+    expect(html).toContain('发件人邮箱')
+    expect(html).toContain('SMTP 配置')
+    expect(html).toContain('测试发送')
+  })
+
+  it('NavigationEditor renders side nav and footer nav cards', () => {
+    const html = stableHtml(
+      renderToHtml(<NavigationEditor navigation={baseNavigation} socials={baseSocials.socials} />),
+    )
+    expect(html).toContain('侧边导航菜单')
+    expect(html).toContain('底部导航菜单')
+    expect(html).toContain('id="nav-text-0"')
+    expect(html).toContain('主题切换')
+  })
+
+  it('SecurityForm renders CSRF, CORS and passkey cards', () => {
+    const html = stableHtml(renderToHtml(<SecurityForm security={baseSecurity} />))
+    expect(html).toContain('CSRF 防护')
+    expect(html).toContain('路径豁免')
+    expect(html).toContain('CORS 策略')
+    expect(html).toContain('Passkey 登录')
+  })
+
+  it('SeoForm renders TOC and OG size cards', () => {
+    const html = stableHtml(renderToHtml(<SeoForm seo={baseSeo} />))
+    expect(html).toContain('目录 (TOC)')
+    expect(html).toContain('OG 图渲染尺寸')
+  })
+
+  it('SidebarForm renders widget list with toggles and counts', () => {
+    const html = stableHtml(renderToHtml(<SidebarForm sidebar={baseSidebar} />))
+    expect(html).toContain('侧边栏组件')
+    expect(html).toContain('搜索框')
+    expect(html).toContain('推荐文章')
+    expect(html).toContain('最近评论')
+    expect(html).toContain('标签云')
+    expect(html).toContain('日历组件')
+  })
+
+  it('SocialsEditor renders configured networks and link inputs', () => {
+    const html = stableHtml(renderToHtml(<SocialsEditor socials={baseSocials} />))
+    expect(html).toContain('社交链接')
+    expect(html).toContain('GitHub')
+    expect(html).toContain('微信')
+  })
+
+  it('ThresholdForm renders common buckets behind the advanced disclosure', () => {
+    const html = stableHtml(renderToHtml(<ThresholdForm rateLimit={baseRateLimit} />))
+    expect(html).toContain('流控设置')
+    expect(html).toContain('登录限流')
+    expect(html).toContain('评论限流')
+    expect(html).toContain('点赞限流')
+    expect(html).toContain('公共资源限流')
+    expect(html).toContain('高级选项')
+    expect(html).toContain('恢复默认')
+    // Advanced buckets stay hidden behind the collapsed disclosure.
+    expect(html).not.toContain('OTP 发送限流')
+    expect(html).not.toContain('邀请限流')
+  })
+})

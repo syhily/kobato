@@ -10,7 +10,7 @@ _Avoid_: catalog-visible; published (silent about soft-delete, revision, schedul
 
 **Promoted**: published with a published revision, whatever the soft-delete state and schedule; the
 projection for lifecycle bucketing (draft vs published) and restore re-indexing. Live implies Promoted.
-`isPromoted`/`promotedContentWhere` in `src/server/domains/content/schemas/live-gate.ts`, bound per
+`isPromoted`/`promotedContentWhere` in `packages/server/src/domains/content/schemas/live-gate.ts`, bound per
 entity by `promotedPostWhere`.
 _Avoid_: live (stricter: adds not-deleted and not-future legs), published (misses the revision)
 
@@ -27,7 +27,7 @@ _Avoid_: post draft service / page draft service (dual tracks)
 **Scheduled**: published with a future `publishedAt` — not live, 404 until its time.
 _Avoid_: future-dated, timed
 
-**Lexical**: the storage format for post/page/comment bodies (`src/shared/lexical/`); public
+**Lexical**: the storage format for post/page/comment bodies (`packages/shared/src/lexical/`); public
 bodies render the saved `bodyHtml` projection.
 _Avoid_: MDX, InklingDocument (vendor experiment, not the shipping store)
 
@@ -36,7 +36,7 @@ monotonic `revisionNo`; publishing points the entity's `publishedRevisionId` at 
 _Avoid_: version (ambiguous with app version), draft (a revision's state)
 
 **Live gate**: `isLive` (in-memory) and `liveContentWhere` (SQL) in
-`src/server/domains/content/schemas/live-gate.ts` decide Live; both take `{ asOf, includeScheduled }`;
+`packages/server/src/domains/content/schemas/live-gate.ts` decide Live; both take `{ asOf, includeScheduled }`;
 column binding in `posts/live-gate.ts` / `pages/live-gate.ts`.
 _Avoid_: hand-written `published && publishedRevisionId` checks (that is the Promoted gate)
 
@@ -86,7 +86,7 @@ _Avoid_: full-section snapshot, loader shape as write base
 ## Internationalization
 
 **UI locale**: `siteIdentity.locale`, one of `en-US`, `zh-HK`, `zh-TW`, `zh-CN`
-(`@/shared/i18n/locales`); drives every system surface (public/admin/auth/editor copy, validation and
+(`@kobato/shared/i18n/locales.ts`); drives every system surface (public/admin/auth/editor copy, validation and
 error messages, emails, notifications, SEO, feeds, formatting) and is emitted as `<html lang>` /
 `Content-Language`; it is never the content's language.
 _Avoid_: site language, i18n locale, language code (a tag canonicalized from legacy aliases)
@@ -101,7 +101,7 @@ _Avoid_: treating it as the UI locale, using it to pick a message catalog, an en
 
 **Message catalog**: one typed ICU module per locale per namespace — `messages/ui/<locale>` (client
 copy, via the root loader) and `messages/server/<locale>` (email, notifications, jobs). English defines
-the message-id type, others `satisfies` it; `@/shared/i18n/catalog` aggregates, merges the English
+the message-id type, others `satisfies` it; `@kobato/shared/i18n/catalog.ts` aggregates, merges the English
 baseline, and validates the ICU contract (variables, argument kinds, legal plural categories, select
 coverage). New copy goes into all four locales, never inline.
 _Avoid_: translations file, messages JSON (TS modules in the SEA bundle), "just the Chinese strings"
@@ -120,8 +120,8 @@ _Avoid_: saving the locale first, reloading on a commit failure, a per-field sav
 ## Cache
 
 **Cache declaration**: one named bucket (og, calendar, avatar, imageMeta, searchResult, feed, sitemap,
-categories, tags, comments, githubRelease, githubAvatar): metadata in `@/shared/cache/registry` (label,
-description, default prefix + TTL, tunable flag), behavior in `@/server/infra/cache/registry` (key
+categories, tags, comments, githubRelease, githubAvatar): metadata in `@kobato/shared/cache/registry.ts` (label,
+description, default prefix + TTL, tunable flag), behavior in `@kobato/server/infra/cache/registry.ts` (key
 shape, codec, write policy). Consumers use its db-free verbs (`through`, `get`/`set`/`remove`/`clear`,
 `throughMany`, generation counters), never `file-store`. Storage is `<storage.data>/cache`; content
 invalidates through `invalidateContent(event)`.
@@ -132,7 +132,7 @@ generation: `feed`/`calendar` on `locale:APP_VERSION:settingsRevision:<content k
 theme), `og` on `settingsRevision:<slug>-<input hash>`, `comments` on `<commentsRevision>:<limit>`,
 `sitemap` on its site-origin generation. Responses (plus `manifest.webmanifest`) are
 `Cache-Control: public, no-cache` with a strong ETag over the exact served bytes. `settingsRevision` is
-the SECTION-SCOPED, content-addressed generation (`shared/config/representation-scopes`): one hash per
+the SECTION-SCOPED, content-addressed generation (`@kobato/shared/config/representation-scopes.ts`): one hash per
 `detail`/`listing`/`feed`/`calendar`/`og`/`manifest`/`comments` over exactly the sections that surface
 renders (secrets excluded), so unrelated saves or credential rotation move nothing; the boot-unique
 `revision` is request identity / locale sync only. Bucket deletes by the
@@ -140,7 +140,7 @@ renders (secrets excluded), so unrelated saves or credential rotation move nothi
 never depends on them or on waiting for in-flight renders.
 _Avoid_: locale-less keys, `max-age` on localized representations, generation counters for those buckets
 
-**Content invalidation**: one door — `invalidateContent(event)` in `@/server/domains/content/invalidate`
+**Content invalidation**: one door — `invalidateContent(event)` in `@kobato/server/domains/content/invalidate.ts`
 — owns the event → side-effect map (post: feed + taxonomy lists + sitemap + search generation; page:
 sitemap; category/tag: taxonomy list + whole feed bucket; comment: latest-comments list). Emitted from
 repo mutations for comments (two controllers bypass the services), service/lifecycle for posts, pages,
@@ -149,7 +149,7 @@ _Avoid_: cache clears or `bumpCounter` called directly from mutation sites
 
 ## Request pipeline
 
-**RequestContext**: the per-request fact base (`src/server/http/request-context.ts`), derived once by
+**RequestContext**: the per-request fact base (`packages/server/src/http/request-context.ts`), derived once by
 `requestContextMiddleware` and projected — never re-derived — onto Hono `c.var.requestContext`, the oRPC
 `HandlerContext` copy, and the React Router `RouterContextProvider` key. It carries the session, viewer,
 proxy-aware client address, normalized document URL (`.data`/`_routes`/`index` stripped), request facts,
@@ -162,7 +162,7 @@ _Avoid_: re-deriving session / URL / client address in a loader, resource, or co
 audit literals (use `recordAuditEventFromContext`)
 
 **Viewer**: the session's identity projection — the full `SessionUser` on `RequestContext.viewer`
-(`null` when anonymous). Permission predicates in `src/server/domains/auth/rbac.ts` take
+(`null` when anonymous). Permission predicates in `packages/server/src/domains/auth/rbac.ts` take
 `ViewerIdentity { id, role }`, which a `SessionUser` satisfies; audit reads the same shape.
 _Avoid_: `viewer.userId` (the field is `id`)
 
