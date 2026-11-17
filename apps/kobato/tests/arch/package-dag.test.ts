@@ -50,7 +50,7 @@ const REPO_PACKAGES = [
   { name: '@kobato/web', dir: 'packages/web' },
   { name: '@kobato/test', dir: 'packages/helpers/test' },
   { name: '@kobato/trace', dir: 'packages/helpers/trace' },
-  { name: '@kobato/emails', dir: 'packages/helpers/emails' },
+  { name: '@kobato/email', dir: 'packages/helpers/email' },
   { name: '@kobato/i18n', dir: 'packages/helpers/i18n' },
   { name: '@kobato/pack', dir: 'packages/helpers/pack' },
   { name: '@kobato/browser', dir: 'packages/helpers/browser' },
@@ -78,7 +78,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/test': ['@kobato/test', '@kobato/inkling', '@kobato/shared', '@kobato/server', '@kobato/web'],
   // Orchestration and tooling layers may depend on anything internal.
   kobato: INTERNAL_SCOPES,
-  '@kobato/emails': INTERNAL_SCOPES,
+  '@kobato/email': INTERNAL_SCOPES,
   '@kobato/i18n': INTERNAL_SCOPES,
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
@@ -104,7 +104,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
-  '@kobato/emails': INTERNAL_SCOPES,
+  '@kobato/email': INTERNAL_SCOPES,
   '@kobato/i18n': INTERNAL_SCOPES,
 }
 

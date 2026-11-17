@@ -824,7 +824,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.3
 
-  packages/helpers/emails:
+  packages/helpers/email:
     devDependencies:
       '@kobato/server':
         specifier: workspace:*

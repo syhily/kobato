@@ -9,7 +9,7 @@
     "db:migrate": "drizzle-kit migrate",
     "demo": "vite apps/inkling-demo",
     "dev": "pnpm -C apps/kobato dev",
-    "emails:generate": "vite-node packages/helpers/emails/src/generate.ts",
+    "emails:generate": "vite-node packages/helpers/email/src/generate.ts",
     "fmt": "oxfmt -c oxfmt.config.ts --write",
     "fmt:check": "oxfmt -c oxfmt.config.ts --check",
     "i18n:regional-diff": "vite-node packages/helpers/i18n/src/regional-diff.ts",

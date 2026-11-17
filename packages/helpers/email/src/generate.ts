@@ -4,7 +4,7 @@ import type { BlogSettingsBundle } from '@kobato/shared/config/types.ts'
 import type { AppLocale } from '@kobato/shared/i18n/locales.ts'
 
 // Renders every email template to a standalone HTML file under
-// `packages/helpers/emails/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
+// `packages/helpers/email/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
 // The snapshot data is entirely fake — no real addresses or secrets.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

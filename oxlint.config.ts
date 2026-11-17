@@ -440,7 +440,7 @@ export default defineConfig({
         'packages/helpers/pack/**/*.ts',
         'packages/helpers/trace/**/*.ts',
         'packages/helpers/browser/**/*.ts',
-        'packages/helpers/emails/**/*.ts',
+        'packages/helpers/email/**/*.ts',
         'packages/helpers/i18n/**/*.ts',
       ],
       rules: {
