@@ -1,9 +1,10 @@
-import { fail } from '../sea/exec.ts'
+import { fail } from '@kobato/pack/sea/exec.ts'
+
 import { runBrowserSuite } from './run.ts'
 
 const arg = process.argv[2]
 if (arg?.startsWith('--')) {
-  fail('Usage: node packages/helpers/pack/src/browser/cli.ts [path-to-binary]')
+  fail('Usage: node packages/helpers/browser/src/cli.ts [path-to-binary]')
 }
 
 try {

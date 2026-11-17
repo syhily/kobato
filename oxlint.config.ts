@@ -436,7 +436,12 @@ export default defineConfig({
       },
     },
     {
-      files: ['scripts/**/*.ts', 'packages/helpers/pack/**/*.ts', 'packages/helpers/trace/**/*.ts'],
+      files: [
+        'scripts/**/*.ts',
+        'packages/helpers/pack/**/*.ts',
+        'packages/helpers/trace/**/*.ts',
+        'packages/helpers/browser/**/*.ts',
+      ],
       rules: {
         // Plain-node build scripts (executed directly with `node
         // packages/helpers/pack/...` or `node scripts/...`, type-stripped at

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
     "@kobato/server": "workspace:*",

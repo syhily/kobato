@@ -809,6 +809,21 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
 
+  packages/helpers/browser:
+    devDependencies:
+      '@kobato/pack':
+        specifier: workspace:*
+        version: link:../pack
+      '@kobato/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      bcryptjs:
+        specifier: 'catalog:'
+        version: 3.0.3
+
   packages/helpers/pack:
     devDependencies:
       '@duckdb/node-api':

@@ -1,0 +1,12 @@
+{
+  "name": "@kobato/browser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@kobato/pack": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@types/node": "catalog:",
+    "bcryptjs": "catalog:"
+  }
+}

@@ -4,15 +4,7 @@
 // SEA binary against per-run temp dirs. Nothing reads a real kobato config or
 // a secret from the user's machine.
 
-import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
-import bcrypt from 'bcryptjs'
-import { spawnSync } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
-import { rm } from 'node:fs/promises'
-import { join, resolve as resolvePath } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
-
-import { fail } from '../sea/exec.ts'
+import { fail } from '@kobato/pack/sea/exec.ts'
 import {
   bootServer,
   ensureBinaryExists,
@@ -21,8 +13,15 @@ import {
   smokeDatabases,
   waitForExit,
   waitForHttp,
-} from '../sea/instance.ts'
-import { repoRoot, seaBinaryPath } from '../sea/paths.ts'
+} from '@kobato/pack/sea/instance.ts'
+import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths.ts'
+import { rateLimitDefaults } from '@kobato/shared/config/defaults.ts'
+import bcrypt from 'bcryptjs'
+import { spawnSync } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
+import { rm } from 'node:fs/promises'
+import { join, resolve as resolvePath } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 
 const SHUTDOWN_TIMEOUT_MS = 15_000
 

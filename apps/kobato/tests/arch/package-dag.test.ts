@@ -52,6 +52,7 @@ const REPO_PACKAGES = [
   { name: '@kobato/trace', dir: 'packages/helpers/trace' },
   { name: '@kobato/scripts', dir: 'scripts' },
   { name: '@kobato/pack', dir: 'packages/helpers/pack' },
+  { name: '@kobato/browser', dir: 'packages/helpers/browser' },
   { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
 ] as const
 
@@ -79,6 +80,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/scripts': INTERNAL_SCOPES,
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
+  '@kobato/browser': INTERNAL_SCOPES,
   '@kobato/inkling-demo': INTERNAL_SCOPES,
 }
 
@@ -98,6 +100,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   // internal package from their src trees.
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
+  '@kobato/browser': INTERNAL_SCOPES,
 }
 
 /**

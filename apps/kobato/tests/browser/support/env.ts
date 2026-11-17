@@ -1,4 +1,4 @@
-// Env contract for the real-browser journeys. The runner (`packages/helpers/pack/src/browser/run.ts`,
+// Env contract for the real-browser journeys. The runner (`packages/helpers/browser/src/run.ts`,
 // `pnpm run sea:browser`) injects it after booting a throwaway SEA instance and seeding
 // the admin; exporting the same variables targets an external instance.
 
