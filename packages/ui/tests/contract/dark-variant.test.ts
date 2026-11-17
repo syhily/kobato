@@ -23,13 +23,13 @@ describe('dark variant contract', () => {
   })
 
   it('keeps exactly one @custom-variant dark definition across the style entries', () => {
-    for (const name of ['tailwind.css', 'inkling-editor.css', 'inkling-comment-editor.css']) {
+    for (const name of ['tailwind.css', 'typeset.css']) {
       expect(read(name)).not.toContain('@custom-variant dark')
     }
   })
 
-  it('every Tailwind compilation importing the inkling package sheet registers the variant first', () => {
-    for (const name of ['tailwind.css', 'inkling-editor.css', 'inkling-comment-editor.css']) {
+  it('the token partial registers the variant before its utility compile', () => {
+    for (const name of ['tailwind.css']) {
       const css = read(name)
       expect(css).toContain("@import './dark-variant.css';")
       const variantAt = css.indexOf("@import './dark-variant.css';")
@@ -41,7 +41,7 @@ describe('dark variant contract', () => {
   })
 
   it('the variant import is never wrapped in a cascade layer', () => {
-    for (const name of ['tailwind.css', 'inkling-editor.css', 'inkling-comment-editor.css']) {
+    for (const name of ['tailwind.css', 'typeset.css']) {
       expect(read(name)).not.toMatch(/@import\s+'\.\/dark-variant\.css'\s+layer\(/)
     }
   })

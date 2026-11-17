@@ -12,9 +12,7 @@ import { ScrollTopButton } from '@kobato/web/ui/public/chrome/ScrollTopButton.ts
 import { ThemeToggle } from '@kobato/web/ui/public/chrome/ThemeToggle.tsx'
 import { LazyNotificationsDrawer } from '@kobato/web/ui/shared/notifications/LazyNotificationsDrawer.tsx'
 import { useState } from 'react'
-// Static import so React Router preloads `public.css` during SSR (no FOUC).
-// Do NOT re-export from `@/root` — that would pin this module in the admin chunk.
-import '@kobato/ui/styles/public.css'
+import '@kobato/web/styles/public.css'
 
 export interface BaseLayoutProps {
   navigation?: NavigationItem[]

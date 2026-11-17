@@ -99,7 +99,7 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
 - Admin body editor: `@kobato/web/ui/admin/editor/PageBodyEditor` wraps the inkling composer (`@kobato/inkling`) through the skeleton
   shared with comments (`@kobato/web/client/editor/editor-surface`); the layer owns the composer surface, while kobato glue
   (host cards, `KobatoImageNode`, upload/picker wiring) lives in `@kobato/web/client/editor/` (see `packages/web/src/client/AGENTS.md`).
-  Inserts use `INSERT_CARD_COMMAND`; host hooks sit under `.kobato-page-editor` in `packages/ui/src/styles/inkling-editor.css`.
+  Inserts use `INSERT_CARD_COMMAND`; host hooks sit under `.kobato-page-editor` in `packages/web/src/styles/inkling-editor.css`.
   The locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`), imported by no UI module.
 - Editor copy lives in `admin.editor.*`, read with `useI18n()` (`t` / `tRich`). The entity noun ("post" / "page")
   never crosses a shared boundary as text: configs and props carry `entityLabelId` (`UiMessageId`, e.g.
@@ -124,7 +124,7 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
   hold the iOS viewport zoom lock (see `packages/web/src/client/AGENTS.md` → iOS auto-zoom).
 - Comment editor hydration: server and client first render both emit the wrapper's placeholder shell (byte-stable
   hydration); the wrapper hands focus to the contenteditable after mount, because the activating pointerdown landed
-  on a node that is gone. `min-height`/padding live on the contentEditable in `packages/ui/src/styles/inkling-comment-editor.css`,
+  on a node that is gone. `min-height`/padding live on the contentEditable in `packages/web/src/styles/inkling-comment-editor.css`,
   so the whole bordered canvas is clickable (a wrapper-owned box leaves dead click zones below the one-line empty
   paragraph). The shell is transparent (`bg-transparent`, no background, `placeholder={<></>}`); host hooks sit under
   `.kobato-comment-editor` in the same file, and the host captures Ctrl+Q before inkling sees it (AsideNode is

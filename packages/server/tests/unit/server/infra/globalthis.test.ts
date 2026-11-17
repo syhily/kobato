@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 const DI_MODULES = [
   'packages/db/src/database.ts',
-  'packages/server/src/infra/db/migrate.ts',
+  'packages/db/src/migrate.ts',
   'packages/server/src/infra/storage/backends/s3.ts',
   'packages/shared/src/config/snapshot.ts',
 ] as const

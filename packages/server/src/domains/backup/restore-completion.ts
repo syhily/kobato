@@ -1,7 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
 import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@kobato/server/domains/backup/services/restore.ts'
-import { migrateDatabase } from '@kobato/server/infra/db/migrate.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { restartServer } from '@kobato/server/infra/lifecycle.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
@@ -20,6 +19,8 @@ export interface RestoreCompletionDeps {
   getDb(): Database
   /** The live handle whose sqlite client runs the post-bulk-load ANALYZE. */
   getDatabaseHandle(): DatabaseHandle
+  /** Run package-owned content migrations through the composition root's adapters. */
+  migrateDatabase(db: Database): Promise<void>
   /** Drop the restored-instance file cache; may reject with a partial-wipe failure. */
   wipeCache(): Promise<void>
   /** Tell admins the cache wipe failed (the restore itself succeeded). */
@@ -73,7 +74,7 @@ export function createRestoreCompletion(
 
     try {
       try {
-        await migrateDatabase(deps.getDb())
+        await deps.migrateDatabase(deps.getDb())
         log.info('Database migrations completed after restore')
         // Bulk-loaded file — refresh planner statistics.
         deps.getDatabaseHandle().client.exec('ANALYZE')

@@ -1,0 +1,8 @@
+@layer theme, base, inkling, components, utilities;
+@import 'tailwindcss' source(none);
+@import './tailwind.css';
+@import './typeset.css';
+
+@source '../components';
+@source '../icons';
+@source '../lib';

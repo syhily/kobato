@@ -1,10 +1,17 @@
 {
   "name": "@kobato/ui",
-  "version": "0.0.0",
+  "version": "8.0.3-dev",
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./package.json": "./package.json",
+    "./components/*": "./src/components/*",
+    "./icons/*": "./src/icons/*",
+    "./lib/*": "./src/lib/*",
+    "./styles/dark-variant.css": "./src/styles/dark-variant.css",
+    "./styles/tailwind.css": "./src/styles/tailwind.css",
+    "./styles/typeset.css": "./src/styles/typeset.css",
+    "./styles/ui.css": "./src/styles/ui.css"
   },
   "devDependencies": {
     "@base-ui/react": "catalog:",
@@ -24,6 +31,7 @@
     "react-dom": "catalog:",
     "react-intl": "catalog:",
     "sonner": "catalog:",
+    "tailwindcss": "catalog:",
     "vitest": "catalog:"
   }
 }

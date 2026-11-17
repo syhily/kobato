@@ -7,5 +7,6 @@
 - `database.ts` owns `node:sqlite` + Drizzle's synchronous driver and the `:memory:` sentinel. Configuration-specific path selection stays in the server composition layer.
 - `schema/` contains only persistence schema. Domain validation and wire DTOs stay in `@kobato/shared` or the owning server domain.
 - `operations/` contains reusable Drizzle queries. Domain orchestration and transport errors stay in `@kobato/server`.
-- Process lifecycle, logging, batchers, schedulers, and SEA migration-path adaptation remain in `@kobato/server/infra/db/`.
+- `migrate.ts` owns migration execution, package/SEA folder selection inputs, lifecycle logging, and failure propagation. The server composition root only injects its `MigrationLogger` and optional SEA folder; restore receives the composed function through `RestoreCompletionDeps`.
+- Process lifecycle, batchers, and schedulers remain in `@kobato/server`; no server import is needed here.
 - Imports within this package use the package root (`@kobato/db/...`), not relative traversal.

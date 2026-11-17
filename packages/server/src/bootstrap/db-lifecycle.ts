@@ -1,6 +1,7 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
 import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
+import { migrateDatabase } from '@kobato/db/migrate.ts'
 import {
   closeAnalyticsForRestore,
   initAnalyticsDatabase,
@@ -47,7 +48,6 @@ import {
   wireJobFailureNotifier,
   wireJobRunRecorder,
 } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { migrateDatabase } from '@kobato/server/infra/db/migrate.ts'
 import { resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
 import { startQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics.ts'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender.ts'
@@ -59,12 +59,15 @@ import {
   setRestartRefreshSettings,
   setServerPhase,
 } from '@kobato/server/infra/lifecycle.ts'
+import { getLogger } from '@kobato/server/infra/logger.ts'
+import { seaAssetPath } from '@kobato/server/infra/sea.ts'
 // Load-bearing: each batcher module self-registers on the registry at import time.
 import '@kobato/server/domains/analytics/services/batcher.ts'
 import '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import '@kobato/server/domains/audit/services/batcher.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/shared/config/getters.ts'
 import { NOTIFICATION_SOURCES } from '@kobato/shared/contracts/notifications.ts'
+import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/shared/sea/assets.ts'
 import { isRecord } from '@kobato/shared/utils/type-guards.ts'
 
 // HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
@@ -89,6 +92,17 @@ const engine = new ManagedEngine<DatabaseHandle>(
   },
   'handle',
 )
+
+const migrationLog = getLogger('db:migrations')
+
+async function migrateContentDatabase(db: Database): Promise<void> {
+  const embeddedFolder = seaAssetPath(SEA_DRIZZLE_ASSET_PREFIX.replace(/\/$/, ''))
+  migrateDatabase(db, {
+    migrationsFolder: embeddedFolder ?? undefined,
+    embedded: embeddedFolder !== null,
+    logger: migrationLog,
+  })
+}
 
 const JOB_RUN_SOURCE = NOTIFICATION_SOURCES[1]
 
@@ -203,6 +217,7 @@ wireRestoreMachine({
     reopenDatabase,
     getDb,
     getDatabaseHandle,
+    migrateDatabase: migrateContentDatabase,
     // Regardless of wipe outcome, the registry wrapper drops the process-local
     // generation memo so the next counter read re-reads `_generation`. A
     // partial wipe can still leave residual entries that age out by TTL.
@@ -241,7 +256,7 @@ registerSectionChangeHandler('observability', () =>
 // vitest's per-graph :memory: DBs must migrate themselves.
 
 if (!migrationsRanInHmr()) {
-  await migrateDatabase(getDb())
+  await migrateContentDatabase(getDb())
   markMigrationsRanInHmr()
 }
 

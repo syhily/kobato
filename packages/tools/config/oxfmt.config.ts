@@ -31,7 +31,7 @@ export default defineConfig({
     ],
   },
   sortTailwindcss: {
-    stylesheet: './packages/ui/src/styles/public.css',
+    stylesheet: './apps/kobato/src/styles/public.css',
     functions: ['cn'],
     preserveWhitespace: true,
   },

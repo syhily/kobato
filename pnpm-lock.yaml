@@ -706,6 +706,9 @@ importers:
       react-router:
         specifier: 'catalog:'
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
       vite:
         specifier: 'catalog:'
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
@@ -808,6 +811,9 @@ importers:
       react-router:
         specifier: 'catalog:'
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
       vite:
         specifier: 'catalog:'
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
@@ -1000,6 +1006,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
       vite-plugin-svgr:
         specifier: 'catalog:'
         version: 5.2.0(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -1243,6 +1252,9 @@ importers:
       sharp:
         specifier: 'catalog:'
         version: 0.35.5(@types/node@26.6.6)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
       undici:
         specifier: 'catalog:'
         version: 8.12.4
@@ -1480,6 +1492,9 @@ importers:
       sonner:
         specifier: 'catalog:'
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
       vitest:
         specifier: 'catalog:'
         version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -1624,6 +1639,9 @@ importers:
       sonner:
         specifier: 'catalog:'
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
       vitest:
         specifier: 'catalog:'
         version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))

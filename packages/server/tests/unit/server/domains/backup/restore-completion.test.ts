@@ -6,10 +6,6 @@ const mockScheduleRegisteredJob = vi.hoisted(() => vi.fn())
 const mockRollbackPreRestoreFiles = vi.hoisted(() => vi.fn())
 const mockCleanupPreRestoreFiles = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/server/infra/db/migrate.ts', () => ({
-  migrateDatabase: mockMigrateDatabase,
-}))
-
 vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
   restartServer: mockRestartServer,
 }))
@@ -40,6 +36,7 @@ function makeDeps(): RestoreCompletionDeps & {
     reopenDatabase: vi.fn().mockResolvedValue({ db: {}, client: { exec: clientExec } }),
     getDb: vi.fn().mockReturnValue({ id: 'db' }),
     getDatabaseHandle: vi.fn().mockReturnValue({ client: { exec: clientExec } }),
+    migrateDatabase: mockMigrateDatabase,
     wipeCache: vi.fn().mockResolvedValue(undefined),
     notifyCacheWipeFailed: vi.fn<() => void>(),
     clientExec,

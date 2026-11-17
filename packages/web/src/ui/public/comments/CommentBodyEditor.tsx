@@ -5,7 +5,8 @@
 // import graph stays editor-free. `isEmojiEnabled={false}` keeps the emoji-mart chunk out of
 // nested editors; `codeEditor="plain"` avoids the CodeMirror chunk here.
 
-import '@kobato/ui/styles/inkling-comment-editor.css'
+import '@kobato/inkling/styles/index.css'
+import '@kobato/web/styles/inkling-comment-editor.css'
 import type { InklingLabelsInput } from '@kobato/inkling'
 import type { CommentEditorState } from '@kobato/shared/lexical/comment-schema.ts'
 

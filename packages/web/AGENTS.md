@@ -11,4 +11,4 @@
 - Everything here is browser-safe: no `node:*` value imports, no `@kobato/server` value imports. Server-only shapes (oRPC input/output types) come from `@kobato/shared` contracts (Zod `z.infer`), never from server source.
 - The ONE sanctioned server edge is the type-only `RouterClient<ApiRouter>` in `client/api/client.ts` (`@kobato/server` is a devDependency for exactly this). Any second type channel must go through a `@kobato/shared` contract instead.
 - Imports use `@kobato/web/...` inside this package and `@kobato/ui/...`, `@kobato/shared/...`, or `@kobato/inkling` across packages.
-- Subdirectory conventions load additively: `src/client/AGENTS.md` and `src/ui/AGENTS.md` (+ `src/ui/admin/settings/AGENTS.md`). Design tokens and style-entry rules live in `packages/ui/src/styles/AGENTS.md`.
+- Subdirectory conventions load additively: `src/client/AGENTS.md`, `src/ui/AGENTS.md` (+ `src/ui/admin/settings/AGENTS.md`), and `src/styles/AGENTS.md`. Design tokens and generic style partials live in `packages/ui/src/styles/AGENTS.md`; app-owned compilation entries live in `apps/kobato/src/styles/AGENTS.md`.

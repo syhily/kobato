@@ -33,7 +33,7 @@ vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => ':memory:',
 }))
 
-vi.mock('@kobato/server/infra/db/migrate.ts', () => ({
+vi.mock('@kobato/db/migrate.ts', () => ({
   migrateDatabase: (...args: unknown[]) => migrateDatabase(...args),
 }))
 

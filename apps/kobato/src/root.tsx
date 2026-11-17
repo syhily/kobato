@@ -37,7 +37,12 @@ import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
 const PublicErrorLayout = lazy(() =>
-  import('@kobato/web/ui/public/chrome/BaseLayout.tsx').then((module) => ({ default: module.BaseLayout })),
+  Promise.all([
+    import('@kobato/shared/styles/cards.css'),
+    import('@kobato/ui/styles/ui.css'),
+    import('@/styles/public.css'),
+    import('@kobato/web/ui/public/chrome/BaseLayout.tsx'),
+  ]).then(([, , , module]) => ({ default: module.BaseLayout })),
 )
 
 import type { Route } from './+types/root'

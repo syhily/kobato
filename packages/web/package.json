@@ -1,6 +1,6 @@
 {
   "name": "@kobato/web",
-  "version": "0.0.0",
+  "version": "8.0.3-dev",
   "private": true,
   "type": "module",
   "exports": {
@@ -53,6 +53,7 @@
     "react-intl": "catalog:",
     "react-router": "catalog:",
     "sonner": "catalog:",
+    "tailwindcss": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

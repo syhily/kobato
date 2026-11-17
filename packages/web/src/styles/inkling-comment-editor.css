@@ -1,6 +1,6 @@
 /*
  * Inkling comment-editor surface styles. Imported ONLY by
- * `@/ui/public/comments/CommentBodyEditor`, which the public comment form
+ * `@kobato/web/ui/public/comments/CommentBodyEditor`, which the public comment form
  * lazy-loads. The package stylesheet is forced into the `inkling` layer,
  * pinned below `utilities` and above `base` by the `@layer` statements in
  * both entries (`public.css`, `admin.css`); host rules below are deliberately
@@ -12,17 +12,8 @@
  * uses, so the canvas is the render; card interiors opt out via
  * `.not-inkling-prose`.
  *
- * The `dark` variant is registered BEFORE the inkling import so the package's
- * `dark:` utilities compile with class-or-media semantics (see
- * ./dark-variant.css).
+ * Inkling owns and compiles its own layer, dark variant, and utility scan.
  */
-@import './dark-variant.css';
-@import '@kobato/inkling/styles/index.css' layer(inkling);
-
-/* Utility scan for the inkling layer's own sources (the card chrome TSX).
-   Lives on THIS root: a `@source` inside a `layer()`-imported sheet nests
-   inside `@layer` and Tailwind rejects the compile. */
-@source '../inkling';
 
 /* Comment canvas: a compact bordered input, not an article column. The
    min-height keeps the empty state tall; the bottom runway lets the floating

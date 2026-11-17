@@ -1,0 +1,6 @@
+/* Demo-owned utilities. Dependencies compile and scan their own stylesheets. */
+@layer theme, base, inkling, components, utilities;
+@import 'tailwindcss' source(none);
+@import '@kobato/ui/styles/tailwind.css' reference;
+
+@source '../**/*.{ts,tsx}';

@@ -376,6 +376,23 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
+  it('workspace package versions stay synchronized', () => {
+    const source = JSON.parse(readFileSync(`${REPO_ROOT}/apps/kobato/package.json`, 'utf8')) as { version: string }
+    for (const pkg of REPO_PACKAGES) {
+      const manifest = JSON.parse(readFileSync(`${REPO_ROOT}/${pkg.dir}/package.json`, 'utf8')) as { version: string }
+      expect(manifest.version, `${pkg.dir}/package.json version`).toBe(source.version)
+    }
+  })
+
+  it('db and ui expose bounded package surfaces', () => {
+    for (const dir of ['packages/db', 'packages/ui']) {
+      const manifest = JSON.parse(readFileSync(`${REPO_ROOT}/${dir}/package.json`, 'utf8')) as {
+        exports: Record<string, string>
+      }
+      expect(manifest.exports, `${dir} must not expose every source file`).not.toHaveProperty('./*')
+    }
+  })
+
   it('product source trees use package-root imports', () => {
     const rootAnchored = new Set([
       'kobato',

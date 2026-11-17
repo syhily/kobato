@@ -1,0 +1,22 @@
+@layer theme, base, inkling, components, utilities;
+@import 'tailwindcss' source(none);
+@import '@kobato/ui/styles/tailwind.css' reference;
+
+@source '../ui/admin';
+@source '../ui/public/music-player';
+@source '../ui/public/chrome';
+@source '../ui/public/comments/*.{ts,tsx}';
+@source '../ui/public/widgets';
+@source '../ui/public/Search.tsx';
+@source '../client/editor';
+
+@layer utilities {
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}

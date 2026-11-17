@@ -212,12 +212,10 @@ Glossary owned here: **card** (a decorator-node block), **card adjacency**, **ca
 ## Documented tradeoffs
 
 - Content typography is NOT owned here: the host owns `packages/ui/src/styles/typeset.css` and passes `contentEditableClassName="typeset typeset-post|typeset-comment"`
-  into `InklingComposableEditor`; `packages/inkling/packages/ui/src/styles/components/inkling-prose.css` keeps only card rhythm, nested-editor chrome variants, the aside
+  into `InklingComposableEditor`; `packages/inkling/src/styles/components/inkling-prose.css` keeps only card rhythm, nested-editor chrome variants, the aside
   pull-quote, and the accent re-scope. The typeset guard honors `.not-inkling-prose` and `.inkling-blockquote-alt`.
-- `packages/inkling/src/styles/index.css` is consumed as source: imported by `packages/ui/src/styles/inkling-editor.css` and `packages/ui/src/styles/inkling-comment-editor.css` into the
-  `inkling` cascade layer, below `utilities` and above `base` via the bare `@layer` statements in `admin.css` / `public.css`. Chrome arbitrary values are
-  authored in rem (0.1rem/px), never px: the canvas runs `zoom: 2/3` on a 15px root (demo: 10px-root). Both partials import `packages/ui/src/styles/dark-variant.css`
-  first, and bridge tokens (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`).
+- `packages/inkling/src/styles/index.css` is the package's complete Tailwind entry: it imports `variants.css`, scans only Inkling sources, and emits preflight, components, and utilities into the `inkling` layer. Consumers import it directly alongside their own independently compiled host styles; no consumer may add Inkling paths to its `@source`.
+- Chrome arbitrary values are authored in rem (0.1rem/px), never px: the Kobato canvas runs `zoom: 2/3` on a 15px root (demo: 10px-root). Web's host adapters bridge tokens (`--inkling-accent-color` ← `--brand`, `--font-sans` ← `--font-body`).
 - `packages/inkling/src/markdown/round-trip.ts` intentionally uses a constrained node set and does not round-trip decorator cards.
 - `@kobato/inkling/headless` (zero React) is the server-side conversion surface only (HTML/markdown/plain-text converters) and the server bundle's ONLY editor
   import, which also takes `generateDecoratorNode` plus `DecoratorNodeProperty` from it. `RenderContext` / `ExportDOMOutput` stay internal (hosts declare

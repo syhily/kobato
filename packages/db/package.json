@@ -1,6 +1,6 @@
 {
   "name": "@kobato/db",
-  "version": "0.0.0",
+  "version": "8.0.3-dev",
   "private": true,
   "files": [
     "src",
@@ -9,8 +9,15 @@
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
-    "./drizzle/*": "./drizzle/*",
-    "./*": "./src/*"
+    "./database.ts": "./src/database.ts",
+    "./errors.ts": "./src/errors.ts",
+    "./like-escape.ts": "./src/like-escape.ts",
+    "./migrate.ts": "./src/migrate.ts",
+    "./target.ts": "./src/target.ts",
+    "./types.ts": "./src/types.ts",
+    "./operations/*": "./src/operations/*",
+    "./schema/*": "./src/schema/*",
+    "./drizzle/*": "./drizzle/*"
   },
   "devDependencies": {
     "@kobato/db": "workspace:*",

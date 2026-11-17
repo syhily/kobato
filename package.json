@@ -37,7 +37,8 @@
     "trace:smoke": "vite-node packages/tools/trace/src/smoke.ts",
     "trace:status": "node packages/tools/trace/src/status.ts",
     "trace:up": "node packages/tools/trace/src/up.ts",
-    "type": "pnpm -C apps/kobato typegen && tsc"
+    "type": "pnpm -C apps/kobato typegen && tsc",
+    "version:sync": "node packages/tools/pack/src/release.ts sync-versions"
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",

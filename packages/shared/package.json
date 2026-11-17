@@ -1,6 +1,6 @@
 {
   "name": "@kobato/shared",
-  "version": "0.0.0",
+  "version": "8.0.3-dev",
   "private": true,
   "type": "module",
   "exports": {
@@ -24,6 +24,7 @@
     "react": "catalog:",
     "react-router": "catalog:",
     "sharp": "catalog:",
+    "tailwindcss": "catalog:",
     "undici": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

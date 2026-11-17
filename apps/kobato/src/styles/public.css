@@ -1,0 +1,8 @@
+/* App-owned route utilities. Every dependency compiles and scans its own stylesheet. */
+@layer theme, base, inkling, components, utilities;
+@import 'tailwindcss' source(none);
+@import '@kobato/ui/styles/tailwind.css' reference;
+@import './cursors.css';
+
+@source '../routes/public';
+@source '../root.tsx';

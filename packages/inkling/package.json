@@ -1,6 +1,6 @@
 {
   "name": "@kobato/inkling",
-  "version": "0.0.0",
+  "version": "8.0.3-dev",
   "private": true,
   "type": "module",
   "exports": {
@@ -60,6 +60,7 @@
     "react": "catalog:",
     "react-colorful": "catalog:",
     "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
     "vite-plugin-svgr": "catalog:",
     "vitest": "catalog:",
     "y-websocket": "catalog:",

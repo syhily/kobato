@@ -11,8 +11,8 @@ import { describe, expect, it } from 'vitest'
 // RichTextPlugin mounts an unclassed wrapper in between, so a child combinator
 // cannot reach it).
 
-const css = readFileSync(resolve(process.cwd(), 'packages/ui/src/styles/inkling-editor.css'), 'utf8')
-const commentCss = readFileSync(resolve(process.cwd(), 'packages/ui/src/styles/inkling-comment-editor.css'), 'utf8')
+const css = readFileSync(resolve(process.cwd(), 'packages/web/src/styles/inkling-editor.css'), 'utf8')
+const commentCss = readFileSync(resolve(process.cwd(), 'packages/web/src/styles/inkling-comment-editor.css'), 'utf8')
 
 describe('page editor canvas scope contract', () => {
   it('pins the canvas geometry rule to the top-level .inkling-lexical', () => {

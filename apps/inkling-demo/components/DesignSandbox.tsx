@@ -1,4 +1,4 @@
-import '../styles/inkling.css'
+import '@kobato/inkling/styles/index.css'
 import AddIcon from '@kobato/inkling/assets/icons/inkling-add.svg?react'
 import BoldIcon from '@kobato/inkling/assets/icons/inkling-bold.svg?react'
 import AudioCardIcon from '@kobato/inkling/assets/icons/inkling-card-type-audio.svg?react'

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -37,6 +37,41 @@ function writeJson(path: string, data: Record<string, unknown>): void {
   writeFileSync(resolve(ROOT, path), JSON.stringify(data, null, 2) + '\n')
 }
 
+function workspacePackagePaths(): string[] {
+  const paths: string[] = []
+  for (const base of ['apps', 'packages']) {
+    for (const entry of readdirSync(resolve(ROOT, base), { withFileTypes: true })) {
+      if (entry.isDirectory() && existsSync(resolve(ROOT, base, entry.name, 'package.json'))) {
+        paths.push(`${base}/${entry.name}/package.json`)
+      }
+    }
+  }
+  for (const entry of readdirSync(resolve(ROOT, 'packages', 'tools'), { withFileTypes: true })) {
+    if (entry.isDirectory() && existsSync(resolve(ROOT, 'packages', 'tools', entry.name, 'package.json'))) {
+      paths.push(`packages/tools/${entry.name}/package.json`)
+    }
+  }
+  return paths.sort()
+}
+
+function syncWorkspaceVersions(version: string): { oldVersion: string; paths: string[] } {
+  const source = readJson('apps/kobato/package.json')
+  if (!isRecord(source)) {
+    throw new Error('Invalid apps/kobato/package.json')
+  }
+  const oldVersion = requireString(source, 'version')
+  const paths = workspacePackagePaths()
+  for (const path of paths) {
+    const pkg = readJson(path)
+    if (!isRecord(pkg)) {
+      throw new Error(`Invalid ${path}`)
+    }
+    pkg.version = version
+    writeJson(path, pkg)
+  }
+  return { oldVersion, paths }
+}
+
 function validateClean(): void {
   const status = run('git status --porcelain')
   if (status) {
@@ -64,21 +99,19 @@ function cmdBump(version: string): void {
 
   validateClean()
 
-  const pkgPath = 'apps/kobato/package.json'
   const lockPath = 'pnpm-lock.yaml'
+  const { oldVersion, paths } = syncWorkspaceVersions(version)
 
-  const pkg = readJson(pkgPath)
-  if (!isRecord(pkg)) {
-    throw new Error('Invalid package.json')
-  }
-  const oldVersion = requireString(pkg, 'version')
-  pkg.version = version
-  writeJson(pkgPath, pkg)
-
-  run(`git add ${pkgPath} ${lockPath}`)
+  run(`git add ${[...paths, lockPath].join(' ')}`)
   run(`git commit -m "build: release ${version}"`)
 
   process.stdout.write(`${oldVersion} -> ${version}`)
+}
+
+function cmdSyncVersions(version: string): void {
+  assertVersion(version)
+  const { oldVersion, paths } = syncWorkspaceVersions(version)
+  process.stdout.write(`Synchronized ${paths.length} workspace packages: ${oldVersion} -> ${version}`)
 }
 
 function cmdTag(args: string[]): void {
@@ -135,10 +168,9 @@ function cmdPrepareNext(version?: string): void {
 
   validateClean()
 
-  const pkgPath = 'apps/kobato/package.json'
   const lockPath = 'pnpm-lock.yaml'
 
-  const pkg = readJson(pkgPath)
+  const pkg = readJson('apps/kobato/package.json')
   if (!isRecord(pkg)) {
     throw new Error('Invalid package.json')
   }
@@ -153,10 +185,8 @@ function cmdPrepareNext(version?: string): void {
     nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}-dev`
   }
 
-  pkg.version = nextVersion
-  writeJson(pkgPath, pkg)
-
-  run(`git add ${pkgPath} ${lockPath}`)
+  const { paths } = syncWorkspaceVersions(nextVersion)
+  run(`git add ${[...paths, lockPath].join(' ')}`)
   run(`git commit -m "chore: prepare next development cycle"`)
 
   process.stdout.write(`Prepared ${nextVersion} on develop (from ${oldVersion})`)
@@ -169,6 +199,7 @@ const commands: Record<string, (args: string[]) => void> = {
   bump: (args) => cmdBump(args[0]),
   tag: (args) => cmdTag(args),
   'prepare-next': (args) => cmdPrepareNext(args[0]),
+  'sync-versions': (args) => cmdSyncVersions(args[0]),
 }
 
 if (!command || !commands[command]) {

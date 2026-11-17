@@ -97,7 +97,7 @@ introduce a new pattern.
 - **A. Public layout (`routes/public/layout.tsx`)** — **pathless** layout wrapping every public URL; owns
   `<BaseLayout>`, which **statically imports `public.css`** so the matched route graph links the stylesheet (styled
   first paint). **Do not** lazy-load `public.css` from a child route or move it into a regular component — FOUC.
-  Admin / login / install / API routes stay outside and import `admin.css` (`packages/ui/src/styles/AGENTS.md` → Entry structure).
+  Admin / login / install / API routes stay outside and import `admin.css` (`apps/kobato/src/styles/AGENTS.md` → Entry structure).
 - **B. Splat catch-all** — `route('*', 'routes/public/not-found.tsx')` MUST stay last inside `public/layout.tsx`:
   `*` is the lowest-priority match, firing only for paths nothing else handles — multi-segment WordPress probes
   (`/wp-content/plugins/x.php`, `/cgi-bin/test`); single-segment `.php` / `cgi-bin` probes hit `:slug` first and

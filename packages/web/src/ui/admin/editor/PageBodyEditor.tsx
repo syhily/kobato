@@ -1,4 +1,5 @@
-import '@kobato/ui/styles/inkling-editor.css'
+import '@kobato/inkling/styles/index.css'
+import '@kobato/web/styles/inkling-editor.css'
 import type { LexicalEditorState } from '@kobato/shared/lexical/schema.ts'
 
 import { InklingEditor } from '@kobato/inkling'

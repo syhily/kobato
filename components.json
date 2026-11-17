@@ -5,7 +5,7 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "packages/ui/src/styles/public.css",
+    "css": "apps/kobato/src/styles/public.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""

@@ -1,0 +1,15 @@
+@layer theme, base, inkling, components, utilities;
+@import 'tailwindcss' source(none);
+@import '@kobato/ui/styles/tailwind.css' reference;
+
+@source '../ui/public';
+
+.medium-zoom-overlay,
+.medium-zoom-image--opened {
+  z-index: 1080;
+}
+
+.comment-body.active {
+  animation: var(--animate-comment-flash);
+  border-radius: var(--radius-sm);
+}
