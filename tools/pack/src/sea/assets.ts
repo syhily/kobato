@@ -2,7 +2,6 @@
 // blob.ts) and write manifest.json, the codec/integrity registry the runtime
 // reads. Asset keys come from `packages/shared/distribution/src/sea-assets.ts` — never hardcode one.
 
-// Relative import: this script runs under plain `node` — no path aliases.
 import {
   SEA_CLIENT_ASSET_PREFIX,
   SEA_DRIZZLE_ASSET_PREFIX,
@@ -24,6 +23,7 @@ import {
 } from '@kobato/distribution/sea-assets.ts'
 import { fail, run } from '@kobato/pack/sea/exec.ts'
 import {
+  observabilitySourceAssetsDir,
   repoRoot,
   seaIntermediatesDir,
   seaManifestPath,
@@ -407,13 +407,7 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
 
   // Observability provisioning assets (4 dashboards + the RUM privacy VRL) ride
   // raw — plain VFS files via `readAssetTextOrDisk`, never the packed blob channel.
-  await addTree(
-    assets,
-    files,
-    SEA_OBSERVABILITY_ASSET_PREFIX,
-    join(repoRoot, 'packages', 'server', 'src', 'domains', 'observability', 'assets'),
-    ctx,
-  )
+  await addTree(assets, files, SEA_OBSERVABILITY_ASSET_PREFIX, observabilitySourceAssetsDir(), ctx)
 
   await addNativeAssets(assets, files, ctx)
 

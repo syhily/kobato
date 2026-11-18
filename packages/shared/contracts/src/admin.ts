@@ -8,7 +8,7 @@ import type { SettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
 import { clearable, mergePatchInput } from '@kobato/contracts/merge-patch.ts'
 import { loginMethodSchema, newPasswordSchema, passkeyOptionsOutputSchema } from '@kobato/contracts/users.ts'
 import { type SettingsSection, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
-import { optionalHttpUrlSchema } from '@kobato/utils/safe-url.ts'
+import { optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
 // Admin/me dashboard, settings, session and analytics SSR loader contracts. The

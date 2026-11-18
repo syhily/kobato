@@ -433,10 +433,10 @@ describe('production sources', () => {
         'packages/server/src/http/controllers/admin/audit.controller.ts',
         'packages/server/src/http/controllers/admin/users-admin.controller.ts',
         'packages/server/src/http/loaders/search.ts',
-        // GeoIP updates, the self-update pipeline, safe-url ids.
+        // GeoIP updates, the self-update pipeline, URL-schema message ids.
         'packages/server/src/domains/analytics/geoip-update.ts',
         'packages/server/src/domains/update/pipeline.ts',
-        'packages/shared/utils/src/safe-url.ts',
+        'packages/shared/utils/src/url-schema.ts',
         // The Gravatar mirror preset labels render through `t()`.
         'packages/web/admin/src/ui/settings/CommentsForm.tsx',
         // Email templates/senders render server-catalog copy.

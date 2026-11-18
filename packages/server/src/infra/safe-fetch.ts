@@ -1,8 +1,9 @@
 import type { SafeFetchOperation } from '@kobato/server/infra/trace/sanitize.ts'
 import type { LookupAddress, LookupOptions } from 'node:dns'
 
+import { isBlockedFetchHost } from '@kobato/auth/network.ts'
 import { isTraceActive, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { isBlockedFetchHost, tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { tryParseUrl } from '@kobato/utils/safe-url.ts'
 import { lookup } from 'node:dns/promises'
 import { isIP, type LookupFunction } from 'node:net'
 import { Agent } from 'undici'

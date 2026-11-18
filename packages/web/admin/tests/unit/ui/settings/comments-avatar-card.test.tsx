@@ -115,7 +115,7 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
   })
 
   // The dropdown labels come from the catalog (`t(preset.labelKey)`), never from
-  // a Chinese literal baked into `safe-url.ts`.
+  // a Chinese literal baked into the shared Gravatar preset module.
   async function openMirrorOptions(locale: AppLocale): Promise<string[]> {
     renderCommentsForm(baseComments, locale)
     fireEvent.click(document.getElementById('comments-avatar-mirror')!)

@@ -5,6 +5,7 @@ import type { SettingsSection } from '@kobato/settings/sections.ts'
 import type { SectionMeta } from '@kobato/settings/sections/registry.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { isValidPasskeyDomain } from '@kobato/auth/network.ts'
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 import {
   SECTION_REGISTRY,
@@ -26,7 +27,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 import { validateS3Config } from '@kobato/server/infra/storage/backends/s3.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { securitySection } from '@kobato/settings/sections/security.ts'
-import { isValidPasskeyDomain } from '@kobato/utils/safe-url.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 const log = getLogger('settings.service')

@@ -2,7 +2,7 @@ import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
 import { honeypotField, idString, isoDateTime, successDto } from '@kobato/contracts/primitives.ts'
 import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/utils/safe-url.ts'
+import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
 // Welcome-dashboard moderation inbox row. Same shape for both queues —

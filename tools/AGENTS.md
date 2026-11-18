@@ -5,7 +5,7 @@
 - `toolchain` ↔ `@kobato/toolchain` — the shared TypeScript (`tsconfig.base.json`) / oxlint / oxfmt configuration, consumed by the root config wrappers and `tsconfig.json` via its exports map.
 - `test` ↔ `@kobato/test` — in-process Vitest fixtures/doubles only (see `test/AGENTS.md`).
 - `harness` ↔ `@kobato/harness` — the out-of-process instance harness (see `harness/AGENTS.md`).
-- `trace` ↔ `@kobato/trace` — OpenObserve DEV container tooling (see `trace/README.md`).
+- `trace` ↔ `@kobato/trace` — OpenObserve DEV container tooling (see `trace/README.md`); it consumes `pack/sea/paths.ts` for the shared observability-asset location and `@kobato/telemetry` for protocol names.
 - `browser` ↔ `@kobato/browser` — the real-browser Playwright journey runner (`test:browser` / `sea:browser`).
 - `email` ↔ `@kobato/email` — localized email-template previews (`emails:generate`).
 - `i18n` ↔ `@kobato/i18n-tools` — regional terminology diff report (`i18n:regional-diff`).

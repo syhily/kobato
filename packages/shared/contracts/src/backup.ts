@@ -1,15 +1,5 @@
 import { z } from 'zod'
 
-export interface BackupFileDto {
-  key: string
-  fileName: string
-  size: number
-  lastModified: string
-  /** The archive is password-encrypted (`.enc` storage suffix) — restores
-   *  need the backup encryption password. */
-  encrypted: boolean
-}
-
 /** Response of POST /api/admin/backup/upload-restore — either the restore
  *  started, or the upload is an encrypted archive parked server-side,
  *  waiting for the follow-up decrypt call with the password. */
@@ -41,9 +31,11 @@ export const backupFileDto = z.object({
   fileName: z.string(),
   size: z.number(),
   lastModified: z.string(),
+  /** The archive is password-encrypted (`.enc` storage suffix) — restores
+   *  need the backup encryption password. */
   encrypted: z.boolean(),
 })
-export type BackupFileWire = z.infer<typeof backupFileDto>
+export type BackupFileDto = z.infer<typeof backupFileDto>
 
 export const adminBackupStatusOutputDto = z.object({ primaryDriver: z.enum(['s3', 'local']) })
 export type AdminBackupStatusOutput = z.infer<typeof adminBackupStatusOutputDto>

@@ -4,7 +4,7 @@ import { applyFriendSchema } from '@kobato/contracts/friends.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/utils/safe-url.ts'
+import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { describe, expect, it } from 'vitest'
 
 // The shared http(s)-URL rule states a catalog id, not prose: every schema reusing it

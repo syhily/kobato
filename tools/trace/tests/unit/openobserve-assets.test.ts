@@ -1,3 +1,4 @@
+import { OBSERVABILITY_SOURCE_ASSETS_DIR } from '@kobato/pack/sea/paths.ts'
 import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
 import { TRACE_METRIC_NAMES, TRACE_METRIC_STREAM_PREFIXES } from '@kobato/telemetry/metrics.ts'
 import { RUM_PRIVACY_PIPELINE_DESCRIPTION, RUM_PRIVACY_VRL_SHA256 } from '@kobato/telemetry/pipeline.ts'
@@ -7,7 +8,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const ASSETS = join(process.cwd(), 'packages/server/src/domains/observability/assets')
+const ASSETS = join(process.cwd(), OBSERVABILITY_SOURCE_ASSETS_DIR)
 const DASHBOARDS = join(ASSETS, 'dashboards')
 
 interface Panel {

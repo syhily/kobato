@@ -1,9 +1,9 @@
 import type { SecuritySettings } from '@kobato/settings/types.ts'
 
+import { isValidPasskeyDomain } from '@kobato/auth/network.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { isValidPasskeyDomain } from '@kobato/utils/safe-url.ts'
 import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'

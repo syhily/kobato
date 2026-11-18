@@ -7,6 +7,7 @@
 // token, privacy pipeline, and dashboards are installed by the SERVER during
 // the admin connection test.
 
+import { OBSERVABILITY_SOURCE_ASSETS_DIR } from '@kobato/pack/sea/paths.ts'
 import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
 import { isTraceMetricStreamName } from '@kobato/telemetry/metrics.ts'
 import { RUM_STREAM_NAME } from '@kobato/telemetry/pipeline.ts'
@@ -28,10 +29,10 @@ export const DEFAULT_O2_PORT = 5080
 export const DEFAULT_APP_PORT = 4321
 export const DEFAULT_APPLICATION_ID = 'kobato-dev'
 export const RETENTION_DAYS = 1
-/** The RUM intake stream, owned by `packages/shared/contracts/src/trace-pipeline.ts`. */
+/** The RUM intake stream, owned by `@kobato/telemetry/pipeline.ts`. */
 export const RUM_STREAM = RUM_STREAM_NAME
 export const TRACE_STREAM = 'default'
-/** The application log stream, owned by `packages/shared/contracts/src/trace-logs.ts`. */
+/** The application log stream, owned by `@kobato/telemetry/logs.ts`. */
 export const LOG_STREAM = TRACE_LOG_STREAM
 
 /** Streams this tooling owns for retention/status: RUM, traces, server logs, metric streams. */
@@ -695,7 +696,7 @@ export function resolveFromRepo(relative: string): string {
 
 /** Versioned dashboards + the RUM privacy VRL, shared with the server provisioner. */
 export function observabilityAssetDirectory(): string {
-  return resolveFromRepo('packages/server/src/domains/observability/assets')
+  return resolveFromRepo(OBSERVABILITY_SOURCE_ASSETS_DIR)
 }
 
 /** One bundled OpenObserve v8 dashboard by file name (e.g. `overview.json`). */

@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 import { SECTION_TO_BUNDLE_KEY, type SettingsSection } from '@kobato/settings/sections.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
@@ -64,19 +65,12 @@ export const REPRESENTATION_SECTION_DEPS: Record<RepresentationScope, readonly S
 const HASH_VERSION = 'v1'
 
 /**
- * Encrypted settings secret FIELD NAMES (kept in step with the server's
- * `SECRET_FIELDS` by a contract test). They are never rendered, so hashing
- * them would both leak-derived key material into a cache key and invalidate
- * pages on a credential rotation.
+ * Encrypted settings secret FIELD NAMES, derived from the single secret
+ * declaration point. They are never rendered, so hashing them would both leak
+ * derived key material into a cache key and invalidate pages on a credential
+ * rotation.
  */
-export const SETTINGS_SECRET_FIELD_NAMES: ReadonlySet<string> = new Set([
-  'smtpPass',
-  'mailgunApiKey',
-  'secretAccessKey',
-  'githubToken',
-  'password',
-  'rumClientToken',
-])
+export const SETTINGS_SECRET_FIELD_NAMES: ReadonlySet<string> = new Set(SECRET_FIELDS.map((field) => field.field))
 
 /** Deterministic JSON: object keys sorted, `undefined` members dropped, arrays in order. */
 function stableSerialize(value: unknown): string {

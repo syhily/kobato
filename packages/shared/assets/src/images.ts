@@ -2,13 +2,6 @@ import { isOnSiteOrigin, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.t
 
 export type AdminImageKind = 'generic' | 'category' | 'friend'
 
-export interface ListImagesInput {
-  q?: string
-  kind?: AdminImageKind | 'all'
-  offset?: number
-  limit?: number
-}
-
 /**
  * Sparse image metadata for an image source (the block keeps its own src),
  * produced by the images domain enhancer and consumed by the renderer.

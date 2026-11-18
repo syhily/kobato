@@ -13,12 +13,12 @@
 ## The thirteen leaves
 
 - `@kobato/utils` — pure isomorphic helpers (`slug`, `safe-url`, `memo`, `thumbhash`, `type-guards`, …) plus the display `format` facade.
-- `@kobato/auth` — role vocabulary/ordering/labels and the password-length + Web Crypto identity primitives shared by server auth and the wire.
+- `@kobato/auth` — role vocabulary/ordering/labels, the password-length + Web Crypto identity primitives shared by server auth and the wire, and the network-boundary checks (`network`: SSRF host/CIDR grammar + passkey RP validation).
 - `@kobato/i18n` — locale contract, ICU message catalogs (`messages/ui` + `messages/server`), the `catalog-scope` classifier, `fallback-messages`, and the `inkling-labels` editor tables.
 - `@kobato/cache` — the cache-bucket declaration registry and derived bucket id unions. Declarations only — never a storage plane.
 - `@kobato/catalog` — the public content read model: post/page/taxonomy/friend/comment public shapes, listing read models, and the projections from internal records to public shells/cards/links.
 - `@kobato/settings` — the isomorphic Section schema/default/secret registry and derived settings types, admin projections/getters, the `snapshot` slot, representation-scope generations, `app-localization`, and the RUM client identity. Server-only write validation and persistence stay in `@kobato/server`.
-- `@kobato/assets` — the site-owned asset-URL path grammar, image kind/URL derivation, the avatar URL rule, and the font payload types.
+- `@kobato/assets` — the site-owned asset-URL path grammar, image kind/URL derivation, the avatar URL rule, the Gravatar mirror allowlist/presets, and the font payload types.
 - `@kobato/lexical` — the Lexical document model: storage schemas, the save pipeline, the TOC projection, React-free host-card specs, and their Tailwind entry.
 - `@kobato/sanitize` — the isomorphic DOMPurify stack (per-strategy allowlists, parity-pinned engines), `sanitize-url`, and `escape-html`.
 - `@kobato/contracts` — the wire: per-domain Zod schemas + derived DTOs, `api-error`, `merge-patch`, and the remaining cross-boundary type shapes (`backup`, `sessions`, the comments wire family).

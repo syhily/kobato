@@ -1,6 +1,7 @@
 import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
 import { honeypotField, idString, isoDateTime, okDto } from '@kobato/contracts/primitives.ts'
-import { HTTP_URL_MESSAGE, isHttpUrl } from '@kobato/utils/safe-url.ts'
+import { isHttpUrl } from '@kobato/utils/safe-url.ts'
+import { HTTP_URL_MESSAGE } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
 export const adminFriendDto = z.object({

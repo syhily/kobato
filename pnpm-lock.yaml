@@ -2308,6 +2308,9 @@ importers:
       '@kobato/harness':
         specifier: workspace:*
         version: link:../harness
+      '@kobato/pack':
+        specifier: workspace:*
+        version: link:../pack
       '@kobato/telemetry':
         specifier: workspace:*
         version: link:../../packages/shared/telemetry

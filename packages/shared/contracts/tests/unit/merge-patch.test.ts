@@ -1,5 +1,5 @@
 import { clearable, mergePatchInput, splitMergePatch } from '@kobato/contracts/merge-patch.ts'
-import { optionalHttpUrlSchema } from '@kobato/utils/safe-url.ts'
+import { optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

@@ -1,5 +1,6 @@
 import type { AvatarSource } from '@kobato/assets/avatar.ts'
 
+import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar.ts'
 import { encodedEmail } from '@kobato/auth/security.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import {
@@ -23,7 +24,6 @@ import { imageWidth } from '@kobato/server/infra/image/compress.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { GRAVATAR_MIRROR_URLS } from '@kobato/utils/safe-url.ts'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -9,6 +9,7 @@ import type {
   RegistrationResponseJSON,
 } from '@simplewebauthn/server'
 
+import { isValidPasskeyDomain } from '@kobato/auth/network.ts'
 import { isUniqueConstraintError } from '@kobato/db/errors.ts'
 import { findSafeUserById, findUserByEmail } from '@kobato/db/operations/user.ts'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
@@ -18,7 +19,7 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { requireBlogSettingsBundle } from '@kobato/settings/getters.ts'
-import { isValidPasskeyDomain, tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { tryParseUrl } from '@kobato/utils/safe-url.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import {
