@@ -4,6 +4,8 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags.ts'
 import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions.tsx'
 import { CommentAuthorLine, CommentAvatar } from '@kobato/web-public/ui/comments/comment-item/CommentAuthorLine.tsx'
+import { InlineEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineEditForm.tsx'
+import { InlineOwnEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineOwnEditForm.tsx'
 import {
   commentBodyClass,
   commentContentClass,
@@ -12,9 +14,7 @@ import {
   nestedCommentInnerClass,
   nestedCommentLiClass,
   rootCommentLiClass,
-} from '@kobato/web-public/ui/comments/comment-item/helpers.ts'
-import { InlineEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineEditForm.tsx'
-import { InlineOwnEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineOwnEditForm.tsx'
+} from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml.tsx'
 import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context.ts'
 import { XIcon } from 'lucide-react'

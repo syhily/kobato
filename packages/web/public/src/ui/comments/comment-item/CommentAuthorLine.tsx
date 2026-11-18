@@ -6,7 +6,7 @@ import { AvatarSkeleton } from '@kobato/ui/components/avatar.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { safeHref } from '@kobato/utils/safe-url.ts'
 import { useAssetsSettingsOptional } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { commentAuthorClass, commentAvatarClass } from '@kobato/web-public/ui/comments/comment-item/helpers.ts'
+import { commentAuthorClass, commentAvatarClass } from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 import { useEffect, useRef, useState } from 'react'
 
 type AvatarLoadState = 'loading' | 'loaded' | 'error'

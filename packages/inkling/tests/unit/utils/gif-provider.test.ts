@@ -1,8 +1,4 @@
-import {
-  extractErrorMessage,
-  getGifProviderConfig,
-  isInvalidKeyError,
-} from '@kobato/inkling-internal/utils/services/gif'
+import { extractErrorMessage, getGifProviderConfig, isInvalidKeyError } from '@kobato/inkling-internal/services/gif'
 import { describe, expect, test } from 'vitest'
 
 function requireGifProvider(settings: Parameters<typeof getGifProviderConfig>[0]) {

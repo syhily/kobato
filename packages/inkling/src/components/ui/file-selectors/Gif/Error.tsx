@@ -1,5 +1,5 @@
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import { ERROR_TYPE } from '@kobato/inkling-internal/utils/services/gif'
+import { ERROR_TYPE } from '@kobato/inkling-internal/services/gif'
 
 export function Error({ error }: { error?: string }) {
   const labels = useInklingLabels()

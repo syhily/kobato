@@ -1,4 +1,4 @@
-import type { GifData, GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
+import type { GifData, GifProviderConfig } from '@kobato/inkling-internal/services/gif'
 
 import {
   createGifBrowser,
@@ -10,7 +10,7 @@ import {
   type GifNavState,
   type GifScheduler,
   type GifTileRect,
-} from '@kobato/inkling-internal/utils/services/gif-browser'
+} from '@kobato/inkling-internal/services/gif-browser'
 import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { describe, expect, it, vi } from 'vitest'
 

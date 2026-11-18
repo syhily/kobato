@@ -1,4 +1,4 @@
-import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@kobato/server/infra/hono/helpers.ts'
+import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@kobato/server/infra/hono/build-runtime.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('bindIncomingRequestSocketInfo', () => {

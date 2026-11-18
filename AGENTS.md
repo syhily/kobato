@@ -107,7 +107,7 @@ Use `/release <version> <next-version>` (e.g., `/release 6.3.0 6.4.0-dev`). No P
 
 ## Defensive constraints
 
-Banned layer-root directories (in any package): `actions/`, `middleware/`, `layouts/`, `services/`, `hooks/`, `db/`, `content/` at a source root, and `assets/scripts/`. There is no `assets/scripts/`; all interactivity lives in React hooks/components under `packages/web/client/src/`, `packages/web/public/src/ui/`, and `packages/web/admin/src/ui/`.
+Banned layer-root directories (in any package): `actions/`, `middleware/`, `layouts/`, `services/`, `hooks/`, `db/`, `content/` at a source root, and `assets/scripts/`. The one documented exception is `@kobato/inkling`, whose `src/hooks/` and `src/services/` are real layers of the editor island (see `packages/inkling/AGENTS.md`). There is no `assets/scripts/`; all interactivity lives in React hooks/components under `packages/web/client/src/`, `packages/web/public/src/ui/`, and `packages/web/admin/src/ui/`.
 
 - `apps/kobato/src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, the per-section "reset to defaults" action, and a monolithic `BlogConfigContext`/`<BlogConfigProvider>` — use per-section hooks.
 - `data-admin-shell` selector; a `packages/web/admin/src/lib/` parallel to `packages/ui/src/lib`; `@kobato/web-admin/ui/shadcn/components/ui/` nesting.

@@ -5,7 +5,7 @@ import { useInklingGifSettings } from '@kobato/inkling-internal/context/InklingH
 import { useGifBrowser } from '@kobato/inkling-internal/hooks/useGifBrowser'
 import { useSelectorPlaceholderLifecycle } from '@kobato/inkling-internal/hooks/useSelectorPlaceholderLifecycle'
 import { INSERT_FROM_GIF_COMMAND } from '@kobato/inkling-internal/plugins/InklingSelectorPlugin'
-import { getGifProviderConfig, type GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
+import { getGifProviderConfig, type GifProviderConfig } from '@kobato/inkling-internal/services/gif'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 

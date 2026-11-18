@@ -1,6 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
-import { normalizeDocumentUrl } from '@kobato/server/http/utils/request-facts.ts'
+import { normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
 import { Hono } from 'hono'
 import { describe, expect, it, vi } from 'vitest'
 

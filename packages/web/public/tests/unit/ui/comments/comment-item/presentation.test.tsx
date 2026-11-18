@@ -12,10 +12,10 @@ import {
   nestedCommentInnerClass,
   nestedCommentLiClass,
   rootCommentLiClass,
-} from '@kobato/web-public/ui/comments/comment-item/helpers.ts'
+} from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-describe('ui/public/comments/comment-item/helpers', () => {
+describe('ui/public/comments/comment-item/presentation', () => {
   describe('asKey', () => {
     it('stringifies bigint values', () => {
       expect(asKey(42)).toBe('42')

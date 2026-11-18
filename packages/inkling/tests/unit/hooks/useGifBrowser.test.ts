@@ -1,5 +1,5 @@
-import type { GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
-import type { GifScheduler } from '@kobato/inkling-internal/utils/services/gif-browser'
+import type { GifProviderConfig } from '@kobato/inkling-internal/services/gif'
+import type { GifScheduler } from '@kobato/inkling-internal/services/gif-browser'
 
 import { useGifBrowser } from '@kobato/inkling-internal/hooks/useGifBrowser'
 import { renderHook } from '@testing-library/react'

@@ -5,7 +5,7 @@ import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merg
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
-import { GeneralForm } from '@kobato/web-admin/ui/settings/GeneralForm.tsx'
+import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.tsx'
 import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
 import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
 import { publishLocaleChange } from '@kobato/web-client/lib/locale-sync.ts'

@@ -1,11 +1,11 @@
-import { getClientAddress } from '@kobato/server/http/utils/client-address.ts'
+import { getClientAddress } from '@kobato/server/http/request/client-address.ts'
 import { describe, expect, it } from 'vitest'
 
 function buildRequest(headers: Record<string, string> = {}): Request {
   return new Request('https://example.com', { headers })
 }
 
-describe('server/http/utils/client-address — getClientAddress', () => {
+describe('server/http/request/client-address — getClientAddress', () => {
   it('returns the direct ip when no proxy header is set', () => {
     expect(getClientAddress(buildRequest(), '203.0.113.1')).toBe('203.0.113.1')
   })

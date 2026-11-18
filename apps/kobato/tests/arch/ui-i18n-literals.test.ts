@@ -93,7 +93,16 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // Technical tokens that are never translated — SI units, provider names,
   // protocol paths, keyboard keys and example URLs.
   { path: 'packages/web/admin/src/ui/settings/CommentsForm.tsx', rules: ['jsx-text'], text: 'ms' },
-  { path: 'packages/web/admin/src/ui/settings/GeneralForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  {
+    path: 'packages/web/admin/src/ui/settings/general/GeneralIdentityCard.tsx',
+    rules: ['jsx-attribute'],
+    text: 'https://example.com',
+  },
+  {
+    path: 'packages/web/admin/src/ui/settings/general/GeneralAuthorCard.tsx',
+    rules: ['jsx-attribute'],
+    text: 'https://example.com',
+  },
   {
     path: 'packages/web/admin/src/ui/settings/SecurityForm.tsx',
     rules: ['jsx-attribute'],
@@ -261,7 +270,8 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/auth/AdminInstallForm.tsx',
         'packages/web/admin/src/ui/auth/SetupTokenVerifyForm.tsx',
         'packages/web/admin/src/ui/settings/CommentsForm.tsx',
-        'packages/web/admin/src/ui/settings/GeneralForm.tsx',
+        'packages/web/admin/src/ui/settings/general/GeneralIdentityCard.tsx',
+        'packages/web/admin/src/ui/settings/general/GeneralAuthorCard.tsx',
         'packages/web/admin/src/ui/settings/SecurityForm.tsx',
         'packages/web/admin/src/ui/settings/storage/StorageCards.tsx',
         'packages/web/admin/src/ui/shell/AdminSearchDialog.tsx',

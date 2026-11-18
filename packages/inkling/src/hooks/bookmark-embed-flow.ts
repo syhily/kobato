@@ -15,9 +15,9 @@ import type { LexicalEditor, NodeKey } from 'lexical'
 
 import { $isBookmarkNode, $updateCardNode } from '@kobato/inkling-internal/nodes/base'
 import { focusEditorRoot } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
-import { createRequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
-import { runTrackedRequest } from '@kobato/inkling-internal/utils/services/service-machine'
-import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import { createRequestTrack } from '@kobato/inkling-internal/services/request-track'
+import { runTrackedRequest } from '@kobato/inkling-internal/services/service-machine'
+import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 import { $getSelection, $setSelection } from 'lexical'
 
 // The runtime boundary stays defensive: untyped JavaScript hosts bypass the

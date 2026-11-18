@@ -1,7 +1,7 @@
 import EarthIcon from '@kobato/inkling-internal/assets/icons/inkling-earth.svg?react'
-import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/utils/services/request-track'
-import { runTrackedRequest } from '@kobato/inkling-internal/utils/services/service-machine'
-import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/services/request-track'
+import { runTrackedRequest } from '@kobato/inkling-internal/services/service-machine'
+import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 import React from 'react'
 
 // Headless owner of the link-search flow behind useSearchLinks: two request

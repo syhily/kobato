@@ -10,7 +10,7 @@
  *  a. module naming — hooks are `use-kebab-case`, controller files end in
  *     `.controller.ts`, no doubled directory segment anywhere in `src/`;
  *  b. layer placement — UI `components/` never exports a hook, settings section
- *     directories own their view/form file, the server `http/utils` trio stays
+ *     directories own their view/form file, the server `http/request` trio stays
  *     the only `utils/` drawer;
  *  c. test-tree layout — `tests/utils/` holds helpers only;
  *  d. domain naming — the admin UI directory set and the `@kobato/api` admin
@@ -52,7 +52,48 @@ function dirsOf(root: string): string[] {
 
 const WEB_SRC_ROOTS = ['packages/web/admin/src', 'packages/web/public/src', 'packages/web/client/src']
 
+function packageDirs(): string[] {
+  const out: string[] = []
+  for (const root of ['apps', 'packages', 'tools']) {
+    for (const file of walk(`${REPO_ROOT}/${root}`)) {
+      if (file.endsWith('/package.json') && !file.includes('/node_modules/')) {
+        out.push(file.slice(0, -'/package.json'.length))
+      }
+    }
+  }
+  return out.sort()
+}
+
 describe('structure conventions', () => {
+  it('gives every workspace package an AGENTS.md', () => {
+    const missing = packageDirs()
+      .filter((dir) => {
+        try {
+          return !statSync(`${dir}/AGENTS.md`).isFile()
+        } catch {
+          return true
+        }
+      })
+      .map((dir) => relative(REPO_ROOT, dir))
+    expect(missing, 'a workspace package documents its own conventions in AGENTS.md').toEqual([])
+  })
+
+  it('keeps configuration and test files out of src', () => {
+    const offenders: string[] = []
+    for (const root of ['apps', 'packages', 'tools']) {
+      for (const file of walk(`${REPO_ROOT}/${root}`)) {
+        if (!file.includes('/src/') || file.includes('/node_modules/')) {
+          continue
+        }
+        const name = file.slice(file.lastIndexOf('/') + 1)
+        if (/\.test\.tsx?$/.test(name) || ['vite.config.ts', 'vitest.config.ts', 'tsconfig.json'].includes(name)) {
+          offenders.push(relative(REPO_ROOT, file))
+        }
+      }
+    }
+    expect(offenders, 'config lives at the package root; tests live under tests/').toEqual([])
+  })
+
   it('names every web hook use-kebab-case', () => {
     const offenders: string[] = []
     for (const root of WEB_SRC_ROOTS) {

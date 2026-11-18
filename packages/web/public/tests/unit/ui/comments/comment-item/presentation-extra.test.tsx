@@ -3,7 +3,7 @@ import {
   commentAvatarClass,
   commentContentClass,
   editableHint,
-} from '@kobato/web-public/ui/comments/comment-item/helpers.ts'
+} from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('editableHint — pending/non-pending branch coverage', () => {

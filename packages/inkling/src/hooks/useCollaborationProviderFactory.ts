@@ -1,6 +1,6 @@
 import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
 
-import { createLazyProviderFactory } from '@kobato/inkling-internal/utils/services/lazy-collaboration'
+import { createLazyProviderFactory } from '@kobato/inkling-internal/services/lazy-collaboration'
 import React from 'react'
 
 /**

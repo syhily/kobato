@@ -1,4 +1,4 @@
-import type { GifData } from '@kobato/inkling-internal/utils/services/gif'
+import type { GifData } from '@kobato/inkling-internal/services/gif'
 
 import GifSelector from '@kobato/inkling-internal/components/ui/GifSelector'
 import {
@@ -6,7 +6,7 @@ import {
   type GifBrowser,
   type GifFetchOutcome,
   type GifScheduler,
-} from '@kobato/inkling-internal/utils/services/gif-browser'
+} from '@kobato/inkling-internal/services/gif-browser'
 import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'

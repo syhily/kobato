@@ -3,7 +3,7 @@ import type {
   GifBrowserEffect,
   GifGeometry,
   GifKeyTarget,
-} from '@kobato/inkling-internal/utils/services/gif-browser'
+} from '@kobato/inkling-internal/services/gif-browser'
 
 import SearchIcon from '@kobato/inkling-internal/assets/icons/inkling-search.svg?react'
 import { Error } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Error'

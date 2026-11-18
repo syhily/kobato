@@ -4,7 +4,7 @@ import type { RequestContext } from '@kobato/server/http/request-context.ts'
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/utils/request-facts.ts'
+import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
 import { regularSession } from '@kobato/test/session.ts'
 

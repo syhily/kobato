@@ -1,7 +1,7 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 import type { MyCommentOwnership } from '@kobato/web-public/ui/comments/comments-context.ts'
 
-import { asKey } from '@kobato/web-public/ui/comments/comment-item/helpers.ts'
+import { asKey } from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 
 /** Slice of viewer identity the ownership predicates read — structurally satisfied
  *  by `CommentsIdentityContextValue`. */

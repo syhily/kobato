@@ -1,4 +1,4 @@
-import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('createSnapshotStore', () => {

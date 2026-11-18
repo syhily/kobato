@@ -13,13 +13,13 @@ import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { useCollaborationProviderFactory } from '@kobato/inkling-internal/hooks/useCollaborationProviderFactory'
 import { resolveLabels, type InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
+import { requireMultiplayerConfig } from '@kobato/inkling-internal/services/multiplayer-config'
 import { setTelemetryHandler } from '@kobato/inkling-internal/utils/analytics'
 import { normalizeFileUploader } from '@kobato/inkling-internal/utils/file-uploader'
 import {
   type InklingInitialEditorState,
   normalizeInitialEditorState,
 } from '@kobato/inkling-internal/utils/initial-document'
-import { requireMultiplayerConfig } from '@kobato/inkling-internal/utils/services/multiplayer-config'
 import { LexicalCollaboration } from '@lexical/react/LexicalCollaborationContext'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer'

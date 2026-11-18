@@ -3,7 +3,7 @@ import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
 
 import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection.ts'
-import { readRevisionProjection } from '@kobato/server/domains/content/projection-helpers.ts'
+import { readRevisionProjection } from '@kobato/server/domains/content/projection-read.ts'
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared.ts'
 import { readStringArray } from '@kobato/server/infra/coerce.ts'
 

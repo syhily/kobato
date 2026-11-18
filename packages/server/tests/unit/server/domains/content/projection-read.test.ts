@@ -3,14 +3,14 @@ import type { ContentRow } from '@kobato/db/types.ts'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
-const { readHeadings, readRevisionProjection } = await import('@kobato/server/domains/content/projection-helpers.ts')
+const { readHeadings, readRevisionProjection } = await import('@kobato/server/domains/content/projection-read.ts')
 
 function revisionRow(overrides: Partial<ContentRow>): ContentRow {
   // Only the columns the projection reads matter here.
   return { body: [], bodyHtml: null, bodyHtmlFeed: null, imageSources: [], headings: [], ...overrides } as ContentRow
 }
 
-describe('content/projection-helpers — readRevisionProjection (body routing)', () => {
+describe('content/projection-read — readRevisionProjection (body routing)', () => {
   it('returns every field empty for a null revision', () => {
     expect(readRevisionProjection(null)).toEqual({
       bodyHtml: null,
@@ -72,7 +72,7 @@ describe('content/projection-helpers — readRevisionProjection (body routing)',
   })
 })
 
-describe('content/projection-helpers — readHeadings', () => {
+describe('content/projection-read — readHeadings', () => {
   it('returns empty array for non-array input', () => {
     expect(readHeadings(null)).toEqual([])
     expect(readHeadings(undefined)).toEqual([])

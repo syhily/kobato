@@ -3,7 +3,7 @@ import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { extractRequestFacts } from '@kobato/server/http/utils/request-facts.ts'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
 
 // Builders for the oRPC `context` argument. Authed procedures gate on `context.viewer`

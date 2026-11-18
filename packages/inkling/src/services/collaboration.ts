@@ -1,6 +1,6 @@
 import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
 
-import { requireMultiplayerConfig } from '@kobato/inkling-internal/utils/services/multiplayer-config'
+import { requireMultiplayerConfig } from '@kobato/inkling-internal/services/multiplayer-config'
 import { WebsocketProvider } from 'y-websocket'
 import { Doc } from 'yjs'
 

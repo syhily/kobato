@@ -1,4 +1,4 @@
-import type { GifData } from '@kobato/inkling-internal/utils/services/gif'
+import type { GifData } from '@kobato/inkling-internal/services/gif'
 
 import React, { useEffect, useRef } from 'react'
 

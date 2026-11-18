@@ -1,4 +1,4 @@
-import { createSnapshotStore, type SnapshotListener } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import { createSnapshotStore, type SnapshotListener } from '@kobato/inkling-internal/services/snapshot-store'
 import React from 'react'
 
 // Composer handle factory: a per-top-level-composer, editor-side channel shaped

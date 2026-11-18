@@ -1,4 +1,4 @@
-import type { GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
+import type { GifProviderConfig } from '@kobato/inkling-internal/services/gif'
 
 import { useDisposableStore } from '@kobato/inkling-internal/hooks/useDisposableStore'
 import {
@@ -6,7 +6,7 @@ import {
   type GifBrowser,
   type GifFetchPage,
   type GifScheduler,
-} from '@kobato/inkling-internal/utils/services/gif-browser'
+} from '@kobato/inkling-internal/services/gif-browser'
 import React from 'react'
 
 // React adapter over gif-browser (the deep module — fetch tracks, column

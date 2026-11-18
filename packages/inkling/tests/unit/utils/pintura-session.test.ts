@@ -5,7 +5,7 @@ import {
   createPinturaCloseGate,
   resolvePinturaImportUrl,
   type PinturaAssetPorts,
-} from '@kobato/inkling-internal/utils/services/pintura-session'
+} from '@kobato/inkling-internal/services/pintura-session'
 import { describe, expect, it, vi } from 'vitest'
 
 const BASE = 'https://cms.example.com/admin/posts/'

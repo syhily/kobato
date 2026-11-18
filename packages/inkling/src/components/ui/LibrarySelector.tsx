@@ -1,5 +1,5 @@
 import type { LibraryImageItem } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
-import type { LibraryBrowser } from '@kobato/inkling-internal/utils/services/library-browser'
+import type { LibraryBrowser } from '@kobato/inkling-internal/services/library-browser'
 
 import SearchIcon from '@kobato/inkling-internal/assets/icons/inkling-search.svg?react'
 import UploadIcon from '@kobato/inkling-internal/assets/icons/inkling-upload-fill.svg?react'

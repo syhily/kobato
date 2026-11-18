@@ -2,7 +2,7 @@ import {
   createLibraryBrowser,
   LIBRARY_SEARCH_DEBOUNCE_MS,
   type LibraryScheduler,
-} from '@kobato/inkling-internal/utils/services/library-browser'
+} from '@kobato/inkling-internal/services/library-browser'
 import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { describe, expect, it, vi } from 'vitest'
 

@@ -6,9 +6,9 @@
 // library pickers reuse the machine. The React adapter is `useLibraryBrowser`;
 // `LibrarySelector` renders and dispatches intents.
 
-import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/utils/services/request-track'
-import { runTrackedRequest, type ServiceMachine } from '@kobato/inkling-internal/utils/services/service-machine'
-import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/services/request-track'
+import { runTrackedRequest, type ServiceMachine } from '@kobato/inkling-internal/services/service-machine'
+import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 
 export const LIBRARY_SEARCH_DEBOUNCE_MS = 300
 

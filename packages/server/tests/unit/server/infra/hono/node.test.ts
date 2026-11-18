@@ -18,9 +18,9 @@ vi.mock('@hono/node-server', async () => {
   }
 })
 
-vi.mock('@kobato/server/infra/hono/helpers.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/infra/hono/helpers.ts')>(
-    '@kobato/server/infra/hono/helpers.ts',
+vi.mock('@kobato/server/infra/hono/build-runtime.ts', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/server/infra/hono/build-runtime.ts')>(
+    '@kobato/server/infra/hono/build-runtime.ts',
   )
   return {
     ...actual,

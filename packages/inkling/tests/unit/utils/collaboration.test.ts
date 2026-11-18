@@ -1,9 +1,6 @@
 import type { WebsocketProvider } from 'y-websocket'
 
-import {
-  adaptWebsocketProvider,
-  createWebsocketProviderFactory,
-} from '@kobato/inkling-internal/utils/services/collaboration'
+import { adaptWebsocketProvider, createWebsocketProviderFactory } from '@kobato/inkling-internal/services/collaboration'
 import { describe, expect, it, vi } from 'vitest'
 import { Doc } from 'yjs'
 

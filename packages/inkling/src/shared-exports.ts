@@ -46,13 +46,13 @@ export type {
 
 /* Media library: the picker's headless state machine rides both entries, so a
  * host building its own library-backed card (e.g. music) reuses it. */
-export { createLibraryBrowser } from '@kobato/inkling-internal/utils/services/library-browser'
+export { createLibraryBrowser } from '@kobato/inkling-internal/services/library-browser'
 export type {
   LibraryBrowser,
   LibraryBrowserIntent,
   LibraryBrowserSnapshot,
   LibraryScheduler,
-} from '@kobato/inkling-internal/utils/services/library-browser'
+} from '@kobato/inkling-internal/services/library-browser'
 
 /* Card-free composition pieces shared by both entries. */
 export { default as InklingComposableEditor } from '@kobato/inkling-internal/components/InklingComposableEditor'

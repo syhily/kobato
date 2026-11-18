@@ -1,5 +1,5 @@
-import { createRequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
-import { runTrackedRequest } from '@kobato/inkling-internal/utils/services/service-machine'
+import { createRequestTrack } from '@kobato/inkling-internal/services/request-track'
+import { runTrackedRequest } from '@kobato/inkling-internal/services/service-machine'
 import { describe, expect, it, vi } from 'vitest'
 
 function deferred<T>() {

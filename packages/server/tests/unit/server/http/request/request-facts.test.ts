@@ -1,4 +1,4 @@
-import { extractRequestFacts } from '@kobato/server/http/utils/request-facts.ts'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
 import { describe, expect, it } from 'vitest'
 
 // The single extraction point for transport facts: header names and the

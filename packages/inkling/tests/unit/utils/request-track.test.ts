@@ -1,4 +1,4 @@
-import { createRequestTrack, defaultScheduler } from '@kobato/inkling-internal/utils/services/request-track'
+import { createRequestTrack, defaultScheduler } from '@kobato/inkling-internal/services/request-track'
 import { describe, expect, it, vi } from 'vitest'
 
 function createManualScheduler() {

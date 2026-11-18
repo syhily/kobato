@@ -3,7 +3,7 @@ import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/In
 import {
   createLazyProviderFactory,
   type CollaborationChunk,
-} from '@kobato/inkling-internal/utils/services/lazy-collaboration'
+} from '@kobato/inkling-internal/services/lazy-collaboration'
 import { describe, expect, it, vi } from 'vitest'
 
 function deferred<T>() {

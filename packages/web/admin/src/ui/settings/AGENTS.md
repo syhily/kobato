@@ -6,6 +6,7 @@ Cross-section framework files stay at the root (`SettingsSection`, `SettingsHint
 `feature-flags`, `useSettingsMutation`, `use-locale-switch`, `gravatar-mirror-presets`). Each
 non-trivial section owns a subdirectory with its cards, dialogs, and controller:
 
+- `general/` — the general section form and its four cards (identity, footer/ICP, author, locale/time-zone) plus the shared `form-schema.ts`; it crossed the ≤500 LOC line and moved out of the root.
 - `backup/` — backup/restore view, schedule, encryption/file list, restore progress, restore controller.
 - `mail/` — mail section form and transport/provider cards.
 - `observability/` — connection, reporting, assets, provision summary, section form.

@@ -1,5 +1,5 @@
 // The paste dialect's lazy-engine port (same import-port shape as
-// `@kobato/inkling-internal/utils/services/lazy-collaboration`): markdown-it + its plugin
+// `@kobato/inkling-internal/services/lazy-collaboration`): markdown-it + its plugin
 // stack stay out of the editor island, loading through `loadPasteDialect` —
 // pre-warmed on editor mount by MarkdownPastePlugin and awaited on the cold
 // paste path before the markdown command dispatches.

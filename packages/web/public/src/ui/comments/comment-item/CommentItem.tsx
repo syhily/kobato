@@ -1,7 +1,7 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
 import { CommentRow } from '@kobato/web-public/ui/comments/comment-item/CommentRow.tsx'
-import { asKey, childrenListClass } from '@kobato/web-public/ui/comments/comment-item/helpers.ts'
+import { asKey, childrenListClass } from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 import { useCommentsReplySlot } from '@kobato/web-public/ui/comments/comments-context.ts'
 import { memo } from 'react'
 

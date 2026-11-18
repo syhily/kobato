@@ -44,11 +44,11 @@ describe('requestContextMiddleware', () => {
       commitSessionWithMaxAge,
       SESSION_COOKIE_NAME: '__session',
     }))
-    vi.doMock('@kobato/server/http/utils/cookie-exempt.ts', () => ({
+    vi.doMock('@kobato/server/http/request/cookie-exempt.ts', () => ({
       isExempt: (path: string) => path.startsWith('/feed'),
     }))
     const getClientAddress = vi.fn().mockReturnValue('192.168.1.1')
-    vi.doMock('@kobato/server/http/utils/client-address.ts', () => ({
+    vi.doMock('@kobato/server/http/request/client-address.ts', () => ({
       getClientAddress,
     }))
 

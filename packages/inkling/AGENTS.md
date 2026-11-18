@@ -53,7 +53,7 @@ This package has one closed public surface (`src/index.ts` React barrel) and one
   are load-bearing module entries, NOT barrels — keep them and import through them.
 - `transforms/` is flat: `default-transforms.ts` + `register-node-transform.ts` + one file per transform (`denest`, `merge-list-nodes`, `remove-alignment`,
   `remove-at-link-nodes`). Never nest a directory inside itself.
-- `utils/` holds pure helpers and `utils/draggable/` only; `utils/services/` is a state-machine layer. Non-component modules are `kebab-case.ts`;
+- `utils/` holds pure helpers and `utils/draggable/` only; `services/` is the state-machine layer (gif/library/pintura/collaboration request machines), one level above utils. Non-component modules are `kebab-case.ts`;
   PascalCase is reserved for component files, `$`-prefixed for Lexical helpers.
 
 ## Architecture notes
@@ -244,7 +244,7 @@ Glossary owned here: **card** (a decorator-node block), **card adjacency**, **ca
   ':' query), the callout `EmojiPickerPortal` behind `React.lazy`; markdown-it via `packages/inkling/src/markdown/lazy-paste-dialect.ts` (pre-warmed on mount,
   awaited on cold first paste, seeded by the headless HTML surface); CodeMirror via `packages/inkling/src/components/ui/cards/LazyCardEditor.tsx` (static fallback on
   SSR/first render) in `CodeBlockCard.tsx` and `HtmlCard.tsx`, with `packages/inkling/src/utils/codemirror-config.ts` on the shared chunk; `yjs`/`y-websocket` via
-  `enableMultiplayer` and `packages/inkling/src/utils/services/lazy-collaboration.ts`, with `useCollaborationProviderFactory` the React adapter. `fast-average-color`
+  `enableMultiplayer` and `packages/inkling/src/services/lazy-collaboration.ts`, with `useCollaborationProviderFactory` the React adapter. `fast-average-color`
   stays eager.
 - Composition defaults: `InklingComposer`'s `nodes` prop is OPTIONAL (defaults to `DEFAULT_NODES`) while `packages/inkling/src/components/InklingComposerBase.tsx`
   requires it; `MarkdownShortcutPlugin` defaults to the card-free `MINIMAL_TRANSFORMERS` (`InklingEditor` passes `DEFAULT_TRANSFORMERS`).

@@ -1,5 +1,5 @@
 import { Error } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Error'
-import { ERROR_TYPE } from '@kobato/inkling-internal/utils/services/gif'
+import { ERROR_TYPE } from '@kobato/inkling-internal/services/gif'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'

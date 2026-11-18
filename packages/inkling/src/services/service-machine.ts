@@ -8,8 +8,8 @@
  * through `runTrackedRequest`.
  */
 
-import type { RequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
-import type { SnapshotListener } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import type { RequestTrack } from '@kobato/inkling-internal/services/request-track'
+import type { SnapshotListener } from '@kobato/inkling-internal/services/snapshot-store'
 
 /**
  * The dispatch+effect protocol: React subscribes to the snapshot and

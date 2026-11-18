@@ -1,4 +1,4 @@
-import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
+import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 
 // Card menu navigator — the headless state machine owning the slash menu's
 // keyboard selection: the wrap-around index policy, the scroll-request latch,

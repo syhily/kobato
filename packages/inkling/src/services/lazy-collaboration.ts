@@ -9,7 +9,7 @@
 
 import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
 
-import { createRequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
+import { createRequestTrack } from '@kobato/inkling-internal/services/request-track'
 
 /** The lazy chunk's public shape — only the factory builder is consumed. */
 export interface CollaborationChunk {
@@ -37,7 +37,7 @@ export interface LazyProviderFactorySession {
 }
 
 export function createLazyProviderFactory(
-  load: LoadCollaborationChunk = () => import('@kobato/inkling-internal/utils/services/collaboration'),
+  load: LoadCollaborationChunk = () => import('@kobato/inkling-internal/services/collaboration'),
 ): LazyProviderFactorySession {
   const track = createRequestTrack()
   return {

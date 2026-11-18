@@ -1,6 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
-import { extractRequestFacts } from '@kobato/server/http/utils/request-facts.ts'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
