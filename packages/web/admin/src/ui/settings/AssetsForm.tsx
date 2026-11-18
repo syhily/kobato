@@ -6,7 +6,7 @@ import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.t
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
 import { SettingsInput, SettingsTextarea } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
-import { StorageCards } from '@kobato/web-admin/ui/settings/StorageCards.tsx'
+import { StorageCards } from '@kobato/web-admin/ui/settings/storage/StorageCards.tsx'
 import { useWatch } from 'react-hook-form'
 
 interface AssetsFormProps {

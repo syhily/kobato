@@ -1,6 +1,6 @@
 # Storage domain conventions
 
-S3 is configured on `/admin/settings` in the 存储配置 (assets) section — `StorageCards` (`packages/web/admin/src/ui/settings/StorageCards.tsx`) carries 当前存储 / 存储迁移 / 资源域名 / S3 兼容存储; the section's `AssetsForm` adds upload limits + robots.txt.
+S3 is configured on `/admin/settings` in the 存储配置 (assets) section — `StorageCards` (`packages/web/admin/src/ui/settings/storage/StorageCards.tsx`) carries 当前存储 / 存储迁移 / 资源域名 / S3 兼容存储; the section's `AssetsForm` adds upload limits + robots.txt.
 
 - First-time saves of `assets.storage.*` are connectivity-probed (`validateS3Config`, HeadBucket + ListObjectsV2 fallback) before persisting; an unreachable/invalid config rejects with BAD_REQUEST. The probe's raw SDK error stays in the server log; the admin sees a fixed message.
 - Write-path URL rules live OUTSIDE `assetsSchema` (hydration must keep reading legacy `http://` endpoint rows): `assetsWriteSchema` on the section's `writeSchema` slot (consumed only by the admin write path in `packages/server/src/domains/settings/services/core.ts`) requires an `https://` endpoint and restricts `urlTemplate` to an https full URL carrying `{src}` or a scheme-less relative suffix; the migration-target input in `packages/server/src/http/controllers/admin/storage.controller.ts` shares the predicates (`isSafeStorageEndpoint` / `isSafeStorageUrlTemplate`).

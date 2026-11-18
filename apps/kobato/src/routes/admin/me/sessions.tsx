@@ -2,7 +2,7 @@ import type { MySessionItem } from '@kobato/contracts/sessions.ts'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { MySessionsView } from '@kobato/web-admin/ui/my/MySessionsView.tsx'
+import { MySessionsView } from '@kobato/web-admin/ui/account/MySessionsView.tsx'
 import {
   DEFAULT_MY_SORT,
   MY_SESSION_SORT_OPTIONS,

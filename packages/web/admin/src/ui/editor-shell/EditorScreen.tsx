@@ -12,8 +12,8 @@ import type { MetaSidebarSlotProps } from '@kobato/web-admin/ui/editor-shell/Edi
 import type { NavigateFunction } from 'react-router'
 
 import { cn } from '@kobato/ui/lib/cn.ts'
-import { CreateModeBanner } from '@kobato/web-admin/ui/editor-shared/CreateModeBanner.tsx'
-import { TitleSlugStrip } from '@kobato/web-admin/ui/editor-shared/TitleSlugStrip.tsx'
+import { CreateModeBanner } from '@kobato/web-admin/ui/editor-meta/CreateModeBanner.tsx'
+import { TitleSlugStrip } from '@kobato/web-admin/ui/editor-meta/TitleSlugStrip.tsx'
 import { ActionBanner } from '@kobato/web-admin/ui/editor-shell/ActionBanner.tsx'
 import { DraftConflictDialog } from '@kobato/web-admin/ui/editor-shell/DraftConflictDialog.tsx'
 import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel.tsx'

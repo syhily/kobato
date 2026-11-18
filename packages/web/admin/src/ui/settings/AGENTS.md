@@ -1,5 +1,20 @@
 # Settings conventions
 
+## Layout
+
+Cross-section framework files stay at the root (`SettingsSection`, `SettingsHintTooltip`, `display`,
+`feature-flags`, `useSettingsMutation`, `use-locale-switch`, `gravatar-mirror-presets`). Each
+non-trivial section owns a subdirectory with its cards, dialogs, and controller:
+
+- `backup/` — backup/restore view, schedule, encryption/file list, restore progress, restore controller.
+- `mail/` — mail section form and transport/provider cards.
+- `observability/` — connection, reporting, assets, provision summary, section form.
+- `storage/` — storage cards and migration dialog/controller.
+- `cache/` / `rate-limit/` — already grouped; keep their constants/formatters/validation beside the views.
+- `shell/` — workspace chrome, flush/search/scroll-spy controllers, and form wrappers.
+
+A new section with more than one file gets its own subdirectory; do not flatten cards back into the root.
+
 `/admin/settings` saves per card through `useSettingsCard` → `useSettingsMutation.commit(section, payload)`. Saves are blur-driven — typing never fires a request. The save response is authoritative without a refetch: the card adopts it for display (`display`), while the form baseline advances to the values it submitted, never to the response.
 
 - Text `<Input>` / `<Textarea>` — `flushOnBlur` on blur; no-op if clean.

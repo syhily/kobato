@@ -56,8 +56,14 @@
     in `editor-shell-persist-plan.ts`. `useAutosave` is the sole baseline owner behind `setBaseline` (mount seed
     `initialBaseline`); `EditorScreen` is driven by an `EditorScreenAdapter` from `makeEditorAdapter`.
     `Post/PageEditorShell.tsx` (in `posts/`, `pages/`) are config-only call sites; `Post/PageEditorRoute.tsx`
-    delegate query → error → skeleton → shell to `editor-shared/EditorRouteLoader`.
-  - `settings/` — card autosave model and wrappers: `packages/web/admin/src/ui/settings/AGENTS.md`.
+    delegate query → error → skeleton → shell to `editor-shell/EditorRouteLoader`.
+  - `editor-meta/` — the post/page meta form family (basic info, cover/OG, image field, language, publish
+    status, title/slug, toggle rows/cards, create banner), consumed by `posts/` and `pages/` sidebars plus
+    `editor-shell/EditorScreen`; it holds presentation/controllers only, never route loading.
+  - `account/` — the `/admin/me` account domain (profile, login method, passkey, password, sessions, own
+    comments); the route family name stays `me`, the UI module follows the `account.*` API group.
+  - `branding/` — the `/admin/library/branding` branding view; images, fonts, and music remain their own domains.
+  - `settings/` — card autosave model and section-grouped settings views: `packages/web/admin/src/ui/settings/AGENTS.md`.
 
 ## Cross-cutting UI modules
 
