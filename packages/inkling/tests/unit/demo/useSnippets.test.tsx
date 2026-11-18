@@ -1,7 +1,6 @@
+import { useSnippets } from '@kobato/inkling-demo/utils/useSnippets'
 import { renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-
-import { useSnippets } from '../../../../../apps/inkling-demo/utils/useSnippets'
 
 describe('useSnippets', () => {
   afterEach(() => {

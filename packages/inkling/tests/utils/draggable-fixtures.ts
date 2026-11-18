@@ -5,7 +5,7 @@
  * into the union. Specialized variants (an image CARD payload, a specific
  * dataset) stay local to their spec and override these defaults.
  */
-import type { CardDraggableInfo, ImageDraggableInfo } from '../../src/utils/draggable/DragDropContainer'
+import type { CardDraggableInfo, ImageDraggableInfo } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
 export function cardDrag(overrides: Partial<CardDraggableInfo> = {}): CardDraggableInfo {
   return {

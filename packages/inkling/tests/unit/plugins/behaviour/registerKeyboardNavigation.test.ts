@@ -1,3 +1,13 @@
+import { $isCodeBlockNode, CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import {
+  createCardSelectionStore,
+  type CardSelectionStore,
+} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { DELETE_CARD_COMMAND, SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { markEventFromCaptionEditor } from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
+import { registerKeyboardNavigation } from '@kobato/inkling-internal/plugins/behaviour/registerKeyboardNavigation'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createLinkNode, $isLinkNode, LinkNode } from '@lexical/link'
 import { $createListItemNode, $createListNode, ListItemNode, ListNode } from '@lexical/list'
 import {
@@ -32,14 +42,6 @@ import {
   COMMAND_PRIORITY_LOW,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $isCodeBlockNode, CodeBlockNode } from '../../../../src/nodes/CodeBlockNode'
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { createCardSelectionStore, type CardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { DELETE_CARD_COMMAND, SELECT_CARD_COMMAND } from '../../../../src/plugins/behaviour/commands'
-import { markEventFromCaptionEditor } from '../../../../src/plugins/behaviour/nested-editor-protocol'
-import { registerKeyboardNavigation } from '../../../../src/plugins/behaviour/registerKeyboardNavigation'
-import { updateEditor } from '../../../utils/test-editor'
 
 // Minimal node set that lets the keyboard plugin's listeners run in jsdom.
 const KEYBOARD_TEST_NODES = [ImageNode, ListNode, ListItemNode, CodeBlockNode, LinkNode]
@@ -279,7 +281,7 @@ describe('registerKeyboardNavigation', () => {
   })
 
   it('toggles card edit mode on meta+enter when a card is selected', async () => {
-    const { $createCodeBlockNode } = await import('../../../../src/nodes/CodeBlockNode')
+    const { $createCodeBlockNode } = await import('@kobato/inkling-internal/nodes/CodeBlockNode')
     let cardKey = ''
     await updateEditor(editor, () => {
       const root = $getRoot()

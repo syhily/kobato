@@ -1,15 +1,13 @@
+import type { PanelPosition, PanelSpacing, PanelViewport } from '@kobato/inkling-internal/utils/floating-panel'
 import type { RefObject } from 'react'
-
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import type { PanelPosition, PanelSpacing, PanelViewport } from '../../../src/utils/floating-panel'
 
 import {
   createPanelDomWiring,
   type PanelDomWiring,
   type PanelDomWiringPorts,
-} from '../../../src/utils/panel-resize-choreography'
-import { createPanelSuppression } from '../../../src/utils/panel-suppression'
+} from '@kobato/inkling-internal/utils/panel-resize-choreography'
+import { createPanelSuppression } from '@kobato/inkling-internal/utils/panel-suppression'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // The DOM assembly (createPanelDomWiring) over stubbed ResizeObserver:
 // drag grab/release through the body-level press listeners, the committed

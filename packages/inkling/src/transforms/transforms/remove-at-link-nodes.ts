@@ -1,10 +1,9 @@
 import type { LexicalEditor } from 'lexical'
 
+import { AtLinkNode } from '@kobato/inkling-internal/nodes/base'
+import { registerNodeTransformIfPresent } from '@kobato/inkling-internal/transforms/register-node-transform'
 /* c8 ignore start */
 import { $isTextNode } from 'lexical'
-
-import { AtLinkNode } from '../../nodes/base'
-import { registerNodeTransformIfPresent } from '../register-node-transform'
 /* c8 ignore stop */
 
 // render-path cleanup: strips the temporary nodes used while searching

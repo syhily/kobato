@@ -1,12 +1,14 @@
+import { $createButtonNode, ButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
+import { registerCardInteraction } from '@kobato/inkling-internal/plugins/behaviour/card-interaction'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import {
+  createCardSelectionStore,
+  type CardSelectionStore,
+} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { $getRoot, CLICK_COMMAND, createEditor, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $createButtonNode, ButtonNode } from '../../../../src/nodes/ButtonNode'
-import { registerCardInteraction } from '../../../../src/plugins/behaviour/card-interaction'
-import { createCardPickerStore } from '../../../../src/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore, type CardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { registerCardCommands } from '../../../../src/plugins/behaviour/registerCardCommands'
-import { tick } from '../../../utils/test-editor'
 
 // The select→edit choreography as a synchronous table: real editor, real
 // card, real container — no browser. Clicks arrive by dispatching

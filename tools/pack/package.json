@@ -11,6 +11,7 @@
     "@kobato/contracts": "workspace:*",
     "@kobato/distribution": "workspace:*",
     "@kobato/harness": "workspace:*",
+    "@kobato/pack": "workspace:*",
     "@kobato/server": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",

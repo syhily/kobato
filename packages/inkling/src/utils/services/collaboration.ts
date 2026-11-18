@@ -1,9 +1,8 @@
+import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
+
+import { requireMultiplayerConfig } from '@kobato/inkling-internal/utils/services/multiplayer-config'
 import { WebsocketProvider } from 'y-websocket'
 import { Doc } from 'yjs'
-
-import type { LexicalProviderFactory } from '../../context/InklingCollaborationContext'
-
-import { requireMultiplayerConfig } from './multiplayer-config'
 
 // The events Lexical's Provider interface registers handlers for. Of these,
 // y-websocket's WebsocketProvider only ever emits 'sync' and 'status' — its

@@ -15,8 +15,9 @@
  *     how the pre-split layout leaked across layers);
  *  d. the `@/` app alias resolves to `apps/kobato/src` (root tsconfig), so it
  *     may appear only inside the app package itself;
- *  e. inkling is reached only through its three public entry specifiers;
- *  f. product source trees use package-root imports instead of relative traversal.
+ *  e. inkling is reached only through its public entry specifiers — its own
+ *     source/tests use the private @kobato/inkling-internal alias;
+ *  f. source trees use package-root imports instead of relative traversal.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
@@ -406,34 +407,15 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
 const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []
 
 /**
- * Relative imports that cross a package boundary. Every entry is a TEST
- * reaching into a sibling tree without going through its package surface —
- * `tools/pack/**` (SEA tooling: no exports map, not a declared dependency
- * of any package) or `apps/inkling-demo/**` (inkling's playground host) —
- * plus the one web→inkling case: the host-card parity test reaches two
- * internals the inkling exports map deliberately does not expose (inkling's
- * public surface is kept closed; the test walks the source relatively until
- * those pins move behind the barrel). Production `src/**` trees have exactly
- * ONE entry: the SEA server entry imports the app's built bundle, which is
- * a build output without a package specifier.
+ * The ONLY relative import allowed to cross a package boundary: the SEA server
+ * entry pulls the app's built bundle into the single-file Vite build, and a
+ * build output has no package specifier to import by.
  */
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
-  'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/labels/inkling-labels.ts',
-  'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
-  // Contract tests pinning the SEA tooling sources textually.
-  'packages/shared/distribution/tests/unit/sea/inline-package-data.test.ts:../../../../../../tools/pack/src/sea/inline-package-data.ts',
-  'packages/shared/distribution/tests/unit/sea/native-specifiers.test.ts:../../../../../../tools/pack/src/sea/redirect-native-requires.ts',
-  'packages/shared/distribution/tests/unit/sea/bundle-globals.test.ts:../../../../../../tools/pack/src/sea/check-bundle.ts',
-  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../tools/pack/src/sea/assets.ts',
-  // The SEA server entry pulls the app's built bundle into the single-file
-  // vite build; a build output has no package specifier to import by.
   'tools/pack/src/sea/server-entry.ts:../../../../apps/kobato/build/server/index.js',
-  // The demo playground is inkling's host app; its glue implements the
-  // host contract inkling's suite type-checks and tests against.
-  'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../apps/inkling-demo/utils/fetchEmbed',
-  'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../apps/inkling-demo/utils/useSnippets',
-  'packages/inkling/tests/unit/demo/useSnippets.test.tsx:../../../../../apps/inkling-demo/utils/useSnippets',
-  'packages/inkling/tests/utils/gen-demo-content.test.ts:../../../../apps/inkling-demo/components/MusicPlayerCard',
+  // Generated JavaScript inside the SEA sandbox capability probe — not a
+  // module import in the tool's own graph.
+  'tools/pack/src/sea/vfs-capabilities.ts:./lib/greet.mjs',
 ])
 
 /** The `@/` alias resolves to `apps/kobato/src` — app-package internal shorthand. */
@@ -622,6 +604,21 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
+  it('the @tests alias appears only inside the app test tree', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
+      if (file.startsWith(`${APP_PACKAGE_DIR}/tests/`)) {
+        continue
+      }
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier.startsWith('@tests/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('workspace package versions stay synchronized', () => {
     const source = JSON.parse(readFileSync(`${REPO_ROOT}/apps/kobato/package.json`, 'utf8')) as { version: string }
     for (const pkg of REPO_PACKAGES) {
@@ -650,13 +647,25 @@ describe('package DAG', () => {
       '@kobato/web-admin',
       '@kobato/web-client',
       '@kobato/web-public',
+      '@kobato/inkling',
+      '@kobato/test',
+      '@kobato/pack',
+      '@kobato/trace',
+      '@kobato/browser',
+      '@kobato/harness',
+      '@kobato/email',
+      '@kobato/i18n-tools',
     ])
     const offenders: string[] = []
     for (const pkg of REPO_PACKAGES.filter((entry) => rootAnchored.has(entry.name))) {
       for (const file of sourceFiles(`${pkg.dir}/src`)) {
         for (const specifier of importSpecifiers(readSource(file))) {
-          if (specifier.startsWith('.') && !specifier.startsWith('./+types/')) {
-            offenders.push(`${file}: ${specifier}`)
+          if (!specifier.startsWith('.') || specifier.startsWith('./+types/')) {
+            continue
+          }
+          const key = `${file}:${specifier}`
+          if (!RELATIVE_ESCAPE_EXCEPTIONS.has(key)) {
+            offenders.push(key)
           }
         }
       }
@@ -664,13 +673,28 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
+  it('the private inkling alias stays inside the editor package except its white-box host pin', () => {
+    const whiteBoxHostPin = 'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx'
+    const offenders: string[] = []
+    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+      if (file.startsWith('packages/inkling/') || file === whiteBoxHostPin) {
+        continue
+      }
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier === '@kobato/inkling-internal' || specifier.startsWith('@kobato/inkling-internal/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('inkling is reached only through its barrel, headless, or styles entries', () => {
-    // The demo playground is out of scope: its vite config aliases
-    // @kobato/inkling straight at the package source and deliberately reaches
-    // internals (apps/inkling-demo/vite.config.ts).
+    // The package's own source/tests use @kobato/inkling-internal; the demo
+    // playground alias reaches internals through its vite config.
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools')) {
-      if (file.startsWith('apps/inkling-demo/')) {
+      if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/')) {
         continue
       }
       for (const specifier of importSpecifiers(readSource(file))) {

@@ -3,7 +3,7 @@
 // becomes a drag once the pointer travels past DRAG_START_THRESHOLD, and is cancelled when
 // the pointer is released or a native HTML drag begins first.
 
-import { createPressThresholdSession } from './press-threshold-session'
+import { createPressThresholdSession } from '@kobato/inkling-internal/utils/draggable/press-threshold-session'
 
 /** Distance in px the pointer must travel from the grab point before a press becomes a drag. */
 export const DRAG_START_THRESHOLD = 1

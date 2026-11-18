@@ -1,11 +1,15 @@
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import {
+  HeaderNode,
+  $createHeaderNode,
+  $isHeaderNode,
+  INSERT_HEADER_COMMAND,
+} from '@kobato/inkling-internal/nodes/HeaderNode'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { HeaderNode, $createHeaderNode, $isHeaderNode, INSERT_HEADER_COMMAND } from '../../../src/nodes/HeaderNode'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [HeaderNode]
 

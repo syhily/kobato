@@ -1,11 +1,11 @@
-import type { AudioNodeDataset } from './cards/card-commands'
+import type { AudioNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { audioDeclaration } from './cards/audio.declaration'
-export { $isAudioNode } from './base/nodes/audio/AudioNode'
-export type { SerializedAudioNode } from './base/nodes/audio/AudioNode'
-export { INSERT_AUDIO_COMMAND } from './cards/card-commands'
-export type { AudioNodeDataset } from './cards/card-commands'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { audioDeclaration } from '@kobato/inkling-internal/nodes/cards/audio.declaration'
+export { $isAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'
+export type { SerializedAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'
+export { INSERT_AUDIO_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { AudioNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

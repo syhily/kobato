@@ -1,4 +1,4 @@
-import type { GalleryImage } from '../../../../types/gallery'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
 // Gallery layout caps: at most 3 images per row, at most 9 images per gallery.
 // Owned here (the row-layout module) so the export renderer, the React

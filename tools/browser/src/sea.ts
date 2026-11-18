@@ -2,11 +2,10 @@
 // per-run temp dirs (never an external server) and run the Playwright
 // journeys against it. The browser-side counterpart of `sea:e2e`.
 
+import { runBrowserSuite } from '@kobato/browser/run.ts'
 import { fail } from '@kobato/pack/sea/exec.ts'
 import { seaBinaryPath } from '@kobato/pack/sea/paths.ts'
 import { resolve as resolvePath } from 'node:path'
-
-import { runBrowserSuite } from './run.ts'
 
 const arg = process.argv[2]
 if (arg?.startsWith('--')) {

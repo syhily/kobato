@@ -1,6 +1,5 @@
+import { MAX_PER_ROW, buildGalleryRows } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
 import { describe, expect, it } from 'vitest'
-
-import { MAX_PER_ROW, buildGalleryRows } from '../../../src/nodes/base/nodes/gallery/gallery-rows'
 
 // the stored `row` assignment is naive ceil division (recalculateImageRows);
 // buildGalleryRows layers the single-image-last-row bump on top of it

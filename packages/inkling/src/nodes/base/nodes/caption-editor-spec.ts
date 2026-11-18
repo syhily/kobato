@@ -1,6 +1,6 @@
-import type { NestedEditorSpec } from '../card-specs'
+import type { NestedEditorSpec } from '@kobato/inkling-internal/nodes/base/card-specs'
 
-import MINIMAL_NODES from '../../MinimalNodes'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 
 /**
  * The shared core of the five captioned cards' `captionEditor` nested-editor

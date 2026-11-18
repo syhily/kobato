@@ -1,11 +1,10 @@
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import InklingCaptionEditor from '@kobato/inkling-internal/components/InklingCaptionEditor'
+import { TextInput } from '@kobato/inkling-internal/components/ui/TextInput'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { isEditorEmpty } from '@kobato/inkling-internal/utils/isEditorEmpty'
 import React from 'react'
-
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { isEditorEmpty } from '../../utils/isEditorEmpty'
-import InklingCaptionEditor from '../InklingCaptionEditor'
-import { TextInput } from './TextInput'
 
 interface CaptionInputProps {
   captionEditor: LexicalEditor

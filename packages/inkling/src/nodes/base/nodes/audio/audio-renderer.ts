@@ -1,8 +1,11 @@
-import type { ExportDOMOutput } from '../../export-dom'
-import type { RenderContext } from '../../render-context'
+import type { ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/export-dom'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { isSafeRenderableSource, renderEmptyContainer } from '../../utils/render-empty-container'
-import { formatVideoDuration } from '../video/format-video-duration'
+import { formatVideoDuration } from '@kobato/inkling-internal/nodes/base/nodes/video/format-video-duration'
+import {
+  isSafeRenderableSource,
+  renderEmptyContainer,
+} from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
 
 interface AudioNodeData {
   src: string

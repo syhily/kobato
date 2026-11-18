@@ -1,8 +1,7 @@
 import type { EditorConfig } from 'lexical'
 
+import { themeClassList } from '@kobato/inkling-internal/themes/inkling-theme-classes'
 import { $applyNodeReplacement, TextNode } from 'lexical'
-
-import { themeClassList } from '../../../../themes/inkling-theme-classes'
 
 // Represents the search query string inside an AtLinkNode. Used in place of a
 // regular TextNode to allow for :after styling to be applied to work as a placeholder

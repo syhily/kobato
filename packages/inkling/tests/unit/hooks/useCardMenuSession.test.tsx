@@ -1,8 +1,7 @@
+import { useCardMenuSession, type CardMenuSessionSelection } from '@kobato/inkling-internal/hooks/useCardMenuSession'
 import { act, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { useCardMenuSession, type CardMenuSessionSelection } from '../../../src/hooks/useCardMenuSession'
 
 function createFakeSelection() {
   const ranges: Range[] = []

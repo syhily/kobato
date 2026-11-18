@@ -1,30 +1,33 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getNearestNodeFromDOMNode, type LexicalEditor } from 'lexical'
-import React from 'react'
-import { flushSync } from 'react-dom'
-import { createRoot } from 'react-dom/client'
-
-import { useCardSelectionState } from '../context/CardSelectionStoreContext'
-import { useDragDropHandle, useDragDropHandleState } from '../context/DragDropHandleContext'
-import { useInklingDragScrollContainerSelector } from '../context/InklingHostIntegrationContext'
-import { $isInklingCard } from '../nodes/base'
-import { getCardDragIcon } from '../nodes/cards/card-menus'
-import {
-  type DraggableInfo,
-  type DroppablePosition,
-  type DropResolution,
-  type DropResult,
-} from '../utils/draggable/DragDropContainer'
-import { DragDropHandler } from '../utils/draggable/DragDropHandler'
-import { createReorderGeometry, resolveDrop, resolveReorder } from '../utils/draggable/reorder-rules'
-import { useDragDropContainer } from '../utils/draggable/useDragDropContainer'
+import { useCardSelectionState } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useDragDropHandle, useDragDropHandleState } from '@kobato/inkling-internal/context/DragDropHandleContext'
+import { useInklingDragScrollContainerSelector } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
 import {
   $insertDraggedImage,
   $relocateCard,
   $removeDropSource,
   resolveDragMarkerRefresh,
   shouldRemoveDropSource,
-} from './behaviour/drop-surgery'
+} from '@kobato/inkling-internal/plugins/behaviour/drop-surgery'
+import {
+  type DraggableInfo,
+  type DroppablePosition,
+  type DropResolution,
+  type DropResult,
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
+import {
+  createReorderGeometry,
+  resolveDrop,
+  resolveReorder,
+} from '@kobato/inkling-internal/utils/draggable/reorder-rules'
+import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/useDragDropContainer'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { $getNearestNodeFromDOMNode, type LexicalEditor } from 'lexical'
+import React from 'react'
+import { flushSync } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 function preventDefault(event: Event): void {
   event.preventDefault()

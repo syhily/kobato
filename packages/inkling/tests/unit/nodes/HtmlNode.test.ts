@@ -1,11 +1,10 @@
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import { HtmlNode, $createHtmlNode, $isHtmlNode, INSERT_HTML_COMMAND } from '@kobato/inkling-internal/nodes/HtmlNode'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { HtmlNode, $createHtmlNode, $isHtmlNode, INSERT_HTML_COMMAND } from '../../../src/nodes/HtmlNode'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [HtmlNode]
 

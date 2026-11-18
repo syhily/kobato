@@ -1,13 +1,14 @@
+import type { FileUploader } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import type { LexicalEditor } from 'lexical'
 
+import { INSERT_MEDIA_COMMAND, MIME_TEXT_HTML } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import {
+  claimDroppedFiles,
+  getEditorAcceptableMimeTypes,
+} from '@kobato/inkling-internal/plugins/behaviour/file-drop-routing'
 import { $insertDataTransferForRichText } from '@lexical/clipboard'
 import { DRAG_DROP_PASTE } from '@lexical/rich-text'
 import { $getRoot, $getSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, DROP_COMMAND } from 'lexical'
-
-import type { FileUploader } from '../../context/InklingHostIntegrationContext'
-
-import { INSERT_MEDIA_COMMAND, MIME_TEXT_HTML } from './clipboard-protocol'
-import { claimDroppedFiles, getEditorAcceptableMimeTypes } from './file-drop-routing'
 
 // File drop: the headless policies behind DragDropPastePlugin (the mime-claim rules
 // live in file-drop-routing). Dropped files always insert at the selection left

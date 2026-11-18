@@ -1,11 +1,10 @@
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { CARD_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards'
+import { resolveAllCardFacts, resolveCardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import { registerHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
+import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import { createCommand } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { generateDecoratorNode } from '../../../src/nodes/base/generate-decorator-node'
-import { CARD_DECLARATIONS } from '../../../src/nodes/cards'
-import { resolveAllCardFacts, resolveCardFacts } from '../../../src/nodes/cards/card-facts'
-import { registerHostCard } from '../../../src/nodes/cards/host-card-registry'
-import { defineCard } from '../../../src/nodes/cards/host-cards'
 
 // The merge policy's single home: the built-in declarations answer first, the
 // host card registry is a fallback, never an override. Registered at module

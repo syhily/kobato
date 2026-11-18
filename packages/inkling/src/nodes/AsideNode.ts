@@ -1,6 +1,5 @@
+import { AsideNode as BaseAsideNode } from '@kobato/inkling-internal/nodes/base'
 import { addClassNamesToElement, $createParagraphNode, type EditorConfig } from 'lexical'
-
-import { AsideNode as BaseAsideNode } from './base'
 
 export class AsideNode extends BaseAsideNode {
   createDOM(config: EditorConfig) {

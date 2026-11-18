@@ -1,3 +1,22 @@
+import type { CardNode } from '@kobato/inkling/tests/utils/card-node'
+
+import { $createMarkdownNode, MarkdownNode } from '@kobato/inkling-internal/nodes/base'
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import {
+  $deselectCard,
+  $getLogicallyAdjacentCard,
+  $getVisuallyAdjacentCard,
+  $isCaretAtBlockTop,
+  $removeOrReplaceNodeWithParagraph,
+  $selectCard,
+  dispatchSelectedCardDeletion,
+  editorOwnsFocus,
+  type CardAdjacencyGeometry,
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { DELETE_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { $selectDecoratorNode } from '@kobato/inkling-internal/utils'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -13,26 +32,6 @@ import {
   type LexicalNodeConfig,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { CardNode } from '../../../utils/card-node'
-
-import { $createMarkdownNode, MarkdownNode } from '../../../../src/nodes/base'
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import {
-  $deselectCard,
-  $getLogicallyAdjacentCard,
-  $getVisuallyAdjacentCard,
-  $isCaretAtBlockTop,
-  $removeOrReplaceNodeWithParagraph,
-  $selectCard,
-  dispatchSelectedCardDeletion,
-  editorOwnsFocus,
-  type CardAdjacencyGeometry,
-} from '../../../../src/plugins/behaviour/card-adjacency'
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { DELETE_CARD_COMMAND } from '../../../../src/plugins/behaviour/commands'
-import { $selectDecoratorNode } from '../../../../src/utils'
-import { updateEditor } from '../../../utils/test-editor'
 
 // Minimal node set: one card type is enough to exercise adjacency in jsdom.
 const CARD_ADJACENCY_TEST_NODES = [ImageNode]

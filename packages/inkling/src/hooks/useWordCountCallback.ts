@@ -1,4 +1,4 @@
-import { useWordCountHandleState } from '../context/WordCountHandleContext'
+import { useWordCountHandleState } from '@kobato/inkling-internal/context/WordCountHandleContext'
 
 // Render-only subscription to the per-composer word-count handle. Returns the
 // onChange callback the top-level WordCountPlugin published, or null until it

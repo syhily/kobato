@@ -1,12 +1,11 @@
-import { describe, expect, it, vi } from 'vitest'
-
-import type { PanelPosition } from '../../../src/utils/floating-panel'
+import type { PanelPosition } from '@kobato/inkling-internal/utils/floating-panel'
 
 import {
   createPanelDragSession,
   resolvePanelGrabVerdict,
   type PanelDragActiveListeners,
-} from '../../../src/utils/panel-drag-session'
+} from '@kobato/inkling-internal/utils/panel-drag-session'
+import { describe, expect, it, vi } from 'vitest'
 
 // the choreography is exercised synchronously through the ports: fake path
 // elements stand in for the composed DOM path, the listenActive port captures

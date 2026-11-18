@@ -1,5 +1,5 @@
-import { BaseHorizontalRuleNode } from '../base/nodes/horizontalrule/HorizontalRuleNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseHorizontalRuleNode } from '@kobato/inkling-internal/nodes/base/nodes/horizontalrule/HorizontalRuleNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const horizontalRuleDeclaration = checkedCardDeclaration({
   nodeType: 'horizontalrule',
@@ -18,7 +18,7 @@ export const horizontalRuleDeclaration = checkedCardDeclaration({
   ],
   // No toolbar renders for the divider; the label matches the node type.
   toolbarLabel: 'horizontalrule',
-  // Markdown-eligible without a card fence: `HR` in `@/inkling/markdown/transformers`
+  // Markdown-eligible without a card fence: `HR` in `@kobato/inkling-internal/markdown/transformers`
   // owns `---`.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<'horizontalrule', typeof BaseHorizontalRuleNode, readonly [], readonly []>)

@@ -1,11 +1,11 @@
 // The shared markdown grammar table: one declaration of the syntax both of
 // Inkling's markdown dialects speak (the paste dialect in
-// `@/inkling/markdown/paste-dialect`, the card-aware round-trip dialect in
-// `@/inkling/markdown/round-trip`), with each engine projecting its half.
+// `@kobato/inkling-internal/markdown/paste-dialect`, the card-aware round-trip dialect in
+// `@kobato/inkling-internal/markdown/round-trip`), with each engine projecting its half.
 //
 // - Inline delimiters (`==mark==`, `~sub~`, `^sup^`): declared once in
 //   `INLINE_DELIMITERS`. The `@lexical/markdown` engine projects the table into
-//   its text-format transformers (`@/inkling/markdown/transformers-core`); the
+//   its text-format transformers (`@kobato/inkling-internal/markdown/transformers-core`); the
 //   markdown-it engine's projection is its plugin stack
 //   (markdown-it-mark/sub/sup hardcode these delimiters). Both engines honor
 //   the table, pinned by tests/inkling/markdown/grammar.test.ts.
@@ -13,7 +13,7 @@
 //   ON PURPOSE and are not flattened; plus the one closing-fence regex the
 //   multiline import transformers share.
 //
-// The fence trigger BODIES stay in `@/inkling/markdown/card-shortcuts` (the
+// The fence trigger BODIES stay in `@kobato/inkling-internal/markdown/card-shortcuts` (the
 // seam that resolves the card class through the editor's registered-node map);
 // this table owns only the grammar.
 

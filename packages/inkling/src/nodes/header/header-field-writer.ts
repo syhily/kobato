@@ -1,4 +1,4 @@
-import type { BaseHeaderNode } from '../base/nodes/header/HeaderNode'
+import type { BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
 
 /** The card write seam's `write(mutator)` signature, narrowed to the header node. */
 export type HeaderNodeWriter = (update: (node: BaseHeaderNode) => void) => void

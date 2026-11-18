@@ -1,12 +1,11 @@
+import { isSafeUrl } from '@kobato/inkling-internal/nodes/base/utils/is-safe-url'
+import { getModifierState, isPasteableLinkUrl } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { MarkdownPastePlugin } from '@kobato/inkling-internal/plugins/MarkdownPastePlugin'
 import { createLexicalComposerContext, LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, renderHook } from '@testing-library/react'
 import { createEditor } from 'lexical'
 import React, { useMemo } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { isSafeUrl } from '../../../../src/nodes/base/utils/is-safe-url'
-import { getModifierState, isPasteableLinkUrl } from '../../../../src/plugins/behaviour/clipboard-protocol'
-import { MarkdownPastePlugin } from '../../../../src/plugins/MarkdownPastePlugin'
 
 function createTestEditor() {
   return createEditor({

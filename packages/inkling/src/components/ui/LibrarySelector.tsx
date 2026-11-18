@@ -1,12 +1,11 @@
+import type { LibraryImageItem } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { LibraryBrowser } from '@kobato/inkling-internal/utils/services/library-browser'
+
+import SearchIcon from '@kobato/inkling-internal/assets/icons/inkling-search.svg?react'
+import UploadIcon from '@kobato/inkling-internal/assets/icons/inkling-upload-fill.svg?react'
+import { Loader } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Loader'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React, { useEffect, useRef } from 'react'
-
-import type { LibraryImageItem } from '../../context/InklingHostIntegrationContext'
-import type { LibraryBrowser } from '../../utils/services/library-browser'
-
-import SearchIcon from '../../assets/icons/inkling-search.svg?react'
-import UploadIcon from '../../assets/icons/inkling-upload-fill.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { Loader } from './file-selectors/Gif/Loader'
 
 export interface LibrarySelectorProps {
   browser: LibraryBrowser<LibraryImageItem>

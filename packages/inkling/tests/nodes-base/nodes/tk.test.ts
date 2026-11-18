@@ -1,11 +1,10 @@
 import type { ElementNode, LexicalEditor } from 'lexical'
 
+import { TKNode, $createTKNode, $isTKNode } from '@kobato/inkling-internal/nodes/base/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { TKNode, $createTKNode, $isTKNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
 
 const editorNodes = [TKNode]
 

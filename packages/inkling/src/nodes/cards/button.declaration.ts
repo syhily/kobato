@@ -1,5 +1,5 @@
-import { BaseButtonNode } from '../base/nodes/button/ButtonNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseButtonNode } from '@kobato/inkling-internal/nodes/base/nodes/button/ButtonNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const buttonDeclaration = checkedCardDeclaration({
   nodeType: 'button',

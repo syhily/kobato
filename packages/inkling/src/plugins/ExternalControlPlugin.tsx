@@ -1,10 +1,13 @@
+import {
+  focusEditorAt,
+  insertParagraphAt,
+  lastNodeIsDecorator,
+} from '@kobato/inkling-internal/plugins/behaviour/external-control'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { DRAG_DROP_PASTE } from '@lexical/rich-text'
 import { $canShowPlaceholder } from '@lexical/text'
 import { type LexicalEditor } from 'lexical'
 import React from 'react'
-
-import { focusEditorAt, insertParagraphAt, lastNodeIsDecorator } from './behaviour/external-control'
 
 export interface ExternalControlAPI {
   editorInstance: LexicalEditor
@@ -20,7 +23,7 @@ export interface ExternalControlAPI {
 
 // Minimal API for controlling the editor from the host app, so typical
 // behaviours do not require the host to bundle lexical. The tree surgeries
-// live in @/inkling/plugins/behaviour/external-control; this plugin is API
+// live in @kobato/inkling-internal/plugins/behaviour/external-control; this plugin is API
 // assembly only.
 export const ExternalControlPlugin = ({ registerAPI }: { registerAPI: (api: ExternalControlAPI | null) => void }) => {
   const [editor] = useLexicalComposerContext()

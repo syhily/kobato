@@ -1,6 +1,5 @@
+import { escapeRegExp, kebabCase, pick } from '@kobato/inkling-internal/utils/objects'
 import { describe, expect, it } from 'vitest'
-
-import { escapeRegExp, kebabCase, pick } from '../../../src/utils/objects'
 
 describe('pick', () => {
   it('picks the requested keys', () => {

@@ -1,9 +1,14 @@
-import CenterAlignIcon from '../../../assets/icons/inkling-align-center.svg?react'
-import LeftAlignIcon from '../../../assets/icons/inkling-align-left.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { Button } from '../Button'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { ButtonGroupSetting, InputSetting, InputUrlSetting, SettingsPanel } from '../SettingsPanel'
+import CenterAlignIcon from '@kobato/inkling-internal/assets/icons/inkling-align-center.svg?react'
+import LeftAlignIcon from '@kobato/inkling-internal/assets/icons/inkling-align-left.svg?react'
+import { Button } from '@kobato/inkling-internal/components/ui/Button'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import {
+  ButtonGroupSetting,
+  InputSetting,
+  InputUrlSetting,
+  SettingsPanel,
+} from '@kobato/inkling-internal/components/ui/SettingsPanel'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 export function ButtonCard({
   alignment,

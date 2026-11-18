@@ -1,9 +1,8 @@
+import { $replaceDashes } from '@kobato/inkling-internal/plugins/behaviour/em-en-dash'
+import { registerUpdateScan } from '@kobato/inkling-internal/plugins/behaviour/update-scan'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useEffect } from 'react'
-
-import { getRegisteredNodeMap } from '../utils/lexical-internals'
-import { $replaceDashes } from './behaviour/em-en-dash'
-import { registerUpdateScan } from './behaviour/update-scan'
 
 export const EmEnDashPlugin = () => {
   const [editor] = useLexicalComposerContext()
@@ -11,7 +10,7 @@ export const EmEnDashPlugin = () => {
   useEffect(() => {
     // '---' as the sole content of a paragraph is the horizontal-rule card
     // shortcut - leave it alone so the seam's HR trigger can fire
-    // (@/inkling/markdown/card-shortcuts). Only relevant when a
+    // (@kobato/inkling-internal/markdown/card-shortcuts). Only relevant when a
     // horizontalrule node is actually registered.
     const supportsHrShortcut = [...getRegisteredNodeMap(editor).values()].some(
       ({ klass }) => klass.getType() === 'horizontalrule',
@@ -19,8 +18,8 @@ export const EmEnDashPlugin = () => {
 
     // Registration policy (history-tag / composing / empty-dirty skips,
     // nested scan commit) lives in the update-scan seam
-    // (@/inkling/plugins/behaviour/update-scan); the dash grammar itself
-    // lives in @/inkling/plugins/behaviour/em-en-dash. The 'history-push'
+    // (@kobato/inkling-internal/plugins/behaviour/update-scan); the dash grammar itself
+    // lives in @kobato/inkling-internal/plugins/behaviour/em-en-dash. The 'history-push'
     // tag keeps the replacement a separate history entry from the keystroke
     // that triggered it, so undo restores the raw typed dashes.
     return registerUpdateScan(editor, {

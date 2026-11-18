@@ -1,5 +1,9 @@
-import { BaseGalleryNode, galleryNestedEditors, galleryTransientProps } from '../base/nodes/gallery/GalleryNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import {
+  BaseGalleryNode,
+  galleryNestedEditors,
+  galleryTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/gallery/GalleryNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const galleryDeclaration = checkedCardDeclaration({
   nodeType: 'gallery',

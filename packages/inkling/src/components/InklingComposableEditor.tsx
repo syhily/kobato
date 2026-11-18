@@ -1,20 +1,18 @@
+import type { CorePluginScope } from '@kobato/inkling-internal/plugins/CorePlugins'
+import type { ExternalControlAPI } from '@kobato/inkling-internal/plugins/ExternalControlPlugin'
 import type { Transformer } from '@lexical/markdown'
 import type { EditorState, SerializedEditorState } from 'lexical'
 
+import { EditorPlaceholder } from '@kobato/inkling-internal/components/ui/EditorPlaceholder'
+import { useDragDropHandle } from '@kobato/inkling-internal/context/DragDropHandleContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useSharedEditorStateContext } from '@kobato/inkling-internal/context/SharedEditorStateContext'
+import { type HiddenFormat } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
+import CorePlugins from '@kobato/inkling-internal/plugins/CorePlugins'
+import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import type { CorePluginScope } from '../plugins/CorePlugins'
-import type { ExternalControlAPI } from '../plugins/ExternalControlPlugin'
-
-import { useDragDropHandle } from '../context/DragDropHandleContext'
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { useSharedEditorStateContext } from '../context/SharedEditorStateContext'
-import { type HiddenFormat } from '../plugins/behaviour/format-toolbar'
-import CorePlugins from '../plugins/CorePlugins'
-import { getParentEditor } from '../utils/lexical-internals'
-import { EditorPlaceholder } from './ui/EditorPlaceholder'
 
 export interface InklingComposableEditorProps {
   onChange?: (editorState: SerializedEditorState) => void

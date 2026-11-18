@@ -1,9 +1,8 @@
+import { AudioCard } from '@kobato/inkling-internal/components/ui/cards/AudioCard'
+import { createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { AudioCard } from '../../../src/components/ui/cards/AudioCard'
-import { createUploader } from '../../utils/mock-file-factories'
 
 describe('AudioCard', function () {
   const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' })

@@ -1,3 +1,5 @@
+import { $swapTriggerParagraph } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -8,9 +10,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $swapTriggerParagraph } from '../../../../src/plugins/behaviour/card-menu-trigger'
-import { createTestEditor, updateEditor } from '../../../utils/test-editor'
 
 describe('$swapTriggerParagraph', () => {
   let editor: LexicalEditor

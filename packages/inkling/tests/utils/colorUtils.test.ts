@@ -1,6 +1,5 @@
+import { Color, textColorForBackgroundColor } from '@kobato/inkling-internal/utils/index'
 import { describe, expect, it } from 'vitest'
-
-import { Color, textColorForBackgroundColor } from '../../src/utils/index'
 
 describe('colorUtils', function () {
   describe('Color', function () {

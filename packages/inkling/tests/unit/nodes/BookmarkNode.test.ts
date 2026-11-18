@@ -1,17 +1,16 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
-
 import {
   BookmarkNode,
   $createBookmarkNode,
   $isBookmarkNode,
   INSERT_BOOKMARK_COMMAND,
-} from '../../../src/nodes/BookmarkNode'
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { attachCaptionEditorWithText } from '../../utils/caption-editor'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import { attachCaptionEditorWithText } from '@kobato/inkling/tests/utils/caption-editor'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const editorNodes = [BookmarkNode]
 

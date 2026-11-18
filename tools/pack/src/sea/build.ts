@@ -2,15 +2,20 @@
 // Platform-native by design: the embedded natives and the copied Node
 // executable are the build machine's, so build on the delivery target's arch.
 
+import { collectSeaAssets } from '@kobato/pack/sea/assets.ts'
+import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget.ts'
+import { fail, run } from '@kobato/pack/sea/exec.ts'
+import { runInjectStep } from '@kobato/pack/sea/inject.ts'
+import {
+  repoRoot,
+  seaBinaryFileName,
+  seaBinaryPath,
+  seaBinarySha256Path,
+  seaIntermediatesDir,
+} from '@kobato/pack/sea/paths.ts'
 import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-import { collectSeaAssets } from './assets.ts'
-import { BINARY_MAX_BYTES } from './budget.ts'
-import { fail, run } from './exec.ts'
-import { runInjectStep } from './inject.ts'
-import { repoRoot, seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
 
 // 26.10.0 fixed the VFS addon loader's dlopen flags forwarding
 // (nodejs/node#65909); a SEA built on an earlier 26.x ships a binary whose

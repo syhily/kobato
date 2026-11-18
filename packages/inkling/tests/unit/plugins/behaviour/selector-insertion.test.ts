@@ -1,19 +1,22 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { $createNodeSelection, $getRoot, $setSelection, type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $isImageNode } from '../../../../src/nodes/base/nodes/image/ImageNode'
-import { $createImageNode, ImageNode, type ImageNode as ImageNodeInstance } from '../../../../src/nodes/ImageNode'
-import { createCardPickerStore } from '../../../../src/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { registerCardCommands } from '../../../../src/plugins/behaviour/registerCardCommands'
+import { $isImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import {
+  $createImageNode,
+  ImageNode,
+  type ImageNode as ImageNodeInstance,
+} from '@kobato/inkling-internal/nodes/ImageNode'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
 import {
   $insertFromSelectorDataset,
   INSERT_FROM_GIF_COMMAND,
   INSERT_FROM_LIBRARY_COMMAND,
   registerSelectorInsertCommands,
-} from '../../../../src/plugins/behaviour/selector-insertion'
-import { tick } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { $createNodeSelection, $getRoot, $setSelection, type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 // The selector-insert surgery end to end: a placeholder image node (the
 // overlay's ride) selected, a pick dispatched, the real card in its place.

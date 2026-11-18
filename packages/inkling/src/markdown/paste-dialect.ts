@@ -1,13 +1,15 @@
+import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '@kobato/inkling-internal/utils'
+import { createHeadingIdTracker } from '@kobato/inkling-internal/utils/heading-id-tracker'
 // The paste dialect — one of Inkling's two markdown dialects (the card-aware
-// round-trip dialect is `@/inkling/markdown/round-trip`). Two pipelines speak it:
+// round-trip dialect is `@kobato/inkling-internal/markdown/round-trip`). Two pipelines speak it:
 // clipboard markdown (the headless `markdownToSanitizedHtml` in
-// `@/inkling/plugins/behaviour/markdownPaste`, fed into Lexical's HTML import by
+// `@kobato/inkling-internal/plugins/behaviour/markdownPaste`, fed into Lexical's HTML import by
 // `MarkdownPastePlugin`) and the markdown card's HTML export
-// (`@/inkling/nodes/base/nodes/markdown/markdown-renderer`).
+// (`@kobato/inkling-internal/nodes/base/nodes/markdown/markdown-renderer`).
 //
 // It speaks footnotes, ==mark==, ~sub~, ^sup^ — and no card-fence grammar. The
 // inline delimiters are declared once in the shared grammar table
-// (`@/inkling/markdown/grammar`); the engine is markdown-it with its plugin
+// (`@kobato/inkling-internal/markdown/grammar`); the engine is markdown-it with its plugin
 // stack, the cached per-slug-policy instances, and `inklingVersion` slug
 // branching.
 //
@@ -29,9 +31,6 @@ import markdownItMark from 'markdown-it-mark'
 import markdownItSub from 'markdown-it-sub'
 import markdownItSup from 'markdown-it-sup'
 
-import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '../utils'
-import { createHeadingIdTracker } from '../utils/heading-id-tracker'
-
 const renderers: Partial<Record<'<4.x' | 'latest', MarkdownItInstance>> = {}
 
 interface RenderOptions {
@@ -39,7 +38,7 @@ interface RenderOptions {
 }
 
 // The per-render heading-id tracker carried on the markdown-it env: the
-// shared dedup policy (`@/inkling/utils/heading-id-tracker`) — base id on first
+// shared dedup policy (`@kobato/inkling-internal/utils/heading-id-tracker`) — base id on first
 // use, `<base>-<n>` on repeats, the same numbering the HTML renderer's
 // `trackIdAttribute` emits.
 function isHeadingIdTracker(value: unknown): value is (base: string) => string {
@@ -112,7 +111,7 @@ const selectRenderer = function (options: RenderOptions): MarkdownItInstance {
     return renderers[key]
   }
   // markdown-it-mark/sub/sup are this engine's projection of the shared
-  // grammar table's inline delimiters (`@/inkling/markdown/grammar`'s
+  // grammar table's inline delimiters (`@kobato/inkling-internal/markdown/grammar`'s
   // INLINE_DELIMITERS) — the plugins hardcode ==/~/^, and
   // tests/inkling/markdown/grammar.test.ts pins the engines agreeing.
   const markdownIt = new MarkdownIt({ html: true, breaks: true, linkify: true })

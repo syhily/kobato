@@ -1,8 +1,7 @@
+import { Delayed } from '@kobato/inkling-internal/components/ui/Delayed'
 import { act, render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { Delayed } from '../../../../src/components/ui/Delayed'
 
 describe('Delayed', () => {
   beforeEach(() => {

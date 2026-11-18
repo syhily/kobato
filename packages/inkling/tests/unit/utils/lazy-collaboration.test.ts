@@ -1,8 +1,10 @@
+import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
+
+import {
+  createLazyProviderFactory,
+  type CollaborationChunk,
+} from '@kobato/inkling-internal/utils/services/lazy-collaboration'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { LexicalProviderFactory } from '../../../src/context/InklingCollaborationContext'
-
-import { createLazyProviderFactory, type CollaborationChunk } from '../../../src/utils/services/lazy-collaboration'
 
 function deferred<T>() {
   let resolve!: (value: T) => void

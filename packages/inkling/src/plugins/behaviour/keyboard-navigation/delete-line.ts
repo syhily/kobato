@@ -1,11 +1,13 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor } from 'lexical'
 
+import {
+  $getLogicallyAdjacentCard,
+  $isCaretAtBlockTop,
+  dispatchSelectedCardDeletion,
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { $selectDecoratorNode } from '@kobato/inkling-internal/utils'
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_LOW, DELETE_LINE_COMMAND } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { $selectDecoratorNode } from '../../../utils'
-import { $getLogicallyAdjacentCard, $isCaretAtBlockTop, dispatchSelectedCardDeletion } from '../card-adjacency'
 
 export function registerDeleteLineCommand(editor: LexicalEditor, deps: KeyboardNavigationDeps): () => void {
   const { store, isNested } = deps

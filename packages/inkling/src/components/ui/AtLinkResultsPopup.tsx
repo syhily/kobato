@@ -1,13 +1,14 @@
+import type { ListOptionItem, ListOptionSection } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import type { LexicalNode } from 'lexical'
 
+import {
+  LinkSuggestionList,
+  useLinkDropdownOpenedTracking,
+} from '@kobato/inkling-internal/components/ui/LinkSuggestionList'
+import { useSelectionAnchoredPopup } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
+import { createNodeElementAnchor } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import type { ListOptionItem, ListOptionSection } from '../../hooks/useSearchLinks'
-
-import { useSelectionAnchoredPopup } from '../../hooks/useSelectionAnchoredPopup'
-import { createNodeElementAnchor } from '../../utils/selection-anchored-popup'
-import { LinkSuggestionList, useLinkDropdownOpenedTracking } from './LinkSuggestionList'
 
 interface AtLinkResultsPopupProps {
   atLinkNode: LexicalNode

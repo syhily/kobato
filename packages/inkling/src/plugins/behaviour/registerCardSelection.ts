@@ -1,11 +1,9 @@
+import type { CardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import { $deselectCard } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import { $getNodeByKey, $getSelection, $isNodeSelection } from 'lexical'
-
-import type { CardSelectionStore } from './cardSelectionStore'
-
-import { $isInklingCard } from '../../nodes/base'
-import { $deselectCard } from './card-adjacency'
 
 interface CardSelectionDeps {
   store: CardSelectionStore

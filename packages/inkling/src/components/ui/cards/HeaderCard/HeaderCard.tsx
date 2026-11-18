@@ -1,33 +1,20 @@
+import type { DragHandlerLike, FileUploaderLike } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
 import type { InitialEditorStateType, LexicalEditor } from 'lexical'
 
-import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React, { useContext, useEffect, useState } from 'react'
-
-import type { DragHandlerLike, FileUploaderLike } from '../card-ui-types'
-
-import CenterAlignIcon from '../../../../assets/icons/inkling-align-center.svg?react'
-import LeftAlignIcon from '../../../../assets/icons/inkling-align-left.svg?react'
-import ExpandIcon from '../../../../assets/icons/inkling-expand.svg?react'
-import ImgBgIcon from '../../../../assets/icons/inkling-img-bg.svg?react'
-import ImgFullIcon from '../../../../assets/icons/inkling-img-full.svg?react'
-import ImgRegularIcon from '../../../../assets/icons/inkling-img-regular.svg?react'
-import ImgWideIcon from '../../../../assets/icons/inkling-img-wide.svg?react'
-import LayoutSplitIcon from '../../../../assets/icons/inkling-layout-split.svg?react'
-import ShrinkIcon from '../../../../assets/icons/inkling-shrink.svg?react'
-import { useInklingLabels } from '../../../../hooks/useInklingLabels'
-import {
-  headerHexColor,
-  matchingHeaderTextColor,
-  resolveHeaderImageTextColor,
-} from '../../../../nodes/header/header-accent-color'
-import trackEvent from '../../../../utils/analytics'
-import { cx } from '../../../../utils/cx'
-import { isEditorEmpty } from '../../../../utils/isEditorEmpty'
-import InklingNestedEditor from '../../../InklingNestedEditor'
-import { Button } from '../../Button'
-import { IconButton } from '../../IconButton'
-import { MediaUploader } from '../../MediaUploader'
-import { ReadOnlyOverlay } from '../../ReadOnlyOverlay'
+import CenterAlignIcon from '@kobato/inkling-internal/assets/icons/inkling-align-center.svg?react'
+import LeftAlignIcon from '@kobato/inkling-internal/assets/icons/inkling-align-left.svg?react'
+import ExpandIcon from '@kobato/inkling-internal/assets/icons/inkling-expand.svg?react'
+import ImgBgIcon from '@kobato/inkling-internal/assets/icons/inkling-img-bg.svg?react'
+import ImgFullIcon from '@kobato/inkling-internal/assets/icons/inkling-img-full.svg?react'
+import ImgRegularIcon from '@kobato/inkling-internal/assets/icons/inkling-img-regular.svg?react'
+import ImgWideIcon from '@kobato/inkling-internal/assets/icons/inkling-img-wide.svg?react'
+import LayoutSplitIcon from '@kobato/inkling-internal/assets/icons/inkling-layout-split.svg?react'
+import ShrinkIcon from '@kobato/inkling-internal/assets/icons/inkling-shrink.svg?react'
+import InklingNestedEditor from '@kobato/inkling-internal/components/InklingNestedEditor'
+import { Button } from '@kobato/inkling-internal/components/ui/Button'
+import { IconButton } from '@kobato/inkling-internal/components/ui/IconButton'
+import { MediaUploader } from '@kobato/inkling-internal/components/ui/MediaUploader'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
 import {
   ButtonGroupSetting,
   ColorPickerSetting,
@@ -36,8 +23,19 @@ import {
   MediaUploadSetting,
   SettingsPanel,
   ToggleSetting,
-} from '../../SettingsPanel'
-import { Tooltip } from '../../Tooltip'
+} from '@kobato/inkling-internal/components/ui/SettingsPanel'
+import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import {
+  headerHexColor,
+  matchingHeaderTextColor,
+  resolveHeaderImageTextColor,
+} from '@kobato/inkling-internal/nodes/header/header-accent-color'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { cx } from '@kobato/inkling-internal/utils/cx'
+import { isEditorEmpty } from '@kobato/inkling-internal/utils/isEditorEmpty'
+import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import React, { useContext, useEffect, useState } from 'react'
 
 /** The card's view state — every presentational value the node carries. */
 export interface HeaderCardViewModel {

@@ -1,8 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
+import { $selectCard } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import { $createParagraphNode, $getRoot, $isDecoratorNode, $isElementNode } from 'lexical'
-
-import { $selectCard } from './card-adjacency'
 
 // External control — the headless host-facing control surgeries behind
 // ExternalControlPlugin (which keeps only API assembly), so hosts can drive

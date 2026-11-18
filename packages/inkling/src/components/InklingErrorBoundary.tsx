@@ -1,7 +1,6 @@
+import { useInklingHostEssentials } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import { useInklingHostEssentials } from '../context/InklingHostIntegrationContext'
-import { useInklingLabels } from '../hooks/useInklingLabels'
 
 interface InklingErrorBoundaryInnerProps {
   children?: React.ReactNode

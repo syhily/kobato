@@ -1,10 +1,13 @@
 import type { HeadingTagType } from '@lexical/rich-text'
 
-import { FORMAT_TEXT_COMMAND, type LexicalEditor } from 'lexical'
-import React from 'react'
-
-import { useInklingSnippetSettings } from '../../context/InklingHostIntegrationContext'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
+import {
+  ToolbarMenu,
+  ToolbarMenuItem,
+  ToolbarMenuSeparator,
+  type ToolbarIconName,
+} from '@kobato/inkling-internal/components/ui/ToolbarMenu'
+import { useInklingSnippetSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import {
   $cycleQuoteBlock,
   $formatBlocksToHeading,
@@ -14,9 +17,10 @@ import {
   resolveFormatToolbarVisibility,
   type FormatToolbarState,
   type HiddenFormat,
-} from '../../plugins/behaviour/format-toolbar'
-import { altOrOption, ctrlOrCmdSymbol, ctrlOrSymbol } from '../../utils/shortcutSymbols'
-import { ToolbarMenu, ToolbarMenuItem, ToolbarMenuSeparator, type ToolbarIconName } from './ToolbarMenu'
+} from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
+import { altOrOption, ctrlOrCmdSymbol, ctrlOrSymbol } from '@kobato/inkling-internal/utils/shortcutSymbols'
+import { FORMAT_TEXT_COMMAND, type LexicalEditor } from 'lexical'
+import React from 'react'
 
 function quoteIcon(blockType = ''): ToolbarIconName {
   if (blockType.endsWith('quote')) {

@@ -1,9 +1,8 @@
+import InklingComposableEditor from '@kobato/inkling-internal/components/InklingComposableEditor'
+import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import InklingComposableEditor from '../../../src/components/InklingComposableEditor'
-import InklingComposer from '../../../src/components/InklingComposer'
 
 describe('InklingComposableEditor', () => {
   it('renders an editable surface with the default wrapper classes', () => {

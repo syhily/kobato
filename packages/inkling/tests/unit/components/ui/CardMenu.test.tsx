@@ -1,8 +1,12 @@
+import {
+  CardMenu,
+  CardMenuItem,
+  CardMenuSection,
+  CardSnippetItem,
+} from '@kobato/inkling-internal/components/ui/CardMenu'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { CardMenu, CardMenuItem, CardMenuSection, CardSnippetItem } from '../../../../src/components/ui/CardMenu'
 
 describe('CardMenuItem', () => {
   it('renders label and description', () => {

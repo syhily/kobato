@@ -1,12 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   DragDropContainer,
   type ContainerDragHandlers,
   type DraggableInfo,
-} from '../../../../src/utils/draggable/DragDropContainer'
-import { cardDrag, imageDrag } from '../../../utils/draggable-fixtures'
-import '../../../../src/utils/draggable/draggable-constants'
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+import { cardDrag, imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import '@kobato/inkling-internal/utils/draggable/draggable-constants'
 
 function createHandlers(): ContainerDragHandlers {
   return {

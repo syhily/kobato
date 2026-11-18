@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-
-import trackEvent from '../utils/analytics'
-import { importPinturaModule } from '../utils/services/pintura-import'
+import { useDisposableStore } from '@kobato/inkling-internal/hooks/useDisposableStore'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { importPinturaModule } from '@kobato/inkling-internal/utils/services/pintura-import'
 import {
   buildPinturaOptions,
   bustImageCache,
   createPinturaAssetLoader,
   createPinturaCloseGate,
   type PinturaAssetPorts,
-} from '../utils/services/pintura-session'
-import { useDisposableStore } from './useDisposableStore'
-import { useInklingLabels } from './useInklingLabels'
+} from '@kobato/inkling-internal/utils/services/pintura-session'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 
 export interface PinturaConfig {
   jsUrl?: string

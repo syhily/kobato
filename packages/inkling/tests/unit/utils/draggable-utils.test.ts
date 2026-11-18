@@ -1,5 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   applyUserSelect,
   getDocumentScrollingElement,
@@ -7,7 +5,8 @@ import {
   getParent,
   getParentScrollableElement,
   getPreviousSibling,
-} from '../../../src/utils/draggable/draggable-utils'
+} from '@kobato/inkling-internal/utils/draggable/draggable-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('draggable-utils', () => {
   describe('getParent', () => {

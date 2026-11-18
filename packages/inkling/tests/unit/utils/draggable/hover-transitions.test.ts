@@ -1,12 +1,11 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   type HoverFrame,
   type HoverState,
   initialHoverState,
   resolveDroppablePosition,
   resolveHoverTransition,
-} from '../../../../src/utils/draggable/hover-transitions'
+} from '@kobato/inkling-internal/utils/draggable/hover-transitions'
+import { describe, expect, it } from 'vitest'
 
 // the transition matrix for the drag hover machine: frames and states are
 // plain data (jsdom elements for identity/containment), so every scenario

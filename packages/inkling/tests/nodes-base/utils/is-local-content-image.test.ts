@@ -1,6 +1,5 @@
+import { isLocalContentImage } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
 import { describe, expect, it } from 'vitest'
-
-import { isLocalContentImage } from '../../../src/nodes/base/utils/content-image-url'
 
 describe('Utils: isLocalContentImage', function () {
   it('returns true for local content image paths', function () {

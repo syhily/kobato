@@ -1,11 +1,10 @@
+import { $createTKNode, TKNode } from '@kobato/inkling-internal/nodes/base'
+import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { $selectTkFromIndicator } from '@kobato/inkling-internal/plugins/behaviour/tk-tracking'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createParagraphNode, $getRoot, $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $createTKNode, TKNode } from '../../../../src/nodes/base'
-import { $createHorizontalRuleNode, HorizontalRuleNode } from '../../../../src/nodes/HorizontalRuleNode'
-import { SELECT_CARD_COMMAND } from '../../../../src/plugins/behaviour/commands'
-import { $selectTkFromIndicator } from '../../../../src/plugins/behaviour/tk-tracking'
-import { createTestEditor, updateEditor } from '../../../utils/test-editor'
 
 describe('$selectTkFromIndicator', () => {
   let editor: LexicalEditor

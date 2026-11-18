@@ -1,8 +1,7 @@
+import { Loader } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Loader'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { Loader } from '../../../../../../src/components/ui/file-selectors/Gif/Loader'
 
 describe('Gif Loader', () => {
   it('renders the lazy loading variant', () => {

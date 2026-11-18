@@ -1,5 +1,14 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
+import { $isAsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
+import {
+  $removeEmptyBlockAndSelectCard,
+  $removeLogicallyAdjacentCard,
+  dispatchSelectedCardDeletion,
+  editorOwnsFocus,
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { $unwrapSpecialMarkupFormat } from '@kobato/inkling-internal/plugins/behaviour/markdown-unwrap'
 import { $isLinkNode } from '@lexical/link'
 import { $isListItemNode } from '@lexical/list'
 import { $isQuoteNode } from '@lexical/rich-text'
@@ -12,17 +21,6 @@ import {
   INSERT_PARAGRAPH_COMMAND,
   KEY_BACKSPACE_COMMAND,
 } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { $isAsideNode } from '../../../nodes/AsideNode'
-import {
-  $removeEmptyBlockAndSelectCard,
-  $removeLogicallyAdjacentCard,
-  dispatchSelectedCardDeletion,
-  editorOwnsFocus,
-} from '../card-adjacency'
-import { $unwrapSpecialMarkupFormat } from '../markdown-unwrap'
 
 // Convert a top-level list item to a paragraph when backspace lands at the item's
 // start boundary. Two anchor shapes: an EMPTY item (the selection anchor IS the

@@ -1,5 +1,10 @@
+import type { ResolvedMenuItem } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
 import type { AnyLexicalCommand } from 'lexical'
 
+import {
+  registerMenuArrowsClose,
+  registerMenuKeyboardNavigation,
+} from '@kobato/inkling-internal/plugins/behaviour/card-menu-keyboard'
 import {
   createEditor,
   KEY_ARROW_DOWN_COMMAND,
@@ -9,13 +14,6 @@ import {
   KEY_ENTER_COMMAND,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { ResolvedMenuItem } from '../../../../src/nodes/cards/card-menu-build'
-
-import {
-  registerMenuArrowsClose,
-  registerMenuKeyboardNavigation,
-} from '../../../../src/plugins/behaviour/card-menu-keyboard'
 
 // The card menu keyboard policy, driven through a real headless editor: the
 // handlers read their inputs at event time through ports, so a dispatched key

@@ -1,6 +1,5 @@
+import slugify, { slugify as namedSlugify } from '@kobato/inkling-internal/utils/slugify'
 import { describe, expect, it } from 'vitest'
-
-import slugify, { slugify as namedSlugify } from '../../src/utils/slugify'
 
 describe('slugify()', function () {
   it('handles empty input', function () {

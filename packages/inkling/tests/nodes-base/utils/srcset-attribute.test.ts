@@ -1,7 +1,6 @@
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import { getSrcsetAttribute } from '@kobato/inkling-internal/nodes/base/utils/srcset-attribute'
 import { describe, expect, it } from 'vitest'
-
-import { createRenderContext } from '../../../src/nodes/base/render-context'
-import { getSrcsetAttribute } from '../../../src/nodes/base/utils/srcset-attribute'
 
 const options = {
   imageOptimization: {

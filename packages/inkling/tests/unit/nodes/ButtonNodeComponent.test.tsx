@@ -1,15 +1,17 @@
+import {
+  InklingHostIntegrationProvider,
+  type CardConfig,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { ButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
+import { ButtonNodeComponent } from '@kobato/inkling-internal/nodes/ButtonNodeComponent'
+import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider, type CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import { ButtonNode } from '../../../src/nodes/ButtonNode'
-import { ButtonNodeComponent } from '../../../src/nodes/ButtonNodeComponent'
-import { EDIT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', async (importOriginal) => ({
   ...(await importOriginal()),

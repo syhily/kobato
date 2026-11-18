@@ -1,8 +1,7 @@
+import { Spinner } from '@kobato/inkling-internal/components/ui/Spinner'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { Spinner } from '../../../../src/components/ui/Spinner'
 
 describe('Spinner', () => {
   it('renders with default size', () => {

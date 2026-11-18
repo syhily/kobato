@@ -1,15 +1,22 @@
-import type { CardSpecFieldMapFor, DecoratorNodeProperty, TransientPropSpec } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 
-import { transientInitialFileProp, transientTriggerFileDialogProp } from '../../card-specs'
+import {
+  transientInitialFileProp,
+  transientTriggerFileDialogProp,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { bytesToSize, sizeToBytes } from '../../utils/size-byte-converter'
-import { renderFileNode } from './file-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { renderFileNode } from '@kobato/inkling-internal/nodes/base/nodes/file/file-renderer'
+import { bytesToSize, sizeToBytes } from '@kobato/inkling-internal/nodes/base/utils/size-byte-converter'
 
 // the card's transient-prop spec — see the audioTransientProps note
 export const fileTransientProps = [

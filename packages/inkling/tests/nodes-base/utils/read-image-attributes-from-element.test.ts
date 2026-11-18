@@ -1,7 +1,6 @@
+import { readImageAttributesFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-image-attributes-from-element'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { describe, expect, it } from 'vitest'
-
-import { readImageAttributesFromElement } from '../../../src/nodes/base/utils/read-image-attributes-from-element'
-import { createTestDom } from '../../utils/render-live'
 
 describe('readImageAttributesFromElement', function () {
   it('omits width and height when the data attributes are missing', function () {

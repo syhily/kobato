@@ -19,6 +19,8 @@ export default defineConfig({
   plugins: [react({ compiler: true }), tailwindcss(), svgr()],
   resolve: {
     alias: {
+      '@kobato/inkling-demo': resolve(import.meta.dirname, '.'),
+      '@kobato/inkling-internal': resolve(import.meta.dirname, '../../packages/inkling/src'),
       '@kobato/inkling/headless': resolve(import.meta.dirname, '../../packages/inkling/src/headless.ts'),
       '@kobato/inkling': resolve(import.meta.dirname, '../../packages/inkling/src'),
       '@kobato/web-public': resolve(import.meta.dirname, '../../packages/web/public/src'),

@@ -1,8 +1,7 @@
+import { EditorPlaceholder } from '@kobato/inkling-internal/components/ui/EditorPlaceholder'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { EditorPlaceholder } from '../../../../src/components/ui/EditorPlaceholder'
 
 describe('EditorPlaceholder', () => {
   it('renders the default placeholder text', () => {

@@ -1,10 +1,9 @@
+import { ColorIndicator, ColorPicker } from '@kobato/inkling-internal/components/ui/ColorPicker'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ColorIndicator, ColorPicker } from '../../../../src/components/ui/ColorPicker'
-
-vi.mock('../../../../src/hooks/useClickOutside', () => ({
+vi.mock('@kobato/inkling-internal/hooks/useClickOutside', () => ({
   useClickOutside: vi.fn(),
 }))
 

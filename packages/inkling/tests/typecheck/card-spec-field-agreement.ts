@@ -1,3 +1,10 @@
+import type {
+  CardSpecFieldMap,
+  CardSpecFieldNames,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-cards'
+import type { Expect, Equal, Extends } from '@kobato/inkling/tests/utils/type-pins'
 /**
  * Compile-time pins for the card spec field vocabulary.
  *
@@ -12,18 +19,14 @@
  */
 import type { EditorState, LexicalEditor } from 'lexical'
 
-import type { CardSpecFieldMap, CardSpecFieldNames, TransientPropSpec } from '../../src/nodes/base/card-specs'
-import type { HostCardSpec } from '../../src/nodes/cards/host-cards'
-import type { Expect, Equal, Extends } from '../utils/type-pins'
-
-import { generateDecoratorNode } from '../../src/nodes/base/generate-decorator-node'
-import { BaseAudioNode } from '../../src/nodes/base/nodes/audio/AudioNode'
-import { BaseCalloutNode } from '../../src/nodes/base/nodes/callout/CalloutNode'
-import { BaseImageNode } from '../../src/nodes/base/nodes/image/ImageNode'
-import { audioDeclaration } from '../../src/nodes/cards/audio.declaration'
-import { bookmarkDeclaration } from '../../src/nodes/cards/bookmark.declaration'
-import { calloutDeclaration } from '../../src/nodes/cards/callout.declaration'
-import { toggleDeclaration } from '../../src/nodes/cards/toggle.declaration'
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { BaseAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'
+import { BaseCalloutNode } from '@kobato/inkling-internal/nodes/base/nodes/callout/CalloutNode'
+import { BaseImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { audioDeclaration } from '@kobato/inkling-internal/nodes/cards/audio.declaration'
+import { bookmarkDeclaration } from '@kobato/inkling-internal/nodes/cards/bookmark.declaration'
+import { calloutDeclaration } from '@kobato/inkling-internal/nodes/cards/callout.declaration'
+import { toggleDeclaration } from '@kobato/inkling-internal/nodes/cards/toggle.declaration'
 
 // the derivation itself: the audio spec yields exactly its two transient
 // field names

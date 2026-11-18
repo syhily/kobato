@@ -1,9 +1,8 @@
+import { useTKHandle } from '@kobato/inkling-internal/context/TKHandleContext'
+import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import { createTKHandleWrapper } from '@kobato/inkling/tests/utils/tk-handle'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { useTKHandle } from '../../../../src/context/TKHandleContext'
-import { createTKHandle } from '../../../../src/plugins/behaviour/tkHandle'
-import { createTKHandleWrapper } from '../../../utils/tk-handle'
 
 // Thin per-instance suite: the generic handle semantics (partial setState,
 // change guard, subscribe/unsubscribe, fallback) live in

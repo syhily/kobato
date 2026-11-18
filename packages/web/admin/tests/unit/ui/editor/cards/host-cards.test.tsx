@@ -22,6 +22,11 @@ import type { ReactElement } from 'react'
 
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { createHeadlessEditor } from '@kobato/inkling'
+// White-box parity pins: these two reach inkling internals the exports map
+// deliberately does not expose, through the private source alias rather than
+// widening the public surface.
+import { lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels.ts'
+import { getHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry.ts'
 import { MUSIC_PLAYER_META_KEYS } from '@kobato/lexical/artifacts.ts'
 import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/lexical/cards/card-html.ts'
 import {
@@ -69,12 +74,6 @@ import { JSDOM } from 'jsdom'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-// White-box parity pins: these two reach inkling internals the exports map
-// deliberately does not expose, so they import the package source relatively
-// instead of widening the public surface.
-import { lookupLabel, resolveLabels } from '../../../../../../../inkling/src/labels/inkling-labels.ts'
-import { getHostCard } from '../../../../../../../inkling/src/nodes/cards/host-card-registry.ts'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

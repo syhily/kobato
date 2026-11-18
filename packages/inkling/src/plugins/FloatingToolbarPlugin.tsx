@@ -1,11 +1,6 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { COMMAND_PRIORITY_LOW, DELETE_CHARACTER_COMMAND, type LexicalEditor } from 'lexical'
-import React from 'react'
-
-import { FloatingFormatToolbar } from '../components/ui/FloatingFormatToolbar'
-import { FloatingLinkToolbar } from '../components/ui/FloatingLinkToolbar'
-import { debounce } from '../utils'
-import { type HiddenFormat } from './behaviour/format-toolbar'
+import { FloatingFormatToolbar } from '@kobato/inkling-internal/components/ui/FloatingFormatToolbar'
+import { FloatingLinkToolbar } from '@kobato/inkling-internal/components/ui/FloatingLinkToolbar'
+import { type HiddenFormat } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
 import {
   createLinkHoverFeed,
   createToolbarRevealFeed,
@@ -14,7 +9,11 @@ import {
   registerToolbarCommands,
   registerToolbarSelectionSync,
   type ToolbarSession,
-} from './behaviour/link-editing'
+} from '@kobato/inkling-internal/plugins/behaviour/link-editing'
+import { debounce } from '@kobato/inkling-internal/utils'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { COMMAND_PRIORITY_LOW, DELETE_CHARACTER_COMMAND, type LexicalEditor } from 'lexical'
+import React from 'react'
 
 export default function FloatingToolbarPlugin({
   anchorElem = document.body,

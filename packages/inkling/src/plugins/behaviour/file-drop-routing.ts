@@ -1,9 +1,8 @@
+import type { FileUploader } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { EditorCardNode } from '@kobato/inkling-internal/nodes/cards/editor-card-nodes'
 import type { LexicalEditor } from 'lexical'
 
-import type { FileUploader } from '../../context/InklingHostIntegrationContext'
-import type { EditorCardNode } from '../../nodes/cards/editor-card-nodes'
-
-import { getEditorCardNodes } from '../../nodes/cards/editor-card-nodes'
+import { getEditorCardNodes } from '@kobato/inkling-internal/nodes/cards/editor-card-nodes'
 
 // File-drop → media-claim routing: which dropped file becomes which card's
 // `INSERT_MEDIA_COMMAND` payload (the command itself is owned by

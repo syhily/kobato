@@ -1,6 +1,6 @@
-import DOMPurify, { type WindowLike } from 'dompurify'
+import type { ExportDOMDom } from '@kobato/inkling-internal/nodes/base/export-dom'
 
-import type { ExportDOMDom } from '../nodes/base/export-dom'
+import DOMPurify, { type WindowLike } from 'dompurify'
 
 export interface SanitizeHtmlOptions {
   replaceJS?: boolean

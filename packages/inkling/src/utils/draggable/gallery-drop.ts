@@ -4,10 +4,10 @@
  * transitions over plain data; the one DOM read arrives behind the probe port.
  */
 
-import type { GalleryImage } from '../../types/gallery'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import { datasetToGalleryImage } from '../../nodes/base/utils/gallery-image-fill'
-import { adjustInsertIndexForRemoval } from './reorder-rules'
+import { datasetToGalleryImage } from '@kobato/inkling-internal/nodes/base/utils/gallery-image-fill'
+import { adjustInsertIndexForRemoval } from '@kobato/inkling-internal/utils/draggable/reorder-rules'
 
 export interface GalleryDragFacts {
   type?: string

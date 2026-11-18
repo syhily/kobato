@@ -1,11 +1,10 @@
 import type { SetURLSearchParams } from 'react-router'
 
+import EyeClosedIcon from '@kobato/inkling-demo/assets/icons/eye-closed.svg?react'
+import EyeOpenIcon from '@kobato/inkling-demo/assets/icons/eye-open.svg?react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $createParagraphNode, $getRoot } from 'lexical'
 import React from 'react'
-
-import EyeClosedIcon from '../assets/icons/eye-closed.svg?react'
-import EyeOpenIcon from '../assets/icons/eye-open.svg?react'
 
 interface InitialContentToggleProps {
   defaultContent: string

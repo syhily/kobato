@@ -1,15 +1,4 @@
-import { $createListItemNode, $createListNode } from '@lexical/list'
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  $setSelection,
-  createEditor,
-  type LexicalEditor,
-} from 'lexical'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import DEFAULT_NODES from '../../../../src/nodes/DefaultNodes'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
 // Characterization pins for the card-menu trigger module: the slash
 // valid-press grammar, the slash query/close verdicts, and the plus caret/
 // hover/selectionchange policy, driven headlessly through the registrations
@@ -34,8 +23,18 @@ import {
   type PlusButtonVerdict,
   type SlashMenuVerdict,
   type SlashPressEvent,
-} from '../../../../src/plugins/behaviour/card-menu-trigger'
-import { drainEnqueuedUpdates } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
+import { drainEnqueuedUpdates } from '@kobato/inkling/tests/utils/test-editor'
+import { $createListItemNode, $createListNode } from '@lexical/list'
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $setSelection,
+  createEditor,
+  type LexicalEditor,
+} from 'lexical'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function createTestEditor(): LexicalEditor {
   return createEditor({

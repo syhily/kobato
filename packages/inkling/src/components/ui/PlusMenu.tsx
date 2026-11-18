@@ -1,5 +1,5 @@
-import PlusIcon from '../../assets/icons/plus.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
+import PlusIcon from '@kobato/inkling-internal/assets/icons/plus.svg?react'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 export function PlusButton({ onClick }: { onClick?: () => void }) {
   const labels = useInklingLabels()

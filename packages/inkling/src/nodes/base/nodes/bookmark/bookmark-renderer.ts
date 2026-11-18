@@ -1,7 +1,10 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { appendCardCaption } from '../../utils/append-card-caption'
-import { isSafeRenderableSource, renderEmptyContainer } from '../../utils/render-empty-container'
+import { appendCardCaption } from '@kobato/inkling-internal/nodes/base/utils/append-card-caption'
+import {
+  isSafeRenderableSource,
+  renderEmptyContainer,
+} from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
 
 interface BookmarkNodeData {
   url: string

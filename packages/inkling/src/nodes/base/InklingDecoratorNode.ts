@@ -1,9 +1,8 @@
+import type { ExportDOMOptions, ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/export-dom'
 import type { LexicalEditor } from 'lexical'
 
 /* c8 ignore start */
 import { DecoratorNode } from 'lexical'
-
-import type { ExportDOMOptions, ExportDOMOutput } from './export-dom'
 
 export class InklingDecoratorNode extends DecoratorNode<unknown> {
   static transform() {

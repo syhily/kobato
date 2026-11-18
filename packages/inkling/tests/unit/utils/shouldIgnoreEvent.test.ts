@@ -1,6 +1,5 @@
+import { shouldIgnoreEvent } from '@kobato/inkling-internal/utils/shouldIgnoreEvent'
 import { describe, expect, it } from 'vitest'
-
-import { shouldIgnoreEvent } from '../../../src/utils/shouldIgnoreEvent'
 
 describe('shouldIgnoreEvent', () => {
   it('returns false for a missing event', () => {

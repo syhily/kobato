@@ -1,8 +1,11 @@
+import { getScrollAncestor } from '@kobato/inkling-internal/utils/scroll-ancestor'
+import {
+  resolveAnchoredPopupPlacement,
+  type PopupAnchor,
+  type PopupRectLike,
+} from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { type LexicalEditor } from 'lexical'
 import React from 'react'
-
-import { getScrollAncestor } from '../utils/scroll-ancestor'
-import { resolveAnchoredPopupPlacement, type PopupAnchor, type PopupRectLike } from '../utils/selection-anchored-popup'
 
 interface UseSelectionAnchoredPopupOptions {
   editor: LexicalEditor

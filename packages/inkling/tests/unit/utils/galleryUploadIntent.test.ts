@@ -1,12 +1,11 @@
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
+
+import { galleryUploadIntent, type UploadFn } from '@kobato/inkling-internal/nodes/upload-intent'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { createPreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-import type { GalleryImage } from '../../../src/types/gallery'
-
-import { galleryUploadIntent, type UploadFn } from '../../../src/nodes/upload-intent'
-import { getImageDimensions } from '../../../src/utils/getImageDimensions'
-import { createPreviewLeasePool } from '../../../src/utils/preview-lease'
-
-vi.mock('../../../src/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

@@ -1,16 +1,24 @@
-import type { CardSpecFieldMapFor, DecoratorNodeProperty, NestedEditorSpec, TransientPropSpec } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 
-import { transientInitialFileProp, transientTriggerFileDialogProp } from '../../card-specs'
+import {
+  transientInitialFileProp,
+  transientTriggerFileDialogProp,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { captionEditorSpecBase } from '../caption-editor-spec'
-import { formatVideoDuration } from './format-video-duration'
-import { renderVideoNode } from './video-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { captionEditorSpecBase } from '@kobato/inkling-internal/nodes/base/nodes/caption-editor-spec'
+import { formatVideoDuration } from '@kobato/inkling-internal/nodes/base/nodes/video/format-video-duration'
+import { renderVideoNode } from '@kobato/inkling-internal/nodes/base/nodes/video/video-renderer'
 
 // The card's spec arrays live here, beside the class they type — the
 // declaration imports them from this module. `as const` keeps the literal

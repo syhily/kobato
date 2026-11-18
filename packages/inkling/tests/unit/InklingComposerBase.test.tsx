@@ -1,16 +1,15 @@
 import type { SerializedEditorState, SerializedParagraphNode, SerializedTextNode } from 'lexical'
 
+import InklingComposerBase from '@kobato/inkling-internal/components/InklingComposerBase'
+import InklingErrorBoundary from '@kobato/inkling-internal/components/InklingErrorBoundary'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import InklingComposerBase from '../../src/components/InklingComposerBase'
-import InklingErrorBoundary from '../../src/components/InklingErrorBoundary'
-import MINIMAL_NODES from '../../src/nodes/MinimalNodes'
-import { getRegisteredNodeMap } from '../../src/utils/lexical-internals'
 
 // The core composer variant: boots with the card-free MINIMAL_NODES
 // set and serializes back out — the composition the `./core` entry exports.

@@ -7,9 +7,9 @@
  * `useCollaborationProviderFactory`.
  */
 
-import type { LexicalProviderFactory } from '../../context/InklingCollaborationContext'
+import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
 
-import { createRequestTrack } from './request-track'
+import { createRequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
 
 /** The lazy chunk's public shape — only the factory builder is consumed. */
 export interface CollaborationChunk {
@@ -37,7 +37,7 @@ export interface LazyProviderFactorySession {
 }
 
 export function createLazyProviderFactory(
-  load: LoadCollaborationChunk = () => import('./collaboration'),
+  load: LoadCollaborationChunk = () => import('@kobato/inkling-internal/utils/services/collaboration'),
 ): LazyProviderFactorySession {
   const track = createRequestTrack()
   return {

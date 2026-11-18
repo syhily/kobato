@@ -1,11 +1,9 @@
+import type { LinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { createBookmarkEmbedFlow } from '@kobato/inkling-internal/hooks/bookmark-embed-flow'
+import { useDisposableStore } from '@kobato/inkling-internal/hooks/useDisposableStore'
 import React from 'react'
-
-import type { LinkingSettings } from '../context/InklingHostIntegrationContext'
-
-import { createBookmarkEmbedFlow } from './bookmark-embed-flow'
-import { useDisposableStore } from './useDisposableStore'
 
 interface UseBookmarkMetadataOptions {
   editor: LexicalEditor

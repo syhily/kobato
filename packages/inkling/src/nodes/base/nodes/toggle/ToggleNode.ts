@@ -1,17 +1,20 @@
-import { $canShowPlaceholderCurry } from '@lexical/text'
+import type {
+  DecoratorNodeProperty,
+  NestedEditorFieldMap,
+  NestedEditorSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 
-import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
-
-import BASIC_NODES from '../../../BasicNodes'
-import MINIMAL_NODES from '../../../MinimalNodes'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { renderToggleNode } from './toggle-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { renderToggleNode } from '@kobato/inkling-internal/nodes/base/nodes/toggle/toggle-renderer'
+import BASIC_NODES from '@kobato/inkling-internal/nodes/BasicNodes'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { $canShowPlaceholderCurry } from '@lexical/text'
 
 // The card's nested-editor spec lives here, beside the class it types — the
 // declaration imports it from this module. Both editors are `nullable`: the

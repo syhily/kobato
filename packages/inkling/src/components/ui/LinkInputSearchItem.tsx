@@ -1,7 +1,7 @@
-import type { ListOptionItem } from '../../hooks/useSearchLinks'
+import type { ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
 
-import { HighlightedString } from './HighlightedString'
-import { InputListItem } from './InputList'
+import { HighlightedString } from '@kobato/inkling-internal/components/ui/HighlightedString'
+import { InputListItem } from '@kobato/inkling-internal/components/ui/InputList'
 
 export function LinkInputSearchItem({
   dataTestId,

@@ -1,25 +1,3 @@
-import { LinkNode } from '@lexical/link'
-import {
-  $createParagraphNode,
-  $createRangeSelection,
-  $createTextNode,
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isTextNode,
-  $nodesOfType,
-  $setSelection,
-  CONTROLLED_TEXT_INSERTION_COMMAND,
-  DELETE_CHARACTER_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  KEY_ESCAPE_COMMAND,
-  createEditor,
-  type LexicalEditor,
-  type TextNode,
-} from 'lexical'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   $createAtLinkNode,
   $createAtLinkSearchNode,
@@ -27,8 +5,8 @@ import {
   AtLinkNode,
   AtLinkSearchNode,
   ZWNJNode,
-} from '../../../../src/nodes/base'
-import { BookmarkNode } from '../../../../src/nodes/BookmarkNode'
+} from '@kobato/inkling-internal/nodes/base'
+import { BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
 // Characterization pins for the at-link registrations (insertion, session,
 // guards, shape transform, commit). Mounted-plugin gating and popup wiring
 // live in AtLinkPlugin.test.tsx.
@@ -51,8 +29,29 @@ import {
   registerAtLinkSession,
   type AtLinkCommitResult,
   type AtLinkSessionSnapshot,
-} from '../../../../src/plugins/behaviour/at-link'
-import { drainEnqueuedUpdates, tick } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/at-link'
+import { drainEnqueuedUpdates, tick } from '@kobato/inkling/tests/utils/test-editor'
+import { LinkNode } from '@lexical/link'
+import {
+  $createParagraphNode,
+  $createRangeSelection,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isTextNode,
+  $nodesOfType,
+  $setSelection,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
+  DELETE_CHARACTER_COMMAND,
+  FORMAT_TEXT_COMMAND,
+  KEY_ESCAPE_COMMAND,
+  createEditor,
+  type LexicalEditor,
+  type TextNode,
+} from 'lexical'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // jsdom's Selection lacks the (non-standard) modify() API that
 // RangeSelection.deleteCharacter routes through on the native fallback's

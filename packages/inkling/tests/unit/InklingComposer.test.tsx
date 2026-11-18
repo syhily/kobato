@@ -1,20 +1,22 @@
+import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
+import InklingErrorBoundary from '@kobato/inkling-internal/components/InklingErrorBoundary'
+import InklingCollaborationContext, {
+  noopWebsocketProviderFactory,
+  type LexicalProviderFactory,
+} from '@kobato/inkling-internal/context/InklingCollaborationContext'
+import {
+  type FileUploader,
+  useInklingHostEssentials,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { normalizeInitialEditorState } from '@kobato/inkling-internal/utils/initial-document'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { render, waitFor } from '@testing-library/react'
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import InklingComposer from '../../src/components/InklingComposer'
-import InklingErrorBoundary from '../../src/components/InklingErrorBoundary'
-import InklingCollaborationContext, {
-  noopWebsocketProviderFactory,
-  type LexicalProviderFactory,
-} from '../../src/context/InklingCollaborationContext'
-import { type FileUploader, useInklingHostEssentials } from '../../src/context/InklingHostIntegrationContext'
-import InklingUiPrefsContext from '../../src/context/InklingUiPrefsContext'
-import trackEvent from '../../src/utils/analytics'
-import { normalizeInitialEditorState } from '../../src/utils/initial-document'
 
 vi.mock('@lexical/react/LexicalCollaborationPlugin', () => ({
   CollaborationPlugin: vi.fn(() => null),

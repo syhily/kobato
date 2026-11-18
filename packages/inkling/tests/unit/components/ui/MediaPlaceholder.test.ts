@@ -1,6 +1,5 @@
+import { isPlaceholderIconName } from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
 import { describe, expect, it } from 'vitest'
-
-import { isPlaceholderIconName } from '../../../../src/components/ui/MediaPlaceholder'
 
 describe('isPlaceholderIconName', () => {
   it('accepts declared icon names', () => {

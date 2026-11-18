@@ -1,11 +1,10 @@
-import { describe, expect, it, vi } from 'vitest'
-
 import {
   createLibraryBrowser,
   LIBRARY_SEARCH_DEBOUNCE_MS,
   type LibraryScheduler,
-} from '../../../src/utils/services/library-browser'
-import { tick } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/utils/services/library-browser'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
+import { describe, expect, it, vi } from 'vitest'
 
 interface TestItem {
   id: string

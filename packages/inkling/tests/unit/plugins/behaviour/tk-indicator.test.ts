@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   nextTkNodeKey,
   resolveTkIndicatorPosition,
@@ -7,7 +5,8 @@ import {
   TK_INDICATOR_TOP_OFFSET,
   type TkIndicatorPosition,
   type TkRectLike,
-} from '../../../../src/plugins/behaviour/tk-indicator'
+} from '@kobato/inkling-internal/plugins/behaviour/tk-indicator'
+import { describe, expect, it } from 'vitest'
 
 // Data-driven pins for the TK indicator geometry and click-to-cycle policy.
 // Editor wiring (measuring, rendering, editor.update) lives in

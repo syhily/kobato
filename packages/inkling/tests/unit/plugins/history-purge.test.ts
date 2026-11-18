@@ -1,8 +1,7 @@
+import { purgeDeadEditorHistoryEntries } from '@kobato/inkling-internal/plugins/behaviour/history-purge'
 import { createEmptyHistoryState, type HistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { createEditor, type LexicalEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { purgeDeadEditorHistoryEntries } from '../../../src/plugins/behaviour/history-purge'
 
 type HistoryStateEntry = HistoryState['undoStack'][number]
 

@@ -1,7 +1,10 @@
+import {
+  createSearchCoordinator,
+  type ListOptionSection,
+  type SearchLinksFn,
+} from '@kobato/inkling-internal/hooks/search-coordinator'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import { createSearchCoordinator, type ListOptionSection, type SearchLinksFn } from './search-coordinator'
-import { useInklingLabels } from './useInklingLabels'
 
 // React adapter over search-coordinator (the deep module — request tracks, URL
 // short-circuit, and race policy live there). The coordinator is recreated when
@@ -10,7 +13,12 @@ import { useInklingLabels } from './useInklingLabels'
 // resolved here and injected into the coordinator, which keeps its own English
 // fallbacks for headless consumers.
 
-export type { ListOptionItem, ListOptionSection, SearchLinksFn, SearchResult } from './search-coordinator'
+export type {
+  ListOptionItem,
+  ListOptionSection,
+  SearchLinksFn,
+  SearchResult,
+} from '@kobato/inkling-internal/hooks/search-coordinator'
 
 interface UseSearchLinksOptions {
   noResultOptions?: (query: string) => ListOptionSection[]

@@ -5,12 +5,11 @@ import { css } from '@codemirror/lang-css'
 import { html } from '@codemirror/lang-html'
 import { javascript } from '@codemirror/lang-javascript'
 import { EditorView as CodeMirrorEditorView } from '@codemirror/view'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { darkBaseExtensions, lightBaseExtensions } from '@kobato/inkling-internal/utils/codemirror-config'
 import CodeMirror from '@uiw/react-codemirror'
 import React from 'react'
-
-import InklingUiPrefsContext from '../../../context/InklingUiPrefsContext'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { darkBaseExtensions, lightBaseExtensions } from '../../../utils/codemirror-config'
 
 // The CodeMirror-backed code editor: it loads in its own chunk behind the card's
 // lazy boundary, so this module must only be reached through React.lazy.

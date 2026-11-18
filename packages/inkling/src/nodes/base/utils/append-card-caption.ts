@@ -1,4 +1,4 @@
-import type { RenderContext } from '../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
 /*
  * The caption/figcaption pairing invariant: a card with a caption exports the

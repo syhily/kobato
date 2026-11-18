@@ -1,19 +1,18 @@
+import type { HeaderNode } from '@kobato/inkling-internal/nodes/HeaderNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { HeaderCard } from '@kobato/inkling-internal/components/ui/cards/HeaderCard/HeaderCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useInklingUploadSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useHeaderBackgroundImage } from '@kobato/inkling-internal/hooks/useHeaderBackgroundImage'
+import { useMediaCardUpload } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import usePinturaEditor from '@kobato/inkling-internal/hooks/usePinturaEditor'
+import { headerFieldWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
+import { $isHeaderNode } from '@kobato/inkling-internal/nodes/HeaderNode'
+import { headerBackgroundUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import { useEffect } from 'react'
-
-import type { HeaderNode } from '../HeaderNode'
-
-import { CardActionToolbar } from '../../components/ui/CardActionToolbar'
-import { HeaderCard } from '../../components/ui/cards/HeaderCard/HeaderCard'
-import { useCardIsEditing } from '../../context/CardSelectionStoreContext'
-import { useInklingUploadSettings } from '../../context/InklingHostIntegrationContext'
-import { useCardChrome } from '../../hooks/useCardChrome'
-import { useHeaderBackgroundImage } from '../../hooks/useHeaderBackgroundImage'
-import { useMediaCardUpload } from '../../hooks/useMediaCardUpload'
-import usePinturaEditor from '../../hooks/usePinturaEditor'
-import { $isHeaderNode } from '../HeaderNode'
-import { headerBackgroundUploadIntent } from '../upload-intent'
-import { headerFieldWriter } from './header-field-writer'
 
 interface HeaderNodeComponentProps {
   alignment: string
@@ -195,7 +194,7 @@ export default HeaderNodeComponent
 
 /**
  * Header's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderHeaderCard(node: HeaderNode) {
   return (

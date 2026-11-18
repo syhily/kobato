@@ -1,19 +1,18 @@
 import type { InitialEditorStateType } from 'lexical'
 
-import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext'
-import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
-import { LexicalNestedComposer, type LexicalNestedComposerProps } from '@lexical/react/LexicalNestedComposer'
-import React from 'react'
-
-import InklingCollaborationContext from '../context/InklingCollaborationContext'
+import InklingCollaborationContext from '@kobato/inkling-internal/context/InklingCollaborationContext'
 import {
   useWordCountCallback,
   useWordCountLanguage,
   useWordCountSelectionCallback,
-} from '../hooks/useWordCountCallback'
-import ReplacementStringsPlugin from '../plugins/ReplacementStringsPlugin'
-import TKPlugin from '../plugins/TKPlugin'
-import WordCountPlugin from '../plugins/WordCountPlugin'
+} from '@kobato/inkling-internal/hooks/useWordCountCallback'
+import ReplacementStringsPlugin from '@kobato/inkling-internal/plugins/ReplacementStringsPlugin'
+import TKPlugin from '@kobato/inkling-internal/plugins/TKPlugin'
+import WordCountPlugin from '@kobato/inkling-internal/plugins/WordCountPlugin'
+import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext'
+import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
+import { LexicalNestedComposer, type LexicalNestedComposerProps } from '@lexical/react/LexicalNestedComposer'
+import React from 'react'
 
 // mirrors LexicalNestedComposer; initialEditorState is only used to bootstrap
 // the collaboration plugin when collab is active

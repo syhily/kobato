@@ -1,7 +1,6 @@
+import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
 import { renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import { useClickOutside } from '../../../src/hooks/useClickOutside'
 
 function setupDom() {
   const container = document.createElement('div')

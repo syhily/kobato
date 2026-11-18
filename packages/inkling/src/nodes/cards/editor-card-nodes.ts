@@ -1,11 +1,10 @@
+import type { CardUploadType } from '@kobato/inkling-internal/nodes/cards/card-declaration'
+import type { CardMenuSource, MenuItem } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
 import type { LexicalEditor } from 'lexical'
 
-import type { CardUploadType } from './card-declaration'
-import type { CardMenuSource, MenuItem } from './card-menu-build'
-
-import { getRegisteredNodeMap } from '../../utils/lexical-internals'
-import { resolveAllCardFacts } from './card-facts'
-import { resolveCardMenuEntries } from './card-menus'
+import { resolveAllCardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import { resolveCardMenuEntries } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 
 /**
  * One registered card as declaration-backed data: menu entries resolved through the

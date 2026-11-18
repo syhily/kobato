@@ -1,6 +1,5 @@
+import { ANCHOR_POPUP_GAP, fitRectWithin, type FitRect } from '@kobato/inkling-internal/utils/fit-rect'
 import { describe, expect, it } from 'vitest'
-
-import { ANCHOR_POPUP_GAP, fitRectWithin, type FitRect } from '../../../src/utils/fit-rect'
 
 function rect(top: number, left: number, width: number, height: number): FitRect {
   return { top, left, width, height }

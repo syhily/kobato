@@ -1,3 +1,16 @@
+import EyedropperIcon from '@kobato/inkling-internal/assets/icons/inkling-eyedropper.svg?react'
+import ImgBgIcon from '@kobato/inkling-internal/assets/icons/inkling-img-bg.svg?react'
+import { Button } from '@kobato/inkling-internal/components/ui/Button'
+import {
+  resolveSelectedSwatchTitle,
+  resolveSwatchDisplayColor,
+  resolveSwatchValue,
+} from '@kobato/inkling-internal/components/ui/color-swatch'
+import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
+import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { cx } from '@kobato/inkling-internal/utils/cx'
+import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   Fragment,
@@ -10,16 +23,6 @@ import {
   type ReactNode,
 } from 'react'
 import { HexColorInput, HexColorPicker } from 'react-colorful'
-
-import EyedropperIcon from '../../assets/icons/inkling-eyedropper.svg?react'
-import ImgBgIcon from '../../assets/icons/inkling-img-bg.svg?react'
-import { useClickOutside } from '../../hooks/useClickOutside'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { cx } from '../../utils/cx'
-import { getAccentColor } from '../../utils/getAccentColor'
-import { Button } from './Button'
-import { resolveSelectedSwatchTitle, resolveSwatchDisplayColor, resolveSwatchValue } from './color-swatch'
-import { Tooltip } from './Tooltip'
 
 interface ColorPickerProps {
   value: string

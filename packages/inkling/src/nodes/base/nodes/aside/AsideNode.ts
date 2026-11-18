@@ -1,8 +1,7 @@
 import type { EditorConfig, LexicalEditor, SerializedElementNode } from 'lexical'
 
+import { AsideParser } from '@kobato/inkling-internal/nodes/base/nodes/aside/AsideParser'
 import { ElementNode } from 'lexical'
-
-import { AsideParser } from './AsideParser'
 
 export class AsideNode extends ElementNode {
   static getType() {

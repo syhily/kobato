@@ -1,26 +1,32 @@
+import type { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+
+import { ActionToolbar } from '@kobato/inkling-internal/components/ui/ActionToolbar'
+import { CardActionToolbar, useCardToolbarLabel } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { ImageCard } from '@kobato/inkling-internal/components/ui/cards/ImageCard'
+import { LinkInput } from '@kobato/inkling-internal/components/ui/LinkInput'
+import { useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import {
+  useInklingHostEssentials,
+  useInklingUploadSettings,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import useDropTarget from '@kobato/inkling-internal/hooks/useDropTarget'
+import { useMediaCardUpload } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import usePinturaEditor from '@kobato/inkling-internal/hooks/usePinturaEditor'
+import { isCardWidth, normalizeCardWidth, type CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import { getAllowedImageCardWidths } from '@kobato/inkling-internal/nodes/base/utils/image-card-widths'
+import { $isImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { imageUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { $selectCard } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { applyImageCardDrop, isImageCardDropAllowed } from '@kobato/inkling-internal/plugins/behaviour/drop-surgery'
+import {
+  backfillImageDimensions,
+  clampImageCardWidth,
+  migrateImageDataUrl,
+} from '@kobato/inkling-internal/plugins/behaviour/image-lifecycle'
+import { isGif } from '@kobato/inkling-internal/utils/isGif'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { ImageNode } from './ImageNode'
-
-import { ActionToolbar } from '../components/ui/ActionToolbar'
-import { CardActionToolbar, useCardToolbarLabel } from '../components/ui/CardActionToolbar'
-import { ImageCard } from '../components/ui/cards/ImageCard'
-import { LinkInput } from '../components/ui/LinkInput'
-import { useCardIsSelected } from '../context/CardSelectionStoreContext'
-import { useInklingHostEssentials, useInklingUploadSettings } from '../context/InklingHostIntegrationContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import useDropTarget from '../hooks/useDropTarget'
-import { useMediaCardUpload } from '../hooks/useMediaCardUpload'
-import usePinturaEditor from '../hooks/usePinturaEditor'
-import { $selectCard } from '../plugins/behaviour/card-adjacency'
-import { applyImageCardDrop, isImageCardDropAllowed } from '../plugins/behaviour/drop-surgery'
-import { backfillImageDimensions, clampImageCardWidth, migrateImageDataUrl } from '../plugins/behaviour/image-lifecycle'
-import { isGif } from '../utils/isGif'
-import { isCardWidth, normalizeCardWidth, type CardWidth } from './base/utils/card-widths'
-import { getAllowedImageCardWidths } from './base/utils/image-card-widths'
-import { $isImageNode } from './ImageNode'
-import { imageUploadIntent } from './upload-intent'
 
 export interface ImageNodeComponentProps {
   nodeKey: NodeKey
@@ -107,7 +113,7 @@ export function ImageNodeComponent({
   const hasMultipleImageCardWidths = allowedImageCardWidths.length > 1
 
   // the mount-time document migrations (data:-URL upload, dimension
-  // backfill, width clamp) live in @/inkling/plugins/behaviour/image-lifecycle
+  // backfill, width clamp) live in @kobato/inkling-internal/plugins/behaviour/image-lifecycle
   React.useEffect(() => {
     let isMounted = true
     void migrateImageDataUrl(
@@ -252,7 +258,7 @@ export function ImageNodeComponent({
 
 /**
  * Image's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderImageCard(node: ImageNode) {
   const Selector = node.__selector

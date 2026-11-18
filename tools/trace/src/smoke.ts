@@ -11,6 +11,7 @@
 // Everything is synthetic and loopback-only. Ordinary `pnpm test` never runs
 // this file; it requires Docker and Playwright.
 
+import type { O2Context, TraceState } from '@kobato/trace/lib.ts'
 import type { BrowserContext, Page } from '@playwright/test'
 
 import { bootDevServer, stopDevServer, writeDevConfig, type DevServer } from '@kobato/harness/dev-instance.ts'
@@ -21,17 +22,6 @@ import { seedInstalledInstance } from '@kobato/harness/seed.ts'
 import { TRACE_METRIC_STREAMS } from '@kobato/telemetry/metrics.ts'
 import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { chromium } from '@playwright/test'
-import bcrypt from 'bcryptjs'
-import { randomBytes } from 'node:crypto'
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import sharp from 'sharp'
-
-import type { O2Context, TraceState } from './lib.ts'
-
 import {
   buildState,
   docker,
@@ -55,8 +45,16 @@ import {
   stopOpenObserve,
   waitForOpenObserve,
   warn,
-} from './lib.ts'
-import { applyRetention } from './provision.ts'
+} from '@kobato/trace/lib.ts'
+import { applyRetention } from '@kobato/trace/provision.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { chromium } from '@playwright/test'
+import bcrypt from 'bcryptjs'
+import { randomBytes } from 'node:crypto'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import sharp from 'sharp'
 
 const REPO_ROOT = join(import.meta.dirname, '..', '..', '..')
 const DATA_TIMEOUT_MS = 60_000

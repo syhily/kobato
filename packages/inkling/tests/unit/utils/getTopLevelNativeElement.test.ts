@@ -1,6 +1,5 @@
+import { getTopLevelNativeElement } from '@kobato/inkling-internal/utils/getTopLevelNativeElement'
 import { describe, expect, it } from 'vitest'
-
-import { getTopLevelNativeElement } from '../../../src/utils/getTopLevelNativeElement'
 
 describe('getTopLevelNativeElement', () => {
   it('returns null for a missing node', () => {

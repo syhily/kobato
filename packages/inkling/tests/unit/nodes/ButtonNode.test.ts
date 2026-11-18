@@ -1,13 +1,17 @@
 import type { LexicalEditor } from 'lexical'
 
+import {
+  ButtonNode,
+  $createButtonNode,
+  $isButtonNode,
+  INSERT_BUTTON_COMMAND,
+} from '@kobato/inkling-internal/nodes/ButtonNode'
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { ButtonNode, $createButtonNode, $isButtonNode, INSERT_BUTTON_COMMAND } from '../../../src/nodes/ButtonNode'
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { registerCardDecorateAdapter } from '../../../src/nodes/decorate-card'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
 
 // The decorate() assertions below need the wrapper layer's adapter registered
 // into the injection port — production gets it from the `.` barrel.

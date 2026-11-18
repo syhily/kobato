@@ -1,20 +1,22 @@
+import {
+  InklingHostIntegrationProvider,
+  type FileUploader,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { VideoNode, $createVideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
+import { VideoNodeComponent } from '@kobato/inkling-internal/nodes/VideoNodeComponent'
+import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import extractVideoMetadata from '@kobato/inkling-internal/utils/extractVideoMetadata'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { CollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { $getNodeByKey, $getRoot, createEditor, type LexicalEditor, type NodeKey } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest'
 
-import { InklingHostIntegrationProvider, type FileUploader } from '../../../src/context/InklingHostIntegrationContext'
-import MINIMAL_NODES from '../../../src/nodes/MinimalNodes'
-import { VideoNode, $createVideoNode } from '../../../src/nodes/VideoNode'
-import { VideoNodeComponent } from '../../../src/nodes/VideoNodeComponent'
-import { EDIT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import extractVideoMetadata from '../../../src/utils/extractVideoMetadata'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { tick, updateEditor } from '../../utils/test-editor'
-
-vi.mock('../../../src/utils/extractVideoMetadata', () => ({
+vi.mock('@kobato/inkling-internal/utils/extractVideoMetadata', () => ({
   default: vi.fn(),
 }))
 

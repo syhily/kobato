@@ -1,6 +1,5 @@
+import { datasetToGalleryImage } from '@kobato/inkling-internal/nodes/base/utils/gallery-image-fill'
 import { describe, expect, it } from 'vitest'
-
-import { datasetToGalleryImage } from '../../../src/nodes/base/utils/gallery-image-fill'
 
 describe('datasetToGalleryImage', () => {
   it('rejects a dataset without a usable src', () => {

@@ -1,10 +1,9 @@
 import type { ElementNode, Klass, LexicalEditor, LexicalNode } from 'lexical'
 
+import { registerNodeTransformIfPresent } from '@kobato/inkling-internal/transforms/register-node-transform'
 /* c8 ignore start */
 import { $isListItemNode, $isListNode, ListItemNode } from '@lexical/list'
 import { $createParagraphNode, $getRoot, $isLineBreakNode, $isRootNode, $isTextNode } from 'lexical'
-
-import { registerNodeTransformIfPresent } from '../register-node-transform'
 /* c8 ignore stop */
 
 export type CreateNodeFn<T extends LexicalNode> = (originalNode: T) => T

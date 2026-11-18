@@ -1,8 +1,7 @@
+import type { FileUploader, FileUploaderInput } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
+import { normalizeFileUploader } from '@kobato/inkling-internal/utils/file-uploader'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { FileUploader, FileUploaderInput } from '../../../src/context/InklingHostIntegrationContext'
-
-import { normalizeFileUploader } from '../../../src/utils/file-uploader'
 
 const validHook: FileUploader['useFileUpload'] = () => ({
   upload: () => Promise.resolve([{ url: 'https://cdn.example.com/a.png' }]),

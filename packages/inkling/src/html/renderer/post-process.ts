@@ -3,7 +3,7 @@
 // declarative pass over them. Subsystems own their post-render policy here
 // instead of the string layer hardcoding per-subsystem specials (e.g. the
 // footnotes `<section>` wrap in
-// `@/inkling/nodes/footnote/footnote-html-export`).
+// `@kobato/inkling-internal/nodes/footnote/footnote-html-export`).
 //
 // A processor may also claim a doc-end trailing run (`isTrailingRunNode`):
 // the string layer's trailing-blank-paragraph suppression walks past the
@@ -11,11 +11,10 @@
 // paragraph the editor keeps. Processors run in registry order after the
 // suppression.
 
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 import type { LexicalNode } from 'lexical'
 
-import type { RenderContext } from '../../nodes/base/render-context'
-
-import { footnotesSectionPostProcessor } from '../../nodes/footnote/footnote-html-export'
+import { footnotesSectionPostProcessor } from '@kobato/inkling-internal/nodes/footnote/footnote-html-export'
 
 export interface HtmlPostProcessInput {
   /** The root children this render exported. */

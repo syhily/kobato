@@ -1,7 +1,10 @@
-import type { DecoratorNodeProperty } from '../../card-specs'
+import type { DecoratorNodeProperty } from '@kobato/inkling-internal/nodes/base/card-specs'
 
-import { generateDecoratorNode, type DecoratorNodeData } from '../../generate-decorator-node'
-import { renderMathNode } from './math-renderer'
+import {
+  generateDecoratorNode,
+  type DecoratorNodeData,
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { renderMathNode } from '@kobato/inkling-internal/nodes/base/nodes/math/math-renderer'
 
 const mathProperties = [
   // the artifact-slot invariant as spec data: editing `tex` clears the

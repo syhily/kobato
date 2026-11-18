@@ -1,9 +1,8 @@
+import type { ContainerDragHandlers } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+import type { DraggableContainerHandle } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
+
+import { useDragDropHandleState } from '@kobato/inkling-internal/context/DragDropHandleContext'
 import React from 'react'
-
-import type { ContainerDragHandlers } from './DragDropContainer'
-import type { DraggableContainerHandle } from './DragDropHandler'
-
-import { useDragDropHandleState } from '../../context/DragDropHandleContext'
 
 export interface UseDragDropContainerOptions extends ContainerDragHandlers {
   // Registered once both the element and the DragDropHandler (published to the drag-drop

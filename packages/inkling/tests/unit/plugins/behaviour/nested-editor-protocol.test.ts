@@ -1,11 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest'
-
 import {
   getEventProvenance,
   isTypeaheadMenuOpen,
   markEventFromCaptionEditor,
   markEventFromNested,
-} from '../../../../src/plugins/behaviour/nested-editor-protocol'
+} from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
+import { afterEach, describe, expect, it } from 'vitest'
 
 function keyEvent(): KeyboardEvent {
   return new KeyboardEvent('keydown', { key: 'Enter' })

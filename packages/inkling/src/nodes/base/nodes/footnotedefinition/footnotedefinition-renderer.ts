@@ -1,6 +1,10 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { FOOTNOTE_BACKREF_ATTRIBUTE, footnoteAnchorId, footnoteRefHref } from '../../../footnote/footnote-anchors'
+import {
+  FOOTNOTE_BACKREF_ATTRIBUTE,
+  footnoteAnchorId,
+  footnoteRefHref,
+} from '@kobato/inkling-internal/nodes/footnote/footnote-anchors'
 
 interface FootnoteDefinitionNodeData {
   content: string
@@ -14,8 +18,8 @@ interface FootnoteDefinitionNodeData {
  * renderer's business: the doc-end-run invariant (the footnote behaviour
  * module's RootNode transform) guarantees every definition exports as one
  * trailing run, so the section wrap is a mechanical string-layer step in
- * `@/inkling/html/renderer/convert-to-html-string`. Anchors come from the single
- * contract owner (`@/inkling/nodes/footnote/footnote-anchors`).
+ * `@kobato/inkling-internal/html/renderer/convert-to-html-string`. Anchors come from the single
+ * contract owner (`@kobato/inkling-internal/nodes/footnote/footnote-anchors`).
  */
 export function renderFootnoteDefinitionNode(node: FootnoteDefinitionNodeData, context: RenderContext) {
   const document = context.createDocument()

@@ -1,3 +1,16 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
+
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerModifierCommand } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/modifier'
+import { registerKeyboardNavigation } from '@kobato/inkling-internal/plugins/behaviour/registerKeyboardNavigation'
+import {
+  firstTextKey,
+  seedSelectionEditor,
+  selectAcrossParagraphs,
+  selectFirstText,
+  selectText,
+} from '@kobato/inkling/tests/utils/selection'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { registerRichText } from '@lexical/rich-text'
@@ -17,20 +30,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { KeyboardNavigationDeps } from '../../../../src/plugins/behaviour/keyboard-navigation/types'
-
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { registerModifierCommand } from '../../../../src/plugins/behaviour/keyboard-navigation/modifier'
-import { registerKeyboardNavigation } from '../../../../src/plugins/behaviour/registerKeyboardNavigation'
-import {
-  firstTextKey,
-  seedSelectionEditor,
-  selectAcrossParagraphs,
-  selectFirstText,
-  selectText,
-} from '../../../utils/selection'
-import { tick } from '../../../utils/test-editor'
 
 // Typing an unmodified backtick over a range selection formats it as inline
 // code through the same FORMAT_TEXT_COMMAND path as ctrl+shift+K. These are

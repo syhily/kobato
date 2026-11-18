@@ -1,11 +1,10 @@
+import { INLINE_DELIMITERS } from '@kobato/inkling-internal/markdown/grammar'
+import { pasteDialect } from '@kobato/inkling-internal/markdown/paste-dialect'
+import { MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $convertFromMarkdownString } from '@lexical/markdown'
 import { $getRoot, type TextFormatType } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { INLINE_DELIMITERS } from '../../src/markdown/grammar'
-import { pasteDialect } from '../../src/markdown/paste-dialect'
-import { MINIMAL_TRANSFORMERS } from '../../src/markdown/transformers-core'
 
 // The shared grammar table's projection pin: every inline delimiter the
 // table declares must be honored by BOTH markdown engines — the paste

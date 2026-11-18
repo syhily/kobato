@@ -1,11 +1,11 @@
-import AudioPlaceholderIcon from '../../assets/icons/inkling-audio-placeholder.svg?react'
-import FilePlaceholderIcon from '../../assets/icons/inkling-file-placeholder.svg?react'
-import GalleryPlaceholderIcon from '../../assets/icons/inkling-gallery-placeholder.svg?react'
-import ImgPlaceholderIcon from '../../assets/icons/inkling-img-placeholder.svg?react'
-import ProductPlaceholderIcon from '../../assets/icons/inkling-product-placeholder.svg?react'
-import VideoPlaceholderIcon from '../../assets/icons/inkling-video-placeholder.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { cx } from '../../utils/cx'
+import AudioPlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-audio-placeholder.svg?react'
+import FilePlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-file-placeholder.svg?react'
+import GalleryPlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-gallery-placeholder.svg?react'
+import ImgPlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-img-placeholder.svg?react'
+import ProductPlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-product-placeholder.svg?react'
+import VideoPlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-video-placeholder.svg?react'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 
 export const PLACEHOLDER_ICONS = {
   image: ImgPlaceholderIcon,

@@ -4,17 +4,15 @@
 // binary lifecycle lives in sea-instance.ts; Docker/OpenObserve tooling
 // stays in @kobato/trace.
 
+import type { ExitState } from '@kobato/harness/process.ts'
 import type { ChildProcess } from 'node:child_process'
 
+import { raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from '@kobato/harness/process.ts'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-import type { ExitState } from './process.ts'
-
-import { raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from './process.ts'
 
 const BOOT_TIMEOUT_MS = 120_000
 const POLL_INTERVAL_MS = 400

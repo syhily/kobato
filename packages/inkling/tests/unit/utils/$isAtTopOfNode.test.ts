@@ -1,6 +1,5 @@
+import { $isAtTopOfNode } from '@kobato/inkling-internal/utils/$isAtTopOfNode'
 import { describe, expect, it } from 'vitest'
-
-import { $isAtTopOfNode } from '../../../src/utils/$isAtTopOfNode'
 
 describe('$isAtTopOfNode', () => {
   it('returns undefined when there are no client rects', () => {

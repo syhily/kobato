@@ -1,6 +1,3 @@
-import { $createParagraphNode, $createTextNode, $getRoot, KEY_DOWN_COMMAND, type LexicalEditor } from 'lexical'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
 // Boundary-validation pins for the emoji search port: emoji-mart's
 // SearchIndex.search returns `any`, so `./emoji-completion` validates every
 // entry before handing it out. The scripted adapter below replaces the chunk
@@ -13,12 +10,14 @@ import {
   registerEmojiExactMatchCompletion,
   searchEmojis,
   type EmojiCommitResult,
-} from '../../../../src/plugins/behaviour/emoji-completion'
-import { createTestEditor, drainEnqueuedUpdates, tick } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'
+import { createTestEditor, drainEnqueuedUpdates, tick } from '@kobato/inkling/tests/utils/test-editor'
+import { $createParagraphNode, $createTextNode, $getRoot, KEY_DOWN_COMMAND, type LexicalEditor } from 'lexical'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const searchEmojiMartIndex = vi.hoisted(() => vi.fn<(query: string) => Promise<unknown>>())
 
-vi.mock('../../../../src/plugins/behaviour/emoji-search-index', () => ({ searchEmojiMartIndex }))
+vi.mock('@kobato/inkling-internal/plugins/behaviour/emoji-search-index', () => ({ searchEmojiMartIndex }))
 
 async function setParagraph(editor: LexicalEditor, text: string) {
   await drainEnqueuedUpdates(editor, () => {

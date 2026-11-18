@@ -1,7 +1,6 @@
+import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { describe, expect, it } from 'vitest'
-
-import { readCaptionFromElement } from '../../../src/nodes/base/utils/read-caption-from-element'
-import { createTestDom } from '../../utils/render-live'
 
 describe('readCaptionFromElement', function () {
   it('skips empty cleaned caption fragments when joining captions', function () {

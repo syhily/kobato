@@ -1,3 +1,16 @@
+import $convertToHtmlString from '@kobato/inkling-internal/html/renderer/convert-to-html-string'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import {
+  $createMathInlineNode,
+  $isMathInlineNode,
+  MathInlineNode,
+} from '@kobato/inkling-internal/nodes/math/MathInlineNode'
+import {
+  dispatchEditMathInlineAtTarget,
+  EDIT_MATH_INLINE_COMMAND,
+  registerMathInlineEnter,
+} from '@kobato/inkling-internal/plugins/behaviour/math-inline'
+import defaultTheme from '@kobato/inkling-internal/themes/default'
 import { createHeadlessEditor } from '@lexical/headless'
 import {
   $createNodeSelection,
@@ -13,16 +26,6 @@ import {
   type NodeKey,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import $convertToHtmlString from '../../../../src/html/renderer/convert-to-html-string'
-import DEFAULT_NODES from '../../../../src/nodes/DefaultNodes'
-import { $createMathInlineNode, $isMathInlineNode, MathInlineNode } from '../../../../src/nodes/math/MathInlineNode'
-import {
-  dispatchEditMathInlineAtTarget,
-  EDIT_MATH_INLINE_COMMAND,
-  registerMathInlineEnter,
-} from '../../../../src/plugins/behaviour/math-inline'
-import defaultTheme from '../../../../src/themes/default'
 
 describe('MathInlineNode', () => {
   let editor: LexicalEditor

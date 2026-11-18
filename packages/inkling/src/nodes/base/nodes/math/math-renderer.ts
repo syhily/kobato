@@ -1,8 +1,11 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { MATH_HTML_CONFIG } from '../../render-context'
-import { hasRenderableSource, renderEmptyContainer } from '../../utils/render-empty-container'
-import { resolveMathArtifact } from './math-artifacts'
+import { resolveMathArtifact } from '@kobato/inkling-internal/nodes/base/nodes/math/math-artifacts'
+import { MATH_HTML_CONFIG } from '@kobato/inkling-internal/nodes/base/render-context'
+import {
+  hasRenderableSource,
+  renderEmptyContainer,
+} from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
 
 interface MathNodeData {
   tex: string

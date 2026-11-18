@@ -1,11 +1,10 @@
+import { BaseFileNode, $createBaseFileNode, $isFileNode } from '@kobato/inkling-internal/nodes/base/index'
+import { dom, createDocument } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { BaseFileNode, $createBaseFileNode, $isFileNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { dom, createDocument } from '../test-utils/index'
 
 const editorNodes = [BaseFileNode]
 

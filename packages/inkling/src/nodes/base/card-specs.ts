@@ -1,8 +1,7 @@
+import type { CleanBasicHtmlOptions } from '@kobato/inkling-internal/html/clean-basic-html'
 import type { EditorState, Klass, LexicalEditor, LexicalNode, LexicalNodeReplacement } from 'lexical'
 
-import type { CleanBasicHtmlOptions } from '../../html/clean-basic-html'
-
-import { fileOr } from '../../utils/value-guards'
+import { fileOr } from '@kobato/inkling-internal/utils/value-guards'
 
 // The card-spec vocabulary, a LEAF of the card pipeline: it never imports the
 // class factory or a node class, so declarations, the assembler, and the

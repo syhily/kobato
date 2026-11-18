@@ -1,9 +1,8 @@
+import type { SerializedCodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+
+import { lexicalStateToMarkdown, markdownToLexicalState } from '@kobato/inkling-internal/markdown/round-trip'
 import { IS_HIGHLIGHT, IS_SUBSCRIPT, IS_SUPERSCRIPT, type SerializedEditorState } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import type { SerializedCodeBlockNode } from '../../src/nodes/CodeBlockNode'
-
-import { lexicalStateToMarkdown, markdownToLexicalState } from '../../src/markdown/round-trip'
 
 describe('Markdown round-trip', function () {
   function roundTrip(markdown: string) {

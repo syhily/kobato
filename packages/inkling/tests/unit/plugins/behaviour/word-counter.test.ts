@@ -1,3 +1,15 @@
+import { createWordCounter, type WordCounterThrottle } from '@kobato/inkling-internal/plugins/behaviour/word-counter'
+import { countWords } from '@kobato/inkling-internal/utils'
+import { getTopLevelEditor } from '@kobato/inkling-internal/utils/lexical-internals'
+import {
+  cleanupSelectionEditors,
+  createSelectionEditor,
+  firstTextKey,
+  seedSelectionEditor,
+  selectAcrossParagraphs,
+  selectText,
+} from '@kobato/inkling/tests/utils/selection'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -12,21 +24,8 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createWordCounter, type WordCounterThrottle } from '../../../../src/plugins/behaviour/word-counter'
-import { countWords } from '../../../../src/utils'
-import { getTopLevelEditor } from '../../../../src/utils/lexical-internals'
-import {
-  cleanupSelectionEditors,
-  createSelectionEditor,
-  firstTextKey,
-  seedSelectionEditor,
-  selectAcrossParagraphs,
-  selectText,
-} from '../../../utils/selection'
-import { updateEditor } from '../../../utils/test-editor'
-
-vi.mock('../../../../src/utils', async (importActual) => {
-  const actual = await importActual<typeof import('../../../../src/utils')>()
+vi.mock('@kobato/inkling-internal/utils', async (importActual) => {
+  const actual = await importActual<typeof import('@kobato/inkling-internal/utils')>()
   return { ...actual, countWords: vi.fn(actual.countWords) }
 })
 

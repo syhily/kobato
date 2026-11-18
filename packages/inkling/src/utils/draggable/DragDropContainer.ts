@@ -1,9 +1,13 @@
+import type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 import type { ComponentType, SVGProps } from 'react'
 
-import type { ImageNodeDataset } from '../../nodes/cards/card-commands'
-
-import { CONTAINER_DATA_ATTR, DRAGGABLE_DATA_ATTR, DROPPABLE_DATA_ATTR, INKLING_ZINDEX } from './draggable-constants'
-import { isGalleryImageDrag } from './gallery-drop'
+import {
+  CONTAINER_DATA_ATTR,
+  DRAGGABLE_DATA_ATTR,
+  DROPPABLE_DATA_ATTR,
+  INKLING_ZINDEX,
+} from '@kobato/inkling-internal/utils/draggable/draggable-constants'
+import { isGalleryImageDrag } from '@kobato/inkling-internal/utils/draggable/gallery-drop'
 
 // Registration options for a container's draggable side. Absent optional callbacks are
 // filled with no-ops by the constructor, so DragDropHandler can call them unconditionally.

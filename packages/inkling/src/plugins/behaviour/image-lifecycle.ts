@@ -1,13 +1,11 @@
+import type { CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { $isImageNode, type BaseImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { getDefaultImageCardWidth } from '@kobato/inkling-internal/nodes/base/utils/image-card-widths'
+import { dataSrcToFile } from '@kobato/inkling-internal/utils/dataSrcToFile'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
 import { $getNodeByKey } from 'lexical'
-
-import type { CardWidth } from '../../nodes/base/utils/card-widths'
-
-import { $isImageNode, type BaseImageNode } from '../../nodes/base/nodes/image/ImageNode'
-import { getDefaultImageCardWidth } from '../../nodes/base/utils/image-card-widths'
-import { dataSrcToFile } from '../../utils/dataSrcToFile'
-import { getImageDimensions } from '../../utils/getImageDimensions'
 
 // Image lifecycle — the image card's mount-time document-migration
 // policies, headless so they are jsdom-testable through real editors: the

@@ -1,6 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
-
-import type { GifData, GifProviderConfig } from '../../../src/utils/services/gif'
+import type { GifData, GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
 
 import {
   createGifBrowser,
@@ -12,8 +10,9 @@ import {
   type GifNavState,
   type GifScheduler,
   type GifTileRect,
-} from '../../../src/utils/services/gif-browser'
-import { tick } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/utils/services/gif-browser'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
+import { describe, expect, it, vi } from 'vitest'
 
 const TEST_CONFIG: GifProviderConfig = {
   provider: 'tenor',

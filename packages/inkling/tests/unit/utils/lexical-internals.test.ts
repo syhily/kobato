@@ -1,6 +1,3 @@
-import { createEditor, type LexicalEditor } from 'lexical'
-import { describe, expect, it } from 'vitest'
-
 import {
   getEditorTheme,
   getParentEditor,
@@ -8,7 +5,9 @@ import {
   getTopLevelEditor,
   isEditorUpdating,
   isNestedEditor,
-} from '../../../src/utils/lexical-internals'
+} from '@kobato/inkling-internal/utils/lexical-internals'
+import { createEditor, type LexicalEditor } from 'lexical'
+import { describe, expect, it } from 'vitest'
 
 function createTestEditor(
   overrides: { parentEditor?: LexicalEditor; theme?: Record<string, unknown> } = {},

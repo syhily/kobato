@@ -1,14 +1,19 @@
-import type { CardSpecFieldMapFor, DecoratorNodeProperty, NestedEditorSpec, TransientPropSpec } from '../../card-specs'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
 
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { captionEditorSpecBase } from '../caption-editor-spec'
-import { parseCodeBlockNode } from './codeblock-parser'
-import { renderCodeBlockNode } from './codeblock-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { captionEditorSpecBase } from '@kobato/inkling-internal/nodes/base/nodes/caption-editor-spec'
+import { parseCodeBlockNode } from '@kobato/inkling-internal/nodes/base/nodes/codeblock/codeblock-parser'
+import { renderCodeBlockNode } from '@kobato/inkling-internal/nodes/base/nodes/codeblock/codeblock-renderer'
 
 // the card's spec arrays live here, beside the class they type — see the
 // videoNestedEditors note

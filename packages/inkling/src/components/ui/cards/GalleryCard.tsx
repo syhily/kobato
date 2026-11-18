@@ -1,16 +1,19 @@
+import type {
+  DragHandlerLike,
+  FileUploaderLike,
+  ReorderHandlerLike,
+} from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 import type { EditorState, LexicalEditor } from 'lexical'
 
-import type { GalleryImage } from '../../../types/gallery'
-import type { DragHandlerLike, FileUploaderLike, ReorderHandlerLike } from './card-ui-types'
-
-import DeleteIcon from '../../../assets/icons/inkling-trash.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { interpolateLabel } from '../../../labels/inkling-labels'
-import { MAX_IMAGES, buildGalleryRows } from '../../../nodes/base/nodes/gallery/gallery-rows'
-import { CardCaptionEditor } from '../CardCaptionEditor'
-import { IconButton } from '../IconButton'
-import { MediaPlaceholder } from '../MediaPlaceholder'
-import { UploadFileInput, UploadingOverlay } from '../UploadChrome'
+import DeleteIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
+import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCaptionEditor'
+import { IconButton } from '@kobato/inkling-internal/components/ui/IconButton'
+import { MediaPlaceholder } from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
+import { UploadFileInput, UploadingOverlay } from '@kobato/inkling-internal/components/ui/UploadChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
+import { MAX_IMAGES, buildGalleryRows } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
 
 interface GalleryRowProps {
   index: number

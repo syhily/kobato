@@ -3,11 +3,10 @@
 // binary), and every `__APP_*__`/`__SEA_*__` identifier must be covered by the
 // define table (a leftover is a bare ReferenceError at boot).
 
+import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from '@kobato/pack/sea/paths.ts'
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import { pathToFileURL } from 'node:url'
-
-import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from './paths.ts'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 

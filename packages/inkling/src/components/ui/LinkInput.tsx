@@ -1,12 +1,15 @@
+import CloseIcon from '@kobato/inkling-internal/assets/icons/inkling-close.svg?react'
+import { Input } from '@kobato/inkling-internal/components/ui/Input'
+import {
+  LinkSuggestionList,
+  useLinkDropdownEscape,
+  useLinkDropdownOpenedTracking,
+} from '@kobato/inkling-internal/components/ui/LinkSuggestionList'
+import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { useSearchLinks, type ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import React, { useEffect, useRef } from 'react'
-
-import CloseIcon from '../../assets/icons/inkling-close.svg?react'
-import { useInklingLinkingSettings } from '../../context/InklingHostIntegrationContext'
-import { useClickOutside } from '../../hooks/useClickOutside'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { useSearchLinks, type ListOptionItem } from '../../hooks/useSearchLinks'
-import { Input } from './Input'
-import { LinkSuggestionList, useLinkDropdownEscape, useLinkDropdownOpenedTracking } from './LinkSuggestionList'
 
 interface LinkInputProps {
   href?: string

@@ -1,21 +1,23 @@
+import type { DragHandlerLike } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
 import type { RefObject } from 'react'
 
-import React from 'react'
-
-import type { DragHandlerLike } from './cards/card-ui-types'
-
-import DeleteIcon from '../../assets/icons/inkling-trash.svg?react'
-import WandIcon from '../../assets/icons/inkling-wand.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { cx } from '../../utils/cx'
-import { IconButton } from './IconButton'
+import DeleteIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
+import WandIcon from '@kobato/inkling-internal/assets/icons/inkling-wand.svg?react'
+import { IconButton } from '@kobato/inkling-internal/components/ui/IconButton'
 import {
   type MediaPlaceholderSize,
   type MediaPlaceholderType,
   MediaPlaceholder,
   isPlaceholderIconName,
-} from './MediaPlaceholder'
-import { UploadFileInput, UploadingOverlay, useFileInputRefTunnel } from './UploadChrome'
+} from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
+import {
+  UploadFileInput,
+  UploadingOverlay,
+  useFileInputRefTunnel,
+} from '@kobato/inkling-internal/components/ui/UploadChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { cx } from '@kobato/inkling-internal/utils/cx'
+import React from 'react'
 
 export interface MediaUploaderProps {
   className?: string

@@ -1,9 +1,8 @@
 import type { RangeSelection } from 'lexical'
 
+import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
 import { $isAtNodeEnd } from '@lexical/selection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { getSelectedNode } from '../../../src/utils/getSelectedNode'
 
 vi.mock('@lexical/selection', () => ({
   $isAtNodeEnd: vi.fn(),

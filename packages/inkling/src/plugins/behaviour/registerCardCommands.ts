@@ -1,22 +1,25 @@
+import type { CardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import type { CardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
-import { mergeRegister } from '@lexical/utils'
-import { $getNodeByKey, $getSelection, $isNodeSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
-
-import type { CardPickerStore } from './cardPickerStore'
-import type { CardSelectionStore } from './cardSelectionStore'
-
-import { $isInklingCard } from '../../nodes/base'
-import { $ensureParagraphAfterCard } from '../../utils/$ensureParagraphAfterCard'
-import { $insertAndSelectNode } from '../../utils/$insertAndSelectNode'
-import { $deselectCard, $getLogicallyAdjacentCard, $selectCard, focusEditorRoot } from './card-adjacency'
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import {
+  $deselectCard,
+  $getLogicallyAdjacentCard,
+  $selectCard,
+  focusEditorRoot,
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import {
   DELETE_CARD_COMMAND,
   DESELECT_CARD_COMMAND,
   EDIT_CARD_COMMAND,
   INSERT_CARD_COMMAND,
   SELECT_CARD_COMMAND,
-} from './commands'
+} from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensureParagraphAfterCard'
+import { $insertAndSelectNode } from '@kobato/inkling-internal/utils/$insertAndSelectNode'
+import { mergeRegister } from '@lexical/utils'
+import { $getNodeByKey, $getSelection, $isNodeSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
 
 interface CardCommandDeps {
   store: CardSelectionStore

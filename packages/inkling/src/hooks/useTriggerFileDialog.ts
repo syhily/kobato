@@ -1,7 +1,6 @@
+import { $updateCardNode } from '@kobato/inkling-internal/nodes/base'
 import { type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
 import React from 'react'
-
-import { $updateCardNode } from '../nodes/base'
 
 /** A card node carrying the transient `triggerFileDialog` flag (image, audio, video, file). */
 export interface TriggerFileDialogCardNode extends LexicalNode {

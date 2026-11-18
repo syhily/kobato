@@ -1,3 +1,5 @@
+import { $isAtStartOfDocument } from '@kobato/inkling-internal/utils/$isAtStartOfDocument'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import {
   $createNodeSelection,
@@ -9,9 +11,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $isAtStartOfDocument } from '../../../src/utils/$isAtStartOfDocument'
-import { updateEditor } from '../../utils/test-editor'
 
 describe('$isAtStartOfDocument', () => {
   let editor: LexicalEditor

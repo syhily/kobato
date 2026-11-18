@@ -1,3 +1,7 @@
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import { createFootnoteHandle, type FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+import { $collectFootnoteSnapshot, registerFootnotes } from '@kobato/inkling-internal/plugins/behaviour/footnotes'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { registerRichText } from '@lexical/rich-text'
@@ -13,11 +17,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import DEFAULT_NODES from '../../../src/nodes/DefaultNodes'
-import { createFootnoteHandle, type FootnoteHandle } from '../../../src/plugins/behaviour/footnoteHandle'
-import { $collectFootnoteSnapshot, registerFootnotes } from '../../../src/plugins/behaviour/footnotes'
-import { tick, updateEditor } from '../../utils/test-editor'
 
 // The undo-merge pin: the caret-trigger insertion commits untagged, so it
 // merges into the typing history entry and one undo reverts the whole footnote

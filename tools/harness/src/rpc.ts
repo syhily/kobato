@@ -3,7 +3,7 @@
 // `path` is the camelCase structural router path; kebab-case `.route()`
 // strings are OpenAPI metadata.
 
-import type { E2eClient } from './http.ts'
+import type { E2eClient } from '@kobato/harness/http.ts'
 
 export interface E2eRpcResult<T> {
   status: number

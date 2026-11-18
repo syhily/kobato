@@ -1,9 +1,8 @@
 import defaultData from '@emoji-mart/data'
+import Picker, { type EmojiMartPickerOptions } from '@kobato/inkling-internal/components/ui/EmojiPicker'
+import Portal from '@kobato/inkling-internal/components/ui/Portal'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import React from 'react'
-
-import InklingUiPrefsContext from '../../context/InklingUiPrefsContext'
-import Picker, { type EmojiMartPickerOptions } from './EmojiPicker'
-import Portal from './Portal'
 
 interface EmojiPickerPortalProps extends Omit<EmojiMartPickerOptions, 'data' | 'onEmojiSelect'> {
   // emoji-mart's onEmojiSelect delivers its (untyped upstream) emoji object;

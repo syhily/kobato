@@ -1,15 +1,14 @@
 import type { LexicalEditor } from 'lexical'
 
+import FloatingToolbar from '@kobato/inkling-internal/components/ui/FloatingToolbar'
+import { default as FormatToolbar } from '@kobato/inkling-internal/components/ui/FormatToolbar'
+import { LinkActionToolbarWithSearch } from '@kobato/inkling-internal/components/ui/LinkActionToolbarWithSearch'
+import { LinkInput } from '@kobato/inkling-internal/components/ui/LinkInput'
+import { SnippetActionToolbar } from '@kobato/inkling-internal/components/ui/SnippetActionToolbar'
+import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { type HiddenFormat } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
+import { $applyLinkToSelection } from '@kobato/inkling-internal/plugins/behaviour/link-editing'
 import React from 'react'
-
-import { useInklingLinkingSettings } from '../../context/InklingHostIntegrationContext'
-import { type HiddenFormat } from '../../plugins/behaviour/format-toolbar'
-import { $applyLinkToSelection } from '../../plugins/behaviour/link-editing'
-import FloatingToolbar from './FloatingToolbar'
-import { default as FormatToolbar } from './FormatToolbar'
-import { LinkActionToolbarWithSearch } from './LinkActionToolbarWithSearch'
-import { LinkInput } from './LinkInput'
-import { SnippetActionToolbar } from './SnippetActionToolbar'
 
 export const toolbarItemTypes = {
   snippet: 'snippet',

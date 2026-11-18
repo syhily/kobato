@@ -1,5 +1,5 @@
-import { BaseMathNode } from '../base/nodes/math/MathNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseMathNode } from '@kobato/inkling-internal/nodes/base/nodes/math/MathNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const mathDeclaration = checkedCardDeclaration({
   nodeType: 'math',

@@ -1,5 +1,15 @@
+import type { ListOptionItem, ListOptionSection } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import type React from 'react'
 
+import {
+  InklingHostIntegrationProvider,
+  type CardConfig,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { AtLinkNode, AtLinkSearchNode, ZWNJNode } from '@kobato/inkling-internal/nodes/base'
+import { AtLinkPlugin, InklingAtLinkPlugin } from '@kobato/inkling-internal/plugins/AtLinkPlugin'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $isLinkNode, LinkNode } from '@lexical/link'
 import { act, renderHook } from '@testing-library/react'
 import {
@@ -17,20 +27,11 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ListOptionItem, ListOptionSection } from '../../../src/hooks/useSearchLinks'
-
-import { InklingHostIntegrationProvider, type CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import { AtLinkNode, AtLinkSearchNode, ZWNJNode } from '../../../src/nodes/base'
-import { AtLinkPlugin, InklingAtLinkPlugin } from '../../../src/plugins/AtLinkPlugin'
-import trackEvent from '../../../src/utils/analytics'
-import { mockComposerContext } from '../../utils/composer-context'
-import { tick, updateEditor } from '../../utils/test-editor'
-
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-vi.mock('../../../src/utils/analytics', () => ({
+vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
   default: vi.fn(),
 }))
 

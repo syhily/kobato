@@ -1,12 +1,11 @@
+import type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
+
+import { lexicalStateToHtml } from '@kobato/inkling-internal/html/headless-html'
+import $convertToHtmlString from '@kobato/inkling-internal/html/renderer/convert-to-html-string'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import defaultTheme from '@kobato/inkling-internal/themes/default'
 import { JSDOM } from 'jsdom'
 import { createEditor } from 'lexical'
-
-import type { ExportDOMOptions } from '../../src/nodes/base/export-dom'
-
-import { lexicalStateToHtml } from '../../src/html/headless-html'
-import $convertToHtmlString from '../../src/html/renderer/convert-to-html-string'
-import DEFAULT_NODES from '../../src/nodes/DefaultNodes'
-import defaultTheme from '../../src/themes/default'
 
 // The HTML render harness: the two render paths the suite pins against, plus
 // the single jsdom construction site (jsdom is the pinned optional peer).

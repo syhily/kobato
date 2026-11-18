@@ -1,8 +1,7 @@
 import type { EditorConfig, SerializedTextNode } from 'lexical'
 
+import { themeClassList } from '@kobato/inkling-internal/themes/inkling-theme-classes'
 import { $applyNodeReplacement, TextNode } from 'lexical'
-
-import { themeClassList } from '../../../themes/inkling-theme-classes'
 
 export class TKNode extends TextNode {
   static getType() {

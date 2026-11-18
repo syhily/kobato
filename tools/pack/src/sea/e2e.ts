@@ -11,14 +11,13 @@ import type { SmokeServer } from '@kobato/harness/sea-instance.ts'
 import { bootServer, ensureBinaryExists, waitForExit, waitForHttp } from '@kobato/harness/sea-instance.ts'
 import { readConvergedConfig, relaxRateLimits, seedInstalledInstance } from '@kobato/harness/seed.ts'
 import { makeTempDirs, smokeDatabases } from '@kobato/harness/temp.ts'
+import { fail } from '@kobato/pack/sea/exec.ts'
+import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths.ts'
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { rm } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
-
-import { fail } from './exec.ts'
-import { repoRoot, seaBinaryPath } from './paths.ts'
 
 const SHUTDOWN_TIMEOUT_MS = 15_000
 

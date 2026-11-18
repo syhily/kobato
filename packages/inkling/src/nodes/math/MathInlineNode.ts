@@ -1,13 +1,11 @@
+import type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
 import type { DOMExportOutput, EditorConfig, LexicalEditor, SerializedLexicalNode } from 'lexical'
 
+import { applyArtifactSlotInvalidation } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { resolveMathArtifact } from '@kobato/inkling-internal/nodes/base/nodes/math/math-artifacts'
+import { createRenderContext, MATH_HTML_CONFIG } from '@kobato/inkling-internal/nodes/base/render-context'
 import DOMPurify from 'dompurify'
 import { DecoratorNode } from 'lexical'
-
-import type { ExportDOMOptions } from '../base/export-dom'
-
-import { applyArtifactSlotInvalidation } from '../base/generate-decorator-node'
-import { resolveMathArtifact } from '../base/nodes/math/math-artifacts'
-import { createRenderContext, MATH_HTML_CONFIG } from '../base/render-context'
 
 export interface MathInlineDataset {
   tex?: string
@@ -30,7 +28,7 @@ export interface SerializedMathInlineNode extends SerializedLexicalNode {
  * The editor preview renders the stored artifacts straight from createDOM
  * (CSP-safe: no wasm, no render runtime in the browser); the host owns the
  * editing UI — inkling only dispatches `EDIT_MATH_INLINE_COMMAND`
- * (`@/inkling/plugins/behaviour/math-inline`).
+ * (`@kobato/inkling-internal/plugins/behaviour/math-inline`).
  */
 export class MathInlineNode extends DecoratorNode<null> {
   __tex: string

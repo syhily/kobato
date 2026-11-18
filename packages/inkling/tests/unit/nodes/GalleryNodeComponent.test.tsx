@@ -1,32 +1,31 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { GalleryImage } from '../../../src/types/gallery'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
 import {
   InklingHostIntegrationProvider,
   type CardConfig,
   type FileUploader,
-} from '../../../src/context/InklingHostIntegrationContext'
-import { $isGalleryNode } from '../../../src/nodes/base'
-import { GalleryNode } from '../../../src/nodes/GalleryNode'
-import { GalleryNodeComponent } from '../../../src/nodes/GalleryNodeComponent'
-import { getImageDimensions } from '../../../src/utils/getImageDimensions'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { $isGalleryNode } from '@kobato/inkling-internal/nodes/base'
+import { GalleryNode } from '@kobato/inkling-internal/nodes/GalleryNode'
+import { GalleryNodeComponent } from '@kobato/inkling-internal/nodes/GalleryNodeComponent'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-vi.mock('../../../src/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 
-vi.mock('../../../src/components/ui/CardCaptionEditor', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => null,
 }))
 

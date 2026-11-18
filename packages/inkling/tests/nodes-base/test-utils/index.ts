@@ -1,8 +1,7 @@
-import Prettier from '@prettier/sync'
-
 // The html tag here PRETTIFIES (parser 'html') — a deliberate policy for
 // these renderer snapshots.
-import { createTestDom } from '../../utils/render-live'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
+import Prettier from '@prettier/sync'
 
 export function html(partials: TemplateStringsArray, ...params: unknown[]) {
   let output = ''

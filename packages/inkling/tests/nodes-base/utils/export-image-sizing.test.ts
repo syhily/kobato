@@ -1,8 +1,7 @@
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import { getExportImageDimensions } from '@kobato/inkling-internal/nodes/base/utils/export-image-sizing'
+import { getResizedImageDimensions } from '@kobato/inkling-internal/nodes/base/utils/get-resized-image-dimensions'
 import { describe, expect, it } from 'vitest'
-
-import { createRenderContext } from '../../../src/nodes/base/render-context'
-import { getExportImageDimensions } from '../../../src/nodes/base/utils/export-image-sizing'
-import { getResizedImageDimensions } from '../../../src/nodes/base/utils/get-resized-image-dimensions'
 
 const LOCAL_SRC = '/content/images/2024/04/example.jpg'
 const EXTERNAL_SRC = 'https://example.com/images/example.jpg'

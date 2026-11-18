@@ -1,10 +1,9 @@
 import type { LexicalEditor } from 'lexical'
 
+import { registerMergeListNodesTransform } from '@kobato/inkling-internal/transforms/index'
+import { assertTransform, createEditor } from '@kobato/inkling/tests/transforms/utils'
 import { ParagraphNode, TextNode } from 'lexical'
 import { describe, it } from 'vitest'
-
-import { registerMergeListNodesTransform } from '../../../src/transforms/index'
-import { assertTransform, createEditor } from '../utils'
 
 describe('Merge adjacent lists transform', function () {
   it('handles adjacent ULs', function () {

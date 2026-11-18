@@ -1,10 +1,14 @@
 import type { LexicalEditor } from 'lexical'
 
+import { getLoadedPasteDialect, loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
+import {
+  isPasteableLinkUrl,
+  MIME_TEXT_HTML,
+  MIME_TEXT_PLAIN,
+  PASTE_MARKDOWN_COMMAND,
+} from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { PASTE_LINK_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { $getSelection, $isRangeSelection } from 'lexical'
-
-import { getLoadedPasteDialect, loadPasteDialect } from '../../markdown/lazy-paste-dialect'
-import { isPasteableLinkUrl, MIME_TEXT_HTML, MIME_TEXT_PLAIN, PASTE_MARKDOWN_COMMAND } from './clipboard-protocol'
-import { PASTE_LINK_COMMAND } from './commands'
 
 interface PlainTextPasteOptions {
   allowBr: boolean

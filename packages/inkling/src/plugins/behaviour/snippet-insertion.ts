@@ -1,13 +1,12 @@
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensureParagraphAfterCard'
 import { $generateNodesFromSerializedNodes, $insertGeneratedNodes } from '@lexical/clipboard'
 import { $getSelection, type LexicalEditor, type SerializedLexicalNode } from 'lexical'
 
-import { $isInklingCard } from '../../nodes/base'
-import { $ensureParagraphAfterCard } from '../../utils/$ensureParagraphAfterCard'
-import { INSERT_CARD_COMMAND } from './commands'
-
 // Snippet insertion — the headless module behind InklingSnippetPlugin. A
 // snippet is a host-managed fragment of serialized editor state (the
-// `{ name, value }` menu insertParams built by `@/inkling/nodes/cards/card-menu-build`);
+// `{ name, value }` menu insertParams built by `@kobato/inkling-internal/nodes/cards/card-menu-build`);
 // inserting one parses the value, regenerates the nodes, and splices them at
 // the selection. Two special cases live here: a single-card snippet goes
 // through the card insert path (`INSERT_CARD_COMMAND`) so the card lands like
@@ -16,7 +15,7 @@ import { INSERT_CARD_COMMAND } from './commands'
 
 /** The snippet insert payload — the `{ name, value }` pair the snippet menu
  * entry dispatches through the type-erased menu insert path
- * (`@/inkling/nodes/cards/card-menu-build`). */
+ * (`@kobato/inkling-internal/nodes/cards/card-menu-build`). */
 export interface SnippetDataset {
   name: string
   value: string

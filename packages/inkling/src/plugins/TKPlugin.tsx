@@ -1,17 +1,20 @@
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import { useTKHandle, useTKHandleState } from '@kobato/inkling-internal/context/TKHandleContext'
+import { useInklingTextEntity } from '@kobato/inkling-internal/hooks/useInklingTextEntity'
+import { $createTKNode, ExtendedTextNode, TKNode } from '@kobato/inkling-internal/nodes/base'
+import { resolveTkIndicatorPosition } from '@kobato/inkling-internal/plugins/behaviour/tk-indicator'
+import { getTKMatch } from '@kobato/inkling-internal/plugins/behaviour/tk-matcher'
+import {
+  $selectTkFromIndicator,
+  applyTkHoverHighlight,
+  registerTkNodeTracking,
+} from '@kobato/inkling-internal/plugins/behaviour/tk-tracking'
+import { themeClassList } from '@kobato/inkling-internal/themes/inkling-theme-classes'
+import { getEditorTheme } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { type LexicalEditor, TextNode } from 'lexical'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-
-import CardContext from '../context/CardContext'
-import { useTKHandle, useTKHandleState } from '../context/TKHandleContext'
-import { useInklingTextEntity } from '../hooks/useInklingTextEntity'
-import { $createTKNode, ExtendedTextNode, TKNode } from '../nodes/base'
-import { themeClassList } from '../themes/inkling-theme-classes'
-import { getEditorTheme } from '../utils/lexical-internals'
-import { resolveTkIndicatorPosition } from './behaviour/tk-indicator'
-import { getTKMatch } from './behaviour/tk-matcher'
-import { $selectTkFromIndicator, applyTkHoverHighlight, registerTkNodeTracking } from './behaviour/tk-tracking'
 
 function TKIndicator({
   editor,
@@ -25,7 +28,7 @@ function TKIndicator({
   nodeKeys: string[]
 }) {
   const theme = getEditorTheme(editor)
-  // the custom keys are typed at the boundary in @/inkling/themes/inkling-theme-classes
+  // the custom keys are typed at the boundary in @kobato/inkling-internal/themes/inkling-theme-classes
   const tkClasses = themeClassList(theme, 'tk')
   const tkHighlightClasses = themeClassList(theme, 'tkHighlighted')
 

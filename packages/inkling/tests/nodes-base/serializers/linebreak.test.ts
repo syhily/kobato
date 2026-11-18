@@ -1,12 +1,11 @@
 import type { ElementNode, HTMLConfig, LexicalEditor } from 'lexical'
 
+import { DEFAULT_BASE_NODES, DEFAULT_CONFIG } from '@kobato/inkling-internal/nodes/base/index'
+import { createDocument } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { DEFAULT_BASE_NODES, DEFAULT_CONFIG } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { createDocument } from '../test-utils/index'
 
 describe('Serializers: linebreak', function () {
   let editor: LexicalEditor

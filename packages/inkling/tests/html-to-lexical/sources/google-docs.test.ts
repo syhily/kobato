@@ -1,7 +1,6 @@
+import { htmlToLexical } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
 import assert from 'node:assert/strict'
 import { describe, it } from 'vitest'
-
-import { htmlToLexical } from '../../utils/html-to-lexical-with-dom'
 
 const options = {
   editorConfig: {

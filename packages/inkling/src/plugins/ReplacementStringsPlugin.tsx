@@ -1,9 +1,8 @@
+import { ExtendedTextNode } from '@kobato/inkling-internal/nodes/base'
+import { $replacementStringTransform } from '@kobato/inkling-internal/plugins/behaviour/replacement-strings'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { type LexicalEditor, TextNode } from 'lexical'
 import { useEffect } from 'react'
-
-import { ExtendedTextNode } from '../nodes/base'
-import { $replacementStringTransform } from './behaviour/replacement-strings'
 
 function useReplacementStrings(editor: LexicalEditor) {
   useEffect(() => {

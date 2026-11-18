@@ -1,12 +1,11 @@
-import { describe, expect, it } from 'vitest'
-
-import type { GalleryImage } from '../../../src/types/gallery'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
 import {
   isGalleryImageDrag,
   resolveGalleryDrop,
   resolveGallerySourceRemoval,
-} from '../../../src/utils/draggable/gallery-drop'
+} from '@kobato/inkling-internal/utils/draggable/gallery-drop'
+import { describe, expect, it } from 'vitest'
 
 function facts(dataset: Record<string, unknown>, overrides: { type?: string; cardName?: string } = { type: 'image' }) {
   return { ...overrides, dataset }

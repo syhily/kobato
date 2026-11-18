@@ -1,13 +1,12 @@
+import { AudioNode, $createAudioNode, type AudioNode as AudioNodeType } from '@kobato/inkling-internal/nodes/AudioNode'
+import { audioUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { getAudioMetadata } from '@kobato/inkling-internal/utils/getAudioMetadata'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AudioNode, $createAudioNode, type AudioNode as AudioNodeType } from '../../../src/nodes/AudioNode'
-import { audioUploadIntent } from '../../../src/nodes/upload-intent'
-import { getAudioMetadata } from '../../../src/utils/getAudioMetadata'
-import { tick, updateEditor } from '../../utils/test-editor'
-
-vi.mock('../../../src/utils/getAudioMetadata', () => ({
+vi.mock('@kobato/inkling-internal/utils/getAudioMetadata', () => ({
   getAudioMetadata: vi.fn(),
 }))
 

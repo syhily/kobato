@@ -1,3 +1,4 @@
+import { renderLive } from '@kobato/inkling/tests/utils/render-live'
 // The footnote export byte contract:
 // the ref anchors, the definition `<li>` with its backref, and the
 // string-layer `<section class="footnotes">` wrap — pinned byte-exact so the
@@ -5,8 +6,6 @@
 // table-export.test.ts): an editor configured like InklingComposer
 // (DEFAULT_NODES + defaultTheme), a parsed state, `$convertToHtmlString`.
 import { describe, expect, it } from 'vitest'
-
-import { renderLive } from '../../utils/render-live'
 
 const ref = (text: string, targetKey: string) => ({
   type: 'footnote-ref',

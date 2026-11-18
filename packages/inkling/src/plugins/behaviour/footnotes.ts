@@ -9,24 +9,26 @@
 // top-level walk cannot see inside them, so footnote insertion is disabled
 // there and numbering never descends.
 
+import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
 import type { LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 
-import { $isTableCellNode } from '@lexical/table'
-import { mergeRegister } from '@lexical/utils'
-import { $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, RootNode } from 'lexical'
-
-import type { FootnoteHandle } from './footnoteHandle'
-
-import { $isCodeBlockNode } from '../../nodes/base/nodes/codeblock/CodeBlockNode'
+import { $isCodeBlockNode } from '@kobato/inkling-internal/nodes/base/nodes/codeblock/CodeBlockNode'
 import {
   $isFootnoteDefinitionNode,
   type BaseFootnoteDefinitionNode,
-} from '../../nodes/base/nodes/footnotedefinition/FootnoteDefinitionNode'
-import { createFootnoteTargetKey } from '../../nodes/footnote/footnote-keys'
-import { $createFootnoteRefNode, $isFootnoteRefNode, type FootnoteRefNode } from '../../nodes/footnote/FootnoteRefNode'
-import { $createFootnoteDefinitionNode } from '../../nodes/FootnoteDefinitionNode'
-import { getRegisteredNodeMap, isNestedEditor } from '../../utils/lexical-internals'
-import { registerUpdateScan } from './update-scan'
+} from '@kobato/inkling-internal/nodes/base/nodes/footnotedefinition/FootnoteDefinitionNode'
+import { createFootnoteTargetKey } from '@kobato/inkling-internal/nodes/footnote/footnote-keys'
+import {
+  $createFootnoteRefNode,
+  $isFootnoteRefNode,
+  type FootnoteRefNode,
+} from '@kobato/inkling-internal/nodes/footnote/FootnoteRefNode'
+import { $createFootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
+import { registerUpdateScan } from '@kobato/inkling-internal/plugins/behaviour/update-scan'
+import { getRegisteredNodeMap, isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
+import { $isTableCellNode } from '@lexical/table'
+import { mergeRegister } from '@lexical/utils'
+import { $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, RootNode } from 'lexical'
 
 /**
  * Caret trigger: `^ ` typed at the caret. The character before `^` must be

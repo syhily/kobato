@@ -1,13 +1,8 @@
+import type { ExportDOMOptions, ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/export-dom'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 import type { DOMConversionMap, LexicalEditor, SerializedLexicalNode } from 'lexical'
 
-import { $generateHtmlFromNodes } from '@lexical/html'
-import { isLexicalEditor } from 'lexical'
-
-import type { ExportDOMOptions, ExportDOMOutput } from './export-dom'
-import type { RenderContext } from './render-context'
-
-import { cleanBasicHtml } from '../../html/clean-basic-html'
-import { populateNestedEditor, setupNestedEditor } from '../nested-editors'
+import { cleanBasicHtml } from '@kobato/inkling-internal/html/clean-basic-html'
 import {
   getNestedEditorSpecs,
   getTransientPropPrivateName,
@@ -15,11 +10,18 @@ import {
   type DecoratorNodeProperty,
   type NestedEditorSpec,
   type TransientPropSpec,
-} from './card-specs'
-import { buildImportConversions, validateImportSpec, type CardImportSpec } from './import-spec'
-import { InklingDecoratorNode } from './InklingDecoratorNode'
-import { createRenderContext } from './render-context'
-import readTextContent from './utils/read-text-content'
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import {
+  buildImportConversions,
+  validateImportSpec,
+  type CardImportSpec,
+} from '@kobato/inkling-internal/nodes/base/import-spec'
+import { InklingDecoratorNode } from '@kobato/inkling-internal/nodes/base/InklingDecoratorNode'
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import readTextContent from '@kobato/inkling-internal/nodes/base/utils/read-text-content'
+import { populateNestedEditor, setupNestedEditor } from '@kobato/inkling-internal/nodes/nested-editors'
+import { $generateHtmlFromNodes } from '@lexical/html'
+import { isLexicalEditor } from 'lexical'
 
 // The render context is the ONLY export-time view a render fn receives besides
 // the node. The node parameter is typed as the generated instance itself, so

@@ -1,11 +1,10 @@
+import type { ExportChildren } from '@kobato/inkling-internal/html/renderer/transformers/index'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 import type { LinkNode } from '@lexical/link'
 import type { LexicalNode, TextFormatType } from 'lexical'
 
 import { $isLinkNode } from '@lexical/link'
 import { $isTextNode, $isLineBreakNode } from 'lexical'
-
-import type { RenderContext } from '../../../nodes/base/render-context'
-import type { ExportChildren } from '../transformers/index'
 
 type TextFormatAbbreviation = 'STRONG' | 'EM' | 'S' | 'U' | 'CODE' | 'SUB' | 'SUP' | 'MARK' | 'SPAN'
 

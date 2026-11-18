@@ -1,6 +1,5 @@
+import { createPreviewLease, type PreviewLease } from '@kobato/inkling-internal/utils/preview-lease'
 import React from 'react'
-
-import { createPreviewLease, type PreviewLease } from '../utils/preview-lease'
 
 /**
  * Bridges the preview lease to React state: the state holds the current preview

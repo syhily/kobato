@@ -1,14 +1,12 @@
+import type { ElementTransformer } from '@kobato/inkling-internal/html/renderer/transformers/index'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 import type { ElementNode } from 'lexical'
 
+import { $isAsideNode } from '@kobato/inkling-internal/nodes/base'
+import { slugify } from '@kobato/inkling-internal/utils'
 /* c8 ignore start */
 import { $isHeadingNode, $isQuoteNode } from '@lexical/rich-text'
 import { $isParagraphNode } from 'lexical'
-
-import type { RenderContext } from '../../../../nodes/base/render-context'
-import type { ElementTransformer } from '../index'
-
-import { $isAsideNode } from '../../../../nodes/base'
-import { slugify } from '../../../../utils'
 /* c8 ignore stop */
 
 // The simple element wrappers — the whole "how a plain element exports"

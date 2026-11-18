@@ -11,14 +11,13 @@ import { fetchManual, scrubbedParentEnv, sleep } from '@kobato/harness/process.t
 import { bootServer, ensureBinaryExists, waitForExit, waitForHttp } from '@kobato/harness/sea-instance.ts'
 import { readConvergedConfig, seedInstalledInstance } from '@kobato/harness/seed.ts'
 import { makeTempDirs, smokeDatabases } from '@kobato/harness/temp.ts'
+import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget.ts'
+import { fail } from '@kobato/pack/sea/exec.ts'
+import { seaBinaryPath } from '@kobato/pack/sea/paths.ts'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
-
-import { BINARY_MAX_BYTES } from './budget.ts'
-import { fail } from './exec.ts'
-import { seaBinaryPath } from './paths.ts'
 
 interface CheckResult {
   name: string

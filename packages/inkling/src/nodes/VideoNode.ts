@@ -1,11 +1,11 @@
-import type { VideoNodeDataset } from './cards/card-commands'
+import type { VideoNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { videoDeclaration } from './cards/video.declaration'
-export { $isVideoNode } from './base/nodes/video/VideoNode'
-export type { SerializedVideoNode } from './base/nodes/video/VideoNode'
-export { INSERT_VIDEO_COMMAND } from './cards/card-commands'
-export type { VideoNodeDataset } from './cards/card-commands'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { videoDeclaration } from '@kobato/inkling-internal/nodes/cards/video.declaration'
+export { $isVideoNode } from '@kobato/inkling-internal/nodes/base/nodes/video/VideoNode'
+export type { SerializedVideoNode } from '@kobato/inkling-internal/nodes/base/nodes/video/VideoNode'
+export { INSERT_VIDEO_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { VideoNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

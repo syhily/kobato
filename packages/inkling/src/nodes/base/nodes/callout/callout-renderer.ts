@@ -1,6 +1,6 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { CALLOUT_HTML_CONFIG } from '../../render-context'
+import { CALLOUT_HTML_CONFIG } from '@kobato/inkling-internal/nodes/base/render-context'
 
 interface CalloutNodeData {
   backgroundColor: string

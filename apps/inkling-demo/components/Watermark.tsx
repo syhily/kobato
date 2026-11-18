@@ -1,6 +1,5 @@
+import KobatoFavicon from '@kobato/inkling-demo/assets/icons/kobato-favicon.svg?react'
 import { Link } from 'react-router'
-
-import KobatoFavicon from '../assets/icons/kobato-favicon.svg?react'
 
 interface EditorTypeLink {
   name: string

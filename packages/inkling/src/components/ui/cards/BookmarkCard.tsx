@@ -1,11 +1,10 @@
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCaptionEditor'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import { UrlInput } from '@kobato/inkling-internal/components/ui/UrlInput'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { CardCaptionEditor } from '../CardCaptionEditor'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { UrlInput } from '../UrlInput'
 
 interface BookmarkCardProps {
   author?: string

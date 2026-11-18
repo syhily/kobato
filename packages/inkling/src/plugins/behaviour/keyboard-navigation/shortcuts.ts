@@ -1,5 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
+import { $createAsideNode, $isAsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
+import { $selectDecoratorNode } from '@kobato/inkling-internal/utils'
 import { $isListNode, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from '@lexical/list'
 import { $createHeadingNode, $createQuoteNode, $isQuoteNode } from '@lexical/rich-text'
 import { $setBlocksType } from '@lexical/selection'
@@ -13,9 +15,6 @@ import {
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
 } from 'lexical'
-
-import { $createAsideNode, $isAsideNode } from '../../../nodes/AsideNode'
-import { $selectDecoratorNode } from '../../../utils'
 
 /**
  * The keyboard-shortcut table: each entry owns one key shape. `matches` is the

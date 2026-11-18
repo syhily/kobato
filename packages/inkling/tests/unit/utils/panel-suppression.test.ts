@@ -1,6 +1,5 @@
+import { createPanelSuppression, type PanelSuppression } from '@kobato/inkling-internal/utils/panel-suppression'
 import { afterEach, describe, expect, it } from 'vitest'
-
-import { createPanelSuppression, type PanelSuppression } from '../../../src/utils/panel-suppression'
 
 function makePanel(): { panel: HTMLElement; suppression: PanelSuppression } {
   const panel = document.createElement('div')

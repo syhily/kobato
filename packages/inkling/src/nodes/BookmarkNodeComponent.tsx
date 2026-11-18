@@ -1,20 +1,22 @@
+import type { BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { BookmarkCard } from '@kobato/inkling-internal/components/ui/cards/BookmarkCard'
+import { useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import {
+  useInklingLinkingSettings,
+  useInklingSnippetSettings,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useBookmarkMetadata } from '@kobato/inkling-internal/hooks/useBookmarkMetadata'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { $isBookmarkNode } from '@kobato/inkling-internal/nodes/base'
+import { $replaceCardWithParagraph } from '@kobato/inkling-internal/plugins/behaviour/card-removal'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
 import { $createLinkNode } from '@lexical/link'
 import { $createTextNode, type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React, { useCallback } from 'react'
-
-import type { BookmarkNode } from './BookmarkNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { BookmarkCard } from '../components/ui/cards/BookmarkCard'
-import { useCardIsSelected } from '../context/CardSelectionStoreContext'
-import { useInklingLinkingSettings, useInklingSnippetSettings } from '../context/InklingHostIntegrationContext'
-import { useBookmarkMetadata } from '../hooks/useBookmarkMetadata'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { useInklingLabels } from '../hooks/useInklingLabels'
-import { $replaceCardWithParagraph } from '../plugins/behaviour/card-removal'
-import trackEvent from '../utils/analytics'
-import { isInternalUrl } from '../utils/isInternalUrl'
-import { $isBookmarkNode } from './base'
 
 interface BookmarkNodeComponentProps {
   author?: string
@@ -145,7 +147,7 @@ export function BookmarkNodeComponent({
 
 /**
  * Bookmark's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderBookmarkCard(node: BookmarkNode) {
   return (

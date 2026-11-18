@@ -1,17 +1,15 @@
+import type { SlashMenuVerdict } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import type { LexicalEditor } from 'lexical'
 
+import { useCardMenuSession, type CardMenuSessionSelection } from '@kobato/inkling-internal/hooks/useCardMenuSession'
+import { useSlashCardMenuTrigger } from '@kobato/inkling-internal/hooks/useSlashCardMenuTrigger'
+import { registerSlashCardMenuTrigger } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import { act, render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { SlashMenuVerdict } from '../../../src/plugins/behaviour/card-menu-trigger'
-
-import { useCardMenuSession, type CardMenuSessionSelection } from '../../../src/hooks/useCardMenuSession'
-import { useSlashCardMenuTrigger } from '../../../src/hooks/useSlashCardMenuTrigger'
-import { registerSlashCardMenuTrigger } from '../../../src/plugins/behaviour/card-menu-trigger'
-
-vi.mock('../../../src/plugins/behaviour/card-menu-trigger', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../../../src/plugins/behaviour/card-menu-trigger')>()
+vi.mock('@kobato/inkling-internal/plugins/behaviour/card-menu-trigger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@kobato/inkling-internal/plugins/behaviour/card-menu-trigger')>()
   return { ...original, registerSlashCardMenuTrigger: vi.fn(() => () => {}) }
 })
 

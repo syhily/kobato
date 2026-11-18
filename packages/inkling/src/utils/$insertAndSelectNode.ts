@@ -1,6 +1,5 @@
+import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensureParagraphAfterCard'
 import { $createNodeSelection, $isParagraphNode, $setSelection, type LexicalNode } from 'lexical'
-
-import { $ensureParagraphAfterCard } from './$ensureParagraphAfterCard'
 
 export const $insertAndSelectNode = ({
   selectedNode,

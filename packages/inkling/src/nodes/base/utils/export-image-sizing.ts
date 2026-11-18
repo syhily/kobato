@@ -1,6 +1,6 @@
-import type { RenderContext } from '../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { getResizedImageDimensions } from './get-resized-image-dimensions'
+import { getResizedImageDimensions } from '@kobato/inkling-internal/nodes/base/utils/get-resized-image-dimensions'
 
 /**
  * The export-time max-width policy for emitted image width/height attrs,

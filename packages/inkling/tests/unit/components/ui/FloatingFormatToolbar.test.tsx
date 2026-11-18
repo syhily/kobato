@@ -1,3 +1,5 @@
+import { FloatingFormatToolbar } from '@kobato/inkling-internal/components/ui/FloatingFormatToolbar'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { fireEvent, render, screen } from '@testing-library/react'
 import {
   $createParagraphNode,
@@ -10,9 +12,6 @@ import {
 } from 'lexical'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { FloatingFormatToolbar } from '../../../../src/components/ui/FloatingFormatToolbar'
-import { tick, updateEditor } from '../../../utils/test-editor'
 
 function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', onError: () => {} })

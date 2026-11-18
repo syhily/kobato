@@ -1,19 +1,22 @@
+import type { VideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { VideoCard } from '@kobato/inkling-internal/components/ui/cards/VideoCard'
+import { useCardIsEditing, useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useInklingHostEssentials } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useMediaCardUpload, useMediaUploader } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import { usePreviewLease } from '@kobato/inkling-internal/hooks/usePreviewLease'
+import { $isVideoNode } from '@kobato/inkling-internal/nodes/base'
+import { isCardWidth, normalizeCardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import {
+  customThumbnailUploadIntent,
+  videoFlowUploadIntent,
+  type UploadFn,
+} from '@kobato/inkling-internal/nodes/upload-intent'
+import extractVideoMetadata, { type VideoMetadata } from '@kobato/inkling-internal/utils/extractVideoMetadata'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React, { useState } from 'react'
-
-import type { VideoNode } from './VideoNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { VideoCard } from '../components/ui/cards/VideoCard'
-import { useCardIsEditing, useCardIsSelected } from '../context/CardSelectionStoreContext'
-import { useInklingHostEssentials } from '../context/InklingHostIntegrationContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { useMediaCardUpload, useMediaUploader } from '../hooks/useMediaCardUpload'
-import { usePreviewLease } from '../hooks/usePreviewLease'
-import extractVideoMetadata, { type VideoMetadata } from '../utils/extractVideoMetadata'
-import { $isVideoNode } from './base'
-import { isCardWidth, normalizeCardWidth } from './base/utils/card-widths'
-import { customThumbnailUploadIntent, videoFlowUploadIntent, type UploadFn } from './upload-intent'
 
 interface VideoNodeComponentProps {
   nodeKey: NodeKey
@@ -180,7 +183,7 @@ export function VideoNodeComponent({
 
 /**
  * Video's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderVideoCard(node: VideoNode) {
   const cardWidth = normalizeCardWidth(node.cardWidth) ?? 'regular'

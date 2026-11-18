@@ -1,7 +1,6 @@
+import { createRequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
+import { runTrackedRequest } from '@kobato/inkling-internal/utils/services/service-machine'
 import { describe, expect, it, vi } from 'vitest'
-
-import { createRequestTrack } from '../../../src/utils/services/request-track'
-import { runTrackedRequest } from '../../../src/utils/services/service-machine'
 
 function deferred<T>() {
   let resolve!: (value: T) => void

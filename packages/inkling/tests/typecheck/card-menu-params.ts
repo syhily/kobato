@@ -1,3 +1,7 @@
+import type { TransientPropSpec } from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { ResolvedMenuItem } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
+import type { HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-cards'
+import type { Equal, Expect, Extends } from '@kobato/inkling/tests/utils/type-pins'
 /**
  * Compile-time pins for the card menu's construction-dataset vocabulary: a
  * declaration derives `insertParams`/`queryParams` from its base class and
@@ -9,16 +13,15 @@
  */
 import type { ComponentType, SVGProps } from 'react'
 
-import type { TransientPropSpec } from '../../src/nodes/base/card-specs'
-import type { ResolvedMenuItem } from '../../src/nodes/cards/card-menu-build'
-import type { HostCardSpec } from '../../src/nodes/cards/host-cards'
-import type { Equal, Expect, Extends } from '../utils/type-pins'
-
-import { generateDecoratorNode } from '../../src/nodes/base/generate-decorator-node'
-import { BaseAudioNode, audioTransientProps } from '../../src/nodes/base/nodes/audio/AudioNode'
-import { BaseHeaderNode, headerNestedEditors } from '../../src/nodes/base/nodes/header/HeaderNode'
-import { BaseImageNode, imageNestedEditors, imageTransientProps } from '../../src/nodes/base/nodes/image/ImageNode'
-import { CARD_DECLARATIONS } from '../../src/nodes/cards'
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { BaseAudioNode, audioTransientProps } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'
+import { BaseHeaderNode, headerNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+import {
+  BaseImageNode,
+  imageNestedEditors,
+  imageTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { CARD_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards'
 import {
   checkedCardDeclaration,
   type CardDeclaration,
@@ -26,8 +29,8 @@ import {
   type CardMenuDataset,
   type CardMenuEntryCheck,
   type CardMenuQueryParamKey,
-} from '../../src/nodes/cards/card-declaration'
-import { defineCard } from '../../src/nodes/cards/host-cards'
+} from '@kobato/inkling-internal/nodes/cards/card-declaration'
+import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 
 type ImageDataset = CardMenuDataset<typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>
 

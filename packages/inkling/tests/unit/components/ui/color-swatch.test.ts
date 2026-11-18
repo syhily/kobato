@@ -1,13 +1,12 @@
-import { describe, expect, it } from 'vitest'
-
-import type { ColorSwatchData } from '../../../../src/components/ui/ColorPicker'
+import type { ColorSwatchData } from '@kobato/inkling-internal/components/ui/ColorPicker'
 
 import {
   isColorKeyword,
   resolveSelectedSwatchTitle,
   resolveSwatchDisplayColor,
   resolveSwatchValue,
-} from '../../../../src/components/ui/color-swatch'
+} from '@kobato/inkling-internal/components/ui/color-swatch'
+import { describe, expect, it } from 'vitest'
 
 const SWATCHES: ColorSwatchData[] = [
   { title: 'Accent', accent: true },

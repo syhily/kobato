@@ -1,22 +1,30 @@
+import type {
+  CardConfig,
+  FileUploader,
+  FileUploaderInput,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
+import { buildInklingRootExtension } from '@kobato/inkling-internal/components/inkling-root-extension'
+import { ComposerHandlesProvider } from '@kobato/inkling-internal/context/ComposerHandlesProvider'
+import InklingCollaborationContext, {
+  noopWebsocketProviderFactory,
+} from '@kobato/inkling-internal/context/InklingCollaborationContext'
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useCollaborationProviderFactory } from '@kobato/inkling-internal/hooks/useCollaborationProviderFactory'
+import { resolveLabels, type InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
+import { setTelemetryHandler } from '@kobato/inkling-internal/utils/analytics'
+import { normalizeFileUploader } from '@kobato/inkling-internal/utils/file-uploader'
+import {
+  type InklingInitialEditorState,
+  normalizeInitialEditorState,
+} from '@kobato/inkling-internal/utils/initial-document'
+import { requireMultiplayerConfig } from '@kobato/inkling-internal/utils/services/multiplayer-config'
 import { LexicalCollaboration } from '@lexical/react/LexicalCollaborationContext'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer'
 import { type CreateEditorArgs } from 'lexical'
 import React from 'react'
-
-import type { CardConfig, FileUploader, FileUploaderInput } from '../context/InklingHostIntegrationContext'
-
-import { ComposerHandlesProvider } from '../context/ComposerHandlesProvider'
-import InklingCollaborationContext, { noopWebsocketProviderFactory } from '../context/InklingCollaborationContext'
-import { InklingHostIntegrationProvider } from '../context/InklingHostIntegrationContext'
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { useCollaborationProviderFactory } from '../hooks/useCollaborationProviderFactory'
-import { resolveLabels, type InklingLabelsInput } from '../labels/inkling-labels'
-import { setTelemetryHandler } from '../utils/analytics'
-import { normalizeFileUploader } from '../utils/file-uploader'
-import { type InklingInitialEditorState, normalizeInitialEditorState } from '../utils/initial-document'
-import { requireMultiplayerConfig } from '../utils/services/multiplayer-config'
-import { buildInklingRootExtension } from './inkling-root-extension'
 
 export type { InklingInitialEditorState }
 

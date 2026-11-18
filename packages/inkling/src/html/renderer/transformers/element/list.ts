@@ -1,9 +1,8 @@
+import type { ElementTransformer, ExportChildren } from '@kobato/inkling-internal/html/renderer/transformers/index'
 import type { ListNode } from '@lexical/list'
 import type { ElementNode } from 'lexical'
 
 import { $isListNode, $isListItemNode } from '@lexical/list'
-
-import type { ElementTransformer, ExportChildren } from '../index'
 
 const exportList = function (node: ElementNode, exportChildren: ExportChildren): string | null {
   if (!$isListNode(node)) {

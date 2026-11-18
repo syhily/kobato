@@ -1,14 +1,13 @@
 import type { LexicalEditor } from 'lexical'
 
+import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
+import { MarkdownNode, $createMarkdownNode, $isMarkdownNode } from '@kobato/inkling-internal/nodes/base/index'
+import { expectPrettifiedHtml } from '@kobato/inkling/tests/nodes-base/test-utils/assertions'
+import { dom, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot } from 'lexical'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-
-import { loadPasteDialect } from '../../../src/markdown/lazy-paste-dialect'
-import { MarkdownNode, $createMarkdownNode, $isMarkdownNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { expectPrettifiedHtml } from '../test-utils/assertions'
-import { dom, html } from '../test-utils/index'
 
 const editorNodes = [MarkdownNode]
 

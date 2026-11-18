@@ -1,12 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { DragDropHandler } from '../../../../src/utils/draggable/DragDropHandler'
+import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 import {
   CONTAINER_DATA_ATTR,
   DROP_INDICATOR_SELECTOR,
   INKLING_CONTAINER_ID,
-} from '../../../../src/utils/draggable/draggable-constants'
-import { imageDrag } from '../../../utils/draggable-fixtures'
+} from '@kobato/inkling-internal/utils/draggable/draggable-constants'
+import { imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 function createContainer(name = 'container') {
   const element = document.createElement('div')

@@ -1,6 +1,5 @@
+import prettifyFileName from '@kobato/inkling-internal/utils/prettifyFileName'
 import { describe, expect, it } from 'vitest'
-
-import prettifyFileName from '../../../src/utils/prettifyFileName'
 
 describe('prettifyFileName', () => {
   it('removes extension and replaces separators with spaces', () => {

@@ -1,12 +1,11 @@
+import EmojiPickerPortal from '@kobato/inkling-internal/components/ui/EmojiPickerPortal'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import EmojiPickerPortal from '../../../../src/components/ui/EmojiPickerPortal'
-
 const pickerPropsSpy = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/components/ui/EmojiPicker', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/EmojiPicker', () => ({
   default: (props: Record<string, unknown>) => {
     pickerPropsSpy(props)
     return <div data-testid="emoji-picker" />

@@ -1,7 +1,7 @@
+import type { SnippetSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
 import { $generateJSONFromSelectedNodes } from '@lexical/clipboard'
 import { $getNodeByKey, $getSelection, type LexicalEditor, type NodeKey } from 'lexical'
-
-import type { SnippetSettings } from '../../context/InklingHostIntegrationContext'
 
 // Snippet creation — the headless half of the snippet-creation flow
 // (CONTEXT.md "snippet creation"): the two derive-value strategies (a whole

@@ -1,3 +1,12 @@
+import type { BaseImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/ImageNode'
+import type { CardDraggableInfo, DraggableInfo } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+
+import { $isImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { getImageFilenameFromSrc } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
+import { datasetToGalleryImage } from '@kobato/inkling-internal/nodes/base/utils/gallery-image-fill'
+import { $isGalleryNode } from '@kobato/inkling-internal/nodes/GalleryNode'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import {
   $createNodeSelection,
   $getEditor,
@@ -9,16 +18,6 @@ import {
   type LexicalEditor,
   type NodeKey,
 } from 'lexical'
-
-import type { BaseImageNode } from '../../nodes/base/nodes/image/ImageNode'
-import type { ImageNodeDataset } from '../../nodes/ImageNode'
-import type { CardDraggableInfo, DraggableInfo } from '../../utils/draggable/DragDropContainer'
-
-import { $isImageNode } from '../../nodes/base/nodes/image/ImageNode'
-import { getImageFilenameFromSrc } from '../../nodes/base/utils/content-image-url'
-import { datasetToGalleryImage } from '../../nodes/base/utils/gallery-image-fill'
-import { $isGalleryNode } from '../../nodes/GalleryNode'
-import { getRegisteredNodeMap } from '../../utils/lexical-internals'
 
 // Drop surgery — the headless $-surgeries behind DragDropReorderPlugin. The
 // reorder rules own the drop decisions (allowance, insertIndex derivation,

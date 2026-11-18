@@ -1,15 +1,18 @@
+import type {
+  DecoratorNodeProperty,
+  NestedEditorFieldMap,
+  NestedEditorSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 import type { LexicalEditor } from 'lexical'
 
-import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
-
-import MINIMAL_NODES from '../../../MinimalNodes'
 import {
   generateDecoratorNode,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { renderCalloutNode } from './callout-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { renderCalloutNode } from '@kobato/inkling-internal/nodes/base/nodes/callout/callout-renderer'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 
 // The card's nested-editor spec lives here, beside the class it types — the
 // declaration imports it from this module. The editor is `nullable`: the

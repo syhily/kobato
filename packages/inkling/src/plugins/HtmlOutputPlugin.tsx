@@ -1,11 +1,10 @@
+import { $insertHtmlDocument } from '@kobato/inkling-internal/html/html-to-lexical/insert-html'
+import $convertToHtmlString from '@kobato/inkling-internal/html/renderer/convert-to-html-string'
+import { debounce } from '@kobato/inkling-internal/utils/timing'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { $getRoot, $isParagraphNode } from 'lexical'
 import React from 'react'
-
-import { $insertHtmlDocument } from '../html/html-to-lexical/insert-html'
-import $convertToHtmlString from '../html/renderer/convert-to-html-string'
-import { debounce } from '../utils/timing'
 
 export const HtmlOutputPlugin = ({
   html = '',

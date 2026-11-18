@@ -1,6 +1,5 @@
+import { isGif } from '@kobato/inkling-internal/utils/isGif'
 import { describe, expect, it } from 'vitest'
-
-import { isGif } from '../../../src/utils/isGif'
 
 describe('isGif', () => {
   it('returns true for gif URLs', () => {

@@ -61,7 +61,7 @@ export type LoadEmojiSearchIndex = () => Promise<EmojiSearchIndexChunk>
 let indexChunkPromise: Promise<EmojiSearchIndexChunk> | null = null
 
 function loadEmojiSearchIndex(
-  load: LoadEmojiSearchIndex = () => import('./emoji-search-index'),
+  load: LoadEmojiSearchIndex = () => import('@kobato/inkling-internal/plugins/behaviour/emoji-search-index'),
 ): Promise<EmojiSearchIndexChunk> {
   indexChunkPromise ??= load()
   return indexChunkPromise

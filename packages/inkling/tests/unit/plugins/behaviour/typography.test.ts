@@ -1,3 +1,5 @@
+import { $replaceTypography } from '@kobato/inkling-internal/plugins/behaviour/typography'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import {
   $createParagraphNode,
@@ -9,9 +11,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $replaceTypography } from '../../../../src/plugins/behaviour/typography'
-import { updateEditor } from '../../../utils/test-editor'
 
 // Synchronous test table for the smart-typography grammar — tiptap
 // extension-typography default-rule parity (minus the em dash rule

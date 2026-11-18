@@ -1,11 +1,10 @@
+import type { MathSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { resolveMathArtifact } from '@kobato/inkling-internal/nodes/base/nodes/math/math-artifacts'
+import { MATH_HTML_CONFIG } from '@kobato/inkling-internal/nodes/base/render-context'
 import DOMPurify from 'dompurify'
 import React from 'react'
-
-import type { MathSettings } from '../../../context/InklingHostIntegrationContext'
-
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { resolveMathArtifact } from '../../../nodes/base/nodes/math/math-artifacts'
-import { MATH_HTML_CONFIG } from '../../../nodes/base/render-context'
 
 interface MathPreviewState {
   html: string | null

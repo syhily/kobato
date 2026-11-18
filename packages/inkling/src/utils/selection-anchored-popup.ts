@@ -1,7 +1,6 @@
+import { $getSelectionRangeRect } from '@kobato/inkling-internal/utils/$getSelectionRangeRect'
+import { ANCHOR_POPUP_GAP, fitRectWithin } from '@kobato/inkling-internal/utils/fit-rect'
 import { $getSelection, type LexicalEditor } from 'lexical'
-
-import { $getSelectionRangeRect } from './$getSelectionRangeRect'
-import { ANCHOR_POPUP_GAP, fitRectWithin } from './fit-rect'
 
 // Two positioning modes: 'fixed' (viewport coords, spans the container's width, flips above
 // the anchor when the below position plus the max-height budget would overflow the scroll

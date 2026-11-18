@@ -1,16 +1,15 @@
+import { useCardMenu } from '@kobato/inkling-internal/hooks/useCardMenu'
+import { $isImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { CardInsertPlugin } from '@kobato/inkling-internal/plugins/CardInsertPlugin'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationWrapper } from '@kobato/inkling/tests/utils/host-integration-wrapper'
+import { createTestEditor, tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { act, renderHook } from '@testing-library/react'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { useCardMenu } from '../../../src/hooks/useCardMenu'
-import { $isImageNode, ImageNode } from '../../../src/nodes/ImageNode'
-import { createCardPickerStore } from '../../../src/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore } from '../../../src/plugins/behaviour/cardSelectionStore'
-import { registerCardCommands } from '../../../src/plugins/behaviour/registerCardCommands'
-import { CardInsertPlugin } from '../../../src/plugins/CardInsertPlugin'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationWrapper } from '../../utils/host-integration-wrapper'
-import { createTestEditor, tick, updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

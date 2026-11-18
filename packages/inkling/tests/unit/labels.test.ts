@@ -1,6 +1,5 @@
+import { DEFAULT_LABELS, lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels'
 import { describe, expect, it } from 'vitest'
-
-import { DEFAULT_LABELS, lookupLabel, resolveLabels } from '../../src/labels/inkling-labels'
 
 describe('labels', () => {
   describe('resolveLabels', () => {

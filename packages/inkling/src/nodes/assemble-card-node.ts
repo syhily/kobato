@@ -1,14 +1,18 @@
+import type {
+  CardSpecAccessorMap,
+  CardSpecFieldMap,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
+import type { CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 import type { LexicalNode } from 'lexical'
 import type { ReactNode } from 'react'
 
-import type { CardSpecAccessorMap, CardSpecFieldMap, NestedEditorSpec, TransientPropSpec } from './base/card-specs'
-import type { CardImportSpec } from './base/import-spec'
-import type { CardDeclaration } from './cards/card-declaration'
-
-import { getTransientPropPrivateName } from './base/card-specs'
-import { ensureLexicalNodeOwnMethods } from './base/ensure-node-own-methods'
-import { defineFieldAccessor } from './base/generate-decorator-node'
-import { decorateCardNode } from './card-decorate-slot'
+import { getTransientPropPrivateName } from '@kobato/inkling-internal/nodes/base/card-specs'
+import { ensureLexicalNodeOwnMethods } from '@kobato/inkling-internal/nodes/base/ensure-node-own-methods'
+import { defineFieldAccessor } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { decorateCardNode } from '@kobato/inkling-internal/nodes/card-decorate-slot'
 
 /**
  * The class type `assembleCardNode` returns: the declaration's base node class with
@@ -60,7 +64,7 @@ export type CardAssemblyDeclaration = Pick<
  * base node and adopts the spec statics — `nestedEditors`/`transientProps` (read off
  * `this.constructor` by the generated node machinery). Its only method is
  * `decorate()`, delegated through the injection port
- * (`@/inkling/nodes/card-decorate-slot`) the wrapper layer registers into — the
+ * (`@kobato/inkling-internal/nodes/card-decorate-slot`) the wrapper layer registers into — the
  * inversion keeps this module off the React component tree, so card shims (and the
  * markdown round-trip built on them) stay importable from the `./headless` entry.
  *

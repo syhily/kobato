@@ -1,10 +1,6 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import type { GalleryImage } from '../../../src/types/gallery'
-
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
 import {
   GalleryNode,
   $createGalleryNode,
@@ -12,10 +8,13 @@ import {
   INSERT_GALLERY_COMMAND,
   MAX_IMAGES,
   recalculateImageRows,
-} from '../../../src/nodes/GalleryNode'
-import { attachCaptionEditorWithText } from '../../utils/caption-editor'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/nodes/GalleryNode'
+import { attachCaptionEditorWithText } from '@kobato/inkling/tests/utils/caption-editor'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const editorNodes = [GalleryNode]
 
@@ -80,7 +79,7 @@ describe('GalleryNode', () => {
     await updateEditor(editor, () => {
       const node = $createGalleryNode({})
       const images = Array.from({ length: MAX_IMAGES + 2 }, (_, i) => ({ src: String(i) }))
-      node.setImages(images as import('../../../src/types/gallery').GalleryImage[])
+      node.setImages(images as import('@kobato/inkling-internal/types/gallery').GalleryImage[])
 
       expect(node.images).toHaveLength(MAX_IMAGES)
     })
@@ -89,11 +88,11 @@ describe('GalleryNode', () => {
   it('adds images up to the maximum', async () => {
     await updateEditor(editor, () => {
       const node = $createGalleryNode({})
-      node.setImages([{ src: '0' }, { src: '1' }] as import('../../../src/types/gallery').GalleryImage[])
+      node.setImages([{ src: '0' }, { src: '1' }] as import('@kobato/inkling-internal/types/gallery').GalleryImage[])
       node.addImages(
         Array.from({ length: MAX_IMAGES }, (_, i) => ({
           src: String(i + 2),
-        })) as import('../../../src/types/gallery').GalleryImage[],
+        })) as import('@kobato/inkling-internal/types/gallery').GalleryImage[],
       )
 
       expect(node.images).toHaveLength(MAX_IMAGES)

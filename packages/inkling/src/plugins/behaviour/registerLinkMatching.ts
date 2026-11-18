@@ -1,10 +1,9 @@
 import type { LexicalEditor } from 'lexical'
 
+import { INSERT_CARD_COMMAND, PASTE_LINK_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $createLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 import { $createTextNode, $getSelection, $insertNodes, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
-
-import { getRegisteredNodeMap } from '../../utils/lexical-internals'
-import { INSERT_CARD_COMMAND, PASTE_LINK_COMMAND } from './commands'
 
 interface LinkMatchingDeps {
   isShiftPressed: { current: boolean }

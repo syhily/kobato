@@ -1,5 +1,5 @@
-import { awaitMediaEvents } from './awaitMediaEvents'
-import { createPreviewLease } from './preview-lease'
+import { awaitMediaEvents } from '@kobato/inkling-internal/utils/awaitMediaEvents'
+import { createPreviewLease } from '@kobato/inkling-internal/utils/preview-lease'
 
 export interface VideoMetadata {
   duration: number

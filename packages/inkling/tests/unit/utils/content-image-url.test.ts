@@ -1,6 +1,5 @@
+import { getImageFilenameFromSrc, parseUrlPathname } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
 import { describe, expect, it } from 'vitest'
-
-import { getImageFilenameFromSrc, parseUrlPathname } from '../../../src/nodes/base/utils/content-image-url'
 
 describe('getImageFilenameFromSrc', () => {
   it('extracts filename from URL pathname', () => {

@@ -1,4 +1,16 @@
 import {
+  $isHorizontalRuleNode,
+  HorizontalRuleNode,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+} from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import {
+  $insertHorizontalRule,
+  registerHorizontalRuleInsert,
+  registerHorizontalRuleScan,
+  resolveDividerScanTarget,
+} from '@kobato/inkling-internal/plugins/behaviour/horizontal-rule'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
+import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -8,19 +20,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import {
-  $isHorizontalRuleNode,
-  HorizontalRuleNode,
-  INSERT_HORIZONTAL_RULE_COMMAND,
-} from '../../../../src/nodes/HorizontalRuleNode'
-import {
-  $insertHorizontalRule,
-  registerHorizontalRuleInsert,
-  registerHorizontalRuleScan,
-  resolveDividerScanTarget,
-} from '../../../../src/plugins/behaviour/horizontal-rule'
-import { tick } from '../../../utils/test-editor'
 
 describe('horizontal-rule behaviour', () => {
   let editor: LexicalEditor

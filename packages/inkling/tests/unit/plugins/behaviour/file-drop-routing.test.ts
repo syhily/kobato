@@ -1,15 +1,14 @@
-import { createEditor } from 'lexical'
-import { describe, expect, it } from 'vitest'
+import type { EditorCardNode } from '@kobato/inkling-internal/nodes/cards/editor-card-nodes'
 
-import type { EditorCardNode } from '../../../../src/nodes/cards/editor-card-nodes'
-
-import { ImageNode } from '../../../../src/nodes/ImageNode'
-import { VideoNode } from '../../../../src/nodes/VideoNode'
+import { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { VideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
 import {
   claimDroppedFiles,
   getAcceptableMimeTypes,
   getEditorAcceptableMimeTypes,
-} from '../../../../src/plugins/behaviour/file-drop-routing'
+} from '@kobato/inkling-internal/plugins/behaviour/file-drop-routing'
+import { createEditor } from 'lexical'
+import { describe, expect, it } from 'vitest'
 
 // The pure legs take hand-written card-node entries: `getEditorCardNodes`
 // reads the card declarations (not class statics), so a fake node class could

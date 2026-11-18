@@ -1,3 +1,27 @@
+import {
+  $createAtLinkNode,
+  $createAtLinkSearchNode,
+  $createZWNJNode,
+  $isAtLinkSearchNode,
+  AtLinkNode,
+  AtLinkSearchNode,
+  ZWNJNode,
+} from '@kobato/inkling-internal/nodes/base'
+import {
+  $applyLinkToSelection,
+  $getLinkHrefAtSelection,
+  $removeLink,
+  $selectLinkText,
+  createLinkHoverFeed,
+  createToolbarRevealFeed,
+  createToolbarSession,
+  isLinkShortcutPress,
+  registerToolbarCommands,
+  registerToolbarSelectionSync,
+  type HoveredLink,
+  type ToolbarSession,
+} from '@kobato/inkling-internal/plugins/behaviour/link-editing'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createLinkNode, $isLinkNode, $toggleLink, LinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 import {
   $createParagraphNode,
@@ -15,31 +39,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import {
-  $createAtLinkNode,
-  $createAtLinkSearchNode,
-  $createZWNJNode,
-  $isAtLinkSearchNode,
-  AtLinkNode,
-  AtLinkSearchNode,
-  ZWNJNode,
-} from '../../../../src/nodes/base'
-import {
-  $applyLinkToSelection,
-  $getLinkHrefAtSelection,
-  $removeLink,
-  $selectLinkText,
-  createLinkHoverFeed,
-  createToolbarRevealFeed,
-  createToolbarSession,
-  isLinkShortcutPress,
-  registerToolbarCommands,
-  registerToolbarSelectionSync,
-  type HoveredLink,
-  type ToolbarSession,
-} from '../../../../src/plugins/behaviour/link-editing'
-import { updateEditor } from '../../../utils/test-editor'
 
 function createTestEditor(): LexicalEditor {
   const editor = createEditor({ namespace: 'test', nodes: [LinkNode], onError: () => {} })

@@ -1,16 +1,15 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
-
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
 import {
   HorizontalRuleNode,
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
-} from '../../../src/nodes/HorizontalRuleNode'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const editorNodes = [HorizontalRuleNode]
 

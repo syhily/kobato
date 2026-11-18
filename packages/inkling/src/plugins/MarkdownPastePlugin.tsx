@@ -1,20 +1,19 @@
-// The paste dialect of Inkling's two markdown dialects — markdown-it →
-// sanitize → Lexical HTML import. The markdown-it → sanitize chain is the
-// headless `markdownToSanitizedHtml` (`@/inkling/plugins/behaviour/markdownPaste`);
-// this plugin keeps only the DataTransfer glue and command handling.
-import { $insertDataTransferForRichText } from '@lexical/clipboard'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
-import React from 'react'
-
-import { loadPasteDialect } from '../markdown/lazy-paste-dialect'
+import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
 import {
   getModifierState,
   MIME_TEXT_HTML,
   MIME_TEXT_PLAIN,
   PASTE_MARKDOWN_COMMAND,
-} from './behaviour/clipboard-protocol'
-import { markdownToSanitizedHtml } from './behaviour/markdownPaste'
+} from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdownPaste'
+// The paste dialect of Inkling's two markdown dialects — markdown-it →
+// sanitize → Lexical HTML import. The markdown-it → sanitize chain is the
+// headless `markdownToSanitizedHtml` (`@kobato/inkling-internal/plugins/behaviour/markdownPaste`);
+// this plugin keeps only the DataTransfer glue and command handling.
+import { $insertDataTransferForRichText } from '@lexical/clipboard'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
+import React from 'react'
 
 export const MarkdownPastePlugin = () => {
   const [editor] = useLexicalComposerContext()

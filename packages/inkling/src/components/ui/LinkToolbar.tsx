@@ -1,6 +1,5 @@
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import { useInklingLabels } from '../../hooks/useInklingLabels'
 
 export interface LinkToolbarProps {
   href?: string

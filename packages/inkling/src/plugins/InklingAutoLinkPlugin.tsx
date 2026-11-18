@@ -1,8 +1,7 @@
+import { AUTOLINK_SEPARATOR, INKLING_AUTOLINK_MATCHERS } from '@kobato/inkling-internal/plugins/behaviour/autolink'
 import { AutoLinkNode, registerAutoLink } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import { AUTOLINK_SEPARATOR, INKLING_AUTOLINK_MATCHERS } from './behaviour/autolink'
 
 /**
  * The default autolink mount (tiptap `autolink: true` parity): bare URLs and

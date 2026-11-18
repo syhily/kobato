@@ -1,13 +1,13 @@
 import type { LexicalNode } from 'lexical'
 import type { ReactNode } from 'react'
 
-import InklingCardWrapper from '../components/InklingCardWrapper'
-import { registerCardDecorate } from './card-decorate-slot'
-import { getCardDecorateTarget } from './cards/card-decorate'
+import InklingCardWrapper from '@kobato/inkling-internal/components/InklingCardWrapper'
+import { registerCardDecorate } from '@kobato/inkling-internal/nodes/card-decorate-slot'
+import { getCardDecorateTarget } from '@kobato/inkling-internal/nodes/cards/card-decorate'
 
 /**
  * The one shared decorate() adapter: every card's `decorate()` reaches here through
- * the injection port (`@/inkling/nodes/card-decorate-slot`) — the registered call
+ * the injection port (`@kobato/inkling-internal/nodes/card-decorate-slot`) — the registered call
  * below is this module's one side effect, and the `.` barrel's side-effect import
  * of this module fills the slot for every full-entry consumer, keeping the adapter
  * off the assembled classes' static import graph so the `./headless` entry stays

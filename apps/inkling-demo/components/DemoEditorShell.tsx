@@ -1,11 +1,10 @@
 import { type CardConfig, type ExternalControlAPI, InklingComposableEditor, InklingComposer } from '@kobato/inkling'
+import { DemoChrome, useDemoSidebar } from '@kobato/inkling-demo/components/DemoChrome'
+import { klipyConfig, tenorConfig } from '@kobato/inkling-demo/utils/gifConfig'
+import { fileTypes, useFileUpload } from '@kobato/inkling-demo/utils/useFileUpload'
+import { useFocusBelowCanvas } from '@kobato/inkling-demo/utils/useFocusBelowCanvas'
+import { useSnippets } from '@kobato/inkling-demo/utils/useSnippets'
 import React, { useState } from 'react'
-
-import { klipyConfig, tenorConfig } from '../utils/gifConfig'
-import { fileTypes, useFileUpload } from '../utils/useFileUpload'
-import { useFocusBelowCanvas } from '../utils/useFocusBelowCanvas'
-import { useSnippets } from '../utils/useSnippets'
-import { DemoChrome, useDemoSidebar } from './DemoChrome'
 
 // Shared editor shell for the secondary demo surfaces; a surface passes only its facts — an optional node set
 // and its inner plugin(s).

@@ -1,5 +1,5 @@
-import { BaseFileNode, fileTransientProps } from '../base/nodes/file/FileNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseFileNode, fileTransientProps } from '@kobato/inkling-internal/nodes/base/nodes/file/FileNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const fileDeclaration = checkedCardDeclaration({
   nodeType: 'file',

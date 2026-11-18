@@ -3,18 +3,24 @@
 // stop with a bounded SIGTERM/SIGKILL race. Used by the pack smoke/e2e
 // orchestrators and the browser journey runner.
 
+import type { ExitOutcome, ExitState } from '@kobato/harness/process.ts'
+import type { TempDirs } from '@kobato/harness/temp.ts'
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
 
+import {
+  fail,
+  fetchManual,
+  pickFreePort,
+  raceChildExit,
+  scrubbedParentEnv,
+  sleep,
+  watchChildExit,
+} from '@kobato/harness/process.ts'
 import { spawn } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
-
-import type { ExitOutcome, ExitState } from './process.ts'
-import type { TempDirs } from './temp.ts'
-
-import { fail, fetchManual, pickFreePort, raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from './process.ts'
 
 export const BOOT_TIMEOUT_MS = 90_000
 const POLL_INTERVAL_MS = 500

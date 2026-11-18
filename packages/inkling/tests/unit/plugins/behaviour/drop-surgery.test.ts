@@ -1,3 +1,18 @@
+import { $isGalleryNode, GalleryNode } from '@kobato/inkling-internal/nodes/GalleryNode'
+import { $createImageNode, $isImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import {
+  $insertDraggedImage,
+  $mergeImagesIntoGallery,
+  $relocateCard,
+  $removeDropSource,
+  applyImageCardDrop,
+  type ImageCardDraggableInfo,
+  isImageCardDropAllowed,
+  resolveDragMarkerRefresh,
+  shouldRemoveDropSource,
+} from '@kobato/inkling-internal/plugins/behaviour/drop-surgery'
+import { cardDrag, imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -14,22 +29,6 @@ import {
   type NodeKey,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $isGalleryNode, GalleryNode } from '../../../../src/nodes/GalleryNode'
-import { $createImageNode, $isImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import {
-  $insertDraggedImage,
-  $mergeImagesIntoGallery,
-  $relocateCard,
-  $removeDropSource,
-  applyImageCardDrop,
-  type ImageCardDraggableInfo,
-  isImageCardDropAllowed,
-  resolveDragMarkerRefresh,
-  shouldRemoveDropSource,
-} from '../../../../src/plugins/behaviour/drop-surgery'
-import { cardDrag, imageDrag } from '../../../utils/draggable-fixtures'
-import { tick, updateEditor } from '../../../utils/test-editor'
 
 // One card type is enough to exercise the surgeries in jsdom (the same
 // approach as the card-adjacency and snippet-insertion tests).

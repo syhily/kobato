@@ -1,7 +1,6 @@
+import { registerDefaultTransforms } from '@kobato/inkling-internal/transforms/index'
+import { assertTransform, createEditor } from '@kobato/inkling/tests/transforms/utils'
 import { describe, it } from 'vitest'
-
-import { registerDefaultTransforms } from '../../src/transforms/index'
-import { assertTransform, createEditor } from './utils'
 
 describe('Default transforms', function () {
   it('registerDefaultTransforms() registers all transforms', function () {

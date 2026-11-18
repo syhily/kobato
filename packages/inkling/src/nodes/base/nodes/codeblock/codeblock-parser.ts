@@ -3,7 +3,7 @@
 // reads.
 import type { LexicalNode } from 'lexical'
 
-import { readCaptionFromElement } from '../../utils/read-caption-from-element'
+import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
 
 export function parseCodeBlockNode(BaseCodeBlockNode: new (data: Record<string, unknown>) => LexicalNode) {
   return {

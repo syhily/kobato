@@ -1,10 +1,9 @@
+import type { InklingSurfaceProps } from '@kobato/inkling-internal/components/InklingSurface'
+
+import InklingSurface from '@kobato/inkling-internal/components/InklingSurface'
+import { DEFAULT_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers'
+import { DefaultFeaturePlugins } from '@kobato/inkling-internal/plugins/DefaultFeaturePlugins'
 import React from 'react'
-
-import type { InklingSurfaceProps } from './InklingSurface'
-
-import { DEFAULT_TRANSFORMERS } from '../markdown/transformers'
-import { DefaultFeaturePlugins } from '../plugins/DefaultFeaturePlugins'
-import InklingSurface from './InklingSurface'
 
 export type InklingEditorProps = InklingSurfaceProps
 

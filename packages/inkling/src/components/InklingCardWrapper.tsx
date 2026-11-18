@@ -1,15 +1,17 @@
+import { CardWrapper } from '@kobato/inkling-internal/components/ui/CardWrapper'
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import {
+  useCardSelectionState,
+  useCardSelectionStore,
+} from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useDragDropHandleState } from '@kobato/inkling-internal/context/DragDropHandleContext'
+import { useSharedEditorStateContext } from '@kobato/inkling-internal/context/SharedEditorStateContext'
+import { type CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import { registerCardInteraction } from '@kobato/inkling-internal/plugins/behaviour/card-interaction'
+import { purgeDeadEditorHistoryEntries } from '@kobato/inkling-internal/plugins/behaviour/history-purge'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
 import React from 'react'
-
-import CardContext from '../context/CardContext'
-import { useCardSelectionState, useCardSelectionStore } from '../context/CardSelectionStoreContext'
-import { useDragDropHandleState } from '../context/DragDropHandleContext'
-import { useSharedEditorStateContext } from '../context/SharedEditorStateContext'
-import { type CardWidth } from '../nodes/base/utils/card-widths'
-import { registerCardInteraction } from '../plugins/behaviour/card-interaction'
-import { purgeDeadEditorHistoryEntries } from '../plugins/behaviour/history-purge'
-import { CardWrapper } from './ui/CardWrapper'
 
 interface InklingCardWrapperProps {
   nodeKey: NodeKey
@@ -20,7 +22,7 @@ interface InklingCardWrapperProps {
 }
 
 // The select→edit click choreography lives in
-// `@/inkling/plugins/behaviour/card-interaction` (one stable registration per card);
+// `@kobato/inkling-internal/plugins/behaviour/card-interaction` (one stable registration per card);
 // this component keeps the render, the card-type init read, and the width
 // dataset marker.
 const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, children }: InklingCardWrapperProps) => {

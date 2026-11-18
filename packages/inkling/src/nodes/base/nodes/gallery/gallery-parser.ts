@@ -3,11 +3,11 @@
 // not flat per-property reads.
 import type { LexicalNode } from 'lexical'
 
-import { readCaptionFromElement } from '../../utils/read-caption-from-element'
-import { readImageAttributesFromElement } from '../../utils/read-image-attributes-from-element'
 // MAX_PER_ROW comes straight from its canonical home — importing it via
 // GalleryNode would close a GalleryNode → parser → GalleryNode import cycle
-import { MAX_PER_ROW } from './gallery-rows'
+import { MAX_PER_ROW } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
+import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
+import { readImageAttributesFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-image-attributes-from-element'
 
 function readGalleryImageAttributesFromElement(element: HTMLImageElement, imgNum: number) {
   const image = readImageAttributesFromElement(element)

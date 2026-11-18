@@ -1,6 +1,5 @@
+import { ScrollHandler } from '@kobato/inkling-internal/utils/draggable/ScrollHandler'
 import { afterEach, describe, expect, it } from 'vitest'
-
-import { ScrollHandler } from '../../../../src/utils/draggable/ScrollHandler'
 
 function getScrollingElement(): HTMLElement {
   return (document.scrollingElement || document.documentElement) as HTMLElement

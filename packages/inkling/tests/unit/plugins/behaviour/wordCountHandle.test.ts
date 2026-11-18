@@ -1,9 +1,11 @@
+import { useWordCountHandle } from '@kobato/inkling-internal/context/WordCountHandleContext'
+import {
+  createWordCountHandle,
+  publishWordCountCallback,
+} from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
 import { renderHook } from '@testing-library/react'
 import { createEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { useWordCountHandle } from '../../../../src/context/WordCountHandleContext'
-import { createWordCountHandle, publishWordCountCallback } from '../../../../src/plugins/behaviour/wordCountHandle'
 
 // Thin per-instance suite: the generic handle semantics (partial setState,
 // change guard, subscribe/unsubscribe, fallback) live in

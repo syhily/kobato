@@ -1,6 +1,10 @@
-import { BaseVideoNode, videoNestedEditors, videoTransientProps } from '../base/nodes/video/VideoNode'
-import { decorateCardWidth } from '../base/utils/card-widths'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import {
+  BaseVideoNode,
+  videoNestedEditors,
+  videoTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/video/VideoNode'
+import { decorateCardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const videoDeclaration = checkedCardDeclaration({
   nodeType: 'video',

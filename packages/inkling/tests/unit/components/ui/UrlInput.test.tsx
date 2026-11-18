@@ -1,10 +1,9 @@
+import { UrlInput } from '@kobato/inkling-internal/components/ui/UrlInput'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor, KEY_ENTER_COMMAND, type LexicalEditor } from 'lexical'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { UrlInput } from '../../../../src/components/ui/UrlInput'
 
 function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', onError: () => {} })

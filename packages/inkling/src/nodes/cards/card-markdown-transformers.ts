@@ -1,21 +1,20 @@
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 import type { ElementTransformer, MultilineElementTransformer } from '@lexical/markdown'
 import type { Klass, LexicalNode } from 'lexical'
 
-import type { GalleryImage } from '../../types/gallery'
-
-import { $createAudioNode, type AudioNode } from '../AudioNode'
-import { getNestedEditorSpecs } from '../base/card-specs'
-import { $createBookmarkNode, type BookmarkNode } from '../BookmarkNode'
-import { $createButtonNode, type ButtonNode } from '../ButtonNode'
-import { $createCalloutNode, type CalloutNode } from '../CalloutNode'
-import { $createFileNode, type FileNode } from '../FileNode'
-import { $createGalleryNode, type GalleryNode } from '../GalleryNode'
-import { $createHtmlNode, type HtmlNode } from '../HtmlNode'
-import { $createImageNode, $isImageNode, ImageNode } from '../ImageNode'
-import { $createToggleNode, type ToggleNode } from '../ToggleNode'
-import { $createVideoNode, type VideoNode } from '../VideoNode'
-import { type CARD_DECLARATIONS, type CardNodeType } from './'
-import { CARD_WRAPPER_NODES } from './card-wrappers'
+import { $createAudioNode, type AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'
+import { getNestedEditorSpecs } from '@kobato/inkling-internal/nodes/base/card-specs'
+import { $createBookmarkNode, type BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { $createButtonNode, type ButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
+import { $createCalloutNode, type CalloutNode } from '@kobato/inkling-internal/nodes/CalloutNode'
+import { type CARD_DECLARATIONS, type CardNodeType } from '@kobato/inkling-internal/nodes/cards/'
+import { CARD_WRAPPER_NODES } from '@kobato/inkling-internal/nodes/cards/card-wrappers'
+import { $createFileNode, type FileNode } from '@kobato/inkling-internal/nodes/FileNode'
+import { $createGalleryNode, type GalleryNode } from '@kobato/inkling-internal/nodes/GalleryNode'
+import { $createHtmlNode, type HtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
+import { $createImageNode, $isImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { $createToggleNode, type ToggleNode } from '@kobato/inkling-internal/nodes/ToggleNode'
+import { $createVideoNode, type VideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
 
 /**
  * The per-card markdown transformer vocabulary: a payload table keyed exhaustively
@@ -315,7 +314,7 @@ const CARD_FENCE_PAYLOADS: Record<FenceCardNodeType, CardFencePayload> = {
  * Wrapper-layer projection of the card declarations: each declaration paired with its
  * wrapper node class and, for markdown-eligible cards whose markdown form
  * `DEFAULT_TRANSFORMERS` does not cover, its card transformer.
- * `@/inkling/markdown/round-trip` derives `MARKDOWN_NODES` and `CARD_TRANSFORMERS`
+ * `@kobato/inkling-internal/markdown/round-trip` derives `MARKDOWN_NODES` and `CARD_TRANSFORMERS`
  * from this list. The throw below is the runtime backstop behind the payload
  * table's exhaustive-`Record` compile-time guarantee.
  */

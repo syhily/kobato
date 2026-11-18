@@ -1,6 +1,5 @@
+import { getResizedImageDimensions } from '@kobato/inkling-internal/nodes/base/utils/get-resized-image-dimensions'
 import { describe, expect, it } from 'vitest'
-
-import { getResizedImageDimensions } from '../../../src/nodes/base/utils/get-resized-image-dimensions'
 
 describe('Utils: getResizedImageDimensions', function () {
   it('returns original dimensions when no target size is given', function () {

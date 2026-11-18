@@ -1,15 +1,14 @@
+import type { CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { CodeBlockCard } from '@kobato/inkling-internal/components/ui/cards/CodeBlockCard'
+import { useCardIsEditing, useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useReselectOnEscape } from '@kobato/inkling-internal/hooks/useReselectOnEscape'
+import { $isCodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { CodeBlockNode } from './CodeBlockNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { CodeBlockCard } from '../components/ui/cards/CodeBlockCard'
-import { useCardIsEditing, useCardIsSelected } from '../context/CardSelectionStoreContext'
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { useReselectOnEscape } from '../hooks/useReselectOnEscape'
-import { $isCodeBlockNode } from './CodeBlockNode'
 
 export interface CodeBlockNodeComponentProps {
   nodeKey: NodeKey
@@ -58,7 +57,7 @@ export function CodeBlockNodeComponent({
 /**
  * CodeBlock's decorate render — the React-bearing half of its
  * decorate-target, paired with the declaration by
- * `@/inkling/nodes/cards/card-decorate`.
+ * `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderCodeBlockCard(node: CodeBlockNode) {
   return (

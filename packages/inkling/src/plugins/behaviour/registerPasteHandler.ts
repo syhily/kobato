@@ -1,13 +1,12 @@
 import type { LexicalEditor } from 'lexical'
 
+import { editorOwnsFocus } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { MIME_TEXT_HTML } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { handlePlainTextPaste } from '@kobato/inkling-internal/plugins/behaviour/plainTextPaste'
+import { shouldIgnoreEvent } from '@kobato/inkling-internal/utils/shouldIgnoreEvent'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { DRAG_DROP_PASTE } from '@lexical/rich-text'
 import { $isRangeSelection, $getSelection, $insertNodes, COMMAND_PRIORITY_LOW, PASTE_COMMAND } from 'lexical'
-
-import { shouldIgnoreEvent } from '../../utils/shouldIgnoreEvent'
-import { editorOwnsFocus } from './card-adjacency'
-import { MIME_TEXT_HTML } from './clipboard-protocol'
-import { handlePlainTextPaste } from './plainTextPaste'
 
 interface PasteHandlerDeps {
   isNested?: boolean

@@ -1,17 +1,19 @@
+import type { CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+
+import InklingCardWrapper from '@kobato/inkling-internal/components/InklingCardWrapper'
+import { useCardSelectionStore } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import {
+  InklingHostIntegrationProvider,
+  type CardConfig,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { HtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
 import { render, screen } from '@testing-library/react'
 import { $getRoot, createEditor, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { CardWidth } from '../../../src/nodes/base/utils/card-widths'
-
-import InklingCardWrapper from '../../../src/components/InklingCardWrapper'
-import { useCardSelectionStore } from '../../../src/context/CardSelectionStoreContext'
-import { InklingHostIntegrationProvider, type CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import { HtmlNode } from '../../../src/nodes/HtmlNode'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

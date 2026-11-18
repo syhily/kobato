@@ -1,9 +1,8 @@
+import { handlePlainTextPaste } from '@kobato/inkling-internal/plugins/behaviour/plainTextPaste'
+import { registerParagraphRestriction } from '@kobato/inkling-internal/plugins/behaviour/restrict-content'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, COMMAND_PRIORITY_HIGH, PASTE_COMMAND } from 'lexical'
 import React from 'react'
-
-import { handlePlainTextPaste } from './behaviour/plainTextPaste'
-import { registerParagraphRestriction } from './behaviour/restrict-content'
 
 /**
  * Paragraphs-only enforcement: any update strips decorator nodes (below) and

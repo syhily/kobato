@@ -1,12 +1,10 @@
+import type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/ImageNode'
 import type { LexicalEditor } from 'lexical'
 
+import { $isImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $getEditor, $getSelection, COMMAND_PRIORITY_LOW, createCommand, mergeRegister } from 'lexical'
-
-import type { ImageNodeDataset } from '../../nodes/ImageNode'
-
-import { $isImageNode } from '../../nodes/base/nodes/image/ImageNode'
-import { getRegisteredNodeMap } from '../../utils/lexical-internals'
-import { INSERT_CARD_COMMAND } from './commands'
 
 // Selector insertion — the headless surgery behind the gif and image-library
 // selector overlays: build the card from the picked dataset, insert it through

@@ -1,11 +1,11 @@
-import type { BookmarkNodeDataset } from './cards/card-commands'
+import type { BookmarkNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { bookmarkDeclaration } from './cards/bookmark.declaration'
-export { $isBookmarkNode } from './base/nodes/bookmark/BookmarkNode'
-export type { SerializedBookmarkNode } from './base/nodes/bookmark/BookmarkNode'
-export { INSERT_BOOKMARK_COMMAND } from './cards/card-commands'
-export type { BookmarkNodeDataset } from './cards/card-commands'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { bookmarkDeclaration } from '@kobato/inkling-internal/nodes/cards/bookmark.declaration'
+export { $isBookmarkNode } from '@kobato/inkling-internal/nodes/base/nodes/bookmark/BookmarkNode'
+export type { SerializedBookmarkNode } from '@kobato/inkling-internal/nodes/base/nodes/bookmark/BookmarkNode'
+export { INSERT_BOOKMARK_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { BookmarkNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

@@ -1,7 +1,6 @@
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import InklingUiPrefsContext from '../../../context/InklingUiPrefsContext'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
 
 // The code box's display/edit shared styling — one source so the display-mode
 // <pre> (CodeBlock in ./CodeBlockCard) and the plain editor's textarea stay

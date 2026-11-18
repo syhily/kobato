@@ -1,9 +1,9 @@
 import type { EditorState, LexicalEditor } from 'lexical'
 
-import ArrowDownIcon from '../../../assets/icons/inkling-toggle-arrow.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import InklingNestedEditor from '../../InklingNestedEditor'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
+import ArrowDownIcon from '@kobato/inkling-internal/assets/icons/inkling-toggle-arrow.svg?react'
+import InklingNestedEditor from '@kobato/inkling-internal/components/InklingNestedEditor'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 export function ToggleCard({
   contentEditor,

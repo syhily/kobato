@@ -1,4 +1,4 @@
-import { useInklingLabels } from '../../hooks/useInklingLabels'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 export function EditorPlaceholder({ className, text }: { className?: string; text?: string }) {
   const labels = useInklingLabels()

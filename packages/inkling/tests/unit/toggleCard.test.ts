@@ -1,9 +1,8 @@
 import type { LexicalEditor } from 'lexical'
 
+import { $createToggleNode, ToggleNode, type ToggleNodeDataset } from '@kobato/inkling-internal/nodes/ToggleNode'
+import { createTestEditor, editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $createToggleNode, ToggleNode, type ToggleNodeDataset } from '../../src/nodes/ToggleNode'
-import { createTestEditor, editorTest } from '../utils/test-editor'
 
 const editorNodes = [ToggleNode]
 

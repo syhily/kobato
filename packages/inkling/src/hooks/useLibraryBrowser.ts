@@ -1,5 +1,9 @@
-import { createLibraryBrowser, type LibraryBrowser, type LibraryScheduler } from '../utils/services/library-browser'
-import { useDisposableStore } from './useDisposableStore'
+import { useDisposableStore } from '@kobato/inkling-internal/hooks/useDisposableStore'
+import {
+  createLibraryBrowser,
+  type LibraryBrowser,
+  type LibraryScheduler,
+} from '@kobato/inkling-internal/utils/services/library-browser'
 
 // React adapter over library-browser (the deep module — the debounced request
 // track and race policy live there). The browser is recreated when the search

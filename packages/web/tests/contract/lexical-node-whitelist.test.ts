@@ -3,9 +3,8 @@ import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/lexical/node
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { PAGE_EDITOR_NODES } from '@kobato/web-admin/ui/editor/page-editor-nodes.ts'
 import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes.ts'
+import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@kobato/web-tests/contract/composer-nodes.ts'
 import { describe, expect, it } from 'vitest'
-
-import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from './composer-nodes.ts'
 
 // The two zod schemas, the node-whitelist constants, and the composer-mounted
 // node sets must stay three-way identical — the editor must never produce a

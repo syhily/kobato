@@ -1,9 +1,15 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { CARD_CAPTION_MARKER_CLASS, renderCardCaptionHtml } from '../../utils/append-card-caption'
-import { getFirstHtmlElement } from '../../utils/get-first-html-element'
-import { isSafeRenderableSource, renderEmptyContainer } from '../../utils/render-empty-container'
-import { formatVideoDuration } from './format-video-duration'
+import { formatVideoDuration } from '@kobato/inkling-internal/nodes/base/nodes/video/format-video-duration'
+import {
+  CARD_CAPTION_MARKER_CLASS,
+  renderCardCaptionHtml,
+} from '@kobato/inkling-internal/nodes/base/utils/append-card-caption'
+import { getFirstHtmlElement } from '@kobato/inkling-internal/nodes/base/utils/get-first-html-element'
+import {
+  isSafeRenderableSource,
+  renderEmptyContainer,
+} from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
 
 interface VideoNodeData {
   src: string

@@ -1,6 +1,6 @@
 # App test conventions
 
-Test trees for the deployable app, plus the cross-package architecture guards and the two live-instance suites.
+Test trees for the deployable app, plus the cross-package architecture guards and the two live-instance suites. In Vitest trees import app source through `@/...` and app-test helpers through `@tests/...`; React Router's generated `./+types/*` stays relative. The Playwright journey tree is the one runner-level exception: Playwright loads its config/support files before any tsconfig-path resolver, so those local imports stay relative.
 
 ## Layout
 

@@ -1,7 +1,6 @@
+import { MathCard } from '@kobato/inkling-internal/components/ui/cards/MathCard'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { MathCard } from '../../../src/components/ui/cards/MathCard'
 
 describe('MathCard', function () {
   const svgArtifact = '<svg viewBox="0 0 10 10"><path d="M0 0z"/></svg>'

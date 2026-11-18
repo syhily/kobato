@@ -1,11 +1,11 @@
-import type { GalleryImage } from '../../../../types/gallery'
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import { appendCardCaption } from '../../utils/append-card-caption'
-import { getExportImageDimensions } from '../../utils/export-image-sizing'
-import { renderEmptyContainer } from '../../utils/render-empty-container'
-import { setSrcsetAttribute } from '../../utils/srcset-attribute'
-import { buildGalleryRows } from './gallery-rows'
+import { buildGalleryRows } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
+import { appendCardCaption } from '@kobato/inkling-internal/nodes/base/utils/append-card-caption'
+import { getExportImageDimensions } from '@kobato/inkling-internal/nodes/base/utils/export-image-sizing'
+import { renderEmptyContainer } from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
+import { setSrcsetAttribute } from '@kobato/inkling-internal/nodes/base/utils/srcset-attribute'
 
 // the renderer can only lay out images that carry these fields; isValidImage
 // narrows the canonical (all-optional) GalleryImage to this stricter view

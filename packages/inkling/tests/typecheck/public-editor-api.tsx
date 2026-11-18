@@ -7,8 +7,6 @@
 import type { Transformer } from '@lexical/markdown'
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
 
-import { ORDERED_LIST } from '@lexical/markdown'
-
 import {
   BASIC_NODES,
   BASIC_TRANSFORMERS,
@@ -39,7 +37,8 @@ import {
   type SnippetItem,
   type SnippetSettings,
   type UploadSettings,
-} from '../../src/index'
+} from '@kobato/inkling-internal/index'
+import { ORDERED_LIST } from '@lexical/markdown'
 
 declare const nestedEditor: LexicalEditor
 declare const serializedState: SerializedEditorState

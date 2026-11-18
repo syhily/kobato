@@ -1,13 +1,19 @@
+import type {
+  DecoratorNodeProperty,
+  NestedEditorFieldMap,
+  NestedEditorSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
-import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '../../card-specs'
-import type { ExportDOMOptions } from '../../export-dom'
-
-import BASIC_NODES from '../../../BasicNodes'
-import { generateDecoratorNode, type DecoratorNodeData } from '../../generate-decorator-node'
-import { createRenderContext } from '../../render-context'
-import { parseFootnoteDefinitionSection } from './footnotedefinition-parser'
-import { renderFootnoteDefinitionNode } from './footnotedefinition-renderer'
+import {
+  generateDecoratorNode,
+  type DecoratorNodeData,
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { parseFootnoteDefinitionSection } from '@kobato/inkling-internal/nodes/base/nodes/footnotedefinition/footnotedefinition-parser'
+import { renderFootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/base/nodes/footnotedefinition/footnotedefinition-renderer'
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import BASIC_NODES from '@kobato/inkling-internal/nodes/BasicNodes'
 
 // The card's nested-editor spec lives here, beside the class it types — the
 // declaration imports it from this module. The editor is `nullable`: the

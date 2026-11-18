@@ -1,6 +1,5 @@
+import { useHydrated } from '@kobato/inkling-internal/hooks/useHydrated'
 import React from 'react'
-
-import { useHydrated } from '../../../hooks/useHydrated'
 
 /**
  * Hydration-safe lazy boundary for the CodeMirror-backed card edit surfaces (code

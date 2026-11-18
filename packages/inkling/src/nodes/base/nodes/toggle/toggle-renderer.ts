@@ -1,6 +1,6 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { getFirstHtmlElement } from '../../utils/get-first-html-element'
+import { getFirstHtmlElement } from '@kobato/inkling-internal/nodes/base/utils/get-first-html-element'
 
 interface ToggleNodeData {
   heading: string

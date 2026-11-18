@@ -1,3 +1,5 @@
+import { TypographyPlugin } from '@kobato/inkling-internal/plugins/TypographyPlugin'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { registerRichText } from '@lexical/rich-text'
@@ -12,9 +14,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { TypographyPlugin } from '../../../src/plugins/TypographyPlugin'
-import { tick, updateEditor } from '../../utils/test-editor'
 
 function createTestEditor() {
   return createEditor({

@@ -1,13 +1,12 @@
+import { $createBaseHeaderNode, BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+import { headerBackgroundUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { $createBaseHeaderNode, BaseHeaderNode } from '../../../src/nodes/base/nodes/header/HeaderNode'
-import { headerBackgroundUploadIntent } from '../../../src/nodes/upload-intent'
-import { getImageDimensions } from '../../../src/utils/getImageDimensions'
-import { tick, updateEditor } from '../../utils/test-editor'
-
-vi.mock('../../../src/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

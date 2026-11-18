@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
-import { isNestedEditor } from '../../utils/lexical-internals'
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
+import { isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 
 // Editor-side handle for the per-top-level-composer word-count channel, built on the
 // composer handle factory. Owns the callbacks handed to the top-level WordCountPlugin

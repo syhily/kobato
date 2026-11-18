@@ -1,16 +1,15 @@
+/* c8 ignore start */
+import type { ElementTransformer, ExportChildren } from '@kobato/inkling-internal/html/renderer/transformers/index'
 import type { ElementNode } from 'lexical'
 
-/* c8 ignore start */
-import type { ElementTransformer, ExportChildren } from '../index'
-
-import { getTableCellTag } from '../../../../nodes/table/table-facts'
-import { $isTableCellNode, $isTableNode, $isTableRowNode } from '../../../../nodes/table/TableNodes'
+import { getTableCellTag } from '@kobato/inkling-internal/nodes/table/table-facts'
+import { $isTableCellNode, $isTableNode, $isTableRowNode } from '@kobato/inkling-internal/nodes/table/TableNodes'
 /* c8 ignore stop */
 
 // The table family exports straight from the tree — not via upstream
 // exportDOM, whose cell inline styles and colgroup bookkeeping belong to the
 // editing surface, not the published HTML. The header-cell ⇔ <th> mapping
-// is declared in @/inkling/nodes/table/table-facts (the HTML direction reads
+// is declared in @kobato/inkling-internal/nodes/table/table-facts (the HTML direction reads
 // the header state; the GFM direction forges it). Cell children render inline:
 // the renderer's exportChildren flattens the cell's single paragraph into
 // the tag without wrapping it in <p>.

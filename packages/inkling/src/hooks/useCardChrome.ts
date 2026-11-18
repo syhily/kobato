@@ -1,8 +1,7 @@
 import type { LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 
+import { useCardWriter, type CardWriteOptions } from '@kobato/inkling-internal/hooks/useCardWriter'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-
-import { useCardWriter, type CardWriteOptions } from './useCardWriter'
 
 export interface CardChrome<T extends LexicalNode> {
   editor: LexicalEditor

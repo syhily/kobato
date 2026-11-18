@@ -4,7 +4,7 @@
  * are allowed.
  *
  * Export-side half of the URL policy pair: the input-side table
- * (`isPasteableLinkUrl` in `@/inkling/plugins/behaviour/clipboard-protocol`) decides
+ * (`isPasteableLinkUrl` in `@kobato/inkling-internal/plugins/behaviour/clipboard-protocol`) decides
  * which pasted text becomes a link and deliberately also accepts
  * mailto/tel/ftp. The divergence is pinned in
  * `test/unit/plugins/behaviour/clipboard-protocol.test.tsx`.

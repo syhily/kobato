@@ -1,19 +1,18 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   customThumbnailUploadIntent,
   videoFlowUploadIntent,
   videoThumbnailUploadIntent,
   videoUploadIntent,
   type VideoFlowMetadata,
-} from '../../../src/nodes/upload-intent'
-import { $createVideoNode, VideoNode, type VideoNode as VideoNodeType } from '../../../src/nodes/VideoNode'
-import { getImageDimensions } from '../../../src/utils/getImageDimensions'
-import { updateEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/nodes/upload-intent'
+import { $createVideoNode, VideoNode, type VideoNode as VideoNodeType } from '@kobato/inkling-internal/nodes/VideoNode'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../../src/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

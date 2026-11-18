@@ -1,5 +1,9 @@
-import { BaseBookmarkNode, bookmarkNestedEditors, bookmarkTransientProps } from '../base/nodes/bookmark/BookmarkNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import {
+  BaseBookmarkNode,
+  bookmarkNestedEditors,
+  bookmarkTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/bookmark/BookmarkNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const bookmarkDeclaration = checkedCardDeclaration({
   nodeType: 'bookmark',

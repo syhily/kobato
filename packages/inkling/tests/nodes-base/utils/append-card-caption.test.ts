@@ -1,7 +1,9 @@
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import {
+  appendCardCaption,
+  CARD_CAPTION_MARKER_CLASS,
+} from '@kobato/inkling-internal/nodes/base/utils/append-card-caption'
 import { describe, expect, it } from 'vitest'
-
-import { createRenderContext } from '../../../src/nodes/base/render-context'
-import { appendCardCaption, CARD_CAPTION_MARKER_CLASS } from '../../../src/nodes/base/utils/append-card-caption'
 
 describe('appendCardCaption', function () {
   it('adds the marker class without a null prefix when the element has no class attribute', function () {

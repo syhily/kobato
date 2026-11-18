@@ -1,12 +1,11 @@
-import { createEditor } from 'lexical'
-import { describe, expect, it } from 'vitest'
-
 import {
   $appendEmptyParagraph,
   MINIMAL_DOCUMENT,
   MINIMAL_DOCUMENT_LEGACY_PAYLOAD,
   normalizeInitialEditorState,
-} from '../../../src/utils/initial-document'
+} from '@kobato/inkling-internal/utils/initial-document'
+import { createEditor } from 'lexical'
+import { describe, expect, it } from 'vitest'
 
 function createThrowingEditor() {
   return createEditor({

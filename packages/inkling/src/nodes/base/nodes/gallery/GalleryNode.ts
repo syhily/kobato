@@ -1,18 +1,23 @@
-import type { GalleryImage } from '../../../../types/gallery'
-import type { CardSpecFieldMapFor, DecoratorNodeProperty, NestedEditorSpec, TransientPropSpec } from '../../card-specs'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import { pick } from '../../../../utils/objects'
-import { transientTriggerFileDialogProp } from '../../card-specs'
+import { transientTriggerFileDialogProp } from '@kobato/inkling-internal/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { captionEditorSpecBase } from '../caption-editor-spec'
-import { parseGalleryNode } from './gallery-parser'
-import { renderGalleryNode } from './gallery-renderer'
-import { MAX_IMAGES, MAX_PER_ROW } from './gallery-rows'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { captionEditorSpecBase } from '@kobato/inkling-internal/nodes/base/nodes/caption-editor-spec'
+import { parseGalleryNode } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-parser'
+import { renderGalleryNode } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-renderer'
+import { MAX_IMAGES, MAX_PER_ROW } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
+import { pick } from '@kobato/inkling-internal/utils/objects'
 
 // the card's spec arrays live here, beside the class they type — see the
 // videoNestedEditors note; the nested editor is `nullable` because the
@@ -42,7 +47,7 @@ export type GalleryData = DecoratorNodeData<typeof galleryProperties>
 export type SerializedGalleryNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof galleryProperties>>
 
 // canonical homes are gallery-rows.ts (the row-layout module); re-exported
-// here so the node shim, parser, and `@/inkling/nodes/base` importers keep working
+// here so the node shim, parser, and `@kobato/inkling-internal/nodes/base` importers keep working
 export { MAX_IMAGES, MAX_PER_ROW }
 
 // keep client-side-only properties (e.g. preview blob urls) out of the persisted payload
@@ -93,7 +98,7 @@ export class BaseGalleryNode extends generateDecoratorNode({
   // inherits them; renderer surfaces never invoke them.
   // TODO: move to inkling-default-nodes? — packaging decision about where
   // `setImages` lives (its view→node writes are mirrored through
-  // @/inkling/hooks/gallery-images-mirror).
+  // @kobato/inkling-internal/hooks/gallery-images-mirror).
   setImages(images: GalleryImage[]) {
     const datasetImages = images.slice(0, MAX_IMAGES).map((image) => pick(image, ALLOWED_IMAGE_PROPS))
 

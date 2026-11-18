@@ -1,13 +1,12 @@
 import type { LexicalEditor } from 'lexical'
 
+import { ExtendedHeadingNode, BaseImageNode } from '@kobato/inkling-internal/nodes/base'
+import { registerDefaultTransforms, registerDenestTransform } from '@kobato/inkling-internal/transforms/index'
+import { assertTransform, createEditor } from '@kobato/inkling/tests/transforms/utils'
 import { $createListItemNode, $createListNode, ListItemNode, ListNode } from '@lexical/list'
 import { $createHeadingNode, HeadingNode } from '@lexical/rich-text'
 import { $createParagraphNode, $createTextNode, $getRoot, ParagraphNode, TextNode } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { ExtendedHeadingNode, BaseImageNode } from '../../../src/nodes/base'
-import { registerDefaultTransforms, registerDenestTransform } from '../../../src/transforms/index'
-import { assertTransform, createEditor } from '../utils'
 
 describe('Denest transform', function () {
   it('handles images inside paragraphs', function () {

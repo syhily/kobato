@@ -1,17 +1,16 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { GifData } from '@kobato/inkling-internal/utils/services/gif'
 
-import type { GifData } from '../../../../src/utils/services/gif'
-
-import GifSelector from '../../../../src/components/ui/GifSelector'
+import GifSelector from '@kobato/inkling-internal/components/ui/GifSelector'
 import {
   createGifBrowser,
   type GifBrowser,
   type GifFetchOutcome,
   type GifScheduler,
-} from '../../../../src/utils/services/gif-browser'
-import { tick } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/utils/services/gif-browser'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Adapter tests: the navigation machine itself is covered by the pure
 // transition table in gif-browser.test.ts. This file pins the DOM wiring —

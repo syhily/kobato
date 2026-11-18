@@ -1,6 +1,5 @@
+import { createRequestTrack, defaultScheduler } from '@kobato/inkling-internal/utils/services/request-track'
 import { describe, expect, it, vi } from 'vitest'
-
-import { createRequestTrack, defaultScheduler } from '../../../src/utils/services/request-track'
 
 function createManualScheduler() {
   const pending = new Map<number, () => void>()

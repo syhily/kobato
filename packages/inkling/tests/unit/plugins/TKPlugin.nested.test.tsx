@@ -1,16 +1,15 @@
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContext'
+import { ExtendedTextNode, TKNode, extendedTextNodeReplacement, $isTKNode } from '@kobato/inkling-internal/nodes/base'
+import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import TKPlugin from '@kobato/inkling-internal/plugins/TKPlugin'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer'
 import { render } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, $isElementNode, createEditor } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import CardContext from '../../../src/context/CardContext'
-import { TKHandleContext } from '../../../src/context/TKHandleContext'
-import { ExtendedTextNode, TKNode, extendedTextNodeReplacement, $isTKNode } from '../../../src/nodes/base'
-import { createTKHandle } from '../../../src/plugins/behaviour/tkHandle'
-import TKPlugin from '../../../src/plugins/TKPlugin'
-import { tick, updateEditor } from '../../utils/test-editor'
 
 const NESTED_NODES = [ExtendedTextNode, extendedTextNodeReplacement, TKNode]
 

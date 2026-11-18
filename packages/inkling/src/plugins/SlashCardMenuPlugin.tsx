@@ -1,11 +1,10 @@
+import { isSlashTriggerPress } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
+import { CardMenuPopup, type CardMenuPopupHandle } from '@kobato/inkling-internal/plugins/CardMenuPopup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 
-import { isSlashTriggerPress } from './behaviour/card-menu-trigger'
-import { CardMenuPopup, type CardMenuPopupHandle } from './CardMenuPopup'
-
 // Slash card menu — trigger wiring only. The valid-press grammar lives in the
-// trigger module (@/inkling/plugins/behaviour/card-menu-trigger); everything
+// trigger module (@kobato/inkling-internal/plugins/behaviour/card-menu-trigger); everything
 // downstream — the session, the slash trigger binding, the keyboard
 // navigator, the menu itself — is CardMenuPopup's 'slash' trigger syntax over
 // the 'selection' anchor policy, driven through the popup handle.

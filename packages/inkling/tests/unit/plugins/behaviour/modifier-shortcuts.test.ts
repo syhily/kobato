@@ -1,3 +1,10 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
+
+import { $isAsideNode, AsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
+import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerModifierCommand } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/modifier'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createListItemNode,
   $createListNode,
@@ -24,14 +31,6 @@ import {
   type TextFormatType,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { KeyboardNavigationDeps } from '../../../../src/plugins/behaviour/keyboard-navigation/types'
-
-import { $isAsideNode, AsideNode } from '../../../../src/nodes/AsideNode'
-import { $createHorizontalRuleNode, HorizontalRuleNode } from '../../../../src/nodes/HorizontalRuleNode'
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { registerModifierCommand } from '../../../../src/plugins/behaviour/keyboard-navigation/modifier'
-import { tick } from '../../../utils/test-editor'
 
 const deps: KeyboardNavigationDeps = {
   store: createCardSelectionStore(),

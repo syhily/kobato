@@ -1,6 +1,5 @@
+import { getAudioMetadata } from '@kobato/inkling-internal/utils/getAudioMetadata'
 import { afterEach, describe, expect, it } from 'vitest'
-
-import { getAudioMetadata } from '../../../src/utils/getAudioMetadata'
 
 describe('getAudioMetadata', () => {
   const OriginalAudio = globalThis.Audio

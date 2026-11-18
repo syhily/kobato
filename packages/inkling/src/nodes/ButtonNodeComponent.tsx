@@ -1,14 +1,13 @@
+import type { ButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { ButtonCard } from '@kobato/inkling-internal/components/ui/cards/ButtonCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { $isButtonNode } from '@kobato/inkling-internal/nodes/base'
 import { type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { ButtonNode } from './ButtonNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { ButtonCard } from '../components/ui/cards/ButtonCard'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { useInklingLabels } from '../hooks/useInklingLabels'
-import { $isButtonNode } from './base'
 
 export interface ButtonNodeComponentProps {
   alignment?: string
@@ -60,7 +59,7 @@ export function ButtonNodeComponent({
 
 /**
  * Button's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderButtonCard(node: ButtonNode) {
   return (

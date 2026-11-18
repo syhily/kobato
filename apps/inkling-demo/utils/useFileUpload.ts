@@ -1,6 +1,5 @@
+import { isTestEnv } from '@kobato/inkling-demo/utils/isTestEnv'
 import { useState } from 'react'
-
-import { isTestEnv } from './isTestEnv'
 
 export interface FileTypeConfig {
   mimeTypes: string[]

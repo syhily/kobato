@@ -1,3 +1,6 @@
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensureParagraphAfterCard'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $getRoot,
@@ -8,10 +11,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $createImageNode, ImageNode } from '../../../src/nodes/ImageNode'
-import { $ensureParagraphAfterCard } from '../../../src/utils/$ensureParagraphAfterCard'
-import { updateEditor } from '../../utils/test-editor'
 
 // One card type is enough to exercise the policy in jsdom (the same approach
 // as the card-adjacency and snippet-insertion tests).

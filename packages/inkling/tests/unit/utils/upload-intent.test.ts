@@ -1,8 +1,4 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { $getNodeByKey, $getRoot, type LexicalEditor, type LexicalNode } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { AudioNode, $createAudioNode } from '../../../src/nodes/AudioNode'
+import { AudioNode, $createAudioNode } from '@kobato/inkling-internal/nodes/AudioNode'
 import {
   $isAudioNode,
   $isFileNode,
@@ -10,15 +6,18 @@ import {
   type BaseAudioNode as AudioNodeType,
   type BaseFileNode as FileNodeType,
   type BaseImageNode as ImageNodeType,
-} from '../../../src/nodes/base'
-import { FileNode, $createFileNode } from '../../../src/nodes/FileNode'
-import { ImageNode, $createImageNode } from '../../../src/nodes/ImageNode'
+} from '@kobato/inkling-internal/nodes/base'
+import { FileNode, $createFileNode } from '@kobato/inkling-internal/nodes/FileNode'
+import { ImageNode, $createImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
 import {
   runUploadIntent,
   type ExtractMetadataContext,
   type RunUploadIntentOptions,
-} from '../../../src/nodes/upload-intent'
-import { updateEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/nodes/upload-intent'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { $getNodeByKey, $getRoot, type LexicalEditor, type LexicalNode } from 'lexical'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('runUploadIntent', () => {
   let editor: LexicalEditor

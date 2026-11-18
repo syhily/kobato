@@ -1,14 +1,19 @@
+import type {
+  DecoratorNodeProperty,
+  NestedEditorFieldMap,
+  NestedEditorSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
 import type { LexicalNode } from 'lexical'
 
+import {
+  generateDecoratorNode,
+  type DecoratorNodeData,
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { parseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/header/parsers/header-parser'
+import { renderHeaderNodeV2 } from '@kobato/inkling-internal/nodes/base/nodes/header/renderers/header-renderer'
+import { normalizeCardWidth, type CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 import { $canShowPlaceholderCurry } from '@lexical/text'
-
-import type { DecoratorNodeProperty, NestedEditorFieldMap, NestedEditorSpec } from '../../card-specs'
-
-import MINIMAL_NODES from '../../../MinimalNodes'
-import { generateDecoratorNode, type DecoratorNodeData } from '../../generate-decorator-node'
-import { normalizeCardWidth, type CardWidth } from '../../utils/card-widths'
-import { parseHeaderNode } from './parsers/header-parser'
-import { renderHeaderNodeV2 } from './renderers/header-renderer'
 
 // The card's nested-editor spec lives here, beside the class it types — the
 // declaration imports it from this module. Header's dataset exposes the

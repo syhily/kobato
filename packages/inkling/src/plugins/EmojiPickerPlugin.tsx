@@ -1,18 +1,17 @@
 import type { TextNode } from 'lexical'
 
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import React from 'react'
-
-import Portal from '../components/ui/Portal'
-import useTypeaheadTriggerMatch from '../hooks/useTypeaheadTriggerMatch'
-import trackEvent from '../utils/analytics'
+import Portal from '@kobato/inkling-internal/components/ui/Portal'
+import useTypeaheadTriggerMatch from '@kobato/inkling-internal/hooks/useTypeaheadTriggerMatch'
 import {
   $insertSelectedEmoji,
   registerEmojiExactMatchCompletion,
   searchEmojis,
   type EmojiSearchResult,
-} from './behaviour/emoji-completion'
+} from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
+import React from 'react'
 
 class EmojiOption extends MenuOption {
   id: string

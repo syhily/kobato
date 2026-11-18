@@ -1,9 +1,8 @@
 import type { SerializedEditorState, SerializedElementNode } from 'lexical'
 
+import { htmlToLexical as importWithDom } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
 import assert from 'node:assert/strict'
 import { describe, it } from 'vitest'
-
-import { htmlToLexical as importWithDom } from '../utils/html-to-lexical-with-dom'
 
 const options = {
   editorConfig: {

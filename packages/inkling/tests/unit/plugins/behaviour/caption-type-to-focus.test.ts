@@ -1,7 +1,6 @@
+import { registerCaptionTypeToFocus } from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
 import { $createParagraphNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { registerCaptionTypeToFocus } from '../../../../src/plugins/behaviour/nested-editor-protocol'
 
 // The caption type-to-focus policy as a synchronous table: printable key +
 // selected card + unfocused caption → focus; every other leg passes through.

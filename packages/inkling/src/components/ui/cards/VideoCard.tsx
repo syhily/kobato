@@ -1,18 +1,22 @@
+import type { DragHandlerLike, FileUploaderLike } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
 import type { EditorState, LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
-import type { DragHandlerLike, FileUploaderLike } from './card-ui-types'
-
-import ImgFullIcon from '../../../assets/icons/inkling-img-full.svg?react'
-import ImgRegularIcon from '../../../assets/icons/inkling-img-regular.svg?react'
-import ImgWideIcon from '../../../assets/icons/inkling-img-wide.svg?react'
-import PlayIcon from '../../../assets/icons/inkling-play.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { CardCaptionEditor } from '../CardCaptionEditor'
-import { MediaPlayer } from '../MediaPlayer'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { ButtonGroupSetting, MediaUploadSetting, SettingsPanel, ToggleSetting } from '../SettingsPanel'
-import { UploadingOverlay, UploadPlaceholder } from '../UploadChrome'
+import ImgFullIcon from '@kobato/inkling-internal/assets/icons/inkling-img-full.svg?react'
+import ImgRegularIcon from '@kobato/inkling-internal/assets/icons/inkling-img-regular.svg?react'
+import ImgWideIcon from '@kobato/inkling-internal/assets/icons/inkling-img-wide.svg?react'
+import PlayIcon from '@kobato/inkling-internal/assets/icons/inkling-play.svg?react'
+import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCaptionEditor'
+import { MediaPlayer } from '@kobato/inkling-internal/components/ui/MediaPlayer'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import {
+  ButtonGroupSetting,
+  MediaUploadSetting,
+  SettingsPanel,
+  ToggleSetting,
+} from '@kobato/inkling-internal/components/ui/SettingsPanel'
+import { UploadingOverlay, UploadPlaceholder } from '@kobato/inkling-internal/components/ui/UploadChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 interface PopulatedVideoCardProps {
   thumbnail: string

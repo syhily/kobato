@@ -1,8 +1,8 @@
 import {
   BaseFootnoteDefinitionNode,
   footnoteDefinitionNestedEditors,
-} from '../base/nodes/footnotedefinition/FootnoteDefinitionNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+} from '@kobato/inkling-internal/nodes/base/nodes/footnotedefinition/FootnoteDefinitionNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const footnoteDefinitionDeclaration = checkedCardDeclaration({
   nodeType: 'footnotedefinition',

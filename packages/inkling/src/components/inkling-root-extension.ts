@@ -1,3 +1,6 @@
+import InklingErrorBoundary from '@kobato/inkling-internal/components/InklingErrorBoundary'
+import { DEFAULT_CONFIG } from '@kobato/inkling-internal/nodes/base'
+import defaultTheme from '@kobato/inkling-internal/themes/default'
 import { ReactExtension } from '@lexical/react/ReactExtension'
 import {
   $getRoot,
@@ -7,10 +10,6 @@ import {
   type InitialEditorStateType,
   type LexicalEditor,
 } from 'lexical'
-
-import { DEFAULT_CONFIG } from '../nodes/base'
-import defaultTheme from '../themes/default'
-import InklingErrorBoundary from './InklingErrorBoundary'
 
 export interface InklingRootExtensionInput {
   nodes: CreateEditorArgs['nodes']

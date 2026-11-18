@@ -1,7 +1,6 @@
+import { $appendEmptyParagraph } from '@kobato/inkling-internal/utils/initial-document'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot, $insertNodes, $setSelection, type EditorState, type LexicalEditor, type LexicalNode } from 'lexical'
-
-import { $appendEmptyParagraph } from './initial-document'
 
 // exported for testing
 export function _$generateNodesFromHTML(editor: LexicalEditor, html: string): LexicalNode[] {

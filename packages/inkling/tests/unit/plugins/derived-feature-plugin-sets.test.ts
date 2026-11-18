@@ -1,7 +1,6 @@
+import { CORE_PLUGINS } from '@kobato/inkling-internal/plugins/CorePlugins'
+import { DEFAULT_FEATURE_PLUGINS } from '@kobato/inkling-internal/plugins/DefaultFeaturePlugins'
 import { describe, expect, it } from 'vitest'
-
-import { CORE_PLUGINS } from '../../../src/plugins/CorePlugins'
-import { DEFAULT_FEATURE_PLUGINS } from '../../../src/plugins/DefaultFeaturePlugins'
 
 // Guards for the default plugin sets.
 describe('default feature plugin set', () => {

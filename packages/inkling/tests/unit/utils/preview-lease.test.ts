@@ -1,6 +1,5 @@
+import { createPreviewLease, createPreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { createPreviewLease, createPreviewLeasePool } from '../../../src/utils/preview-lease'
 
 describe('createPreviewLease', () => {
   let createObjectURLSpy: ReturnType<typeof vi.spyOn>

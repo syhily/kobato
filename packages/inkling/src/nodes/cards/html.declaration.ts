@@ -1,12 +1,12 @@
-import { BaseHtmlNode } from '../base/nodes/html/HtmlNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseHtmlNode } from '@kobato/inkling-internal/nodes/base/nodes/html/HtmlNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const htmlDeclaration = checkedCardDeclaration({
   nodeType: 'html',
   baseNode: BaseHtmlNode,
   decorateTarget: {
     wrapperStyle: 'wide',
-    // the icon component attaches one layer up (`@/inkling/nodes/HtmlNodeComponent`)
+    // the icon component attaches one layer up (`@kobato/inkling-internal/nodes/HtmlNodeComponent`)
     hasIndicatorIcon: true,
   },
   menu: [

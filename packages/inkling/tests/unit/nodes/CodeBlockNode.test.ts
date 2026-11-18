@@ -1,11 +1,10 @@
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import { CodeBlockNode, $createCodeBlockNode, $isCodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { attachCaptionEditorWithText } from '@kobato/inkling/tests/utils/caption-editor'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { CodeBlockNode, $createCodeBlockNode, $isCodeBlockNode } from '../../../src/nodes/CodeBlockNode'
-import { attachCaptionEditorWithText } from '../../utils/caption-editor'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [CodeBlockNode]
 

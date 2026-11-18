@@ -6,7 +6,7 @@
  * error, so drop-path callers can hand it host-supplied data.
  *
  * The input-side counterpart of `isLocalContentImage` is `isInternalUrl`
- * (`@/inkling/utils/isInternalUrl`), which labels at-link results as
+ * (`@kobato/inkling-internal/utils/isInternalUrl`), which labels at-link results as
  * internal/external — a different grammar (site hostname + subdir), kept
  * separate on purpose.
  */

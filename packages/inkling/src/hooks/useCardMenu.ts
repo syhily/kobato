@@ -1,26 +1,24 @@
-import type { AnyLexicalCommand, LexicalEditor } from 'lexical'
-
-import { TableNode } from '@lexical/table'
-import React from 'react'
-
 import type {
   BuildCardMenuResult,
   CardMenuInsertParams,
   CardMenuSource,
   MenuBuildConfig,
-} from '../nodes/cards/card-menu-build'
+} from '@kobato/inkling-internal/nodes/cards/card-menu-build'
+import type { AnyLexicalCommand, LexicalEditor } from 'lexical'
 
 import {
   useInklingGifSettings,
   useInklingLibrarySettings,
   useInklingSnippetSettings,
-} from '../context/InklingHostIntegrationContext'
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { lookupLabel } from '../labels/inkling-labels'
-import { buildCardMenu } from '../nodes/cards/card-menu-build'
-import { getEditorCardNodes } from '../nodes/cards/editor-card-nodes'
-import { TABLE_MENU_SOURCE } from '../nodes/table/table-menu'
-import { $swapTriggerParagraph } from '../plugins/behaviour/card-menu-trigger'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { lookupLabel } from '@kobato/inkling-internal/labels/inkling-labels'
+import { buildCardMenu } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
+import { getEditorCardNodes } from '@kobato/inkling-internal/nodes/cards/editor-card-nodes'
+import { TABLE_MENU_SOURCE } from '@kobato/inkling-internal/nodes/table/table-menu'
+import { $swapTriggerParagraph } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
+import { TableNode } from '@lexical/table'
+import React from 'react'
 
 export type CardMenuInsert = (insertCommand: AnyLexicalCommand, params?: CardMenuInsertParams) => void
 

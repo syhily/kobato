@@ -1,23 +1,22 @@
-import { createHeadlessEditor } from '@lexical/headless'
-import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $isImageNode, type BaseImageNode } from '../../../../src/nodes/base/nodes/image/ImageNode'
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
+import { $isImageNode, type BaseImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
 import {
   backfillImageDimensions,
   clampImageCardWidth,
   migrateImageDataUrl,
-} from '../../../../src/plugins/behaviour/image-lifecycle'
-import { dataSrcToFile } from '../../../../src/utils/dataSrcToFile'
-import { getImageDimensions } from '../../../../src/utils/getImageDimensions'
-import { tick, updateEditor } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/image-lifecycle'
+import { dataSrcToFile } from '@kobato/inkling-internal/utils/dataSrcToFile'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../../../src/utils/dataSrcToFile', () => ({
+vi.mock('@kobato/inkling-internal/utils/dataSrcToFile', () => ({
   dataSrcToFile: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

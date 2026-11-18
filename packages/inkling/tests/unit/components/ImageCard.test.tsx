@@ -1,11 +1,10 @@
+import { ImageCard } from '@kobato/inkling-internal/components/ui/cards/ImageCard'
+import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ImageCard } from '../../../src/components/ui/cards/ImageCard'
-import { createDragHandler, createUploader } from '../../utils/mock-file-factories'
-
-vi.mock('../../../src/components/ui/CardCaptionEditor', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => <div data-testid="card-caption-editor" />,
 }))
 

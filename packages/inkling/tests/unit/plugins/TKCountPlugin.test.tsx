@@ -1,9 +1,8 @@
+import TKCountPlugin from '@kobato/inkling-internal/plugins/TKCountPlugin'
+import { createTKHandleWrapper } from '@kobato/inkling/tests/utils/tk-handle'
 import { act, render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import TKCountPlugin from '../../../src/plugins/TKCountPlugin'
-import { createTKHandleWrapper } from '../../utils/tk-handle'
 
 describe('TKCountPlugin', () => {
   it('reports the current tk count and follows handle updates', () => {

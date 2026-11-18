@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
  * or the per-card shim modules — that is the assembler's job.
  *
  * Specifiers are normalized onto the inkling layer root before judgment, so a
- * relative drift import is caught like its `../../../src/` alias twin. The
+ * relative drift import is caught like its `@kobato/inkling-internal/` twin. The
  * self-check tests pin the patterns against the real modules on disk, so a
  * guard that silently matches nothing fails loudly.
  */
@@ -58,13 +58,13 @@ function runtimeImportSpecifiers(source: string): string[] {
 /**
  * Resolves a specifier to its layer-relative target ('nodes/...',
  * 'components/...'), or null for specifiers outside the inkling layer. Alias
- * and relative forms both normalize, so `../../../src/nodes/foo` and
+ * and relative forms both normalize, so `@kobato/inkling-internal/nodes/foo` and
  * `../nodes/foo` from a utils file land on the same target. Pure string math
  * (no cwd, no filesystem), so the verdict never depends on where vitest runs.
  */
 function normalizeSpecifier(fromFile: string, specifier: string): string | null {
-  if (specifier.startsWith('../../../src/')) {
-    return specifier.slice('../../../src/'.length)
+  if (specifier.startsWith('@kobato/inkling-internal/')) {
+    return specifier.slice('@kobato/inkling-internal/'.length)
   }
   if (specifier.startsWith('./') || specifier.startsWith('../')) {
     const segments = fromFile.split('/')
@@ -79,7 +79,7 @@ function normalizeSpecifier(fromFile: string, specifier: string): string | null 
         segments.push(part)
       }
     }
-    // Normalize onto the layer root, mirroring the '../../../src/'.slice above —
+    // Normalize onto the layer root, mirroring the internal-alias slice above —
     // the wrapper-layer check below is rooted at the layer, not the repo.
     const resolved = segments.join('/')
     return resolved.startsWith('packages/inkling/src/') ? resolved.slice('packages/inkling/src/'.length) : resolved
@@ -147,7 +147,7 @@ describe('card pipeline layering guard', () => {
 
     for (const name of listSourceFiles(declarationsDir).filter((name) => name.endsWith('.declaration.ts'))) {
       const source = readFileSync(join(declarationsDir, name), 'utf8')
-      if (/from\s+['"](\.\/card-commands|@\/inkling\/nodes\/cards\/card-commands)['"]/.test(source)) {
+      if (/from\s+['"](\.\/card-commands|@kobato\/inkling-internal\/nodes\/cards\/card-commands)['"]/.test(source)) {
         offenders.push(name.split(sep).join('/'))
       }
     }
@@ -192,13 +192,13 @@ describe('card pipeline layering guard', () => {
     const fixture = 'packages/inkling/src/nodes/cards/fixture.declaration.ts'
     const judged = (source: string) => wrapperLayerImportsOfSource(fixture, source)
     for (const name of [...shims, ...components]) {
-      const specifier = `../../../src/nodes/${name.replace(/\.tsx?$/, '')}`
+      const specifier = `@kobato/inkling-internal/nodes/${name.replace(/\.tsx?$/, '')}`
       expect(judged(`import { X } from '${specifier}'`)).toEqual([specifier])
     }
     // the header card's component lives one directory down
-    expect(judged(`import { renderHeaderCard } from '../../../src/nodes/header/HeaderNodeComponent'`)).toEqual([
-      '../../../src/nodes/header/HeaderNodeComponent',
-    ])
+    expect(
+      judged(`import { renderHeaderCard } from '@kobato/inkling-internal/nodes/header/HeaderNodeComponent'`),
+    ).toEqual(['@kobato/inkling-internal/nodes/header/HeaderNodeComponent'])
   })
 
   it('self-check: alias, relative, side-effect, dynamic and mixed-type forms are all judged', () => {
@@ -206,23 +206,29 @@ describe('card pipeline layering guard', () => {
     const judged = (source: string) => wrapperLayerImportsOfSource(fixture, source)
 
     // alias forms of every forbidden family
-    expect(judged(`import { AudioNode } from '../../../src/nodes/AudioNode'`)).toEqual(['../../../src/nodes/AudioNode'])
-    expect(judged(`import { renderAudioCard } from '../../../src/nodes/AudioNodeComponent'`)).toEqual([
-      '../../../src/nodes/AudioNodeComponent',
+    expect(judged(`import { AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([
+      '@kobato/inkling-internal/nodes/AudioNode',
+    ])
+    expect(judged(`import { renderAudioCard } from '@kobato/inkling-internal/nodes/AudioNodeComponent'`)).toEqual([
+      '@kobato/inkling-internal/nodes/AudioNodeComponent',
     ])
     expect(judged(`import { useEffect } from 'react'`)).toEqual(['react'])
     expect(judged(`import { createRoot } from 'react-dom'`)).toEqual(['react-dom'])
-    expect(judged(`import { CARD_WRAPPER_NODES } from '../../../src/nodes/cards/card-wrappers'`)).toEqual([
-      '../../../src/nodes/cards/card-wrappers',
+    expect(judged(`import { CARD_WRAPPER_NODES } from '@kobato/inkling-internal/nodes/cards/card-wrappers'`)).toEqual([
+      '@kobato/inkling-internal/nodes/cards/card-wrappers',
     ])
-    expect(judged(`import { decorateCard } from '../../../src/nodes/decorate-card'`)).toEqual([
-      '../../../src/nodes/decorate-card',
+    expect(judged(`import { decorateCard } from '@kobato/inkling-internal/nodes/decorate-card'`)).toEqual([
+      '@kobato/inkling-internal/nodes/decorate-card',
     ])
-    expect(judged(`import InklingCardWrapper from '../../../src/components/InklingCardWrapper'`)).toEqual([
-      '../../../src/components/InklingCardWrapper',
+    expect(judged(`import InklingCardWrapper from '@kobato/inkling-internal/components/InklingCardWrapper'`)).toEqual([
+      '@kobato/inkling-internal/components/InklingCardWrapper',
     ])
-    expect(judged(`import { useX } from '../../../src/hooks/x'`)).toEqual(['../../../src/hooks/x'])
-    expect(judged(`import { XPlugin } from '../../../src/plugins/x'`)).toEqual(['../../../src/plugins/x'])
+    expect(judged(`import { useX } from '@kobato/inkling-internal/hooks/x'`)).toEqual([
+      '@kobato/inkling-internal/hooks/x',
+    ])
+    expect(judged(`import { XPlugin } from '@kobato/inkling-internal/plugins/x'`)).toEqual([
+      '@kobato/inkling-internal/plugins/x',
+    ])
 
     // relative drift forms — judged exactly like their alias twins
     expect(judged(`import { AudioNode } from '../AudioNode'`)).toEqual(['../AudioNode'])
@@ -231,24 +237,30 @@ describe('card pipeline layering guard', () => {
     ])
 
     // side-effect and dynamic forms
-    expect(judged(`import '../../../src/nodes/AudioNode'`)).toEqual(['../../../src/nodes/AudioNode'])
-    expect(judged(`const m = await import('../../../src/nodes/AudioNode')`)).toEqual(['../../../src/nodes/AudioNode'])
+    expect(judged(`import '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([
+      '@kobato/inkling-internal/nodes/AudioNode',
+    ])
+    expect(judged(`const m = await import('@kobato/inkling-internal/nodes/AudioNode')`)).toEqual([
+      '@kobato/inkling-internal/nodes/AudioNode',
+    ])
 
     // type-only imports erase, including the inline-modifier form; a mixed
     // import keeps its runtime binding and stays a violation
-    expect(judged(`import type { AudioNode } from '../../../src/nodes/AudioNode'`)).toEqual([])
-    expect(judged(`import { type AudioNode } from '../../../src/nodes/AudioNode'`)).toEqual([])
-    expect(judged(`import { type AudioData, AudioNode } from '../../../src/nodes/AudioNode'`)).toEqual([
-      '../../../src/nodes/AudioNode',
+    expect(judged(`import type { AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([])
+    expect(judged(`import { type AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([])
+    expect(judged(`import { type AudioData, AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([
+      '@kobato/inkling-internal/nodes/AudioNode',
     ])
 
     // compliant neighbours stay free: the base layer (the bottom of the
     // stack), the node-set modules, sibling registry/declaration modules,
     // and the utils layer
-    expect(judged(`import { BaseAudioNode } from '../../../src/nodes/base/nodes/audio/AudioNode'`)).toEqual([])
-    expect(judged(`import MINIMAL_NODES from '../../../src/nodes/MinimalNodes'`)).toEqual([])
-    expect(judged(`import BASIC_NODES from '../../../src/nodes/BasicNodes'`)).toEqual([])
+    expect(judged(`import { BaseAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'`)).toEqual(
+      [],
+    )
+    expect(judged(`import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'`)).toEqual([])
+    expect(judged(`import BASIC_NODES from '@kobato/inkling-internal/nodes/BasicNodes'`)).toEqual([])
     expect(judged(`import { captionEditorSpec } from './caption-editor-spec'`)).toEqual([])
-    expect(judged(`import { strOr } from '../../../src/utils/value-guards'`)).toEqual([])
+    expect(judged(`import { strOr } from '@kobato/inkling-internal/utils/value-guards'`)).toEqual([])
   })
 })

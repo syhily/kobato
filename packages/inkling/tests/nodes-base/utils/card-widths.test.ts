@@ -1,6 +1,5 @@
+import { CARD_WIDTHS, isCardWidth, normalizeCardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
 import { describe, expect, it } from 'vitest'
-
-import { CARD_WIDTHS, isCardWidth, normalizeCardWidth } from '../../../src/nodes/base/utils/card-widths'
 
 describe('Utils: card-widths', function () {
   describe('CARD_WIDTHS', function () {

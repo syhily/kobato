@@ -1,11 +1,9 @@
+import type { CardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import { EDIT_CARD_COMMAND, SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { $getNodeByKey, CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
-
-import type { CardSelectionStore } from './cardSelectionStore'
-
-import { $isInklingCard } from '../../nodes/base'
-import { EDIT_CARD_COMMAND, SELECT_CARD_COMMAND } from './commands'
 
 // Card interaction — the headless select→edit choreography behind
 // InklingCardWrapper. One registration per card nodeKey: the editor-level

@@ -1,11 +1,10 @@
+import { registerTableBehaviour } from '@kobato/inkling-internal/plugins/behaviour/table'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { TableNode } from '@lexical/table'
 import React from 'react'
 
-import { registerTableBehaviour } from './behaviour/table'
-
 /**
- * React adapter for the table behaviour (`@/inkling/plugins/behaviour/table`),
+ * React adapter for the table behaviour (`@kobato/inkling-internal/plugins/behaviour/table`),
  * mounted by DefaultFeaturePlugins. No-ops on surfaces whose node set left
  * the table family out — the selection observer invariants on an
  * unregistered TableNode.

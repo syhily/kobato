@@ -10,14 +10,6 @@
   "include": ["./**/*", "../../apps/kobato/src/**/*.d.ts", "../../packages/inkling/src/**/*.d.ts"],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "paths": {
-      "@kobato/inkling/headless": ["../../packages/inkling/src/headless.ts"],
-      "@kobato/inkling": ["../../packages/inkling/src/index.ts"],
-      "@kobato/inkling/*": ["../../packages/inkling/src/*"],
-      "@kobato/web-public/*": ["../../packages/web/public/src/*"],
-      "@kobato/ui/*": ["../../packages/ui/src/*"],
-      "@kobato/lexical/*": ["../../packages/shared/lexical/src/*"]
-    },
     "types": ["vite/client", "node"]
   }
 }

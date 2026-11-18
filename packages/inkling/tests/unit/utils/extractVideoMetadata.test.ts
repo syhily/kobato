@@ -1,6 +1,5 @@
+import extractVideoMetadata from '@kobato/inkling-internal/utils/extractVideoMetadata'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import extractVideoMetadata from '../../../src/utils/extractVideoMetadata'
 
 class MockCanvas {
   width = 0

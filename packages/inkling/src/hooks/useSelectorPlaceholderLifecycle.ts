@@ -1,8 +1,7 @@
+import { DELETE_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
 import React from 'react'
-
-import { DELETE_CARD_COMMAND } from '../plugins/behaviour/commands'
 
 // The selector-placeholder lifecycle: the overlay is open while its placeholder
 // node exists — Escape and click-outside delete the placeholder, and a pick that

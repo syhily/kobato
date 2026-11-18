@@ -1,7 +1,11 @@
 // The settings panel's grab → drag → release choreography as a headless module;
 // `useFloatingPanel` owns every DOM consequence.
 
-import { createDragSession, type DragSessionPorts, type PanelPosition } from './floating-panel'
+import {
+  createDragSession,
+  type DragSessionPorts,
+  type PanelPosition,
+} from '@kobato/inkling-internal/utils/floating-panel'
 
 /** The verdict of a grab's composed-path walk. */
 export type PanelGrabVerdict = 'panel' | 'interactive' | 'outside'

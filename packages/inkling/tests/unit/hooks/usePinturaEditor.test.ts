@@ -1,12 +1,11 @@
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import usePinturaEditor from '@kobato/inkling-internal/hooks/usePinturaEditor'
+import { resolveLabels, type InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import InklingUiPrefsContext from '../../../src/context/InklingUiPrefsContext'
-import usePinturaEditor from '../../../src/hooks/usePinturaEditor'
-import { resolveLabels, type InklingLabelsInput } from '../../../src/labels/inkling-labels'
-
-vi.mock('../../../src/utils/analytics', () => ({
+vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
   default: vi.fn(),
 }))
 

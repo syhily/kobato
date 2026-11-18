@@ -1,9 +1,13 @@
+import { Dropdown } from '@kobato/inkling-internal/components/ui/SnippetInput/Dropdown'
+import { Input } from '@kobato/inkling-internal/components/ui/SnippetInput/Input'
+import {
+  initialSlot,
+  nextSlot,
+  previousSlot,
+  slotToItemIndex,
+} from '@kobato/inkling-internal/components/ui/SnippetInput/snippet-navigator'
+import { type SnippetItem } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import React, { useRef, useState } from 'react'
-
-import { type SnippetItem } from '../../context/InklingHostIntegrationContext'
-import { Dropdown } from './SnippetInput/Dropdown'
-import { Input } from './SnippetInput/Input'
-import { initialSlot, nextSlot, previousSlot, slotToItemIndex } from './SnippetInput/snippet-navigator'
 
 interface SnippetInputProps {
   value?: string

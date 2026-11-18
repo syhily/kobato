@@ -1,14 +1,13 @@
+import type { ContainerDragHandlers, DraggableInfo } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+
+import { DragDropHandleContext } from '@kobato/inkling-internal/context/DragDropHandleContext'
+import useDropTarget from '@kobato/inkling-internal/hooks/useDropTarget'
+import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/dragDropHandle'
+import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
+import { cardDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
 import { act, renderHook } from '@testing-library/react'
 import React from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { ContainerDragHandlers, DraggableInfo } from '../../../src/utils/draggable/DragDropContainer'
-
-import { DragDropHandleContext } from '../../../src/context/DragDropHandleContext'
-import useDropTarget from '../../../src/hooks/useDropTarget'
-import { createDragDropHandle } from '../../../src/plugins/behaviour/dragDropHandle'
-import { DragDropHandler } from '../../../src/utils/draggable/DragDropHandler'
-import { cardDrag } from '../../utils/draggable-fixtures'
 
 const mockContainer = {
   enableDrag: vi.fn(),

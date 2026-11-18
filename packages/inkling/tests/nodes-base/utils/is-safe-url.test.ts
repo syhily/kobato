@@ -1,6 +1,5 @@
+import { isSafeMediaUrl, isSafeUrl } from '@kobato/inkling-internal/nodes/base/utils/is-safe-url'
 import { describe, expect, it } from 'vitest'
-
-import { isSafeMediaUrl, isSafeUrl } from '../../../src/nodes/base/utils/is-safe-url'
 
 describe('isSafeUrl', () => {
   it('allows http URLs', () => {
@@ -31,7 +30,7 @@ describe('isSafeUrl', () => {
 
   it('rejects mailto, tel, and ftp URLs', () => {
     // export-side navigation policy keeps only http/https/relative. The input
-    // side (`isPasteableLinkUrl` in `@/inkling/plugins/behaviour/clipboard-protocol`)
+    // side (`isPasteableLinkUrl` in `@kobato/inkling-internal/plugins/behaviour/clipboard-protocol`)
     // deliberately accepts these schemes; the divergence is pinned in
     // `tests/inkling/unit/plugins/behaviour/clipboard-protocol.test.tsx`.
     expect(isSafeUrl('mailto:test@example.com')).toBe(false)

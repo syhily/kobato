@@ -1,5 +1,5 @@
-import { CARD_DECLARATIONS } from './'
-import { getHostCard, getHostCards, type HostCardRecord } from './host-card-registry'
+import { CARD_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards/'
+import { getHostCard, getHostCards, type HostCardRecord } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 
 type BuiltinCardDeclaration = (typeof CARD_DECLARATIONS)[number]
 

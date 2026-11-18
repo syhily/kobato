@@ -1,25 +1,24 @@
+import type { DecorateTargetSpec } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 import type { LexicalNode } from 'lexical'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
 
-import type { DecorateTargetSpec } from './card-declaration'
-
-import { renderHorizontalRuleCard } from '../../components/ui/cards/HorizontalRuleCard'
-import { renderAudioCard } from '../AudioNodeComponent'
-import { renderBookmarkCard } from '../BookmarkNodeComponent'
-import { renderButtonCard } from '../ButtonNodeComponent'
-import { renderCalloutCard } from '../CalloutNodeComponent'
-import { renderCodeBlockCard } from '../CodeBlockNodeComponent'
-import { renderFileCard } from '../FileNodeComponent'
-import { renderFootnoteDefinitionCard } from '../FootnoteDefinitionNodeComponent'
-import { renderGalleryCard } from '../GalleryNodeComponent'
-import { renderHeaderCard } from '../header/HeaderNodeComponent'
-import { IndicatorIcon as HtmlIndicatorIcon, renderHtmlCard } from '../HtmlNodeComponent'
-import { renderImageCard } from '../ImageNodeComponent'
-import { renderMathCard } from '../MathNodeComponent'
-import { renderToggleCard } from '../ToggleNodeComponent'
-import { renderVideoCard } from '../VideoNodeComponent'
-import { CARD_DECLARATIONS, type CardNodeType } from './'
-import { resolveCardFacts, type CardFacts } from './card-facts'
+import { renderHorizontalRuleCard } from '@kobato/inkling-internal/components/ui/cards/HorizontalRuleCard'
+import { renderAudioCard } from '@kobato/inkling-internal/nodes/AudioNodeComponent'
+import { renderBookmarkCard } from '@kobato/inkling-internal/nodes/BookmarkNodeComponent'
+import { renderButtonCard } from '@kobato/inkling-internal/nodes/ButtonNodeComponent'
+import { renderCalloutCard } from '@kobato/inkling-internal/nodes/CalloutNodeComponent'
+import { CARD_DECLARATIONS, type CardNodeType } from '@kobato/inkling-internal/nodes/cards/'
+import { resolveCardFacts, type CardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import { renderCodeBlockCard } from '@kobato/inkling-internal/nodes/CodeBlockNodeComponent'
+import { renderFileCard } from '@kobato/inkling-internal/nodes/FileNodeComponent'
+import { renderFootnoteDefinitionCard } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNodeComponent'
+import { renderGalleryCard } from '@kobato/inkling-internal/nodes/GalleryNodeComponent'
+import { renderHeaderCard } from '@kobato/inkling-internal/nodes/header/HeaderNodeComponent'
+import { IndicatorIcon as HtmlIndicatorIcon, renderHtmlCard } from '@kobato/inkling-internal/nodes/HtmlNodeComponent'
+import { renderImageCard } from '@kobato/inkling-internal/nodes/ImageNodeComponent'
+import { renderMathCard } from '@kobato/inkling-internal/nodes/MathNodeComponent'
+import { renderToggleCard } from '@kobato/inkling-internal/nodes/ToggleNodeComponent'
+import { renderVideoCard } from '@kobato/inkling-internal/nodes/VideoNodeComponent'
 
 /**
  * The React-bearing half of a card's decorate-target: the node→component render and,
@@ -59,7 +58,7 @@ const CARD_DECORATE_MODULES: Record<CardNodeType, CardDecorateModule> = {
  * Wrapper-layer projection of the card declarations: each declaration paired with
  * the React-bearing half of its decorate-target, the indicator icon gated by the
  * declaration's `decorateTarget.hasIndicatorIcon` flag (Html only). The shared
- * adapter (`@/inkling/nodes/decorate-card`) renders these through
+ * adapter (`@kobato/inkling-internal/nodes/decorate-card`) renders these through
  * `InklingCardWrapper`.
  */
 export const CARD_DECORATE_TARGETS = CARD_DECLARATIONS.map((declaration) => {
@@ -112,7 +111,7 @@ export function resolveCardDecorateTarget(facts: CardFacts): CardDecorateTarget 
 
 /**
  * Resolves a card's decorate target by node type. The built-in-first /
- * host-fallback merge lives in `@/inkling/nodes/cards/card-facts`.
+ * host-fallback merge lives in `@kobato/inkling-internal/nodes/cards/card-facts`.
  */
 export function getCardDecorateTarget(nodeType: string): CardDecorateTarget | undefined {
   const facts = resolveCardFacts(nodeType)

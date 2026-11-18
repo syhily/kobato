@@ -1,4 +1,10 @@
 import {
+  FOCUS_ACTIVE_ATTRIBUTE,
+  FOCUS_MODE_CLASS,
+  registerFocusMode,
+} from '@kobato/inkling-internal/plugins/behaviour/focus-mode'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -8,13 +14,6 @@ import {
   type TextNode,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import {
-  FOCUS_ACTIVE_ATTRIBUTE,
-  FOCUS_MODE_CLASS,
-  registerFocusMode,
-} from '../../../../src/plugins/behaviour/focus-mode'
-import { createTestEditor, updateEditor } from '../../../utils/test-editor'
 
 // Focus-mode DOM bookkeeping, pinned against
 // a rendered editor: the mode class on the root, the active attribute

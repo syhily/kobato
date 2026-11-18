@@ -1,5 +1,10 @@
 import type { LexicalEditor } from 'lexical'
 
+import { DEFAULT_TRANSFORMERS, ELEMENT_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers'
+import { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
+import { $createCodeBlockNode, $isCodeBlockNode, CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { $isHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { createTestEditor, tick } from '@kobato/inkling/tests/utils/test-editor'
 import { LinkNode } from '@lexical/link'
 import { $isListItemNode, $isListNode, ListItemNode, ListNode } from '@lexical/list'
 import {
@@ -18,12 +23,6 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
 } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { DEFAULT_TRANSFORMERS, ELEMENT_TRANSFORMERS } from '../../../src/markdown/transformers'
-import { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '../../../src/markdown/transformers-core'
-import { $createCodeBlockNode, $isCodeBlockNode, CodeBlockNode } from '../../../src/nodes/CodeBlockNode'
-import { $isHorizontalRuleNode, HorizontalRuleNode } from '../../../src/nodes/HorizontalRuleNode'
-import { createTestEditor, tick } from '../../utils/test-editor'
 
 function importMarkdown(markdown: string, transformers: Transformer[] = DEFAULT_TRANSFORMERS): LexicalEditor {
   const editor = createTestEditor({

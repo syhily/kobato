@@ -1,13 +1,12 @@
 import type { LexicalEditor } from 'lexical'
 
+import { BaseHeaderNode, $createBaseHeaderNode, $isHeaderNode } from '@kobato/inkling-internal/nodes/base/index'
+import { populateNestedEditor, setupNestedEditor } from '@kobato/inkling-internal/nodes/nested-editors'
+import { createDocument, dom } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { BaseHeaderNode, $createBaseHeaderNode, $isHeaderNode } from '../../../src/nodes/base/index'
-import { populateNestedEditor, setupNestedEditor } from '../../../src/nodes/nested-editors'
-import { editorTest } from '../../utils/test-editor'
-import { createDocument, dom } from '../test-utils/index'
 
 const editorNodes = [BaseHeaderNode]
 

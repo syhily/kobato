@@ -20,7 +20,8 @@ describe('shortcutSymbols', () => {
       configurable: true,
     })
 
-    const { ctrlOrCmdSymbol, ctrlOrSymbol, altOrOption } = await import('../../../src/utils/shortcutSymbols')
+    const { ctrlOrCmdSymbol, ctrlOrSymbol, altOrOption } =
+      await import('@kobato/inkling-internal/utils/shortcutSymbols')
 
     expect(ctrlOrCmdSymbol()).toBe('⌘')
     expect(ctrlOrSymbol()).toBe('⌃')
@@ -33,7 +34,8 @@ describe('shortcutSymbols', () => {
       configurable: true,
     })
 
-    const { ctrlOrCmdSymbol, ctrlOrSymbol, altOrOption } = await import('../../../src/utils/shortcutSymbols')
+    const { ctrlOrCmdSymbol, ctrlOrSymbol, altOrOption } =
+      await import('@kobato/inkling-internal/utils/shortcutSymbols')
 
     expect(ctrlOrCmdSymbol()).toBe('Ctrl')
     expect(ctrlOrSymbol()).toBe('Ctrl')

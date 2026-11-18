@@ -1,6 +1,5 @@
+import { renderHeadless } from '@kobato/inkling/tests/utils/render-live'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import { renderHeadless } from '../utils/render-live'
 
 // Server-globals suite: headless renders must not touch browser globals. A
 // sanitize leg reading the global window/DOMParser at call time would

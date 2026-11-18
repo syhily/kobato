@@ -1,10 +1,9 @@
+import { SnippetInput } from '@kobato/inkling-internal/components/ui/SnippetInput'
+import { useInklingSnippetSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { focusEditorRoot } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { createSnippetFromSource } from '@kobato/inkling-internal/plugins/behaviour/snippet-creation'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import { useInklingSnippetSettings } from '../../context/InklingHostIntegrationContext'
-import { focusEditorRoot } from '../../plugins/behaviour/card-adjacency'
-import { createSnippetFromSource } from '../../plugins/behaviour/snippet-creation'
-import { SnippetInput } from './SnippetInput'
 
 export interface SnippetCreateToolbarProps {
   nodeKey: string

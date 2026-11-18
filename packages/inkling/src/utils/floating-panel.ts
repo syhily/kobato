@@ -3,8 +3,11 @@
 // panel-drag-session, the re-clamp resolutions in panel-resize-choreography, and the React
 // DOM adapter in useFloatingPanel.
 
-import { createPressThresholdSession, type PressThresholdSession } from './draggable/press-threshold-session'
-import { fitRectWithin } from './fit-rect'
+import {
+  createPressThresholdSession,
+  type PressThresholdSession,
+} from '@kobato/inkling-internal/utils/draggable/press-threshold-session'
+import { fitRectWithin } from '@kobato/inkling-internal/utils/fit-rect'
 
 export interface PanelPosition {
   x: number

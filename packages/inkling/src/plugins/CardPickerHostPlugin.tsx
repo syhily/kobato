@@ -1,9 +1,8 @@
+import { useCardPickerState, useCardPickerStore } from '@kobato/inkling-internal/context/CardPickerStoreContext'
+import { resolveCardPicker } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey } from 'lexical'
 import React from 'react'
-
-import { useCardPickerState, useCardPickerStore } from '../context/CardPickerStoreContext'
-import { resolveCardPicker } from '../nodes/cards/host-card-registry'
 
 /**
  * The pick seam's dispatch half (CONTEXT.md: "pick seam"): one generic

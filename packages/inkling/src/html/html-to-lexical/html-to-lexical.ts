@@ -1,11 +1,10 @@
+import type { ExportDOMDom } from '@kobato/inkling-internal/nodes/base'
 import type { CreateEditorArgs, SerializedEditorState } from 'lexical'
 
-import type { ExportDOMDom } from '../../nodes/base'
-
-import { registerDefaultTransforms, type DefaultTransformsOptions } from '../../transforms'
-import { MINIMAL_DOCUMENT } from '../../utils/initial-document'
-import { createHeadlessHtmlEditor } from '../headless-editor'
-import { $insertHtmlDocument } from './insert-html'
+import { createHeadlessHtmlEditor } from '@kobato/inkling-internal/html/headless-editor'
+import { $insertHtmlDocument } from '@kobato/inkling-internal/html/html-to-lexical/insert-html'
+import { registerDefaultTransforms, type DefaultTransformsOptions } from '@kobato/inkling-internal/transforms'
+import { MINIMAL_DOCUMENT } from '@kobato/inkling-internal/utils/initial-document'
 
 export interface htmlToLexicalOptions {
   /** Required DOM port — parse goes through `dom.window.document`, so the module itself never touches a global or jsdom. */
@@ -25,7 +24,7 @@ export function htmlToLexical(html: string, options: htmlToLexicalOptions): Seri
 
   // The importer replaces the defaults wholesale when the caller passes
   // editorConfig.nodes; the renderer uses additive semantics instead (see
-  // @/inkling/html/headless-editor) — do not "unify" the two.
+  // @kobato/inkling-internal/html/headless-editor) — do not "unify" the two.
   const editor = createHeadlessHtmlEditor({ merge: 'wholesale', editorConfig: options.editorConfig })
 
   // Standard parser entry — jsdom and browsers both support it, so the
@@ -34,7 +33,7 @@ export function htmlToLexical(html: string, options: htmlToLexicalOptions): Seri
   doc.body.innerHTML = html.trim()
 
   // one-shot headless editor, so the default transforms only normalize this
-  // import — see the transform-policy note in @/inkling/utils/initial-document
+  // import — see the transform-policy note in @kobato/inkling-internal/utils/initial-document
   registerDefaultTransforms(editor, { alignment: options.alignment })
 
   editor.update(

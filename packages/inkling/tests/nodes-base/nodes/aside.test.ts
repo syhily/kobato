@@ -1,13 +1,12 @@
 import type { LexicalEditor } from 'lexical'
 
+import { AsideNode, $createAsideNode, $isAsideNode } from '@kobato/inkling-internal/nodes/base/index'
+import { createDocument, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot, $createParagraphNode, $createTextNode } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { AsideNode, $createAsideNode, $isAsideNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { createDocument, html } from '../test-utils/index'
 
 const editorNodes = [AsideNode]
 

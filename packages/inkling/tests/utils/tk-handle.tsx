@@ -1,7 +1,6 @@
+import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContext'
+import { createTKHandle, type TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
 import React from 'react'
-
-import { TKHandleContext } from '../../src/context/TKHandleContext'
-import { createTKHandle, type TKHandle } from '../../src/plugins/behaviour/tkHandle'
 
 // Test stand-in for the per-composer provider InklingComposer mounts: wraps
 // children in a TKHandleContext.Provider backed by a real handle. Returns the

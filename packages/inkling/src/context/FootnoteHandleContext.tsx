@@ -1,9 +1,9 @@
-import { createComposerHandleBinding } from '../plugins/behaviour/composer-handle'
+import { createComposerHandleBinding } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 import {
   createFootnoteHandle,
   type FootnoteHandle,
   type FootnoteHandleState,
-} from '../plugins/behaviour/footnoteHandle'
+} from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
 
 // Per-composer footnote handle; nested composers share the top-level one.
 export const {

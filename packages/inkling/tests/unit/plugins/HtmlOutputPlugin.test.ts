@@ -1,11 +1,10 @@
+import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { HtmlOutputPlugin } from '@kobato/inkling-internal/plugins/HtmlOutputPlugin'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { act, renderHook } from '@testing-library/react'
 import { $createLineBreakNode, $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $createHorizontalRuleNode, HorizontalRuleNode } from '../../../src/nodes/HorizontalRuleNode'
-import { HtmlOutputPlugin } from '../../../src/plugins/HtmlOutputPlugin'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createTestEditor, updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

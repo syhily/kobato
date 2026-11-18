@@ -1,6 +1,5 @@
+import { awaitMediaEvents, MEDIA_LOAD_TIMEOUT_MS } from '@kobato/inkling-internal/utils/awaitMediaEvents'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import { awaitMediaEvents, MEDIA_LOAD_TIMEOUT_MS } from '../../../src/utils/awaitMediaEvents'
 
 afterEach(() => {
   vi.useRealTimers()

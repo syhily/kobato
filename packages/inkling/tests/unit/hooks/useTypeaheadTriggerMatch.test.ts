@@ -1,7 +1,6 @@
+import useTypeaheadTriggerMatch from '@kobato/inkling-internal/hooks/useTypeaheadTriggerMatch'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import useTypeaheadTriggerMatch from '../../../src/hooks/useTypeaheadTriggerMatch'
 
 describe('useTypeaheadTriggerMatch', () => {
   function getMatcher(trigger = ':', options?: { minLength?: number; maxLength?: number }) {

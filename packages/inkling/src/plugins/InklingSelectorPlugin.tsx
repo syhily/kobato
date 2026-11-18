@@ -1,22 +1,27 @@
+import GifPlugin from '@kobato/inkling-internal/components/ui/GifPlugin'
+import LibraryPlugin from '@kobato/inkling-internal/components/ui/LibraryPlugin'
+import {
+  OPEN_GIF_SELECTOR_COMMAND,
+  OPEN_IMAGE_LIBRARY_COMMAND,
+} from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { registerSelectorInsertCommands } from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, COMMAND_PRIORITY_LOW } from 'lexical'
 import React from 'react'
 
-import GifPlugin from '../components/ui/GifPlugin'
-import LibraryPlugin from '../components/ui/LibraryPlugin'
-import { OPEN_GIF_SELECTOR_COMMAND, OPEN_IMAGE_LIBRARY_COMMAND } from '../nodes/cards/card-commands'
-import { $createImageNode, ImageNode } from '../nodes/ImageNode'
-import { INSERT_CARD_COMMAND } from './behaviour/commands'
-import { registerSelectorInsertCommands } from './behaviour/selector-insertion'
-
-// defined with the other card commands (`@/inkling/nodes/cards/card-commands`)
+// defined with the other card commands (`@kobato/inkling-internal/nodes/cards/card-commands`)
 // and in the selector-insertion behaviour module; re-exported here as part of
 // this module's public surface
 export { OPEN_GIF_SELECTOR_COMMAND }
-export { INSERT_FROM_GIF_COMMAND, INSERT_FROM_LIBRARY_COMMAND } from './behaviour/selector-insertion'
+export {
+  INSERT_FROM_GIF_COMMAND,
+  INSERT_FROM_LIBRARY_COMMAND,
+} from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
 
 // the insert surgeries and their command registrations live in
-// `@/inkling/plugins/behaviour/selector-insertion`; this plugin keeps only the
+// `@kobato/inkling-internal/plugins/behaviour/selector-insertion`; this plugin keeps only the
 // OPEN_* placeholder dispatches, which name the React overlay components.
 // The two registrations are one skeleton folded through a table — the
 // overlay component is the only datum that varies.

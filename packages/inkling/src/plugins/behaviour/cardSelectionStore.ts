@@ -1,4 +1,4 @@
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 
 // Editor-side handle for card selection state, built on the composer handle
 // factory. Owns selectedCardKey and isEditingCard so Lexical handlers can read

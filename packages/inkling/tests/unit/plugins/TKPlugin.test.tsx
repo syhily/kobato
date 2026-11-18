@@ -1,23 +1,22 @@
+import CardContext, { type CardContextValue } from '@kobato/inkling-internal/context/CardContext'
+import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContext'
+import { useInklingTextEntity } from '@kobato/inkling-internal/hooks/useInklingTextEntity'
+import { ExtendedTextNode, TKNode } from '@kobato/inkling-internal/nodes/base'
+import { getTKMatch } from '@kobato/inkling-internal/plugins/behaviour/tk-matcher'
+import { createTKHandle, type TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import TKPlugin from '@kobato/inkling-internal/plugins/TKPlugin'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { render, screen } from '@testing-library/react'
 import { $createTextNode, type LexicalEditor } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import CardContext, { type CardContextValue } from '../../../src/context/CardContext'
-import { TKHandleContext } from '../../../src/context/TKHandleContext'
-import { useInklingTextEntity } from '../../../src/hooks/useInklingTextEntity'
-import { ExtendedTextNode, TKNode } from '../../../src/nodes/base'
-import { getTKMatch } from '../../../src/plugins/behaviour/tk-matcher'
-import { createTKHandle, type TKHandle } from '../../../src/plugins/behaviour/tkHandle'
-import TKPlugin from '../../../src/plugins/TKPlugin'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createTestEditor, updateEditor } from '../../utils/test-editor'
-
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-vi.mock('../../../src/hooks/useInklingTextEntity', () => ({
+vi.mock('@kobato/inkling-internal/hooks/useInklingTextEntity', () => ({
   useInklingTextEntity: vi.fn(),
 }))
 

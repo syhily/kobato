@@ -1,5 +1,5 @@
-import PlusCardMenuPlugin from './PlusCardMenuPlugin'
-import SlashCardMenuPlugin from './SlashCardMenuPlugin'
+import PlusCardMenuPlugin from '@kobato/inkling-internal/plugins/PlusCardMenuPlugin'
+import SlashCardMenuPlugin from '@kobato/inkling-internal/plugins/SlashCardMenuPlugin'
 
 export const CardMenuPlugin = () => {
   return (

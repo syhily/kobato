@@ -1,6 +1,15 @@
-import { ExtendedHeadingNode, extendedHeadingNodeReplacement } from './ExtendedHeadingNode'
-import { ExtendedQuoteNode, extendedQuoteNodeReplacement } from './ExtendedQuoteNode'
-import { ExtendedTextNode, extendedTextNodeReplacement } from './ExtendedTextNode'
+import {
+  ExtendedHeadingNode,
+  extendedHeadingNodeReplacement,
+} from '@kobato/inkling-internal/nodes/base/nodes/ExtendedHeadingNode'
+import {
+  ExtendedQuoteNode,
+  extendedQuoteNodeReplacement,
+} from '@kobato/inkling-internal/nodes/base/nodes/ExtendedQuoteNode'
+import {
+  ExtendedTextNode,
+  extendedTextNodeReplacement,
+} from '@kobato/inkling-internal/nodes/base/nodes/ExtendedTextNode'
 
 // The named extended-node runs — the one home of "an extended node and its
 // replacement config travel as one pair". Kept in a leaf module (not the

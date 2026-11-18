@@ -1,3 +1,27 @@
+import type { CardPickerRenderProps } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
+
+import { useCardPicker } from '@kobato/inkling-internal/hooks/useCardPicker'
+import { useCardWriter } from '@kobato/inkling-internal/hooks/useCardWriter'
+import { AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { resolveCardInsertCommand } from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { getCardInsertRegistrations } from '@kobato/inkling-internal/nodes/cards/card-insert-commands'
+import {
+  getHostCard,
+  registerCardPicker,
+  resolveCardPicker,
+} from '@kobato/inkling-internal/nodes/cards/host-card-registry'
+import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { CardInsertPlugin } from '@kobato/inkling-internal/plugins/CardInsertPlugin'
+import { CardPickerHostPlugin } from '@kobato/inkling-internal/plugins/CardPickerHostPlugin'
+import { CORE_PLUGINS, type CorePluginScope } from '@kobato/inkling-internal/plugins/CorePlugins'
+import { createCardPickerStoreWrapper } from '@kobato/inkling/tests/utils/card-picker-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createTestEditor, tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { act, render, renderHook } from '@testing-library/react'
 import {
@@ -13,27 +37,6 @@ import {
 import { readFileSync } from 'node:fs'
 import { useMemo, type ContextType, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { CardPickerRenderProps } from '../../../src/nodes/cards/host-card-registry'
-
-import { useCardPicker } from '../../../src/hooks/useCardPicker'
-import { useCardWriter } from '../../../src/hooks/useCardWriter'
-import { AudioNode } from '../../../src/nodes/AudioNode'
-import { generateDecoratorNode } from '../../../src/nodes/base/generate-decorator-node'
-import { resolveCardInsertCommand } from '../../../src/nodes/cards/card-commands'
-import { getCardInsertRegistrations } from '../../../src/nodes/cards/card-insert-commands'
-import { getHostCard, registerCardPicker, resolveCardPicker } from '../../../src/nodes/cards/host-card-registry'
-import { defineCard } from '../../../src/nodes/cards/host-cards'
-import { createCardPickerStore } from '../../../src/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore } from '../../../src/plugins/behaviour/cardSelectionStore'
-import { INSERT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { registerCardCommands } from '../../../src/plugins/behaviour/registerCardCommands'
-import { CardInsertPlugin } from '../../../src/plugins/CardInsertPlugin'
-import { CardPickerHostPlugin } from '../../../src/plugins/CardPickerHostPlugin'
-import { CORE_PLUGINS, type CorePluginScope } from '../../../src/plugins/CorePlugins'
-import { createCardPickerStoreWrapper } from '../../utils/card-picker-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createTestEditor, tick, updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
@@ -568,7 +571,7 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
 
 describe('headless purity', () => {
   it('the headless surface never references the pick seam', () => {
-    // `@/inkling/headless` is the react-free server surface (pinned by
+    // `@kobato/inkling-internal/headless` is the react-free server surface (pinned by
     // tests/unit/shared/contracts/boundaries.test.ts); the seam's React
     // halves (hook, host plugin, context) must never leak into it. The
     // registry's picker fact is type-only — the card-layering-imports guard

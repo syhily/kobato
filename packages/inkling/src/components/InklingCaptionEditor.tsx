@@ -1,3 +1,17 @@
+import InklingComposableEditor from '@kobato/inkling-internal/components/InklingComposableEditor'
+import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import { useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import {
+  registerCaptionArrowHandoff,
+  registerCaptionTypeToFocus,
+  registerNestedEnterHandoff,
+} from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
+import { EmojiPickerPlugin } from '@kobato/inkling-internal/plugins/EmojiPickerPlugin'
+import RestrictContentPlugin from '@kobato/inkling-internal/plugins/RestrictContentPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   mergeRegister,
@@ -8,21 +22,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import React, { useContext } from 'react'
-
-import CardContext from '../context/CardContext'
-import { useCardIsSelected } from '../context/CardSelectionStoreContext'
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { MINIMAL_TRANSFORMERS } from '../markdown/transformers-core'
-import MINIMAL_NODES from '../nodes/MinimalNodes'
-import {
-  registerCaptionArrowHandoff,
-  registerCaptionTypeToFocus,
-  registerNestedEnterHandoff,
-} from '../plugins/behaviour/nested-editor-protocol'
-import { EmojiPickerPlugin } from '../plugins/EmojiPickerPlugin'
-import RestrictContentPlugin from '../plugins/RestrictContentPlugin'
-import InklingComposableEditor from './InklingComposableEditor'
-import InklingNestedComposer from './InklingNestedComposer'
 
 const Placeholder = ({ text = 'Type here' }) => {
   return (

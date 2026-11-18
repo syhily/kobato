@@ -1,9 +1,8 @@
+import { isEditorEmpty } from '@kobato/inkling-internal/utils/isEditorEmpty'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { isEditorEmpty } from '../../../src/utils/isEditorEmpty'
-import { updateEditor } from '../../utils/test-editor'
 
 describe('isEditorEmpty', () => {
   let editor: LexicalEditor

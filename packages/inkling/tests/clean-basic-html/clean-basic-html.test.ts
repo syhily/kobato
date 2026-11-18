@@ -1,7 +1,6 @@
+import { cleanBasicHtml } from '@kobato/inkling-internal/html/clean-basic-html/clean-basic-html'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-
-import { cleanBasicHtml } from '../../src/html/clean-basic-html/clean-basic-html'
-import { createTestDom } from '../utils/render-live'
 
 describe('cleanBasicHtml', function () {
   let options: { createDocument: (html: string) => Document }

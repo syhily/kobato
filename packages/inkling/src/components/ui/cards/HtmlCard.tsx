@@ -1,13 +1,12 @@
+import { LazyCardEditor } from '@kobato/inkling-internal/components/ui/cards/LazyCardEditor'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import { sanitizeHtml } from '@kobato/inkling-internal/utils/sanitize-html'
 import React from 'react'
-
-import { sanitizeHtml } from '../../../utils/sanitize-html'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { LazyCardEditor } from './LazyCardEditor'
 
 // The CodeMirror-backed editor loads behind the hydration-safe lazy boundary
 // (LazyCardEditor): the SSR'd canvas and the first client render both show
 // the static source fallback, then the editor chunk takes over after mount.
-const LazyHtmlEditor = React.lazy(() => import('./HtmlCard/HtmlEditor'))
+const LazyHtmlEditor = React.lazy(() => import('@kobato/inkling-internal/components/ui/cards/HtmlCard/HtmlEditor'))
 
 // Static read-only mirror of the editor's initial state: the raw source at
 // the CodeMirror surface's min-height and type metrics.

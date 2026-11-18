@@ -1,3 +1,6 @@
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { registerClickAndCut } from '@kobato/inkling-internal/plugins/behaviour/registerClickAndCut'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $getRoot,
   $getSelection,
@@ -8,10 +11,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { registerClickAndCut } from '../../../../src/plugins/behaviour/registerClickAndCut'
-import { updateEditor } from '../../../utils/test-editor'
 
 function createTestEditor() {
   return createEditor({

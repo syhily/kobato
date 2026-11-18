@@ -1,7 +1,6 @@
+import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
 import { createHeadlessEditor } from '@lexical/headless'
 import { createEditor, type LexicalEditor } from 'lexical'
-
-import { registerCardDecorateAdapter } from '../../src/nodes/decorate-card'
 
 // Lexical reconciliation calls decorate(), which resolves through the
 // injection port the `.` barrel fills in production. Register the adapter here

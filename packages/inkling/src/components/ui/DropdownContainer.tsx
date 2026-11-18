@@ -1,8 +1,7 @@
+import { debounce } from '@kobato/inkling-internal/utils'
+import { cx } from '@kobato/inkling-internal/utils/cx'
+import { POPUP_LIST_MAX_HEIGHT } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import React, { useLayoutEffect } from 'react'
-
-import { debounce } from '../../utils'
-import { cx } from '../../utils/cx'
-import { POPUP_LIST_MAX_HEIGHT } from '../../utils/selection-anchored-popup'
 
 /**
  * Note: when using the DropdownContainer, make sure the input and the dropdown both are in a relative container with a defined z-index (or new stacking context)

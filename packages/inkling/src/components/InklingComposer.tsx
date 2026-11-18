@@ -1,16 +1,16 @@
 import type { CreateEditorArgs } from 'lexical'
 
-import DEFAULT_NODES from '../nodes/DefaultNodes'
 import InklingComposerBase, {
   type InklingComposerProps as InklingComposerBaseProps,
   type InklingInitialEditorState,
-} from './InklingComposerBase'
+} from '@kobato/inkling-internal/components/InklingComposerBase'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
 
 export type { InklingInitialEditorState }
 
 /**
  * The full-entry composer: identical to the core variant
- * (`@/inkling/components/InklingComposerBase`) except `nodes` defaults to the
+ * (`@kobato/inkling-internal/components/InklingComposerBase`) except `nodes` defaults to the
  * full DEFAULT_NODES card set.
  */
 export interface InklingComposerProps extends Omit<InklingComposerBaseProps, 'nodes'> {

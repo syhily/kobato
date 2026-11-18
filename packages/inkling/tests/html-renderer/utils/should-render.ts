@@ -1,7 +1,6 @@
+import { lexicalStateToHtml, type LexicalStateToHtmlOptions } from '@kobato/inkling-internal/html/headless-html'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { expect } from 'vitest'
-
-import { lexicalStateToHtml, type LexicalStateToHtmlOptions } from '../../../src/html/headless-html'
-import { createTestDom } from '../../utils/render-live'
 
 const dom = createTestDom()
 

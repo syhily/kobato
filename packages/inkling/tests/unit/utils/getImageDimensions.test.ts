@@ -1,6 +1,5 @@
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
 import { afterEach, describe, expect, it } from 'vitest'
-
-import { getImageDimensions } from '../../../src/utils/getImageDimensions'
 
 describe('getImageDimensions', () => {
   const OriginalImage = globalThis.Image

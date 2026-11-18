@@ -1,11 +1,7 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import type { CardConfig } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
 
-import type { CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import type { ListOptionItem } from '../../../src/hooks/useSearchLinks'
-
-import { SettingDescription, SettingLabel } from '../../../src/components/ui/SettingLabel'
+import { SettingDescription, SettingLabel } from '@kobato/inkling-internal/components/ui/SettingLabel'
 import {
   ButtonGroupSetting,
   ColorOptionSetting,
@@ -16,7 +12,10 @@ import {
   MediaUploadSetting,
   SettingsPanel,
   ToggleSetting,
-} from '../../../src/components/ui/SettingsPanel'
+} from '@kobato/inkling-internal/components/ui/SettingsPanel'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import React from 'react'
+import { describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   contextValue: { cardConfig: {} as CardConfig },
@@ -37,8 +36,8 @@ function createListOptionItem(): ListOptionItem {
 }
 
 // Mock the host-integration linking channel used by InputUrlSetting
-vi.mock('../../../src/context/InklingHostIntegrationContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../src/context/InklingHostIntegrationContext')>()
+vi.mock('@kobato/inkling-internal/context/InklingHostIntegrationContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/inkling-internal/context/InklingHostIntegrationContext')>()
   return { ...actual, useInklingLinkingSettings: () => mocks.contextValue.cardConfig }
 })
 

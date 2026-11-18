@@ -1,10 +1,9 @@
 import type { NodeKey } from 'lexical'
 
+import { useCardPickerStore } from '@kobato/inkling-internal/context/CardPickerStoreContext'
+import { resolveCardPicker } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey } from 'lexical'
-
-import { useCardPickerStore } from '../context/CardPickerStoreContext'
-import { resolveCardPicker } from '../nodes/cards/host-card-registry'
 
 export interface CardPickerHandle {
   /**
@@ -24,7 +23,7 @@ export interface CardPickerHandle {
  * The card component's half of the pick seam (CONTEXT.md: "pick seam"): the
  * unresolved placeholder's click and the resolved card's replace affordance
  * both call `open(nodeKey)`; the picker host plugin
- * (`@/inkling/plugins/CardPickerHostPlugin`) renders the picker registered for
+ * (`@kobato/inkling-internal/plugins/CardPickerHostPlugin`) renders the picker registered for
  * the node's type. Dispatch is by node KEY, never the node instance — the
  * pick write resolves the latest instance inside `editor.update()` (Lexical
  * #195).

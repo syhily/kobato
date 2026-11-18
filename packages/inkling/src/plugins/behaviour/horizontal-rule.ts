@@ -1,12 +1,17 @@
 import type { LexicalEditor, ParagraphNode } from 'lexical'
 
+import {
+  $insertHorizontalRuleForUpdateScanTrigger,
+  DIVIDER_REGEXP,
+} from '@kobato/inkling-internal/markdown/card-shortcuts'
+import {
+  $createHorizontalRuleNode,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+} from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { registerUpdateScan } from '@kobato/inkling-internal/plugins/behaviour/update-scan'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $getSelection, $isParagraphNode, $isRangeSelection, COMMAND_PRIORITY_EDITOR } from 'lexical'
-
-import { $insertHorizontalRuleForUpdateScanTrigger, DIVIDER_REGEXP } from '../../markdown/card-shortcuts'
-import { $createHorizontalRuleNode, INSERT_HORIZONTAL_RULE_COMMAND } from '../../nodes/HorizontalRuleNode'
-import { getSelectedNode } from '../../utils/getSelectedNode'
-import { getRegisteredNodeMap } from '../../utils/lexical-internals'
-import { registerUpdateScan } from './update-scan'
 
 // Horizontal rule behaviour — the insert surgery and the divider scan's
 // guard half, headless (the HorizontalRulePlugin keeps only registration).

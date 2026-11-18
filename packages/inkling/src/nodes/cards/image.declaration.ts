@@ -1,6 +1,10 @@
-import { BaseImageNode, imageNestedEditors, imageTransientProps } from '../base/nodes/image/ImageNode'
-import { decorateCardWidth } from '../base/utils/card-widths'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import {
+  BaseImageNode,
+  imageNestedEditors,
+  imageTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { decorateCardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const imageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
@@ -59,6 +63,6 @@ export const imageDeclaration = checkedCardDeclaration({
   uploadType: 'image',
   toolbarLabel: 'image',
   // Markdown-eligible without a card fence: `IMAGE_CARD_TRANSFORMER` in
-  // `@/inkling/nodes/cards/card-markdown-transformers` owns `![alt](src)`.
+  // `@kobato/inkling-internal/nodes/cards/card-markdown-transformers` owns `![alt](src)`.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)

@@ -1,3 +1,4 @@
+import type { ResolvedMenuItem } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
 import type { LexicalEditor } from 'lexical'
 
 import {
@@ -9,8 +10,6 @@ import {
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical'
-
-import type { ResolvedMenuItem } from '../../nodes/cards/card-menu-build'
 
 // The card menu's keyboard policy, headless — the mapping from keys to menu
 // actions. Two syntaxes, one module:

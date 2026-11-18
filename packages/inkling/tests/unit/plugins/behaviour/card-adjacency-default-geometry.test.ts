@@ -1,9 +1,8 @@
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { $getVisuallyAdjacentCard } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { $getVisuallyAdjacentCard } from '../../../../src/plugins/behaviour/card-adjacency'
-import { updateEditor } from '../../../utils/test-editor'
 
 // Pins the DEFAULT CardAdjacencyGeometry implementation — the module's riskiest
 // transcription (arrows.ts's `anchorNode === topLevelElement` + `children.length - 1`

@@ -1,10 +1,9 @@
+import { CodeBlockCard } from '@kobato/inkling-internal/components/ui/cards/CodeBlockCard'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { CodeBlockCard } from '../../../../../src/components/ui/cards/CodeBlockCard'
-import InklingUiPrefsContext from '../../../../../src/context/InklingUiPrefsContext'
-import { DEFAULT_LABELS } from '../../../../../src/labels/inkling-labels'
 
 type UiPrefs = React.ComponentProps<typeof InklingUiPrefsContext.Provider>['value']
 

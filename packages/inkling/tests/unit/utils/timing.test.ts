@@ -1,6 +1,5 @@
+import { debounce, throttle } from '@kobato/inkling-internal/utils/timing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { debounce, throttle } from '../../../src/utils/timing'
 
 describe('debounce', () => {
   beforeEach(() => {

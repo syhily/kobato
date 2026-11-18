@@ -1,9 +1,8 @@
+import type { HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
+
+import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useContext, useEffect, useState } from 'react'
-
-import type { HeaderNodeWriter } from '../nodes/header/header-field-writer'
-
-import { getAccentColor } from '../utils/getAccentColor'
 
 export interface UseHeaderBackgroundImageOptions {
   /** The node's current layout — the layout-change transition keys off it. */

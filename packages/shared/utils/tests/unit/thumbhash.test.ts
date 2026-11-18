@@ -6,7 +6,7 @@ import {
   thumbHashToRGBA,
 } from '@kobato/utils/thumbhash.ts'
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { join } from 'node:path'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
@@ -20,11 +20,9 @@ const SNAPSHOTS: Array<{
   aspectRatio: number
   thumbHashToDataURL: string
   rgbaToDataURL: string
-}> = JSON.parse(
-  readFileSync(resolve(__dirname, '../../../../../tools/test/src/fixtures/thumbhash/snapshots.json'), 'utf-8'),
-)
+}> = JSON.parse(readFileSync(join(import.meta.dirname, '../fixtures/thumbhash/snapshots.json'), 'utf-8'))
 
-const FIXTURE_DIR = resolve(__dirname, '../../../../../tools/test/src/fixtures/thumbhash')
+const FIXTURE_DIR = join(import.meta.dirname, '../fixtures/thumbhash')
 
 async function loadRGBA(path: string): Promise<{ w: number; h: number; rgba: Uint8Array }> {
   const { data, info } = await sharp(path)
@@ -51,13 +49,13 @@ describe('thumbhash', () => {
   it('has fixture images and snapshots', () => {
     expect(SNAPSHOTS.length).toBe(5)
     for (const s of SNAPSHOTS) {
-      expect(readFileSync(resolve(FIXTURE_DIR, s.name)).length).toBeGreaterThan(0)
+      expect(readFileSync(join(FIXTURE_DIR, s.name)).length).toBeGreaterThan(0)
     }
   })
 
   it('rgbaToThumbHash produces identical hashes', async () => {
     for (const s of SNAPSHOTS) {
-      const { w, h, rgba } = await loadRGBA(resolve(FIXTURE_DIR, s.name))
+      const { w, h, rgba } = await loadRGBA(join(FIXTURE_DIR, s.name))
       const hash = rgbaToThumbHash(w, h, rgba)
       expect(bytesToBase64(hash)).toBe(s.hashBase64)
     }

@@ -1,4 +1,4 @@
-import { escapeRegExp } from '../../utils'
+import { escapeRegExp } from '@kobato/inkling-internal/utils'
 
 export function HighlightedString({
   string,

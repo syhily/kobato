@@ -1,7 +1,7 @@
 import type { LexicalNode } from 'lexical'
 
-import { assembleCardNodeOnce, type CardNodeClass } from '../assemble-card-node'
-import { getHostCards } from './host-card-registry'
+import { assembleCardNodeOnce, type CardNodeClass } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { getHostCards } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 
 /**
  * The registered host cards' assembled node classes in registration order: the

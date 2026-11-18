@@ -1,4 +1,4 @@
-import { kebabCase } from '../objects'
+import { kebabCase } from '@kobato/inkling-internal/utils/objects'
 
 // Data attributes rather than classes: a draggable/droppable element's class attribute may
 // be dynamically generated, which would remove DnD classes when changed.

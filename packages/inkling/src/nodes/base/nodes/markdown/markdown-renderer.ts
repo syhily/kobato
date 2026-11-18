@@ -1,11 +1,11 @@
-import type { ExportDOMOutput } from '../../export-dom'
-import type { RenderContext } from '../../render-context'
+import type { ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/export-dom'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
 // The markdown card's HTML export speaks the paste dialect. exportDOM is a
 // sync pipeline, so the engine comes from the lazy port's loaded cache
-// (`@/inkling/markdown/lazy-paste-dialect`) — pre-warmed on editor mount in
+// (`@kobato/inkling-internal/markdown/lazy-paste-dialect`) — pre-warmed on editor mount in
 // the browser and statically seeded by the headless HTML surface.
-import { getLoadedPasteDialect } from '../../../../markdown/lazy-paste-dialect'
+import { getLoadedPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
 
 interface MarkdownNodeData {
   markdown: string

@@ -1,17 +1,17 @@
 // The paste dialect's lazy-engine port (same import-port shape as
-// `@/inkling/utils/services/lazy-collaboration`): markdown-it + its plugin
+// `@kobato/inkling-internal/utils/services/lazy-collaboration`): markdown-it + its plugin
 // stack stay out of the editor island, loading through `loadPasteDialect` —
 // pre-warmed on editor mount by MarkdownPastePlugin and awaited on the cold
 // paste path before the markdown command dispatches.
 //
 // Two consumers cannot await — the paste command handler
-// (`@/inkling/plugins/behaviour/markdownPaste`), which runs synchronously
+// (`@kobato/inkling-internal/plugins/behaviour/markdownPaste`), which runs synchronously
 // inside the editor update, and the markdown card's HTML export
-// (`@/inkling/nodes/base/nodes/markdown/markdown-renderer`), whose exportDOM is
+// (`@kobato/inkling-internal/nodes/base/nodes/markdown/markdown-renderer`), whose exportDOM is
 // a sync pipeline — so they read the loaded engine through
 // `getLoadedPasteDialect`. The pre-warm covers the browser; the headless HTML
 // surface seeds its bundled engine via `registerLoadedPasteDialect`.
-import type { pasteDialect } from './paste-dialect'
+import type { pasteDialect } from '@kobato/inkling-internal/markdown/paste-dialect'
 
 /** The lazy chunk's public shape — the dialect handle is all consumers use. */
 export interface PasteDialectChunk {
@@ -24,7 +24,9 @@ export type LoadPasteDialect = () => Promise<PasteDialectChunk>
 let loadedChunk: PasteDialectChunk | null = null
 let pendingChunk: Promise<PasteDialectChunk> | null = null
 
-export function loadPasteDialect(load: LoadPasteDialect = () => import('./paste-dialect')): Promise<PasteDialectChunk> {
+export function loadPasteDialect(
+  load: LoadPasteDialect = () => import('@kobato/inkling-internal/markdown/paste-dialect'),
+): Promise<PasteDialectChunk> {
   if (loadedChunk) {
     return Promise.resolve(loadedChunk)
   }
@@ -41,7 +43,7 @@ export function getLoadedPasteDialect(): PasteDialectChunk['pasteDialect'] | nul
 }
 
 /** Synchronous seed for a host that already holds the engine statically
- * (the `@/inkling/headless` HTML surface). */
+ * (the `@kobato/inkling-internal/headless` HTML surface). */
 export function registerLoadedPasteDialect(chunk: PasteDialectChunk): void {
   loadedChunk = chunk
 }

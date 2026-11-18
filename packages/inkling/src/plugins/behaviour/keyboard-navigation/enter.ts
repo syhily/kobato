@@ -1,13 +1,15 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor } from 'lexical'
 
+import { $fireFenceKeyboardShortcut } from '@kobato/inkling-internal/markdown/card-shortcuts'
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import {
+  $removeOrReplaceNodeWithParagraph,
+  $selectCard,
+  editorOwnsFocus,
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { getEventProvenance } from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
 import { $createParagraphNode, $getNodeByKey, COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { $fireFenceKeyboardShortcut } from '../../../markdown/card-shortcuts'
-import { $isInklingCard } from '../../../nodes/base'
-import { $removeOrReplaceNodeWithParagraph, $selectCard, editorOwnsFocus } from '../card-adjacency'
-import { getEventProvenance } from '../nested-editor-protocol'
 
 export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNavigationDeps): () => void {
   const { store, isNested } = deps
@@ -65,7 +67,7 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
       }
 
       // Code card shortcut: trigger only; regex, language extraction and
-      // replace-and-select live in @/inkling/markdown/card-shortcuts.
+      // replace-and-select live in @kobato/inkling-internal/markdown/card-shortcuts.
       if (!isNested && event && $fireFenceKeyboardShortcut(event)) {
         return true
       }

@@ -1,9 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
-
 import {
   createPressThresholdSession,
   type PressThresholdPoint,
-} from '../../../../src/utils/draggable/press-threshold-session'
+} from '@kobato/inkling-internal/utils/draggable/press-threshold-session'
+import { describe, expect, it, vi } from 'vitest'
 
 const THRESHOLD = 3
 

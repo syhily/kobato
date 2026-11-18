@@ -1,6 +1,5 @@
+import { countWords } from '@kobato/inkling-internal/utils/index'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import { countWords } from '../../src/utils/index'
 
 describe('countWords', function () {
   it('counts plain words', function () {

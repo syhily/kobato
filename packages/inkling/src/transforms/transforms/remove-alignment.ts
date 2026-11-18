@@ -1,7 +1,7 @@
 /* c8 ignore next */
 import type { ElementNode, Klass, LexicalEditor } from 'lexical'
 
-import { registerNodeTransformIfPresent } from '../register-node-transform'
+import { registerNodeTransformIfPresent } from '@kobato/inkling-internal/transforms/register-node-transform'
 
 export function removeAlignmentTransform(node: ElementNode) {
   // on element nodes format===text-align in Lexical

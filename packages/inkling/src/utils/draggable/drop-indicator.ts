@@ -1,6 +1,9 @@
-import type { DroppablePosition } from './DragDropContainer'
+import type { DroppablePosition } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
-import { DROP_INDICATOR_DATA_ATTR, DROP_INDICATOR_ZINDEX } from './draggable-constants'
+import {
+  DROP_INDICATOR_DATA_ATTR,
+  DROP_INDICATOR_ZINDEX,
+} from '@kobato/inkling-internal/utils/draggable/draggable-constants'
 
 // The drop indicator: the green line marking where a dragged element would land; offset
 // math sits behind the DropIndicatorGeometry seam.

@@ -1,7 +1,7 @@
 // Floating element placement: always above the target and horizontally centered, clamped
 // into the scroller. Measuring and style writes stay here.
 
-import { ANCHOR_POPUP_GAP, fitRectWithin } from './fit-rect'
+import { ANCHOR_POPUP_GAP, fitRectWithin } from '@kobato/inkling-internal/utils/fit-rect'
 
 interface SetFloatingElemPositionOptions {
   verticalGap?: number

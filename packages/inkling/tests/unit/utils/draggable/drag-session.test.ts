@@ -1,11 +1,10 @@
-import { describe, expect, it, vi } from 'vitest'
-
 import {
   createDragStartSession,
   DRAG_START_THRESHOLD,
   type DragSessionPoint,
   type DragStartSessionListeners,
-} from '../../../../src/utils/draggable/drag-session'
+} from '@kobato/inkling-internal/utils/draggable/drag-session'
+import { describe, expect, it, vi } from 'vitest'
 
 // the threshold policy is exercised synchronously through the ports: the
 // listen port captures the session's listeners (standing in for the document

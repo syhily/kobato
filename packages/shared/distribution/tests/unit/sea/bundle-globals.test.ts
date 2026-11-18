@@ -1,10 +1,9 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   FORBIDDEN_BROWSER_TELEMETRY_MARKERS,
   SEA_BUNDLE_DEFINED_GLOBALS,
   scanBundleText,
-} from '../../../../../../tools/pack/src/sea/check-bundle.ts'
+} from '@kobato/pack/sea/check-bundle.ts'
+import { describe, expect, it } from 'vitest'
 
 // An `__APP_*__`/`__SEA_*__` identifier missing from the bundle's define
 // table would boot into a bare ReferenceError inside the binary — pin the

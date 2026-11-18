@@ -1,4 +1,4 @@
-import type { DroppablePosition } from './DragDropContainer'
+import type { DroppablePosition } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
 // Headless reorder rules for drag-drop: drop allowance and insert-index math for both drag
 // directions (editor-root card reorder, in-gallery image reorder).

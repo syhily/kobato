@@ -1,12 +1,14 @@
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
+
+import {
+  createGalleryImagesMirror,
+  type GalleryImagesMirror,
+} from '@kobato/inkling-internal/hooks/gallery-images-mirror'
+import { useCardWriter } from '@kobato/inkling-internal/hooks/useCardWriter'
+import { $isGalleryNode } from '@kobato/inkling-internal/nodes/base'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { GalleryImage } from '../types/gallery'
-
-import { $isGalleryNode } from '../nodes/base'
-import { createGalleryImagesMirror, type GalleryImagesMirror } from './gallery-images-mirror'
-import { useCardWriter } from './useCardWriter'
 
 /**
  * The React adapter of the gallery images mirror (see gallery-images-mirror.ts):

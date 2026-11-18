@@ -1,12 +1,14 @@
+import type {
+  CardMenuInsertParams,
+  MenuSection,
+  ResolvedMenuItem,
+} from '@kobato/inkling-internal/nodes/cards/card-menu-build'
 import type { AnyLexicalCommand } from 'lexical'
 
+import TrashCardIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import React from 'react'
-
-import type { CardMenuInsertParams, MenuSection, ResolvedMenuItem } from '../../nodes/cards/card-menu-build'
-
-import TrashCardIcon from '../../assets/icons/inkling-trash.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import trackEvent from '../../utils/analytics'
 
 export type CardMenuItemData = ResolvedMenuItem
 export type CardMenuSectionData = MenuSection

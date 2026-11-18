@@ -1,5 +1,23 @@
 import type { LexicalEditor } from 'lexical'
 
+import { FootnoteRefNode, $createFootnoteRefNode } from '@kobato/inkling-internal/nodes/footnote/FootnoteRefNode'
+import { MathInlineNode, $createMathInlineNode } from '@kobato/inkling-internal/nodes/math/MathInlineNode'
+import {
+  $isTableCellNode,
+  $isTableNode,
+  INKLING_TABLE_NODES,
+  TableCellHeaderStates,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@kobato/inkling-internal/nodes/table/TableNodes'
+import {
+  $insertTable,
+  INSERT_TABLE_COMMAND,
+  registerTableBehaviour,
+} from '@kobato/inkling-internal/plugins/behaviour/table'
+import { registerDefaultTransforms } from '@kobato/inkling-internal/transforms/default-transforms'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { $createLinkNode, LinkNode } from '@lexical/link'
 import { registerRichText } from '@lexical/rich-text'
 import {
@@ -11,21 +29,6 @@ import {
   createEditor,
 } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { FootnoteRefNode, $createFootnoteRefNode } from '../../../../src/nodes/footnote/FootnoteRefNode'
-import { MathInlineNode, $createMathInlineNode } from '../../../../src/nodes/math/MathInlineNode'
-import {
-  $isTableCellNode,
-  $isTableNode,
-  INKLING_TABLE_NODES,
-  TableCellHeaderStates,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
-} from '../../../../src/nodes/table/TableNodes'
-import { $insertTable, INSERT_TABLE_COMMAND, registerTableBehaviour } from '../../../../src/plugins/behaviour/table'
-import { registerDefaultTransforms } from '../../../../src/transforms/default-transforms'
-import { tick } from '../../../utils/test-editor'
 
 const NODES = [LinkNode, MathInlineNode, FootnoteRefNode, ...INKLING_TABLE_NODES]
 

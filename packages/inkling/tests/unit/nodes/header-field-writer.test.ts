@@ -1,8 +1,7 @@
+import type { BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+
+import { headerFieldWriter, type HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
 import { describe, expect, it } from 'vitest'
-
-import type { BaseHeaderNode } from '../../../src/nodes/base/nodes/header/HeaderNode'
-
-import { headerFieldWriter, type HeaderNodeWriter } from '../../../src/nodes/header/header-field-writer'
 
 // capture each mutator's effect on a fresh node-shaped record, so the
 // write-through mapping stays a synchronous table

@@ -1,11 +1,10 @@
-import { COMMAND_PRIORITY_LOW, createEditor, KEY_ENTER_COMMAND, type LexicalCommand, type LexicalEditor } from 'lexical'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
 import {
   getEventProvenance,
   registerNestedEnterHandoff,
-} from '../../../../src/plugins/behaviour/nested-editor-protocol'
-import { getParentEditor } from '../../../../src/utils/lexical-internals'
+} from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
+import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internals'
+import { COMMAND_PRIORITY_LOW, createEditor, KEY_ENTER_COMMAND, type LexicalCommand, type LexicalEditor } from 'lexical'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Unit pins for the shared Enter hand-off both nested-editor surfaces
 // (InklingNestedEditorPlugin's default branch, CaptionPlugin) delegate to,

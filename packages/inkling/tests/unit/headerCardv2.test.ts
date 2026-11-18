@@ -1,9 +1,13 @@
 import type { LexicalEditor } from 'lexical'
 
+import {
+  $createHeaderNode,
+  $isHeaderNode,
+  HeaderNode,
+  type HeaderNodeDataset,
+} from '@kobato/inkling-internal/nodes/HeaderNode'
+import { createTestEditor, editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $createHeaderNode, $isHeaderNode, HeaderNode, type HeaderNodeDataset } from '../../src/nodes/HeaderNode'
-import { createTestEditor, editorTest } from '../utils/test-editor'
 
 const editorNodes = [HeaderNode]
 

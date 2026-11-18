@@ -1,6 +1,5 @@
+import { setFloatingElemPosition } from '@kobato/inkling-internal/utils/setFloatingElemPosition'
 import { describe, expect, it } from 'vitest'
-
-import { setFloatingElemPosition } from '../../../src/utils/setFloatingElemPosition'
 
 describe('setFloatingElemPosition', () => {
   it('does nothing when required elements are missing', () => {

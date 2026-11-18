@@ -1,13 +1,8 @@
+import { INLINE_DATA_CASES, expectedInlineLiteral, inlinePackageData } from '@kobato/pack/sea/inline-package-data.ts'
 import { readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-
-import {
-  INLINE_DATA_CASES,
-  expectedInlineLiteral,
-  inlinePackageData,
-} from '../../../../../../tools/pack/src/sea/inline-package-data.ts'
 
 // Contract test: the server bundle inlines jsdom (the sanitize engine), which
 // resolves its sync-XHR worker path at module scope — a code path the server

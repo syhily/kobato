@@ -1,3 +1,6 @@
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import generateEditorState from '@kobato/inkling-internal/utils/generateEditorState'
+import { MINIMAL_DOCUMENT_LEGACY_PAYLOAD } from '@kobato/inkling-internal/utils/initial-document'
 import {
   createEditor,
   type EditorState,
@@ -7,11 +10,7 @@ import {
   type LexicalNodeReplacement,
 } from 'lexical'
 
-import generateEditorState from '../utils/generateEditorState'
-import { MINIMAL_DOCUMENT_LEGACY_PAYLOAD } from '../utils/initial-document'
-import MINIMAL_NODES from './MinimalNodes'
-
-// nested editors bootstrap from the legacy payload dialect (@/inkling/utils/initial-document)
+// nested editors bootstrap from the legacy payload dialect (@kobato/inkling-internal/utils/initial-document)
 const BLANK_EDITOR_STATE = JSON.stringify(MINIMAL_DOCUMENT_LEGACY_PAYLOAD)
 
 export interface SetupNestedEditorOptions {

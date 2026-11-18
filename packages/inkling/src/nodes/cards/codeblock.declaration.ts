@@ -2,8 +2,8 @@ import {
   BaseCodeBlockNode,
   codeBlockNestedEditors,
   codeBlockTransientProps,
-} from '../base/nodes/codeblock/CodeBlockNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+} from '@kobato/inkling-internal/nodes/base/nodes/codeblock/CodeBlockNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const codeBlockDeclaration = checkedCardDeclaration({
   nodeType: 'codeblock',
@@ -32,7 +32,7 @@ export const codeBlockDeclaration = checkedCardDeclaration({
   // Live e2e selector contract ("code-block"), deliberately not a transform of "codeblock"
   toolbarLabel: 'code-block',
   // Markdown-eligible without a card fence: `CODE_BLOCK` in
-  // `@/inkling/markdown/transformers` owns the fence.
+  // `@kobato/inkling-internal/markdown/transformers` owns the fence.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<
   'codeblock',

@@ -1,14 +1,13 @@
-import type { AnyLexicalCommand } from 'lexical'
-
 import type {
   GifSettings,
   LibrarySettings,
   SnippetItem,
   SnippetSettings,
-} from '../../context/InklingHostIntegrationContext'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { AnyLexicalCommand } from 'lexical'
 
-import SnippetCardIcon from '../../assets/icons/inkling-card-type-snippet.svg?react'
-import { INSERT_SNIPPET_COMMAND } from './card-commands'
+import SnippetCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-snippet.svg?react'
+import { INSERT_SNIPPET_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 interface MenuItemBase {
   nodeType?: string

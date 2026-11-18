@@ -1,7 +1,6 @@
+import { TextInput } from '@kobato/inkling-internal/components/ui/TextInput'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import { TextInput } from '../../../../src/components/ui/TextInput'
 
 describe('TextInput', () => {
   it('passes a numeric maxLength through to the input', () => {

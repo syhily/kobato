@@ -1,9 +1,8 @@
+import { lexicalStateToHtml } from '@kobato/inkling-internal/html/headless-html'
+import { BaseImageNode, BaseHtmlNode } from '@kobato/inkling-internal/nodes/base'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import Prettier from 'prettier'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { lexicalStateToHtml } from '../../src/html/headless-html'
-import { BaseImageNode, BaseHtmlNode } from '../../src/nodes/base'
-import { createTestDom } from '../utils/render-live'
 
 const nodes = [BaseImageNode, BaseHtmlNode]
 

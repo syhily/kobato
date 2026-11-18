@@ -1,9 +1,8 @@
 // Process helpers for the SEA build scripts: fail-fast wrappers around
 // spawnSync with inherited stdio so build progress stays visible.
 
+import { repoRoot } from '@kobato/pack/sea/paths.ts'
 import { spawnSync } from 'node:child_process'
-
-import { repoRoot } from './paths.ts'
 
 export function fail(message: string): never {
   console.error(message)

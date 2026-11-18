@@ -1,22 +1,26 @@
+import type { CardMenuInsertParams } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
 import type { AnyLexicalCommand, LexicalEditor } from 'lexical'
 
+import { CardMenu } from '@kobato/inkling-internal/components/ui/CardMenu'
+import { PlusButton, PlusMenu } from '@kobato/inkling-internal/components/ui/PlusMenu'
+import { SlashMenu } from '@kobato/inkling-internal/components/ui/SlashMenu'
+import { createMenuNavigator, type MenuNavigator } from '@kobato/inkling-internal/hooks/card-menu-navigation'
+import { useCardMenu } from '@kobato/inkling-internal/hooks/useCardMenu'
+import { useCardMenuSession } from '@kobato/inkling-internal/hooks/useCardMenuSession'
+import { useSelectionAnchoredPopup } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
+import { useSlashCardMenuTrigger } from '@kobato/inkling-internal/hooks/useSlashCardMenuTrigger'
+import {
+  registerMenuArrowsClose,
+  registerMenuKeyboardNavigation,
+} from '@kobato/inkling-internal/plugins/behaviour/card-menu-keyboard'
+import {
+  shouldHidePlusButtonOnSelectionChange,
+  type PlusButtonVerdict,
+} from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { resolveAnchoredPopupPlacement } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { $setSelection } from 'lexical'
 import React from 'react'
-
-import type { CardMenuInsertParams } from '../nodes/cards/card-menu-build'
-
-import { CardMenu } from '../components/ui/CardMenu'
-import { PlusButton, PlusMenu } from '../components/ui/PlusMenu'
-import { SlashMenu } from '../components/ui/SlashMenu'
-import { createMenuNavigator, type MenuNavigator } from '../hooks/card-menu-navigation'
-import { useCardMenu } from '../hooks/useCardMenu'
-import { useCardMenuSession } from '../hooks/useCardMenuSession'
-import { useSelectionAnchoredPopup } from '../hooks/useSelectionAnchoredPopup'
-import { useSlashCardMenuTrigger } from '../hooks/useSlashCardMenuTrigger'
-import trackEvent from '../utils/analytics'
-import { resolveAnchoredPopupPlacement } from '../utils/selection-anchored-popup'
-import { registerMenuArrowsClose, registerMenuKeyboardNavigation } from './behaviour/card-menu-keyboard'
-import { shouldHidePlusButtonOnSelectionChange, type PlusButtonVerdict } from './behaviour/card-menu-trigger'
 
 // CardMenuPopup — the one card-menu popup, parameterized over the two
 // trigger/anchor pairings. It owns the whole stack end-to-end: the session
@@ -293,7 +297,7 @@ export function CardMenuPopup({
   )
 
   // slash: capture key navigation to move/insert the selected card item — the
-  // policy is headless in @/inkling/plugins/behaviour/card-menu-keyboard; this
+  // policy is headless in @kobato/inkling-internal/plugins/behaviour/card-menu-keyboard; this
   // effect only mounts the registration while the slash menu is open
   React.useEffect(() => {
     if (!isSlash || !isOpen) {

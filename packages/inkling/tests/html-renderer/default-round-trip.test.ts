@@ -1,16 +1,14 @@
+import type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base'
 import type { LexicalEditor, SerializedParagraphNode } from 'lexical'
 
+import { DEFAULT_HTML_NODES } from '@kobato/inkling-internal/html/default-html-nodes'
+import { lexicalStateToHtml } from '@kobato/inkling-internal/html/headless-html'
+import { BaseImageNode } from '@kobato/inkling-internal/nodes/base'
+import { htmlToLexical } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { HeadingNode } from '@lexical/rich-text'
 import { ParagraphNode } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { ExportDOMOptions } from '../../src/nodes/base'
-
-import { DEFAULT_HTML_NODES } from '../../src/html/default-html-nodes'
-import { lexicalStateToHtml } from '../../src/html/headless-html'
-import { BaseImageNode } from '../../src/nodes/base'
-import { htmlToLexical } from '../utils/html-to-lexical-with-dom'
-import { createTestDom } from '../utils/render-live'
 
 const dom = createTestDom()
 

@@ -91,6 +91,8 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
     base = join(REPO_ROOT, 'packages/inkling/src/index')
   } else if (specifier === '@kobato/inkling/headless') {
     base = join(REPO_ROOT, 'packages/inkling/src/headless')
+  } else if (specifier.startsWith('@kobato/inkling-internal/')) {
+    base = join(REPO_ROOT, 'packages/inkling/src', specifier.slice('@kobato/inkling-internal/'.length))
   } else if (specifier.startsWith('@kobato/')) {
     const [scope, name, ...rest] = specifier.split('/')
     const packageSrc = PACKAGE_SRC[`${scope}/${name}`]

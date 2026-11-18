@@ -1,10 +1,8 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor } from 'lexical'
 
+import { KEYBOARD_SHORTCUTS } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/shortcuts'
 import { COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { KEYBOARD_SHORTCUTS } from './shortcuts'
 
 export function registerModifierCommand(editor: LexicalEditor, _deps: KeyboardNavigationDeps): () => void {
   return editor.registerCommand(

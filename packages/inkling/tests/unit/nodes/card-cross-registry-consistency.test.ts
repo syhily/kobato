@@ -1,6 +1,4 @@
-import { describe, expect, it } from 'vitest'
-
-import { CARD_DECLARATIONS } from '../../../src/nodes/cards'
+import { CARD_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards'
 import {
   INSERT_AUDIO_COMMAND,
   INSERT_BOOKMARK_COMMAND,
@@ -20,8 +18,9 @@ import {
   OPEN_IMAGE_LIBRARY_COMMAND,
   resolveCardInsertCommand,
   resolveCardMenuCommand,
-} from '../../../src/nodes/cards/card-commands'
-import { CARD_MARKDOWN_DECLARATIONS } from '../../../src/nodes/cards/card-markdown-transformers'
+} from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { CARD_MARKDOWN_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards/card-markdown-transformers'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Cross-registry consistency guard. The declaration pipeline's derived views

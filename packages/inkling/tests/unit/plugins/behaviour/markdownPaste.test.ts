@@ -1,7 +1,6 @@
+import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
+import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdownPaste'
 import { beforeAll, describe, expect, it } from 'vitest'
-
-import { loadPasteDialect } from '../../../../src/markdown/lazy-paste-dialect'
-import { markdownToSanitizedHtml } from '../../../../src/plugins/behaviour/markdownPaste'
 
 // The headless leg of the paste markdown dialect: markdown text in, sanitized
 // HTML out — no composer, no DataTransfer. The Lexical HTML import that

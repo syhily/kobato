@@ -1,13 +1,17 @@
+import type {
+  ExportDOMDom,
+  ExportDOMOptions,
+  ExportPolicyKey,
+  ImageOptimizationOptions,
+} from '@kobato/inkling-internal/nodes/base/export-dom'
+
+import { cleanDOM } from '@kobato/inkling-internal/nodes/base/utils/clean-dom'
+import { isLocalContentImage as isLocalContentImageImpl } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
+import { escapeHtml } from '@kobato/inkling-internal/nodes/base/utils/escape-html'
+import { isSafeMediaUrl, isSafeUrl } from '@kobato/inkling-internal/nodes/base/utils/is-safe-url'
+import { createHeadingIdTracker } from '@kobato/inkling-internal/utils/heading-id-tracker'
+import { sanitizeHtml } from '@kobato/inkling-internal/utils/sanitize-html'
 import DOMPurify, { type Config as DOMPurifyConfig, type WindowLike } from 'dompurify'
-
-import type { ExportDOMDom, ExportDOMOptions, ExportPolicyKey, ImageOptimizationOptions } from './export-dom'
-
-import { createHeadingIdTracker } from '../../utils/heading-id-tracker'
-import { sanitizeHtml } from '../../utils/sanitize-html'
-import { cleanDOM } from './utils/clean-dom'
-import { isLocalContentImage as isLocalContentImageImpl } from './utils/content-image-url'
-import { escapeHtml } from './utils/escape-html'
-import { isSafeMediaUrl, isSafeUrl } from './utils/is-safe-url'
 
 /**
  * The read-only render context: the single view of export-time policy and data,
@@ -116,7 +120,7 @@ export interface RenderContext {
   readonly canTransformImage: ((src: string) => boolean) | undefined
   readonly canTransformImageToFormat: ((format: string) => boolean) | undefined
   /**
-   * The markdown card's slug-policy input, consumed by `@/inkling/markdown/paste-dialect`.
+   * The markdown card's slug-policy input, consumed by `@kobato/inkling-internal/markdown/paste-dialect`.
    *
    * @deprecated Read `resolveExportPolicy('inkling-version')` instead — this
    * field is that call's resolved value, kept for renderer compatibility.

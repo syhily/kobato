@@ -1,9 +1,8 @@
 import { MINIMAL_NODES, RestrictContentPlugin } from '@kobato/inkling'
+import { DemoEditorShell } from '@kobato/inkling-demo/components/DemoEditorShell'
 import { ListItemNode, ListNode } from '@lexical/list'
 import React from 'react'
 import { useLocation } from 'react-router'
-
-import { DemoEditorShell } from './components/DemoEditorShell'
 
 // The core entry requires the host to name its node set; MINIMAL_NODES alone would reject pasted list JSON, so the
 // list pair joins explicitly.

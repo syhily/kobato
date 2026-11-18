@@ -1,12 +1,10 @@
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 import type { LexicalNodeConfig } from 'lexical'
 
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { createDocument } from '@kobato/inkling/tests/nodes-base/test-utils/index'
 import { createHeadlessEditor } from '@lexical/headless'
 import { describe, expect, it } from 'vitest'
-
-import type { CardImportSpec } from '../../src/nodes/base/import-spec'
-
-import { generateDecoratorNode } from '../../src/nodes/base/generate-decorator-node'
-import { createDocument } from './test-utils/index'
 
 const baseProperties = [
   { name: 'text', default: 'default-text' },

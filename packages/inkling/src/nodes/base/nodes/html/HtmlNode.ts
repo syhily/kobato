@@ -1,13 +1,13 @@
-import type { DecoratorNodeProperty } from '../../card-specs'
+import type { DecoratorNodeProperty } from '@kobato/inkling-internal/nodes/base/card-specs'
 
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { parseHtmlNode } from './html-parser'
-import { renderHtmlNode } from './html-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { parseHtmlNode } from '@kobato/inkling-internal/nodes/base/nodes/html/html-parser'
+import { renderHtmlNode } from '@kobato/inkling-internal/nodes/base/nodes/html/html-renderer'
 
 const htmlProperties = [
   { name: 'html', default: '', urlType: 'html', wordCount: true },

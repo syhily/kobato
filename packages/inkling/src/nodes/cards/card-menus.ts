@@ -1,25 +1,25 @@
-import type { CardIconId, CardMenuEntrySpec } from './card-declaration'
-import type { CardFacts } from './card-facts'
-import type { MenuItem } from './card-menu-build'
-import type { HostCardMenuEntrySpec } from './host-card-registry'
+import type { CardIconId, CardMenuEntrySpec } from '@kobato/inkling-internal/nodes/cards/card-declaration'
+import type { CardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import type { MenuItem } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
+import type { HostCardMenuEntrySpec } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 
-import AudioCardIcon from '../../assets/icons/inkling-card-type-audio.svg?react'
-import BookmarkCardIcon from '../../assets/icons/inkling-card-type-bookmark.svg?react'
-import ButtonCardIcon from '../../assets/icons/inkling-card-type-button.svg?react'
-import CalloutCardIcon from '../../assets/icons/inkling-card-type-callout.svg?react'
-import DividerCardIcon from '../../assets/icons/inkling-card-type-divider.svg?react'
-import FileCardIcon from '../../assets/icons/inkling-card-type-file.svg?react'
-import GalleryCardIcon from '../../assets/icons/inkling-card-type-gallery.svg?react'
-import CodeBlockIcon from '../../assets/icons/inkling-card-type-gen-embed.svg?react'
-import GIFIcon from '../../assets/icons/inkling-card-type-gif.svg?react'
-import HeaderCardIcon from '../../assets/icons/inkling-card-type-header.svg?react'
-import HtmlCardIcon from '../../assets/icons/inkling-card-type-html.svg?react'
-import ImageCardIcon from '../../assets/icons/inkling-card-type-image.svg?react'
-import MathCardIcon from '../../assets/icons/inkling-card-type-math.svg?react'
-import ToggleIcon from '../../assets/icons/inkling-card-type-toggle.svg?react'
-import VideoCardIcon from '../../assets/icons/inkling-card-type-video.svg?react'
-import { resolveCardMenuCommand } from './card-commands'
-import { resolveCardFacts } from './card-facts'
+import AudioCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-audio.svg?react'
+import BookmarkCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-bookmark.svg?react'
+import ButtonCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-button.svg?react'
+import CalloutCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-callout.svg?react'
+import DividerCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-divider.svg?react'
+import FileCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-file.svg?react'
+import GalleryCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-gallery.svg?react'
+import CodeBlockIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-gen-embed.svg?react'
+import GIFIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-gif.svg?react'
+import HeaderCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-header.svg?react'
+import HtmlCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-html.svg?react'
+import ImageCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-image.svg?react'
+import MathCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-math.svg?react'
+import ToggleIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-toggle.svg?react'
+import VideoCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-video.svg?react'
+import { resolveCardMenuCommand } from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { resolveCardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
 
 /**
  * The menu/drag icons the declarations name by `CardIconId`: every icon is an SVGR
@@ -103,7 +103,7 @@ export function resolveCardDragIcon(facts: CardFacts): MenuItem['Icon'] {
 
 /**
  * Resolves a card's drag-preview icon by node type. The built-in-first /
- * host-fallback merge lives in `@/inkling/nodes/cards/card-facts`.
+ * host-fallback merge lives in `@kobato/inkling-internal/nodes/cards/card-facts`.
  */
 export function getCardDragIcon(nodeType: string): MenuItem['Icon'] {
   const facts = resolveCardFacts(nodeType)

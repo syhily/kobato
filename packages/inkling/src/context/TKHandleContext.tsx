@@ -1,5 +1,5 @@
-import { createComposerHandleBinding } from '../plugins/behaviour/composer-handle'
-import { createTKHandle, type TKHandle, type TKHandleState } from '../plugins/behaviour/tkHandle'
+import { createComposerHandleBinding } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
+import { createTKHandle, type TKHandle, type TKHandleState } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
 
 // Per-composer tk handle; nested composers share the top-level one.
 export const {

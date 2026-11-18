@@ -1,8 +1,7 @@
+import FloatingButton from '@kobato/inkling-demo/components/FloatingButton'
+import Sidebar from '@kobato/inkling-demo/components/Sidebar'
+import Watermark from '@kobato/inkling-demo/components/Watermark'
 import React from 'react'
-
-import FloatingButton from './FloatingButton'
-import Sidebar from './Sidebar'
-import Watermark from './Watermark'
 
 export function useDemoSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)

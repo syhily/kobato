@@ -1,12 +1,14 @@
+import {
+  registerPlusCardMenuTrigger,
+  resolvePlusHoverButtonVerdict,
+} from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
+import { CardMenuPopup, type CardMenuPopupHandle } from '@kobato/inkling-internal/plugins/CardMenuPopup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 
-import { registerPlusCardMenuTrigger, resolvePlusHoverButtonVerdict } from './behaviour/card-menu-trigger'
-import { CardMenuPopup, type CardMenuPopupHandle } from './CardMenuPopup'
-
 // Plus card menu — trigger wiring only. The trigger policy (caret/hover
 // verdicts, the selectionchange hide rule) lives in
-// @/inkling/plugins/behaviour/card-menu-trigger; everything downstream — the
+// @kobato/inkling-internal/plugins/behaviour/card-menu-trigger; everything downstream — the
 // session, the button's anchor chrome (including its Range, handed to the
 // session on open), the menu itself — is CardMenuPopup's 'button' anchor
 // policy, driven through the popup handle.

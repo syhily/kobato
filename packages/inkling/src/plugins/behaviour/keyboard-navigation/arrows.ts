@@ -1,3 +1,17 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
+
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import {
+  $getLogicallyAdjacentCard,
+  $getVisuallyAdjacentCard,
+  editorOwnsFocus,
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import {
+  $extendSelectionAcrossCardBoundary,
+  $selectCardFromCaptionArrow,
+} from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/selection-extension'
+import { $isAtStartOfDocument, $selectDecoratorNode } from '@kobato/inkling-internal/utils'
+import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensureParagraphAfterCard'
 import {
   type LexicalEditor,
   $getSelection,
@@ -10,14 +24,6 @@ import {
   KEY_ARROW_UP_COMMAND,
   type LexicalCommand,
 } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { $isInklingCard } from '../../../nodes/base'
-import { $isAtStartOfDocument, $selectDecoratorNode } from '../../../utils'
-import { $ensureParagraphAfterCard } from '../../../utils/$ensureParagraphAfterCard'
-import { $getLogicallyAdjacentCard, $getVisuallyAdjacentCard, editorOwnsFocus } from '../card-adjacency'
-import { $extendSelectionAcrossCardBoundary, $selectCardFromCaptionArrow } from './selection-extension'
 
 // The vertical-arrow pair shares one skeleton; the directions diverge in two
 // one-sided policies: up exits the editor at the document start

@@ -1,6 +1,8 @@
+import {
+  resolvePanelReclamp,
+  resolvePanelViewportShift,
+} from '@kobato/inkling-internal/utils/panel-resize-choreography'
 import { describe, expect, it } from 'vitest'
-
-import { resolvePanelReclamp, resolvePanelViewportShift } from '../../../src/utils/panel-resize-choreography'
 
 const viewport = { width: 1024, height: 768 }
 const origin = { x: 0, y: 0 }

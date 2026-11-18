@@ -15,6 +15,7 @@
 
 - **Product src never depends on tools.** No `src/` module under `apps/*` or `packages/*` may import a tools package — not even type-only. The dependency edge is strictly one-directional: tools may depend on product packages (`test` and `pack` do), never the reverse. Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 - Product **tests** import tools freely (`@kobato/test`, `@kobato/harness`); that is the sanctioned seam, declared in each package's devDependencies.
-- A few build-time seams reach into `pack` by relative path (`vite.sea.config.ts`, `apps/kobato/vite.config.ts`, the SEA contract tests) — these are listed exceptions in the package-dag test, not a license for new ones.
+- The two root Vite configs reach into `pack` by relative path (`vite.sea.config.ts`, `apps/kobato/vite.config.ts`) because they load before package aliases exist — these are listed exceptions in the package-dag test. Product SEA contract tests use `@kobato/pack/...` through the shared tsconfig alias without declaring a workspace dependency: pack already consumes those product packages, so a back edge would close a workspace cycle.
 - Tools packages declare every import in their own package.json; the workspace layering rules of the product packages still apply to what they consume.
+- Tool source and tests use `@kobato/<name>/...` self-imports (with the self-link declared) and `@kobato/<name>/tests/...` for test helpers. Packages invoked directly by `node` expose `"./*": "./src/*"` so package self-resolution works without a bundler. Root Vite config loading and build-output entry paths remain the sanctioned relative seams.
 - `scripts/` (outside this umbrella) stays shell/node-builtin-only; anything needing project modules belongs here instead.

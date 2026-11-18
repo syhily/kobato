@@ -1,13 +1,12 @@
+import type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 import type { NodeKey } from 'lexical'
 
-import type { ImageNodeDataset } from './cards/card-commands'
-
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { imageDeclaration } from './cards/image.declaration'
-export { $isImageNode } from './base/nodes/image/ImageNode'
-export type { SerializedImageNode } from './base/nodes/image/ImageNode'
-export { INSERT_IMAGE_COMMAND } from './cards/card-commands'
-export type { ImageNodeDataset } from './cards/card-commands'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { imageDeclaration } from '@kobato/inkling-internal/nodes/cards/image.declaration'
+export { $isImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+export type { SerializedImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+export { INSERT_IMAGE_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

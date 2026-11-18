@@ -1,10 +1,14 @@
-import type { DragHandlerLike, FileInputRef, FileUploaderLike } from './card-ui-types'
+import type {
+  DragHandlerLike,
+  FileInputRef,
+  FileUploaderLike,
+} from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
 
-import FileUploadIcon from '../../../assets/icons/inkling-file-upload.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { TextInput } from '../TextInput'
-import { UploadingPanel, UploadPlaceholder } from '../UploadChrome'
+import FileUploadIcon from '@kobato/inkling-internal/assets/icons/inkling-file-upload.svg?react'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import { TextInput } from '@kobato/inkling-internal/components/ui/TextInput'
+import { UploadingPanel, UploadPlaceholder } from '@kobato/inkling-internal/components/ui/UploadChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 interface PopulatedFileCardProps {
   isEditing?: boolean

@@ -1,5 +1,5 @@
-import SerializedStateTextarea from './SerializedStateTextarea'
-import TreeView from './TreeView'
+import SerializedStateTextarea from '@kobato/inkling-demo/components/SerializedStateTextarea'
+import TreeView from '@kobato/inkling-demo/components/TreeView'
 
 interface SidebarProps {
   isOpen: boolean

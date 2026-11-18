@@ -1,13 +1,16 @@
 import type { LexicalNode } from 'lexical'
 
-import { createFootnoteTargetKey, resolveImportedFootnoteTargetKey } from '../../../footnote/footnote-keys'
+import {
+  createFootnoteTargetKey,
+  resolveImportedFootnoteTargetKey,
+} from '@kobato/inkling-internal/nodes/footnote/footnote-keys'
 
 // Hand-written parser: both footnote HTML dialects arrive as one container —
 // `section.footnotes > ol > li` is markdown-it-footnote's paste shape and
 // inkling's own export shape alike, so ONE conversion consumes the whole
 // section and returns every definition node. The li `id` is only the source
 // anchor slug correlating definitions with their refs — targetKeys are
-// recast per import (see `@/inkling/nodes/footnote/footnote-keys`).
+// recast per import (see `@kobato/inkling-internal/nodes/footnote/footnote-keys`).
 export function parseFootnoteDefinitionSection(
   FootnoteDefinitionNodeClass: new (data: Record<string, unknown>) => LexicalNode,
 ) {

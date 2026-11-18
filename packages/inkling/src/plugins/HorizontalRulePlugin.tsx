@@ -1,10 +1,12 @@
+import {
+  registerHorizontalRuleInsert,
+  registerHorizontalRuleScan,
+} from '@kobato/inkling-internal/plugins/behaviour/horizontal-rule'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useEffect } from 'react'
 
-import { registerHorizontalRuleInsert, registerHorizontalRuleScan } from './behaviour/horizontal-rule'
-
 // The insert surgery, the scan guards, and the registration guards live in
-// @/inkling/plugins/behaviour/horizontal-rule (no-ops when the card is not
+// @kobato/inkling-internal/plugins/behaviour/horizontal-rule (no-ops when the card is not
 // registered); this plugin is the React adapter that mounts them.
 export const HorizontalRulePlugin = () => {
   const [editor] = useLexicalComposerContext()

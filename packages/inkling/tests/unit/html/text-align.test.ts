@@ -1,3 +1,11 @@
+import { htmlToLexicalState } from '@kobato/inkling-internal/html/headless-html'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import { $setBlocksAlignment, type BlockAlignment } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
+import defaultTheme from '@kobato/inkling-internal/themes/default'
+import { registerDefaultTransforms } from '@kobato/inkling-internal/transforms'
+import { htmlToLexical } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
+import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 /**
  * The text-align four-leg contract (tiptap `TextAlign.configure({ types:
  * ['heading', 'paragraph', 'blockquote'] })` parity): an alignment set in the
@@ -8,15 +16,6 @@
  */
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { htmlToLexicalState } from '../../../src/html/headless-html'
-import DEFAULT_NODES from '../../../src/nodes/DefaultNodes'
-import { $setBlocksAlignment, type BlockAlignment } from '../../../src/plugins/behaviour/format-toolbar'
-import defaultTheme from '../../../src/themes/default'
-import { registerDefaultTransforms } from '../../../src/transforms'
-import { htmlToLexical } from '../../utils/html-to-lexical-with-dom'
-import { renderHeadless, renderLive } from '../../utils/render-live'
-import { tick, updateEditor } from '../../utils/test-editor'
 
 interface BlockJSON {
   type: string

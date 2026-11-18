@@ -1,23 +1,25 @@
+import {
+  InklingHostIntegrationProvider,
+  type CardConfig,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
+import { CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { CodeBlockNodeComponent } from '@kobato/inkling-internal/nodes/CodeBlockNodeComponent'
+import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider, type CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import InklingUiPrefsContext from '../../../src/context/InklingUiPrefsContext'
-import { DEFAULT_LABELS } from '../../../src/labels/inkling-labels'
-import { CodeBlockNode } from '../../../src/nodes/CodeBlockNode'
-import { CodeBlockNodeComponent } from '../../../src/nodes/CodeBlockNodeComponent'
-import { EDIT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-vi.mock('../../../src/components/ui/CardCaptionEditor', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => <div data-testid="card-caption-editor" />,
 }))
 

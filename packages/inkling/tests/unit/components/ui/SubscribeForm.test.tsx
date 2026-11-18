@@ -1,8 +1,7 @@
+import { SubscribeForm } from '@kobato/inkling-internal/components/ui/SubscribeForm'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { SubscribeForm } from '../../../../src/components/ui/SubscribeForm'
 
 describe('SubscribeForm', () => {
   it('renders with the provided value and button text', () => {

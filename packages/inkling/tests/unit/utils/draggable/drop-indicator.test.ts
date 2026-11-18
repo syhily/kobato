@@ -1,7 +1,6 @@
+import { DROP_INDICATOR_SELECTOR } from '@kobato/inkling-internal/utils/draggable/draggable-constants'
+import { DropIndicator, type DropIndicatorGeometry } from '@kobato/inkling-internal/utils/draggable/drop-indicator'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { DROP_INDICATOR_SELECTOR } from '../../../../src/utils/draggable/draggable-constants'
-import { DropIndicator, type DropIndicatorGeometry } from '../../../../src/utils/draggable/drop-indicator'
 
 // a droppable at (20, 100), 200x50, inside an offset parent whose viewport
 // position is (5, 10) — the indicator position is the droppable offset box

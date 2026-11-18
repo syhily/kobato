@@ -1,8 +1,7 @@
+import { $updateCardNode } from '@kobato/inkling-internal/nodes/base'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { HISTORY_MERGE_TAG, type LexicalNode, type NodeKey } from 'lexical'
 import React from 'react'
-
-import { $updateCardNode } from '../nodes/base'
 
 export interface CardWriteOptions {
   /**

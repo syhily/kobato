@@ -1,10 +1,9 @@
 import type { ElementTransformer, MultilineElementTransformer } from '@lexical/markdown'
 
+import { CARD_MARKDOWN_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards/card-markdown-transformers'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type Klass, type LexicalEditor, type LexicalNode } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { CARD_MARKDOWN_DECLARATIONS } from '../../src/nodes/cards/card-markdown-transformers'
 
 /**
  * Drift guard tying the card markdown transformers' field vocabulary to each

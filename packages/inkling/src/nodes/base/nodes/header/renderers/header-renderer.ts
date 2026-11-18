@@ -1,7 +1,7 @@
-import { slugify } from '../../../../../utils/slugify'
-import { isSafeColorValue, type RenderContext } from '../../../render-context'
-import { getFirstHtmlElement } from '../../../utils/get-first-html-element'
-import { getSrcsetAttribute } from '../../../utils/srcset-attribute'
+import { isSafeColorValue, type RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import { getFirstHtmlElement } from '@kobato/inkling-internal/nodes/base/utils/get-first-html-element'
+import { getSrcsetAttribute } from '@kobato/inkling-internal/nodes/base/utils/srcset-attribute'
+import { slugify } from '@kobato/inkling-internal/utils/slugify'
 
 interface HeaderV2NodeData {
   alignment: string

@@ -1,9 +1,8 @@
+import { INSERT_IMAGE_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { getEditorCardNodes, getRegisteredCardNodes } from '@kobato/inkling-internal/nodes/cards/editor-card-nodes'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
 import { createEditor, DecoratorNode } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { INSERT_IMAGE_COMMAND } from '../../../src/nodes/cards/card-commands'
-import { getEditorCardNodes, getRegisteredCardNodes } from '../../../src/nodes/cards/editor-card-nodes'
-import DEFAULT_NODES from '../../../src/nodes/DefaultNodes'
 
 // a card-shaped node with no matching declaration: the declarations are the
 // source of truth, so looking like a card does not make a node a card

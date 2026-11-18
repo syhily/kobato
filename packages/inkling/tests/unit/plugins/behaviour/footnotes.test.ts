@@ -1,3 +1,17 @@
+import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import { $createFootnoteRefNode, $isFootnoteRefNode } from '@kobato/inkling-internal/nodes/footnote/FootnoteRefNode'
+import { $createFootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
+import { createFootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+import {
+  $collectFootnoteSnapshot,
+  $footnoteSyncSignature,
+  $removeFootnote,
+  $syncFootnoteIndices,
+  registerFootnotes,
+} from '@kobato/inkling-internal/plugins/behaviour/footnotes'
+import { drainEnqueuedUpdates } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $createTableCellNode, $createTableNode, $createTableRowNode, TableCellHeaderStates } from '@lexical/table'
 import {
@@ -10,21 +24,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { FootnoteHandle } from '../../../../src/plugins/behaviour/footnoteHandle'
-
-import DEFAULT_NODES from '../../../../src/nodes/DefaultNodes'
-import { $createFootnoteRefNode, $isFootnoteRefNode } from '../../../../src/nodes/footnote/FootnoteRefNode'
-import { $createFootnoteDefinitionNode } from '../../../../src/nodes/FootnoteDefinitionNode'
-import { createFootnoteHandle } from '../../../../src/plugins/behaviour/footnoteHandle'
-import {
-  $collectFootnoteSnapshot,
-  $footnoteSyncSignature,
-  $removeFootnote,
-  $syncFootnoteIndices,
-  registerFootnotes,
-} from '../../../../src/plugins/behaviour/footnotes'
-import { drainEnqueuedUpdates } from '../../../utils/test-editor'
 
 // Pins for the footnote behaviour module: the renumber engine (the footnote-
 // sync matrix, table-driven), the signature short-circuit, the caret trigger

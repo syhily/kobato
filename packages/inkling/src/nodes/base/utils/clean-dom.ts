@@ -1,4 +1,4 @@
-import type { RenderContext } from '../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
 // Attributes the nested callout editor legitimately produces. A[href] is
 // additionally validated with the render context's URL policy; CODE[style]

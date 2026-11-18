@@ -1,12 +1,10 @@
+import type { PanelPosition, PanelSpacing, PanelViewport } from '@kobato/inkling-internal/utils/floating-panel'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { createPanelDomWiring } from '@kobato/inkling-internal/utils/panel-resize-choreography'
+import { createPanelSuppression } from '@kobato/inkling-internal/utils/panel-suppression'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useCallback, useContext, useId, useLayoutEffect, useRef, type RefObject } from 'react'
-
-import type { PanelPosition, PanelSpacing, PanelViewport } from '../utils/floating-panel'
-
-import { createPanelDomWiring } from '../utils/panel-resize-choreography'
-import { createPanelSuppression } from '../utils/panel-suppression'
 
 // React adapter over the headless floating-panel modules: this hook keeps the
 // refs, measurement closures, and effect triggers; every DOM consequence (body

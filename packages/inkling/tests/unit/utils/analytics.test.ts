@@ -1,6 +1,5 @@
+import trackEvent, { setTelemetryHandler } from '@kobato/inkling-internal/utils/analytics'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import trackEvent, { setTelemetryHandler } from '../../../src/utils/analytics'
 
 describe('the telemetry channel', () => {
   let restore: () => void

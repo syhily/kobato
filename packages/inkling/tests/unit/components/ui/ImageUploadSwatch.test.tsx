@@ -1,8 +1,7 @@
+import { ImageUploadSwatch } from '@kobato/inkling-internal/components/ui/ImageUploadSwatch'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { ImageUploadSwatch } from '../../../../src/components/ui/ImageUploadSwatch'
 
 describe('ImageUploadSwatch', () => {
   it('renders an image swatch button', () => {

@@ -1,3 +1,5 @@
+import { countWords, throttle } from '@kobato/inkling-internal/utils'
+import { getTopLevelEditor, isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 import { mergeRegister } from '@lexical/utils'
 import {
   $getNodeByKey,
@@ -12,9 +14,6 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical'
-
-import { countWords, throttle } from '../../utils'
-import { getTopLevelEditor, isNestedEditor } from '../../utils/lexical-internals'
 
 // Headless word counter — the counting engine behind WordCountPlugin.
 //

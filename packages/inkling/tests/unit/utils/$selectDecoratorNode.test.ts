@@ -1,10 +1,9 @@
+import { HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { $selectDecoratorNode } from '@kobato/inkling-internal/utils/$selectDecoratorNode'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $createParagraphNode, $getRoot, $getSelection, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { HorizontalRuleNode } from '../../../src/nodes/HorizontalRuleNode'
-import { $selectDecoratorNode } from '../../../src/utils/$selectDecoratorNode'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [HorizontalRuleNode]
 

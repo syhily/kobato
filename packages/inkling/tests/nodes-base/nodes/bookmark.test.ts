@@ -1,20 +1,19 @@
 import type { LexicalEditor } from 'lexical'
 
-import { createHeadlessEditor } from '@lexical/headless'
-import { $generateNodesFromDOM } from '@lexical/html'
-import Prettier from '@prettier/sync'
-import { $getRoot } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
-
 import {
   BaseBookmarkNode,
   $createBaseBookmarkNode,
   $isBookmarkNode,
   type BookmarkData,
-} from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { expectPrettifiedHtml } from '../test-utils/assertions'
-import { createDocument, dom, html } from '../test-utils/index'
+} from '@kobato/inkling-internal/nodes/base/index'
+import { expectPrettifiedHtml } from '@kobato/inkling/tests/nodes-base/test-utils/assertions'
+import { createDocument, dom, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { $generateNodesFromDOM } from '@lexical/html'
+import Prettier from '@prettier/sync'
+import { $getRoot } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const editorNodes = [BaseBookmarkNode]
 

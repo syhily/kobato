@@ -1,3 +1,10 @@
+import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import {
+  focusEditorAt,
+  insertParagraphAt,
+  lastNodeIsDecorator,
+} from '@kobato/inkling-internal/plugins/behaviour/external-control'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -9,14 +16,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $createHorizontalRuleNode, HorizontalRuleNode } from '../../../../src/nodes/HorizontalRuleNode'
-import {
-  focusEditorAt,
-  insertParagraphAt,
-  lastNodeIsDecorator,
-} from '../../../../src/plugins/behaviour/external-control'
-import { tick, updateEditor } from '../../../utils/test-editor'
 
 describe('external-control', () => {
   let editor: LexicalEditor

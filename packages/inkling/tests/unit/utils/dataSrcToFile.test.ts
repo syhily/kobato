@@ -1,6 +1,5 @@
+import { dataSrcToFile } from '@kobato/inkling-internal/utils/dataSrcToFile'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { dataSrcToFile } from '../../../src/utils/dataSrcToFile'
 
 describe('dataSrcToFile', () => {
   const originalCrypto = globalThis.crypto

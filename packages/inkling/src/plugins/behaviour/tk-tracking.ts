@@ -1,12 +1,10 @@
+import type { TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { $isTKNode, TKNode } from '@kobato/inkling-internal/nodes/base'
+import { SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { nextTkNodeKey } from '@kobato/inkling-internal/plugins/behaviour/tk-indicator'
 import { $getNodeByKey, $getSelection, $isDecoratorNode, $isRangeSelection, $isTextNode } from 'lexical'
-
-import type { TKHandle } from './tkHandle'
-
-import { $isTKNode, TKNode } from '../../nodes/base'
-import { SELECT_CARD_COMMAND } from './commands'
-import { nextTkNodeKey } from './tk-indicator'
 
 // TK tracking — the headless half of TKPlugin: the mutation-listener →
 // handle bookkeeping (which TK node lives under which top-level node, per

@@ -1,6 +1,5 @@
+import { createMenuNavigator } from '@kobato/inkling-internal/hooks/card-menu-navigation'
 import { describe, expect, it, vi } from 'vitest'
-
-import { createMenuNavigator } from '../../../src/hooks/card-menu-navigation'
 
 // The slash menu's keyboard-selection matrix as a synchronous table — the
 // state machine behind SlashCardMenuPlugin's command registrations. The

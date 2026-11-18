@@ -8,9 +8,9 @@
 // policy otherwise, while this dev container wants the shortest representable
 // window. `trace:init` and the smoke therefore apply it through this module.
 
-import type { O2Context, StreamInfo } from './lib.ts'
+import type { O2Context, StreamInfo } from '@kobato/trace/lib.ts'
 
-import { isRelevantTraceStream, listStreams, RETENTION_DAYS, setRetention } from './lib.ts'
+import { isRelevantTraceStream, listStreams, RETENTION_DAYS, setRetention } from '@kobato/trace/lib.ts'
 
 export interface RetentionReport {
   applied: number

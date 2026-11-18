@@ -1,12 +1,16 @@
+import type {
+  GifBrowser,
+  GifBrowserEffect,
+  GifGeometry,
+  GifKeyTarget,
+} from '@kobato/inkling-internal/utils/services/gif-browser'
+
+import SearchIcon from '@kobato/inkling-internal/assets/icons/inkling-search.svg?react'
+import { Error } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Error'
+import { Gif } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Gif'
+import { Loader } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Loader'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-
-import type { GifBrowser, GifBrowserEffect, GifGeometry, GifKeyTarget } from '../../utils/services/gif-browser'
-
-import SearchIcon from '../../assets/icons/inkling-search.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { Error } from './file-selectors/Gif/Error'
-import { Gif } from './file-selectors/Gif/Gif'
-import { Loader } from './file-selectors/Gif/Loader'
 
 // number of columns based on selector container width
 const TWO_COLUMN_WIDTH = 540

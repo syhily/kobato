@@ -1,10 +1,9 @@
+import PlusIcon from '@kobato/inkling-internal/assets/icons/plus.svg?react'
+import { ConicRing } from '@kobato/inkling-internal/components/ui/ColorPicker'
+import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
+import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
+import { usePreviousFocus } from '@kobato/inkling-internal/hooks/usePreviousFocus'
 import React, { useState } from 'react'
-
-import PlusIcon from '../../assets/icons/plus.svg?react'
-import { useClickOutside } from '../../hooks/useClickOutside'
-import { usePreviousFocus } from '../../hooks/usePreviousFocus'
-import { ConicRing } from './ColorPicker'
-import { Tooltip } from './Tooltip'
 
 interface ColorOptionButton {
   name: string

@@ -1,9 +1,8 @@
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { createRenderContext, type RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import { dom } from '@kobato/inkling/tests/nodes-base/test-utils/index'
 import { createHeadlessEditor } from '@lexical/headless'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import { generateDecoratorNode } from '../../../src/nodes/base/generate-decorator-node'
-import { createRenderContext, type RenderContext } from '../../../src/nodes/base/render-context'
-import { dom } from '../test-utils/index'
 
 afterEach(() => {
   vi.unstubAllGlobals()

@@ -1,8 +1,7 @@
+import { HorizontalRuleCard } from '@kobato/inkling-internal/components/ui/cards/HorizontalRuleCard'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { HorizontalRuleCard } from '../../../../../src/components/ui/cards/HorizontalRuleCard'
 
 describe('HorizontalRuleCard', () => {
   it('renders a horizontal rule', () => {

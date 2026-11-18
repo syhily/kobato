@@ -1,12 +1,11 @@
 import type { CreateEditorArgs, LexicalEditor, LexicalNodeConfig } from 'lexical'
 
+import { DEFAULT_BASE_NODES } from '@kobato/inkling-internal/nodes/base'
 import { createHeadlessEditor } from '@lexical/headless'
 import { LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import assert from 'node:assert/strict'
-
-import { DEFAULT_BASE_NODES } from '../../src/nodes/base'
 
 export const defaultNodes: LexicalNodeConfig[] = [
   // basic HTML nodes

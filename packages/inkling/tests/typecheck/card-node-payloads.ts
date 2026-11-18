@@ -6,10 +6,10 @@
  */
 import type { EditorState, LexicalEditor } from 'lexical'
 
-import { type AudioNodeDataset, INSERT_AUDIO_COMMAND } from '../../src/nodes/AudioNode'
-import { type CodeBlockNodeDataset, INSERT_CODE_BLOCK_COMMAND } from '../../src/nodes/CodeBlockNode'
-import { INSERT_HORIZONTAL_RULE_COMMAND } from '../../src/nodes/HorizontalRuleNode'
-import { type HtmlNodeDataset, INSERT_HTML_COMMAND } from '../../src/nodes/HtmlNode'
+import { type AudioNodeDataset, INSERT_AUDIO_COMMAND } from '@kobato/inkling-internal/nodes/AudioNode'
+import { type CodeBlockNodeDataset, INSERT_CODE_BLOCK_COMMAND } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { INSERT_HORIZONTAL_RULE_COMMAND } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { type HtmlNodeDataset, INSERT_HTML_COMMAND } from '@kobato/inkling-internal/nodes/HtmlNode'
 
 declare const editor: LexicalEditor
 declare const file: File

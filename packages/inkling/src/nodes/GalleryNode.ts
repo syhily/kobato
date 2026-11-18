@@ -1,17 +1,17 @@
-import type { GalleryNodeDataset } from './cards/card-commands'
+import type { GalleryNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { galleryDeclaration } from './cards/gallery.declaration'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { galleryDeclaration } from '@kobato/inkling-internal/nodes/cards/gallery.declaration'
 export {
   ALLOWED_IMAGE_PROPS,
   $isGalleryNode,
   MAX_IMAGES,
   MAX_PER_ROW,
   recalculateImageRows,
-} from './base/nodes/gallery/GalleryNode'
-export type { SerializedGalleryNode } from './base/nodes/gallery/GalleryNode'
-export { INSERT_GALLERY_COMMAND } from './cards/card-commands'
-export type { GalleryNodeDataset } from './cards/card-commands'
+} from '@kobato/inkling-internal/nodes/base/nodes/gallery/GalleryNode'
+export type { SerializedGalleryNode } from '@kobato/inkling-internal/nodes/base/nodes/gallery/GalleryNode'
+export { INSERT_GALLERY_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { GalleryNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

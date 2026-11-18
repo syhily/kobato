@@ -1,14 +1,13 @@
+import type { HtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
+
+import IndicatorIcon from '@kobato/inkling-internal/assets/icons/inkling-indicator-html.svg?react'
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { HtmlCard } from '@kobato/inkling-internal/components/ui/cards/HtmlCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { $isHtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
 import React from 'react'
-
-import type { HtmlNode } from './HtmlNode'
-
-import IndicatorIcon from '../assets/icons/inkling-indicator-html.svg?react'
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { HtmlCard } from '../components/ui/cards/HtmlCard'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { $isHtmlNode } from './HtmlNode'
 
 export function HtmlNodeComponent({ nodeKey, html }: { nodeKey: string; html?: string }) {
   const { setField } = useCardChrome(nodeKey, $isHtmlNode)
@@ -33,7 +32,7 @@ export { IndicatorIcon }
 
 /**
  * Html's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderHtmlCard(node: HtmlNode) {
   return <HtmlNodeComponent html={node.html} nodeKey={node.getKey()} />

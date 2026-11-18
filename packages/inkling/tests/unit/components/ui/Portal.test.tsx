@@ -1,8 +1,7 @@
+import Portal from '@kobato/inkling-internal/components/ui/Portal'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import Portal from '../../../../src/components/ui/Portal'
 
 describe('Portal', () => {
   it('renders children in a portal attached to document.body', () => {

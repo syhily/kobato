@@ -3,20 +3,25 @@
 //
 // Host utilities: framework-free helpers a host reaches for when wiring the editor into
 // a product.
-export { DEFAULT_INKLING_VERSION, default as slugify, isLegacyVersion } from './slugify'
-export type { SlugifyOptions } from './slugify'
-export { default as countWords } from './countWords'
-export type { SafeStringLike } from './countWords'
-export { Color, textColorForBackgroundColor } from './colorUtils'
-export type { ColorInstance } from './colorUtils'
-export { debounce, throttle } from './timing'
-export type { DebouncedFunction, DebounceOptions } from './timing'
-export { escapeRegExp, kebabCase, pick } from './objects'
-export { CARD_WIDTHS, isCardWidth, normalizeCardWidth, type CardWidth } from '../nodes/base/utils/card-widths'
+export { DEFAULT_INKLING_VERSION, default as slugify, isLegacyVersion } from '@kobato/inkling-internal/utils/slugify'
+export type { SlugifyOptions } from '@kobato/inkling-internal/utils/slugify'
+export { default as countWords } from '@kobato/inkling-internal/utils/countWords'
+export type { SafeStringLike } from '@kobato/inkling-internal/utils/countWords'
+export { Color, textColorForBackgroundColor } from '@kobato/inkling-internal/utils/colorUtils'
+export type { ColorInstance } from '@kobato/inkling-internal/utils/colorUtils'
+export { debounce, throttle } from '@kobato/inkling-internal/utils/timing'
+export type { DebouncedFunction, DebounceOptions } from '@kobato/inkling-internal/utils/timing'
+export { escapeRegExp, kebabCase, pick } from '@kobato/inkling-internal/utils/objects'
+export {
+  CARD_WIDTHS,
+  isCardWidth,
+  normalizeCardWidth,
+  type CardWidth,
+} from '@kobato/inkling-internal/nodes/base/utils/card-widths'
 //
 // Lexical editor primitives: $-prefixed state readers and DOM helpers for hosts writing
 // their own behaviour-layer commands.
-export { $isAtStartOfDocument } from './$isAtStartOfDocument'
-export { $selectDecoratorNode } from './$selectDecoratorNode'
-export { $isAtTopOfNode } from './$isAtTopOfNode'
-export { getTopLevelNativeElement } from './getTopLevelNativeElement'
+export { $isAtStartOfDocument } from '@kobato/inkling-internal/utils/$isAtStartOfDocument'
+export { $selectDecoratorNode } from '@kobato/inkling-internal/utils/$selectDecoratorNode'
+export { $isAtTopOfNode } from '@kobato/inkling-internal/utils/$isAtTopOfNode'
+export { getTopLevelNativeElement } from '@kobato/inkling-internal/utils/getTopLevelNativeElement'

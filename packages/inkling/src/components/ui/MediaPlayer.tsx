@@ -1,5 +1,5 @@
-import PlayIcon from '../../assets/icons/inkling-play.svg?react'
-import UnmuteIcon from '../../assets/icons/inkling-unmute.svg?react'
+import PlayIcon from '@kobato/inkling-internal/assets/icons/inkling-play.svg?react'
+import UnmuteIcon from '@kobato/inkling-internal/assets/icons/inkling-unmute.svg?react'
 
 interface MediaPlayerProps {
   duration?: string

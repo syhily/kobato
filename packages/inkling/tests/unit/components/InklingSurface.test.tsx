@@ -1,3 +1,13 @@
+import InklingComposableEditor from '@kobato/inkling-internal/components/InklingComposableEditor'
+import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
+import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
+import InklingSurface from '@kobato/inkling-internal/components/InklingSurface'
+import {
+  useSharedEditorStateContext,
+  type SharedEditorStateContextValue,
+} from '@kobato/inkling-internal/context/SharedEditorStateContext'
+import { ExtendedTextNode, extendedTextNodeReplacement, TKNode } from '@kobato/inkling-internal/nodes/base'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LinkNode } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render, waitFor } from '@testing-library/react'
@@ -13,17 +23,6 @@ import {
 } from 'lexical'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import InklingComposableEditor from '../../../src/components/InklingComposableEditor'
-import InklingComposer from '../../../src/components/InklingComposer'
-import InklingNestedComposer from '../../../src/components/InklingNestedComposer'
-import InklingSurface from '../../../src/components/InklingSurface'
-import {
-  useSharedEditorStateContext,
-  type SharedEditorStateContextValue,
-} from '../../../src/context/SharedEditorStateContext'
-import { ExtendedTextNode, extendedTextNodeReplacement, TKNode } from '../../../src/nodes/base'
-import { updateEditor } from '../../utils/test-editor'
 
 const NESTED_NODES = [ExtendedTextNode, extendedTextNodeReplacement, TKNode, LinkNode]
 

@@ -3,8 +3,7 @@ import { MusicPlayerCard } from '@kobato/web-public/ui/music-player/music-player
 import { useMusicPlayers } from '@kobato/web-public/ui/post/use-music-players'
 import { useEffect, useRef, useState } from 'react'
 import '@kobato/ui/styles/ui.css'
-
-import './styles/public.css'
+import '@kobato/inkling-demo/styles/public.css'
 
 // Minimal article-page demo for MusicPlayerCard (`/#/music-player`). External media fixtures (SoundHelix audio,
 // picsum covers) require network access; the LRC fixtures are inline.

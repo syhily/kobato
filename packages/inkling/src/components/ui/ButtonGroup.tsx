@@ -1,7 +1,6 @@
+import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
+import { usePreviousFocus } from '@kobato/inkling-internal/hooks/usePreviousFocus'
 import React from 'react'
-
-import { usePreviousFocus } from '../../hooks/usePreviousFocus'
-import { Tooltip } from './Tooltip'
 
 export interface ButtonGroupButton {
   label?: string

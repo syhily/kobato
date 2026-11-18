@@ -1,9 +1,8 @@
 import type { LexicalEditor, RangeSelection } from 'lexical'
 
+import { $selectCard } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { getEventProvenance } from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
 import { $isDecoratorNode, $isRootNode } from 'lexical'
-
-import { $selectCard } from '../card-adjacency'
-import { getEventProvenance } from '../nested-editor-protocol'
 
 // Shift+arrow selection extension: the one home for the root-offset anchor/focus
 // arithmetic that carries a range selection across a card (decorator) boundary.

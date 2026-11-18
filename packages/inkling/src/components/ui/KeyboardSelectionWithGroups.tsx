@@ -1,8 +1,7 @@
+import type { ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
+
+import { useKeyboardListSelection } from '@kobato/inkling-internal/hooks/useKeyboardListSelection'
 import React from 'react'
-
-import type { ListOptionItem } from '../../hooks/useSearchLinks'
-
-import { useKeyboardListSelection } from '../../hooks/useKeyboardListSelection'
 
 export interface KeyboardSelectionWithGroupsProps<T extends { value: string | null } = ListOptionItem> {
   groups: Array<{ label: string; items: T[] }>

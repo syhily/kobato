@@ -1,5 +1,8 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
+import { $fireFenceKeyboardShortcut } from '@kobato/inkling-internal/markdown/card-shortcuts'
+import { editorOwnsFocus } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import { $isListItemNode } from '@lexical/list'
 import {
   $getSelection,
@@ -10,11 +13,6 @@ import {
   COMMAND_PRIORITY_LOW,
   KEY_TAB_COMMAND,
 } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { $fireFenceKeyboardShortcut } from '../../../markdown/card-shortcuts'
-import { editorOwnsFocus } from '../card-adjacency'
 
 export function registerTabCommand(editor: LexicalEditor, deps: KeyboardNavigationDeps): () => void {
   const { isNested, cursorDidExitAtTop } = deps
@@ -60,7 +58,7 @@ export function registerTabCommand(editor: LexicalEditor, deps: KeyboardNavigati
       }
 
       // Code card shortcut: trigger only; regex, language extraction and
-      // replace-and-select live in @/inkling/markdown/card-shortcuts.
+      // replace-and-select live in @kobato/inkling-internal/markdown/card-shortcuts.
       if (!isNested) {
         if ($fireFenceKeyboardShortcut(event)) {
           return true

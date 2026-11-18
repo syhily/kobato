@@ -1,18 +1,17 @@
 import type { InitialEditorStateType, LexicalEditor } from 'lexical'
 
+import InklingNestedEditor from '@kobato/inkling-internal/components/InklingNestedEditor'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import { ColorOptionSetting, SettingsPanel, ToggleSetting } from '@kobato/inkling-internal/components/ui/SettingsPanel'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { lookupLabel } from '@kobato/inkling-internal/labels/inkling-labels'
 import React from 'react'
-
-import InklingUiPrefsContext from '../../../context/InklingUiPrefsContext'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { lookupLabel } from '../../../labels/inkling-labels'
-import InklingNestedEditor from '../../InklingNestedEditor'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { ColorOptionSetting, SettingsPanel, ToggleSetting } from '../SettingsPanel'
 
 // The picker (emoji-mart's Picker + @emoji-mart/data) loads behind a lazy
 // boundary on the callout icon click — it never appears in SSR markup (the
 // menu opens only from a click), so a null fallback is behavior-identical.
-const EmojiPickerPortal = React.lazy(() => import('../EmojiPickerPortal'))
+const EmojiPickerPortal = React.lazy(() => import('@kobato/inkling-internal/components/ui/EmojiPickerPortal'))
 
 export type CalloutColorName = 'white' | 'grey' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple' | 'accent'
 

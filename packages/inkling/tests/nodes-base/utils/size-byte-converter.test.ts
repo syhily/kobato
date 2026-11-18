@@ -1,6 +1,5 @@
+import { bytesToSize, sizeToBytes } from '@kobato/inkling-internal/nodes/base/utils/size-byte-converter'
 import { describe, expect, it } from 'vitest'
-
-import { bytesToSize, sizeToBytes } from '../../../src/nodes/base/utils/size-byte-converter'
 
 describe('Utils: size-byte-converter', function () {
   describe('sizeToBytes', function () {

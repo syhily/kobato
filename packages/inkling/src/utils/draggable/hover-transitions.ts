@@ -1,4 +1,4 @@
-import type { DroppablePosition } from './DragDropContainer'
+import type { DroppablePosition } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
 // The pure hover state machine behind DragDropHandler's drag move: one frame in (what is
 // under the pointer, resolved to plain data), the next hover state plus the ordered effects

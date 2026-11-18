@@ -1,12 +1,11 @@
 import type { LexicalEditor } from 'lexical'
 
+import { $createBaseFileNode, BaseFileNode } from '@kobato/inkling-internal/nodes/base/nodes/file/FileNode'
+import { $createBaseImageNode, BaseImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import { $createBaseVideoNode, BaseVideoNode } from '@kobato/inkling-internal/nodes/base/nodes/video/VideoNode'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { describe, expect, it } from 'vitest'
-
-import { $createBaseFileNode, BaseFileNode } from '../../src/nodes/base/nodes/file/FileNode'
-import { $createBaseImageNode, BaseImageNode } from '../../src/nodes/base/nodes/image/ImageNode'
-import { $createBaseVideoNode, BaseVideoNode } from '../../src/nodes/base/nodes/video/VideoNode'
-import { editorTest } from '../utils/test-editor'
 
 /**
  * Drift guard for the cards whose `exportJSON` is a hand-written key

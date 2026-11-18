@@ -1,6 +1,6 @@
-import type { GalleryImage } from '../../../types/gallery'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import { getImageFilenameFromSrc } from './content-image-url'
+import { getImageFilenameFromSrc } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
 
 /**
  * The one fill policy mapping an image card's drag dataset onto the

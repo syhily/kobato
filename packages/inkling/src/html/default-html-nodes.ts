@@ -1,11 +1,10 @@
 import type { CreateEditorArgs } from 'lexical'
 
+import { DEFAULT_BASE_NODES } from '@kobato/inkling-internal/nodes/base'
+import { INKLING_TABLE_NODES } from '@kobato/inkling-internal/nodes/table/TableNodes'
 import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
-
-import { DEFAULT_BASE_NODES } from '../nodes/base'
-import { INKLING_TABLE_NODES } from '../nodes/table/TableNodes'
 
 /**
  * The complete node set shared by the default HTML importer

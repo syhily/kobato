@@ -1,6 +1,5 @@
+import { useTKHandleState } from '@kobato/inkling-internal/context/TKHandleContext'
 import React from 'react'
-
-import { useTKHandleState } from '../context/TKHandleContext'
 
 export default function TKCountPlugin({ onChange }: { onChange?: (count: number) => void }) {
   const tkCount = useTKHandleState((state) => state.tkCount)

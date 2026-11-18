@@ -1,9 +1,8 @@
+import { AsideNode, $createAsideNode, $isAsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $createParagraphNode, $createTextNode, $getRoot, type EditorConfig, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { AsideNode, $createAsideNode, $isAsideNode } from '../../../src/nodes/AsideNode'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [AsideNode]
 const asideEditorConfig: EditorConfig = {

@@ -1,6 +1,6 @@
 import type React from 'react'
 
-import { useDragDropHandleState } from '../../context/DragDropHandleContext'
+import { useDragDropHandleState } from '@kobato/inkling-internal/context/DragDropHandleContext'
 
 export function ActionToolbar({
   isVisible,

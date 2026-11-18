@@ -1,7 +1,10 @@
+import {
+  htmlToLexicalState,
+  lexicalStateToHtml,
+  lexicalStateToPlainText,
+} from '@kobato/inkling-internal/html/headless-html'
+import { MINIMAL_DOCUMENT } from '@kobato/inkling-internal/utils/initial-document'
 import { describe, expect, it } from 'vitest'
-
-import { htmlToLexicalState, lexicalStateToHtml, lexicalStateToPlainText } from '../../src/html/headless-html'
-import { MINIMAL_DOCUMENT } from '../../src/utils/initial-document'
 
 // Public headless HTML surface, exercised through the
 // barrel-facing functions with no dom passed — the vitest jsdom globals feed

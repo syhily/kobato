@@ -1,12 +1,10 @@
+import type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
 import type { DOMConversionMap, DOMExportOutput, EditorConfig, LexicalEditor, SerializedTextNode } from 'lexical'
 
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import { footnoteAnchorHref, footnoteRefId } from '@kobato/inkling-internal/nodes/footnote/footnote-anchors'
+import { resolveImportedFootnoteTargetKey } from '@kobato/inkling-internal/nodes/footnote/footnote-keys'
 import { $applyNodeReplacement, TextNode } from 'lexical'
-
-import type { ExportDOMOptions } from '../base/export-dom'
-
-import { createRenderContext } from '../base/render-context'
-import { footnoteAnchorHref, footnoteRefId } from './footnote-anchors'
-import { resolveImportedFootnoteTargetKey } from './footnote-keys'
 
 export type SerializedFootnoteRefNode = SerializedTextNode & {
   targetKey: string
@@ -15,7 +13,7 @@ export type SerializedFootnoteRefNode = SerializedTextNode & {
 /**
  * Inline footnote reference — a TextNode entity (TKNode precedent) whose visible
  * text IS the 1-based index; the renumber engine
- * (`@/inkling/plugins/behaviour/footnotes`) rewrites the text in place, so no
+ * (`@kobato/inkling-internal/plugins/behaviour/footnotes`) rewrites the text in place, so no
  * separate index field can drift from what the reader sees. `__targetKey` points
  * at the definition card it cites (kobato's `footnoteRef.targetKey`). Atomicity
  * comes from `isTextEntity()` + the `canInsertText*` pair, exactly like TKNode.
@@ -134,7 +132,7 @@ export class FootnoteRefNode extends TextNode {
 
   // The string layer splices this node's exportDOM markup (`<sup><a…>`)
   // into the text flow instead of adding it to the pending text run — the
-  // inline-markup-entity protocol (`@/inkling/nodes/base/export-dom`).
+  // inline-markup-entity protocol (`@kobato/inkling-internal/nodes/base/export-dom`).
   isInlineMarkupEntity() {
     return true
   }

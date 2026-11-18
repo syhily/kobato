@@ -1,21 +1,24 @@
+import type { CardNodeClass } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import type { NestedEditorSpec, TransientPropSpec } from '@kobato/inkling-internal/nodes/base/card-specs'
+import type {
+  CardBaseNodeClass,
+  CardMenuDataset,
+  CardMenuEntryCheck,
+} from '@kobato/inkling-internal/nodes/cards/card-declaration'
+import type { HostCardMenuEntrySpec, HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 import type { MultilineElementTransformer } from '@lexical/markdown'
 import type { LexicalNode } from 'lexical'
 import type { ReactNode } from 'react'
 
-import type { CardNodeClass } from '../assemble-card-node'
-import type { NestedEditorSpec, TransientPropSpec } from '../base/card-specs'
-import type { CardBaseNodeClass, CardMenuDataset, CardMenuEntryCheck } from './card-declaration'
-import type { HostCardMenuEntrySpec, HostCardSpec } from './host-card-registry'
-
-import { assembleCardNodeOnce } from '../assemble-card-node'
-import { InklingDecoratorNode } from '../base/InklingDecoratorNode'
-import { CARD_DECLARATIONS } from './'
-import { createCardTransformer } from './card-markdown-transformers'
-import { hasHostCard, registerHostCard } from './host-card-registry'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { InklingDecoratorNode } from '@kobato/inkling-internal/nodes/base/InklingDecoratorNode'
+import { CARD_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards/'
+import { createCardTransformer } from '@kobato/inkling-internal/nodes/cards/card-markdown-transformers'
+import { hasHostCard, registerHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 
 // the host card vocabulary lives beside the registry that stores it; the
 // barrel re-exports it from here, the public defineCard module
-export type { HostCardMenuEntrySpec, HostCardSpec } from './host-card-registry'
+export type { HostCardMenuEntrySpec, HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 
 /**
  * The handle `defineCard` returns: the assembled node class to compose into

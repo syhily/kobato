@@ -1,17 +1,19 @@
+import {
+  InklingHostIntegrationProvider,
+  type CardConfig,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { ToggleNode, $createToggleNode } from '@kobato/inkling-internal/nodes/ToggleNode'
+import { ToggleNodeComponent } from '@kobato/inkling-internal/nodes/ToggleNodeComponent'
+import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { CollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider, type CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import MINIMAL_NODES from '../../../src/nodes/MinimalNodes'
-import { ToggleNode, $createToggleNode } from '../../../src/nodes/ToggleNode'
-import { ToggleNodeComponent } from '../../../src/nodes/ToggleNodeComponent'
-import { EDIT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor } from '../../utils/test-editor'
 
 function createLexicalComposerContext(editor: LexicalEditor): [LexicalEditor, { getTheme: () => undefined }] {
   return [editor, { getTheme: () => undefined }]

@@ -1,10 +1,8 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor } from 'lexical'
 
+import { shouldIgnoreEvent } from '@kobato/inkling-internal/utils/shouldIgnoreEvent'
 import { COMMAND_PRIORITY_LOW, KEY_DOWN_COMMAND } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
-
-import { shouldIgnoreEvent } from '../../../utils/shouldIgnoreEvent'
 
 export function registerKeyDownPassthrough(editor: LexicalEditor, _deps: KeyboardNavigationDeps): () => void {
   return editor.registerCommand(

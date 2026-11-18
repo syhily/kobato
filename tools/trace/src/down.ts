@@ -1,9 +1,8 @@
 // `pnpm run trace:down [-- --volumes]` — stop and remove the development
 // container. Data survives unless `--volumes` is explicit.
 
+import { log, readState, stateFilePath, stopOpenObserve, warn } from '@kobato/trace/lib.ts'
 import { rm } from 'node:fs/promises'
-
-import { log, readState, stateFilePath, stopOpenObserve, warn } from './lib.ts'
 
 const removeVolumes = process.argv.includes('--volumes') || process.argv.includes('--purge')
 

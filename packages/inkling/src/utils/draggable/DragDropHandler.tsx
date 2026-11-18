@@ -1,11 +1,15 @@
-import { ActiveDrag } from './ActiveDrag'
+import { ActiveDrag } from '@kobato/inkling-internal/utils/draggable/ActiveDrag'
 import {
   createDragStartSession,
   DRAG_START_THRESHOLD,
   type DragSessionPoint,
   type DragStartSession,
-} from './drag-session'
-import { DragDropContainer, type ContainerDragHandlers, type DraggableInfo } from './DragDropContainer'
+} from '@kobato/inkling-internal/utils/draggable/drag-session'
+import {
+  DragDropContainer,
+  type ContainerDragHandlers,
+  type DraggableInfo,
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 import {
   CONTAINER_SELECTOR,
   DRAGGABLE_SELECTOR,
@@ -13,11 +17,11 @@ import {
   DROPPABLE_SELECTOR,
   INKLING_ZINDEX,
   INKLING_CONTAINER_ID,
-} from './draggable-constants'
-import { applyUserSelect, getParent } from './draggable-utils'
-import { DropIndicator } from './drop-indicator'
-import { resolveHoverTransition } from './hover-transitions'
-import { ScrollHandler, type ScrollHandlerOptions } from './ScrollHandler'
+} from '@kobato/inkling-internal/utils/draggable/draggable-constants'
+import { applyUserSelect, getParent } from '@kobato/inkling-internal/utils/draggable/draggable-utils'
+import { DropIndicator } from '@kobato/inkling-internal/utils/draggable/drop-indicator'
+import { resolveHoverTransition } from '@kobato/inkling-internal/utils/draggable/hover-transitions'
+import { ScrollHandler, type ScrollHandlerOptions } from '@kobato/inkling-internal/utils/draggable/ScrollHandler'
 
 export interface DraggableContainerHandle {
   enableDrag: () => void
@@ -192,7 +196,7 @@ export class DragDropHandler {
 
   // Begins a drag-start session: temporary document listeners (move/release/native drag)
   // decide whether the press becomes a drag (movement past the start threshold) or is
-  // discarded. The threshold policy lives in @/inkling/utils/draggable/drag-session; the
+  // discarded. The threshold policy lives in @kobato/inkling-internal/utils/draggable/drag-session; the
   // session's listeners and resolution are the ports declared here.
   _beginDragStartSession(startEvent: MouseEvent) {
     // a new grab replaces any still-pending session

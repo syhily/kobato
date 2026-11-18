@@ -1,17 +1,15 @@
+import type { FileUploader } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { UseFileDragAndDropResult } from '@kobato/inkling-internal/hooks/useFileDragAndDrop'
+import type { TriggerFileDialogCardNode } from '@kobato/inkling-internal/hooks/useTriggerFileDialog'
+import type { UploadFn } from '@kobato/inkling-internal/nodes/upload-intent'
 import type { NodeKey } from 'lexical'
 
+import { useInklingHostEssentials } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import useFileDragAndDrop from '@kobato/inkling-internal/hooks/useFileDragAndDrop'
+import { useInitialFileUpload } from '@kobato/inkling-internal/hooks/useInitialFileUpload'
+import { useTriggerFileDialog } from '@kobato/inkling-internal/hooks/useTriggerFileDialog'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import type { FileUploader } from '../context/InklingHostIntegrationContext'
-import type { UploadFn } from '../nodes/upload-intent'
-import type { UseFileDragAndDropResult } from './useFileDragAndDrop'
-import type { TriggerFileDialogCardNode } from './useTriggerFileDialog'
-
-import { useInklingHostEssentials } from '../context/InklingHostIntegrationContext'
-import useFileDragAndDrop from './useFileDragAndDrop'
-import { useInitialFileUpload } from './useInitialFileUpload'
-import { useTriggerFileDialog } from './useTriggerFileDialog'
 
 // Media-card upload wiring — the one owner of the per-channel skeleton the
 // media cards share: the host uploader for one media kind, the file-drag

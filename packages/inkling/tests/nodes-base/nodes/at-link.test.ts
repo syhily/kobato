@@ -1,17 +1,16 @@
 import type { LexicalEditor, EditorConfig } from 'lexical'
 
-import { createHeadlessEditor } from '@lexical/headless'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
 import {
   AtLinkNode,
   $createAtLinkNode,
   $isAtLinkNode,
   $createAtLinkSearchNode,
   AtLinkSearchNode,
-} from '../../../src/nodes/base/index'
-import { createTestDom } from '../../utils/render-live'
-import { editorTest } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/nodes/base/index'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
+import { createHeadlessEditor } from '@lexical/headless'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const editorNodes = [AtLinkNode, AtLinkSearchNode]
 

@@ -1,7 +1,6 @@
+import { useKeyboardListSelection } from '@kobato/inkling-internal/hooks/useKeyboardListSelection'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { useKeyboardListSelection } from '../../../src/hooks/useKeyboardListSelection'
 
 function pressArrowDown() {
   act(() => {

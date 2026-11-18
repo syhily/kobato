@@ -1,6 +1,11 @@
-import { createCommand } from 'lexical'
+import type {
+  DeleteCardPayload,
+  InsertCardPayload,
+  LinkMatchPayload,
+  SelectCardPayload,
+} from '@kobato/inkling-internal/plugins/behaviour/types'
 
-import type { DeleteCardPayload, InsertCardPayload, LinkMatchPayload, SelectCardPayload } from './types'
+import { createCommand } from 'lexical'
 
 export const INSERT_CARD_COMMAND = createCommand<InsertCardPayload>('INSERT_CARD_COMMAND')
 export const SELECT_CARD_COMMAND = createCommand<SelectCardPayload>('SELECT_CARD_COMMAND')

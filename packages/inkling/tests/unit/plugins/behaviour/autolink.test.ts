@@ -7,17 +7,16 @@
  */
 import type { ElementNode, LexicalEditor } from 'lexical'
 
-import { $createLinkNode, $isAutoLinkNode, $isLinkNode, AutoLinkNode, LinkNode, registerAutoLink } from '@lexical/link'
-import { $createParagraphNode, $createTextNode, $getRoot, $isTextNode, createEditor } from 'lexical'
-import { beforeEach, describe, expect, it } from 'vitest'
-
 import {
   AUTOLINK_SEPARATOR,
   autolinkUrl,
   INKLING_AUTOLINK_MATCHERS,
   stripUrlTrailingPunctuation,
-} from '../../../../src/plugins/behaviour/autolink'
-import { updateEditor } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/autolink'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { $createLinkNode, $isAutoLinkNode, $isLinkNode, AutoLinkNode, LinkNode, registerAutoLink } from '@lexical/link'
+import { $createParagraphNode, $createTextNode, $getRoot, $isTextNode, createEditor } from 'lexical'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const match = (text: string) => INKLING_AUTOLINK_MATCHERS[0](text)
 

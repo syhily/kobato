@@ -1,7 +1,6 @@
+import { Color, textColorForBackgroundColor } from '@kobato/inkling-internal/utils'
+import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
 import { FastAverageColor } from 'fast-average-color'
-
-import { Color, textColorForBackgroundColor } from '../../utils'
-import { getAccentColor } from '../../utils/getAccentColor'
 
 // Header accent color — the one owner of the header card's color policy: the
 // 'accent' keyword resolution, the transparency-over-white merge, the

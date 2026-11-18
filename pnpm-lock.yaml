@@ -2092,6 +2092,9 @@ importers:
 
   tools/browser:
     devDependencies:
+      '@kobato/browser':
+        specifier: workspace:*
+        version: 'link:'
       '@kobato/harness':
         specifier: workspace:*
         version: link:../harness
@@ -2128,6 +2131,9 @@ importers:
       '@duckdb/node-api':
         specifier: 'catalog:'
         version: 2.0.0-r.1
+      '@kobato/harness':
+        specifier: workspace:*
+        version: 'link:'
       '@kobato/settings':
         specifier: workspace:*
         version: link:../../packages/shared/settings
@@ -2161,6 +2167,9 @@ importers:
       '@kobato/harness':
         specifier: workspace:*
         version: link:../harness
+      '@kobato/pack':
+        specifier: workspace:*
+        version: 'link:'
       '@kobato/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -2305,6 +2314,9 @@ importers:
       '@kobato/test':
         specifier: workspace:*
         version: link:../test
+      '@kobato/trace':
+        specifier: workspace:*
+        version: 'link:'
       '@kobato/utils':
         specifier: workspace:*
         version: link:../../packages/shared/utils

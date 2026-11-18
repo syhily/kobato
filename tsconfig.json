@@ -20,10 +20,7 @@
     "apps/inkling-demo/types/vite-env.d.ts"
   ],
   "compilerOptions": {
-    "rootDirs": [".", "./apps/kobato", "./apps/kobato/.react-router/types"],
-    "paths": {
-      "@/*": ["./apps/kobato/src/*"]
-    }
+    "rootDirs": [".", "./apps/kobato", "./apps/kobato/.react-router/types"]
   },
   "exclude": ["build", "dist", "node_modules", "apps/kobato/build"]
 }

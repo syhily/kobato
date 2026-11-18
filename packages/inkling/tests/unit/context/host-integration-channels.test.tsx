@@ -1,14 +1,13 @@
-import { render } from '@testing-library/react'
-import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
-
 import {
   InklingHostIntegrationProvider,
   useInklingGifSettings,
   useInklingHostEssentials,
   useInklingMathSettings,
-} from '../../../src/context/InklingHostIntegrationContext'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { render } from '@testing-library/react'
+import React from 'react'
+import { describe, expect, it, vi } from 'vitest'
 
 // The re-render domain under test: one feature slice's identity changing must
 // re-render only that channel's consumers, not the other channels'.

@@ -1,6 +1,5 @@
+import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '@kobato/inkling-internal/utils/slugify'
 import { describe, expect, it } from 'vitest'
-
-import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '../../../src/utils/slugify'
 
 // Direct pins for the slug-version policy single-sourced here (the paste
 // dialect imports both the predicate and the default from this module).

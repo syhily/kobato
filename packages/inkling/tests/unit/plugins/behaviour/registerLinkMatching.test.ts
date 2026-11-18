@@ -1,3 +1,8 @@
+import { $isBookmarkNode, BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { INSERT_CARD_COMMAND, PASTE_LINK_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { registerLinkMatching } from '@kobato/inkling-internal/plugins/behaviour/registerLinkMatching'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $isLinkNode, LinkNode } from '@lexical/link'
 import {
   $createParagraphNode,
@@ -10,12 +15,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $isBookmarkNode, BookmarkNode } from '../../../../src/nodes/BookmarkNode'
-import { ImageNode } from '../../../../src/nodes/ImageNode'
-import { INSERT_CARD_COMMAND, PASTE_LINK_COMMAND } from '../../../../src/plugins/behaviour/commands'
-import { registerLinkMatching } from '../../../../src/plugins/behaviour/registerLinkMatching'
-import { updateEditor } from '../../../utils/test-editor'
 
 function createTestEditor() {
   return createEditor({

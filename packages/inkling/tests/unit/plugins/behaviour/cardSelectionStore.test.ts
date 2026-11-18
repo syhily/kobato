@@ -1,9 +1,8 @@
+import { useCardSelectionStore } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import { useCardSelectionStore } from '../../../../src/context/CardSelectionStoreContext'
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { createCardSelectionStoreWrapper } from '../../../utils/card-selection-store'
 
 // Thin per-instance suite: the generic handle semantics (partial setState,
 // change guard, subscribe/unsubscribe, fallback) live in

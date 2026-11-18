@@ -1,6 +1,5 @@
+import { escapeHtml } from '@kobato/inkling-internal/nodes/base/utils/escape-html'
 import { describe, expect, it } from 'vitest'
-
-import { escapeHtml } from '../../../src/nodes/base/utils/escape-html'
 
 describe('Utils: escapeHtml', function () {
   it('escapes special HTML characters', function () {

@@ -1,8 +1,11 @@
 // adapted from draggable.js Scrollable plugin (MIT)
 // https://github.com/Shopify/draggable/blob/master/src/Draggable/Plugins/Scrollable/Scrollable.js
-import type { DraggableInfo } from './DragDropContainer'
+import type { DraggableInfo } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
-import { getDocumentScrollingElement, getParentScrollableElement } from './draggable-utils'
+import {
+  getDocumentScrollingElement,
+  getParentScrollableElement,
+} from '@kobato/inkling-internal/utils/draggable/draggable-utils'
 
 const defaultOptions = {
   speed: 8,

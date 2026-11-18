@@ -1,11 +1,11 @@
-import type { ToggleNodeDataset } from './cards/card-commands'
+import type { ToggleNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { toggleDeclaration } from './cards/toggle.declaration'
-export { $isToggleNode } from './base/nodes/toggle/ToggleNode'
-export type { SerializedToggleNode } from './base/nodes/toggle/ToggleNode'
-export { INSERT_TOGGLE_COMMAND } from './cards/card-commands'
-export type { ToggleNodeDataset } from './cards/card-commands'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { toggleDeclaration } from '@kobato/inkling-internal/nodes/cards/toggle.declaration'
+export { $isToggleNode } from '@kobato/inkling-internal/nodes/base/nodes/toggle/ToggleNode'
+export type { SerializedToggleNode } from '@kobato/inkling-internal/nodes/base/nodes/toggle/ToggleNode'
+export { INSERT_TOGGLE_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { ToggleNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

@@ -1,4 +1,4 @@
-import { isTestEnv } from './isTestEnv'
+import { isTestEnv } from '@kobato/inkling-demo/utils/isTestEnv'
 
 export interface TenorConfig {
   googleApiKey: string

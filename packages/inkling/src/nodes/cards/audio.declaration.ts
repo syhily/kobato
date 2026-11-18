@@ -1,5 +1,5 @@
-import { audioTransientProps, BaseAudioNode } from '../base/nodes/audio/AudioNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { audioTransientProps, BaseAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const audioDeclaration = checkedCardDeclaration({
   nodeType: 'audio',

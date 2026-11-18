@@ -1,3 +1,15 @@
+import { AsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
+import {
+  $cycleQuoteBlock,
+  $formatBlocksToHeading,
+  $formatBlocksToParagraph,
+  $setBlocksAlignment,
+  FORMAT_BLOCK_TYPES,
+  registerFormatToolbarState,
+  resolveFormatToolbarVisibility,
+  type FormatToolbarState,
+} from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import {
@@ -11,19 +23,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { AsideNode } from '../../../../src/nodes/AsideNode'
-import {
-  $cycleQuoteBlock,
-  $formatBlocksToHeading,
-  $formatBlocksToParagraph,
-  $setBlocksAlignment,
-  FORMAT_BLOCK_TYPES,
-  registerFormatToolbarState,
-  resolveFormatToolbarVisibility,
-  type FormatToolbarState,
-} from '../../../../src/plugins/behaviour/format-toolbar'
-import { tick, updateEditor } from '../../../utils/test-editor'
 
 const TEST_NODES = [ListNode, ListItemNode, HeadingNode, QuoteNode, AsideNode]
 

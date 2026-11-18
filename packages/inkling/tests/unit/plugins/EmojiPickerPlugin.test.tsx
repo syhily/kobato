@@ -1,13 +1,12 @@
+import type { EmojiSearchResult } from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'
+
+import { EmojiPickerPlugin } from '@kobato/inkling-internal/plugins/EmojiPickerPlugin'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { render, renderHook } from '@testing-library/react'
 import { SearchIndex } from 'emoji-mart'
 import { KEY_DOWN_COMMAND, createEditor } from 'lexical'
 import React, { act, useMemo } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { EmojiSearchResult } from '../../../src/plugins/behaviour/emoji-completion'
-
-import { EmojiPickerPlugin } from '../../../src/plugins/EmojiPickerPlugin'
 
 const emojiMartMocks = vi.hoisted(() => ({
   init: vi.fn(),

@@ -1,9 +1,8 @@
+import { INSERT_SNIPPET_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { $insertSnippet } from '@kobato/inkling-internal/plugins/behaviour/snippet-insertion'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_LOW } from 'lexical'
 import React from 'react'
-
-import { INSERT_SNIPPET_COMMAND } from '../nodes/cards/card-commands'
-import { $insertSnippet } from './behaviour/snippet-insertion'
 
 export const InklingSnippetPlugin = () => {
   const [editor] = useLexicalComposerContext()

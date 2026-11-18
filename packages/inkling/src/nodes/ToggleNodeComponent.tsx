@@ -1,12 +1,10 @@
+import type { ToggleNode } from '@kobato/inkling-internal/nodes/ToggleNode'
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { ToggleCard } from '@kobato/inkling-internal/components/ui/cards/ToggleCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
 import React from 'react'
-
-import type { ToggleNode } from './ToggleNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { ToggleCard } from '../components/ui/cards/ToggleCard'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
 
 export function ToggleNodeComponent({
   nodeKey,
@@ -45,7 +43,7 @@ export function ToggleNodeComponent({
 
 /**
  * Toggle's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderToggleCard(node: ToggleNode) {
   // Same headless-round-trip invariant as callout's nested editor: null only

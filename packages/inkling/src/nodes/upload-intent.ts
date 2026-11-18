@@ -1,11 +1,5 @@
-import { $getNodeByKey, type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import type { GalleryImage } from '../types/gallery'
-
-import { getAudioMetadata } from '../utils/getAudioMetadata'
-import { getImageDimensions } from '../utils/getImageDimensions'
-import prettifyFileName from '../utils/prettifyFileName'
-import { createPreviewLease, type PreviewLeasePool } from '../utils/preview-lease'
 import {
   $isAudioNode,
   $isFileNode,
@@ -17,7 +11,12 @@ import {
   recalculateImageRows,
   type BaseFileNode,
   type BaseImageNode,
-} from './base'
+} from '@kobato/inkling-internal/nodes/base'
+import { getAudioMetadata } from '@kobato/inkling-internal/utils/getAudioMetadata'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import prettifyFileName from '@kobato/inkling-internal/utils/prettifyFileName'
+import { createPreviewLease, type PreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
+import { $getNodeByKey, type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
 
 /**
  * The one upload-intent module: file(s) + per-card metadata extraction in, typed node
@@ -151,7 +150,7 @@ export interface RunUploadIntentOptions<
  * released in a `finally` around the whole flow; rejections always propagate.
  *
  * INTERNAL seam the per-card factories bind to, deliberately not on the public
- * `@/inkling` surface. Returns the first result URL (`undefined` when the flow
+ * `@kobato/inkling-internal` surface. Returns the first result URL (`undefined` when the flow
  * bailed) so callers can compose follow-up intents imperatively.
  */
 export async function runUploadIntent<TNode extends LexicalNode, TMeta = undefined>({

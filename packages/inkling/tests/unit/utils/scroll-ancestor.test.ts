@@ -1,6 +1,5 @@
+import { getScrollAncestor } from '@kobato/inkling-internal/utils/scroll-ancestor'
 import { describe, expect, it } from 'vitest'
-
-import { getScrollAncestor } from '../../../src/utils/scroll-ancestor'
 
 describe('getScrollAncestor — floating policy', () => {
   it('returns document.body when node is missing', () => {

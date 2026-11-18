@@ -1,5 +1,10 @@
+import type { CardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
 import type { DecoratorNode, LexicalEditor, LexicalNode } from 'lexical'
 
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import { DELETE_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { $isAtTopOfNode, $selectDecoratorNode, getTopLevelNativeElement } from '@kobato/inkling-internal/utils'
+import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensureParagraphAfterCard'
 import {
   $createNodeSelection,
   $getNodeByKey,
@@ -11,13 +16,6 @@ import {
   $isRangeSelection,
   $setSelection,
 } from 'lexical'
-
-import type { CardSelectionStore } from './cardSelectionStore'
-
-import { $isInklingCard } from '../../nodes/base'
-import { $isAtTopOfNode, $selectDecoratorNode, getTopLevelNativeElement } from '../../utils'
-import { $ensureParagraphAfterCard } from '../../utils/$ensureParagraphAfterCard'
-import { DELETE_CARD_COMMAND } from './commands'
 
 export const RANGE_TO_ELEMENT_BOUNDARY_THRESHOLD_PX = 10
 

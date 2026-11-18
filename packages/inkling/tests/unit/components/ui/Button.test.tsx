@@ -1,7 +1,6 @@
+import { Button } from '@kobato/inkling-internal/components/ui/Button'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import { Button } from '../../../../src/components/ui/Button'
 
 describe('Button', () => {
   it('defaults to accent styling with rounded corners and shrink-0', () => {

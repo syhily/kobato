@@ -1,14 +1,13 @@
-import type { Klass, LexicalNode } from 'lexical'
-
-import type { CardConfig, FileUploader } from '../../context/InklingHostIntegrationContext'
+import type { CardConfig, FileUploader } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import type {
   CardSpecNestedEditorDataset,
   CardSpecTransientDataset,
   NestedEditorSpec,
   TransientPropSpec,
-} from '../base/card-specs'
-import type { CardImportSpec } from '../base/import-spec'
-import type { CardWidth } from '../base/utils/card-widths'
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
+import type { CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+import type { Klass, LexicalNode } from 'lexical'
 
 /**
  * A generateDecoratorNode product. Projections widen to `Klass<LexicalNode>`, but the
@@ -37,7 +36,7 @@ export interface DecorateTargetSpec {
  * The card's membership in the insert-command surface; the presence of `insert` is the
  * opt-in. The command derives from the node type via `resolveCardInsertCommand`, so it
  * cannot drift from the card. React-free; the registrar
- * (`@/inkling/plugins/CardInsertPlugin`) is the derived view.
+ * (`@kobato/inkling-internal/plugins/CardInsertPlugin`) is the derived view.
  */
 export interface CardInsertSpec {
   /** dispatch INSERT_CARD_COMMAND with openInEditMode: true after construction */
@@ -52,7 +51,7 @@ export interface CardInsertSpec {
 
 /**
  * Card menu icon ids. Naming the icon by id keeps declarations React-free; the SVGR
- * components attach one layer up in `@/inkling/nodes/cards/card-menus`.
+ * components attach one layer up in `@kobato/inkling-internal/nodes/cards/card-menus`.
  */
 export type CardIconId =
   | 'audio'
@@ -176,7 +175,7 @@ export type CardUploadType = keyof NonNullable<FileUploader['fileTypes']>
 
 /**
  * How the card joins the markdown round-trip (`MARKDOWN_NODES` in
- * `@/inkling/markdown/round-trip`):
+ * `@kobato/inkling-internal/markdown/round-trip`):
  *
  * - `{ kind: 'fence' }` — the card speaks a ` ```inkling:<card>``` ` fence; the payload
  *   vocabulary lives in `card-markdown-transformers`, and its `createNode` must
@@ -195,7 +194,7 @@ export type CardMarkdownSpec = { kind: 'fence' } | { kind: 'exempt' }
  * wrapper node classes, insert registrations) is a derived view over these
  * declarations.
  *
- * React-free: `baseNode` is imported from its deep `@/inkling/nodes/base/nodes/...`
+ * React-free: `baseNode` is imported from its deep `@kobato/inkling-internal/nodes/base/nodes/...`
  * path so the base barrel can derive its node set from the declarations without
  * pulling in the wrapper/component layer. Declarations must never import wrappers —
  * the base barrel would close an import cycle through the wrapper files.

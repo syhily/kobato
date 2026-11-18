@@ -1,10 +1,9 @@
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useWordCountHandle } from '@kobato/inkling-internal/context/WordCountHandleContext'
+import { createWordCounter, type WordCounter } from '@kobato/inkling-internal/plugins/behaviour/word-counter'
+import { publishWordCountCallback } from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { useWordCountHandle } from '../context/WordCountHandleContext'
-import { createWordCounter, type WordCounter } from './behaviour/word-counter'
-import { publishWordCountCallback } from './behaviour/wordCountHandle'
 
 // `language` selects the Intl.Segmenter word-granularity path in countWords;
 // with no language the counter keeps Inkling's regex path (never an implicit

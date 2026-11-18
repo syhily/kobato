@@ -1,6 +1,6 @@
 import type { NodeKey } from 'lexical'
 
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 
 // Editor-side handle for the per-top-level-composer footnote channel, built
 // on the composer handle factory (same shape as tkHandle/wordCountHandle).

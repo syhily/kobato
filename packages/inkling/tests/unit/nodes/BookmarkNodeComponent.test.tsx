@@ -1,3 +1,14 @@
+import {
+  InklingHostIntegrationProvider,
+  type CardConfig,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { BookmarkNode, $createBookmarkNode, $isBookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { BookmarkNodeComponent } from '@kobato/inkling-internal/nodes/BookmarkNodeComponent'
+import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
 import { LinkNode } from '@lexical/link'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -13,21 +24,12 @@ import {
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { InklingHostIntegrationProvider, type CardConfig } from '../../../src/context/InklingHostIntegrationContext'
-import { BookmarkNode, $createBookmarkNode, $isBookmarkNode } from '../../../src/nodes/BookmarkNode'
-import { BookmarkNodeComponent } from '../../../src/nodes/BookmarkNodeComponent'
-import { registerCardDecorateAdapter } from '../../../src/nodes/decorate-card'
-import trackEvent from '../../../src/utils/analytics'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-
 // These specs attach a root element, so reconciliation calls decorate() —
 // the injection port is filled here (vi.mock hoisting keeps the mocks below
 // ahead of this import; see tests/inkling/utils/test-editor.ts for the rationale).
 registerCardDecorateAdapter()
 
-vi.mock('../../../src/utils/analytics', () => ({
+vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
   default: vi.fn(),
 }))
 
@@ -39,7 +41,7 @@ vi.mock('@lexical/react/LexicalComposerContext', async (importOriginal) => {
   }
 })
 
-vi.mock('../../../src/components/ui/CardCaptionEditor', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => null,
 }))
 

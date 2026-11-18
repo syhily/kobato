@@ -1,5 +1,6 @@
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { $isMathInlineNode } from '@kobato/inkling-internal/nodes/math/MathInlineNode'
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
@@ -8,8 +9,6 @@ import {
   createCommand,
   KEY_ENTER_COMMAND,
 } from 'lexical'
-
-import { $isMathInlineNode } from '../../nodes/math/MathInlineNode'
 
 /**
  * The one command inkling dispatches when the writer asks to edit an inline

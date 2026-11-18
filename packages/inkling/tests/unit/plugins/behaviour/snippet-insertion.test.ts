@@ -1,3 +1,7 @@
+import { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { $insertSnippet, isSnippetDataset } from '@kobato/inkling-internal/plugins/behaviour/snippet-insertion'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -9,11 +13,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { ImageNode } from '../../../../src/nodes/ImageNode'
-import { INSERT_CARD_COMMAND } from '../../../../src/plugins/behaviour/commands'
-import { $insertSnippet, isSnippetDataset } from '../../../../src/plugins/behaviour/snippet-insertion'
-import { updateEditor } from '../../../utils/test-editor'
 
 // One card type is enough to exercise the card fast-path and the
 // trailing-paragraph rule in jsdom.

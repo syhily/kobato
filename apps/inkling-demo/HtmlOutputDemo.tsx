@@ -1,7 +1,6 @@
 import { HtmlOutputPlugin } from '@kobato/inkling'
+import { DemoEditorShell } from '@kobato/inkling-demo/components/DemoEditorShell'
 import { useState } from 'react'
-
-import { DemoEditorShell } from './components/DemoEditorShell'
 
 function HtmlOutputDemo() {
   const [html, setHtml] = useState(

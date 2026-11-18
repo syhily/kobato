@@ -1,5 +1,5 @@
-import { cx } from '../../utils/cx'
-import { Button } from './Button'
+import { Button } from '@kobato/inkling-internal/components/ui/Button'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 
 export function SubscribeForm({
   dataTestId,

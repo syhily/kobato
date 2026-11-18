@@ -1,5 +1,5 @@
-import { throttle } from '../../utils'
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
+import { throttle } from '@kobato/inkling-internal/utils'
 
 // Editor-side handle for the per-top-level-composer tk channel, built on the
 // composer handle factory. Owns the per-editor map of TK node keys plus the

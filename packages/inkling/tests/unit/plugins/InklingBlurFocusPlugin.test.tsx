@@ -1,13 +1,12 @@
 import type { LexicalEditor } from 'lexical'
 
+import { InklingBlurPlugin } from '@kobato/inkling-internal/plugins/InklingBlurPlugin'
+import { InklingFocusPlugin } from '@kobato/inkling-internal/plugins/InklingFocusPlugin'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { render } from '@testing-library/react'
 import { BLUR_COMMAND, FOCUS_COMMAND } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
-
-import { InklingBlurPlugin } from '../../../src/plugins/InklingBlurPlugin'
-import { InklingFocusPlugin } from '../../../src/plugins/InklingFocusPlugin'
 
 function Harness({ children }: { children: React.ReactNode }) {
   return (

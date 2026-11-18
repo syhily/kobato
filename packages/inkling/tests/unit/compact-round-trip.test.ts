@@ -1,9 +1,8 @@
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
+import { createEditor } from '@kobato/inkling/tests/transforms/utils'
 import { compactLexicalEditorState } from '@kobato/lexical/dialect.ts'
 import { describe, expect, it } from 'vitest'
-
-import { createEditor } from '../transforms/utils'
 
 // Contract between the compact storage dialect and the real 0.53 parser:
 // re-parsing a compacted document through `parseEditorState` must heal every

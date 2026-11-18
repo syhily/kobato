@@ -1,17 +1,16 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { mergeRegister, COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
-import React from 'react'
-
-import CardContext from '../context/CardContext'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
-import { getParentEditor } from '../utils/lexical-internals'
-import { focusEditorRoot } from './behaviour/card-adjacency'
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { focusEditorRoot } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import {
   isTypeaheadMenuOpen,
   markEventFromNested,
   registerNestedBlurCardReselect,
   registerNestedEnterHandoff,
-} from './behaviour/nested-editor-protocol'
+} from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
+import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internals'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { mergeRegister, COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
+import React from 'react'
 
 // the nested editor the Enter key hands focus to (Header subheader, Toggle
 // content) — structurally the part of LexicalEditor the hand-off needs

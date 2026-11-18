@@ -1,13 +1,13 @@
-import type { DecoratorNodeProperty } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
+import type { DecoratorNodeProperty } from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { renderButtonNode } from './button-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { renderButtonNode } from '@kobato/inkling-internal/nodes/base/nodes/button/button-renderer'
 
 const buttonProperties = [
   { name: 'buttonText', default: '' },

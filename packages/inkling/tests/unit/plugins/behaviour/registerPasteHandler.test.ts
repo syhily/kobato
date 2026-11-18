@@ -1,8 +1,7 @@
+import { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { registerPasteHandler } from '@kobato/inkling-internal/plugins/behaviour/registerPasteHandler'
 import { createEditor, PASTE_COMMAND, type LexicalEditor } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { ImageNode } from '../../../../src/nodes/ImageNode'
-import { registerPasteHandler } from '../../../../src/plugins/behaviour/registerPasteHandler'
 
 function createTestEditor() {
   return createEditor({

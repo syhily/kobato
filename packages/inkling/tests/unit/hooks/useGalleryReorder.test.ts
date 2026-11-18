@@ -1,12 +1,11 @@
+import { DragDropHandleContext } from '@kobato/inkling-internal/context/DragDropHandleContext'
+import useGalleryReorder, { type GalleryImage } from '@kobato/inkling-internal/hooks/useGalleryReorder'
+import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/dragDropHandle'
+import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
+import { cardDrag, imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
 import { act, renderHook } from '@testing-library/react'
 import React from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { DragDropHandleContext } from '../../../src/context/DragDropHandleContext'
-import useGalleryReorder, { type GalleryImage } from '../../../src/hooks/useGalleryReorder'
-import { createDragDropHandle } from '../../../src/plugins/behaviour/dragDropHandle'
-import { DragDropHandler } from '../../../src/utils/draggable/DragDropHandler'
-import { cardDrag, imageDrag } from '../../utils/draggable-fixtures'
 
 const mockContainer = {
   enableDrag: vi.fn(),

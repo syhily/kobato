@@ -1,18 +1,17 @@
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { CARD_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards'
+import { getCardToolbarLabel } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import HeaderNodeComponent from '@kobato/inkling-internal/nodes/header/HeaderNodeComponent'
+import { $createHeaderNode, HeaderNode } from '@kobato/inkling-internal/nodes/HeaderNode'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { CollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider } from '../../../src/context/InklingHostIntegrationContext'
-import { CARD_DECLARATIONS } from '../../../src/nodes/cards'
-import { getCardToolbarLabel } from '../../../src/nodes/cards/card-facts'
-import HeaderNodeComponent from '../../../src/nodes/header/HeaderNodeComponent'
-import { $createHeaderNode, HeaderNode } from '../../../src/nodes/HeaderNode'
-import MINIMAL_NODES from '../../../src/nodes/MinimalNodes'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor } from '../../utils/test-editor'
 
 function createLexicalComposerContext(editor: LexicalEditor): [LexicalEditor, { getTheme: () => undefined }] {
   return [editor, { getTheme: () => undefined }]

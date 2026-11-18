@@ -1,4 +1,4 @@
-import { awaitMediaEvents } from './awaitMediaEvents'
+import { awaitMediaEvents } from '@kobato/inkling-internal/utils/awaitMediaEvents'
 
 export interface ImageDimensions {
   width: number

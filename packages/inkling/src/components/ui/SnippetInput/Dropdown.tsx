@@ -1,8 +1,8 @@
-import ReplaceIcon from '../../../assets/icons/inkling-sync.svg?react'
-import PlusIcon from '../../../assets/icons/plus.svg?react'
-import { type SnippetItem } from '../../../context/InklingHostIntegrationContext'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { interpolateLabel } from '../../../labels/inkling-labels'
+import ReplaceIcon from '@kobato/inkling-internal/assets/icons/inkling-sync.svg?react'
+import PlusIcon from '@kobato/inkling-internal/assets/icons/plus.svg?react'
+import { type SnippetItem } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
 
 export const Dropdown = ({
   snippets,

@@ -1,11 +1,10 @@
+import { registerFocusMode } from '@kobato/inkling-internal/plugins/behaviour/focus-mode'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useEffect } from 'react'
 
-import { registerFocusMode } from './behaviour/focus-mode'
-
 // Writing-focus mode. Mounted by the 'focus-mode' core entry when the
 // surface sets `focusMode`; the DOM bookkeeping lives headless in
-// @/inkling/plugins/behaviour/focus-mode and the visual rules are host CSS.
+// @kobato/inkling-internal/plugins/behaviour/focus-mode and the visual rules are host CSS.
 export const FocusModePlugin = () => {
   const [editor] = useLexicalComposerContext()
 

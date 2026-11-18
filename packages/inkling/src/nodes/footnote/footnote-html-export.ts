@@ -6,12 +6,12 @@
 // doc-end run while editing, so the wrap here resolves the run's output
 // span through the string layer's own index map (the seam's contract: a
 // claimed trailing-run node exports non-null) instead of re-deriving it by
-// counting. Registered in `@/inkling/html/renderer/post-process`.
+// counting. Registered in `@kobato/inkling-internal/html/renderer/post-process`.
 
-import type { HtmlPostProcessor } from '../../html/renderer/post-process'
+import type { HtmlPostProcessor } from '@kobato/inkling-internal/html/renderer/post-process'
 
-import { $isFootnoteDefinitionNode } from '../base/nodes/footnotedefinition/FootnoteDefinitionNode'
-import { FOOTNOTES_SECTION_HEADING_ID } from './footnote-anchors'
+import { $isFootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/base/nodes/footnotedefinition/FootnoteDefinitionNode'
+import { FOOTNOTES_SECTION_HEADING_ID } from '@kobato/inkling-internal/nodes/footnote/footnote-anchors'
 
 const DEFAULT_FOOTNOTES_SECTION_TITLE = 'Footnotes'
 

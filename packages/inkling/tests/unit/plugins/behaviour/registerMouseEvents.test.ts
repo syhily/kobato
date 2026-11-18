@@ -1,3 +1,7 @@
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { DESELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { registerMouseEvents } from '@kobato/inkling-internal/plugins/behaviour/registerMouseEvents'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -9,11 +13,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { DESELECT_CARD_COMMAND } from '../../../../src/plugins/behaviour/commands'
-import { registerMouseEvents } from '../../../../src/plugins/behaviour/registerMouseEvents'
-import { updateEditor } from '../../../utils/test-editor'
 
 function createTestEditor() {
   return createEditor({

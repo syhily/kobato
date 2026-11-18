@@ -1,12 +1,11 @@
+import type { ListOptionItem, ListOptionSection } from '@kobato/inkling-internal/hooks/useSearchLinks'
+
+import { InputListGroup, InputListLoadingItem } from '@kobato/inkling-internal/components/ui/InputList'
+import { KeyboardSelectionWithGroups } from '@kobato/inkling-internal/components/ui/KeyboardSelectionWithGroups'
+import { LinkInputSearchItem } from '@kobato/inkling-internal/components/ui/LinkInputSearchItem'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { POPUP_LIST_MAX_HEIGHT } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import React from 'react'
-
-import type { ListOptionItem, ListOptionSection } from '../../hooks/useSearchLinks'
-
-import trackEvent from '../../utils/analytics'
-import { POPUP_LIST_MAX_HEIGHT } from '../../utils/selection-anchored-popup'
-import { InputListGroup, InputListLoadingItem } from './InputList'
-import { KeyboardSelectionWithGroups } from './KeyboardSelectionWithGroups'
-import { LinkInputSearchItem } from './LinkInputSearchItem'
 
 /**
  * The link-dropdown suggestion chrome — the one home of the render wiring shared

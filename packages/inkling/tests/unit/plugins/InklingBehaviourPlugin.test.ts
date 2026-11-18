@@ -1,3 +1,14 @@
+import { HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import {
+  DESELECT_CARD_COMMAND,
+  INSERT_CARD_COMMAND,
+  SELECT_CARD_COMMAND,
+} from '@kobato/inkling-internal/plugins/behaviour/commands'
+import InklingBehaviourPlugin from '@kobato/inkling-internal/plugins/InklingBehaviourPlugin'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { renderHook } from '@testing-library/react'
 import {
   $createParagraphNode,
@@ -9,18 +20,6 @@ import {
   type LexicalNodeConfig,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { HorizontalRuleNode } from '../../../src/nodes/HorizontalRuleNode'
-import { $createImageNode, ImageNode } from '../../../src/nodes/ImageNode'
-import {
-  DESELECT_CARD_COMMAND,
-  INSERT_CARD_COMMAND,
-  SELECT_CARD_COMMAND,
-} from '../../../src/plugins/behaviour/commands'
-import InklingBehaviourPlugin from '../../../src/plugins/InklingBehaviourPlugin'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

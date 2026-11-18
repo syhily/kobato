@@ -1,10 +1,9 @@
+import { AudioNode, $createAudioNode, type AudioNode as AudioNodeType } from '@kobato/inkling-internal/nodes/AudioNode'
+import { audioThumbnailUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { AudioNode, $createAudioNode, type AudioNode as AudioNodeType } from '../../../src/nodes/AudioNode'
-import { audioThumbnailUploadIntent } from '../../../src/nodes/upload-intent'
-import { updateEditor } from '../../utils/test-editor'
 
 describe('audioThumbnailUploadIntent', () => {
   let editor: LexicalEditor

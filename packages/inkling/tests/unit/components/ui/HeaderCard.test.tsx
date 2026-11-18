@@ -1,12 +1,11 @@
+import { HeaderCard } from '@kobato/inkling-internal/components/ui/cards/HeaderCard/HeaderCard'
+import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { HeaderCard } from '../../../../src/components/ui/cards/HeaderCard/HeaderCard'
-import { createDragHandler, createUploader } from '../../../utils/mock-file-factories'
-
-vi.mock('../../../../src/components/ui/MediaUploader', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/MediaUploader', () => ({
   MediaUploader: ({ additionalActions, ...props }: Record<string, unknown>) => (
     <div data-testid="media-uploader" {...props}>
       {additionalActions as React.ReactNode}
@@ -14,7 +13,7 @@ vi.mock('../../../../src/components/ui/MediaUploader', () => ({
   ),
 }))
 
-vi.mock('../../../../src/components/ui/SettingsPanel', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/SettingsPanel', () => ({
   SettingsPanel: ({ children }: { children?: React.ReactNode }) => <div data-testid="settings-panel">{children}</div>,
   ButtonGroupSetting: ({
     buttons,
@@ -87,7 +86,7 @@ vi.mock('../../../../src/components/ui/SettingsPanel', () => ({
   MediaUploadSetting: (props: Record<string, unknown>) => <div data-testid="media-upload-setting" {...props} />,
 }))
 
-vi.mock('../../../../src/components/InklingNestedEditor', () => ({
+vi.mock('@kobato/inkling-internal/components/InklingNestedEditor', () => ({
   default: ({ dataTestId }: { dataTestId?: string }) => <div data-testid={dataTestId} />,
 }))
 

@@ -1,11 +1,10 @@
+import type { CardInsertSpec } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 import type { AnyLexicalCommand, Klass, LexicalNode } from 'lexical'
 
-import type { CardInsertSpec } from './card-declaration'
-
-import { assembleCardNodeOnce } from '../assemble-card-node'
-import { resolveCardInsertCommand } from './card-commands'
-import { resolveAllCardFacts } from './card-facts'
-import { CARD_WRAPPER_NODES } from './card-wrappers'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { resolveCardInsertCommand } from '@kobato/inkling-internal/nodes/cards/card-commands'
+import { resolveAllCardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import { CARD_WRAPPER_NODES } from '@kobato/inkling-internal/nodes/cards/card-wrappers'
 
 export interface CardInsertRegistration {
   nodeType: string
@@ -26,7 +25,7 @@ export interface CardInsertRegistration {
  * insert command, derived from its node type by `resolveCardInsertCommand` (the
  * insert spec carries only flags, never a command object). Kept out of the
  * declaration modules so they stay React-free; the registrar
- * (`@/inkling/plugins/CardInsertPlugin`) is the derived view over this list.
+ * (`@kobato/inkling-internal/plugins/CardInsertPlugin`) is the derived view over this list.
  */
 export const CARD_INSERT_COMMANDS: CardInsertRegistration[] = CARD_WRAPPER_NODES.flatMap((declaration) => {
   // `in` narrows the union to the declarations carrying the optional insert entry
@@ -49,7 +48,7 @@ const CARD_INSERT_COMMANDS_BY_TYPE = new Map(
 )
 
 /**
- * The full insert-registration view the registrar (`@/inkling/plugins/CardInsertPlugin`)
+ * The full insert-registration view the registrar (`@kobato/inkling-internal/plugins/CardInsertPlugin`)
  * reads: every card's insert projection in the merged card order (built-ins first,
  * host cards after), with built-in entries reused from `CARD_INSERT_COMMANDS`
  * verbatim. A function rather than a constant so host cards defined after module

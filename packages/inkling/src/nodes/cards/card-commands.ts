@@ -1,28 +1,42 @@
-import type { AnyLexicalCommand } from 'lexical'
-
-import { createCommand } from 'lexical'
-
-import type { SnippetDataset } from '../../plugins/behaviour/snippet-insertion'
-import type { CardSpecNestedEditorDataset, CardSpecTransientDataset } from '../base/card-specs'
-import type { AudioData, audioTransientProps } from '../base/nodes/audio/AudioNode'
-import type { BookmarkData, bookmarkNestedEditors, bookmarkTransientProps } from '../base/nodes/bookmark/BookmarkNode'
-import type { ButtonData } from '../base/nodes/button/ButtonNode'
-import type { CalloutData, calloutNestedEditors } from '../base/nodes/callout/CalloutNode'
+import type {
+  CardSpecNestedEditorDataset,
+  CardSpecTransientDataset,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { AudioData, audioTransientProps } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'
+import type {
+  BookmarkData,
+  bookmarkNestedEditors,
+  bookmarkTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/bookmark/BookmarkNode'
+import type { ButtonData } from '@kobato/inkling-internal/nodes/base/nodes/button/ButtonNode'
+import type { CalloutData, calloutNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/callout/CalloutNode'
 import type {
   CodeBlockData,
   codeBlockNestedEditors,
   codeBlockTransientProps,
-} from '../base/nodes/codeblock/CodeBlockNode'
-import type { FileData, fileTransientProps } from '../base/nodes/file/FileNode'
-import type { GalleryData, galleryNestedEditors } from '../base/nodes/gallery/GalleryNode'
-import type { HeaderData, headerNestedEditors } from '../base/nodes/header/HeaderNode'
-import type { HtmlData } from '../base/nodes/html/HtmlNode'
-import type { ImageData, imageNestedEditors, imageTransientProps } from '../base/nodes/image/ImageNode'
-import type { MathData } from '../base/nodes/math/MathNode'
-import type { ToggleData, toggleNestedEditors } from '../base/nodes/toggle/ToggleNode'
-import type { VideoData, videoNestedEditors, videoTransientProps } from '../base/nodes/video/VideoNode'
-import type { CardNodeType } from './'
-import type { CardMenuCommand } from './card-declaration'
+} from '@kobato/inkling-internal/nodes/base/nodes/codeblock/CodeBlockNode'
+import type { FileData, fileTransientProps } from '@kobato/inkling-internal/nodes/base/nodes/file/FileNode'
+import type { GalleryData, galleryNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/gallery/GalleryNode'
+import type { HeaderData, headerNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+import type { HtmlData } from '@kobato/inkling-internal/nodes/base/nodes/html/HtmlNode'
+import type {
+  ImageData,
+  imageNestedEditors,
+  imageTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
+import type { MathData } from '@kobato/inkling-internal/nodes/base/nodes/math/MathNode'
+import type { ToggleData, toggleNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/toggle/ToggleNode'
+import type {
+  VideoData,
+  videoNestedEditors,
+  videoTransientProps,
+} from '@kobato/inkling-internal/nodes/base/nodes/video/VideoNode'
+import type { CardNodeType } from '@kobato/inkling-internal/nodes/cards/'
+import type { CardMenuCommand } from '@kobato/inkling-internal/nodes/cards/card-declaration'
+import type { SnippetDataset } from '@kobato/inkling-internal/plugins/behaviour/snippet-insertion'
+import type { AnyLexicalCommand } from 'lexical'
+
+import { createCommand } from 'lexical'
 
 /**
  * The card insert commands: a derived view over the card declarations. Declarations
@@ -76,11 +90,11 @@ export type ImageNodeDataset = ImageData &
   CardSpecTransientDataset<typeof imageTransientProps> & {
     // Drag-and-drop payload extras outside the property vocabulary: gallery drags
     // carry the GalleryImage keys (`useGalleryReorder`), and the image→gallery
-    // merge (`@/inkling/plugins/behaviour/drop-surgery`) reads fileName back.
+    // merge (`@kobato/inkling-internal/plugins/behaviour/drop-surgery`) reads fileName back.
     fileName?: string
     row?: number
     // Image-library picks map host-schema pass-through keys onto the insert
-    // dataset (`@/inkling/components/ui/LibraryPlugin`); the stock declaration
+    // dataset (`@kobato/inkling-internal/components/ui/LibraryPlugin`); the stock declaration
     // ignores them, a host card's own properties persist them.
     thumbhash?: string
     storagePath?: string

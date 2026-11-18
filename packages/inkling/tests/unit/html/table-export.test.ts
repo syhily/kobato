@@ -1,3 +1,4 @@
+import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
 // Both HTML export paths render the table family: LIVE pins
 // `$convertToHtmlString` run against an editor configured like
 // InklingComposer (DEFAULT_NODES + defaultTheme), exactly as HtmlOutputPlugin
@@ -6,8 +7,6 @@
 // rendering path. One serializer backs both, so each case pins one string
 // and asserts the two legs agree byte-exactly.
 import { describe, expect, it } from 'vitest'
-
-import { renderHeadless, renderLive } from '../../utils/render-live'
 
 const text = (content: string, format = 0) => ({
   type: 'text',

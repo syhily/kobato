@@ -1,3 +1,6 @@
+import { $isHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { HorizontalRulePlugin } from '@kobato/inkling-internal/plugins/HorizontalRulePlugin'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { registerRichText } from '@lexical/rich-text'
@@ -16,10 +19,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $isHorizontalRuleNode, HorizontalRuleNode } from '../../../src/nodes/HorizontalRuleNode'
-import { HorizontalRulePlugin } from '../../../src/plugins/HorizontalRulePlugin'
-import { tick, updateEditor } from '../../utils/test-editor'
 
 // Pins the hand-rolled HR update listener, mounted with NO markdown
 // transformers so the listener is the only `---` → HR path. The

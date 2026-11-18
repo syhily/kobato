@@ -1,9 +1,8 @@
+import type { InklingComposableEditorProps } from '@kobato/inkling-internal/components/InklingComposableEditor'
+
+import InklingComposableEditor from '@kobato/inkling-internal/components/InklingComposableEditor'
+import { SharedEditorStateContext } from '@kobato/inkling-internal/context/SharedEditorStateContext'
 import React from 'react'
-
-import type { InklingComposableEditorProps } from './InklingComposableEditor'
-
-import { SharedEditorStateContext } from '../context/SharedEditorStateContext'
-import InklingComposableEditor from './InklingComposableEditor'
 
 /**
  * InklingSurface — the composition rule for a top-level editor surface. Wrap the

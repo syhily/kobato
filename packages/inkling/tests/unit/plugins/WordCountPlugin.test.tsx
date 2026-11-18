@@ -1,22 +1,21 @@
 import type { LexicalEditor } from 'lexical'
 
-import { render, renderHook } from '@testing-library/react'
-import React from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import InklingUiPrefsContext from '../../../src/context/InklingUiPrefsContext'
-import { WordCountHandleContext } from '../../../src/context/WordCountHandleContext'
-import { DEFAULT_LABELS } from '../../../src/labels/inkling-labels'
-import { createWordCountHandle, type WordCountHandle } from '../../../src/plugins/behaviour/wordCountHandle'
-import { WordCountPlugin } from '../../../src/plugins/WordCountPlugin'
-import { countWords } from '../../../src/utils'
-import { mockComposerContext } from '../../utils/composer-context'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { WordCountHandleContext } from '@kobato/inkling-internal/context/WordCountHandleContext'
+import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
+import { createWordCountHandle, type WordCountHandle } from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
+import { WordCountPlugin } from '@kobato/inkling-internal/plugins/WordCountPlugin'
+import { countWords } from '@kobato/inkling-internal/utils'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
 import {
   cleanupSelectionEditors,
   createSelectionEditor,
   seedSelectionEditor,
   selectFirstText,
-} from '../../utils/selection'
+} from '@kobato/inkling/tests/utils/selection'
+import { render, renderHook } from '@testing-library/react'
+import React from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Smoke suite for the React adapter: handle publish/clear, publisher
 // ownership across two plugins, callback replacement, and engine wiring. The
@@ -28,8 +27,8 @@ import {
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
-vi.mock('../../../src/utils', async (importActual) => {
-  const actual = await importActual<typeof import('../../../src/utils')>()
+vi.mock('@kobato/inkling-internal/utils', async (importActual) => {
+  const actual = await importActual<typeof import('@kobato/inkling-internal/utils')>()
   return { ...actual, countWords: vi.fn(actual.countWords) }
 })
 

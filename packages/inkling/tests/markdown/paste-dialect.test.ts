@@ -1,6 +1,5 @@
+import { pasteDialect } from '@kobato/inkling-internal/markdown/paste-dialect'
 import { describe, expect, it } from 'vitest'
-
-import { pasteDialect } from '../../src/markdown/paste-dialect'
 
 describe('Paste dialect markdown-it engine', function () {
   describe('latest', function () {
@@ -14,7 +13,7 @@ describe('Paste dialect markdown-it engine', function () {
     it('deduplicates heading ids', function () {
       const result = pasteDialect.render('# Hello\n# Hello', { inklingVersion: '4.0' })
       expect(result).toMatch(/<h1 id="hello">/)
-      // the shared dedup policy (`@/inkling/utils/heading-id-tracker`): repeats get
+      // the shared dedup policy (`@kobato/inkling-internal/utils/heading-id-tracker`): repeats get
       // the hyphenated `<base>-<n>` form, same as the HTML renderer
       expect(result).toMatch(/<h1 id="hello-1">/)
     })

@@ -1,3 +1,13 @@
+import type {
+  DraggableInfo,
+  DropResolution,
+  DropResult,
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+
+import { $createImageNode, $isImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import DragDropReorderPlugin from '@kobato/inkling-internal/plugins/DragDropReorderPlugin'
+import { cardDrag, imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { render } from '@testing-library/react'
 import {
@@ -10,13 +20,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { DraggableInfo, DropResolution, DropResult } from '../../../src/utils/draggable/DragDropContainer'
-
-import { $createImageNode, $isImageNode, ImageNode } from '../../../src/nodes/ImageNode'
-import DragDropReorderPlugin from '../../../src/plugins/DragDropReorderPlugin'
-import { cardDrag, imageDrag } from '../../utils/draggable-fixtures'
-import { updateEditor } from '../../utils/test-editor'
 
 // Exercises the plugin's onDrop result mapping with the drag container stubbed:
 // useDragDropContainer captures the rendered options and resolveDrop is mocked
@@ -37,15 +40,15 @@ const captured = vi.hoisted(() => ({
   resolveDrop: vi.fn(),
 }))
 
-vi.mock('../../../src/utils/draggable/useDragDropContainer', () => ({
+vi.mock('@kobato/inkling-internal/utils/draggable/useDragDropContainer', () => ({
   useDragDropContainer: (options: CapturedContainerOptions) => {
     captured.containerOptions = options
     return { refresh: vi.fn() }
   },
 }))
 
-vi.mock('../../../src/utils/draggable/reorder-rules', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../../../src/utils/draggable/reorder-rules')>()
+vi.mock('@kobato/inkling-internal/utils/draggable/reorder-rules', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@kobato/inkling-internal/utils/draggable/reorder-rules')>()
   return {
     ...original,
     resolveDrop: (...args: unknown[]) => captured.resolveDrop(...args),

@@ -1,3 +1,5 @@
+import { $unwrapSpecialMarkupFormat } from '@kobato/inkling-internal/plugins/behaviour/markdown-unwrap'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import {
   $createParagraphNode,
@@ -9,9 +11,6 @@ import {
   type TextFormatType,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $unwrapSpecialMarkupFormat } from '../../../../src/plugins/behaviour/markdown-unwrap'
-import { updateEditor } from '../../../utils/test-editor'
 
 // Synchronous test table for the markdown special-markup unwrap grammar —
 // one row per markup (code/superscript/subscript/strikethrough), the

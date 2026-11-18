@@ -1,4 +1,4 @@
-import type { ExportDOMDom } from '../nodes/base'
+import type { ExportDOMDom } from '@kobato/inkling-internal/nodes/base'
 
 export const HEADLESS_DOM_MISSING_MESSAGE =
   'inkling headless HTML conversion needs a DOM: pass options.dom or run where a global ' +

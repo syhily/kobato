@@ -1,16 +1,20 @@
+import { ActionToolbar } from '@kobato/inkling-internal/components/ui/ActionToolbar'
+import { SnippetCreateToolbar } from '@kobato/inkling-internal/components/ui/SnippetCreateToolbar'
+import {
+  ToolbarMenu,
+  ToolbarMenuItem,
+  ToolbarMenuSeparator,
+  type ToolbarIconName,
+} from '@kobato/inkling-internal/components/ui/ToolbarMenu'
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import { useCardIsEditing, useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useInklingSnippetSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { getCardToolbarLabel } from '@kobato/inkling-internal/nodes/cards/card-facts'
+import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
 import React from 'react'
-
-import CardContext from '../../context/CardContext'
-import { useCardIsEditing, useCardIsSelected } from '../../context/CardSelectionStoreContext'
-import { useInklingSnippetSettings } from '../../context/InklingHostIntegrationContext'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { getCardToolbarLabel } from '../../nodes/cards/card-facts'
-import { EDIT_CARD_COMMAND } from '../../plugins/behaviour/commands'
-import { ActionToolbar } from './ActionToolbar'
-import { SnippetCreateToolbar } from './SnippetCreateToolbar'
-import { ToolbarMenu, ToolbarMenuItem, ToolbarMenuSeparator, type ToolbarIconName } from './ToolbarMenu'
 
 export type CardToolbarItem =
   | { kind: 'edit'; dataTestId?: string }

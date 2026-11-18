@@ -1,6 +1,5 @@
+import { getDOMRangeRect } from '@kobato/inkling/tests/utils/getDOMRangeRect'
 import { describe, expect, it } from 'vitest'
-
-import { getDOMRangeRect } from '../../utils/getDOMRangeRect'
 
 describe('getDOMRangeRect', () => {
   it('returns the bounding client rect from the range', () => {

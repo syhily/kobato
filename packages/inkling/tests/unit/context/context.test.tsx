@@ -1,9 +1,5 @@
-import { render } from '@testing-library/react'
-import React from 'react'
-import { describe, expect, it } from 'vitest'
-
-import CardContext from '../../../src/context/CardContext'
-import InklingCollaborationContext from '../../../src/context/InklingCollaborationContext'
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import InklingCollaborationContext from '@kobato/inkling-internal/context/InklingCollaborationContext'
 import {
   useInklingDragScrollContainerSelector,
   useInklingGifSettings,
@@ -13,13 +9,16 @@ import {
   useInklingMathSettings,
   useInklingSnippetSettings,
   useInklingUploadSettings,
-} from '../../../src/context/InklingHostIntegrationContext'
-import InklingUiPrefsContext from '../../../src/context/InklingUiPrefsContext'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import {
   SharedEditorStateContext,
   useSharedEditorStateContext,
   type SharedEditorStateContextValue,
-} from '../../../src/context/SharedEditorStateContext'
+} from '@kobato/inkling-internal/context/SharedEditorStateContext'
+import { render } from '@testing-library/react'
+import React from 'react'
+import { describe, expect, it } from 'vitest'
 
 describe('host-integration channels', () => {
   it('provides the default channel values without a provider', () => {

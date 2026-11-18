@@ -3,7 +3,7 @@
 // document factory, so the same renderers run under the browser canvas and the
 // server-side jsdom projection. `CardRenderContext` / `CardRenderOutput` are
 // local structural slices of inkling's internal `RenderContext` / export
-// output types, which lexical/ cannot import (`@/inkling/headless` does not
+// output types, which lexical/ cannot import (`@kobato/inkling-internal/headless` does not
 // export them).
 
 /** Structural slice of inkling's `RenderContext` the host-card renderers consume. */

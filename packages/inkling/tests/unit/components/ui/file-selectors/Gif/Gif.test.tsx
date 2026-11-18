@@ -1,8 +1,7 @@
+import { Gif } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Gif'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { Gif } from '../../../../../../src/components/ui/file-selectors/Gif/Gif'
 
 describe('Gif', () => {
   const data = {

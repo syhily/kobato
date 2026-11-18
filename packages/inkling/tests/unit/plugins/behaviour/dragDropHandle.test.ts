@@ -1,8 +1,7 @@
+import { useDragDropHandle } from '@kobato/inkling-internal/context/DragDropHandleContext'
+import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/dragDropHandle'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import { useDragDropHandle } from '../../../../src/context/DragDropHandleContext'
-import { createDragDropHandle } from '../../../../src/plugins/behaviour/dragDropHandle'
 
 // Thin per-instance suite: the generic handle semantics (partial setState,
 // change guard, subscribe/unsubscribe, fallback) live in

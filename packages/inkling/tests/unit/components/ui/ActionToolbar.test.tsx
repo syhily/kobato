@@ -1,7 +1,6 @@
+import { ActionToolbar } from '@kobato/inkling-internal/components/ui/ActionToolbar'
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import { ActionToolbar } from '../../../../src/components/ui/ActionToolbar'
 
 describe('ActionToolbar', () => {
   it('does not disable pointer events on the toolbar container', () => {

@@ -1,19 +1,18 @@
+import type { GalleryNode } from '@kobato/inkling-internal/nodes/GalleryNode'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { GalleryCard } from '@kobato/inkling-internal/components/ui/cards/GalleryCard'
+import { useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useInklingHostEssentials } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useGalleryImages } from '@kobato/inkling-internal/hooks/useGalleryImages'
+import useGalleryReorder from '@kobato/inkling-internal/hooks/useGalleryReorder'
+import { useMediaCardUpload } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import { $isGalleryNode, recalculateImageRows } from '@kobato/inkling-internal/nodes/GalleryNode'
+import { galleryUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { createPreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { GalleryImage } from '../types/gallery'
-import type { GalleryNode } from './GalleryNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { GalleryCard } from '../components/ui/cards/GalleryCard'
-import { useCardIsSelected } from '../context/CardSelectionStoreContext'
-import { useInklingHostEssentials } from '../context/InklingHostIntegrationContext'
-import { useGalleryImages } from '../hooks/useGalleryImages'
-import useGalleryReorder from '../hooks/useGalleryReorder'
-import { useMediaCardUpload } from '../hooks/useMediaCardUpload'
-import { createPreviewLeasePool } from '../utils/preview-lease'
-import { $isGalleryNode, recalculateImageRows } from './GalleryNode'
-import { galleryUploadIntent } from './upload-intent'
 
 export interface GalleryNodeComponentProps {
   nodeKey: NodeKey
@@ -126,7 +125,7 @@ export function GalleryNodeComponent({
 
 /**
  * Gallery's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderGalleryCard(node: GalleryNode) {
   return (

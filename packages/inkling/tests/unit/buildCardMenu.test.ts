@@ -1,11 +1,10 @@
+import type { CardConfig, SnippetItem } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { CardMenuSource, ResolveMenuLabel } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
+
+import { buildCardMenu } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
 import { createCommand } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import type { CardConfig, SnippetItem } from '../../src/context/InklingHostIntegrationContext'
-import type { CardMenuSource, ResolveMenuLabel } from '../../src/nodes/cards/card-menu-build'
-
-import { buildCardMenu } from '../../src/nodes/cards/card-menu-build'
-import { getCardMenu } from '../utils/card-menu'
 
 const Icon = () => null
 type NodeEntries = Array<[string, CardMenuSource]>

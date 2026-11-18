@@ -2,11 +2,10 @@
 // `node --build-sea` is the only injector, and it does not codesign on darwin,
 // so the modified copy must be re-signed ad-hoc afterwards.
 
+import { writeSeaConfig } from '@kobato/pack/sea/blob.ts'
+import { fail, run, tryRun } from '@kobato/pack/sea/exec.ts'
+import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from '@kobato/pack/sea/paths.ts'
 import { mkdir, readFile } from 'node:fs/promises'
-
-import { writeSeaConfig } from './blob.ts'
-import { fail, run, tryRun } from './exec.ts'
-import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from './paths.ts'
 
 /**
  * Official Node.js builds carry the sentinel fuse; shared-library builds

@@ -1,9 +1,8 @@
+import { FileCard } from '@kobato/inkling-internal/components/ui/cards/FileCard'
+import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { FileCard } from '../../../src/components/ui/cards/FileCard'
-import { createDragHandler, createUploader } from '../../utils/mock-file-factories'
 
 describe('FileCard', function () {
   const file = new File(['pdf'], 'doc.pdf', { type: 'application/pdf' })

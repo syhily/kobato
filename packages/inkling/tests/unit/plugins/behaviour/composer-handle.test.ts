@@ -1,13 +1,12 @@
-import { act, renderHook } from '@testing-library/react'
-import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
-
 import {
   createComposerHandle,
   createComposerHandleBinding,
   type ComposerHandle,
   type ComposerHandleBinding,
-} from '../../../../src/plugins/behaviour/composer-handle'
+} from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
+import { act, renderHook } from '@testing-library/react'
+import React from 'react'
+import { describe, expect, it, vi } from 'vitest'
 
 interface TestState {
   count: number

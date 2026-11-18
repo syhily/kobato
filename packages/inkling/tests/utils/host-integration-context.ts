@@ -1,10 +1,10 @@
-import { vi } from 'vitest'
-
 import type {
   CardConfig,
   FileUploader,
   InklingHostIntegrationContextValue,
-} from '../../src/context/InklingHostIntegrationContext'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
+import { vi } from 'vitest'
 
 type UploadKind = Parameters<FileUploader['useFileUpload']>[0]
 type UploadChannel = ReturnType<FileUploader['useFileUpload']>

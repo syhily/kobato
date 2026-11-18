@@ -1,6 +1,6 @@
-import type { ColorSwatchData } from './ColorPicker'
+import type { ColorSwatchData } from '@kobato/inkling-internal/components/ui/ColorPicker'
 
-import { getAccentColor } from '../../utils/getAccentColor'
+import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
 
 /**
  * The swatch keyword grammar — the one home of the color-value vocabulary the

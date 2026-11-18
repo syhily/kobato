@@ -1,11 +1,10 @@
 import type { LexicalEditor } from 'lexical'
 
+import { AtLinkNode, AtLinkSearchNode, ZWNJNode } from '@kobato/inkling-internal/nodes/base'
+import { registerRemoveAtLinkNodesTransform } from '@kobato/inkling-internal/transforms/index'
+import { assertTransform, createEditor } from '@kobato/inkling/tests/transforms/utils'
 import { ParagraphNode, TextNode } from 'lexical'
 import { describe, it } from 'vitest'
-
-import { AtLinkNode, AtLinkSearchNode, ZWNJNode } from '../../../src/nodes/base'
-import { registerRemoveAtLinkNodesTransform } from '../../../src/transforms/index'
-import { assertTransform, createEditor } from '../utils'
 
 const nodes = [AtLinkNode, AtLinkSearchNode, ZWNJNode, TextNode, ParagraphNode]
 

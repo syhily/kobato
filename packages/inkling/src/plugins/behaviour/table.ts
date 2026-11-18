@@ -89,7 +89,7 @@ export function registerTableInsert(editor: LexicalEditor): () => void {
  * The live-editor table behaviour: the insert handler plus upstream's
  * selection observer (cell-range selection, Tab navigation between cells).
  * The cell guard that keeps cell content inline-only is registered as a
- * default transform instead (`@/inkling/transforms`), so it also covers the
+ * default transform instead (`@kobato/inkling-internal/transforms`), so it also covers the
  * headless import path.
  */
 export function registerTableBehaviour(editor: LexicalEditor): () => void {

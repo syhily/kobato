@@ -1,8 +1,7 @@
+import type { FileUploader } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { UseFileDragAndDropResult } from '@kobato/inkling-internal/hooks/useFileDragAndDrop'
+import type { UseGalleryReorderResult } from '@kobato/inkling-internal/hooks/useGalleryReorder'
 import type { RefObject } from 'react'
-
-import type { FileUploader } from '../../../context/InklingHostIntegrationContext'
-import type { UseFileDragAndDropResult } from '../../../hooks/useFileDragAndDrop'
-import type { UseGalleryReorderResult } from '../../../hooks/useGalleryReorder'
 
 /**
  * The structural types shared by the card UI, aliased from the hooks and context

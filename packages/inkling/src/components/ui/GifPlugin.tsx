@@ -1,14 +1,13 @@
 import type { NodeKey } from 'lexical'
 
+import GifSelector from '@kobato/inkling-internal/components/ui/GifSelector'
+import { useInklingGifSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useGifBrowser } from '@kobato/inkling-internal/hooks/useGifBrowser'
+import { useSelectorPlaceholderLifecycle } from '@kobato/inkling-internal/hooks/useSelectorPlaceholderLifecycle'
+import { INSERT_FROM_GIF_COMMAND } from '@kobato/inkling-internal/plugins/InklingSelectorPlugin'
+import { getGifProviderConfig, type GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import { useInklingGifSettings } from '../../context/InklingHostIntegrationContext'
-import { useGifBrowser } from '../../hooks/useGifBrowser'
-import { useSelectorPlaceholderLifecycle } from '../../hooks/useSelectorPlaceholderLifecycle'
-import { INSERT_FROM_GIF_COMMAND } from '../../plugins/InklingSelectorPlugin'
-import { getGifProviderConfig, type GifProviderConfig } from '../../utils/services/gif'
-import GifSelector from './GifSelector'
 
 interface GifPluginProps {
   nodeKey: NodeKey

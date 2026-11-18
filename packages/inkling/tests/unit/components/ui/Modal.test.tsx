@@ -1,9 +1,8 @@
+import { Modal } from '@kobato/inkling-internal/components/ui/Modal'
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
-
-import { Modal } from '../../../../src/components/ui/Modal'
 
 describe('Modal', () => {
   it('renders nothing when closed', () => {

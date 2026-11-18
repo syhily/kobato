@@ -1,17 +1,16 @@
-import { act, render } from '@testing-library/react'
-import { createEditor } from 'lexical'
-import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import InklingNestedComposer from '../../../src/components/InklingNestedComposer'
-import InklingCollaborationContext from '../../../src/context/InklingCollaborationContext'
-import { WordCountHandleContext } from '../../../src/context/WordCountHandleContext'
+import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
+import InklingCollaborationContext from '@kobato/inkling-internal/context/InklingCollaborationContext'
+import { WordCountHandleContext } from '@kobato/inkling-internal/context/WordCountHandleContext'
 import {
   createWordCountHandle,
   publishWordCountCallback,
   type WordCountHandle,
-} from '../../../src/plugins/behaviour/wordCountHandle'
-import WordCountPlugin from '../../../src/plugins/WordCountPlugin'
+} from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
+import WordCountPlugin from '@kobato/inkling-internal/plugins/WordCountPlugin'
+import { act, render } from '@testing-library/react'
+import { createEditor } from 'lexical'
+import React from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The pin is the conditional mount of the nested WordCountPlugin, not
 // Lexical's nested composer machinery, so everything below the conditional is
@@ -25,14 +24,14 @@ vi.mock('@lexical/react/LexicalCollaborationContext', () => ({
 vi.mock('@lexical/react/LexicalCollaborationPlugin', () => ({
   CollaborationPlugin: vi.fn(() => null),
 }))
-vi.mock('../../../src/plugins/WordCountPlugin', () => ({
+vi.mock('@kobato/inkling-internal/plugins/WordCountPlugin', () => ({
   WordCountPlugin: vi.fn(() => null),
   default: vi.fn(() => null),
 }))
-vi.mock('../../../src/plugins/TKPlugin', () => ({
+vi.mock('@kobato/inkling-internal/plugins/TKPlugin', () => ({
   default: () => null,
 }))
-vi.mock('../../../src/plugins/ReplacementStringsPlugin', () => ({
+vi.mock('@kobato/inkling-internal/plugins/ReplacementStringsPlugin', () => ({
   default: () => null,
 }))
 

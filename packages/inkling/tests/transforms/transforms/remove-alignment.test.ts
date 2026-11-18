@@ -1,11 +1,10 @@
 import type { LexicalEditor } from 'lexical'
 
+import { registerRemoveAlignmentTransform } from '@kobato/inkling-internal/transforms/index'
+import { assertTransform, createEditor } from '@kobato/inkling/tests/transforms/utils'
 import { HeadingNode } from '@lexical/rich-text'
 import { ParagraphNode, TextNode } from 'lexical'
 import { describe, it } from 'vitest'
-
-import { registerRemoveAlignmentTransform } from '../../../src/transforms/index'
-import { assertTransform, createEditor } from '../utils'
 
 describe('Remove element alignment transform', function () {
   it('strips paragraph text-align', function () {

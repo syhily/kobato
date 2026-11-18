@@ -1,5 +1,9 @@
-import { BaseHeaderNode, headerCardWidth, headerNestedEditors } from '../base/nodes/header/HeaderNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import {
+  BaseHeaderNode,
+  headerCardWidth,
+  headerNestedEditors,
+} from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const headerDeclaration = checkedCardDeclaration({
   nodeType: 'header',

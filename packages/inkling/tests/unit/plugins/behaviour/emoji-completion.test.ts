@@ -1,18 +1,3 @@
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isTextNode,
-  KEY_DOWN_COMMAND,
-  createEditor,
-  type LexicalEditor,
-  type TextNode,
-} from 'lexical'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
-
 // Behaviour pins for the headless half of the emoji picker: the query policy
 // with the emoticon alias table, the exact-match `:shortcode:` completion,
 // and the two insertion surgeries. The mounted-plugin wiring lives in
@@ -44,8 +29,22 @@ import {
   searchEmojis,
   type EmojiCommitResult,
   type EmojiSearchResult,
-} from '../../../../src/plugins/behaviour/emoji-completion'
-import { drainEnqueuedUpdates, tick } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'
+import { drainEnqueuedUpdates, tick } from '@kobato/inkling/tests/utils/test-editor'
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isTextNode,
+  KEY_DOWN_COMMAND,
+  createEditor,
+  type LexicalEditor,
+  type TextNode,
+} from 'lexical'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 const taco: EmojiSearchResult = { id: 'taco', skins: [{ native: '🌮' }] }
 

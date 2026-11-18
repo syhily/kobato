@@ -1,24 +1,22 @@
+import type { ExportDOMDom, ExportDOMOptions } from '@kobato/inkling-internal/nodes/base'
 import type { CreateEditorArgs, LexicalNodeConfig, SerializedEditorState } from 'lexical'
 
+import { resolveHeadlessDom } from '@kobato/inkling-internal/html/headless-dom'
+import { prepareHeadlessRenderEditor } from '@kobato/inkling-internal/html/headless-editor'
+import { htmlToLexical } from '@kobato/inkling-internal/html/html-to-lexical/index'
+import $convertToHtmlString from '@kobato/inkling-internal/html/renderer/convert-to-html-string'
+import { registerLoadedPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
+import { pasteDialect } from '@kobato/inkling-internal/markdown/paste-dialect'
+import { type DefaultTransformsOptions } from '@kobato/inkling-internal/transforms'
 import { $getRoot } from 'lexical'
 
-import type { ExportDOMDom, ExportDOMOptions } from '../nodes/base'
-
-import { registerLoadedPasteDialect } from '../markdown/lazy-paste-dialect'
-import { pasteDialect } from '../markdown/paste-dialect'
-import { type DefaultTransformsOptions } from '../transforms'
-import { resolveHeadlessDom } from './headless-dom'
-import { prepareHeadlessRenderEditor } from './headless-editor'
-import { htmlToLexical } from './html-to-lexical/index'
-import $convertToHtmlString from './renderer/convert-to-html-string'
-
 // The markdown card's exportDOM reads the paste dialect through the lazy
-// port's sync cache (`@/inkling/markdown/lazy-paste-dialect`); this surface
+// port's sync cache (`@kobato/inkling-internal/markdown/lazy-paste-dialect`); this surface
 // holds the engine statically and seeds the port at module eval — the headless
 // export path can never await a chunk.
 registerLoadedPasteDialect({ pasteDialect })
 
-export { DEFAULT_HTML_NODES } from './default-html-nodes'
+export { DEFAULT_HTML_NODES } from '@kobato/inkling-internal/html/default-html-nodes'
 
 export interface LexicalStateToHtmlOptions extends ExportDOMOptions {
   /** Additive on top of DEFAULT_HTML_NODES; a same-type entry registered later wins (renderer semantics). */

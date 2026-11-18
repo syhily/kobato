@@ -1,20 +1,18 @@
-import type { ElementNode, LexicalEditor, LexicalNode, TextNode } from 'lexical'
-
-import { $isLinkNode } from '@lexical/link'
-import { $getRoot, $isDecoratorNode, $isElementNode, $isLineBreakNode, $isParagraphNode, $isTextNode } from 'lexical'
-
 import type {
   ExportDOMOptions,
   ExportDOMOutputType,
   InlineMarkupExporter,
   InlineMarkupTextEntity,
-} from '../../nodes/base/export-dom'
+} from '@kobato/inkling-internal/nodes/base/export-dom'
+import type { ElementNode, LexicalEditor, LexicalNode, TextNode } from 'lexical'
 
-import { $isInklingCard } from '../../nodes/base'
-import { createRenderContext } from '../../nodes/base/render-context'
-import { HTML_POST_PROCESSORS, isTrailingRunNode } from './post-process'
-import elementTransformers from './transformers/index'
-import TextContent from './utils/TextContent'
+import { HTML_POST_PROCESSORS, isTrailingRunNode } from '@kobato/inkling-internal/html/renderer/post-process'
+import elementTransformers from '@kobato/inkling-internal/html/renderer/transformers/index'
+import TextContent from '@kobato/inkling-internal/html/renderer/utils/TextContent'
+import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
+import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
+import { $isLinkNode } from '@lexical/link'
+import { $getRoot, $isDecoratorNode, $isElementNode, $isLineBreakNode, $isParagraphNode, $isTextNode } from 'lexical'
 
 /**
  * The capability probe half of the guard below: the opt-in method existing
@@ -26,7 +24,7 @@ function hasInlineMarkupProbe(node: LexicalNode): node is LexicalNode & InlineMa
 }
 
 /**
- * The inline-markup-entity protocol guard (`@/inkling/nodes/base/export-dom`): a
+ * The inline-markup-entity protocol guard (`@kobato/inkling-internal/nodes/base/export-dom`): a
  * TextNode entity that opts in exports element markup spliced into the text
  * flow instead of joining the pending text run. TKNode does not opt in and
  * keeps flowing through TextContent.
@@ -75,7 +73,7 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
   // flowing so headless renders resolve their DOM. The base-class exportDOM
   // signature takes no options parameter; inkling's inline exporters declare
   // the two-parameter form and the protocol interface
-  // (`@/inkling/nodes/base/export-dom`) carries it, so both call sites below
+  // (`@kobato/inkling-internal/nodes/base/export-dom`) carries it, so both call sites below
   // reach the exporter through plain narrowing.
   function exportInlineMarkup(node: LexicalNode & InlineMarkupExporter): string {
     return renderExportOutput(node.exportDOM(editor, options))
@@ -154,7 +152,7 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
   // null results (bare inline nodes as root children) never reach output, so
   // children indices and output indices diverge — keep the map for the
   // trailing-paragraph splice below and the post-processors (the seam's
-  // contract, `@/inkling/html/renderer/post-process`). Dev Lexical rejects
+  // contract, `@kobato/inkling-internal/html/renderer/post-process`). Dev Lexical rejects
   // such trees at RootNode.splice, but prod builds strip that guard, so a
   // malformed headless import can still produce them there.
   const outputIndexByChild: number[] = []
@@ -194,7 +192,7 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
 
   // Each subsystem's registered post-processor gets one pass over the
   // assembled outputs (the footnotes `<section>` wrap lives in
-  // `@/inkling/nodes/footnote/footnote-html-export`).
+  // `@kobato/inkling-internal/nodes/footnote/footnote-html-export`).
   for (const processor of HTML_POST_PROCESSORS) {
     processor.process({ children, output, outputIndexByChild, context })
   }

@@ -1,8 +1,7 @@
+import { lexicalStateToHtml } from '@kobato/inkling-internal/html/headless-html'
+import { AtLinkNode, AtLinkSearchNode, ZWNJNode } from '@kobato/inkling-internal/nodes/base'
+import shouldRender from '@kobato/inkling/tests/html-renderer/utils/should-render'
 import { describe, expect, it, vi } from 'vitest'
-
-import { lexicalStateToHtml } from '../../src/html/headless-html'
-import { AtLinkNode, AtLinkSearchNode, ZWNJNode } from '../../src/nodes/base'
-import shouldRender from './utils/should-render'
 
 describe('render()', function () {
   it('works with no options', async function () {

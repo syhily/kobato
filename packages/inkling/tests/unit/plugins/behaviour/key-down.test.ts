@@ -1,10 +1,9 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
+
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerKeyDownPassthrough } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/key-down'
 import { COMMAND_PRIORITY_LOW, createEditor, KEY_DOWN_COMMAND, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { KeyboardNavigationDeps } from '../../../../src/plugins/behaviour/keyboard-navigation/types'
-
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { registerKeyDownPassthrough } from '../../../../src/plugins/behaviour/keyboard-navigation/key-down'
 
 const deps: KeyboardNavigationDeps = {
   store: createCardSelectionStore(),

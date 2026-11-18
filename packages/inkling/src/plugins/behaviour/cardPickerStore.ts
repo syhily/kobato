@@ -1,6 +1,6 @@
 import type { NodeKey } from 'lexical'
 
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 
 /**
  * One in-flight card pick request (CONTEXT.md: "pick seam"): the card node a

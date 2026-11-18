@@ -1,3 +1,5 @@
+import { $enforceParagraphRestriction } from '@kobato/inkling-internal/plugins/behaviour/restrict-content'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createListItemNode, $createListNode, ListItemNode, ListNode } from '@lexical/list'
 import { $createHeadingNode, HeadingNode } from '@lexical/rich-text'
 import {
@@ -12,9 +14,6 @@ import {
   type NodeKey,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $enforceParagraphRestriction } from '../../../../src/plugins/behaviour/restrict-content'
-import { createTestEditor, updateEditor } from '../../../utils/test-editor'
 
 // The paragraphs-only restriction policy — pins for each cleaning leg
 // (decorator strip, list unwrap, non-paragraph conversion, truncation,

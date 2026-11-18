@@ -1,5 +1,5 @@
-import CloseIcon from '../../../assets/icons/inkling-close.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
+import CloseIcon from '@kobato/inkling-internal/assets/icons/inkling-close.svg?react'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 export const Input = ({
   value,

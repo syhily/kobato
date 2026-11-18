@@ -1,9 +1,13 @@
+import type { GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
+
+import { useDisposableStore } from '@kobato/inkling-internal/hooks/useDisposableStore'
+import {
+  createGifBrowser,
+  type GifBrowser,
+  type GifFetchPage,
+  type GifScheduler,
+} from '@kobato/inkling-internal/utils/services/gif-browser'
 import React from 'react'
-
-import type { GifProviderConfig } from '../utils/services/gif'
-
-import { createGifBrowser, type GifBrowser, type GifFetchPage, type GifScheduler } from '../utils/services/gif-browser'
-import { useDisposableStore } from './useDisposableStore'
 
 // React adapter over gif-browser (the deep module — fetch tracks, column
 // balancing, and the navigation machine live there). The browser is recreated

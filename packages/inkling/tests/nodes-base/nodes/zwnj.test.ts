@@ -1,10 +1,9 @@
 import type { LexicalEditor } from 'lexical'
 
+import { ZWNJNode, $createZWNJNode, $isZWNJNode } from '@kobato/inkling-internal/nodes/base/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { ZWNJNode, $createZWNJNode, $isZWNJNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
 
 const editorNodes = [ZWNJNode]
 

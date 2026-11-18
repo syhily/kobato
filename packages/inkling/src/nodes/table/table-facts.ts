@@ -1,4 +1,8 @@
-import { $isTableCellNode, type TableCellNode, type TableRowNode } from './TableNodes'
+import {
+  $isTableCellNode,
+  type TableCellNode,
+  type TableRowNode,
+} from '@kobato/inkling-internal/nodes/table/TableNodes'
 
 // Table header facts — the one owner of the table family's "header row
 // only, never a header column" invariant as export policy (the insert

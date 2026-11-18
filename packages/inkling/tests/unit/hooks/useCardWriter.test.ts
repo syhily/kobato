@@ -1,11 +1,10 @@
+import { useCardWriter } from '@kobato/inkling-internal/hooks/useCardWriter'
+import { $isHtmlNode, HtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
+import { $isImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
 import { act, renderHook } from '@testing-library/react'
 import { $getRoot, createEditor, type LexicalEditor, type NodeKey } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { useCardWriter } from '../../../src/hooks/useCardWriter'
-import { $isHtmlNode, HtmlNode } from '../../../src/nodes/HtmlNode'
-import { $isImageNode } from '../../../src/nodes/ImageNode'
-import { mockComposerContext } from '../../utils/composer-context'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

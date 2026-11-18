@@ -1,14 +1,13 @@
+import { LinkInput } from '@kobato/inkling-internal/components/ui/LinkInput'
+import Portal from '@kobato/inkling-internal/components/ui/Portal'
+import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useSelectionAnchoredPopup } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
+import { $applyLinkToSelection } from '@kobato/inkling-internal/plugins/behaviour/link-editing'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
+import { createSelectionAnchor } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import { useInklingLinkingSettings } from '../../context/InklingHostIntegrationContext'
-import { useSelectionAnchoredPopup } from '../../hooks/useSelectionAnchoredPopup'
-import { $applyLinkToSelection } from '../../plugins/behaviour/link-editing'
-import trackEvent from '../../utils/analytics'
-import { isInternalUrl } from '../../utils/isInternalUrl'
-import { createSelectionAnchor } from '../../utils/selection-anchored-popup'
-import { LinkInput } from './LinkInput'
-import Portal from './Portal'
 
 interface LinkActionToolbarWithSearchProps {
   anchorElem: HTMLElement

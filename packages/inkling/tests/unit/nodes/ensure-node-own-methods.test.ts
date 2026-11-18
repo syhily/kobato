@@ -1,6 +1,5 @@
+import { ensureLexicalNodeOwnMethods } from '@kobato/inkling-internal/nodes/base/ensure-node-own-methods'
 import { describe, expect, it } from 'vitest'
-
-import { ensureLexicalNodeOwnMethods } from '../../../src/nodes/base/ensure-node-own-methods'
 
 describe('ensureLexicalNodeOwnMethods', () => {
   // Simulate the generateDecoratorNode pattern:

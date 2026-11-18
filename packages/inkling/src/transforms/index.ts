@@ -1,3 +1,3 @@
 /* c8 ignore start */
-export * from './default-transforms'
+export * from '@kobato/inkling-internal/transforms/default-transforms'
 /* c8 ignore stop */

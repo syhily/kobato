@@ -1,12 +1,11 @@
 import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
 import { TRACE_METRIC_NAMES, TRACE_METRIC_STREAM_PREFIXES } from '@kobato/telemetry/metrics.ts'
 import { RUM_PRIVACY_PIPELINE_DESCRIPTION, RUM_PRIVACY_VRL_SHA256 } from '@kobato/telemetry/pipeline.ts'
+import { LOG_STREAM, O2_IMAGE, RETENTION_DAYS, stateDirectory } from '@kobato/trace/lib.ts'
 import { createHash } from 'node:crypto'
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-
-import { LOG_STREAM, O2_IMAGE, RETENTION_DAYS, stateDirectory } from '../../src/lib.ts'
 
 const ASSETS = join(process.cwd(), 'packages/server/src/domains/observability/assets')
 const DASHBOARDS = join(ASSETS, 'dashboards')

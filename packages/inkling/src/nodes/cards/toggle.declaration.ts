@@ -1,5 +1,5 @@
-import { BaseToggleNode, toggleNestedEditors } from '../base/nodes/toggle/ToggleNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseToggleNode, toggleNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/toggle/ToggleNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const toggleDeclaration = checkedCardDeclaration({
   nodeType: 'toggle',

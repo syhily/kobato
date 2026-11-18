@@ -1,7 +1,6 @@
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import React from 'react'
 import { createPortal } from 'react-dom'
-
-import InklingUiPrefsContext from '../../context/InklingUiPrefsContext'
 
 function Portal({
   children,

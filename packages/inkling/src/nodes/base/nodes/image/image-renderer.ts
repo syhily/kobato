@@ -1,9 +1,12 @@
-import type { RenderContext } from '../../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { appendCardCaption } from '../../utils/append-card-caption'
-import { getExportImageDimensions } from '../../utils/export-image-sizing'
-import { isSafeRenderableSource, renderEmptyContainer } from '../../utils/render-empty-container'
-import { getSrcsetAttribute, setSrcsetAttribute } from '../../utils/srcset-attribute'
+import { appendCardCaption } from '@kobato/inkling-internal/nodes/base/utils/append-card-caption'
+import { getExportImageDimensions } from '@kobato/inkling-internal/nodes/base/utils/export-image-sizing'
+import {
+  isSafeRenderableSource,
+  renderEmptyContainer,
+} from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
+import { getSrcsetAttribute, setSrcsetAttribute } from '@kobato/inkling-internal/nodes/base/utils/srcset-attribute'
 
 const MODERN_IMAGE_FORMATS = ['avif', 'webp']
 

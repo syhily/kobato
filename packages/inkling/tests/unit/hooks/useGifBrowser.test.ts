@@ -1,10 +1,9 @@
+import type { GifProviderConfig } from '@kobato/inkling-internal/utils/services/gif'
+import type { GifScheduler } from '@kobato/inkling-internal/utils/services/gif-browser'
+
+import { useGifBrowser } from '@kobato/inkling-internal/hooks/useGifBrowser'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-
-import type { GifProviderConfig } from '../../../src/utils/services/gif'
-import type { GifScheduler } from '../../../src/utils/services/gif-browser'
-
-import { useGifBrowser } from '../../../src/hooks/useGifBrowser'
 
 // Adapter tests: the fetch/navigation behaviour lives in gif-browser.test.ts.
 // This file only pins the hook's wiring — memo stability keyed on the config

@@ -1,8 +1,7 @@
+import { TabView } from '@kobato/inkling-internal/components/ui/TabView'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { TabView } from '../../../../src/components/ui/TabView'
 
 const initialTabs = [
   { id: 'alpha', label: 'Alpha' },

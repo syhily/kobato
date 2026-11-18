@@ -1,15 +1,14 @@
+import type { AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { AudioCard } from '@kobato/inkling-internal/components/ui/cards/AudioCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useInklingHostEssentials } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useMediaCardUpload } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import { $isAudioNode } from '@kobato/inkling-internal/nodes/base'
+import { audioThumbnailUploadIntent, audioUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
 import { type NodeKey } from 'lexical'
-
-import type { AudioNode } from './AudioNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { AudioCard } from '../components/ui/cards/AudioCard'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
-import { useInklingHostEssentials } from '../context/InklingHostIntegrationContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { useMediaCardUpload } from '../hooks/useMediaCardUpload'
-import { $isAudioNode } from './base'
-import { audioThumbnailUploadIntent, audioUploadIntent } from './upload-intent'
 
 interface AudioNodeComponentProps {
   duration: number
@@ -98,7 +97,7 @@ export function AudioNodeComponent({
 
 /**
  * Audio's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderAudioCard(node: AudioNode) {
   return (

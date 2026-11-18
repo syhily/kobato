@@ -1,3 +1,5 @@
+import { registerUpdateScan, type UpdateScanOptions } from '@kobato/inkling-internal/plugins/behaviour/update-scan'
+import { drainEnqueuedUpdates } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -13,9 +15,6 @@ import {
   type NodeKey,
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { registerUpdateScan, type UpdateScanOptions } from '../../../../src/plugins/behaviour/update-scan'
-import { drainEnqueuedUpdates } from '../../../utils/test-editor'
 
 // Unit pins for the update-scan registration policy that EmEnDashPlugin and
 // HorizontalRulePlugin delegate to: the

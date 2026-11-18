@@ -1,8 +1,7 @@
+import { SlashMenu } from '@kobato/inkling-internal/components/ui/SlashMenu'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { SlashMenu } from '../../../../src/components/ui/SlashMenu'
 
 describe('SlashMenu', () => {
   it('renders children inside the slash menu container', () => {

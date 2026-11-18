@@ -1,3 +1,4 @@
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -11,8 +12,6 @@ import {
   type LexicalEditor,
   type LexicalNodeConfig,
 } from 'lexical'
-
-import { updateEditor } from './test-editor'
 
 // Selection-editor harness shared by the word-count and keyboard specs: one
 // rooted/rootless editor factory, the content/seed write, and the range

@@ -1,11 +1,15 @@
+import {
+  AudioNode,
+  $createAudioNode,
+  $isAudioNode,
+  INSERT_AUDIO_COMMAND,
+} from '@kobato/inkling-internal/nodes/AudioNode'
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { AudioNode, $createAudioNode, $isAudioNode, INSERT_AUDIO_COMMAND } from '../../../src/nodes/AudioNode'
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [AudioNode]
 

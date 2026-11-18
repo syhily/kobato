@@ -1,6 +1,5 @@
+import { lexicalStateToMarkdown, markdownToLexicalState } from '@kobato/inkling-internal/markdown/round-trip'
 import { describe, expect, it } from 'vitest'
-
-import { lexicalStateToMarkdown, markdownToLexicalState } from '../../src/markdown/round-trip'
 
 // The dialect speaks GFM pipe tables through the hand-written GFM_TABLE
 // transformer (round-trip.ts) — @lexical/markdown 0.53 has no upstream TABLE

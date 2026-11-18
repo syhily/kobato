@@ -1,10 +1,9 @@
+import { useInklingTextEntity } from '@kobato/inkling-internal/hooks/useInklingTextEntity'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { renderHook } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, $isElementNode, createEditor, TextNode } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
-
-import { useInklingTextEntity } from '../../../src/hooks/useInklingTextEntity'
-import { mockComposerContext } from '../../utils/composer-context'
-import { updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

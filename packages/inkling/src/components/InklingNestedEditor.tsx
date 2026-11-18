@@ -1,17 +1,18 @@
 import type { EditorThemeClasses, InitialEditorStateType, LexicalEditor } from 'lexical'
 
+import InklingComposableEditor from '@kobato/inkling-internal/components/InklingComposableEditor'
+import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
+import BASIC_NODES from '@kobato/inkling-internal/nodes/BasicNodes'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { type HiddenFormat } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
+import { EmojiPickerPlugin } from '@kobato/inkling-internal/plugins/EmojiPickerPlugin'
+import InklingNestedEditorPlugin, {
+  type FocusNextTarget,
+} from '@kobato/inkling-internal/plugins/InklingNestedEditorPlugin'
+import RestrictContentPlugin from '@kobato/inkling-internal/plugins/RestrictContentPlugin'
 import React from 'react'
-
-import InklingUiPrefsContext from '../context/InklingUiPrefsContext'
-import { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '../markdown/transformers-core'
-import BASIC_NODES from '../nodes/BasicNodes'
-import MINIMAL_NODES from '../nodes/MinimalNodes'
-import { type HiddenFormat } from '../plugins/behaviour/format-toolbar'
-import { EmojiPickerPlugin } from '../plugins/EmojiPickerPlugin'
-import InklingNestedEditorPlugin, { type FocusNextTarget } from '../plugins/InklingNestedEditorPlugin'
-import RestrictContentPlugin from '../plugins/RestrictContentPlugin'
-import InklingComposableEditor from './InklingComposableEditor'
-import InklingNestedComposer from './InklingNestedComposer'
 
 const Placeholder = ({ text = 'Type here', className = '' }) => {
   // line-clamp-1, not truncate: truncate adds 'white-space: nowrap', which

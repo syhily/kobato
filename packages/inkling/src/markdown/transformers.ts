@@ -1,8 +1,8 @@
 // The card-bearing transformer sets: HR and CODE_BLOCK construct card nodes
-// (their trigger bodies live in `@/inkling/markdown/card-shortcuts`), so this module
+// (their trigger bodies live in `@kobato/inkling-internal/markdown/card-shortcuts`), so this module
 // statically imports the card shims. The card-free sets
 // (SUBSCRIPT/SUPERSCRIPT/MINIMAL/BASIC) live in
-// `@/inkling/markdown/transformers-core` so card-free compositions take
+// `@kobato/inkling-internal/markdown/transformers-core` so card-free compositions take
 // markdown shortcuts without pulling the card shims — `MarkdownShortcutPlugin`
 // defaults to the card-free `MINIMAL_TRANSFORMERS` (what `InklingComposerBase`
 // compositions get), while `InklingEditor` passes this module's
@@ -10,6 +10,16 @@
 
 import type { ElementNode, LexicalNode } from 'lexical'
 
+import {
+  $insertCodeBlockForShortcut,
+  $insertHorizontalRuleForMarkdownTrigger,
+  codeBlockFence,
+  DIVIDER_REGEXP,
+} from '@kobato/inkling-internal/markdown/card-shortcuts'
+import { FENCE_TRANSFORMER_REGEXP } from '@kobato/inkling-internal/markdown/grammar'
+import { CUSTOM_TEXT_FORMAT_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
+import { $isCodeBlockNode, CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { $isHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
 import {
   HEADING,
   ORDERED_LIST,
@@ -19,17 +29,6 @@ import {
   UNORDERED_LIST,
   type Transformer,
 } from '@lexical/markdown'
-
-import { $isCodeBlockNode, CodeBlockNode } from '../nodes/CodeBlockNode'
-import { $isHorizontalRuleNode, HorizontalRuleNode } from '../nodes/HorizontalRuleNode'
-import {
-  $insertCodeBlockForShortcut,
-  $insertHorizontalRuleForMarkdownTrigger,
-  codeBlockFence,
-  DIVIDER_REGEXP,
-} from './card-shortcuts'
-import { FENCE_TRANSFORMER_REGEXP } from './grammar'
-import { CUSTOM_TEXT_FORMAT_TRANSFORMERS } from './transformers-core'
 
 export const HR = {
   dependencies: [HorizontalRuleNode],

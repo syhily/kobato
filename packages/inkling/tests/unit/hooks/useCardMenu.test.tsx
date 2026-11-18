@@ -1,3 +1,11 @@
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useCardMenu } from '@kobato/inkling-internal/hooks/useCardMenu'
+import { resolveLabels, type InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createHostIntegrationWrapper } from '@kobato/inkling/tests/utils/host-integration-wrapper'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { act, renderHook } from '@testing-library/react'
 import {
   $createParagraphNode,
@@ -9,15 +17,6 @@ import {
 } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider } from '../../../src/context/InklingHostIntegrationContext'
-import InklingUiPrefsContext from '../../../src/context/InklingUiPrefsContext'
-import { useCardMenu } from '../../../src/hooks/useCardMenu'
-import { resolveLabels, type InklingLabelsInput } from '../../../src/labels/inkling-labels'
-import DEFAULT_NODES from '../../../src/nodes/DefaultNodes'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createHostIntegrationWrapper } from '../../utils/host-integration-wrapper'
-import { tick } from '../../utils/test-editor'
 
 const INSERT_TEST_COMMAND = createCommand('INSERT_TEST_COMMAND')
 

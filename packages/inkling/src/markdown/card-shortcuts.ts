@@ -1,14 +1,14 @@
 // One seam for the trigger bodies of the typing shortcuts that turn a paragraph
 // into a card. The trigger regexes live in the shared grammar table
-// (`@/inkling/markdown/grammar`) and are re-exported below for this seam's
+// (`@kobato/inkling-internal/markdown/grammar`) and are re-exported below for this seam's
 // import sites.
 //
 // - Code fence (```lang): three triggers — enter and tab
-//   (`@/inkling/plugins/behaviour/keyboard-navigation`) share
+//   (`@kobato/inkling-internal/plugins/behaviour/keyboard-navigation`) share
 //   `$fireFenceKeyboardShortcut`, and the `CODE_BLOCK` transformer calls
 //   `$insertCodeBlockForShortcut` directly.
 // - Horizontal rule (---): the `HR` transformer and the per-update scan in
-//   `@/inkling/plugins/HorizontalRulePlugin`.
+//   `@kobato/inkling-internal/plugins/HorizontalRulePlugin`.
 //
 // Language extraction differs per fence trigger: the keyboard body takes the
 // full rest of the line, the transformer its `match[1]` capture.
@@ -25,6 +25,9 @@
 // from the card-free core path (keyboard navigation is mounted by every
 // InklingComposableEditor) and the shims drag in the decorate tree.
 
+import { FENCE_KEYBOARD_REGEXP } from '@kobato/inkling-internal/markdown/grammar'
+import { $selectDecoratorNode } from '@kobato/inkling-internal/utils'
+import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import {
   $createParagraphNode,
   $getEditor,
@@ -34,10 +37,6 @@ import {
   type Klass,
   type LexicalNode,
 } from 'lexical'
-
-import { $selectDecoratorNode } from '../utils'
-import { getRegisteredNodeMap } from '../utils/lexical-internals'
-import { FENCE_KEYBOARD_REGEXP } from './grammar'
 
 /**
  * The registered class for a card node type, looked up on the active editor.

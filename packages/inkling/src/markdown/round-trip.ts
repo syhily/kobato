@@ -1,5 +1,35 @@
+import type { HostCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import type { Klass, LexicalNode, SerializedEditorState } from 'lexical'
 
+import { codeBlockFence, stripFenceLines } from '@kobato/inkling-internal/markdown/card-shortcuts'
+import { FENCE_END_REGEXP, FENCE_IMPORT_REGEXP } from '@kobato/inkling-internal/markdown/grammar'
+import { DEFAULT_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers'
+import { MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import {
+  $createMarkdownNode,
+  $isMarkdownNode,
+  MarkdownNode,
+} from '@kobato/inkling-internal/nodes/base/nodes/markdown/MarkdownNode'
+import {
+  CARD_MARKDOWN_DECLARATIONS,
+  createCardTransformer,
+} from '@kobato/inkling-internal/nodes/cards/card-markdown-transformers'
+import { getHostCards } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
+import { $createCodeBlockNode, $isCodeBlockNode, CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { resolveGfmPipeTableLines } from '@kobato/inkling-internal/nodes/table/table-facts'
+import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+  $isTableNode,
+  $isTableRowNode,
+  TableCellHeaderStates,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+  type TableCellHeaderState,
+} from '@kobato/inkling-internal/nodes/table/TableNodes'
 import { createHeadlessEditor } from '@lexical/headless'
 import { LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
@@ -13,39 +43,14 @@ import {
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { $createParagraphNode } from 'lexical'
 
-import type { HostCard } from '../nodes/cards/host-cards'
-
-import { assembleCardNodeOnce } from '../nodes/assemble-card-node'
-import { $createMarkdownNode, $isMarkdownNode, MarkdownNode } from '../nodes/base/nodes/markdown/MarkdownNode'
-import { CARD_MARKDOWN_DECLARATIONS, createCardTransformer } from '../nodes/cards/card-markdown-transformers'
-import { getHostCards } from '../nodes/cards/host-card-registry'
-import { $createCodeBlockNode, $isCodeBlockNode, CodeBlockNode } from '../nodes/CodeBlockNode'
-import { resolveGfmPipeTableLines } from '../nodes/table/table-facts'
-import {
-  $createTableCellNode,
-  $createTableNode,
-  $createTableRowNode,
-  $isTableNode,
-  $isTableRowNode,
-  TableCellHeaderStates,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
-  type TableCellHeaderState,
-} from '../nodes/table/TableNodes'
-import { codeBlockFence, stripFenceLines } from './card-shortcuts'
-import { FENCE_END_REGEXP, FENCE_IMPORT_REGEXP } from './grammar'
-import { DEFAULT_TRANSFORMERS } from './transformers'
-import { MINIMAL_TRANSFORMERS } from './transformers-core'
-
 /**
  * The card-aware round-trip dialect — one of Inkling's two markdown dialects
- * (the paste dialect is `@/inkling/markdown/paste-dialect`) and the public markdown
+ * (the paste dialect is `@kobato/inkling-internal/markdown/paste-dialect`) and the public markdown
  * import/export API (`markdownToLexicalState` / `lexicalStateToMarkdown`).
  *
  * It speaks ```inkling:<card>``` fences, standard `![alt](src)` image syntax,
  * and the shared grammar table's inline delimiters
- * (`@/inkling/markdown/grammar`) — but not footnotes. Conversion runs through
+ * (`@kobato/inkling-internal/markdown/grammar`) — but not footnotes. Conversion runs through
  * `@lexical/markdown`'s `$convertFromMarkdownString` /
  * `$convertToMarkdownString` on a temporary headless editor with the
  * constrained node set below.
@@ -58,7 +63,7 @@ import { MINIMAL_TRANSFORMERS } from './transformers-core'
 // tests/inkling/unit/nodes/derived-node-sets.test.ts.
 const MARKDOWN_CARDS = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown !== undefined)
 
-// Exported for the node-set diff test, not part of the public `@/inkling/markdown` barrel.
+// Exported for the node-set diff test, not part of the public `@kobato/inkling-internal/markdown` barrel.
 export const MARKDOWN_NODES = [
   HeadingNode,
   QuoteNode,
@@ -98,7 +103,7 @@ export const CARD_TRANSFORMERS: Transformer[] = [
 
 // Fenced code blocks are this dialect's grammar, so the dialect carries its own
 // multiline transformer: the shared `CODE_BLOCK` transformer
-// (`@/inkling/markdown/transformers`) is a typing-shortcut trigger whose regex
+// (`@kobato/inkling-internal/markdown/transformers`) is a typing-shortcut trigger whose regex
 // never claims fences on import. The export reads `node.code` rather than
 // `getTextContent()`, which pads word-count text (caption included) with
 // trailing newlines. Ordered after the card transformers so
@@ -183,7 +188,7 @@ const GFM_TABLE: MultilineElementTransformer = {
       return null
     }
 
-    // the pipe-table shape is declared in @/inkling/nodes/table/table-facts
+    // the pipe-table shape is declared in @kobato/inkling-internal/nodes/table/table-facts
     return resolveGfmPipeTableLines(rows, (cell) =>
       exportChildren(cell).replace(/\n/g, ' ').replace(/\|/g, '\\|').trim(),
     ).join('\n')

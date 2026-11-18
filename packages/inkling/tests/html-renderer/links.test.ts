@@ -1,6 +1,5 @@
+import shouldRender from '@kobato/inkling/tests/html-renderer/utils/should-render'
 import { describe, it } from 'vitest'
-
-import shouldRender from './utils/should-render'
 
 describe('Links', function () {
   it(

@@ -1,7 +1,7 @@
-import type { RenderContext } from '../render-context'
+import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-import { CONTENT_IMAGE_PATH_REGEX } from './content-image-url'
-import { getAvailableImageWidths } from './get-available-image-widths'
+import { CONTENT_IMAGE_PATH_REGEX } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
+import { getAvailableImageWidths } from '@kobato/inkling-internal/nodes/base/utils/get-available-image-widths'
 
 export const getSrcsetAttribute = function ({
   src,

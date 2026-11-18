@@ -1,16 +1,15 @@
 import type { Transformer } from '@lexical/markdown'
 
-import { describe, expect, it } from 'vitest'
-
+import { DEFAULT_HTML_NODES } from '@kobato/inkling-internal/html/default-html-nodes'
 // Import the public barrel first: it is the package/demo entry point, so the
 // module graph evaluates in the same order as in the app. Defensive: registry
 // modules imported before it could observe wrapper classes mid-cycle as
 // `undefined` if a wrapper→barrel edge is ever reintroduced.
-import '../../../src/index'
-import { DEFAULT_HTML_NODES } from '../../../src/html/default-html-nodes'
-import { CARD_TRANSFORMERS, MARKDOWN_NODES } from '../../../src/markdown/round-trip'
-import { DEFAULT_BASE_NODES } from '../../../src/nodes/base'
-import DEFAULT_NODES from '../../../src/nodes/DefaultNodes'
+import '@kobato/inkling-internal/index'
+import { CARD_TRANSFORMERS, MARKDOWN_NODES } from '@kobato/inkling-internal/markdown/round-trip'
+import { DEFAULT_BASE_NODES } from '@kobato/inkling-internal/nodes/base'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import { describe, expect, it } from 'vitest'
 
 // Node-set entries are either node classes or Lexical replacement descriptors
 // ({ replace, with }). Pin both, marking replacements so the two forms can
@@ -55,7 +54,7 @@ function transformerSnapshot(transformers: readonly Transformer[]): string[] {
 // card is added or reordered in the declarations, update the literals to
 // the new derived order.
 describe('derived node sets match the pinned literals', () => {
-  it('../../../src/nodes/DefaultNodes (web editor node set)', () => {
+  it('@kobato/inkling-internal/nodes/DefaultNodes (web editor node set)', () => {
     expect(nodeSetSnapshot(DEFAULT_NODES)).toEqual([
       'extended-text',
       'replace:text',
@@ -97,7 +96,7 @@ describe('derived node sets match the pinned literals', () => {
     ])
   })
 
-  it('../../../src/nodes/base DEFAULT_BASE_NODES (base node set)', () => {
+  it('@kobato/inkling-internal/nodes/base DEFAULT_BASE_NODES (base node set)', () => {
     expect(nodeSetSnapshot(DEFAULT_BASE_NODES)).toEqual([
       'extended-text',
       'replace:text',
@@ -131,7 +130,7 @@ describe('derived node sets match the pinned literals', () => {
     ])
   })
 
-  it('../../../src/html/default-html-nodes DEFAULT_HTML_NODES', () => {
+  it('@kobato/inkling-internal/html/default-html-nodes DEFAULT_HTML_NODES', () => {
     expect(nodeSetSnapshot(DEFAULT_HTML_NODES)).toEqual([
       'heading',
       'link',
@@ -174,7 +173,7 @@ describe('derived node sets match the pinned literals', () => {
     ])
   })
 
-  it('../../../src/markdown/round-trip MARKDOWN_NODES', () => {
+  it('@kobato/inkling-internal/markdown/round-trip MARKDOWN_NODES', () => {
     expect(nodeSetSnapshot(MARKDOWN_NODES)).toEqual([
       'heading',
       'quote',
@@ -200,7 +199,7 @@ describe('derived node sets match the pinned literals', () => {
     ])
   })
 
-  it('../../../src/markdown/round-trip CARD_TRANSFORMERS (by card node type)', () => {
+  it('@kobato/inkling-internal/markdown/round-trip CARD_TRANSFORMERS (by card node type)', () => {
     expect(transformerSnapshot(CARD_TRANSFORMERS)).toEqual([
       'image',
       'audio',

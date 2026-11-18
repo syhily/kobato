@@ -1,21 +1,20 @@
 import type { LexicalEditor } from 'lexical'
 
+import { ExtendedHeadingNode } from '@kobato/inkling-internal/nodes/base'
+import { registerTableCellGuard } from '@kobato/inkling-internal/nodes/table/table-cell-guard'
+import { registerDenestTransform } from '@kobato/inkling-internal/transforms/transforms/denest'
+import { registerMergeListNodesTransform } from '@kobato/inkling-internal/transforms/transforms/merge-list-nodes'
+import { registerRemoveAlignmentTransform } from '@kobato/inkling-internal/transforms/transforms/remove-alignment'
 import { $createListItemNode, $createListNode, ListItemNode, ListNode } from '@lexical/list'
 import { $createHeadingNode, $createQuoteNode, HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { mergeRegister, $createParagraphNode, ParagraphNode } from 'lexical'
 
-import { ExtendedHeadingNode } from '../nodes/base'
-import { registerTableCellGuard } from '../nodes/table/table-cell-guard'
-import { registerDenestTransform } from './transforms/denest'
-import { registerMergeListNodesTransform } from './transforms/merge-list-nodes'
-import { registerRemoveAlignmentTransform } from './transforms/remove-alignment'
-
-export * from './transforms/denest'
-export * from './transforms/merge-list-nodes'
-export * from './transforms/remove-alignment'
+export * from '@kobato/inkling-internal/transforms/transforms/denest'
+export * from '@kobato/inkling-internal/transforms/transforms/merge-list-nodes'
+export * from '@kobato/inkling-internal/transforms/transforms/remove-alignment'
 
 // registered only on render paths, never by default
-export * from './transforms/remove-at-link-nodes'
+export * from '@kobato/inkling-internal/transforms/transforms/remove-at-link-nodes'
 
 export interface DefaultTransformsOptions {
   /**

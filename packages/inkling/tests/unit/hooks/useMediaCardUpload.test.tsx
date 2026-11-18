@@ -1,14 +1,13 @@
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useMediaCardUpload, type UseMediaCardUploadOptions } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import { $isFileNode } from '@kobato/inkling-internal/nodes/FileNode'
+import { $createImageNode, $isImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor, tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { act, render } from '@testing-library/react'
 import { $getRoot, type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider } from '../../../src/context/InklingHostIntegrationContext'
-import { useMediaCardUpload, type UseMediaCardUploadOptions } from '../../../src/hooks/useMediaCardUpload'
-import { $isFileNode } from '../../../src/nodes/FileNode'
-import { $createImageNode, $isImageNode, ImageNode } from '../../../src/nodes/ImageNode'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor, tick, updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

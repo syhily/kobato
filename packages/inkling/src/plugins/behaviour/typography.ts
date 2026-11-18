@@ -5,7 +5,7 @@
 //
 // Rule set aligns with tiptap's extension-typography defaults, minus tiptap's
 // emDash rule ('--' → '—'): inkling's dash policy lives in
-// @/inkling/plugins/behaviour/em-en-dash ('---' → em dash, '--' + whitespace →
+// @kobato/inkling-internal/plugins/behaviour/em-en-dash ('---' → em dash, '--' + whitespace →
 // en dash) and the two grammars would fight over '--'.
 //
 // Two structural differences from tiptap's input rules fall out of the scan

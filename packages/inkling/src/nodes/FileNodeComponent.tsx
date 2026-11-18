@@ -1,16 +1,15 @@
+import type { FileNode } from '@kobato/inkling-internal/nodes/FileNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import { FileCard } from '@kobato/inkling-internal/components/ui/cards/FileCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { useMediaCardUpload } from '@kobato/inkling-internal/hooks/useMediaCardUpload'
+import { $isFileNode } from '@kobato/inkling-internal/nodes/base'
+import { fileUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
 import { type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { FileNode } from './FileNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { FileCard } from '../components/ui/cards/FileCard'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { useInklingLabels } from '../hooks/useInklingLabels'
-import { useMediaCardUpload } from '../hooks/useMediaCardUpload'
-import { $isFileNode } from './base'
-import { fileUploadIntent } from './upload-intent'
 
 export interface FileNodeComponentProps {
   fileDesc: string
@@ -128,7 +127,7 @@ export default FileNodeComponent
 
 /**
  * File's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderFileCard(node: FileNode) {
   return (

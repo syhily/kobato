@@ -1,10 +1,9 @@
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { html as langHtml } from '@codemirror/lang-html'
 import { keymap } from '@codemirror/view'
+import { darkBaseExtensions, lightBaseExtensions } from '@kobato/inkling-internal/utils/codemirror-config'
 import CodeMirror from '@uiw/react-codemirror'
 import React from 'react'
-
-import { darkBaseExtensions, lightBaseExtensions } from '../../../../utils/codemirror-config'
 
 const htmlExtras = [keymap.of(closeBracketsKeymap), langHtml(), closeBrackets()]
 

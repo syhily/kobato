@@ -1,8 +1,12 @@
+import type {
+  CardDeclaration,
+  CardIconId,
+  CardMenuCommand,
+  CardMenuEntrySpec,
+} from '@kobato/inkling-internal/nodes/cards/card-declaration'
+import type { CardFencePayload } from '@kobato/inkling-internal/nodes/cards/card-markdown-transformers'
 import type { AnyLexicalCommand, LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
-
-import type { CardDeclaration, CardIconId, CardMenuCommand, CardMenuEntrySpec } from './card-declaration'
-import type { CardFencePayload } from './card-markdown-transformers'
 
 /**
  * A host card's menu entry: the built-in `CardMenuEntrySpec` shape, except the icon

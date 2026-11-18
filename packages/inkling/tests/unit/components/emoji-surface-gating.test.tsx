@@ -1,15 +1,14 @@
+import InklingCaptionEditor from '@kobato/inkling-internal/components/InklingCaptionEditor'
+import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
+import InklingNestedEditor from '@kobato/inkling-internal/components/InklingNestedEditor'
 import { render, screen } from '@testing-library/react'
 import { createEditor, type LexicalEditor } from 'lexical'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import InklingCaptionEditor from '../../../src/components/InklingCaptionEditor'
-import InklingComposer from '../../../src/components/InklingComposer'
-import InklingNestedEditor from '../../../src/components/InklingNestedEditor'
-
 // The gate under test is whether the nested/caption editors MOUNT the emoji
 // typeahead — the plugin is mocked to a sentinel so no emoji-mart chunk loads.
-vi.mock('../../../src/plugins/EmojiPickerPlugin', () => ({
+vi.mock('@kobato/inkling-internal/plugins/EmojiPickerPlugin', () => ({
   EmojiPickerPlugin: () => <div data-testid="emoji-picker-plugin" />,
   default: () => <div data-testid="emoji-picker-plugin" />,
 }))

@@ -1,12 +1,11 @@
+import type { TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+
+import { $createTKNode, TKNode } from '@kobato/inkling-internal/nodes/base'
+import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { applyTkHoverHighlight, registerTkNodeTracking } from '@kobato/inkling-internal/plugins/behaviour/tk-tracking'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { $createParagraphNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { TKHandle } from '../../../../src/plugins/behaviour/tkHandle'
-
-import { $createTKNode, TKNode } from '../../../../src/nodes/base'
-import { $createHorizontalRuleNode, HorizontalRuleNode } from '../../../../src/nodes/HorizontalRuleNode'
-import { applyTkHoverHighlight, registerTkNodeTracking } from '../../../../src/plugins/behaviour/tk-tracking'
-import { tick } from '../../../utils/test-editor'
 
 function createFakeHandle() {
   return {

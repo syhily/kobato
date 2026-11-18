@@ -1,17 +1,16 @@
-import type { SerializedLexicalNode } from 'lexical'
-
 import type {
   CardSpecFieldMapFor,
   CardSpecNestedEditorDataset,
   DecoratorNodeProperty,
   NestedEditorSpec,
   TransientPropSpec,
-} from '../../card-specs'
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { SerializedLexicalNode } from 'lexical'
 
-import { generateDecoratorNode } from '../../generate-decorator-node'
-import { captionEditorSpecBase } from '../caption-editor-spec'
-import { parseBookmarkNode } from './bookmark-parser'
-import { renderBookmarkNode } from './bookmark-renderer'
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { parseBookmarkNode } from '@kobato/inkling-internal/nodes/base/nodes/bookmark/bookmark-parser'
+import { renderBookmarkNode } from '@kobato/inkling-internal/nodes/base/nodes/bookmark/bookmark-renderer'
+import { captionEditorSpecBase } from '@kobato/inkling-internal/nodes/base/nodes/caption-editor-spec'
 
 interface BookmarkMetadata {
   icon?: string

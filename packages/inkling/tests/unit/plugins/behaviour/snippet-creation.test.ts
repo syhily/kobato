@@ -1,9 +1,11 @@
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import {
+  createSnippetFromSource,
+  $deriveSnippetValue,
+} from '@kobato/inkling-internal/plugins/behaviour/snippet-creation'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createParagraphNode, $createTextNode, $getRoot, $setSelection, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { createSnippetFromSource, $deriveSnippetValue } from '../../../../src/plugins/behaviour/snippet-creation'
-import { createTestEditor, updateEditor } from '../../../utils/test-editor'
 
 interface SnippetArg {
   name: string

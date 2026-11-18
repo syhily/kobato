@@ -1,6 +1,5 @@
+import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { getAccentColor } from '../../../src/utils/getAccentColor'
 
 describe('getAccentColor', () => {
   let editor: HTMLDivElement

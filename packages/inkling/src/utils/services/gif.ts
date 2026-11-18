@@ -1,4 +1,4 @@
-import type { GifSettings } from '../../context/InklingHostIntegrationContext'
+import type { GifSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 
 const PROVIDER_API_URLS: Record<string, string> = {
   klipy: 'https://api.klipy.com',

@@ -1,11 +1,10 @@
-import React from 'react'
-
-import { CardSelectionStoreContext } from '../../src/context/CardSelectionStoreContext'
+import { CardSelectionStoreContext } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
 import {
   createCardSelectionStore,
   type CardSelectionState,
   type CardSelectionStore,
-} from '../../src/plugins/behaviour/cardSelectionStore'
+} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import React from 'react'
 
 // Test stand-in for the per-composer provider InklingComposer mounts: wraps
 // children in a CardSelectionStoreContext.Provider backed by a real store.

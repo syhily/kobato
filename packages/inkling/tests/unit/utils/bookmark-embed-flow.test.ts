@@ -1,13 +1,12 @@
-import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   createBookmarkEmbedFlow,
   isEmbedResponse,
   type BookmarkEmbedFlow,
-} from '../../../src/hooks/bookmark-embed-flow'
-import { $createBookmarkNode, $isBookmarkNode, BookmarkNode } from '../../../src/nodes/BookmarkNode'
-import { createTestEditor, updateEditor } from '../../utils/test-editor'
+} from '@kobato/inkling-internal/hooks/bookmark-embed-flow'
+import { $createBookmarkNode, $isBookmarkNode, BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const EMBED = {
   url: 'https://canonical.example.com',

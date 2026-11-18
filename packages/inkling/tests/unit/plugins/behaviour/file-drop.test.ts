@@ -20,17 +20,16 @@ vi.mock('@lexical/clipboard', async (importOriginal) => {
   }
 })
 
-import { $insertDataTransferForRichText } from '@lexical/clipboard'
-
-import { ImageNode } from '../../../../src/nodes/ImageNode'
-import { INSERT_MEDIA_COMMAND, MIME_TEXT_HTML } from '../../../../src/plugins/behaviour/clipboard-protocol'
+import { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { INSERT_MEDIA_COMMAND, MIME_TEXT_HTML } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
 import {
   handleFileDrop,
   registerDragOverSuppression,
   registerFileDropCommands,
   type FileDropPorts,
-} from '../../../../src/plugins/behaviour/file-drop'
-import { tick } from '../../../utils/test-editor'
+} from '@kobato/inkling-internal/plugins/behaviour/file-drop'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
+import { $insertDataTransferForRichText } from '@lexical/clipboard'
 
 const PORTS: FileDropPorts = {
   hasUploader: () => true,

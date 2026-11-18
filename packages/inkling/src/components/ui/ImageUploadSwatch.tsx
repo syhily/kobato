@@ -1,7 +1,7 @@
-import ImgBgIcon from '../../assets/icons/inkling-img-bg.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { cx } from '../../utils/cx'
-import { Tooltip } from './Tooltip'
+import ImgBgIcon from '@kobato/inkling-internal/assets/icons/inkling-img-bg.svg?react'
+import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 
 export const ImageUploadSwatch = ({
   showBackgroundImage,

@@ -1,20 +1,19 @@
 import type { LexicalEditor } from 'lexical'
 
+import { useCardPickerStore } from '@kobato/inkling-internal/context/CardPickerStoreContext'
+import { useCardSelectionStore } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { getModifierState } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { registerCardSelection } from '@kobato/inkling-internal/plugins/behaviour/registerCardSelection'
+import { registerClickAndCut } from '@kobato/inkling-internal/plugins/behaviour/registerClickAndCut'
+import { registerKeyboardNavigation } from '@kobato/inkling-internal/plugins/behaviour/registerKeyboardNavigation'
+import { registerLinkMatching } from '@kobato/inkling-internal/plugins/behaviour/registerLinkMatching'
+import { registerMouseEvents } from '@kobato/inkling-internal/plugins/behaviour/registerMouseEvents'
+import { registerPasteHandler } from '@kobato/inkling-internal/plugins/behaviour/registerPasteHandler'
+import { registerDefaultTransforms } from '@kobato/inkling-internal/transforms'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
 import React from 'react'
-
-import { useCardPickerStore } from '../context/CardPickerStoreContext'
-import { useCardSelectionStore } from '../context/CardSelectionStoreContext'
-import { registerDefaultTransforms } from '../transforms'
-import { getModifierState } from './behaviour/clipboard-protocol'
-import { registerCardCommands } from './behaviour/registerCardCommands'
-import { registerCardSelection } from './behaviour/registerCardSelection'
-import { registerClickAndCut } from './behaviour/registerClickAndCut'
-import { registerKeyboardNavigation } from './behaviour/registerKeyboardNavigation'
-import { registerLinkMatching } from './behaviour/registerLinkMatching'
-import { registerMouseEvents } from './behaviour/registerMouseEvents'
-import { registerPasteHandler } from './behaviour/registerPasteHandler'
 
 interface InklingBehaviourPluginProps {
   containerElem?: React.RefObject<HTMLElement | null>

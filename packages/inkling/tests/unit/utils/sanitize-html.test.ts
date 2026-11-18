@@ -1,6 +1,5 @@
+import { sanitizeHtml } from '@kobato/inkling-internal/utils/sanitize-html'
 import { describe, expect, it, test } from 'vitest'
-
-import { sanitizeHtml } from '../../../src/utils/sanitize-html'
 
 describe('Utils: sanitize-html', () => {
   test('can replace scripts', function () {

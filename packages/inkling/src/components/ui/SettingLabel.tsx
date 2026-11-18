@@ -1,4 +1,4 @@
-import { cx } from '../../utils/cx'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 
 /**
  * The shared settings-panel label chrome. Deliberately NOT a full SettingRow

@@ -1,6 +1,5 @@
+import { HEADLESS_DOM_MISSING_MESSAGE, resolveHeadlessDom } from '@kobato/inkling-internal/html/headless-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import { HEADLESS_DOM_MISSING_MESSAGE, resolveHeadlessDom } from '../../../src/html/headless-dom'
 
 // The port's process-level jsdom cache survives across tests in this file,
 // so the loader legs are ordered deliberately: the failure table (which

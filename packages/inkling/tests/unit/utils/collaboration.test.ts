@@ -1,9 +1,11 @@
 import type { WebsocketProvider } from 'y-websocket'
 
+import {
+  adaptWebsocketProvider,
+  createWebsocketProviderFactory,
+} from '@kobato/inkling-internal/utils/services/collaboration'
 import { describe, expect, it, vi } from 'vitest'
 import { Doc } from 'yjs'
-
-import { adaptWebsocketProvider, createWebsocketProviderFactory } from '../../../src/utils/services/collaboration'
 
 type FakeProvider = {
   awareness: { fakeAwareness: true } & Record<string, unknown>

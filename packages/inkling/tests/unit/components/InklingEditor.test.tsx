@@ -1,15 +1,14 @@
+import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
+import InklingEditor from '@kobato/inkling-internal/components/InklingEditor'
+import InklingSurface from '@kobato/inkling-internal/components/InklingSurface'
+import { DEFAULT_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers'
+import { MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import MarkdownShortcutPlugin from '@kobato/inkling-internal/plugins/MarkdownShortcutPlugin'
 import { MarkdownShortcutPlugin as LexicalMarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import InklingComposer from '../../../src/components/InklingComposer'
-import InklingEditor from '../../../src/components/InklingEditor'
-import InklingSurface from '../../../src/components/InklingSurface'
-import { DEFAULT_TRANSFORMERS } from '../../../src/markdown/transformers'
-import { MINIMAL_TRANSFORMERS } from '../../../src/markdown/transformers-core'
-import MINIMAL_NODES from '../../../src/nodes/MinimalNodes'
-import MarkdownShortcutPlugin from '../../../src/plugins/MarkdownShortcutPlugin'
 
 vi.mock('@lexical/react/LexicalMarkdownShortcutPlugin', () => ({
   MarkdownShortcutPlugin: vi.fn(() => null),

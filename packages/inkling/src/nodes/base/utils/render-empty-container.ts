@@ -1,5 +1,5 @@
-import type { ExportDOMOutput } from '../export-dom'
-import type { RenderContext, SafeUrlKind } from '../render-context'
+import type { ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/export-dom'
+import type { RenderContext, SafeUrlKind } from '@kobato/inkling-internal/nodes/base/render-context'
 
 /*
  * `type: 'inner'` renders the container's inner content (nothing) in the

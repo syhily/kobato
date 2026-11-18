@@ -1,7 +1,10 @@
+import {
+  createSearchCoordinator,
+  type SearchResult,
+  type SearchScheduler,
+} from '@kobato/inkling-internal/hooks/search-coordinator'
+import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { describe, expect, it, vi } from 'vitest'
-
-import { createSearchCoordinator, type SearchResult, type SearchScheduler } from '../../../src/hooks/search-coordinator'
-import { tick } from '../../utils/test-editor'
 
 function deferred<T>() {
   let resolve!: (value: T) => void

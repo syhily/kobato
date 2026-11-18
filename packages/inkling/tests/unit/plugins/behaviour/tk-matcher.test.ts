@@ -1,6 +1,5 @@
+import { getTKMatch } from '@kobato/inkling-internal/plugins/behaviour/tk-matcher'
 import { describe, expect, it } from 'vitest'
-
-import { getTKMatch } from '../../../../src/plugins/behaviour/tk-matcher'
 
 // Data-driven pins for the TK entity matcher. Offsets are UTF-16 code-unit
 // indexes into the input; the match spans the TK plus any adjacent symbol

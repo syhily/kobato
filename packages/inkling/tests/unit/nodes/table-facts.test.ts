@@ -1,6 +1,5 @@
+import { resolveGfmPipeTableLines } from '@kobato/inkling-internal/nodes/table/table-facts'
 import { describe, expect, it } from 'vitest'
-
-import { resolveGfmPipeTableLines } from '../../../src/nodes/table/table-facts'
 
 // The GFM export policy lives in table-facts (row 0 is always the forged
 // header). A rowless table has no pipe-table shape at all — exporting one

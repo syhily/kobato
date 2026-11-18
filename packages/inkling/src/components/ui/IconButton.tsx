@@ -1,7 +1,7 @@
 import type React from 'react'
 
-import { cx } from '../../utils/cx'
-import { Tooltip } from './Tooltip'
+import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 
 export function IconButton({
   className,

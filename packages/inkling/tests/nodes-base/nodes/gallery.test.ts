@@ -1,16 +1,19 @@
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 import type { LexicalEditor } from 'lexical'
 
+import {
+  BaseGalleryNode,
+  $createBaseGalleryNode,
+  $isGalleryNode,
+  BaseImageNode,
+} from '@kobato/inkling-internal/nodes/base/index'
+import { expectPrettifiedHtml } from '@kobato/inkling/tests/nodes-base/test-utils/assertions'
+import { createDocument, dom, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import type { GalleryImage } from '../../../src/types/gallery'
-
-import { BaseGalleryNode, $createBaseGalleryNode, $isGalleryNode, BaseImageNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { expectPrettifiedHtml } from '../test-utils/assertions'
-import { createDocument, dom, html } from '../test-utils/index'
 
 // include BaseImageNode so imported sibling nodes are not processed by other
 // lower-priority nodes when skipped with dataset.hasBeenProcessed

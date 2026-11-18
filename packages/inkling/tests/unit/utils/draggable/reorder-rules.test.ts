@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   adjustInsertIndexForRemoval,
   createReorderGeometry,
@@ -8,7 +6,8 @@ import {
   resolveDrop,
   resolveReorder,
   type ReorderGeometry,
-} from '../../../../src/utils/draggable/reorder-rules'
+} from '@kobato/inkling-internal/utils/draggable/reorder-rules'
+import { describe, expect, it } from 'vitest'
 
 // Builds a container with `count` droppable divs and returns it with its
 // children in document order — the stand-in for both the editor root's

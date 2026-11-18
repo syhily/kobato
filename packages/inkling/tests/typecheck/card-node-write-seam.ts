@@ -6,7 +6,7 @@
  */
 import type { NodeKey } from 'lexical'
 
-import { $isGalleryNode, $isVideoNode, $updateCardNode } from '../../src/nodes/base'
+import { $isGalleryNode, $isVideoNode, $updateCardNode } from '@kobato/inkling-internal/nodes/base'
 
 declare const nodeKey: NodeKey
 

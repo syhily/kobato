@@ -1,13 +1,12 @@
+import { ImageNode, $createImageNode, type ImageNode as ImageNodeType } from '@kobato/inkling-internal/nodes/ImageNode'
+import { imageUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ImageNode, $createImageNode, type ImageNode as ImageNodeType } from '../../../src/nodes/ImageNode'
-import { imageUploadIntent } from '../../../src/nodes/upload-intent'
-import { getImageDimensions } from '../../../src/utils/getImageDimensions'
-import { tick, updateEditor } from '../../utils/test-editor'
-
-vi.mock('../../../src/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

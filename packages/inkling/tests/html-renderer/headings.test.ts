@@ -1,7 +1,6 @@
+import { ExtendedHeadingNode } from '@kobato/inkling-internal/nodes/base'
+import shouldRender from '@kobato/inkling/tests/html-renderer/utils/should-render'
 import { describe, it } from 'vitest'
-
-import { ExtendedHeadingNode } from '../../src/nodes/base'
-import shouldRender from './utils/should-render'
 
 describe('Headings', function () {
   it(

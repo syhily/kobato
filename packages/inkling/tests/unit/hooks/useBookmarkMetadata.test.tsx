@@ -1,3 +1,8 @@
+import type { BookmarkEmbedResponse } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
+import { useBookmarkMetadata } from '@kobato/inkling-internal/hooks/useBookmarkMetadata'
+import { BookmarkNode, $createBookmarkNode, $isBookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
 import { act, renderHook } from '@testing-library/react'
 import {
   $createParagraphNode,
@@ -10,12 +15,6 @@ import {
   type NodeKey,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { BookmarkEmbedResponse } from '../../../src/context/InklingHostIntegrationContext'
-
-import { useBookmarkMetadata } from '../../../src/hooks/useBookmarkMetadata'
-import { BookmarkNode, $createBookmarkNode, $isBookmarkNode } from '../../../src/nodes/BookmarkNode'
-import { registerCardDecorateAdapter } from '../../../src/nodes/decorate-card'
 
 // This suite keeps its own setRootElement editor (bespoke config), so it
 // registers the decorate adapter itself — reconciliation calls decorate(),

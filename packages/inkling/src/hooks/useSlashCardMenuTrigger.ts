@@ -1,10 +1,8 @@
+import type { CardMenuSession } from '@kobato/inkling-internal/hooks/useCardMenuSession'
 import type { LexicalEditor } from 'lexical'
 
+import { registerSlashCardMenuTrigger } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import React from 'react'
-
-import type { CardMenuSession } from './useCardMenuSession'
-
-import { registerSlashCardMenuTrigger } from '../plugins/behaviour/card-menu-trigger'
 
 // Slash trigger binding — the React adapter between the slash card-menu trigger
 // (registerSlashCardMenuTrigger) and the card-menu session.

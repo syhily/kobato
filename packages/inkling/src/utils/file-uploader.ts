@@ -3,7 +3,7 @@
 // `fileTypes` entries forward only when they match `{ mimeTypes: string[] }` per media type
 // (anything else degrades to "no restriction").
 
-import type { FileUploader, FileUploaderInput } from '../context/InklingHostIntegrationContext'
+import type { FileUploader, FileUploaderInput } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 
 const MEDIA_KEYS = ['image', 'video', 'audio', 'file'] as const
 

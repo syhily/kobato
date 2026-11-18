@@ -1,19 +1,18 @@
+import { INSERT_AUDIO_COMMAND } from '@kobato/inkling-internal/nodes/AudioNode'
+import { INSERT_BOOKMARK_COMMAND } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { INSERT_BUTTON_COMMAND } from '@kobato/inkling-internal/nodes/ButtonNode'
+import { INSERT_CALLOUT_COMMAND } from '@kobato/inkling-internal/nodes/CalloutNode'
+import { INSERT_FILE_COMMAND } from '@kobato/inkling-internal/nodes/FileNode'
+import { INSERT_GALLERY_COMMAND } from '@kobato/inkling-internal/nodes/GalleryNode'
+import { INSERT_TOGGLE_COMMAND } from '@kobato/inkling-internal/nodes/ToggleNode'
+import { INSERT_VIDEO_COMMAND } from '@kobato/inkling-internal/nodes/VideoNode'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { CardInsertPlugin } from '@kobato/inkling-internal/plugins/CardInsertPlugin'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createTestEditor, tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { renderHook } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, COMMAND_PRIORITY_CRITICAL, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { INSERT_AUDIO_COMMAND } from '../../../src/nodes/AudioNode'
-import { INSERT_BOOKMARK_COMMAND } from '../../../src/nodes/BookmarkNode'
-import { INSERT_BUTTON_COMMAND } from '../../../src/nodes/ButtonNode'
-import { INSERT_CALLOUT_COMMAND } from '../../../src/nodes/CalloutNode'
-import { INSERT_FILE_COMMAND } from '../../../src/nodes/FileNode'
-import { INSERT_GALLERY_COMMAND } from '../../../src/nodes/GalleryNode'
-import { INSERT_TOGGLE_COMMAND } from '../../../src/nodes/ToggleNode'
-import { INSERT_VIDEO_COMMAND } from '../../../src/nodes/VideoNode'
-import { INSERT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { CardInsertPlugin } from '../../../src/plugins/CardInsertPlugin'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createTestEditor, tick, updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
@@ -34,7 +33,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('audio insert dispatches INSERT_CARD_COMMAND for an audio dataset', async () => {
-    const { AudioNode } = await import('../../../src/nodes/AudioNode')
+    const { AudioNode } = await import('@kobato/inkling-internal/nodes/AudioNode')
     editor = createTestEditor({ nodes: [AudioNode] })
     await setupPluginTest(editor)
 
@@ -56,7 +55,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('bookmark insert requires a range selection and dispatches INSERT_CARD_COMMAND', async () => {
-    const { BookmarkNode } = await import('../../../src/nodes/BookmarkNode')
+    const { BookmarkNode } = await import('@kobato/inkling-internal/nodes/BookmarkNode')
     editor = createTestEditor({ nodes: [BookmarkNode] })
     await setupPluginTest(editor)
 
@@ -87,7 +86,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('button insert rejects non-object payloads', async () => {
-    const { ButtonNode } = await import('../../../src/nodes/ButtonNode')
+    const { ButtonNode } = await import('@kobato/inkling-internal/nodes/ButtonNode')
     editor = createTestEditor({ nodes: [ButtonNode] })
     await setupPluginTest(editor)
 
@@ -96,7 +95,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('callout insert dispatches INSERT_CARD_COMMAND for a callout dataset', async () => {
-    const { CalloutNode } = await import('../../../src/nodes/CalloutNode')
+    const { CalloutNode } = await import('@kobato/inkling-internal/nodes/CalloutNode')
     editor = createTestEditor({ nodes: [CalloutNode] })
     await setupPluginTest(editor)
 
@@ -118,7 +117,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('file insert dispatches INSERT_CARD_COMMAND for a file dataset', async () => {
-    const { FileNode } = await import('../../../src/nodes/FileNode')
+    const { FileNode } = await import('@kobato/inkling-internal/nodes/FileNode')
     editor = createTestEditor({ nodes: [FileNode] })
     await setupPluginTest(editor)
 
@@ -140,7 +139,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('gallery insert dispatches INSERT_CARD_COMMAND for a gallery dataset', async () => {
-    const { GalleryNode } = await import('../../../src/nodes/GalleryNode')
+    const { GalleryNode } = await import('@kobato/inkling-internal/nodes/GalleryNode')
     editor = createTestEditor({ nodes: [GalleryNode] })
     await setupPluginTest(editor)
 
@@ -162,7 +161,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('toggle insert dispatches INSERT_CARD_COMMAND for a toggle dataset', async () => {
-    const { ToggleNode } = await import('../../../src/nodes/ToggleNode')
+    const { ToggleNode } = await import('@kobato/inkling-internal/nodes/ToggleNode')
     editor = createTestEditor({ nodes: [ToggleNode] })
     await setupPluginTest(editor)
 
@@ -184,7 +183,7 @@ describe('Card insert commands (CardInsertPlugin)', () => {
   })
 
   it('video insert dispatches INSERT_CARD_COMMAND for a video dataset', async () => {
-    const { VideoNode } = await import('../../../src/nodes/VideoNode')
+    const { VideoNode } = await import('@kobato/inkling-internal/nodes/VideoNode')
     editor = createTestEditor({ nodes: [VideoNode] })
     await setupPluginTest(editor)
 

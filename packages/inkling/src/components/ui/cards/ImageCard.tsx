@@ -1,17 +1,19 @@
+import type {
+  DragHandlerLike,
+  FileInputRef,
+  FileUploaderLike,
+} from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import WandIcon from '@kobato/inkling-internal/assets/icons/inkling-wand.svg?react'
+import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCaptionEditor'
+import { IconButton } from '@kobato/inkling-internal/components/ui/IconButton'
+import { CardText } from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
+import { UploadingOverlay, UploadPlaceholder } from '@kobato/inkling-internal/components/ui/UploadChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
+import { isGif } from '@kobato/inkling-internal/utils/isGif'
 import React from 'react'
-
-import type { DragHandlerLike, FileInputRef, FileUploaderLike } from './card-ui-types'
-
-import WandIcon from '../../../assets/icons/inkling-wand.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { interpolateLabel } from '../../../labels/inkling-labels'
-import { isGif } from '../../../utils/isGif'
-import { CardCaptionEditor } from '../CardCaptionEditor'
-import { IconButton } from '../IconButton'
-import { CardText } from '../MediaPlaceholder'
-import { UploadingOverlay, UploadPlaceholder } from '../UploadChrome'
 
 interface PopulatedImageCardProps {
   src: string

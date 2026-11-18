@@ -1,16 +1,15 @@
+import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
+import InklingEditor from '@kobato/inkling-internal/components/InklingEditor'
+import InklingErrorBoundary from '@kobato/inkling-internal/components/InklingErrorBoundary'
+import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
+import { ExtendedTextNode, TKNode, extendedTextNodeReplacement } from '@kobato/inkling-internal/nodes/base'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import InklingComposer from '../../../src/components/InklingComposer'
-import InklingEditor from '../../../src/components/InklingEditor'
-import InklingErrorBoundary from '../../../src/components/InklingErrorBoundary'
-import InklingNestedComposer from '../../../src/components/InklingNestedComposer'
-import { ExtendedTextNode, TKNode, extendedTextNodeReplacement } from '../../../src/nodes/base'
-import { updateEditor } from '../../utils/test-editor'
 
 const NESTED_NODES = [ExtendedTextNode, extendedTextNodeReplacement, TKNode]
 

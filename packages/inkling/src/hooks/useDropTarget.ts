@@ -1,9 +1,13 @@
+import type {
+  DraggableInfo,
+  DroppablePosition,
+  DropResolution,
+  DropResult,
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+import type { DraggableContainerHandle } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
+
+import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/useDragDropContainer'
 import React from 'react'
-
-import type { DraggableInfo, DroppablePosition, DropResolution, DropResult } from '../utils/draggable/DragDropContainer'
-import type { DraggableContainerHandle } from '../utils/draggable/DragDropHandler'
-
-import { useDragDropContainer } from '../utils/draggable/useDragDropContainer'
 
 // Drop target — the one owner of the drop-target hover seam: the container
 // element state, the isDraggedOver hover flag (lit by the hover policy, cleared

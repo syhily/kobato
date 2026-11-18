@@ -3,7 +3,7 @@
 // The four per-locale Kobato Inkling overlays. The tables live in `shared` so
 // the server can ship ONE of them through the root i18n payload; the compile-
 // time key guarantee (every key legal for Inkling) is pinned in
-// `@/client/editor/inkling-labels`, the only layer allowed to import `@/inkling`
+// `@/client/editor/inkling-labels`, the only layer allowed to import `@kobato/inkling-internal`
 // types. This suite pins the RUNTIME contract the types cannot: the used-key
 // set, the interpolation tokens, and the locale selection.
 

@@ -1,8 +1,7 @@
+import type { DecoratorNodeProperty } from '@kobato/inkling-internal/nodes/base/card-specs'
 import type { DOMConversionMap, LexicalNode } from 'lexical'
 
-import type { DecoratorNodeProperty } from './card-specs'
-
-import { readCaptionFromElement } from './utils/read-caption-from-element'
+import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
 
 /**
  * The card declaration's DOM-import knowledge, from which the generated node

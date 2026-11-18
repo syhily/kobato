@@ -1,5 +1,16 @@
 import type { LexicalEditor, PointType, TextNode } from 'lexical'
 
+import {
+  $createAtLinkNode,
+  $createAtLinkSearchNode,
+  $createZWNJNode,
+  $isAtLinkNode,
+  $isAtLinkSearchNode,
+  $isZWNJNode,
+  AtLinkNode,
+} from '@kobato/inkling-internal/nodes/base'
+import { $createBookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { editorOwnsFocus } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import { $createLinkNode } from '@lexical/link'
 import { $insertFirst, mergeRegister } from '@lexical/utils'
 import {
@@ -17,18 +28,6 @@ import {
   KEY_ESCAPE_COMMAND,
   PASTE_COMMAND,
 } from 'lexical'
-
-import {
-  $createAtLinkNode,
-  $createAtLinkSearchNode,
-  $createZWNJNode,
-  $isAtLinkNode,
-  $isAtLinkSearchNode,
-  $isZWNJNode,
-  AtLinkNode,
-} from '../../nodes/base'
-import { $createBookmarkNode } from '../../nodes/BookmarkNode'
-import { editorOwnsFocus } from './card-adjacency'
 
 // Headless half of the at-link plugin: node lifecycle (insertion, shape
 // transform, command guards), the search session (registerAtLinkSession, the

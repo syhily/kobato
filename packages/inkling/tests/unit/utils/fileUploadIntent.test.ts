@@ -1,10 +1,9 @@
+import { FileNode, $createFileNode, type FileNode as FileNodeType } from '@kobato/inkling-internal/nodes/FileNode'
+import { fileUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { FileNode, $createFileNode, type FileNode as FileNodeType } from '../../../src/nodes/FileNode'
-import { fileUploadIntent } from '../../../src/nodes/upload-intent'
-import { updateEditor } from '../../utils/test-editor'
 
 describe('fileUploadIntent', () => {
   let editor: LexicalEditor

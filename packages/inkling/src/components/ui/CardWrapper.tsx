@@ -1,9 +1,8 @@
+import type { CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
+
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
 import React from 'react'
-
-import type { CardWidth } from '../../nodes/base/utils/card-widths'
-
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { interpolateLabel } from '../../labels/inkling-labels'
 
 const CARD_WIDTH_CLASSES: Partial<Record<CardWidth, string>> = {
   wide: [

@@ -1,7 +1,7 @@
-import type { GalleryImage } from '../types/gallery'
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
-import { ALLOWED_IMAGE_PROPS } from '../nodes/base'
-import { createSnapshotStore } from '../utils/services/snapshot-store'
+import { ALLOWED_IMAGE_PROPS } from '@kobato/inkling-internal/nodes/base'
+import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
 
 // Gallery images mirror — headless owner of BOTH directions of the gallery
 // card's image list:

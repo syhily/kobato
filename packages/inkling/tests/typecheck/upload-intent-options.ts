@@ -1,3 +1,5 @@
+import type { FileUploader } from '@kobato/inkling-internal/index'
+import type { Equal, Expect, Extends } from '@kobato/inkling/tests/utils/type-pins'
 /**
  * Compile-time pins for the upload-intent policy composition.
  *
@@ -13,10 +15,13 @@
  */
 import type { LexicalEditor, NodeKey } from 'lexical'
 
-import type { FileUploader } from '../../src/index'
-import type { Equal, Expect, Extends } from '../utils/type-pins'
-
-import { $isAudioNode, $isFileNode, $isHeaderNode, $isImageNode, $isVideoNode } from '../../src/nodes/base'
+import {
+  $isAudioNode,
+  $isFileNode,
+  $isHeaderNode,
+  $isImageNode,
+  $isVideoNode,
+} from '@kobato/inkling-internal/nodes/base'
 import {
   audioThumbnailUploadIntent,
   audioUploadIntent,
@@ -29,7 +34,7 @@ import {
   videoFlowUploadIntent,
   videoThumbnailUploadIntent,
   videoUploadIntent,
-} from '../../src/nodes/upload-intent'
+} from '@kobato/inkling-internal/nodes/upload-intent'
 
 declare const editor: LexicalEditor
 declare const nodeKey: NodeKey

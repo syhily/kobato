@@ -9,8 +9,17 @@
 // pointing at the 0600 state file for the password) cannot corrupt an encrypted
 // row.
 
-import { fail, log, o2Context, readState, RETENTION_DAYS, stateFilePath, waitForOpenObserve, warn } from './lib.ts'
-import { applyRetention } from './provision.ts'
+import {
+  fail,
+  log,
+  o2Context,
+  readState,
+  RETENTION_DAYS,
+  stateFilePath,
+  waitForOpenObserve,
+  warn,
+} from '@kobato/trace/lib.ts'
+import { applyRetention } from '@kobato/trace/provision.ts'
 
 async function main(): Promise<void> {
   const state = await readState()

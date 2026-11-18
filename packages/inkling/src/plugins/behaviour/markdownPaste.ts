@@ -5,8 +5,8 @@
 // card's HTML export uses, not a forked engine. Callers must hold the loaded
 // engine: the paste path awaits the port before dispatching; headless callers
 // await `loadPasteDialect()` first.
-import { getLoadedPasteDialect } from '../../markdown/lazy-paste-dialect'
-import { sanitizeHtml } from '../../utils/sanitize-html'
+import { getLoadedPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
+import { sanitizeHtml } from '@kobato/inkling-internal/utils/sanitize-html'
 
 interface MarkdownPasteOptions {
   allowBr: boolean

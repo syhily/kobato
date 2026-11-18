@@ -5,7 +5,7 @@
 // (parsing never constructs nested editors — the serializedKey HTML is an
 // opaque property server-side), the client card module
 // (`@/ui/admin/editor/cards/solution`) builds the editing class through the
-// `@/inkling` barrel + `defineCard`. Two class objects, one spec.
+// `@kobato/inkling-internal` barrel + `defineCard`. Two class objects, one spec.
 //
 // The exportDOM markup IS the public render; the feed variant unwraps to the
 // bare content HTML.

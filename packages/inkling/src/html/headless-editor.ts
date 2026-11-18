@@ -1,10 +1,9 @@
 import type { CreateEditorArgs, LexicalEditor, LexicalNodeConfig, SerializedEditorState } from 'lexical'
 
+import { DEFAULT_HTML_NODES } from '@kobato/inkling-internal/html/default-html-nodes'
+import { DEFAULT_CONFIG } from '@kobato/inkling-internal/nodes/base'
+import { registerRemoveAtLinkNodesTransform } from '@kobato/inkling-internal/transforms'
 import { createHeadlessEditor } from '@lexical/headless'
-
-import { DEFAULT_CONFIG } from '../nodes/base'
-import { registerRemoveAtLinkNodesTransform } from '../transforms'
-import { DEFAULT_HTML_NODES } from './default-html-nodes'
 
 // The one headless-editor factory for the HTML surface (renderer, plain-text
 // leg, importer). The node-merge policy is named because the two semantics

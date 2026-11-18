@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   POPUP_LIST_MAX_HEIGHT,
   POPUP_LIST_MAX_HEIGHT_VH,
@@ -7,7 +5,8 @@ import {
   popupMaxHeightBudget,
   resolveAnchoredPopupPlacement,
   type PopupRectLike,
-} from '../../../src/utils/selection-anchored-popup'
+} from '@kobato/inkling-internal/utils/selection-anchored-popup'
+import { describe, expect, it } from 'vitest'
 
 function rect(top: number, left: number, width: number, height: number): PopupRectLike {
   return { top, left, width, height, bottom: top + height, right: left + width }

@@ -1,4 +1,8 @@
 import {
+  getEventProvenance,
+  registerCaptionArrowHandoff,
+} from '@kobato/inkling-internal/plugins/behaviour/nested-editor-protocol'
+import {
   COMMAND_PRIORITY_LOW,
   createEditor,
   KEY_ARROW_DOWN_COMMAND,
@@ -7,11 +11,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-import {
-  getEventProvenance,
-  registerCaptionArrowHandoff,
-} from '../../../../src/plugins/behaviour/nested-editor-protocol'
 
 // Unit pins for the caption arrow hand-off, beside the Enter hand-off it
 // mirrors in the protocol module. The parent editor is NOT linked

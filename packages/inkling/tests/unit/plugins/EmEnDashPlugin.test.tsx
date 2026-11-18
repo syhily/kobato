@@ -1,3 +1,5 @@
+import { EmEnDashPlugin } from '@kobato/inkling-internal/plugins/EmEnDashPlugin'
+import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { HistoryPlugin, createEmptyHistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { registerRichText } from '@lexical/rich-text'
@@ -12,9 +14,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { EmEnDashPlugin } from '../../../src/plugins/EmEnDashPlugin'
-import { tick, updateEditor } from '../../utils/test-editor'
 
 function createTestEditor() {
   return createEditor({

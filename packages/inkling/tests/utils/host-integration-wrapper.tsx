@@ -1,9 +1,8 @@
+import type { CardConfig } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
 import React from 'react'
-
-import type { CardConfig } from '../../src/context/InklingHostIntegrationContext'
-
-import { InklingHostIntegrationProvider } from '../../src/context/InklingHostIntegrationContext'
-import { createHostIntegrationValue } from './host-integration-context'
 
 /**
  * The provider wrapper hooks read the host-integration channels through

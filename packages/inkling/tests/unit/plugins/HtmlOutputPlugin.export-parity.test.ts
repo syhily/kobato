@@ -19,11 +19,10 @@
  * so an in-progress at-link search serializes as its inline query text.
  */
 
-import { describe, expect, it } from 'vitest'
-
 // renderLive drives the HtmlOutputPlugin route with the node set and theme
 // InklingComposer passes; renderHeadless goes through the public seam.
-import { renderHeadless, renderLive } from '../../utils/render-live'
+import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
+import { describe, expect, it } from 'vitest'
 
 const text = (content: string, format = 0) => ({
   type: 'text',

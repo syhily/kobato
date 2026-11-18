@@ -1,5 +1,8 @@
-import { htmlToLexical as importWithDom, type htmlToLexicalOptions } from '../../src/html/html-to-lexical/index'
-import { createTestDom } from './render-live'
+import {
+  htmlToLexical as importWithDom,
+  type htmlToLexicalOptions,
+} from '@kobato/inkling-internal/html/html-to-lexical/index'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 
 // Shared call adapter for the importer's injected-DOM signature: one
 // jsdom-backed dom is collected here instead of every test constructing its

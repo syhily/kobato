@@ -1,14 +1,18 @@
 import type { LexicalEditor } from 'lexical'
 
+import {
+  BaseAudioNode,
+  $createBaseAudioNode,
+  $isAudioNode,
+  type ExportDOMOptions,
+} from '@kobato/inkling-internal/nodes/base/index'
+import { expectPrettifiedHtml } from '@kobato/inkling/tests/nodes-base/test-utils/assertions'
+import { dom, createDocument, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { BaseAudioNode, $createBaseAudioNode, $isAudioNode, type ExportDOMOptions } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { expectPrettifiedHtml } from '../test-utils/assertions'
-import { dom, createDocument, html } from '../test-utils/index'
 
 const editorNodes = [BaseAudioNode]
 

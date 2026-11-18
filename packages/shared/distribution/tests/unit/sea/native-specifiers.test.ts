@@ -1,13 +1,12 @@
-import { readdirSync, readFileSync, realpathSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
-import { describe, expect, it } from 'vitest'
-
 import {
   isNativePackageModule,
   isPlatformSpecifierArg,
   redirectNativeRequires,
-} from '../../../../../../tools/pack/src/sea/redirect-native-requires.ts'
+} from '@kobato/pack/sea/redirect-native-requires.ts'
+import { readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { describe, expect, it } from 'vitest'
 
 // Contract test: the platform require call sites inside the INSTALLED
 // sharp / @napi-rs/canvas / @duckdb/node-bindings packages must stay

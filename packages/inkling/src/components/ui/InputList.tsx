@@ -1,11 +1,10 @@
+import { Delayed } from '@kobato/inkling-internal/components/ui/Delayed'
+import { DropdownContainer } from '@kobato/inkling-internal/components/ui/DropdownContainer'
+import { Input } from '@kobato/inkling-internal/components/ui/Input'
+import { KeyboardSelectionWithGroups } from '@kobato/inkling-internal/components/ui/KeyboardSelectionWithGroups'
+import { Spinner } from '@kobato/inkling-internal/components/ui/Spinner'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { Delayed } from './Delayed'
-import { DropdownContainer } from './DropdownContainer'
-import { Input } from './Input'
-import { KeyboardSelectionWithGroups } from './KeyboardSelectionWithGroups'
-import { Spinner } from './Spinner'
 
 export interface InputListItemData {
   value: string | null

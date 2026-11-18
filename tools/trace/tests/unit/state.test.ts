@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   buildState,
   isOwnedTraceResource,
@@ -7,7 +5,8 @@ import {
   removeOwnedTraceResources,
   isTraceVolumeName,
   parseTraceState,
-} from '../../src/lib.ts'
+} from '@kobato/trace/lib.ts'
+import { describe, expect, it } from 'vitest'
 
 describe('OpenObserve trace state guard and ownership grammar', () => {
   it('accepts a valid generated state and rejects extra/corrupt fields', () => {

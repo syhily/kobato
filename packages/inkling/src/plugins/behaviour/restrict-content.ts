@@ -7,6 +7,7 @@
 // the document end. It runs only against a collapsed range selection: rewriting the
 // tree under an open selection would yank its anchor.
 
+import { isEditorUpdating } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $isListItemNode, $isListNode } from '@lexical/list'
 import {
   $createParagraphNode,
@@ -18,8 +19,6 @@ import {
   RootNode,
   type LexicalEditor,
 } from 'lexical'
-
-import { isEditorUpdating } from '../../utils/lexical-internals'
 
 /**
  * Any non-clean root (a decorator, a list, another non-paragraph element, or more

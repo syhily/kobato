@@ -1,6 +1,5 @@
+import { toImageDataset } from '@kobato/inkling-internal/components/ui/LibraryPlugin'
 import { describe, expect, it } from 'vitest'
-
-import { toImageDataset } from '../../../../src/components/ui/LibraryPlugin'
 
 // toImageDataset is the library flow's only field-mapping point: the four
 // card fields always land (with their defaults), the three

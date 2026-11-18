@@ -2,9 +2,8 @@
 // `output` is the FINAL executable path; `mainFormat: "module"` means no
 // CJS prelude — runtime bootstrap order lives in the entry's import order.
 
+import { seaConfigPath, seaServerBundlePath } from '@kobato/pack/sea/paths.ts'
 import { writeFile } from 'node:fs/promises'
-
-import { seaConfigPath, seaServerBundlePath } from './paths.ts'
 
 /**
  * @param assets asset key -> absolute file path (sorted — see assets.ts).

@@ -1,18 +1,26 @@
+import type {
+  DragHandlerLike,
+  FileInputRef,
+  FileUploaderLike,
+} from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
+
+import AudioFileIcon from '@kobato/inkling-internal/assets/icons/inkling-audio-file.svg?react'
+import FilePlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-file-placeholder.svg?react'
+import DeleteIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
+import { IconButton } from '@kobato/inkling-internal/components/ui/IconButton'
+import { MediaPlayer } from '@kobato/inkling-internal/components/ui/MediaPlayer'
+import { ProgressBar } from '@kobato/inkling-internal/components/ui/ProgressBar'
+import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
+import { TextInput } from '@kobato/inkling-internal/components/ui/TextInput'
+import {
+  UploadFileInput,
+  UploadPlaceholder,
+  uploadProgressStyle,
+  useFileInputRefTunnel,
+} from '@kobato/inkling-internal/components/ui/UploadChrome'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { formatVideoDuration } from '@kobato/inkling-internal/nodes/base/nodes/video/format-video-duration'
 import React from 'react'
-
-import type { DragHandlerLike, FileInputRef, FileUploaderLike } from './card-ui-types'
-
-import AudioFileIcon from '../../../assets/icons/inkling-audio-file.svg?react'
-import FilePlaceholderIcon from '../../../assets/icons/inkling-file-placeholder.svg?react'
-import DeleteIcon from '../../../assets/icons/inkling-trash.svg?react'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { formatVideoDuration } from '../../../nodes/base/nodes/video/format-video-duration'
-import { IconButton } from '../IconButton'
-import { MediaPlayer } from '../MediaPlayer'
-import { ProgressBar } from '../ProgressBar'
-import { ReadOnlyOverlay } from '../ReadOnlyOverlay'
-import { TextInput } from '../TextInput'
-import { UploadFileInput, UploadPlaceholder, uploadProgressStyle, useFileInputRefTunnel } from '../UploadChrome'
 
 interface AudioThumbnailProps {
   mimeTypes?: string[]

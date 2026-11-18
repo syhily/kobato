@@ -1,12 +1,11 @@
+import type { SearchLinksFn } from '@kobato/inkling-internal/hooks/useSearchLinks'
+
+import { BookmarkCard, BookmarkIcon } from '@kobato/inkling-internal/components/ui/cards/BookmarkCard'
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { SearchLinksFn } from '../../../../src/hooks/useSearchLinks'
-
-import { BookmarkCard, BookmarkIcon } from '../../../../src/components/ui/cards/BookmarkCard'
-import { InklingHostIntegrationProvider } from '../../../../src/context/InklingHostIntegrationContext'
 
 function renderWithSearchLinks(searchLinks: SearchLinksFn, ui: React.ReactElement) {
   return render(
@@ -22,7 +21,7 @@ function renderWithSearchLinks(searchLinks: SearchLinksFn, ui: React.ReactElemen
   )
 }
 
-vi.mock('../../../../src/components/ui/CardCaptionEditor', () => ({
+vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => <div data-testid="card-caption-editor" />,
 }))
 

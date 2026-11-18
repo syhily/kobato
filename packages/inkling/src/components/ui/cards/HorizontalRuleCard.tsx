@@ -5,7 +5,7 @@ export function HorizontalRuleCard() {
 /**
  * HorizontalRule's decorate render — the React-bearing half of its
  * decorate-target, paired with the declaration by
- * `@/inkling/nodes/cards/card-decorate`. Takes no node props.
+ * `@kobato/inkling-internal/nodes/cards/card-decorate`. Takes no node props.
  */
 export function renderHorizontalRuleCard() {
   return <HorizontalRuleCard />

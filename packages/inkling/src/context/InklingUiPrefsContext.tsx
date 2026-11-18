@@ -1,6 +1,5 @@
+import { DEFAULT_LABELS, type InklingLabels } from '@kobato/inkling-internal/labels/inkling-labels'
 import React from 'react'
-
-import { DEFAULT_LABELS, type InklingLabels } from '../labels/inkling-labels'
 
 // Display toggles: they re-render editor chrome but never change document
 // behaviour. `labels` is already merged with the host's overrides; the default

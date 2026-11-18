@@ -1,3 +1,6 @@
+import { $isAtLinkSearchNode } from '@kobato/inkling-internal/nodes/base'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
 import { $isLinkNode, TOGGLE_LINK_COMMAND, type LinkNode } from '@lexical/link'
 import {
   $createRangeSelection,
@@ -11,10 +14,6 @@ import {
   KEY_DOWN_COMMAND,
   type LexicalEditor,
 } from 'lexical'
-
-import { $isAtLinkSearchNode } from '../../nodes/base'
-import { getSelectedNode } from '../../utils/getSelectedNode'
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
 
 // Link-editing flow — headless module owning the link apply/read/remove surgery
 // and the floating-toolbar session, so the plugin and toolbar components are

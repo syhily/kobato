@@ -1,6 +1,6 @@
-import type { DragDropHandler } from '../../utils/draggable/DragDropHandler'
+import type { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 
-import { createComposerHandle, type ComposerHandle } from './composer-handle'
+import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 
 // Editor-side handle for the per-top-level-composer drag-drop channel, built
 // on the composer handle factory. Owns the DragDropHandler instance, the

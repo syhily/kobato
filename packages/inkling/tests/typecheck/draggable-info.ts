@@ -1,5 +1,9 @@
-import type { ImageNodeDataset } from '../../src/nodes/ImageNode'
-import type { CardDraggableInfo, DraggableInfo, ImageDraggableInfo } from '../../src/utils/draggable/DragDropContainer'
+import type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/ImageNode'
+import type {
+  CardDraggableInfo,
+  DraggableInfo,
+  ImageDraggableInfo,
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 /**
  * Compile-time pins for the closed drag-payload union.
  *
@@ -10,7 +14,7 @@ import type { CardDraggableInfo, DraggableInfo, ImageDraggableInfo } from '../..
  *
  * Type-checked only, never executed.
  */
-import type { Equal, Expect } from '../utils/type-pins'
+import type { Equal, Expect } from '@kobato/inkling/tests/utils/type-pins'
 
 // The union's two branches carry their own dataset
 

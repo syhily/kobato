@@ -1,5 +1,3 @@
-import { describe, expect, it, vi } from 'vitest'
-
 import {
   clampOnDrag,
   clampOnResize,
@@ -12,7 +10,8 @@ import {
   resolveInitialPanelPosition,
   WIDE_CARD_ORIGIN_OFFSET,
   type PanelPosition,
-} from '../../../src/utils/floating-panel'
+} from '@kobato/inkling-internal/utils/floating-panel'
+import { describe, expect, it, vi } from 'vitest'
 
 const viewport = { width: 1024, height: 768 }
 const panelSize = { width: 100, height: 100 }

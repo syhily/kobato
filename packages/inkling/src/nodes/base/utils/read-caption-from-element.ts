@@ -1,4 +1,4 @@
-import { cleanBasicHtml } from '../../../html/clean-basic-html'
+import { cleanBasicHtml } from '@kobato/inkling-internal/html/clean-basic-html'
 
 export function readCaptionFromElement(element: Element, { selector = 'figcaption' } = {}): string | undefined {
   let caption: string | undefined

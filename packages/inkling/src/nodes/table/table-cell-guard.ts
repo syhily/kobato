@@ -1,11 +1,10 @@
 import type { ElementNode, LexicalEditor, LexicalNode } from 'lexical'
 
+import { $isFootnoteRefNode } from '@kobato/inkling-internal/nodes/footnote/FootnoteRefNode'
+import { $isMathInlineNode } from '@kobato/inkling-internal/nodes/math/MathInlineNode'
+import { registerNodeTransformIfPresent } from '@kobato/inkling-internal/transforms/register-node-transform'
 import { TableCellNode } from '@lexical/table'
 import { $createParagraphNode, $isElementNode, $isParagraphNode } from 'lexical'
-
-import { registerNodeTransformIfPresent } from '../../transforms/register-node-transform'
-import { $isFootnoteRefNode } from '../footnote/FootnoteRefNode'
-import { $isMathInlineNode } from '../math/MathInlineNode'
 
 // Inline nodes that may never live inside a table cell — the tree-side
 // counterpart of kobato's table-cell-guard ILLEGAL_MARK_NAMES (a cell's

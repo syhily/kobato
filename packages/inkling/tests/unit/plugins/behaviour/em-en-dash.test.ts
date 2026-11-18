@@ -1,3 +1,5 @@
+import { $replaceDashes } from '@kobato/inkling-internal/plugins/behaviour/em-en-dash'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import {
   $createParagraphNode,
@@ -9,9 +11,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $replaceDashes } from '../../../../src/plugins/behaviour/em-en-dash'
-import { updateEditor } from '../../../utils/test-editor'
 
 // Synchronous test table for the em/en dash grammar — em/en replacement,
 // boundary guards, the HR-shortcut exemption, and caret offset adjustment,

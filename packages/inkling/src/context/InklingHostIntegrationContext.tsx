@@ -1,8 +1,8 @@
-import React from 'react'
+import type { PinturaConfig } from '@kobato/inkling-internal/hooks/usePinturaEditor'
+import type { ListOptionItem, SearchResult } from '@kobato/inkling-internal/hooks/useSearchLinks'
+import type { TelemetryHandler } from '@kobato/inkling-internal/utils/analytics'
 
-import type { PinturaConfig } from '../hooks/usePinturaEditor'
-import type { ListOptionItem, SearchResult } from '../hooks/useSearchLinks'
-import type { TelemetryHandler } from '../utils/analytics'
+import React from 'react'
 
 export interface FileUploader {
   useFileUpload: (type: 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail') => {

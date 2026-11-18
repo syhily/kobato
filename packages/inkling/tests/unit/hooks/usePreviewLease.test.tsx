@@ -1,7 +1,6 @@
+import { usePreviewLease } from '@kobato/inkling-internal/hooks/usePreviewLease'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { usePreviewLease } from '../../../src/hooks/usePreviewLease'
 
 describe('usePreviewLease', () => {
   let createObjectURLSpy: ReturnType<typeof vi.spyOn>

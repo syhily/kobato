@@ -1,16 +1,15 @@
+import type { NestedEditorSpec, TransientPropSpec } from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { GeneratedDecoratorNodeClass } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+
+import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { ensureLexicalNodeOwnMethods, type ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/index'
+import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
+import { populateNestedEditor } from '@kobato/inkling-internal/nodes/nested-editors'
+import { dom } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type EditorState, type LexicalEditor, type LexicalNodeConfig } from 'lexical'
 import { beforeAll, describe, expect, it } from 'vitest'
-
-import type { NestedEditorSpec, TransientPropSpec } from '../../src/nodes/base/card-specs'
-import type { GeneratedDecoratorNodeClass } from '../../src/nodes/base/generate-decorator-node'
-
-import { generateDecoratorNode } from '../../src/nodes/base/generate-decorator-node'
-import { ensureLexicalNodeOwnMethods, type ExportDOMOutput } from '../../src/nodes/base/index'
-import MINIMAL_NODES from '../../src/nodes/MinimalNodes'
-import { populateNestedEditor } from '../../src/nodes/nested-editors'
-import { editorTest } from '../utils/test-editor'
-import { dom } from './test-utils/index'
 
 function createRenderResult(tagName: 'div' | 'span', content: string) {
   const element = dom.window.document.createElement(tagName)

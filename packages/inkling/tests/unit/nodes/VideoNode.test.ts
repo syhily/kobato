@@ -1,12 +1,16 @@
+import { getCardDragIcon } from '@kobato/inkling-internal/nodes/cards/card-menus'
+import {
+  VideoNode,
+  $createVideoNode,
+  $isVideoNode,
+  INSERT_VIDEO_COMMAND,
+} from '@kobato/inkling-internal/nodes/VideoNode'
+import { attachCaptionEditorWithText } from '@kobato/inkling/tests/utils/caption-editor'
+import { getCardMenu } from '@kobato/inkling/tests/utils/card-menu'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { getCardDragIcon } from '../../../src/nodes/cards/card-menus'
-import { VideoNode, $createVideoNode, $isVideoNode, INSERT_VIDEO_COMMAND } from '../../../src/nodes/VideoNode'
-import { attachCaptionEditorWithText } from '../../utils/caption-editor'
-import { getCardMenu } from '../../utils/card-menu'
-import { updateEditor } from '../../utils/test-editor'
 
 const editorNodes = [VideoNode]
 

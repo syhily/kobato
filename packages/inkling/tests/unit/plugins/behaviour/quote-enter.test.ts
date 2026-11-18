@@ -1,3 +1,5 @@
+import { registerQuoteEnterCommand } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/quote-enter'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createQuoteNode, $isQuoteNode, QuoteNode } from '@lexical/rich-text'
 import {
   $createLineBreakNode,
@@ -14,9 +16,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { registerQuoteEnterCommand } from '../../../../src/plugins/behaviour/keyboard-navigation/quote-enter'
-import { createTestEditor, updateEditor } from '../../../utils/test-editor'
 
 // Enter-in-blockquote behaviour: a plain Enter opens a new paragraph inside
 // the SAME quote (a double line break — block children are illegal inside

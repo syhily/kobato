@@ -1,9 +1,8 @@
+import { useCardIsSelected } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { type NodeKey } from 'lexical'
 import React from 'react'
-
-import { useCardIsSelected } from '../context/CardSelectionStoreContext'
-import { SELECT_CARD_COMMAND } from '../plugins/behaviour/commands'
 
 /**
  * The shared `onEscape` handler for editing-capable cards (code block, math):

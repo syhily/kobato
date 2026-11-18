@@ -1,14 +1,16 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
-import { AtLinkResultsPopup } from '../components/ui/AtLinkResultsPopup'
-import Portal from '../components/ui/Portal'
-import { type LinkingSettings, useInklingLinkingSettings } from '../context/InklingHostIntegrationContext'
-import { useInklingLabels } from '../hooks/useInklingLabels'
-import { useSearchLinks, type ListOptionItem, type ListOptionSection } from '../hooks/useSearchLinks'
-import { AtLinkNode, AtLinkSearchNode } from '../nodes/base'
-import trackEvent from '../utils/analytics'
-import { isInternalUrl } from '../utils/isInternalUrl'
+import { AtLinkResultsPopup } from '@kobato/inkling-internal/components/ui/AtLinkResultsPopup'
+import Portal from '@kobato/inkling-internal/components/ui/Portal'
+import {
+  type LinkingSettings,
+  useInklingLinkingSettings,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import {
+  useSearchLinks,
+  type ListOptionItem,
+  type ListOptionSection,
+} from '@kobato/inkling-internal/hooks/useSearchLinks'
+import { AtLinkNode, AtLinkSearchNode } from '@kobato/inkling-internal/nodes/base'
 import {
   $commitAtLinkSelection,
   $removeAtLink,
@@ -17,7 +19,11 @@ import {
   registerAtLinkNodeTransform,
   registerAtLinkSession,
   type AtLinkSessionSnapshot,
-} from './behaviour/at-link'
+} from '@kobato/inkling-internal/plugins/behaviour/at-link'
+import trackEvent from '@kobato/inkling-internal/utils/analytics'
+import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import React from 'react'
 
 function noResultOptions(noResultsLabel: string): ListOptionSection[] {
   return [

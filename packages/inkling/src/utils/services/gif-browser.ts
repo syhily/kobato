@@ -5,10 +5,10 @@ import {
   type GifData,
   type GifProviderConfig,
   isGifResponse,
-} from './gif'
-import { createRequestTrack, type RequestScheduler } from './request-track'
-import { runTrackedRequest, type ServiceMachine } from './service-machine'
-import { createSnapshotStore } from './snapshot-store'
+} from '@kobato/inkling-internal/utils/services/gif'
+import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/utils/services/request-track'
+import { runTrackedRequest, type ServiceMachine } from '@kobato/inkling-internal/utils/services/service-machine'
+import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
 
 // Gif browser — the headless module behind the GIF selector: fetch/pagination behind an
 // injected port, column balancing, and the keyboard-navigation machine as pure transitions

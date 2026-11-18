@@ -1,13 +1,16 @@
+import type { CalloutNode } from '@kobato/inkling-internal/nodes/CalloutNode'
+
+import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
+import {
+  CALLOUT_COLORS,
+  CalloutCard,
+  type CalloutColorName,
+} from '@kobato/inkling-internal/components/ui/cards/CalloutCard'
+import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
+import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
+import { $isCalloutNode } from '@kobato/inkling-internal/nodes/base'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
-
-import type { CalloutNode } from './CalloutNode'
-
-import { CardActionToolbar } from '../components/ui/CardActionToolbar'
-import { CALLOUT_COLORS, CalloutCard, type CalloutColorName } from '../components/ui/cards/CalloutCard'
-import { useCardIsEditing } from '../context/CardSelectionStoreContext'
-import { useCardChrome } from '../hooks/useCardChrome'
-import { $isCalloutNode } from './base'
 
 // backgroundColor is a free string on the node — HTML import captures any
 // `inkling-callout-card-*` class word — so narrow it to the known palette at
@@ -102,7 +105,7 @@ export function CalloutNodeComponent({
 
 /**
  * Callout's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@/inkling/nodes/cards/card-decorate`.
+ * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderCalloutCard(node: CalloutNode) {
   // Null only inside the headless markdown round-trip editor (the card

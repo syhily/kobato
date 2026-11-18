@@ -1,6 +1,5 @@
+import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
 import { describe, expect, it, vi } from 'vitest'
-
-import { createSnapshotStore } from '../../../src/utils/services/snapshot-store'
 
 describe('createSnapshotStore', () => {
   it('merges partials, keeps untouched fields, and notifies listeners', () => {

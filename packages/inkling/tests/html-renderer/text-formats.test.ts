@@ -1,7 +1,6 @@
+import { ExtendedTextNode } from '@kobato/inkling-internal/nodes/base'
+import shouldRender from '@kobato/inkling/tests/html-renderer/utils/should-render'
 import { describe, it } from 'vitest'
-
-import { ExtendedTextNode } from '../../src/nodes/base'
-import shouldRender from './utils/should-render'
 
 describe('Basic formats', function () {
   it(

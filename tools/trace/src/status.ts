@@ -4,7 +4,6 @@
 // so a missing asset means the panel has not been configured and tested yet.
 
 import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline.ts'
-
 import {
   containerExists,
   containerRunning,
@@ -17,7 +16,7 @@ import {
   readState,
   stateFilePath,
   waitForOpenObserve,
-} from './lib.ts'
+} from '@kobato/trace/lib.ts'
 
 async function main(): Promise<void> {
   const state = await readState()

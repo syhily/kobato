@@ -1,9 +1,8 @@
+import { useSelectionAnchoredPopup } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
+import { type PopupRectLike } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { act, renderHook } from '@testing-library/react'
 import { type LexicalEditor } from 'lexical'
 import { afterEach, describe, expect, it } from 'vitest'
-
-import { useSelectionAnchoredPopup } from '../../../src/hooks/useSelectionAnchoredPopup'
-import { type PopupRectLike } from '../../../src/utils/selection-anchored-popup'
 
 function rect(top: number, left: number, width: number, height: number): PopupRectLike {
   return { top, left, width, height, bottom: top + height, right: left + width }

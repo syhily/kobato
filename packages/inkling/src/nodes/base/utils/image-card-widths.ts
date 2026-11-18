@@ -1,4 +1,4 @@
-import { CARD_WIDTHS, isCardWidth, type CardWidth } from './card-widths'
+import { CARD_WIDTHS, isCardWidth, type CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-widths'
 
 export function getAllowedImageCardWidths(configuredWidths: string[] | undefined | null): CardWidth[] {
   if (!Array.isArray(configuredWidths)) {

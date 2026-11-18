@@ -1,3 +1,9 @@
+import type { CardNode } from '@kobato/inkling/tests/utils/card-node'
+
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { registerCardSelection } from '@kobato/inkling-internal/plugins/behaviour/registerCardSelection'
+import { drainEnqueuedUpdates } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -9,13 +15,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { CardNode } from '../../../utils/card-node'
-
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { createCardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import { registerCardSelection } from '../../../../src/plugins/behaviour/registerCardSelection'
-import { drainEnqueuedUpdates } from '../../../utils/test-editor'
 
 // Characterization pins for registerCardSelection. The setter spies stand in
 // for the React mirror by observing store notifications; assertions stay on

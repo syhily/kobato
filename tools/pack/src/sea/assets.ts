@@ -22,15 +22,7 @@ import {
   SEA_WASM_CNFS_KEY,
   type SeaAssetCodec,
 } from '@kobato/distribution/sea-assets.ts'
-import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
-import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { availableParallelism } from 'node:os'
-import { dirname, join, relative } from 'node:path'
-import { constants as zlibConstants, zstdCompressSync } from 'node:zlib'
-
-import { fail, run } from './exec.ts'
+import { fail, run } from '@kobato/pack/sea/exec.ts'
 import {
   repoRoot,
   seaIntermediatesDir,
@@ -39,7 +31,14 @@ import {
   seaSmokeWorkerBundlePath,
   seaStagedNativesDir,
   seaWorkerBundlePath,
-} from './paths.ts'
+} from '@kobato/pack/sea/paths.ts'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import { availableParallelism } from 'node:os'
+import { dirname, join, relative } from 'node:path'
+import { constants as zlibConstants, zstdCompressSync } from 'node:zlib'
 
 const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
 

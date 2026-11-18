@@ -1,3 +1,9 @@
+import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
+import { $isCodeBlockNode, CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
+import { $isHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { PASTE_MARKDOWN_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { MarkdownPastePlugin } from '@kobato/inkling-internal/plugins/MarkdownPastePlugin'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $isHeadingNode, HeadingNode, registerRichText } from '@lexical/rich-text'
 import { act, renderHook } from '@testing-library/react'
@@ -12,13 +18,6 @@ import {
 } from 'lexical'
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { loadPasteDialect } from '../../../src/markdown/lazy-paste-dialect'
-import { $isCodeBlockNode, CodeBlockNode } from '../../../src/nodes/CodeBlockNode'
-import { registerCardDecorateAdapter } from '../../../src/nodes/decorate-card'
-import { $isHorizontalRuleNode, HorizontalRuleNode } from '../../../src/nodes/HorizontalRuleNode'
-import { PASTE_MARKDOWN_COMMAND } from '../../../src/plugins/behaviour/clipboard-protocol'
-import { MarkdownPastePlugin } from '../../../src/plugins/MarkdownPastePlugin'
 
 // This spec creates its own editor, so it must register the decorate adapter
 // itself: the card nodes below reach decorate() during the paste round trips.

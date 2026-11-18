@@ -1,9 +1,8 @@
+import { Error } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Error'
+import { ERROR_TYPE } from '@kobato/inkling-internal/utils/services/gif'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
-
-import { Error } from '../../../../../../src/components/ui/file-selectors/Gif/Error'
-import { ERROR_TYPE } from '../../../../../../src/utils/services/gif'
 
 describe('Gif Error', () => {
   it('renders the common error message', () => {

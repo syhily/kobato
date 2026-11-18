@@ -1,6 +1,5 @@
+import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
 import { describe, expect, it } from 'vitest'
-
-import { isInternalUrl } from '../../../src/utils/isInternalUrl'
 
 describe('isInternalUrl', () => {
   it('returns false when url or siteUrl is missing', () => {

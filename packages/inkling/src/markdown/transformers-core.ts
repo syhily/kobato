@@ -2,10 +2,11 @@
 // `@lexical/markdown`, so a card-less composition (`InklingComposerBase` —
 // `MarkdownShortcutPlugin`'s default transformer set is this module's
 // MINIMAL_TRANSFORMERS) gets markdown shortcuts without importing the card
-// shims behind `@/inkling/markdown/transformers` (HR / CODE_BLOCK / the DEFAULT
+// shims behind `@kobato/inkling-internal/markdown/transformers` (HR / CODE_BLOCK / the DEFAULT
 // set live there — their `dependencies` and trigger bodies construct card
 // nodes).
 
+import { inlineDelimiterTag } from '@kobato/inkling-internal/markdown/grammar'
 import {
   ORDERED_LIST,
   TEXT_FORMAT_TRANSFORMERS,
@@ -14,10 +15,8 @@ import {
   type Transformer,
 } from '@lexical/markdown'
 
-import { inlineDelimiterTag } from './grammar'
-
 // The `@lexical/markdown` engine's projection of the shared grammar table
-// (`@/inkling/markdown/grammar`); HIGHLIGHT's `==` rides upstream's
+// (`@kobato/inkling-internal/markdown/grammar`); HIGHLIGHT's `==` rides upstream's
 // TEXT_FORMAT_TRANSFORMERS.
 export const SUBSCRIPT = {
   format: ['subscript'] as const,

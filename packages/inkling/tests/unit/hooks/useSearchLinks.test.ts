@@ -1,7 +1,6 @@
+import { type SearchResult, useSearchLinks } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { type SearchResult, useSearchLinks } from '../../../src/hooks/useSearchLinks'
 
 // Adapter tests: the request tracks and race policy live in
 // search-coordinator.test.ts (synchronous, injected scheduler). This file only

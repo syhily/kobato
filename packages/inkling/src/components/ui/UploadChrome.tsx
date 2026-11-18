@@ -1,11 +1,10 @@
+import type { DragHandlerLike, FileInputRef } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
+import type { MediaPlaceholderSize, PlaceholderIconName } from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
+
+import { MediaPlaceholder } from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
+import { ProgressBar } from '@kobato/inkling-internal/components/ui/ProgressBar'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 import React from 'react'
-
-import type { DragHandlerLike, FileInputRef } from './cards/card-ui-types'
-import type { MediaPlaceholderSize, PlaceholderIconName } from './MediaPlaceholder'
-
-import { cx } from '../../utils/cx'
-import { MediaPlaceholder } from './MediaPlaceholder'
-import { ProgressBar } from './ProgressBar'
 
 /**
  * Upload chrome — the visual half of the media cards' upload UI (the headless

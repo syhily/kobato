@@ -1,19 +1,17 @@
+import type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/ImageNode'
 import type { NodeKey } from 'lexical'
 
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
-import type { ImageNodeDataset } from '../../nodes/ImageNode'
-
+import LibrarySelector from '@kobato/inkling-internal/components/ui/LibrarySelector'
 import {
   type ImageLibrarySettings,
   type LibraryImageItem,
   useInklingLibrarySettings,
-} from '../../context/InklingHostIntegrationContext'
-import { useLibraryBrowser } from '../../hooks/useLibraryBrowser'
-import { useSelectorPlaceholderLifecycle } from '../../hooks/useSelectorPlaceholderLifecycle'
-import { INSERT_FROM_LIBRARY_COMMAND } from '../../plugins/InklingSelectorPlugin'
-import LibrarySelector from './LibrarySelector'
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useLibraryBrowser } from '@kobato/inkling-internal/hooks/useLibraryBrowser'
+import { useSelectorPlaceholderLifecycle } from '@kobato/inkling-internal/hooks/useSelectorPlaceholderLifecycle'
+import { INSERT_FROM_LIBRARY_COMMAND } from '@kobato/inkling-internal/plugins/InklingSelectorPlugin'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import React from 'react'
 
 /**
  * The only field-mapping point of the library flow: library item → insert dataset. The three host-schema keys are

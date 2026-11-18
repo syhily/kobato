@@ -1,11 +1,11 @@
-import type { CodeBlockNodeDataset } from './cards/card-commands'
+import type { CodeBlockNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-import { assembleCardNodeOnce } from './assemble-card-node'
-import { codeBlockDeclaration } from './cards/codeblock.declaration'
-export { $isCodeBlockNode } from './base/nodes/codeblock/CodeBlockNode'
-export type { SerializedCodeBlockNode } from './base/nodes/codeblock/CodeBlockNode'
-export { INSERT_CODE_BLOCK_COMMAND } from './cards/card-commands'
-export type { CodeBlockNodeDataset } from './cards/card-commands'
+import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-card-node'
+import { codeBlockDeclaration } from '@kobato/inkling-internal/nodes/cards/codeblock.declaration'
+export { $isCodeBlockNode } from '@kobato/inkling-internal/nodes/base/nodes/codeblock/CodeBlockNode'
+export type { SerializedCodeBlockNode } from '@kobato/inkling-internal/nodes/base/nodes/codeblock/CodeBlockNode'
+export { INSERT_CODE_BLOCK_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
+export type { CodeBlockNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /**
  * The registered class, assembled once from the card declaration by

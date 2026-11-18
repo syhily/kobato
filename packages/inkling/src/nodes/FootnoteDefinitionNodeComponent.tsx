@@ -1,14 +1,12 @@
+import type { FootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
 import type { EditorState, LexicalEditor, NodeKey } from 'lexical'
 
+import InklingNestedEditor from '@kobato/inkling-internal/components/InklingNestedEditor'
+import { useFootnoteHandle, useFootnoteHandleState } from '@kobato/inkling-internal/context/FootnoteHandleContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { $removeFootnote } from '@kobato/inkling-internal/plugins/behaviour/footnotes'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
-
-import type { FootnoteDefinitionNode } from './FootnoteDefinitionNode'
-
-import InklingNestedEditor from '../components/InklingNestedEditor'
-import { useFootnoteHandle, useFootnoteHandleState } from '../context/FootnoteHandleContext'
-import { useInklingLabels } from '../hooks/useInklingLabels'
-import { $removeFootnote } from '../plugins/behaviour/footnotes'
 
 export interface FootnoteDefinitionNodeComponentProps {
   nodeKey: NodeKey
@@ -97,7 +95,7 @@ export function FootnoteDefinitionNodeComponent({
 /**
  * The footnote definition's decorate render — the React-bearing half of its
  * decorate-target, paired with the declaration by
- * `@/inkling/nodes/cards/card-decorate`.
+ * `@kobato/inkling-internal/nodes/cards/card-decorate`.
  */
 export function renderFootnoteDefinitionCard(node: FootnoteDefinitionNode) {
   // Same headless-round-trip invariant as toggle's nested editors: null only

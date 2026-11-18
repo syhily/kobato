@@ -7,17 +7,18 @@
  * last and patch the node (or paste-as-link) over the newer result.
  */
 
+import type {
+  BookmarkEmbedResponse,
+  LinkingSettings,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import { $isBookmarkNode, $updateCardNode } from '@kobato/inkling-internal/nodes/base'
+import { focusEditorRoot } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { createRequestTrack } from '@kobato/inkling-internal/utils/services/request-track'
+import { runTrackedRequest } from '@kobato/inkling-internal/utils/services/service-machine'
+import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
 import { $getSelection, $setSelection } from 'lexical'
-
-import type { BookmarkEmbedResponse, LinkingSettings } from '../context/InklingHostIntegrationContext'
-
-import { $isBookmarkNode, $updateCardNode } from '../nodes/base'
-import { focusEditorRoot } from '../plugins/behaviour/card-adjacency'
-import { createRequestTrack } from '../utils/services/request-track'
-import { runTrackedRequest } from '../utils/services/service-machine'
-import { createSnapshotStore } from '../utils/services/snapshot-store'
 
 // The runtime boundary stays defensive: untyped JavaScript hosts bypass the
 // closed response contract's type checking.

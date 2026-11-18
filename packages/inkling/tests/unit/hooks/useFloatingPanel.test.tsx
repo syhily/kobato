@@ -1,11 +1,10 @@
 import type { LexicalEditor, NodeKey } from 'lexical'
 
+import useFloatingPanel from '@kobato/inkling-internal/hooks/useFloatingPanel'
 import { LexicalComposerContext, type LexicalComposerContextWithEditor } from '@lexical/react/LexicalComposerContext'
 import { act, render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import useFloatingPanel from '../../../src/hooks/useFloatingPanel'
 
 class MockResizeObserver {
   static instances: MockResizeObserver[] = []

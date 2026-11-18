@@ -1,3 +1,6 @@
+import { $createBookmarkNode, BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
+import { $replaceCardWithParagraph } from '@kobato/inkling-internal/plugins/behaviour/card-removal'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createLinkNode, LinkNode } from '@lexical/link'
 import {
   $createParagraphNode,
@@ -11,10 +14,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { $createBookmarkNode, BookmarkNode } from '../../../../src/nodes/BookmarkNode'
-import { $replaceCardWithParagraph } from '../../../../src/plugins/behaviour/card-removal'
-import { updateEditor } from '../../../utils/test-editor'
 
 // One card type is enough to exercise the surgery in jsdom (the same
 // approach as the drop-surgery tests).

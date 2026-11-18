@@ -4,7 +4,7 @@ import type {
   DragPreview,
   DroppablePosition,
   DropResolution,
-} from './DragDropContainer'
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
 // the per-drag event handlers ActiveDrag listens to for the drag's lifetime
 export interface ActiveDragListeners {

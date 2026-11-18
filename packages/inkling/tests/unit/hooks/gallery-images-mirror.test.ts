@@ -1,8 +1,7 @@
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
+
+import { createGalleryImagesMirror } from '@kobato/inkling-internal/hooks/gallery-images-mirror'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { GalleryImage } from '../../../src/types/gallery'
-
-import { createGalleryImagesMirror } from '../../../src/hooks/gallery-images-mirror'
 
 const image = (overrides: Partial<GalleryImage>): GalleryImage => ({ width: 100, height: 100, ...overrides })
 

@@ -1,11 +1,10 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   initialSlot,
   nextSlot,
   previousSlot,
   slotToItemIndex,
-} from '../../../../src/components/ui/SnippetInput/snippet-navigator'
+} from '@kobato/inkling-internal/components/ui/SnippetInput/snippet-navigator'
+import { describe, expect, it } from 'vitest'
 
 describe('snippet navigator', () => {
   it('starts on the first item when the query matches, on the create button otherwise', () => {

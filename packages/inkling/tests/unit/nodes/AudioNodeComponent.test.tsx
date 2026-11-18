@@ -1,15 +1,17 @@
+import {
+  InklingHostIntegrationProvider,
+  type FileUploader,
+} from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { AudioNode, $createAudioNode } from '@kobato/inkling-internal/nodes/AudioNode'
+import { AudioNodeComponent } from '@kobato/inkling-internal/nodes/AudioNodeComponent'
+import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { createTestEditor, tick } from '@kobato/inkling/tests/utils/test-editor'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider, type FileUploader } from '../../../src/context/InklingHostIntegrationContext'
-import { AudioNode, $createAudioNode } from '../../../src/nodes/AudioNode'
-import { AudioNodeComponent } from '../../../src/nodes/AudioNodeComponent'
-import { EDIT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { createCardSelectionStoreWrapper } from '../../utils/card-selection-store'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { createTestEditor, tick } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

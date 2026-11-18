@@ -1,6 +1,8 @@
+import {
+  getAllowedImageCardWidths,
+  getDefaultImageCardWidth,
+} from '@kobato/inkling-internal/nodes/base/utils/image-card-widths'
 import { describe, expect, it } from 'vitest'
-
-import { getAllowedImageCardWidths, getDefaultImageCardWidth } from '../../../src/nodes/base/utils/image-card-widths'
 
 describe('image-card-widths utils', () => {
   it('returns all widths when config is missing', () => {

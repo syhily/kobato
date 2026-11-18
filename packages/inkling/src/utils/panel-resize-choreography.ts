@@ -2,9 +2,8 @@
 // floating-panel's clamp/drift math, plus the DOM assembly (`createPanelDomWiring`).
 // Every measurement goes through injected ports.
 
+import type { PanelSuppression } from '@kobato/inkling-internal/utils/panel-suppression'
 import type { RefObject } from 'react'
-
-import type { PanelSuppression } from './panel-suppression'
 
 import {
   clampOnDrag,
@@ -18,10 +17,13 @@ import {
   type PanelSize,
   type PanelSpacing,
   type PanelViewport,
-} from './floating-panel'
-import { createPanelDragSession, type PanelDragActiveListeners } from './panel-drag-session'
-import { getScrollAncestor } from './scroll-ancestor'
-import { debounce } from './timing'
+} from '@kobato/inkling-internal/utils/floating-panel'
+import {
+  createPanelDragSession,
+  type PanelDragActiveListeners,
+} from '@kobato/inkling-internal/utils/panel-drag-session'
+import { getScrollAncestor } from '@kobato/inkling-internal/utils/scroll-ancestor'
+import { debounce } from '@kobato/inkling-internal/utils/timing'
 
 export interface PanelReclampInput {
   /** Current committed panel position. */

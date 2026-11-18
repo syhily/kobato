@@ -1,3 +1,17 @@
+import { HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
+import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import {
+  createCardSelectionStore,
+  type CardSelectionStore,
+} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import {
+  DELETE_CARD_COMMAND,
+  INSERT_CARD_COMMAND,
+  SELECT_CARD_COMMAND,
+} from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import {
   $createParagraphNode,
   $createTextNode,
@@ -7,18 +21,6 @@ import {
   type LexicalNodeConfig,
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { HorizontalRuleNode } from '../../../../src/nodes/HorizontalRuleNode'
-import { $createImageNode, ImageNode } from '../../../../src/nodes/ImageNode'
-import { createCardPickerStore } from '../../../../src/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore, type CardSelectionStore } from '../../../../src/plugins/behaviour/cardSelectionStore'
-import {
-  DELETE_CARD_COMMAND,
-  INSERT_CARD_COMMAND,
-  SELECT_CARD_COMMAND,
-} from '../../../../src/plugins/behaviour/commands'
-import { registerCardCommands } from '../../../../src/plugins/behaviour/registerCardCommands'
-import { updateEditor } from '../../../utils/test-editor'
 
 function createTestEditor(nodes: LexicalNodeConfig[] = []) {
   return createEditor({

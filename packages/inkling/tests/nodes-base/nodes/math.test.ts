@@ -1,11 +1,10 @@
+import { BaseMathNode, $createBaseMathNode, $isMathNode } from '@kobato/inkling-internal/nodes/base/index'
+import { expectPrettifiedHtml } from '@kobato/inkling/tests/nodes-base/test-utils/assertions'
+import { dom, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
-
-import { BaseMathNode, $createBaseMathNode, $isMathNode } from '../../../src/nodes/base/index'
-import { editorTest } from '../../utils/test-editor'
-import { expectPrettifiedHtml } from '../test-utils/assertions'
-import { dom, html } from '../test-utils/index'
 
 const editorNodes = [BaseMathNode]
 

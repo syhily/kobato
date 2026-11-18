@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import type { GifData } from '@kobato/inkling-internal/utils/services/gif'
 
-import type { GifData } from '../../../../utils/services/gif'
+import React, { useEffect, useRef } from 'react'
 
 export interface GifProps {
   data: GifData

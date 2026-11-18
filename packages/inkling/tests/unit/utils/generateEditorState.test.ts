@@ -1,8 +1,7 @@
+import { DEFAULT_NODES } from '@kobato/inkling-internal/'
+import generateEditorState, { _$generateNodesFromHTML } from '@kobato/inkling-internal/utils/generateEditorState'
 import { $isElementNode, createEditor, type CreateEditorArgs, type LexicalNode } from 'lexical'
 import { describe, expect, test } from 'vitest'
-
-import { DEFAULT_NODES } from '../../../src/'
-import generateEditorState, { _$generateNodesFromHTML } from '../../../src/utils/generateEditorState'
 
 describe('Utils: generateEditorState', () => {
   function runGenerateEditorState(

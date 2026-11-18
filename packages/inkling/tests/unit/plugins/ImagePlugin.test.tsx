@@ -1,13 +1,12 @@
+import { ImageNode, INSERT_IMAGE_COMMAND } from '@kobato/inkling-internal/nodes/ImageNode'
+import { INSERT_MEDIA_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
+import { CardInsertPlugin } from '@kobato/inkling-internal/plugins/CardInsertPlugin'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createTestEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { act, renderHook } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { ImageNode, INSERT_IMAGE_COMMAND } from '../../../src/nodes/ImageNode'
-import { INSERT_MEDIA_COMMAND } from '../../../src/plugins/behaviour/clipboard-protocol'
-import { INSERT_CARD_COMMAND } from '../../../src/plugins/behaviour/commands'
-import { CardInsertPlugin } from '../../../src/plugins/CardInsertPlugin'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createTestEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

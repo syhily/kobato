@@ -1,12 +1,23 @@
+import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
+import type {
+  DraggableInfo,
+  DroppablePosition,
+  DropResolution,
+} from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+
+import useDropTarget from '@kobato/inkling-internal/hooks/useDropTarget'
+import { pick } from '@kobato/inkling-internal/utils'
+import {
+  isGalleryImageDrag,
+  resolveGalleryDrop,
+  resolveGallerySourceRemoval,
+} from '@kobato/inkling-internal/utils/draggable/gallery-drop'
+import {
+  createReorderGeometry,
+  resolveDrop,
+  resolveReorder,
+} from '@kobato/inkling-internal/utils/draggable/reorder-rules'
 import React from 'react'
-
-import type { GalleryImage } from '../types/gallery'
-import type { DraggableInfo, DroppablePosition, DropResolution } from '../utils/draggable/DragDropContainer'
-
-import { pick } from '../utils'
-import { isGalleryImageDrag, resolveGalleryDrop, resolveGallerySourceRemoval } from '../utils/draggable/gallery-drop'
-import { createReorderGeometry, resolveDrop, resolveReorder } from '../utils/draggable/reorder-rules'
-import useDropTarget from './useDropTarget'
 
 export type { GalleryImage }
 

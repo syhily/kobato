@@ -1,15 +1,14 @@
+import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
+import { INSERT_HTML_COMMAND } from '@kobato/inkling-internal/nodes/HtmlNode'
+import PlusCardMenuPlugin from '@kobato/inkling-internal/plugins/PlusCardMenuPlugin'
+import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
+import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
+import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { InklingHostIntegrationProvider } from '../../../src/context/InklingHostIntegrationContext'
-import DEFAULT_NODES from '../../../src/nodes/DefaultNodes'
-import { INSERT_HTML_COMMAND } from '../../../src/nodes/HtmlNode'
-import PlusCardMenuPlugin from '../../../src/plugins/PlusCardMenuPlugin'
-import { mockComposerContext } from '../../utils/composer-context'
-import { createHostIntegrationValue } from '../../utils/host-integration-context'
-import { updateEditor } from '../../utils/test-editor'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),

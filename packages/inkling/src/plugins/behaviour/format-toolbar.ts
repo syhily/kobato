@@ -11,6 +11,9 @@
  * different consumer.
  */
 
+import { $createAsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
+import { isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $isListNode, ListNode } from '@lexical/list'
 import {
   $createHeadingNode,
@@ -32,10 +35,6 @@ import {
   type ElementFormatType,
   type LexicalEditor,
 } from 'lexical'
-
-import { $createAsideNode } from '../../nodes/AsideNode'
-import { getSelectedNode } from '../../utils/getSelectedNode'
-import { isNestedEditor } from '../../utils/lexical-internals'
 
 /** The block types the toolbar tracks — only membership is read, so this is a Set, not a label map. */
 export const FORMAT_BLOCK_TYPES: ReadonlySet<string> = new Set([

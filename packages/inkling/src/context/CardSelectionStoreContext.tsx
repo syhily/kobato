@@ -1,7 +1,10 @@
 import type { NodeKey } from 'lexical'
 
-import { createCardSelectionStore, type CardSelectionState } from '../plugins/behaviour/cardSelectionStore'
-import { createComposerHandleBinding } from '../plugins/behaviour/composer-handle'
+import {
+  createCardSelectionStore,
+  type CardSelectionState,
+} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { createComposerHandleBinding } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 
 // Per-composer card selection store; nested composers share the top-level one.
 export const {

@@ -1,6 +1,6 @@
-import CloseIcon from '../../assets/icons/inkling-close.svg?react'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import Portal from './Portal'
+import CloseIcon from '@kobato/inkling-internal/assets/icons/inkling-close.svg?react'
+import Portal from '@kobato/inkling-internal/components/ui/Portal'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
 export function Modal({
   isOpen,

@@ -1,14 +1,21 @@
-import type { CardSpecFieldMapFor, DecoratorNodeProperty, TransientPropSpec } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 
-import { transientInitialFileProp, transientTriggerFileDialogProp } from '../../card-specs'
+import {
+  transientInitialFileProp,
+  transientTriggerFileDialogProp,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { renderAudioNode } from './audio-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { renderAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/audio-renderer'
 
 // The card's transient-prop spec lives here, beside the class it types — the
 // declaration imports it from this module. `as const` keeps the literal `name`s

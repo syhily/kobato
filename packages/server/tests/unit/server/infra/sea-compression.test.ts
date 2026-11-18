@@ -1,16 +1,15 @@
 import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/distribution/sea-assets.ts'
-import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea.ts'
-import { createHash } from 'node:crypto'
-import { zstdDecompressSync } from 'node:zlib'
-import { describe, expect, it } from 'vitest'
-
 import {
   isDrizzleSnapshotArtifact,
   packAssetBytes,
   SEA_COMPRESSION_MIN_BYTES,
   shouldPackAsset,
   sortManifestFiles,
-} from '../../../../../../tools/pack/src/sea/assets.ts'
+} from '@kobato/pack/sea/assets.ts'
+import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea.ts'
+import { createHash } from 'node:crypto'
+import { zstdDecompressSync } from 'node:zlib'
+import { describe, expect, it } from 'vitest'
 
 // SEA blob compression contract: the writer and reader must agree on the
 // packed format, with the manifest asset riding uncompressed as the

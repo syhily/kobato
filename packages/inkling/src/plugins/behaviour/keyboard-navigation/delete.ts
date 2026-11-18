@@ -1,15 +1,13 @@
+import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 import type { LexicalEditor } from 'lexical'
-
-import { COMMAND_PRIORITY_LOW, KEY_DELETE_COMMAND } from 'lexical'
-
-import type { KeyboardNavigationDeps } from './types'
 
 import {
   $removeEmptyBlockAndSelectCard,
   $removeLogicallyAdjacentCard,
   dispatchSelectedCardDeletion,
   editorOwnsFocus,
-} from '../card-adjacency'
+} from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
+import { COMMAND_PRIORITY_LOW, KEY_DELETE_COMMAND } from 'lexical'
 
 export function registerDeleteCommand(editor: LexicalEditor, deps: KeyboardNavigationDeps): () => void {
   const { store, isNested } = deps

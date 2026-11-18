@@ -1,21 +1,20 @@
+import type { DragHandlerLike } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
+
+import { ButtonGroup, type ButtonGroupButton } from '@kobato/inkling-internal/components/ui/ButtonGroup'
+import { ColorOptionButtons } from '@kobato/inkling-internal/components/ui/ColorOptionButtons'
+import { ColorIndicator, type ColorSwatchData } from '@kobato/inkling-internal/components/ui/ColorPicker'
+import { Input } from '@kobato/inkling-internal/components/ui/Input'
+import { InputList, InputListItem } from '@kobato/inkling-internal/components/ui/InputList'
+import { MediaUploader, type MediaUploaderProps } from '@kobato/inkling-internal/components/ui/MediaUploader'
+import { SettingDescription, SettingLabel } from '@kobato/inkling-internal/components/ui/SettingLabel'
+import { TabView } from '@kobato/inkling-internal/components/ui/TabView'
+import { Toggle } from '@kobato/inkling-internal/components/ui/Toggle'
+import CardContext from '@kobato/inkling-internal/context/CardContext'
+import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import useFloatingPanel from '@kobato/inkling-internal/hooks/useFloatingPanel'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { cx } from '@kobato/inkling-internal/utils/cx'
 import React from 'react'
-
-import type { DragHandlerLike } from './cards/card-ui-types'
-
-import CardContext from '../../context/CardContext'
-import { useInklingLinkingSettings } from '../../context/InklingHostIntegrationContext'
-import useFloatingPanel from '../../hooks/useFloatingPanel'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { cx } from '../../utils/cx'
-import { ButtonGroup, type ButtonGroupButton } from './ButtonGroup'
-import { ColorOptionButtons } from './ColorOptionButtons'
-import { ColorIndicator, type ColorSwatchData } from './ColorPicker'
-import { Input } from './Input'
-import { InputList, InputListItem } from './InputList'
-import { MediaUploader, type MediaUploaderProps } from './MediaUploader'
-import { SettingDescription, SettingLabel } from './SettingLabel'
-import { TabView } from './TabView'
-import { Toggle } from './Toggle'
 
 export type SettingsPanelProps = {
   darkMode?: boolean

@@ -1,12 +1,11 @@
+import { useFootnoteHandle } from '@kobato/inkling-internal/context/FootnoteHandleContext'
+import { publishFootnoteMaps, registerFootnotes } from '@kobato/inkling-internal/plugins/behaviour/footnotes'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useEffect } from 'react'
 
-import { useFootnoteHandle } from '../context/FootnoteHandleContext'
-import { publishFootnoteMaps, registerFootnotes } from './behaviour/footnotes'
-
 /**
  * The React adapter for the footnote behaviour module
- * (`@/inkling/plugins/behaviour/footnotes`): feeds the per-composer footnote handle
+ * (`@kobato/inkling-internal/plugins/behaviour/footnotes`): feeds the per-composer footnote handle
  * (initial publish so preloaded definitions render their badges) and
  * registers the caret-trigger scan, the renumber scan, and the doc-end run
  * transform. Renders nothing.

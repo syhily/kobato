@@ -1,4 +1,10 @@
 import {
+  $fireFenceKeyboardShortcut,
+  $insertCodeBlockForShortcut,
+} from '@kobato/inkling-internal/markdown/card-shortcuts'
+import { $isCodeBlockNode, CodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
+import { createTestEditor, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
+import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -9,10 +15,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { describe, expect, it } from 'vitest'
-
-import { $fireFenceKeyboardShortcut, $insertCodeBlockForShortcut } from '../../../src/markdown/card-shortcuts'
-import { $isCodeBlockNode, CodeBlockNode } from '../../../src/nodes/CodeBlockNode'
-import { createTestEditor, updateEditor } from '../../utils/test-editor'
 
 // Direct pins for the enter/tab fence trigger body (the card-shortcut seam).
 // The full keyboard dispatch paths — enter, tab, and the isNested guard — are

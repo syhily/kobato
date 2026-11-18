@@ -1,21 +1,28 @@
+import type {
+  CardSpecFieldMapFor,
+  DecoratorNodeProperty,
+  NestedEditorSpec,
+  TransientPropSpec,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 import type { NodeKey } from 'lexical'
 import type { ComponentType } from 'react'
 
-import type { CardSpecFieldMapFor, DecoratorNodeProperty, NestedEditorSpec, TransientPropSpec } from '../../card-specs'
-import type { CardImportSpec } from '../../import-spec'
-
-import { strOr } from '../../../../utils/value-guards'
-import { transientInitialFileProp, transientTriggerFileDialogProp } from '../../card-specs'
+import {
+  transientInitialFileProp,
+  transientTriggerFileDialogProp,
+} from '@kobato/inkling-internal/nodes/base/card-specs'
 import {
   generateDecoratorNode,
   redactDataUrlValue,
   type DecoratorNodeData,
   type DecoratorNodeValueMap,
   type SerializedGeneratedDecoratorNode,
-} from '../../generate-decorator-node'
-import { readImageAttributesFromElement } from '../../utils/read-image-attributes-from-element'
-import { captionEditorSpecBase } from '../caption-editor-spec'
-import { renderImageNode } from './image-renderer'
+} from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
+import { captionEditorSpecBase } from '@kobato/inkling-internal/nodes/base/nodes/caption-editor-spec'
+import { renderImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/image-renderer'
+import { readImageAttributesFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-image-attributes-from-element'
+import { strOr } from '@kobato/inkling-internal/utils/value-guards'
 
 // the selector overlay arrives through the construction dataset as a
 // component value — `typeof === 'function'` is the entire runtime check;

@@ -1,9 +1,8 @@
+import EarthIcon from '@kobato/inkling-internal/assets/icons/inkling-earth.svg?react'
+import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/utils/services/request-track'
+import { runTrackedRequest } from '@kobato/inkling-internal/utils/services/service-machine'
+import { createSnapshotStore } from '@kobato/inkling-internal/utils/services/snapshot-store'
 import React from 'react'
-
-import EarthIcon from '../assets/icons/inkling-earth.svg?react'
-import { createRequestTrack, type RequestScheduler } from '../utils/services/request-track'
-import { runTrackedRequest } from '../utils/services/service-machine'
-import { createSnapshotStore } from '../utils/services/snapshot-store'
 
 // Headless owner of the link-search flow behind useSearchLinks: two request
 // tracks (debounced query search, default-options prefetch) built on the
@@ -19,8 +18,8 @@ export const SEARCH_DEBOUNCE_MS = 100
 // A third URL table, deliberately not unified with either side of the
 // clipboard protocol's policy pair: it classifies link-search-box queries
 // (accepts mailto/tel, not ftp), not pasted links (`isPasteableLinkUrl` in
-// `@/inkling/plugins/behaviour/clipboard-protocol`) or export-safe hrefs (`isSafeUrl`
-// in `@/inkling/nodes/base/utils/is-safe-url`).
+// `@kobato/inkling-internal/plugins/behaviour/clipboard-protocol`) or export-safe hrefs (`isSafeUrl`
+// in `@kobato/inkling-internal/nodes/base/utils/is-safe-url`).
 const URL_QUERY_REGEX = /^http|^#|^\/|^mailto:|^tel:/
 
 // English fallbacks for the URL option — the React adapter (useSearchLinks)

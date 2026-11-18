@@ -1,8 +1,7 @@
+import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
+
+import { CARD_DECLARATIONS, type AnyCardDeclaration } from '@kobato/inkling-internal/nodes/cards'
 import { describe, expect, it } from 'vitest'
-
-import type { CardImportSpec } from '../../src/nodes/base/import-spec'
-
-import { CARD_DECLARATIONS, type AnyCardDeclaration } from '../../src/nodes/cards'
 
 /**
  * Import-spec classification invariant: every card's base node class either

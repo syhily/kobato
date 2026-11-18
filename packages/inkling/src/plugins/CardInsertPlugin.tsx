@@ -1,12 +1,14 @@
 import type { LexicalEditor } from 'lexical'
 
+import {
+  getCardInsertRegistrations,
+  type CardInsertRegistration,
+} from '@kobato/inkling-internal/nodes/cards/card-insert-commands'
+import { INSERT_MEDIA_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
+import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, mergeRegister } from 'lexical'
 import React from 'react'
-
-import { getCardInsertRegistrations, type CardInsertRegistration } from '../nodes/cards/card-insert-commands'
-import { INSERT_MEDIA_COMMAND } from './behaviour/clipboard-protocol'
-import { INSERT_CARD_COMMAND } from './behaviour/commands'
 
 // command payloads cross an untyped runtime boundary (menu dispatch, external
 // consumers), so narrow before constructing the node
@@ -77,7 +79,7 @@ function registerCardInsert(
  * every card's insert command. Every registration fact (command, payload
  * guard, `openInEditMode`, media claiming, priority, bookmark's selection
  * quirk, the picker auto-open) comes from the card declarations via the
- * `@/inkling/nodes/cards/card-insert-commands` projection, which also carries
+ * `@kobato/inkling-internal/nodes/cards/card-insert-commands` projection, which also carries
  * the host cards' insert registrations (CONTEXT.md: "host card"). The
  * per-card `hasNodes` guard against the wrapper class reproduces the
  * mounting matrix: the web editor registers every card, nested composers none.

@@ -1,6 +1,5 @@
+import { runBrowserSuite } from '@kobato/browser/run.ts'
 import { fail } from '@kobato/pack/sea/exec.ts'
-
-import { runBrowserSuite } from './run.ts'
 
 const arg = process.argv[2]
 if (arg?.startsWith('--')) {

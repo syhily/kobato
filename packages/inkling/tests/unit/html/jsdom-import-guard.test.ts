@@ -46,7 +46,7 @@ describe('jsdom import guard', () => {
     // The barrel ships to the browser; headless-html reaches jsdom through
     // headless-dom, so a value (or even type) re-export here drags jsdom and
     // its undici chain into the client module graph. The converters live on
-    // `@/inkling/headless` only.
+    // `@kobato/inkling-internal/headless` only.
     const HEADLESS_MODULES = /headless-(html|dom|editor)/
     for (const barrel of ['packages/inkling/src/index.ts', 'packages/inkling/src/shared-exports.ts']) {
       const specifiers = importSpecifiers(readFileSync(barrel, 'utf8'))

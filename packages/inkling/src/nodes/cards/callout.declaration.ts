@@ -1,5 +1,5 @@
-import { BaseCalloutNode, calloutNestedEditors } from '../base/nodes/callout/CalloutNode'
-import { checkedCardDeclaration, type CardDeclaration } from './card-declaration'
+import { BaseCalloutNode, calloutNestedEditors } from '@kobato/inkling-internal/nodes/base/nodes/callout/CalloutNode'
+import { checkedCardDeclaration, type CardDeclaration } from '@kobato/inkling-internal/nodes/cards/card-declaration'
 
 export const calloutDeclaration = checkedCardDeclaration({
   nodeType: 'callout',

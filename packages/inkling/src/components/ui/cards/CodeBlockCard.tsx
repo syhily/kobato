@@ -1,17 +1,23 @@
 import type { EditorState, LexicalEditor } from 'lexical'
 
+import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCaptionEditor'
+import {
+  CodeBlockPlainEditor,
+  codeBlockPreClass,
+} from '@kobato/inkling-internal/components/ui/cards/CodeBlockPlainEditor'
+import { LazyCardEditor } from '@kobato/inkling-internal/components/ui/cards/LazyCardEditor'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
-
-import InklingUiPrefsContext from '../../../context/InklingUiPrefsContext'
-import { useInklingLabels } from '../../../hooks/useInklingLabels'
-import { CardCaptionEditor } from '../CardCaptionEditor'
-import { CodeBlockPlainEditor, codeBlockPreClass } from './CodeBlockPlainEditor'
-import { LazyCardEditor } from './LazyCardEditor'
 
 // The CodeMirror-backed editor loads behind the hydration-safe lazy boundary
 // (LazyCardEditor): the SSR'd canvas and the first client render both show
 // the static code-box fallback, then the editor chunk takes over after mount.
-const LazyCodeEditor = React.lazy(() => import('./CodeBlockEditor').then((module) => ({ default: module.CodeEditor })))
+const LazyCodeEditor = React.lazy(() =>
+  import('@kobato/inkling-internal/components/ui/cards/CodeBlockEditor').then((module) => ({
+    default: module.CodeEditor,
+  })),
+)
 
 interface CodeBlockProps {
   code?: string

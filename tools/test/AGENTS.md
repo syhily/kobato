@@ -1,6 +1,6 @@
 # @kobato/test — shared test utilities
 
-All shared test utilities live here (`src/`) — there are no per-project helpers directories. The one exception is `packages/inkling/tests/utils/` (see `packages/inkling/tests/AGENTS.md`).
+All shared test utilities live here (`src/`) — there are no per-project helpers directories. The one exception is `packages/inkling/tests/utils/` (see `packages/inkling/tests/AGENTS.md`). Binary test resources are owned by their single consumer (`packages/shared/utils/tests/fixtures/thumbhash/`, `packages/server/tests/fixtures/fonts/`), not this package.
 
 ## Infrastructure requirements
 

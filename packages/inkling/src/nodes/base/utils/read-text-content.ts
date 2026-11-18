@@ -22,7 +22,7 @@ export default function readTextContent(node: Record<string, unknown>, property:
   }
 
   // the editor case: nested editors are created by `createEditor` and stored
-  // on the node (`@/inkling/nodes/nested-editors`). The check stays
+  // on the node (`@kobato/inkling-internal/nodes/nested-editors`). The check stays
   // structural (not instanceof LexicalEditor) so a second embedded Lexical
   // copy can't defeat it: prove each call shape before invoking instead of
   // asserting the whole chain

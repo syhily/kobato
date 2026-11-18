@@ -1,9 +1,8 @@
 import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files.ts'
+import duckdbConfig from '@tests/vitest.duckdb.config.ts'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
-
-import duckdbConfig from '../vitest.duckdb.config.ts'
 
 const REPO_ROOT = process.cwd()
 

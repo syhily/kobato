@@ -1,9 +1,8 @@
+import type { ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
+
+import { KeyboardSelectionWithGroups } from '@kobato/inkling-internal/components/ui/KeyboardSelectionWithGroups'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-
-import type { ListOptionItem } from '../../../../src/hooks/useSearchLinks'
-
-import { KeyboardSelectionWithGroups } from '../../../../src/components/ui/KeyboardSelectionWithGroups'
 
 function EmptyIcon() {
   return <svg />

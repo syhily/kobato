@@ -1,13 +1,16 @@
+import CloseIcon from '@kobato/inkling-internal/assets/icons/inkling-close.svg?react'
+import { InputList } from '@kobato/inkling-internal/components/ui/InputList'
+import {
+  createLinkSuggestionGetItem,
+  useLinkDropdownEscape,
+  useLinkDropdownOpenedTracking,
+} from '@kobato/inkling-internal/components/ui/LinkSuggestionList'
+import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
+import { useSearchLinks, type ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
 import React from 'react'
-
-import CloseIcon from '../../assets/icons/inkling-close.svg?react'
-import { useInklingLinkingSettings } from '../../context/InklingHostIntegrationContext'
-import { useInklingLabels } from '../../hooks/useInklingLabels'
-import { useSearchLinks, type ListOptionItem } from '../../hooks/useSearchLinks'
-import { InputList } from './InputList'
-import { createLinkSuggestionGetItem, useLinkDropdownEscape, useLinkDropdownOpenedTracking } from './LinkSuggestionList'
 
 export interface UrlInputProps {
   dataTestId?: string
