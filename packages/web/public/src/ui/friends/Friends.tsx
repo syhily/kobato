@@ -1,4 +1,4 @@
-import type { Friend } from '@kobato/catalog/catalog.ts'
+import type { Friend } from '@kobato/catalog/model.ts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { shuffle } from '@kobato/utils/sampling.ts'

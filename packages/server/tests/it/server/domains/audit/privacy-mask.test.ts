@@ -1,7 +1,7 @@
-import { maskIp, maskUserAgent } from '@kobato/server/domains/audit/utils.ts'
+import { maskIp, maskUserAgent } from '@kobato/server/domains/audit/privacy.ts'
 import { describe, expect, it } from 'vitest'
 
-describe('audit/utils', () => {
+describe('audit/privacy — masking', () => {
   describe('maskIp', () => {
     it('masks IPv4 addresses', () => {
       expect(maskIp('192.168.1.42')).toBe('192.168.x.x')

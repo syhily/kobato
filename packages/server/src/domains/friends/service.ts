@@ -1,4 +1,4 @@
-import type { Friend } from '@kobato/catalog/catalog.ts'
+import type { Friend } from '@kobato/catalog/model.ts'
 import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { FriendRow } from '@kobato/db/types.ts'

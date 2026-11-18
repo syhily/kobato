@@ -1,4 +1,4 @@
-import type { ClientCategory } from '@kobato/catalog/catalog.ts'
+import type { ClientCategory } from '@kobato/catalog/model.ts'
 
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'

@@ -5,7 +5,7 @@ const gateMocks = vi.hoisted(() => ({ evaluateSelfUpdateGate: vi.fn() }))
 const releaseMocks = vi.hoisted(() => ({ fetchLatestRelease: vi.fn() }))
 const jobMocks = vi.hoisted(() => ({ startUpdateJob: vi.fn() }))
 
-vi.mock('@kobato/server/infra/self-update-gate.ts', () => ({
+vi.mock('@kobato/server/infra/sea/self-update-gate.ts', () => ({
   evaluateSelfUpdateGate: gateMocks.evaluateSelfUpdateGate,
 }))
 vi.mock('@kobato/server/domains/update/release.ts', () => ({ fetchLatestRelease: releaseMocks.fetchLatestRelease }))

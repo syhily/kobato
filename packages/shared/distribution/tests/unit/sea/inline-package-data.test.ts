@@ -44,7 +44,7 @@ describe('contract: inline package data', () => {
     expect(
       inlinePackageData(
         'const x = fs.readFileSync(path.resolve(__dirname, "./other.css"))',
-        join(process.cwd(), 'packages/server/src/infra/sea.ts'),
+        join(process.cwd(), 'packages/server/src/infra/sea/sea.ts'),
       ),
     ).toBeNull()
   })

@@ -1,5 +1,5 @@
-import type { ClientPost, ListingPostCard } from '@kobato/catalog/catalog.ts'
 import type { ListingPageLoaderData } from '@kobato/catalog/listing.ts'
+import type { ClientPost, ListingPostCard } from '@kobato/catalog/model.ts'
 import type { HomeExtra } from '@kobato/contracts/content.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'

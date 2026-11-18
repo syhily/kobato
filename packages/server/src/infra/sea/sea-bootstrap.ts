@@ -2,8 +2,8 @@
 // so natives extraction + `KOBATO_NATIVES_DIR` land before sharp /
 // @napi-rs/canvas run their module-scope platform detection.
 
-import { bootstrapSeaRuntime } from '@kobato/server/infra/sea-natives.ts'
-import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea-vfs-fs-patch.ts'
+import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives.ts'
+import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
 
 // The writev/readv repair lands before anything in the server graph can
 // create a WriteStream — WriteStream resolves fs.writev per call, so

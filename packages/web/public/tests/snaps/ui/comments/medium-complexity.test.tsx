@@ -1,4 +1,4 @@
-import type { CommentFormUser } from '@kobato/catalog/catalog.ts'
+import type { CommentFormUser } from '@kobato/catalog/model.ts'
 import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@kobato/contracts/comments.ts'
 
 import { makeComment, makeCommentBody } from '@kobato/test/catalog.ts'

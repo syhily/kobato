@@ -1,4 +1,4 @@
-import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@kobato/server/infra/sea-natives.ts'
+import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@kobato/server/infra/sea/sea-natives.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -44,7 +44,7 @@ afterEach(() => {
   }
 })
 
-describe('infra/sea-natives — extractNatives', () => {
+describe('infra/sea/sea-natives — extractNatives', () => {
   it('extracts only natives/ assets, into a flat dir', () => {
     const cacheDir = makeTmpDir()
     const { manifestRaw, getAsset } = buildEmbedded({
@@ -153,7 +153,7 @@ describe('infra/sea-natives — extractNatives', () => {
   })
 })
 
-describe('infra/sea-natives — bootstrapSeaRuntime', () => {
+describe('infra/sea/sea-natives — bootstrapSeaRuntime', () => {
   it('is a no-op outside SEA mode', () => {
     const before = process.env.KOBATO_NATIVES_DIR
     expect(() => bootstrapSeaRuntime()).not.toThrow()

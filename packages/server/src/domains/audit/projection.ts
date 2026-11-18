@@ -2,8 +2,7 @@ import type { auditLog } from '@kobato/db/schema/config.ts'
 import type { z } from 'zod'
 
 import { auditLogItemDto } from '@kobato/contracts/audit.ts'
-import { stripL3Markers } from '@kobato/server/domains/audit/privacy.ts'
-import { maskIp, maskUserAgent } from '@kobato/server/domains/audit/utils.ts'
+import { maskIp, maskUserAgent, stripL3Markers } from '@kobato/server/domains/audit/privacy.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 

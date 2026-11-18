@@ -1,4 +1,4 @@
-import type { ClientPost } from '@kobato/catalog/catalog.ts'
+import type { ClientPost } from '@kobato/catalog/model.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 
 import { postTag } from '@kobato/db/schema/post-tag.ts'

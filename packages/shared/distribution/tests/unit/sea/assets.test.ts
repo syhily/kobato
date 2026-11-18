@@ -60,17 +60,17 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     ],
   },
   {
-    file: 'packages/server/src/infra/sea.ts',
+    file: 'packages/server/src/infra/sea/sea.ts',
     names: ['SEA_MANIFEST_KEY', 'SEA_NATIVE_ASSET_PREFIX'],
     forbiddenLiterals: [`'manifest.json'`, `'natives/'`],
   },
   {
-    file: 'packages/server/src/infra/sea-natives.ts',
+    file: 'packages/server/src/infra/sea/sea-natives.ts',
     names: ['SEA_MANIFEST_KEY', 'SEA_NATIVE_ASSET_PREFIX'],
     forbiddenLiterals: [`'manifest.json'`, `'natives/'`],
   },
   {
-    file: 'packages/server/src/infra/sea-cli.ts',
+    file: 'packages/server/src/infra/sea/sea-cli.ts',
     names: [
       'SEA_SMOKE_WORKER_BUNDLE_KEY',
       'SEA_MANIFEST_KEY',
@@ -81,7 +81,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     forbiddenLiterals: [`'worker/smoke-worker.mjs'`, `'manifest.json'`, `'client/'`, `'drizzle/'`, `'natives/'`],
   },
   {
-    file: 'packages/server/src/infra/native-require.ts',
+    file: 'packages/server/src/infra/sea/native-require.ts',
     names: [
       'SEA_NATIVE_ASSET_PREFIX',
       'SEA_NATIVE_SHARP_ADDON_KEY',
@@ -187,11 +187,11 @@ describe('contract: SEA embedded-asset keys', () => {
     // SEA VFS; `getEmbeddedAsset` is only contractual for packed natives/*.
     expect(source).toContain('readAssetTextOrDisk')
     expect(source).not.toContain('getEmbeddedAsset')
-    expect(source).not.toContain("from '@kobato/server/infra/sea.ts'")
+    expect(source).not.toContain("from '@kobato/server/infra/sea/sea.ts'")
   })
 
   it('sea-natives no longer defines the manifest keys locally', () => {
-    const source = readSource('packages/server/src/infra/sea-natives.ts')
+    const source = readSource('packages/server/src/infra/sea/sea-natives.ts')
     // A local definition would fork the contract.
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_MANIFEST_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_SMOKE_WORKER_BUNDLE_KEY\s*=/)
@@ -209,8 +209,8 @@ describe('contract: SEA embedded-asset keys', () => {
   it('writer and readers source the asset codec from the shared module', () => {
     for (const file of [
       'tools/pack/src/sea/assets.ts',
-      'packages/server/src/infra/sea.ts',
-      'packages/server/src/infra/sea-natives.ts',
+      'packages/server/src/infra/sea/sea.ts',
+      'packages/server/src/infra/sea/sea-natives.ts',
     ]) {
       const source = readSource(file)
       expect(source, `${file} must reference SeaAssetCodec`).toContain('SeaAssetCodec')

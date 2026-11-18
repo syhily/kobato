@@ -13,7 +13,7 @@ import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@kobato/distribution/sea-assets.t
 import { domainErrorFromWire } from '@kobato/server/infra/http/errors.ts'
 import { registerShutdownHook } from '@kobato/server/infra/lifecycle.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isSea, getEmbeddedAsset, seaAssetPath } from '@kobato/server/infra/sea.ts'
+import { isSea, getEmbeddedAsset, seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
 import { startSpan } from '@kobato/server/infra/trace/facade.ts'
 import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics.ts'
 import { existsSync, readFileSync } from 'node:fs'

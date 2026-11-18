@@ -4,7 +4,7 @@
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
-import { resetGeoReader } from '@kobato/server/domains/analytics/geoip.ts'
+import { resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'

@@ -1,4 +1,4 @@
-import type { Post } from '@kobato/catalog/catalog.ts'
+import type { Post } from '@kobato/catalog/model.ts'
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { Database } from '@kobato/db/database.ts'

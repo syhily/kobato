@@ -1,4 +1,4 @@
-import type { Page, Post } from '@kobato/catalog/catalog.ts'
+import type { Page, Post } from '@kobato/catalog/model.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'

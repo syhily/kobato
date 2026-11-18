@@ -1,4 +1,4 @@
-import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@kobato/catalog/catalog.ts'
+import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@kobato/catalog/model.ts'
 import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 import type { AdminCommentWire, CommentItemWire } from '@kobato/contracts/comments.ts'
 import type { AdminFriendDto } from '@kobato/contracts/friends.ts'

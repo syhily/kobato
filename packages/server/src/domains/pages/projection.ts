@@ -1,4 +1,4 @@
-import type { Page } from '@kobato/catalog/catalog.ts'
+import type { Page } from '@kobato/catalog/model.ts'
 import type { AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
 

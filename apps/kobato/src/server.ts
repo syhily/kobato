@@ -22,7 +22,7 @@ import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 // Load-bearing: each job module self-registers on the registry at import time; `startAllRegisteredJobs()` below
 // arms them. Registration order is irrelevant — each job computes its own delay.
-import '@kobato/server/domains/analytics/geoip-scheduler.ts'
+import '@kobato/server/domains/analytics/geoip/scheduler.ts'
 import '@kobato/server/domains/audit/services/scheduler.ts'
 import '@kobato/server/domains/auth/token-purge-scheduler.ts'
 import '@kobato/server/domains/backup/scheduler.ts'

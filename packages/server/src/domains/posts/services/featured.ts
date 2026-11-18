@@ -1,9 +1,9 @@
-import type { ClientPost, SidebarPostLink } from '@kobato/catalog/catalog.ts'
+import type { ClientPost, SidebarPostLink } from '@kobato/catalog/model.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { SidebarSettings } from '@kobato/settings/types.ts'
 
-import { toSidebarPostLink } from '@kobato/catalog/catalog.ts'
+import { toSidebarPostLink } from '@kobato/catalog/projection.ts'
 import { findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
 import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'

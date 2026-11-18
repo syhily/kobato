@@ -1,4 +1,4 @@
-import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker } from '@kobato/catalog/catalog.ts'
+import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker } from '@kobato/catalog/model.ts'
 import type { DetailPageComments } from '@kobato/contracts/comments.ts'
 import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
 

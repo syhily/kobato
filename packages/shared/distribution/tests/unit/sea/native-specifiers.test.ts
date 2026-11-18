@@ -154,7 +154,10 @@ describe('contract: native platform specifiers', () => {
 
   it('the plugin leaves non-platform modules untouched', () => {
     expect(
-      redirectNativeRequires('const x = require("@img/foo")', join(process.cwd(), 'packages/server/src/infra/sea.ts')),
+      redirectNativeRequires(
+        'const x = require("@img/foo")',
+        join(process.cwd(), 'packages/server/src/infra/sea/sea.ts'),
+      ),
     ).toBeNull()
     // Requires without platform markers stay for the bundler to inline.
     const canvasIndex = join(packageRoot('@napi-rs/canvas'), 'geometry.js')

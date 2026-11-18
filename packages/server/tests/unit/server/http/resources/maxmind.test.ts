@@ -27,7 +27,7 @@ describe('maxmindRouter', () => {
   })
 
   it('uploads and validates a .mmdb file', async () => {
-    vi.doMock('@kobato/server/domains/analytics/geoip.ts', () => ({
+    vi.doMock('@kobato/server/domains/analytics/geoip/lookup.ts', () => ({
       resetGeoReader: vi.fn(),
     }))
     vi.doMock('@kobato/server/domains/audit/services/record.ts', () => ({
@@ -123,7 +123,7 @@ describe('maxmindRouter', () => {
   })
 
   it('rejects a corrupt mmdb and never touches the live database', async () => {
-    vi.doMock('@kobato/server/domains/analytics/geoip.ts', () => ({
+    vi.doMock('@kobato/server/domains/analytics/geoip/lookup.ts', () => ({
       resetGeoReader: vi.fn(),
     }))
     vi.doMock('@kobato/server/infra/logger.ts', () => ({

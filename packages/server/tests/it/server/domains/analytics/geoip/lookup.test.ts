@@ -1,4 +1,4 @@
-import { getGeoReader, lookupCity, resetGeoReader } from '@kobato/server/domains/analytics/geoip.ts'
+import { getGeoReader, lookupCity, resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('analytics/geoip — getGeoReader & lookupCity', () => {

@@ -1,6 +1,6 @@
 # Infra conventions
 
-`packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from `domains/`, `http/`, or `render/`. Layer rules live in `../../AGENTS.md`.
+`packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from `domains/`, `http/`, or `render/`. `sea/` owns the SEA runtime (CLI/bootstrap, VFS reads/patches, natives, rollback, self-update gate); the remaining root files are cross-cutting primitives. Layer rules live in `../../AGENTS.md`.
 
 - `db/paths.ts` resolves validated config into BOTH embedded engines' paths (`resolveDatabasePath` / `resolveAnalyticsPath`) through the shared `resolveEnginePath` over `@kobato/db/database::resolveStoragePath` (`:memory:` passes through). The engines themselves open in `@kobato/db` (SQLite driver + DuckDB handle); infra owns no engine code.
 

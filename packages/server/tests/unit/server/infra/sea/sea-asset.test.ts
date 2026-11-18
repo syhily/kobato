@@ -1,4 +1,4 @@
-import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
+import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset.ts'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -21,7 +21,7 @@ afterEach(() => {
   }
 })
 
-describe('infra/sea-asset — readAssetTextOrDisk', () => {
+describe('infra/sea/sea-asset — readAssetTextOrDisk', () => {
   it('reads the disk file as UTF-8 when not running as a SEA', () => {
     const dir = makeTmpDir()
     const diskPath = join(dir, 'asset.json')

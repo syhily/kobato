@@ -1,12 +1,12 @@
 // Bundler plugin: rewrite the native packages' platform-specifier requires to
-// `nativeRequire(...)` (`@/server/infra/native-require`) so their `.node` and
+// `nativeRequire(...)` (`@kobato/server/infra/sea/native-require.ts`) so their `.node` and
 // libvips loads resolve from the flat natives cache instead of at bundle time.
 // The rewrite is text-level and verbatim (template-literal args survive).
 
 import type { Plugin } from 'vite'
 
 const NATIVE_REQUIRE_BINDING = 'nativeRequire'
-const NATIVE_REQUIRE_MODULE = '@kobato/server/infra/native-require.ts'
+const NATIVE_REQUIRE_MODULE = '@kobato/server/infra/sea/native-require.ts'
 
 /**
  * Modules to transform: files inside the sharp / @napi-rs/canvas /

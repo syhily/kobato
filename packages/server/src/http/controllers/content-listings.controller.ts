@@ -6,7 +6,7 @@ import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { contentListingsContract } from '@kobato/api/content.ts'
-import { toListingPostCard } from '@kobato/catalog/catalog.ts'
+import { toListingPostCard } from '@kobato/catalog/projection.ts'
 import { trackPageView } from '@kobato/server/domains/analytics/track.ts'
 import {
   countPublicPosts,

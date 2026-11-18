@@ -1,4 +1,4 @@
-import type { ClientPage, ClientPost, Post } from '@kobato/catalog/catalog.ts'
+import type { ClientPage, ClientPost, Post } from '@kobato/catalog/model.ts'
 
 import {
   toClientPost,
@@ -6,7 +6,7 @@ import {
   toDetailPostShell,
   toListingPostCard,
   toSidebarPostLink,
-} from '@kobato/catalog/catalog.ts'
+} from '@kobato/catalog/projection.ts'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
 const basePost: ClientPost = {

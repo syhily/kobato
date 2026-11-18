@@ -1,4 +1,4 @@
-import type { Friend } from '@kobato/catalog/catalog.ts'
+import type { Friend } from '@kobato/catalog/model.ts'
 
 import { renderToHtml } from '@kobato/test/render.tsx'
 import { Friends } from '@kobato/web-public/ui/friends/Friends.tsx'

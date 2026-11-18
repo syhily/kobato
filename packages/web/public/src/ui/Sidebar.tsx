@@ -1,4 +1,4 @@
-import type { ClientTag, SidebarPostLink } from '@kobato/catalog/catalog.ts'
+import type { ClientTag, SidebarPostLink } from '@kobato/catalog/model.ts'
 import type { LatestComment } from '@kobato/contracts/comments.ts'
 import type { ReactNode } from 'react'
 

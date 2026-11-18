@@ -6,7 +6,7 @@ import {
   shouldPackAsset,
   sortManifestFiles,
 } from '@kobato/pack/sea/assets.ts'
-import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea.ts'
+import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea/sea.ts'
 import { createHash } from 'node:crypto'
 import { zstdDecompressSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'

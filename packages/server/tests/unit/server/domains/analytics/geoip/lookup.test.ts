@@ -19,7 +19,7 @@ vi.mock('@kobato/server/infra/logger.ts', () => ({
   getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() })),
 }))
 
-import { getGeoReader, resetGeoReader } from '@kobato/server/domains/analytics/geoip.ts'
+import { getGeoReader, resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup.ts'
 
 describe('analytics/geoip — reader memoization', () => {
   beforeEach(() => {

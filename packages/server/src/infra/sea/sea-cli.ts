@@ -17,7 +17,6 @@ import {
   SEA_NATIVE_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
 } from '@kobato/distribution/sea-assets.ts'
-import { rollbackBinary } from '@kobato/server/infra/binary-rollback.ts'
 import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
 import {
   collectDoctorReport,
@@ -26,10 +25,11 @@ import {
   parseProbeIssues,
 } from '@kobato/server/infra/doctor-report.ts'
 import { runIntlProbe } from '@kobato/server/infra/intl-probe.ts'
-import { bootstrapSeaRuntime } from '@kobato/server/infra/sea-natives.ts'
-import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea-vfs-fs-patch.ts'
-import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea.ts'
-import { evaluateSelfUpdateGate } from '@kobato/server/infra/self-update-gate.ts'
+import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback.ts'
+import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives.ts'
+import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
+import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea/sea.ts'
+import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
@@ -206,7 +206,7 @@ async function smokeVfs(): Promise<void> {
       throw error
     }
   }
-  // The writev repair (src/server/infra/sea-vfs-fs-patch.ts): enough queued
+  // The writev repair (src/server/infra/sea/sea-vfs-fs-patch.ts): enough queued
   // chunks force WriteStream._writev → fs.writev, which crashes an unpatched
   // useVfs process (TypeError: h.writev is not a function) even on a REAL
   // file. Flush 4 MB and verify the byte count.

@@ -14,7 +14,7 @@ vi.mock('node:fs', () => ({
 }))
 
 const seaMocks = vi.hoisted(() => ({ isSea: vi.fn() }))
-vi.mock('@kobato/server/infra/sea.ts', () => ({ isSea: seaMocks.isSea }))
+vi.mock('@kobato/server/infra/sea/sea.ts', () => ({ isSea: seaMocks.isSea }))
 
 const versionState = vi.hoisted(() => ({ value: '6.4.0' }))
 vi.mock('@kobato/distribution/app.ts', () => ({
@@ -23,7 +23,7 @@ vi.mock('@kobato/distribution/app.ts', () => ({
   },
 }))
 
-const { evaluateSelfUpdateGate } = await import('@kobato/server/infra/self-update-gate.ts')
+const { evaluateSelfUpdateGate } = await import('@kobato/server/infra/sea/self-update-gate.ts')
 
 const realPlatform = process.platform
 const realArch = process.arch

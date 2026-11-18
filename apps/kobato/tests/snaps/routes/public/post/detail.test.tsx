@@ -1,4 +1,4 @@
-import { toDetailPostShell } from '@kobato/catalog/catalog.ts'
+import { toDetailPostShell } from '@kobato/catalog/projection.ts'
 import { makePost, makeTag } from '@kobato/test/catalog.ts'
 import { prerenderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'

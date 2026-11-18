@@ -1,4 +1,4 @@
-import type { Page } from '@kobato/catalog/catalog.ts'
+import type { Page } from '@kobato/catalog/model.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
 

@@ -10,7 +10,7 @@ import {
   snapshotAnalyticsTo,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
 import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine.ts'
-import { rescheduleGeoipUpdate } from '@kobato/server/domains/analytics/geoip-scheduler.ts'
+import { rescheduleGeoipUpdate } from '@kobato/server/domains/analytics/geoip/scheduler.ts'
 import { flipBrandingDrivers } from '@kobato/server/domains/assets/services/storage.ts'
 import { rescheduleArchive } from '@kobato/server/domains/audit/services/scheduler.ts'
 import { wireSessionStorageDb } from '@kobato/server/domains/auth/session-storage.ts'
@@ -66,7 +66,7 @@ import '@kobato/server/domains/analytics/services/batcher.ts'
 import '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import '@kobato/server/domains/audit/services/batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { seaAssetPath } from '@kobato/server/infra/sea.ts'
+import { seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 

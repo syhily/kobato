@@ -4,8 +4,8 @@ import {
   type RouteManifestRoute,
 } from '@kobato/distribution/route-warmup.ts'
 import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets.ts'
-import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
-import { seaVfsRoot } from '@kobato/server/infra/sea.ts'
+import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset.ts'
+import { seaVfsRoot } from '@kobato/server/infra/sea/sea.ts'
 import {
   collectManifestChunks,
   isWarmupManifest,

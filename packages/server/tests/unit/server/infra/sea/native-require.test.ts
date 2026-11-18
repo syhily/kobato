@@ -4,7 +4,7 @@ import {
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
 } from '@kobato/distribution/sea-assets.ts'
-import { nativeRequire } from '@kobato/server/infra/native-require.ts'
+import { nativeRequire } from '@kobato/server/infra/sea/native-require.ts'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -19,7 +19,7 @@ const seaMock = vi.hoisted(() => ({
   getEmbeddedAsset: vi.fn<(key: string) => Buffer | null>(() => null),
 }))
 
-vi.mock('@kobato/server/infra/sea.ts', () => ({
+vi.mock('@kobato/server/infra/sea/sea.ts', () => ({
   requireExternal: seaMock.requireExternal,
   getEmbeddedAsset: seaMock.getEmbeddedAsset,
 }))
@@ -81,7 +81,7 @@ afterEach(() => {
   }
 })
 
-describe('infra/native-require — under SEA (KOBATO_NATIVES_DIR set)', () => {
+describe('infra/sea/native-require — under SEA (KOBATO_NATIVES_DIR set)', () => {
   it('loads the sharp addon by absolute path from the flat natives dir', () => {
     const dir = makeNativesDir()
     vi.stubEnv('KOBATO_NATIVES_DIR', dir)
@@ -161,7 +161,7 @@ describe('infra/native-require — under SEA (KOBATO_NATIVES_DIR set)', () => {
   })
 })
 
-describe('infra/native-require — outside SEA (node_modules fallback)', () => {
+describe('infra/sea/native-require — outside SEA (node_modules fallback)', () => {
   it('passes every recognized specifier through to requireExternal', () => {
     vi.stubEnv('KOBATO_NATIVES_DIR', undefined)
 

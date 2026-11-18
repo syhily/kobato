@@ -1,5 +1,5 @@
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { SELF_UPDATE_GATE_REASON_KEYS } from '@kobato/server/infra/self-update-gate.ts'
+import { SELF_UPDATE_GATE_REASON_KEYS } from '@kobato/server/infra/sea/self-update-gate.ts'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 // path must stay side-effect free. Pin the gate's whole local import closure: a
 // transitive edge reaching `server/infra/config` reads NODE_ENV and can create
 // a default config file.
-const ENTRY = 'packages/server/src/infra/self-update-gate.ts'
+const ENTRY = 'packages/server/src/infra/sea/self-update-gate.ts'
 const BANNED = [
   'packages/server/src/infra/config.ts',
   'packages/server/src/infra/i18n.ts',
@@ -74,7 +74,7 @@ function importClosure(entry: string): Set<string> {
   return seen
 }
 
-describe('server/infra/self-update-gate — zero-side-effect import contract', () => {
+describe('server/infra/sea/self-update-gate — zero-side-effect import contract', () => {
   it('never reaches the config, translator or error-descriptor modules', () => {
     const closure = importClosure(ENTRY)
 
@@ -82,7 +82,7 @@ describe('server/infra/self-update-gate — zero-side-effect import contract', (
     // banned-module assertion vacuously green.
     expect(closure.size).toBeGreaterThan(3)
     expect(closure.has(ENTRY)).toBe(true)
-    expect(closure.has('packages/server/src/infra/sea.ts')).toBe(true)
+    expect(closure.has('packages/server/src/infra/sea/sea.ts')).toBe(true)
     expect(closure.has('packages/shared/i18n/src/messages/ui/en-US.ts')).toBe(true)
 
     for (const banned of BANNED) {

@@ -67,10 +67,7 @@ const COPY_STORE_PREFIXES = [
 
 // Whole-file content libraries: every string is data, so skip before reading or
 // parsing — a 1.3 MB quote bank must not cost an AST walk or thousands of findings.
-const COPY_STORE_FILES = new Set([
-  'packages/shared/i18n/src/fallback-messages.ts',
-  'packages/server/src/render/calendar/local-quotes.ts',
-])
+const COPY_STORE_FILES = new Set(['packages/shared/i18n/src/fallback-messages.ts'])
 
 /** Whether `file` is a whole-file content library the scanner never parses. */
 export function isContentStoreFile(file: string): boolean {

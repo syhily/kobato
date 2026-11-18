@@ -1,4 +1,4 @@
-import type { Post } from '@kobato/catalog/catalog.ts'
+import type { Post } from '@kobato/catalog/model.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types.ts'
 

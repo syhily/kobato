@@ -203,7 +203,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   // CLI stderr/doctor output: operator-facing technical diagnostics, never a
   // browser string (the CLI's Chinese text is deliberate, not a locale bug).
   { path: 'packages/server/src/infra/config.ts', rules: ['han-literal'] },
-  { path: 'packages/server/src/infra/binary-rollback.ts', rules: ['han-literal'] },
+  { path: 'packages/server/src/infra/sea/binary-rollback.ts', rules: ['han-literal'] },
   // Slash-menu search aliases: match keys, never rendered as interface copy.
   { path: 'packages/web/admin/src/ui/editor/cards/menu-matches.ts', rules: ['han-literal'] },
   // Default content seeds and the content projection are spec'd as
@@ -302,7 +302,7 @@ describe('production sources', () => {
         'packages/shared/utils/src/slug-char-map.ts',
         'packages/server/src/infra/intl-probe.ts',
         'packages/server/src/infra/config.ts',
-        'packages/server/src/infra/binary-rollback.ts',
+        'packages/server/src/infra/sea/binary-rollback.ts',
         'packages/web/admin/src/ui/editor/cards/menu-matches.ts',
         'packages/shared/lexical/src/cards/solution.ts',
         'packages/shared/lexical/src/projection-state.ts',
@@ -315,16 +315,11 @@ describe('production sources', () => {
   it('excludes whole-file content libraries before reading or parsing them', () => {
     const { skippedFiles, scannedFiles } = scanProduction()
 
-    // The vendored quote bank and the emergency fallback catalog are data, not
-    // chrome: they are reached under the roots but never parsed, so neither
-    // needs an allowlist entry.
-    expect(skippedFiles).toEqual([
-      'packages/server/src/render/calendar/local-quotes.ts',
-      'packages/shared/i18n/src/fallback-messages.ts',
-    ])
-    // Skipped means not scanned: the quote bank never reaches the parser, so
-    // its thousands of quotes need no allowlist exemption either.
-    expect(scannedFiles).not.toContain('packages/server/src/render/calendar/local-quotes.ts')
+    // The emergency fallback catalog is data, not chrome: it is reached under
+    // the roots but never parsed, so it needs no allowlist entry. The calendar
+    // quote bank is now a JSON data file, so its tiny typed wrapper IS scanned.
+    expect(skippedFiles).toEqual(['packages/shared/i18n/src/fallback-messages.ts'])
+    expect(scannedFiles).toContain('packages/server/src/render/calendar/local-quotes.ts')
     expect(scannedFiles).not.toContain('packages/shared/i18n/src/fallback-messages.ts')
   })
 
@@ -438,7 +433,7 @@ describe('production sources', () => {
         'packages/server/src/http/controllers/admin/users-admin.controller.ts',
         'packages/server/src/http/loaders/search.ts',
         // GeoIP updates, the self-update pipeline, URL-schema message ids.
-        'packages/server/src/domains/analytics/geoip-update.ts',
+        'packages/server/src/domains/analytics/geoip/update.ts',
         'packages/server/src/domains/update/pipeline.ts',
         'packages/shared/utils/src/url-schema.ts',
         // The Gravatar mirror preset labels render through `t()`.
@@ -596,7 +591,6 @@ describe('scanner rules', () => {
     // reach it, so the same text is silently (and deliberately) not scanned.
     const invalid = 'this is not valid TypeScript {{{'
     expect(() => scanSourceForI18nLiterals(invalid, 'src/not-a-content-store.ts')).toThrow()
-    expect(scanSourceForI18nLiterals(invalid, 'packages/server/src/render/calendar/local-quotes.ts')).toEqual([])
     expect(scanSourceForI18nLiterals(invalid, 'packages/shared/i18n/src/fallback-messages.ts')).toEqual([])
   })
 

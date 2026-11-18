@@ -2,7 +2,7 @@ import {
   createSequentialReadv,
   createSequentialWritev,
   installSeaVfsRuntimePatches,
-} from '@kobato/server/infra/sea-vfs-fs-patch.ts'
+} from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
 import fs from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
@@ -35,7 +35,7 @@ function makeWriter(behavior?: (call: WriteCall) => number | NodeJS.ErrnoExcepti
   return { calls, write }
 }
 
-describe('infra/sea-vfs-fs-patch — createSequentialWritev', () => {
+describe('infra/sea/sea-vfs-fs-patch — createSequentialWritev', () => {
   it('writes buffers in order, advancing the position per buffer', () => {
     const { calls, write } = makeWriter()
     const writev = createSequentialWritev(write)
@@ -111,7 +111,7 @@ describe('infra/sea-vfs-fs-patch — createSequentialWritev', () => {
   })
 })
 
-describe('infra/sea-vfs-fs-patch — createSequentialReadv', () => {
+describe('infra/sea/sea-vfs-fs-patch — createSequentialReadv', () => {
   it('fills buffers in order, advancing the position per buffer', () => {
     const reads: Array<{ position: number | null }> = []
     const read = (
@@ -159,7 +159,7 @@ describe('infra/sea-vfs-fs-patch — createSequentialReadv', () => {
   })
 })
 
-describe('infra/sea-vfs-fs-patch — installSeaVfsRuntimePatches', () => {
+describe('infra/sea/sea-vfs-fs-patch — installSeaVfsRuntimePatches', () => {
   it('is a no-op outside a SEA (the originals stay in place)', () => {
     const originalWritev = fs.writev
     const originalReadv = fs.readv

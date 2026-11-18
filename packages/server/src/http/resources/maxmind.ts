@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/context.ts'
 import type { Context } from 'hono'
 
-import { withGeoipWriteLock, writeGeoipMetaBestEffort } from '@kobato/server/domains/analytics/geoip-update.ts'
-import { resetGeoReader } from '@kobato/server/domains/analytics/geoip.ts'
+import { resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup.ts'
+import { withGeoipWriteLock, writeGeoipMetaBestEffort } from '@kobato/server/domains/analytics/geoip/update.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { errorJsonResponse } from '@kobato/server/http/errors.ts'
 import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'

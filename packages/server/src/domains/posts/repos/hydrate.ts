@@ -1,4 +1,4 @@
-import type { Post, PostVisibilityOptions } from '@kobato/catalog/catalog.ts'
+import type { Post, PostVisibilityOptions } from '@kobato/catalog/model.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 import type { ListPublicPostsFilters } from '@kobato/server/domains/posts/repos/shared.ts'
