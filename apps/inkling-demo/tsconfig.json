@@ -3,9 +3,9 @@
   // Standalone demo playground — typechecked on demand
   // (`tsc -p apps/inkling-demo/tsconfig.json`), deliberately outside the root `pnpm type`
   // gate. The `*.d.ts` globs ride along for the `*.svg?react` module
-  // declarations, ambient markdown-it plugin types, and app globals; the
-  // paths mirror apps/inkling-demo/vite.config.ts aliases because the playground reaches
-  // into inkling internals the package exports map does not expose.
+  // declarations, ambient markdown-it plugin types, and app globals. Paths come
+  // from the shared @kobato/toolchain table; the demo's Vite aliases only mirror
+  // the entries its playground build loads before tsconfig-path resolution.
   "extends": "../../tools/toolchain/tsconfig.base.json",
   "include": ["./**/*", "../../apps/kobato/src/**/*.d.ts", "../../packages/inkling/src/**/*.d.ts"],
   "compilerOptions": {

@@ -418,6 +418,53 @@ const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
   'tools/pack/src/sea/vfs-capabilities.ts:./lib/greet.mjs',
 ])
 
+/**
+ * Whole-file exemptions from the absolute-import rule. Each file either loads
+ * before a tsconfig-path resolver exists (Vitest configs, Playwright runner) or
+ * deliberately quotes relative specifiers as fixtures for an import scanner.
+ * Normal source/test files must add a specifier-level reason instead.
+ */
+const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
+  'apps/kobato/tests/arch/client-bundle.test.ts',
+  'packages/inkling/tests/unit/nodes/card-layering-imports.test.ts',
+  'packages/inkling/tests/unit/utils/utils-import-guard.test.ts',
+  'packages/shared/tests/unit/vitest.config.ts',
+  'packages/shared/tests/snaps/vitest.config.ts',
+  'packages/ui/tests/contract/dark-variant.test.ts',
+])
+
+const RELATIVE_IMPORT_PREFIX_EXCEPTIONS = [
+  // Playwright loads its config/support modules before tsconfig-path mapping.
+  'apps/kobato/tests/browser/',
+] as const
+
+function isAllowedRelativeImport(file: string, specifier: string): boolean {
+  if (specifier.startsWith('./+types/')) {
+    return true
+  }
+  if (RELATIVE_IMPORT_PREFIX_EXCEPTIONS.some((prefix) => file.startsWith(prefix))) {
+    return true
+  }
+  return RELATIVE_IMPORT_FILE_EXCEPTIONS.has(file) || RELATIVE_ESCAPE_EXCEPTIONS.has(`${file}:${specifier}`)
+}
+
+function collectTsconfigs(dir: string, out: string[]): void {
+  if (!existsSync(dir)) {
+    return
+  }
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (IGNORE_DIRS.has(entry.name)) {
+      continue
+    }
+    const full = `${dir}/${entry.name}`
+    if (entry.isDirectory()) {
+      collectTsconfigs(full, out)
+    } else if (/^tsconfig(?:\..+)?\.json$/.test(entry.name)) {
+      out.push(full)
+    }
+  }
+}
+
 /** The `@/` alias resolves to `apps/kobato/src` — app-package internal shorthand. */
 const APP_PACKAGE_DIR = 'apps/kobato'
 
@@ -612,6 +659,84 @@ describe('package DAG', () => {
       }
       for (const specifier of importSpecifiers(readSource(file))) {
         if (specifier.startsWith('@tests/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('has exactly one shared import-path table', () => {
+    const baseConfigPath = 'tools/toolchain/tsconfig.base.json'
+    const base = JSON.parse(readFileSync(`${REPO_ROOT}/${baseConfigPath}`, 'utf8')) as {
+      compilerOptions: { paths?: Record<string, string[]> }
+    }
+    const paths = base.compilerOptions.paths
+    expect(paths, `${baseConfigPath} owns the workspace path table`).toBeDefined()
+
+    const required: Record<string, string[]> = {
+      '@/*': ['../../apps/kobato/src/*'],
+      '@tests/*': ['../../apps/kobato/tests/*'],
+      '@kobato/inkling-demo/*': ['../../apps/inkling-demo/*'],
+      '@kobato/inkling-internal/*': ['../../packages/inkling/src/*'],
+      '@kobato/inkling/tests/*': ['../../packages/inkling/tests/*'],
+    }
+    for (const [alias, targets] of Object.entries(required)) {
+      expect(paths![alias], `${baseConfigPath} must define ${alias}`).toEqual(targets)
+    }
+
+    for (const [alias, targets] of Object.entries(paths!)) {
+      for (const target of targets) {
+        const resolved = posixNormalize(`tools/toolchain/${target.replace(/\*$/, '')}`)
+        expect(existsSync(`${REPO_ROOT}/${resolved}`), `${alias} target must exist: ${target}`).toBe(true)
+      }
+    }
+
+    const tsconfigs: string[] = []
+    collectTsconfigs(REPO_ROOT, tsconfigs)
+    const pathOwners = tsconfigs.filter((file) => /"paths"\s*:/.test(readFileSync(file, 'utf8')))
+    expect(pathOwners.map((file) => file.slice(REPO_ROOT.length + 1))).toEqual([baseConfigPath])
+  })
+
+  it('source and test trees contain no unregistered relative module imports', () => {
+    const governedRoots = ['apps/kobato/src', 'apps/kobato/tests', 'apps/inkling-demo', 'packages', 'tools'] as const
+
+    const offenders: string[] = []
+    for (const file of sourceFiles(...governedRoots)) {
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier.startsWith('.') && !isAllowedRelativeImport(file, specifier)) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('the demo alias stays in the playground and its inkling host-contract tests', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+      if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/tests/')) {
+        continue
+      }
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier === '@kobato/inkling-demo' || specifier.startsWith('@kobato/inkling-demo/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('package test aliases stay inside their own package test tree', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+      for (const specifier of importSpecifiers(readSource(file))) {
+        const match = /^@kobato\/([^/]+)\/tests(?:\/|$)/.exec(specifier)
+        if (!match) {
+          continue
+        }
+        const pkg = REPO_PACKAGES.find((entry) => entry.name === `@kobato/${match[1]}`)
+        if (!pkg || !file.startsWith(`${pkg.dir}/tests/`)) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
