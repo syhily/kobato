@@ -21,7 +21,7 @@ import {
   type AtLinkSessionSnapshot,
 } from '@kobato/inkling-internal/plugins/behaviour/at-link'
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
-import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
+import { isInternalUrl } from '@kobato/inkling-internal/utils/is-internal-url'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 

@@ -6,10 +6,17 @@
   "exports": {
     "./tsconfig.base.json": "./tsconfig.base.json",
     "./oxlint.config.ts": "./oxlint.config.ts",
-    "./oxfmt.config.ts": "./oxfmt.config.ts"
+    "./oxfmt.config.ts": "./oxfmt.config.ts",
+    "./src/*": "./src/*"
+  },
+  "dependencies": {
+    "@kobato/distribution": "workspace:*",
+    "@kobato/utils": "workspace:*"
   },
   "devDependencies": {
+    "oxc-transform-react": "catalog:",
     "oxfmt": "catalog:",
-    "oxlint": "catalog:"
+    "oxlint": "catalog:",
+    "vite": "catalog:"
   }
 }

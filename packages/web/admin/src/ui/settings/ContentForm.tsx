@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ContentSettings } from '@kobato/settings/types.ts'
 
-import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/settings/footnotes-section-title.ts'
+import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/settings/presentation.ts'
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
@@ -11,7 +11,7 @@ import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/Setting
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { Controller } from 'react-hook-form'
 
 interface ContentFormProps {

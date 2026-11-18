@@ -1,6 +1,6 @@
 import { DragDropHandleContext } from '@kobato/inkling-internal/context/DragDropHandleContext'
 import useGalleryReorder, { type GalleryImage } from '@kobato/inkling-internal/hooks/useGalleryReorder'
-import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/dragDropHandle'
+import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/drag-drop-handle'
 import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 import { cardDrag, imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
 import { act, renderHook } from '@testing-library/react'

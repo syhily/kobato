@@ -1,8 +1,8 @@
 import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { createHash } from 'node:crypto'
 import { isIPv6 } from 'node:net'
 

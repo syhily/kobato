@@ -1,4 +1,4 @@
-import { detailHeaders, listingHeaders } from '@kobato/server/http/loaders/route-exports.ts'
+import { detailHeaders, listingHeaders } from '@kobato/server/http/route-cache-headers.ts'
 import { notModifiedResponse } from '@kobato/server/infra/http/etag.ts'
 import { documentHeaders } from '@kobato/server/infra/http/headers.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'

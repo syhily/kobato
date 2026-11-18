@@ -8,7 +8,7 @@
 // — worker threads cannot start from VFS paths, so eval is the only way.
 // --smoke-intl is a PURE Intl probe: it imports the locale contract and the
 // shared display formatter (for the real `formatDuration` output), reads no
-// configuration and touches no database (`packages/server/src/infra/intl-probe.ts`).
+// configuration and touches no database (`packages/server/src/infra/sea/intl-probe.ts`).
 
 import {
   SEA_CLIENT_ASSET_PREFIX,
@@ -18,14 +18,14 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
 } from '@kobato/distribution/sea-assets.ts'
 import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
+import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback.ts'
 import {
   collectDoctorReport,
   doctorOk,
   formatDoctorText,
   parseProbeIssues,
-} from '@kobato/server/infra/doctor-report.ts'
-import { runIntlProbe } from '@kobato/server/infra/intl-probe.ts'
-import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback.ts'
+} from '@kobato/server/infra/sea/doctor-report.ts'
+import { runIntlProbe } from '@kobato/server/infra/sea/intl-probe.ts'
 import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives.ts'
 import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
 import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea/sea.ts'

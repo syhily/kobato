@@ -1,4 +1,4 @@
-import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum-url-policy.ts'
+import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // The RUM sanitizer must match the URL shape the project's real oRPC client

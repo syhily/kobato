@@ -19,7 +19,7 @@ import {
 import { BucketSaveStatus, ReadOnlyStatusLine } from '@kobato/web-admin/ui/settings/cache/CacheStatusLine.tsx'
 import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { useSettingsMutation } from '@kobato/web-admin/ui/settings/useSettingsMutation.ts'
+import { useSettingsMutation } from '@kobato/web-admin/ui/settings/use-settings-mutation.ts'
 import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useMemo, useRef, useState } from 'react'
 

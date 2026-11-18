@@ -4,10 +4,10 @@ import {
   mergeWhiteColor,
   resolveHeaderImageTextColor,
 } from '@kobato/inkling-internal/nodes/header/header-accent-color'
-import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
+import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/getAccentColor', () => ({
+vi.mock('@kobato/inkling-internal/utils/get-accent-color', () => ({
   getAccentColor: vi.fn(() => ' #3366cc '),
 }))
 

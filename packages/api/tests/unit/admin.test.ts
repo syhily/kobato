@@ -1,6 +1,6 @@
 import type { AnyContractProcedure } from '@orpc/contract'
 
-import { adminAuditLogContract } from '@kobato/api/admin/audit-log.ts'
+import { adminAuditContract } from '@kobato/api/admin/audit.ts'
 import { adminBackupContract } from '@kobato/api/admin/backup.ts'
 import { adminCacheContract } from '@kobato/api/admin/cache.ts'
 import { adminCategoriesContract } from '@kobato/api/admin/categories.ts'
@@ -29,7 +29,6 @@ import {
   adminUsersSessionsContract,
 } from '@kobato/api/admin/users.ts'
 import { adminWebmentionsContract } from '@kobato/api/admin/webmentions.ts'
-import { contentRestoreResultDto } from '@kobato/contracts/admin-meta.ts'
 import {
   adminPostAnalyticsInputSchema,
   adminPostAnalyticsOutputSchema,
@@ -91,6 +90,7 @@ import {
   adminPendingDashboardDto,
   ownCommentMutationDto,
 } from '@kobato/contracts/comments.ts'
+import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base.ts'
 import {
   adminFontDeleteInput,
   adminFontDeleteOutputDto,
@@ -556,7 +556,7 @@ const ADMIN_CONTRACTS = {
   posts: adminPostsContract,
   pages: adminPagesContract,
   users: adminUsersContract,
-  auditLog: adminAuditLogContract,
+  auditLog: adminAuditContract,
   settings: adminSettingsContract,
   storage: adminStorageContract,
   cache: adminCacheContract,

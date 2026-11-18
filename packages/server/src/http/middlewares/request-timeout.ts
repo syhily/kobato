@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { MiddlewareHandler } from 'hono'
 
 import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'

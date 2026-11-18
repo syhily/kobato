@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { friend } from '@kobato/db/schema/friend.ts'
 import { user } from '@kobato/db/schema/user.ts'

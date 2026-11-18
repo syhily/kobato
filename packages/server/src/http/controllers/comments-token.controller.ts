@@ -6,7 +6,7 @@ import {
   cleanupExpiredTokens,
   revokeCommentToken,
   verifyCommentOwnership,
-} from '@kobato/server/domains/comments/services/token.ts'
+} from '@kobato/server/domains/comments/services/token-store.ts'
 import { commentTokenCookie, implementPublic } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 

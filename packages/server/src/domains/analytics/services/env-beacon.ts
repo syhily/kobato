@@ -3,6 +3,7 @@ import type { DeviceEnvClientRow } from '@kobato/db/duckdb/device-env.ts'
 
 import { type DuckDBConnection } from '@duckdb/node-api'
 import { appendDeviceEnvClientRows, existingDeviceEnvEventIds } from '@kobato/db/duckdb/device-env.ts'
+import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths.ts'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
 import {
   deserializeDeadLetterJsonLine,
@@ -13,7 +14,6 @@ import {
   writeDeadLetter,
 } from '@kobato/server/infra/db/insert-batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '@kobato/server/infra/paths.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 // The device-environment beacon side (`device_env_client`): the beacon arrives

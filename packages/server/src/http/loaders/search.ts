@@ -10,10 +10,9 @@ import { recordAuditEventFromContext } from '@kobato/server/domains/audit/servic
 import { pagePath, searchRootPath } from '@kobato/server/domains/content/urls.ts'
 import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
 import { getClientPostsWithMetadata, getPostsBySlugs } from '@kobato/server/domains/posts/services/public-query.ts'
+import { searchPostOptions, searchPosts } from '@kobato/server/domains/posts/services/search-query.ts'
 import { parseListingPage } from '@kobato/server/http/loaders/pagination.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { searchPostOptions } from '@kobato/server/infra/search/options.ts'
-import { searchPosts } from '@kobato/server/infra/search/search.ts'
 import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { redirect } from 'react-router'
@@ -42,7 +41,7 @@ export async function searchLoader(
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content', settings).pagination.search
   // Only live posts are searchable — the gate is defined once and passed
-  // down, keeping the search infra free of business rules.
+  // down; the search module owns the corpus, never the visibility policy.
   const liveWhere = livePostWhere()
   const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
   // The audit row persists the raw keyword — never write one for a blank or

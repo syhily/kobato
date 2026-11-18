@@ -1,5 +1,5 @@
 import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContext'
-import { createTKHandle, type TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import { createTKHandle, type TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
 import React from 'react'
 
 // Test stand-in for the per-composer provider InklingComposer mounts: wraps

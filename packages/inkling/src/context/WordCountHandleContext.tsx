@@ -2,7 +2,7 @@ import { createComposerHandleBinding } from '@kobato/inkling-internal/plugins/be
 import {
   createWordCountHandle,
   type WordCountHandleState,
-} from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
+} from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 
 // Per-composer word-count handle; nested composers share the top-level one.
 export const {

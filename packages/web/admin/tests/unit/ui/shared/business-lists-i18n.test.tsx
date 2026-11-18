@@ -5,8 +5,8 @@ import type { MetingSearchHit } from '@kobato/contracts/music.ts'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { PendingFriendRow } from '@kobato/web-admin/ui/friends/PendingFriendRow.tsx'
-import { SearchResultItem } from '@kobato/web-admin/ui/musics/SearchResultItem.tsx'
-import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/AdminInfiniteListFooter.tsx'
+import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem.tsx'
+import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

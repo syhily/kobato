@@ -119,8 +119,8 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     text: 'https://example.com',
   },
   { path: 'packages/web/admin/src/ui/images/ImageDetailDialog.tsx', rules: ['jsx-text'], text: '×' },
-  { path: 'packages/web/admin/src/ui/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'playerId' },
-  { path: 'packages/web/admin/src/ui/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'sourceId' },
+  { path: 'packages/web/admin/src/ui/music/MusicDetailView.tsx', rules: ['jsx-text'], text: 'playerId' },
+  { path: 'packages/web/admin/src/ui/music/MusicDetailView.tsx', rules: ['jsx-text'], text: 'sourceId' },
   {
     path: 'packages/web/admin/src/ui/account/MyProfileView.tsx',
     rules: ['jsx-attribute'],
@@ -199,7 +199,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/shared/utils/src/slug-char-map.ts', rules: ['hardcoded-locale'] },
   // The SEA Intl probe's expectation table is KEYED by the locale identity — the
   // tags are the probe's index and the expected ICU output is technical data.
-  { path: 'packages/server/src/infra/intl-probe.ts', rules: ['hardcoded-locale', 'han-literal'] },
+  { path: 'packages/server/src/infra/sea/intl-probe.ts', rules: ['hardcoded-locale', 'han-literal'] },
   // CLI stderr/doctor output: operator-facing technical diagnostics, never a
   // browser string (the CLI's Chinese text is deliberate, not a locale bug).
   { path: 'packages/server/src/infra/config.ts', rules: ['han-literal'] },
@@ -214,7 +214,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     rules: ['han-literal'],
     text: '🎵 此文章包含音乐播放器，请访问原文收听。',
   },
-  { path: 'packages/shared/settings/src/footnotes-section-title.ts', rules: ['han-literal'], text: '尾声礼记' },
+  { path: 'packages/shared/settings/src/presentation.ts', rules: ['han-literal'], text: '尾声礼记' },
   // Social rows seed user-editable content: `brandName` holds the
   // locale-neutral form verbatim; the translated label is `labelId`.
   { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微博' },
@@ -271,7 +271,7 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/categories/CategoryRow.tsx',
         'packages/web/admin/src/ui/comments/EditUserDialog.tsx',
         'packages/web/admin/src/ui/images/ImageDetailDialog.tsx',
-        'packages/web/admin/src/ui/musics/MusicDetailView.tsx',
+        'packages/web/admin/src/ui/music/MusicDetailView.tsx',
         'packages/web/admin/src/ui/account/MyProfileView.tsx',
         'packages/web/admin/src/ui/shared/SearchShortcutHint.tsx',
         'packages/web/admin/src/ui/users/UserDetailView.tsx',
@@ -300,13 +300,13 @@ describe('production sources', () => {
         'packages/server/src/domains/auth/primitives.ts',
         'packages/server/src/domains/settings/services/admin-projection.ts',
         'packages/shared/utils/src/slug-char-map.ts',
-        'packages/server/src/infra/intl-probe.ts',
+        'packages/server/src/infra/sea/intl-probe.ts',
         'packages/server/src/infra/config.ts',
         'packages/server/src/infra/sea/binary-rollback.ts',
         'packages/web/admin/src/ui/editor/cards/menu-matches.ts',
         'packages/shared/lexical/src/cards/solution.ts',
         'packages/shared/lexical/src/projection-state.ts',
-        'packages/shared/settings/src/footnotes-section-title.ts',
+        'packages/shared/settings/src/presentation.ts',
         'packages/shared/settings/src/socials.ts',
       ]),
     )
@@ -336,7 +336,7 @@ describe('production sources', () => {
         'packages/shared/cache/src/registry.ts',
         'packages/shared/cache/src/types.ts',
         'packages/shared/auth/src/roles.ts',
-        'packages/shared/utils/src/formatter.ts',
+        'packages/shared/utils/src/site-date.ts',
         'packages/web/admin/src/ui/analytics/time-labels.ts',
         'packages/web/admin/src/ui/editor-shell/wall-clock.ts',
         'packages/web/admin/src/ui/settings/cache/cache-formatters.ts',
@@ -395,7 +395,7 @@ describe('production sources', () => {
         'packages/server/src/domains/content/services/lexical/canonicalize.ts',
         'packages/server/src/infra/slug/resolve.ts',
         'packages/server/src/infra/slug/reservation.ts',
-        'packages/server/src/http/controllers/admin/revision-router.ts',
+        'packages/server/src/http/controllers/admin/revision-shared.ts',
         // Comments and webmentions.
         'packages/server/src/domains/comments/services/moderate.ts',
         'packages/server/src/domains/comments/services/policy.ts',

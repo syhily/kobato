@@ -6,8 +6,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 // factory runs before any import of the backend, so STORAGE_DIR is set first.
 const tmp = vi.hoisted(() => ({ root: '' }))
 
-vi.mock('@kobato/server/infra/paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/paths.ts')>()
+vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
   const fs = await import('node:fs')
   const os = await import('node:os')
   const nodePath = await import('node:path')

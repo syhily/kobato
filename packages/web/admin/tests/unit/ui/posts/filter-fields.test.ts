@@ -11,7 +11,7 @@ import {
   filterPillsReducer,
   type ActiveFilter,
   type FilterPillsAction,
-} from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 const buildPostFilterFields = (sources: Parameters<typeof buildPostFilterFieldsBase>[0]) =>

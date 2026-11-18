@@ -1,4 +1,4 @@
-import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/models.ts'
+import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types.ts'
 
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'

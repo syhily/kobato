@@ -24,7 +24,7 @@ mockTanstackQuery()
 
 const commit = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
     commit,
     isPending: false,

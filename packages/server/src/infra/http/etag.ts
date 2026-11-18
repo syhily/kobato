@@ -2,7 +2,7 @@ import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 
 import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { CACHE_PROFILES } from '@kobato/server/infra/http/headers.ts'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { createHash } from 'node:crypto'
 
 /**

@@ -7,7 +7,7 @@ const ROUTE_GROUPS = {
   public: {
     roots: ['apps/kobato/src/root.tsx', 'apps/kobato/src/routes/public'],
     allowed: [
-      '@kobato/server/http/loaders/route-exports.ts',
+      '@kobato/server/http/route-cache-headers.ts',
       '@kobato/server/http/ssr-caller.ts',
       '@kobato/server/infra/http/headers.ts',
       '@kobato/server/infra/http/status.ts',

@@ -1,5 +1,5 @@
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { FilterFieldSpec, SearchFieldState } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
 
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
@@ -9,7 +9,7 @@ import {
   parseDateFilter,
   parseSingleDateFilter,
   singleDateFilterLabel,
-} from '@kobato/web-admin/ui/shared/date-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
 import { DateSingleFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/date-single-editor.tsx'
 import {
   DateRangeEditor,

@@ -4,8 +4,8 @@ import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { SidebarSettings } from '@kobato/settings/types.ts'
 
 import { getSidebarWidgetCount } from '@kobato/settings/presentation.ts'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
 import { sampleSize } from '@kobato/utils/sampling.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 
 export interface SidebarSeedInput {
   /** Entity/URL scope: `post:<id>`, `page:<id>`, `home`. */

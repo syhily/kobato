@@ -12,7 +12,7 @@
  */
 
 import { $createAsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
-import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-node'
 import { isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $isListNode, ListNode } from '@lexical/list'
 import {

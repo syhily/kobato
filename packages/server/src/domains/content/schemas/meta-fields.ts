@@ -7,7 +7,7 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
  * `null` = clear, a well-formed BCP 47 tag = its canonical spelling (not limited to
  * the four UI locales). Anything else rejects the write with a descriptor-carrying
  * `BAD_REQUEST` from this single authority. The wire field's structural shape and
- * the upsert-meta input base live in `@kobato/contracts/admin-meta.ts`.
+ * the upsert-meta input base live in `@kobato/contracts/content-admin-base.ts`.
  */
 export function resolveContentLanguage(value: string | null | undefined): string | null | undefined {
   if (value === undefined || value === null || value.trim() === '') {

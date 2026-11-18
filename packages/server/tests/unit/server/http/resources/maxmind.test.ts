@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { adminSession, adminUser } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
@@ -37,7 +37,7 @@ describe('maxmindRouter', () => {
     vi.doMock('@kobato/server/infra/logger.ts', () => ({
       getLogger: vi.fn(() => ({ info: vi.fn() })),
     }))
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
       MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
@@ -83,7 +83,7 @@ describe('maxmindRouter', () => {
   })
 
   it('rejects non-mmdb files', async () => {
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
       MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
@@ -103,7 +103,7 @@ describe('maxmindRouter', () => {
   })
 
   it('rejects an empty file', async () => {
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
       MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
@@ -129,7 +129,7 @@ describe('maxmindRouter', () => {
     vi.doMock('@kobato/server/infra/logger.ts', () => ({
       getLogger: vi.fn(() => ({ info: vi.fn() })),
     }))
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
       MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
@@ -164,7 +164,7 @@ describe('maxmindRouter', () => {
   })
 
   it('rejects uploads that exceed the body limit', async () => {
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
       MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))

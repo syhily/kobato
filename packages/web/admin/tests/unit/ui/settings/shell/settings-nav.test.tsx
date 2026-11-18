@@ -12,7 +12,7 @@ import {
   SettingsSearchProvider,
   useSettingsSearch,
   useSettingsSearchFilter,
-} from '@kobato/web-admin/ui/settings/shell/useSettingsSearch.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
 import { screen } from '@testing-library/react'
 import { useEffect } from 'react'
 import { describe, expect, it } from 'vitest'

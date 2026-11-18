@@ -5,7 +5,7 @@ import {
   createWordCountHandle,
   publishWordCountCallback,
   type WordCountHandle,
-} from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
+} from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 import WordCountPlugin from '@kobato/inkling-internal/plugins/WordCountPlugin'
 import { act, render } from '@testing-library/react'
 import { createEditor } from 'lexical'

@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'

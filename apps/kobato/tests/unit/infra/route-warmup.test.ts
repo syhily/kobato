@@ -36,7 +36,7 @@ import {
   routeWarmupPlugin,
   TIER1_ROUTES,
   tier2BucketForRouteId,
-} from '@kobato/server/infra/route-warmup.ts'
+} from '@kobato/toolchain/src/vite/route-warmup.ts'
 
 import routes from '@/routes.ts'
 

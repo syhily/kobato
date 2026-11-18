@@ -1,8 +1,18 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-import { rumClientIdentitySchema } from '@kobato/settings/rum-client-identity.ts'
 import { coerceBoolean } from '@kobato/settings/sections/shared.ts'
 import { z } from 'zod'
+
+/**
+ * How much request identity the intake relay forwards to OpenObserve.
+ * `anonymous` (the default) forwards nothing — O2 enriches from the relay's own
+ * peer address, which the privacy pipeline then drops. `forward` attaches the
+ * trusted-proxy-resolved client address and the original User-Agent, and is
+ * gated by the visitor's explicit privacy consent.
+ */
+export const rumClientIdentitySchema = z.enum(['anonymous', 'forward'])
+
+export type RumClientIdentity = z.infer<typeof rumClientIdentitySchema>
 
 /** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
 export const observabilityValidationMessages = {

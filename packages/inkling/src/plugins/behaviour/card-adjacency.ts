@@ -1,4 +1,4 @@
-import type { CardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import type { CardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
 import type { DecoratorNode, LexicalEditor, LexicalNode } from 'lexical'
 
 import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'

@@ -7,7 +7,7 @@ import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.t
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
 import { SettingsSecretInput, secretFieldStrings } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { Controller, useWatch } from 'react-hook-form'
 
 interface FormState {

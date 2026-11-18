@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { getInstallState } from '@kobato/server/domains/settings/install-gate.ts'
 import { errorJsonResponse } from '@kobato/server/http/errors.ts'

@@ -13,7 +13,7 @@ import { applyOwnCommentEdit } from '@kobato/server/domains/comments/services/mo
 import { createComment } from '@kobato/server/domains/comments/services/mutate.ts'
 import { loadComments, parseComments } from '@kobato/server/domains/comments/services/public-query.ts'
 import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
-import { appendCommentToken, issueCommentToken } from '@kobato/server/domains/comments/services/token.ts'
+import { appendCommentToken, issueCommentToken } from '@kobato/server/domains/comments/services/token-store.ts'
 import {
   commentPostRateLimit,
   commentTokenCookie,

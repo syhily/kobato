@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { ReactNode } from 'react'
 
 import { tZhCN } from '@kobato/test/i18n.ts'
@@ -29,7 +29,7 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({
 }))
 
 import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts'
+import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 

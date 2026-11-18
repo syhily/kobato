@@ -41,6 +41,21 @@ pnpm demo            # vite apps/inkling-demo — not part of the type/test/buil
   `import type` mandatory. A tsconfig edit that floods test files with `TS2339`-style errors means tsgolint's cached program is stale — re-run
   `pnpm run lint` once.
 
+## Directory and naming rules
+
+This package has one closed public surface (`src/index.ts` React barrel) and one react-free surface (`src/headless/index.ts`); internal modules use the
+`@kobato/inkling-internal/*` alias. Everything below is an ALLOWED idiom here (the root bans do not apply verbatim):
+
+- `hooks/` at the source root is the React-hooks layer — 38 hooks, all `use-*`.
+- `nodes/base/nodes/<card>/` mirrors the upstream Lexical layout (base class + parser + renderer + declaration); the doubled `nodes/` is intentional.
+- `$`-prefixed helpers (`$isAtTopOfNode`, `$getSelectionAnchor`) are Lexical-owned idioms; `.declaration.ts` is the card-declaration suffix.
+- Six internal `index.ts` alias seams (`nodes/base`, `nodes/base/nodes/at-link`, `transforms`, `markdown`, `html/html-to-lexical`, `html/clean-basic-html`)
+  are load-bearing module entries, NOT barrels — keep them and import through them.
+- `transforms/` is flat: `default-transforms.ts` + `register-node-transform.ts` + one file per transform (`denest`, `merge-list-nodes`, `remove-alignment`,
+  `remove-at-link-nodes`). Never nest a directory inside itself.
+- `utils/` holds pure helpers and `utils/draggable/` only; `utils/services/` is a state-machine layer. Non-component modules are `kebab-case.ts`;
+  PascalCase is reserved for component files, `$`-prefixed for Lexical helpers.
+
 ## Architecture notes
 
 Glossary owned here: **card** (a decorator-node block), **card adjacency**, **card spec**, **card declaration**, **render target**, **host card**,
@@ -125,7 +140,7 @@ Glossary owned here: **card** (a decorator-node block), **card adjacency**, **ca
 ### Pick seam
 
 - Host cards referencing host-owned entities declare `picker: { render, autoOpenOnInsert? }`; the dialog is host code. Dispatch rides a per-composer handle
-  (`packages/inkling/src/plugins/behaviour/cardPickerStore.ts`, created in `ComposerHandlesProvider`, context `packages/inkling/src/context/CardPickerStoreContext.tsx`):
+  (`packages/inkling/src/plugins/behaviour/card-picker-store.ts`, created in `ComposerHandlesProvider`, context `packages/inkling/src/context/CardPickerStoreContext.tsx`):
   `useCardPicker().open(nodeKey)`, or INSERT_CARD_COMMAND's `openPicker` flag (insert registrar when `autoOpenOnInsert` is projected, or a host intent
   command), with `registerCardCommands` as the single write site. Command channel only; `open()` no-ops when not editable.
 - `CardPickerHostPlugin` (a `CORE_PLUGINS` entry gated to non-nested, non-read-only surfaces) resolves via `resolveCardPicker` (spec `picker` first, then

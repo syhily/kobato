@@ -1,5 +1,5 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { RoleFilter, SortOrder } from '@kobato/web-admin/ui/users/useUsersFilters.ts'
+import type { RoleFilter, SortOrder } from '@kobato/web-admin/ui/users/use-users-filters.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@kobato/ui/components/separator.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { LabelledCheckbox } from '@kobato/web-admin/ui/shared/LabelledCheckbox.tsx'
+import { LabelledCheckbox } from '@kobato/web-admin/ui/shared/form/LabelledCheckbox.tsx'
 import { FilterIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 

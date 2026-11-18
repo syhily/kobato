@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'

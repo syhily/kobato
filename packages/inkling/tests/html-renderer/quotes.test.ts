@@ -1,5 +1,5 @@
 import { AsideNode, ExtendedQuoteNode } from '@kobato/inkling-internal/nodes/base'
-import shouldRender from '@kobato/inkling/tests/html-renderer/utils/should-render'
+import shouldRender from '@kobato/inkling/tests/utils/should-render'
 import { describe, it } from 'vitest'
 
 describe('Quotes', function () {

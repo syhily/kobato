@@ -4,7 +4,7 @@ import {
 } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import { $createImageNode, ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
 import { ImageNodeComponent } from '@kobato/inkling-internal/nodes/ImageNodeComponent'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
 import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'
 import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
@@ -17,7 +17,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

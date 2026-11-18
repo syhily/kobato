@@ -24,7 +24,7 @@ import {
   clampImageCardWidth,
   migrateImageDataUrl,
 } from '@kobato/inkling-internal/plugins/behaviour/image-lifecycle'
-import { isGif } from '@kobato/inkling-internal/utils/isGif'
+import { isGif } from '@kobato/inkling-internal/utils/is-gif'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
 

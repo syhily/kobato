@@ -1,7 +1,7 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
 import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import type { CommentActions } from '@kobato/web-admin/ui/comments/useCommentsController.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
 import { makeAdminComment } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
@@ -77,9 +77,9 @@ const stubActions = vi.hoisted((): CommentActions => {
   }
 })
 
-vi.mock('@kobato/web-admin/ui/comments/useCommentsController.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/comments/useCommentsController.ts')>(
-    '@kobato/web-admin/ui/comments/useCommentsController.ts',
+vi.mock('@kobato/web-admin/ui/comments/use-comments-controller.ts', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/comments/use-comments-controller.ts')>(
+    '@kobato/web-admin/ui/comments/use-comments-controller.ts',
   )
   return {
     ...actual,

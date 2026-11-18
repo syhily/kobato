@@ -205,7 +205,7 @@ describe('comments/services/admin-query — searchPageOptions / searchAuthorOpti
 describe('comments/services/token — issue/revoke cycle', () => {
   it('issues a token that cleanupExpiredTokens accepts, then is revoked', async () => {
     const { issueCommentToken, cleanupExpiredTokens, revokeCommentToken } =
-      await import('@kobato/server/domains/comments/services/token.ts')
+      await import('@kobato/server/domains/comments/services/token-store.ts')
     const tok = await issueCommentToken(db, 1, 2, 'post:1', 60)
     const cookie = { 'post:1': [{ token: tok, expiresAt: Date.now() + 60_000 }] }
 
@@ -221,13 +221,13 @@ describe('comments/services/token — issue/revoke cycle', () => {
 
 describe('comments/services/token — appendCommentToken', () => {
   it('adds a new entry to the per-pageKey list', async () => {
-    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const out = appendCommentToken({}, 'post:1', 'tok', 60)
     expect(out['post:1']).toHaveLength(1)
     expect(out['post:1']?.[0]).toMatchObject({ token: 'tok' })
   })
   it('appends to an existing list without mutating the input', async () => {
-    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const before = appendCommentToken({}, 'post:1', 'tok1', 60)
     const after = appendCommentToken(before, 'post:1', 'tok2', 60)
     expect(after['post:1']).toHaveLength(2)
@@ -236,13 +236,13 @@ describe('comments/services/token — appendCommentToken', () => {
 
 describe('comments/services/token — cleanupExpiredTokens', () => {
   it('returns empty result when the cookie is empty', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const r = await cleanupExpiredTokens(db, {})
     expect(r.cleaned).toEqual({})
     expect(r.validEntries).toEqual([])
   })
   it('skips entries whose local expiresAt has already passed', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token: 'expired', expiresAt: Date.now() - 1000 }],
     })
@@ -251,7 +251,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   })
   it('accepts a real token issued by issueCommentToken (plain-JSON wire format)', async () => {
     const { issueCommentToken, cleanupExpiredTokens } =
-      await import('@kobato/server/domains/comments/services/token.ts')
+      await import('@kobato/server/domains/comments/services/token-store.ts')
     const token = await issueCommentToken(db, 42, 7, 'post:1', 60)
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
@@ -261,7 +261,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.cleaned['post:1']).toHaveLength(1)
   })
   it('skips entries whose stored payload is not a payload object', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
     // The json column accepts a bare JSON string; the shape guard reads it as a miss.
     await db.insert(oneTimeToken).values({
@@ -276,7 +276,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.cleaned).toEqual({})
   })
   it('skips entries whose stored payload fails the shape guard', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const token = 'bad-shape-' + Math.random().toString(36).slice(2)
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
@@ -292,20 +292,20 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
 
 describe('comments/services/token — verifyCommentOwnership', () => {
   it('returns token=null when no token list is supplied', async () => {
-    const { verifyCommentOwnership } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { verifyCommentOwnership } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const r = await verifyCommentOwnership(db, {}, '7')
     expect(r.token).toBeNull()
   })
   it('returns the matched token when a backed token matches the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } =
-      await import('@kobato/server/domains/comments/services/token.ts')
+      await import('@kobato/server/domains/comments/services/token-store.ts')
     const token = await issueCommentToken(db, 77, 7, 'post:1', 60)
     const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
     expect(r.token).toBe(token)
   })
   it('returns token=null when the backed token does not match the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } =
-      await import('@kobato/server/domains/comments/services/token.ts')
+      await import('@kobato/server/domains/comments/services/token-store.ts')
     const token = await issueCommentToken(db, 111, 7, 'post:1', 60)
     const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
     expect(r.token).toBeNull()
@@ -323,7 +323,8 @@ describe('comments/services/access — verifyCommentAccess', () => {
   it('returns ok=true with the cleaned cookie when a real token proves ownership', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { issueCommentToken, appendCommentToken } = await import('@kobato/server/domains/comments/services/token.ts')
+    const { issueCommentToken, appendCommentToken } =
+      await import('@kobato/server/domains/comments/services/token-store.ts')
     const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
     const token = await issueCommentToken(db, id, u1, 'post:1', 60)
     // A second, un-backed entry must be dropped by the cleanup passthrough.

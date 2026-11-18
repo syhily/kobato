@@ -766,6 +766,9 @@ importers:
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
+      '@kobato/toolchain':
+        specifier: workspace:*
+        version: link:../../tools/toolchain
       '@kobato/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -2292,13 +2295,26 @@ importers:
         version: 4.6.7
 
   tools/toolchain:
+    dependencies:
+      '@kobato/distribution':
+        specifier: workspace:*
+        version: link:../../packages/shared/distribution
+      '@kobato/utils':
+        specifier: workspace:*
+        version: link:../../packages/shared/utils
     devDependencies:
+      oxc-transform-react:
+        specifier: 'catalog:'
+        version: 0.158.0
       oxfmt:
         specifier: 'catalog:'
         version: 0.78.0
       oxlint:
         specifier: 'catalog:'
         version: 1.93.0(oxlint-tsgolint@7.0.2007)
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
 
   tools/trace:
     devDependencies:

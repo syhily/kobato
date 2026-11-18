@@ -14,7 +14,7 @@ import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
 import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm.tsx'
 import { AssetsForm } from '@kobato/web-admin/ui/settings/AssetsForm.tsx'
 import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView.tsx'
-import { CacheView } from '@kobato/web-admin/ui/settings/CacheView.tsx'
+import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
 import { CommentsForm } from '@kobato/web-admin/ui/settings/CommentsForm.tsx'
 import { ContentForm } from '@kobato/web-admin/ui/settings/ContentForm.tsx'
 import { NAV_GROUP_LABEL_KEYS, SECTION_DISPLAY } from '@kobato/web-admin/ui/settings/display.ts'
@@ -25,6 +25,7 @@ import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
 import { NavigationEditor } from '@kobato/web-admin/ui/settings/NavigationEditor.tsx'
 import { NewsletterForm } from '@kobato/web-admin/ui/settings/NewsletterForm.tsx'
 import { ObservabilityForm } from '@kobato/web-admin/ui/settings/observability/ObservabilityForm.tsx'
+import { ThresholdForm } from '@kobato/web-admin/ui/settings/rate-limit/ThresholdForm.tsx'
 import { SecurityForm } from '@kobato/web-admin/ui/settings/SecurityForm.tsx'
 import { SeoForm } from '@kobato/web-admin/ui/settings/SeoForm.tsx'
 import {
@@ -36,14 +37,13 @@ import { SettingsMobileBar } from '@kobato/web-admin/ui/settings/shell/SettingsM
 import { ICON_MAP, SettingsNav } from '@kobato/web-admin/ui/settings/shell/SettingsNav.tsx'
 import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
 import { SettingsSearchInput } from '@kobato/web-admin/ui/settings/shell/SettingsSearchInput.tsx'
-import { ScrollSpyProvider, useScrollSpy } from '@kobato/web-admin/ui/settings/shell/useSettingsScrollSpy.tsx'
+import { ScrollSpyProvider, useScrollSpy } from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
 import {
   SettingsSearchProvider,
   useSettingsSearchContext,
-} from '@kobato/web-admin/ui/settings/shell/useSettingsSearch.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
 import { SidebarForm } from '@kobato/web-admin/ui/settings/SidebarForm.tsx'
 import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor.tsx'
-import { ThresholdForm } from '@kobato/web-admin/ui/settings/ThresholdForm.tsx'
 import { WebmentionsForm } from '@kobato/web-admin/ui/settings/WebmentionsForm.tsx'
 import { Children, Fragment, useCallback, useEffect, useRef } from 'react'
 

@@ -1,9 +1,9 @@
 import type { Readable } from 'node:stream'
 
+import { isPathInside, STORAGE_DIR } from '@kobato/server/infra/data-paths.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isPathInside, STORAGE_DIR } from '@kobato/server/infra/paths.ts'
 import {
   MAX_OBJECT_BUFFER_SIZE,
   type PutObjectInput,

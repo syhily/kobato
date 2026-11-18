@@ -1,5 +1,5 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { CommentActions } from '@kobato/web-admin/ui/comments/useCommentsController.ts'
+import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
 import type { ReactNode } from 'react'
 
 import { avatarImageUrl } from '@kobato/assets/avatar.ts'
@@ -7,9 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avata
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
 import { idStr } from '@kobato/utils/id.ts'
 import { safeHref } from '@kobato/utils/safe-url.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { commentBodyPlainText } from '@kobato/web-public/ui/comments/comment-body-helpers.ts'
 import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml.tsx'

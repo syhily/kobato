@@ -1,7 +1,7 @@
 import type { AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { PageFilterFieldKey } from '@kobato/web-admin/ui/pages/filter-fields.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
 import { makeAdminPage } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
@@ -34,9 +34,9 @@ queryMocks.dispatch = vi.fn()
 // data and the loading flag; only the pill hook is mocked, so the real FilterPillBar
 // renders.
 
-vi.mock('@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts')>(
-    '@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts',
+vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')>(
+    '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts',
   )
   return {
     ...actual,

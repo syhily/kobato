@@ -1,4 +1,4 @@
-import type { CommentAndUser } from '@kobato/server/domains/comments/models.ts'
+import type { CommentAndUser } from '@kobato/server/domains/comments/types.ts'
 
 import { post } from '@kobato/db/schema/post.ts'
 import { sendNewComment } from '@kobato/server/domains/comments/services/email.ts'

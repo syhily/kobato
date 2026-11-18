@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
 
 import { getDb } from '@kobato/server/bootstrap/db-lifecycle.ts'

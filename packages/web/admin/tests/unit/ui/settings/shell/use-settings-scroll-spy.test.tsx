@@ -4,7 +4,7 @@ import {
   useScrollSpy,
   useScrollSpyContext,
   useScrollSpyNav,
-} from '@kobato/web-admin/ui/settings/shell/useSettingsScrollSpy.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
 import { describe, expect, it } from 'vitest'
 
 describe('ui/admin/settings/shell/useSettingsScrollSpy', () => {

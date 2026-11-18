@@ -1,6 +1,6 @@
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/AdminListPage.tsx'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
 import { GROUP_META, GROUP_ORDER, TASK_CAPABILITIES } from '@kobato/web-admin/ui/tasks/meta.ts'
 import { TaskCard } from '@kobato/web-admin/ui/tasks/TaskCard.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koba
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { useWebAuthnSupported } from '@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'

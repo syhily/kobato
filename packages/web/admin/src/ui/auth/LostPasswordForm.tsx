@@ -2,7 +2,7 @@ import { Button } from '@kobato/ui/components/button.tsx'
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { inputClasses } from '@kobato/web-admin/ui/auth/shared.tsx'
+import { inputClasses } from '@kobato/web-admin/ui/auth/input-classes.ts'
 import { SendIcon } from 'lucide-react'
 import { Form, Link } from 'react-router'
 

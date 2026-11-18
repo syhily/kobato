@@ -1,5 +1,5 @@
 import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
-import generateEditorState from '@kobato/inkling-internal/utils/generateEditorState'
+import generateEditorState from '@kobato/inkling-internal/utils/generate-editor-state'
 import { MINIMAL_DOCUMENT_LEGACY_PAYLOAD } from '@kobato/inkling-internal/utils/initial-document'
 import {
   createEditor,

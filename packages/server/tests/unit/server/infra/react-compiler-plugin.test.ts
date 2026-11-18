@@ -1,4 +1,4 @@
-import { reactCompilerPlugin } from '@kobato/server/infra/react-compiler-plugin.ts'
+import { reactCompilerPlugin } from '@kobato/toolchain/src/vite/react-compiler-plugin.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 // The plugin's transform handler is invoked directly with a mock Vite

@@ -1,6 +1,6 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
 
 import {

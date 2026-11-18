@@ -2,7 +2,7 @@ import type { SessionSortState } from '@kobato/web-admin/ui/sessions/sort.ts'
 
 import { renderHook } from '@kobato/test/hook.tsx'
 import { SESSION_SORT_OPTIONS } from '@kobato/web-admin/ui/sessions/sort.ts'
-import { useSessionSort } from '@kobato/web-admin/ui/sessions/useSessionSort.ts'
+import { useSessionSort } from '@kobato/web-admin/ui/sessions/use-session-sort.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mock = vi.hoisted(() => ({

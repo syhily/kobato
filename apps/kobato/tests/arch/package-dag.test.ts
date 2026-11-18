@@ -266,7 +266,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/web-public',
     ...SHARED_SPLIT,
   ],
-  '@kobato/toolchain': [],
+  '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
   // The out-of-process instance harness: drives built artifacts, not source
   // graphs — its internal surface is deliberately narrow (see its AGENTS.md).
   '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
@@ -384,7 +384,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/web-public',
     ...SHARED_SPLIT,
   ],
-  '@kobato/toolchain': [],
+  '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
   kobato: INTERNAL_SCOPES,
   // The instance harness keeps the same narrow src DAG as its declarations.
   '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],

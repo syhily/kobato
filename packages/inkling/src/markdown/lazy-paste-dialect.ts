@@ -5,7 +5,7 @@
 // paste path before the markdown command dispatches.
 //
 // Two consumers cannot await — the paste command handler
-// (`@kobato/inkling-internal/plugins/behaviour/markdownPaste`), which runs synchronously
+// (`@kobato/inkling-internal/plugins/behaviour/markdown-paste`), which runs synchronously
 // inside the editor update, and the markdown card's HTML export
 // (`@kobato/inkling-internal/nodes/base/nodes/markdown/markdown-renderer`), whose exportDOM is
 // a sync pipeline — so they read the loaded engine through

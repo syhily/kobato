@@ -21,9 +21,9 @@ import {
   type SigninFlowContext,
 } from '@kobato/server/domains/auth/services/shared.ts'
 import { consumeToken, issueResetToken, revokeTokensFor } from '@kobato/server/domains/auth/verification-tokens.ts'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
 import { sendPasswordReset } from '@kobato/server/infra/email/sender.ts'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
 import bcrypt from 'bcryptjs'
 
 /**

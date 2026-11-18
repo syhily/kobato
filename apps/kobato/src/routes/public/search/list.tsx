@@ -1,7 +1,7 @@
 import type { PublicListingLoaderData } from '@kobato/catalog/listing.ts'
 
 import { metaWithFallback } from '@kobato/seo/meta.ts'
-import { listingHeaders } from '@kobato/server/http/loaders/route-exports.ts'
+import { listingHeaders } from '@kobato/server/http/route-cache-headers.ts'
 import { createSsrCaller, unwrapListing } from '@kobato/server/http/ssr-caller.ts'
 import { PostListingBody } from '@kobato/web-public/ui/post/PostListViews.tsx'
 import { data } from 'react-router'

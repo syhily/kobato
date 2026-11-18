@@ -5,7 +5,7 @@ import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 
 interface SeoFormProps {
   seo: SeoSettings

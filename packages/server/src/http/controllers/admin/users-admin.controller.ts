@@ -1,6 +1,7 @@
 import { adminUsersAdminContract } from '@kobato/api/admin/users.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
@@ -11,7 +12,6 @@ import {
 import { implementAdmin, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
 // Contract-first: method/path/input/output live in `@kobato/api/admin/users.ts`;

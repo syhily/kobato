@@ -3,7 +3,7 @@ import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 import type { FilterFieldSpec } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { resolveSingleDateFilterBounds } from '@kobato/web-admin/ui/shared/date-filter.ts'
+import { resolveSingleDateFilterBounds } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
 import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { CalendarIcon, FileTextIcon, ListChecksIcon, SearchIcon, UserIcon } from 'lucide-react'

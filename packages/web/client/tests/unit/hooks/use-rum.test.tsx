@@ -1,5 +1,5 @@
 import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
-import type { RumConsent } from '@kobato/web-client/lib/rum-consent.ts'
+import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
 
 import {
   __isRumModuleRequestedForTests,
@@ -24,7 +24,7 @@ vi.mock('react-router', () => ({
   useMatches: () => matches.current,
 }))
 
-vi.mock('@kobato/web-client/lib/openobserve-rum.ts', () => ({
+vi.mock('@kobato/web-client/lib/rum/openobserve-rum.ts', () => ({
   startRum: rum.startRum,
   stopRum: rum.stopRum,
   suspendRum: rum.suspendRum,

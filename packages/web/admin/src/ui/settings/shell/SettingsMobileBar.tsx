@@ -1,6 +1,6 @@
 import { Input } from '@kobato/ui/components/input.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useSettingsSearchFilter } from '@kobato/web-admin/ui/settings/shell/useSettingsSearch.tsx'
+import { useSettingsSearchFilter } from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
 import { SearchIcon, XIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'

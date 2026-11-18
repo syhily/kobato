@@ -6,29 +6,10 @@ import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { type VariantProps, cva } from '@kobato/ui/lib/cva.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SidebarContext, type SidebarContextValue, useSidebar } from '@kobato/ui/lib/sidebar-context.ts'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
 import { PanelLeft } from 'lucide-react'
-import { type ComponentProps, createContext, useCallback, use, useMemo, useState } from 'react'
-
-interface SidebarContextValue {
-  state: 'expanded' | 'collapsed'
-  open: boolean
-  setOpen: (open: boolean) => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
-  isMobile: boolean
-  toggleSidebar: () => void
-}
-
-const SidebarContext = createContext<SidebarContextValue | null>(null)
-
-function useSidebar() {
-  const context = use(SidebarContext)
-  if (!context) {
-    throw new Error('useSidebar must be used within a SidebarProvider.')
-  }
-  return context
-}
+import { type ComponentProps, useCallback, useMemo, useState } from 'react'
 
 interface SidebarProviderProps extends ComponentProps<'div'> {
   defaultOpen?: boolean
@@ -396,5 +377,4 @@ export {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
-  useSidebar,
 }

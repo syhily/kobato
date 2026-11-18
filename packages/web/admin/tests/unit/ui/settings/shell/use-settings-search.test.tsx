@@ -4,7 +4,7 @@ import {
   useSettingsSearch,
   useSettingsSearchContext,
   useSettingsSearchFilter,
-} from '@kobato/web-admin/ui/settings/shell/useSettingsSearch.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
 import { describe, expect, it } from 'vitest'
 
 describe('ui/admin/settings/shell/useSettingsSearch', () => {

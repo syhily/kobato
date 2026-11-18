@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { serve } from '@hono/node-server'
 import { hasAdmin } from '@kobato/db/operations/user.ts'

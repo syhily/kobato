@@ -1,4 +1,4 @@
-import type { AdminCommentsResult } from '@kobato/server/domains/comments/models.ts'
+import type { AdminCommentsResult } from '@kobato/server/domains/comments/types.ts'
 
 import { comment } from '@kobato/db/schema/comment.ts'
 import { metric } from '@kobato/db/schema/metric.ts'

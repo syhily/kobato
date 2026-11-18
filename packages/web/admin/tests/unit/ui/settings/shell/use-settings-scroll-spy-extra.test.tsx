@@ -4,7 +4,7 @@ import {
   useScrollSpy,
   useScrollSpyContext,
   useScrollSpyNav,
-} from '@kobato/web-admin/ui/settings/shell/useSettingsScrollSpy.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Extra coverage for useSettingsScrollSpy under the single-pass SSR

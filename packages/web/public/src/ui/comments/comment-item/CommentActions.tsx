@@ -13,7 +13,7 @@ import {
 } from '@kobato/ui/components/alert-dialog.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags.ts'

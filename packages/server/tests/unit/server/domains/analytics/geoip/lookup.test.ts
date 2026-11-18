@@ -11,7 +11,7 @@ vi.mock('node:fs', async () => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
   return { ...actual, existsSync: existsSyncMock }
 })
-vi.mock('@kobato/server/infra/paths.ts', () => ({
+vi.mock('@kobato/server/infra/data-paths.ts', () => ({
   MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
   isPathInside: () => true,
 }))

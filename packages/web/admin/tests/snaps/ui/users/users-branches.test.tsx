@@ -1,5 +1,5 @@
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
-import type { UsersFilters } from '@kobato/web-admin/ui/users/useUsersFilters.ts'
+import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters.ts'
 
 import { makeAdminUser } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
@@ -20,8 +20,8 @@ const controller = vi.hoisted((): { filters: UsersFilters } => ({
   },
 }))
 
-vi.mock('@kobato/web-admin/ui/users/useUsersFilters.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-admin/ui/users/useUsersFilters.ts')>()
+vi.mock('@kobato/web-admin/ui/users/use-users-filters.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/web-admin/ui/users/use-users-filters.ts')>()
   return {
     ...actual,
     useUsersFilters: () => ({

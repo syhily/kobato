@@ -1,6 +1,6 @@
 import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/contracts/audit.ts'
 import type { AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
 import { tZhCN } from '@kobato/test/i18n.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'

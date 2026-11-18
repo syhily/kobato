@@ -1,8 +1,8 @@
 import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/types'
 
-import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
 import { registerModifierCommand } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/modifier'
-import { registerKeyboardNavigation } from '@kobato/inkling-internal/plugins/behaviour/registerKeyboardNavigation'
+import { registerKeyboardNavigation } from '@kobato/inkling-internal/plugins/behaviour/register-keyboard-navigation'
 import {
   firstTextKey,
   seedSelectionEditor,

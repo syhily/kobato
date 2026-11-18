@@ -1,5 +1,5 @@
 import { renderHook } from '@kobato/test/hook.tsx'
-import { useImagesReducer } from '@kobato/web-admin/ui/images/useImagesReducer.ts'
+import { useImagesReducer } from '@kobato/web-admin/ui/images/use-images-reducer.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('ui/admin/images/useImagesReducer', () => {

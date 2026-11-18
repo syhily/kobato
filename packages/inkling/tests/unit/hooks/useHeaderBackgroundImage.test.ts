@@ -2,11 +2,11 @@ import type { BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/h
 import type { HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
 
 import { useHeaderBackgroundImage } from '@kobato/inkling-internal/hooks/useHeaderBackgroundImage'
-import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
+import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/getAccentColor', () => ({
+vi.mock('@kobato/inkling-internal/utils/get-accent-color', () => ({
   getAccentColor: vi.fn(),
 }))
 

@@ -4,7 +4,7 @@ import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/Inkl
 import { useSelectionAnchoredPopup } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
 import { $applyLinkToSelection } from '@kobato/inkling-internal/plugins/behaviour/link-editing'
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
-import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
+import { isInternalUrl } from '@kobato/inkling-internal/utils/is-internal-url'
 import { createSelectionAnchor } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'

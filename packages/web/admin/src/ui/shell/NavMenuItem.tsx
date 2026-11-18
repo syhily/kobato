@@ -1,5 +1,6 @@
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@kobato/ui/components/sidebar.tsx'
+import { SidebarMenuButton, SidebarMenuItem } from '@kobato/ui/components/sidebar.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
+import { useSidebar } from '@kobato/ui/lib/sidebar-context.ts'
 import { useIsActiveLink } from '@kobato/web-admin/ui/shell/use-is-active-link.ts'
 import { ChevronRightIcon } from 'lucide-react'
 import { type ComponentProps, type ReactNode, createContext, use, useMemo, useState } from 'react'

@@ -1,6 +1,6 @@
 import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
 import { createRenderContext, type RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
-import { dom } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { dom } from '@kobato/inkling/tests/nodes-base/test-helpers'
 import { createHeadlessEditor } from '@lexical/headless'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

@@ -2,7 +2,7 @@
 
 - **`tests/unit/`** (`server-unit`) — pure server logic, no database.
 - Test-only binary fixtures live under `tests/fixtures/` (the font-slicing canary owns `fixtures/fonts/`); never reach into `tools/test` by upward path.
-- **`tests/it/`** (`server-it`) — integration tests needing a real database, mirroring `src/`: `packages/server/src/domains/posts/services/cms-posts.ts` → `packages/server/tests/it/server/domains/posts/services/cms-posts.test.ts`.
+- **`tests/it/`** (`server-it`) — integration tests needing a real database, mirroring `src/`: `packages/server/src/domains/posts/services/search-query.ts` → `packages/server/tests/it/server/domains/posts/services/search-query.test.ts`.
 - Cross-cutting integration tests live here under the primary domain they exercise — there is no `features/` bucket.
 - Run with `npx vitest run --project server-unit` / `--project server-it`.
 - Tests that exercise the real (unmocked) rate limiter should call `__resetRateLimitsForTests()` from `@kobato/server/infra/rate-limit.ts` in `beforeEach` — the limiter is a process-level Map, so per-IP/email budgets otherwise leak across tests within a file.

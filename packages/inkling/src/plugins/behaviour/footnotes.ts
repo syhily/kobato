@@ -9,7 +9,7 @@
 // top-level walk cannot see inside them, so footnote insertion is disabled
 // there and numbering never descends.
 
-import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 import type { LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 
 import { $isCodeBlockNode } from '@kobato/inkling-internal/nodes/base/nodes/codeblock/CodeBlockNode'

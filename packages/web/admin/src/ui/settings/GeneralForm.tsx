@@ -14,7 +14,7 @@ import { SettingsCombobox } from '@kobato/web-admin/ui/settings/shell/SettingsCo
 import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch.ts'
 import { useLocaleSyncPublish } from '@kobato/web-public/ui/lib/LocaleSyncProvider.tsx'
 import { PlusIcon, Trash2Icon } from 'lucide-react'

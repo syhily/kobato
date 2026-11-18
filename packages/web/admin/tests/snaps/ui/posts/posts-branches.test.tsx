@@ -1,6 +1,6 @@
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { PostFilterFieldKey } from '@kobato/web-admin/ui/posts/filter-fields.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
 import { makeAdminPost } from '@kobato/test/catalog.ts'
 import { tZhCN } from '@kobato/test/i18n.ts'
@@ -41,7 +41,7 @@ mocks.query = {
 // PostsView's list, pill hook and option-list queries are hoisted singletons; only the
 // hook is mocked, so the real FilterPillBar still renders the pills.
 
-vi.mock('@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts', async () => {
+vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () => {
   const { buildPostFilterFields } = await vi.importActual<typeof import('@kobato/web-admin/ui/posts/filter-fields.ts')>(
     '@kobato/web-admin/ui/posts/filter-fields.ts',
   )

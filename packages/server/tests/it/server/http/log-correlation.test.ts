@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
 import type { LogRecordExporter, ReadableLogRecord } from '@opentelemetry/sdk-logs'
 import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace'

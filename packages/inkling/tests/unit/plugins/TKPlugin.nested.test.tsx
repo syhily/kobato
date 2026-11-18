@@ -1,7 +1,7 @@
 import CardContext from '@kobato/inkling-internal/context/CardContext'
 import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContext'
 import { ExtendedTextNode, TKNode, extendedTextNodeReplacement, $isTKNode } from '@kobato/inkling-internal/nodes/base'
-import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
 import TKPlugin from '@kobato/inkling-internal/plugins/TKPlugin'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'

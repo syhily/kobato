@@ -15,7 +15,7 @@ import { selectSidebarTags, sidebarSelectionSeed } from '@kobato/server/http/loa
 import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 
 // Tail-merge guard: an orphan last page (< pageSize − 2 posts) merges into
 // its predecessor (clamped at 0 for tiny page sizes). See `listingLoader`.

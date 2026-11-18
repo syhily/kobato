@@ -18,12 +18,12 @@ import {
 } from '@kobato/api/content.ts'
 import { friendsContract } from '@kobato/api/friends.ts'
 import { githubContract } from '@kobato/api/github.ts'
-import { imageContract } from '@kobato/api/image.ts'
+import { imagesContract } from '@kobato/api/images.ts'
 import { musicContract } from '@kobato/api/music.ts'
 import { newsletterContract } from '@kobato/api/newsletter.ts'
 import { notificationsContract } from '@kobato/api/notifications.ts'
 import { passkeyContract } from '@kobato/api/passkey.ts'
-import { webmentionContract } from '@kobato/api/webmention.ts'
+import { webmentionsContract } from '@kobato/api/webmentions.ts'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
@@ -400,8 +400,8 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
       release: { method: 'GET', path: '/github/release', output: githubReleaseOutputSchema },
     },
   },
-  image: {
-    contract: imageContract as unknown as Record<string, unknown>,
+  images: {
+    contract: imagesContract as unknown as Record<string, unknown>,
     routes: {
       resolveThumbhash: {
         method: 'GET',
@@ -487,8 +487,8 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
       },
     },
   },
-  webmention: {
-    contract: webmentionContract as unknown as Record<string, unknown>,
+  webmentions: {
+    contract: webmentionsContract as unknown as Record<string, unknown>,
     routes: {
       list: {
         method: 'GET',

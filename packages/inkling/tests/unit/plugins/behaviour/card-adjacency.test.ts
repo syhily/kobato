@@ -13,7 +13,7 @@ import {
   editorOwnsFocus,
   type CardAdjacencyGeometry,
 } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
-import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
 import { DELETE_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { $selectDecoratorNode } from '@kobato/inkling-internal/utils'
 import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'

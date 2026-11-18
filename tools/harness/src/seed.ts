@@ -4,7 +4,7 @@
 // requires, relax the rate-limit buckets one shared instance would trip, and
 // assert a converged config file wrote env overrides back as raw strings.
 
-import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'

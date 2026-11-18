@@ -33,7 +33,7 @@ import {
 } from '@kobato/inkling-internal/nodes/header/header-accent-color'
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { cx } from '@kobato/inkling-internal/utils/cx'
-import { isEditorEmpty } from '@kobato/inkling-internal/utils/isEditorEmpty'
+import { isEditorEmpty } from '@kobato/inkling-internal/utils/is-editor-empty'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React, { useContext, useEffect, useState } from 'react'
 

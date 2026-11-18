@@ -49,7 +49,7 @@ const SOURCE_DIRS = [
 export const APPROVED_SDK_ENTRIES = [
   'packages/server/src/infra/trace/runtime.ts',
   'packages/server/src/infra/trace/logs-runtime.ts',
-  'packages/web/client/src/lib/openobserve-rum.ts',
+  'packages/web/client/src/lib/rum/openobserve-rum.ts',
 ] as const
 
 const TELEMETRY_PACKAGE_PATTERN = /^@(?:opentelemetry|openobserve)\//
@@ -247,7 +247,10 @@ describe('trace SDK source boundary', () => {
   })
 
   it('reaches the slim browser SDK only through the guarded dynamic import', () => {
-    const runtimeSource = readFileSync(join(PROJECT_ROOT, 'packages/web/client/src/lib/openobserve-rum.ts'), 'utf-8')
+    const runtimeSource = readFileSync(
+      join(PROJECT_ROOT, 'packages/web/client/src/lib/rum/openobserve-rum.ts'),
+      'utf-8',
+    )
     expect(getValueSpecifiers(runtimeSource).filter((specifier) => specifier.startsWith('@openobserve/'))).toEqual([
       '@openobserve/browser-rum-slim',
     ])
@@ -315,7 +318,7 @@ describe('trace SDK source boundary', () => {
     expect([...APPROVED_SDK_ENTRIES]).toEqual([
       'packages/server/src/infra/trace/runtime.ts',
       'packages/server/src/infra/trace/logs-runtime.ts',
-      'packages/web/client/src/lib/openobserve-rum.ts',
+      'packages/web/client/src/lib/rum/openobserve-rum.ts',
     ])
   })
 })

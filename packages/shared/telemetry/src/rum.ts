@@ -1,4 +1,4 @@
-import { rumClientIdentitySchema } from '@kobato/settings/rum-client-identity.ts'
+import { rumClientIdentitySchema } from '@kobato/settings/sections/observability.ts'
 import { z } from 'zod'
 
 /**

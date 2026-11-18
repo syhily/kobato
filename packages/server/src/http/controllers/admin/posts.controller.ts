@@ -22,7 +22,7 @@ import {
 } from '@kobato/server/domains/posts/services/mutate.ts'
 import { assertOwnPostOr404 } from '@kobato/server/domains/posts/services/shared.ts'
 import { findPostMetaById } from '@kobato/server/domains/posts/services/single.ts'
-import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-router.ts'
+import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-shared.ts'
 import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'

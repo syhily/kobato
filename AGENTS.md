@@ -45,6 +45,33 @@ Package-level conventions live at each workspace package root (`packages/<packag
 - `packages/ui/AGENTS.md` design-system ownership; `apps/kobato/src/styles/AGENTS.md` app-owned Tailwind entries and product scan graphs; `packages/web/admin/src/styles/AGENTS.md` Inkling host-style adapters; `packages/ui/src/styles/AGENTS.md` generic Tailwind tokens, typeset CSS, and `@theme` conventions; `packages/shared/AGENTS.md` the shared umbrella rules plus the thirteen leaf packages (`packages/shared/<pkg>/AGENTS.md` per leaf); `packages/inkling/AGENTS.md` the Lexical editor layer: card pipeline, headless surface, labels.
 - Per-module test conventions live next to the tests: `apps/kobato/tests/AGENTS.md` (app projects, arch guards, duckdb, e2e, browser journeys), `packages/{db,server,ui,web,inkling}/tests/AGENTS.md` (`packages/web/tests` is the umbrella `web-unit`/`web-snaps` root over the three web leaves' tests — `packages/web/admin/tests`, `packages/web/client/tests`, `packages/web/public/tests` — plus the cross-leaf contract pins), `packages/shared/tests/AGENTS.md` (the umbrella `shared-unit`/`shared-snaps` roots over the thirteen leaf test trees), `tools/AGENTS.md` (the tools umbrella: product src must not depend on tools), `tools/test/AGENTS.md` (the `@kobato/test` utilities catalog and DB/DuckDB harness), `tools/harness/AGENTS.md` (the out-of-process instance harness); `tools/pack/src/sea/AGENTS.md` SEA packaging, build/smoke/probe/e2e, self-update; `tools/trace/README.md` optional OpenObserve DEV container, dev retention, privacy assets, smoke.
 
+## Directory layout standards
+
+The repository has four top-level roots, each with one purpose; nothing else is created at the root:
+
+- `apps/` — deployable applications only (`kobato` the SSR app, `inkling-demo` the playground).
+- `packages/` — PRODUCT code that ships: the app's `@kobato/*` workspace packages (`api`, `db`, `server`, `ui`, `inkling`, `shared/*`, `web/*`).
+- `tools/` — DEVELOPMENT-SUPPORT packages; nothing under it ships in the product binary. Product `src/` never imports a tools package (type-level or value-level).
+- `scripts/` — standalone ops scripts that import no project module (shell or Node builtins only); anything needing project modules belongs in `tools/`.
+
+Every workspace package has the same shape, and a file that fits none of these slots is misplaced:
+
+```
+<package>/
+├── package.json      # name, exports, scripts, workspace deps
+├── AGENTS.md         # the package's conventions (required)
+├── src/              # runtime source ONLY — no tests, no fixtures, no build/test config
+├── tests/            # unit/it/snaps trees mirroring src; helpers in tests/utils|fixtures
+├── drizzle/          # (db only) package-owned migrations + snapshot
+└── assets|styles/    # package-owned static data / Tailwind partials, when the package owns them
+```
+
+- Config files (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`, `drizzle.config.ts`) live at the package root, never under `src/`.
+- Test-only binaries/images/fonts belong to the consuming package's `tests/fixtures/`; never reach into another package or `tools/test` for a resource one test tree uses.
+- `src/` holds no build output and no generated report; a generated module is written beside its generator in `tools/`, not committed as source unless the generator marks it as checked-in schema data (the drizzle snapshot, the slug transliteration table).
+- Naming (pinned by `apps/kobato/tests/arch/structure-conventions.test.ts`): `kebab-case.ts` modules, `PascalCase.tsx` components, `use-kebab-case.ts(x)` hooks, `kebab-case-context.tsx` contexts, `*.controller.ts` router controllers, `filter-fields.ts(x)` filter descriptors. Entity directories and wire modules are plural (`posts`, `comments`, `images`, `webmentions`); mass nouns stay singular (`content`, `music`, `analytics`, `settings`, `storage`, `cache`). No `index.ts` barrels — the inkling package's public barrel and its six internal alias seams are the only exceptions.
+- A directory is created for a FAMILY of three or more sibling modules, or for a documented layer; never nest a directory inside an identically named one.
+
 ## Skills
 
 Agent Skills under `.agents/skills/` override these conventions on conflict; `drizzle` and `taze` are CLI-generated gitignored symlinks into `node_modules` (not repo-owned); `.claude/skills/` mirrors repo-owned skills for Claude Code via symlink.

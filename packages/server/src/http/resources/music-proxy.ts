@@ -1,6 +1,6 @@
 import type { MetingSource } from '@kobato/contracts/music.ts'
 import type { MusicProvider, ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 

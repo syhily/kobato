@@ -4,9 +4,9 @@ import {
   ImageNode,
   type ImageNode as ImageNodeInstance,
 } from '@kobato/inkling-internal/nodes/ImageNode'
-import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
-import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/card-picker-store'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/register-card-commands'
 import {
   $insertFromSelectorDataset,
   INSERT_FROM_GIF_COMMAND,

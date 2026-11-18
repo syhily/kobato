@@ -1,5 +1,5 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { ReactNode } from 'react'
 
 import { makeAdminComment, makeCommentBody } from '@kobato/test/catalog.ts'
@@ -22,9 +22,9 @@ import {
   useCommentsController,
   type AdminCommentsData,
   type AdminCommentsPage,
-} from '@kobato/web-admin/ui/comments/useCommentsController.ts'
-import { type SingleDateFilterValue } from '@kobato/web-admin/ui/shared/date-filter.ts'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts'
+} from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import { type SingleDateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
+import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
@@ -65,7 +65,7 @@ function makeData(...pages: AdminCommentsPage[]): AdminCommentsData {
 }
 
 describe('ui/admin/comments/useCommentsController helpers', () => {
-  // Date-filter helper coverage lives in `packages/web/admin/tests/unit/ui/shared/date-filter.test.ts`.
+  // Date-filter helper coverage lives in `packages/web/admin/tests/unit/ui/shared/filter-bar/date-filter.test.ts`.
   it('validates text operators', () => {
     expect(isTextFilterOperator('contains')).toBe(true)
     expect(isTextFilterOperator('does-not-contain')).toBe(true)

@@ -1,5 +1,5 @@
 import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
-import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdownPaste'
+import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdown-paste'
 import { htmlToLexical as importWithDom } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
 import { renderLive } from '@kobato/inkling/tests/utils/render-live'
 // The footnote import lanes: the

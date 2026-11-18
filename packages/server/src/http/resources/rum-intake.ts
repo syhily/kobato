@@ -15,7 +15,7 @@
 // never re-mounts the router — and exempt from the install gate, HTTP traces, and
 // RUM activity by path.
 
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { OBSERVABILITY_ORGANIZATION_PATTERN } from '@kobato/server/infra/observability.ts'

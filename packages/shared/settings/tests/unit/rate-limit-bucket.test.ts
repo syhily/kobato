@@ -1,9 +1,9 @@
-import { rateLimitBounds } from '@kobato/settings/defaults.ts'
 import {
   rateLimitBucketMessages,
   rateLimitBucketSchema,
   upgradeLegacyRateLimitBuckets,
 } from '@kobato/settings/rate-limit-bucket.ts'
+import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults.ts'
 import { describe, expect, it } from 'vitest'
 
 // The server section schema and the admin ThresholdForm both compose this

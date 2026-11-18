@@ -1,5 +1,5 @@
 import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/seo/meta.ts'
-import { detailHeaders } from '@kobato/server/http/loaders/route-exports.ts'
+import { detailHeaders } from '@kobato/server/http/route-cache-headers.ts'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller.ts'
 import { PostDetailBody } from '@kobato/web-public/ui/post/PostDetailBody.tsx'
 import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList.tsx'

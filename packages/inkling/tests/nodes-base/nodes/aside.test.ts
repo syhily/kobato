@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
 import { AsideNode, $createAsideNode, $isAsideNode } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { createDocument, html } from '@kobato/inkling/tests/nodes-base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'

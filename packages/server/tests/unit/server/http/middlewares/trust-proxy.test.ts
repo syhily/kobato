@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { trustProxy } from '@kobato/server/http/middlewares/trust-proxy.ts'
 import {

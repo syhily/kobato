@@ -18,7 +18,7 @@ import {
   secretFieldStrings,
 } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import {
   resolveSortableMove,
   SortableDragHandle,

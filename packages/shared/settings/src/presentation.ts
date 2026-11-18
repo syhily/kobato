@@ -1,5 +1,5 @@
 import type { SocialNetwork } from '@kobato/settings/socials.ts'
-import type { BrandingObjectRef, SidebarSettings, SidebarWidgetType } from '@kobato/settings/types.ts'
+import type { BrandingObjectRef, ContentSettings, SidebarSettings, SidebarWidgetType } from '@kobato/settings/types.ts'
 
 export function getSidebarWidgetCount(
   settings: SidebarSettings,
@@ -41,4 +41,12 @@ export function extractXHandle(socials: Array<{ network: SocialNetwork; link: st
 export function brandingVersionSuffix(ref: BrandingObjectRef | undefined | null): string {
   const ms = ref?.updatedAt ? Date.parse(ref.updatedAt) : Number.NaN
   return Number.isFinite(ms) ? `?v=${ms}` : ''
+}
+
+export const DEFAULT_FOOTNOTES_SECTION_TITLE = '尾声礼记'
+
+/** Visible `<h3>` above the Lexical footnotes list (`blog.content.footnotes.sectionTitle`). */
+export function resolveFootnotesSectionTitle(content: ContentSettings): string {
+  const title = content.footnotes?.sectionTitle?.trim()
+  return title !== undefined && title.length > 0 ? title : DEFAULT_FOOTNOTES_SECTION_TITLE
 }

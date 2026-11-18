@@ -1,6 +1,6 @@
 import { $isAtLinkSearchNode } from '@kobato/inkling-internal/nodes/base'
 import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
-import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-node'
 import { $isLinkNode, TOGGLE_LINK_COMMAND, type LinkNode } from '@lexical/link'
 import {
   $createRangeSelection,

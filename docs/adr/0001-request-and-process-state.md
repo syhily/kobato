@@ -33,7 +33,7 @@ invalidation channel. The Redis version counter (`settings:snapshot:version`,
   the next call retries. Used by the Shiki highlighter singletons (`infra/lexical/prerender`,
   `domains/audit/highlight`).
 - `createBoundedMap(cap)` — FIFO-evict map: an insert past the cap evicts the oldest key. Used by
-  the `Intl.DateTimeFormat` cache (`shared/utils/formatter`), the branding-byte cache
+  the `Intl.DateTimeFormat` cache (`shared/utils/site-date`), the branding-byte cache
   (`domains/assets/services/storage`), and the image-meta cache (`ui/pt/blocks/BlockImage`).
 
 Three single-flights keep distinct, load-bearing failure semantics, each with a one-line comment

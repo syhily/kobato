@@ -1,4 +1,4 @@
-import { formatLocalDate, formatShowDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate, formatShowDate } from '@kobato/utils/site-date.ts'
 import { describe, expect, it } from 'vitest'
 
 // Minimal aggregated-shaped fixture; only the locale/timeZone/timeFormat slice is read.

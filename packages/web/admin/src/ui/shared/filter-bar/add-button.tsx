@@ -1,11 +1,11 @@
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { FilterFieldSpec, SearchFieldState } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
 
 import { buttonVariants } from '@kobato/ui/components/button.tsx'
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { DEFAULT_SINGLE_DATE_OPERATOR } from '@kobato/web-admin/ui/shared/date-filter.ts'
+import { DEFAULT_SINGLE_DATE_OPERATOR } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
 import { InlineSearchList, SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list.tsx'
 import { ArrowLeftIcon, FunnelIcon, FunnelPlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'

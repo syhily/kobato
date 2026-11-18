@@ -9,7 +9,7 @@ import {
   INSERT_HORIZONTAL_RULE_COMMAND,
 } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
 import { registerUpdateScan } from '@kobato/inkling-internal/plugins/behaviour/update-scan'
-import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-node'
 import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $getSelection, $isParagraphNode, $isRangeSelection, COMMAND_PRIORITY_EDITOR } from 'lexical'
 

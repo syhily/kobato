@@ -9,7 +9,7 @@ import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.t
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'

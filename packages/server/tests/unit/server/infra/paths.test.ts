@@ -1,4 +1,4 @@
-import { isPathInside } from '@kobato/server/infra/paths.ts'
+import { isPathInside } from '@kobato/server/infra/data-paths.ts'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 

@@ -2,7 +2,7 @@ import type { KeyboardNavigationDeps } from '@kobato/inkling-internal/plugins/be
 
 import { $isAsideNode, AsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
 import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
-import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
 import { registerModifierCommand } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/modifier'
 import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import {

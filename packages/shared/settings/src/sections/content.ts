@@ -1,4 +1,4 @@
-import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/settings/footnotes-section-title.ts'
+import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/settings/presentation.ts'
 import { coerceBoolean, sortOrderSchema } from '@kobato/settings/sections/shared.ts'
 import { z } from 'zod'
 

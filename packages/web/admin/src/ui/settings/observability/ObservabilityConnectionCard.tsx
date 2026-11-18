@@ -14,7 +14,7 @@ import {
   secretFieldPatch,
   secretFieldStrings,
 } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
 import { useMutation } from '@tanstack/react-query'

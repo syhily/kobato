@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types.ts'
 import type { Context } from 'hono'
 

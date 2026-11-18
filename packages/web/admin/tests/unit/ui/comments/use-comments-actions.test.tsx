@@ -45,8 +45,8 @@ import {
   useCommentsController,
   type AdminCommentsPage,
   type CommentIntents,
-} from '@kobato/web-admin/ui/comments/useCommentsController.ts'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts'
+} from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 

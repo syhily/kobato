@@ -74,9 +74,9 @@ vi.mock('@kobato/server/domains/taxonomies/tags/service.ts', async () => {
   return { ...actual, getTagsByNames: mocks.getTagsByNames }
 })
 
-vi.mock('@kobato/server/http/loaders/detail.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/http/loaders/detail.ts')>(
-    '@kobato/server/http/loaders/detail.ts',
+vi.mock('@kobato/server/http/loaders/detail-critical.ts', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/server/http/loaders/detail-critical.ts')>(
+    '@kobato/server/http/loaders/detail-critical.ts',
   )
   mocks.loadDetailCritical.mockImplementation(actual.loadDetailCritical)
   return { ...actual, loadDetailCritical: mocks.loadDetailCritical }

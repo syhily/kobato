@@ -1,4 +1,4 @@
-import type { DateFilterValue } from '@kobato/web-admin/ui/shared/date-filter.ts'
+import type { DateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
 import type { TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
 import type {
   FilterOptionItem,
@@ -24,7 +24,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { DateRangeCalendarPicker } from '@kobato/web-admin/ui/shared/DateRangePicker.tsx'
+import { DateRangeCalendarPicker } from '@kobato/web-admin/ui/shared/filter-bar/calendar-picker.tsx'
 import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list.tsx'
 import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'

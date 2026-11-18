@@ -3,8 +3,8 @@
 // wire shape (string ids, ISO timestamps). Helpers are idempotent.
 
 import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments.ts'
-import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/models.ts'
 import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared.ts'
+import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types.ts'
 import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 import type { z } from 'zod'
 

@@ -47,7 +47,7 @@ vi.mock('@kobato/web-client/api/orpc-query.ts', () => {
   }
 })
 
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
 }))
 

@@ -22,7 +22,7 @@ import {
   resolveDrop,
   resolveReorder,
 } from '@kobato/inkling-internal/utils/draggable/reorder-rules'
-import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/useDragDropContainer'
+import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/use-drag-drop-container'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNearestNodeFromDOMNode, type LexicalEditor } from 'lexical'
 import React from 'react'

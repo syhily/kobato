@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { FilterFieldSpec, FilterQueryPatch } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
-import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { deriveStatusQueryFields } from '@kobato/web-admin/ui/shared/filter-bar/status-fields.ts'

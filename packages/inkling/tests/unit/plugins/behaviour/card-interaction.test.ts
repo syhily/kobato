@@ -1,11 +1,11 @@
 import { $createButtonNode, ButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
 import { registerCardInteraction } from '@kobato/inkling-internal/plugins/behaviour/card-interaction'
-import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/card-picker-store'
 import {
   createCardSelectionStore,
   type CardSelectionStore,
-} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
-import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+} from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/register-card-commands'
 import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { $getRoot, CLICK_COMMAND, createEditor, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'

@@ -1,5 +1,5 @@
 import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
-import { createFootnoteHandle, type FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+import { createFootnoteHandle, type FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 import { $collectFootnoteSnapshot, registerFootnotes } from '@kobato/inkling-internal/plugins/behaviour/footnotes'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'

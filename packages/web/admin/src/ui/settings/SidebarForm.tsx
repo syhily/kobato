@@ -28,7 +28,7 @@ import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/Setting
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import {
   resolveSortableMove,
   SortableDragHandle,

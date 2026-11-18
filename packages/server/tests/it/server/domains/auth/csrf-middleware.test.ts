@@ -1,5 +1,5 @@
 import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { createSession } from 'react-router'

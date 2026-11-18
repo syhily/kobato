@@ -3,7 +3,10 @@ import type { LexicalEditor } from 'lexical'
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { WordCountHandleContext } from '@kobato/inkling-internal/context/WordCountHandleContext'
 import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
-import { createWordCountHandle, type WordCountHandle } from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
+import {
+  createWordCountHandle,
+  type WordCountHandle,
+} from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 import { WordCountPlugin } from '@kobato/inkling-internal/plugins/WordCountPlugin'
 import { countWords } from '@kobato/inkling-internal/utils'
 import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-context'

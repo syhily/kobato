@@ -1,8 +1,8 @@
 import type { City, ReaderModel } from '@maxmind/geoip2-node'
 
 import { serverConfig } from '@kobato/server/infra/config.ts'
+import { MAXMIND_DB_PATH, isPathInside } from '@kobato/server/infra/data-paths.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { MAXMIND_DB_PATH, isPathInside } from '@kobato/server/infra/paths.ts'
 import { Reader } from '@maxmind/geoip2-node'
 import { existsSync } from 'node:fs'
 

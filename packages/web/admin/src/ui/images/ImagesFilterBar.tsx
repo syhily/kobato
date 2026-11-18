@@ -1,6 +1,6 @@
 import type { AdminImageKind } from '@kobato/assets/images.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { ActiveImageFilter, ImageFilterField } from '@kobato/web-admin/ui/images/useImagesReducer.ts'
+import type { ActiveImageFilter, ImageFilterField } from '@kobato/web-admin/ui/images/use-images-reducer.ts'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'

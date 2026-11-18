@@ -16,7 +16,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
     commit,
     resetStatus: vi.fn(),

@@ -1,6 +1,6 @@
 import type { HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
 
-import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
+import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useContext, useEffect, useState } from 'react'
 

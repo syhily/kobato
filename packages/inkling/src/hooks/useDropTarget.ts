@@ -6,7 +6,7 @@ import type {
 } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 import type { DraggableContainerHandle } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 
-import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/useDragDropContainer'
+import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/use-drag-drop-container'
 import React from 'react'
 
 // Drop target — the one owner of the drop-target hover seam: the container

@@ -15,7 +15,7 @@ vi.mock('sonner', () => ({
   // Without this export the mocked module would resolve Toaster to undefined and break AdminShell renders.
   Toaster: () => null,
 }))
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
     commit: vi.fn(),
     resetStatus: vi.fn(),

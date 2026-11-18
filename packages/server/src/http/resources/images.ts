@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { Context } from 'hono'
 
 import { defaultAvatarUrl, resolveAvatarSize, serveAvatar } from '@kobato/server/domains/comments/services/avatar.ts'

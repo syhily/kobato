@@ -58,13 +58,13 @@ describe('apiContract composition', () => {
       'comments',
       'content',
       'friends',
-      'image',
+      'images',
       'likes',
       'music',
       'newsletter',
       'notifications',
       'passkey',
-      'webmention',
+      'webmentions',
       'admin',
     ])
     expect(Object.keys(apiContract.admin)).toHaveLength(23)

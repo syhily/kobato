@@ -7,6 +7,6 @@ The isomorphic settings model and its single source of truth.
 - `secrets.ts` owns `SECRET_FIELDS`, `declareSecret`, redaction, and mask metadata. Encryption and secret-preserving writes stay server-side.
 - `projection.ts` owns admin projections and their runtime schemas; loader shapes are `z.infer` derivatives, never parallel interfaces.
 - `types.ts` derives the Section aliases and `BlogSettingsBundle` from `SECTION_REGISTRY`; it also owns `SettingsBundle`, `SettingsSectionPatch`, and `SecretMasks`.
-- `snapshot`, `app-localization`, `representation-scopes`, `rate-limit-bucket`, `rum-client-identity`, `socials`, `presentation`, `footnotes-section-title`, `timezones`, and `defaults` remain isomorphic model helpers. Admin navigation display metadata belongs to `@kobato/web-admin`, not this package.
+- `snapshot`, `app-localization`, `representation-scopes`, `rate-limit-bucket` + `rate-limit-defaults`, `socials`, `presentation` (sidebar/X-handle/display derivations and the footnotes title default), `timezones` remain isomorphic model helpers. The RUM client identity schema lives in `sections/observability.ts`. Admin navigation display metadata belongs to `@kobato/web-admin`, not this package.
 - Allowed deps: `@kobato/i18n`, `@kobato/cache`, `@kobato/assets` (the avatar source vocabulary), `@kobato/utils`. Never `@kobato/contracts`, server, db, web, UI, or React.
 - Tests: `tests/unit/` under the umbrella `shared-unit` project. Server write/hydration/secret tests remain in `packages/server/tests`; navigation display tests live with the web consumer.

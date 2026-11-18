@@ -1,7 +1,7 @@
 import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/AdminListPage.tsx'
-import { AdminPagination } from '@kobato/web-admin/ui/shared/AdminPagination.tsx'
 import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
+import { AdminPagination } from '@kobato/web-admin/ui/shared/list/AdminPagination.tsx'
 import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint.tsx'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

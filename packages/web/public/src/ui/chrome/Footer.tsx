@@ -1,5 +1,5 @@
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { useChromeClock } from '@kobato/web-public/ui/chrome/use-chrome-clock.ts'
 

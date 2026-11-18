@@ -1,7 +1,7 @@
 import type { ErrorMessageParams } from '@kobato/contracts/api-error.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { AuditEventInput } from '@kobato/server/domains/audit/types.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { Context } from 'hono'
 import type { BodyData } from 'hono/utils/body'
 

@@ -5,10 +5,10 @@ import {
   MIME_TEXT_PLAIN,
   PASTE_MARKDOWN_COMMAND,
 } from '@kobato/inkling-internal/plugins/behaviour/clipboard-protocol'
-import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdownPaste'
+import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdown-paste'
 // The paste dialect of Inkling's two markdown dialects — markdown-it →
 // sanitize → Lexical HTML import. The markdown-it → sanitize chain is the
-// headless `markdownToSanitizedHtml` (`@kobato/inkling-internal/plugins/behaviour/markdownPaste`);
+// headless `markdownToSanitizedHtml` (`@kobato/inkling-internal/plugins/behaviour/markdown-paste`);
 // this plugin keeps only the DataTransfer glue and command handling.
 import { $insertDataTransferForRichText } from '@lexical/clipboard'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'

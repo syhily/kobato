@@ -28,7 +28,7 @@ import {
   __resetRateLimitsForTests,
   type RateLimitResult,
 } from '@kobato/server/infra/rate-limit.ts'
-import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

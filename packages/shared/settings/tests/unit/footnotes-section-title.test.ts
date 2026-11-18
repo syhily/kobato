@@ -1,9 +1,6 @@
 import type { ContentSettings } from '@kobato/settings/types.ts'
 
-import {
-  DEFAULT_FOOTNOTES_SECTION_TITLE,
-  resolveFootnotesSectionTitle,
-} from '@kobato/settings/footnotes-section-title.ts'
+import { DEFAULT_FOOTNOTES_SECTION_TITLE, resolveFootnotesSectionTitle } from '@kobato/settings/presentation.ts'
 import { describe, expect, it } from 'vitest'
 
 function content(footnotes?: { sectionTitle?: string }): ContentSettings {

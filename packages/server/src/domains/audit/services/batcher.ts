@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/database.ts'
 import type { AuditEventInput } from '@kobato/server/domains/audit/types.ts'
 
 import { auditLog } from '@kobato/db/schema/config.ts'
+import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths.ts'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
 import {
   deserializeDeadLetterJsonLine,
@@ -12,7 +13,6 @@ import {
   writeDeadLetter,
 } from '@kobato/server/infra/db/insert-batcher.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/paths.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 

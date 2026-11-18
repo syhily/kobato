@@ -19,7 +19,7 @@ import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { prerenderToHtml } from '@kobato/test/render.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
@@ -32,7 +32,7 @@ import { ErrorBoundary, Layout, shouldRevalidate } from '@/root.tsx'
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
 // Under the jsdom/web transform pipeline the virtual specifier is resolved too
 // late — stub the component that owns the import as well.
-vi.mock('@kobato/web-client/components/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
+vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
 
 // Meta/Links/Scripts/ScrollRestoration need the framework build manifest a
 // memory router lacks — stub them, keep the rest real.

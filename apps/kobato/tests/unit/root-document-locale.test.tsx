@@ -19,7 +19,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
-vi.mock('@kobato/web-client/components/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
+vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
 
 // The framework-injected head/body components need the build manifest a
 // memory router lacks; keep everything else real.

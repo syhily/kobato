@@ -1,4 +1,4 @@
-import { adminMetaBaseDto, upsertMetaBaseSchema } from '@kobato/contracts/admin-meta.ts'
+import { adminMetaBaseDto, upsertMetaBaseSchema } from '@kobato/contracts/content-admin-base.ts'
 import { idString, isoDateTime, safeBoolean } from '@kobato/contracts/primitives.ts'
 import { adminRevisionDto } from '@kobato/contracts/revision.ts'
 import { z } from 'zod'

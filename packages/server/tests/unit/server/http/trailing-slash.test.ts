@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { trailingSlashNormaliser } from '@kobato/server/http/middlewares/trailing-slash.ts'
 import { Hono } from 'hono'

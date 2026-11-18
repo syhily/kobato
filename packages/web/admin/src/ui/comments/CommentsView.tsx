@@ -1,5 +1,5 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filterPillsReducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
@@ -15,12 +15,12 @@ import {
   type CommentsFilterQuery,
 } from '@kobato/web-admin/ui/comments/filter-fields.ts'
 import { ReplyCommentDialog } from '@kobato/web-admin/ui/comments/ReplyCommentDialog.tsx'
-import { useCommentsController } from '@kobato/web-admin/ui/comments/useCommentsController.ts'
-import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/AdminInfiniteListFooter.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/AdminListPage.tsx'
+import { useCommentsController } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
 import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
 import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar.tsx'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/useFilterPills.ts'
+import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
+import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
 import { SearchIcon } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 

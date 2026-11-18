@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto'
 
 // Fallback site assets bundled via Vite's glob import: SVGs inlined as raw text,
 // binaries as ArrayBuffers wrapped in Node Buffers at module init. Lives under
-// src/server/ so a stray client-side import of the 430 KB bundle is caught by the path.
+// packages/server/src/assets/ so a stray client-side import of the 430 KB bundle
+// is caught by the path.
 
 export const SVG_SLOTS = ['faviconSvg', 'logoSvg', 'logoDarkSvg', 'logoLargeSvg', 'logoLargeDarkSvg'] as const
 export type SvgSlot = (typeof SVG_SLOTS)[number]

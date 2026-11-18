@@ -14,7 +14,7 @@ import {
   SINGLE_DATE_FILTER_OPERATORS,
   type SingleDateFilterOperator,
   type SingleDateFilterValue,
-} from '@kobato/web-admin/ui/shared/date-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
 import { CalendarIcon, CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 

@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { isPublicMessageKey } from '@kobato/i18n/catalog-scope.ts'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'

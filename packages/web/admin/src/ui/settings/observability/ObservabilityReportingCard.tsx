@@ -1,7 +1,7 @@
 import type { ObservabilityStatusOutput } from '@kobato/contracts/observability.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { RumClientIdentity } from '@kobato/settings/rum-client-identity.ts'
+import type { RumClientIdentity } from '@kobato/settings/sections/observability.ts'
 import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
 import { FieldLabel } from '@kobato/ui/components/field.tsx'
@@ -14,7 +14,7 @@ import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/Setting
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { Controller, useWatch, type UseFormReturn } from 'react-hook-form'
 
 interface ReportingFormState {

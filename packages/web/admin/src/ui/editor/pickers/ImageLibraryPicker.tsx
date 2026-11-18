@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@kobato/ui/components/input.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { UploadImageDialog } from '@kobato/web-admin/ui/shared/UploadImageDialog.tsx'
+import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'

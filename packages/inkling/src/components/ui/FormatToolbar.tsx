@@ -18,7 +18,7 @@ import {
   type FormatToolbarState,
   type HiddenFormat,
 } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
-import { altOrOption, ctrlOrCmdSymbol, ctrlOrSymbol } from '@kobato/inkling-internal/utils/shortcutSymbols'
+import { altOrOption, ctrlOrCmdSymbol, ctrlOrSymbol } from '@kobato/inkling-internal/utils/shortcut-symbols'
 import { FORMAT_TEXT_COMMAND, type LexicalEditor } from 'lexical'
 import React from 'react'
 

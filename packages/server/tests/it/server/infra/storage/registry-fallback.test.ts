@@ -1,6 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { STORAGE_DIR } from '@kobato/server/infra/paths.ts'
+import { STORAGE_DIR } from '@kobato/server/infra/data-paths.ts'
 import { localBackend, resolveLocalPath } from '@kobato/server/infra/storage/backends/local.ts'
 import { activeBackend, isS3Primary } from '@kobato/server/infra/storage/registry.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'

@@ -1,6 +1,5 @@
 import type { Role } from '@kobato/auth/roles.ts'
 import type { AnalyticsOverviewData, MetricRow } from '@kobato/contracts/analytics.ts'
-import type { DraftSummary } from '@kobato/contracts/dashboard.ts'
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { AccountProfile } from '@kobato/contracts/users.ts'
 import type { SettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
@@ -14,6 +13,13 @@ import { z } from 'zod'
 // Admin/me dashboard, settings, session and analytics SSR loader contracts. The
 // `z.custom<T>()` outputs must match the loader-data shapes exactly; HTTP-path
 // coverage lives in `packages/server/tests/it/server/http/admin-api.test.ts`.
+
+/** The dashboard card shape shared by the wire output and the server projection. */
+export interface DraftSummary {
+  id: string
+  title: string
+  updatedAtIso: string
+}
 
 // `getAccountProfile`'s full projection (deleted-mid-session rows degrade
 // to empty fields) plus the two feature switches the profile page renders.

@@ -24,7 +24,7 @@ const readerOpen = vi.hoisted(() => vi.fn())
 const pipelineMock = vi.hoisted(() => vi.fn())
 
 function mockModules() {
-  vi.doMock('@kobato/server/infra/paths.ts', () => ({
+  vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
     MAXMIND_DB_PATH: DB_PATH,
     MAXMIND_META_PATH: META_PATH,
   }))

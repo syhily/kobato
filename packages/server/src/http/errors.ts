@@ -1,6 +1,6 @@
 import type { ErrorMessageParams } from '@kobato/contracts/api-error.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
 import type { DomainErrorIssue } from '@kobato/server/infra/http/errors.ts'
 import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'

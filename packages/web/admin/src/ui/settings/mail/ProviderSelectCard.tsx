@@ -6,7 +6,7 @@ import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { useCallback } from 'react'
 import { Controller } from 'react-hook-form'
 

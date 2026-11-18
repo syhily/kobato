@@ -1,4 +1,4 @@
-import { handlePlainTextPaste } from '@kobato/inkling-internal/plugins/behaviour/plainTextPaste'
+import { handlePlainTextPaste } from '@kobato/inkling-internal/plugins/behaviour/plain-text-paste'
 import { registerParagraphRestriction } from '@kobato/inkling-internal/plugins/behaviour/restrict-content'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, COMMAND_PRIORITY_HIGH, PASTE_COMMAND } from 'lexical'

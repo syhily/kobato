@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { auditLog } from '@kobato/db/schema/config.ts'
 import { user as userTable } from '@kobato/db/schema/user.ts'

@@ -14,7 +14,7 @@ import {
   videoFlowUploadIntent,
   type UploadFn,
 } from '@kobato/inkling-internal/nodes/upload-intent'
-import extractVideoMetadata, { type VideoMetadata } from '@kobato/inkling-internal/utils/extractVideoMetadata'
+import extractVideoMetadata, { type VideoMetadata } from '@kobato/inkling-internal/utils/extract-video-metadata'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React, { useState } from 'react'
 

@@ -1,7 +1,7 @@
 import type { BookmarkEmbedOptions, BookmarkEmbedResponse, SnippetItem } from '@kobato/inkling-internal/index'
 
+import { useSnippets } from '@kobato/inkling-demo/hooks/use-snippets'
 import { fetchEmbed } from '@kobato/inkling-demo/utils/fetchEmbed'
-import { useSnippets } from '@kobato/inkling-demo/utils/useSnippets'
 
 type IsExact<Left, Right> =
   (<Value>(_: Value) => Value extends Left ? 1 : 2) extends <Value>(_: Value) => Value extends Right ? 1 : 2

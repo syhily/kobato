@@ -1,5 +1,5 @@
 import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'

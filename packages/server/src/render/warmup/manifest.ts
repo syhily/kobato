@@ -4,14 +4,14 @@ import {
   type RouteManifestRoute,
 } from '@kobato/distribution/route-warmup.ts'
 import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets.ts'
-import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset.ts'
-import { seaVfsRoot } from '@kobato/server/infra/sea/sea.ts'
 import {
   collectManifestChunks,
   isWarmupManifest,
   parseClientManifest,
   type WarmupManifest,
-} from '@kobato/server/infra/warmup-manifest.ts'
+} from '@kobato/distribution/warmup-manifest.ts'
+import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset.ts'
+import { seaVfsRoot } from '@kobato/server/infra/sea/sea.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'

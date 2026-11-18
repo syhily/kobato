@@ -3,7 +3,7 @@ import { createHeadingIdTracker } from '@kobato/inkling-internal/utils/heading-i
 // The paste dialect — one of Inkling's two markdown dialects (the card-aware
 // round-trip dialect is `@kobato/inkling-internal/markdown/round-trip`). Two pipelines speak it:
 // clipboard markdown (the headless `markdownToSanitizedHtml` in
-// `@kobato/inkling-internal/plugins/behaviour/markdownPaste`, fed into Lexical's HTML import by
+// `@kobato/inkling-internal/plugins/behaviour/markdown-paste`, fed into Lexical's HTML import by
 // `MarkdownPastePlugin`) and the markdown card's HTML export
 // (`@kobato/inkling-internal/nodes/base/nodes/markdown/markdown-renderer`).
 //

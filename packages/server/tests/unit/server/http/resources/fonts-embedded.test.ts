@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
@@ -10,8 +10,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 // factory runs before any import of the route, so STORAGE_DIR is set first.
 const tmp = vi.hoisted(() => ({ root: '' }))
 
-vi.mock('@kobato/server/infra/paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/paths.ts')>()
+vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
   const fs = await import('node:fs')
   const os = await import('node:os')
   const nodePath = await import('node:path')

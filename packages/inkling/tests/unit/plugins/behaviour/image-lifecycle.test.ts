@@ -5,18 +5,18 @@ import {
   clampImageCardWidth,
   migrateImageDataUrl,
 } from '@kobato/inkling-internal/plugins/behaviour/image-lifecycle'
-import { dataSrcToFile } from '@kobato/inkling-internal/utils/dataSrcToFile'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { dataSrcToFile } from '@kobato/inkling-internal/utils/data-src-to-file'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/dataSrcToFile', () => ({
+vi.mock('@kobato/inkling-internal/utils/data-src-to-file', () => ({
   dataSrcToFile: vi.fn(),
 }))
 
-vi.mock('@kobato/inkling-internal/utils/getImageDimensions', () => ({
+vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 

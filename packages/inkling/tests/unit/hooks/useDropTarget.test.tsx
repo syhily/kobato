@@ -2,7 +2,7 @@ import type { ContainerDragHandlers, DraggableInfo } from '@kobato/inkling-inter
 
 import { DragDropHandleContext } from '@kobato/inkling-internal/context/DragDropHandleContext'
 import useDropTarget from '@kobato/inkling-internal/hooks/useDropTarget'
-import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/dragDropHandle'
+import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/drag-drop-handle'
 import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 import { cardDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
 import { act, renderHook } from '@testing-library/react'

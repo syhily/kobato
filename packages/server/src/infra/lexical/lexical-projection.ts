@@ -43,8 +43,8 @@ import {
 import { toProjectionState } from '@kobato/lexical/projection-state.ts'
 import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { resolveFootnotesSectionTitle } from '@kobato/settings/footnotes-section-title.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { resolveFootnotesSectionTitle } from '@kobato/settings/presentation.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import katex from 'katex'
 

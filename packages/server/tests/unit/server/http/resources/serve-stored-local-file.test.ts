@@ -3,8 +3,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 const tmp = vi.hoisted(() => ({ root: '' }))
 
-vi.mock('@kobato/server/infra/paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/paths.ts')>()
+vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
   const fs = await import('node:fs')
   const os = await import('node:os')
   const path = await import('node:path')
@@ -12,7 +12,7 @@ vi.mock('@kobato/server/infra/paths.ts', async (importOriginal) => {
   return { ...actual, STORAGE_DIR: tmp.root }
 })
 
-await import('@kobato/server/infra/paths.ts')
+await import('@kobato/server/infra/data-paths.ts')
 const { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } =
   await import('@kobato/server/http/resources/serve-local-file.ts')
 

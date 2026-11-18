@@ -1,5 +1,8 @@
 import { CardPickerStoreContext } from '@kobato/inkling-internal/context/CardPickerStoreContext'
-import { createCardPickerStore, type CardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import {
+  createCardPickerStore,
+  type CardPickerStore,
+} from '@kobato/inkling-internal/plugins/behaviour/card-picker-store'
 import React from 'react'
 
 // Test stand-in for the per-composer provider InklingComposer mounts: wraps

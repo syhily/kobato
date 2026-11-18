@@ -1,6 +1,6 @@
 import type { LexicalEditor } from 'lexical'
 
-import { getSelectedNode } from '@kobato/inkling-internal/utils/getSelectedNode'
+import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-node'
 import { $createParagraphNode, $getSelection, $isParagraphNode, $isRangeSelection } from 'lexical'
 
 // Card-menu trigger — the headless half of the slash and plus card menus:

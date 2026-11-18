@@ -1,6 +1,6 @@
 import { errorJsonResponse } from '@kobato/server/http/errors.ts'
 import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route.ts'
-import { FONT_DIR } from '@kobato/server/infra/paths.ts'
+import { FONT_DIR } from '@kobato/server/infra/data-paths.ts'
 import { resetCanvasFont, resetFontCache } from '@kobato/server/render/canvas-fonts.ts'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'

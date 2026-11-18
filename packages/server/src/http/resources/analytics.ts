@@ -1,5 +1,5 @@
 import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { deviceEnvBeaconSchema } from '@kobato/contracts/analytics.ts'
 import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime.ts'

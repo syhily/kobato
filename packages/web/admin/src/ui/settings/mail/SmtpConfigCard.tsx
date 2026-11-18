@@ -12,7 +12,7 @@ import {
   secretFieldStrings,
 } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { Controller } from 'react-hook-form'
 
 export function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {

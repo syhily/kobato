@@ -2,7 +2,7 @@ import Portal from '@kobato/inkling-internal/components/ui/Portal'
 import { usePopupRepositionSubscriptions } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
 import { $getSelectionRangeRect } from '@kobato/inkling-internal/utils/$getSelectionRangeRect'
 import { getScrollAncestor } from '@kobato/inkling-internal/utils/scroll-ancestor'
-import { setFloatingElemPosition } from '@kobato/inkling-internal/utils/setFloatingElemPosition'
+import { setFloatingElemPosition } from '@kobato/inkling-internal/utils/set-floating-elem-position'
 import { $getSelection, type LexicalEditor } from 'lexical'
 import React from 'react'
 

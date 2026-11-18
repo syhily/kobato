@@ -1,11 +1,11 @@
-import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
 import { rateLimitBucketSchema, upgradeLegacyRateLimitBuckets } from '@kobato/settings/rate-limit-bucket.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
 // Centralised rate-limiting policy; buckets map to the counter dimensions in
 // `@/server/infra/rate-limit`, and the bounds live in
-// `@kobato/settings/defaults` (mirrored by the admin form).
+// `@kobato/settings/rate-limit-defaults` (mirrored by the admin form).
 
 // `rateLimitDefaults` is the single source of truth for the bucket set; the keys
 // are DERIVED and narrowed back to the concrete key set (the runtime value IS the

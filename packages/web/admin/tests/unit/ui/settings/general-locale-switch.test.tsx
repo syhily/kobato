@@ -17,7 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const commit = vi.hoisted(() => vi.fn())
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), warning: vi.fn(), success: vi.fn() }))
 
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
 }))
 

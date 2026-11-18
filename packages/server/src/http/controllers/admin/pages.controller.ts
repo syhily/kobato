@@ -13,7 +13,7 @@ import {
   unpublishPage,
   updatePageMeta,
 } from '@kobato/server/domains/pages/services/mutate.ts'
-import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-router.ts'
+import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-shared.ts'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'

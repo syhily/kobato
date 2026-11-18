@@ -1,4 +1,7 @@
-import { createCardPickerStore, type CardPickerState } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
+import {
+  createCardPickerStore,
+  type CardPickerState,
+} from '@kobato/inkling-internal/plugins/behaviour/card-picker-store'
 import { createComposerHandleBinding } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 
 // Per-composer card pick request store. Nested composers share the top-level

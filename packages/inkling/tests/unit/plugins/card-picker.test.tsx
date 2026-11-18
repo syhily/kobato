@@ -12,10 +12,10 @@ import {
   resolveCardPicker,
 } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
-import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/card-picker-store'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
 import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
-import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/registerCardCommands'
+import { registerCardCommands } from '@kobato/inkling-internal/plugins/behaviour/register-card-commands'
 import { CardInsertPlugin } from '@kobato/inkling-internal/plugins/CardInsertPlugin'
 import { CardPickerHostPlugin } from '@kobato/inkling-internal/plugins/CardPickerHostPlugin'
 import { CORE_PLUGINS, type CorePluginScope } from '@kobato/inkling-internal/plugins/CorePlugins'

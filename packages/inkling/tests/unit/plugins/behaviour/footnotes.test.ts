@@ -1,9 +1,9 @@
-import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 
 import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
 import { $createFootnoteRefNode, $isFootnoteRefNode } from '@kobato/inkling-internal/nodes/footnote/FootnoteRefNode'
 import { $createFootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
-import { createFootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
+import { createFootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 import {
   $collectFootnoteSnapshot,
   $footnoteSyncSignature,

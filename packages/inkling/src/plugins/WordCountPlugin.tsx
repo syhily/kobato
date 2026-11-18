@@ -1,7 +1,7 @@
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { useWordCountHandle } from '@kobato/inkling-internal/context/WordCountHandleContext'
+import { publishWordCountCallback } from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 import { createWordCounter, type WordCounter } from '@kobato/inkling-internal/plugins/behaviour/word-counter'
-import { publishWordCountCallback } from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 

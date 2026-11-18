@@ -10,7 +10,7 @@ import {
   secretFieldPatch,
   secretFieldStrings,
 } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 
 export function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
   const { t } = useI18n()

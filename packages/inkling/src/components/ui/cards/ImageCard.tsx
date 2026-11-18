@@ -12,7 +12,7 @@ import { CardText } from '@kobato/inkling-internal/components/ui/MediaPlaceholde
 import { UploadingOverlay, UploadPlaceholder } from '@kobato/inkling-internal/components/ui/UploadChrome'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
-import { isGif } from '@kobato/inkling-internal/utils/isGif'
+import { isGif } from '@kobato/inkling-internal/utils/is-gif'
 import React from 'react'
 
 interface PopulatedImageCardProps {

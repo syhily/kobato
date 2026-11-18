@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { enqueueWebmention } from '@kobato/server/domains/webmentions/inbox-enqueue.ts'
 import { webmentionReceiveSchema } from '@kobato/server/domains/webmentions/schema.ts'

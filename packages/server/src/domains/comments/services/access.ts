@@ -2,7 +2,7 @@ import type { Database } from '@kobato/db/database.ts'
 import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token.ts'
 
 import { findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup.ts'
-import { verifyCommentOwnership } from '@kobato/server/domains/comments/services/token.ts'
+import { verifyCommentOwnership } from '@kobato/server/domains/comments/services/token-store.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
 /** Access in precedence order: admin bypass, comment-token ownership, then

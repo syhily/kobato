@@ -1,5 +1,5 @@
 import { accountContract } from '@kobato/api/account.ts'
-import { adminAuditLogContract } from '@kobato/api/admin/audit-log.ts'
+import { adminAuditContract } from '@kobato/api/admin/audit.ts'
 import { adminBackupContract } from '@kobato/api/admin/backup.ts'
 import { adminCacheContract } from '@kobato/api/admin/cache.ts'
 import { adminCategoriesContract } from '@kobato/api/admin/categories.ts'
@@ -28,13 +28,13 @@ import { commentsContract } from '@kobato/api/comments.ts'
 import { contentContract } from '@kobato/api/content.ts'
 import { friendsContract } from '@kobato/api/friends.ts'
 import { githubContract } from '@kobato/api/github.ts'
-import { imageContract } from '@kobato/api/image.ts'
+import { imagesContract } from '@kobato/api/images.ts'
 import { likesContract } from '@kobato/api/likes.ts'
 import { musicContract } from '@kobato/api/music.ts'
 import { newsletterContract } from '@kobato/api/newsletter.ts'
 import { notificationsContract } from '@kobato/api/notifications.ts'
 import { passkeyContract } from '@kobato/api/passkey.ts'
-import { webmentionContract } from '@kobato/api/webmention.ts'
+import { webmentionsContract } from '@kobato/api/webmentions.ts'
 
 export const apiContract = {
   account: accountContract,
@@ -44,16 +44,16 @@ export const apiContract = {
   comments: commentsContract,
   content: contentContract,
   friends: friendsContract,
-  image: imageContract,
+  images: imagesContract,
   likes: likesContract,
   music: musicContract,
   newsletter: newsletterContract,
   notifications: notificationsContract,
   passkey: passkeyContract,
-  webmention: webmentionContract,
+  webmentions: webmentionsContract,
   admin: {
     users: adminUsersContract,
-    auditLog: adminAuditLogContract,
+    auditLog: adminAuditContract,
     settings: adminSettingsContract,
     storage: adminStorageContract,
     cache: adminCacheContract,

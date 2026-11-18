@@ -88,7 +88,7 @@ export async function listPublicWebmentions(db: Database, target: EntityTarget):
 }
 
 /** Per-entity display switch: one PK read; a missing row answers false.
- *  Single gate shared by the detail loader and `public.webmention.list`. */
+ *  Single gate shared by the detail loader and `public.webmentions.list`. */
 async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
   if (target.type === 'post') {
     const rows = await db

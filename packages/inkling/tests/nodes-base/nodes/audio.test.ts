@@ -6,8 +6,7 @@ import {
   $isAudioNode,
   type ExportDOMOptions,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { expectPrettifiedHtml } from '@kobato/inkling/tests/nodes-base/test-utils/assertions'
-import { dom, createDocument, html } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/nodes-base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'

@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
-import { formatLocalDate, formatShowDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate, formatShowDate } from '@kobato/utils/site-date.ts'
 import { useChromeClock } from '@kobato/web-public/ui/chrome/use-chrome-clock.ts'
 import { SearchIcon } from 'lucide-react'
 import { Fragment, memo } from 'react'

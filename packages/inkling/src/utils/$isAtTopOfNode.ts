@@ -1,4 +1,4 @@
-import { getTopLevelNativeElement } from '@kobato/inkling-internal/utils/getTopLevelNativeElement'
+import { getTopLevelNativeElement } from '@kobato/inkling-internal/utils/get-top-level-native-element'
 
 /**
  * `nativeSelection` is the window selection, `threshold` an estimated line height in px.

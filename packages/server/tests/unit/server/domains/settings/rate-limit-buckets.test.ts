@@ -1,4 +1,4 @@
-import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { RATE_LIMIT_BUCKET_KEYS } from '@kobato/settings/sections/rate-limit.ts'
 import { BUCKET_META } from '@kobato/web-admin/ui/settings/rate-limit/constants.ts'
 import { readFileSync } from 'node:fs'

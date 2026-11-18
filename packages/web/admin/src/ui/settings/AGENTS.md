@@ -10,7 +10,8 @@ non-trivial section owns a subdirectory with its cards, dialogs, and controller:
 - `mail/` — mail section form and transport/provider cards.
 - `observability/` — connection, reporting, assets, provision summary, section form.
 - `storage/` — storage cards and migration dialog/controller.
-- `cache/` / `rate-limit/` — already grouped; keep their constants/formatters/validation beside the views.
+- `cache/` — cache status cards plus `CacheView` (the section view owns its directory, like `backup/`).
+- `rate-limit/` — threshold form plus its constants/formatters/validation.
 - `shell/` — workspace chrome, flush/search/scroll-spy controllers, and form wrappers.
 
 A new section with more than one file gets its own subdirectory; do not flatten cards back into the root.

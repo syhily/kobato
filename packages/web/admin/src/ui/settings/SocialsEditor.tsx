@@ -6,7 +6,7 @@ import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { useFieldArray, useWatch } from 'react-hook-form'
 
 interface SocialsEditorProps {

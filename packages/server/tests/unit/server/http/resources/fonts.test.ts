@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { adminSession, adminUser } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
@@ -34,7 +34,7 @@ describe('fontsRouter', () => {
     vi.doMock('@kobato/server/infra/logger.ts', () => ({
       getLogger: vi.fn(() => ({ info: vi.fn() })),
     }))
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       FONT_DIR: '/tmp/fonts',
     }))
     vi.doMock('@kobato/server/render/canvas-fonts.ts', () => ({
@@ -86,7 +86,7 @@ describe('fontsRouter', () => {
     vi.doMock('@kobato/server/infra/logger.ts', () => ({
       getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn() })),
     }))
-    vi.doMock('@kobato/server/infra/paths.ts', () => ({
+    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
       FONT_DIR: '/tmp/fonts',
     }))
     vi.doMock('node:fs/promises', () => fsMocks)

@@ -1,4 +1,4 @@
-import type { TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import type { TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
 
 import { $createTKNode, TKNode } from '@kobato/inkling-internal/nodes/base'
 import { $createHorizontalRuleNode, HorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'

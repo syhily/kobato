@@ -2,7 +2,7 @@ import type { LatestComment } from '@kobato/contracts/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domains/comments/models.ts'
+import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domains/comments/types.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { hasAtLeast } from '@kobato/auth/roles.ts'

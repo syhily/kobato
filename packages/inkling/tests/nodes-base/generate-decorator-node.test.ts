@@ -5,7 +5,7 @@ import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/gener
 import { ensureLexicalNodeOwnMethods, type ExportDOMOutput } from '@kobato/inkling-internal/nodes/base/index'
 import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 import { populateNestedEditor } from '@kobato/inkling-internal/nodes/nested-editors'
-import { dom } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { dom } from '@kobato/inkling/tests/nodes-base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type EditorState, type LexicalEditor, type LexicalNodeConfig } from 'lexical'

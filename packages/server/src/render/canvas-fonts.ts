@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { FONT_DIR } from '@kobato/server/infra/data-paths.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { FONT_DIR } from '@kobato/server/infra/paths.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'

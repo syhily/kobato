@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit.ts'
 import { Hono } from 'hono'

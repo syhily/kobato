@@ -3,7 +3,7 @@ import {
   createCardSelectionStore,
   type CardSelectionState,
   type CardSelectionStore,
-} from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
+} from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
 import React from 'react'
 
 // Test stand-in for the per-composer provider InklingComposer mounts: wraps

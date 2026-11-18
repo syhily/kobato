@@ -1,6 +1,6 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 
-import { adminAuditLogContract } from '@kobato/api/admin/audit-log.ts'
+import { adminAuditContract } from '@kobato/api/admin/audit.ts'
 import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv.ts'
 import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight.ts'
 import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection.ts'
@@ -28,9 +28,9 @@ function assertValidActorId(context: HandlerContext, actorId: string | undefined
 const EXPORT_MAX_ROWS = 10_000
 
 // Contract-first: method/path/input/output live in
-// `@kobato/api/admin/audit-log.ts`; this controller only implements the
+// `@kobato/api/admin/audit.ts`; this controller only implements the
 // procedures (admin base).
-const impl = implementAdmin(adminAuditLogContract)
+const impl = implementAdmin(adminAuditContract)
 
 const list = impl.list.handler(async ({ input, context }) => {
   const { db } = context

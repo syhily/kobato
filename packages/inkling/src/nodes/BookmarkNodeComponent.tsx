@@ -13,7 +13,7 @@ import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabel
 import { $isBookmarkNode } from '@kobato/inkling-internal/nodes/base'
 import { $replaceCardWithParagraph } from '@kobato/inkling-internal/plugins/behaviour/card-removal'
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
-import { isInternalUrl } from '@kobato/inkling-internal/utils/isInternalUrl'
+import { isInternalUrl } from '@kobato/inkling-internal/utils/is-internal-url'
 import { $createLinkNode } from '@lexical/link'
 import { $createTextNode, type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React, { useCallback } from 'react'

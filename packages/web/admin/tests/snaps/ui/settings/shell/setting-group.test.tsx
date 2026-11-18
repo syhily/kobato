@@ -7,9 +7,9 @@ import { SettingsMobileBar } from '@kobato/web-admin/ui/settings/shell/SettingsM
 import { SettingsNav } from '@kobato/web-admin/ui/settings/shell/SettingsNav.tsx'
 import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
 import { SettingsSearchInput } from '@kobato/web-admin/ui/settings/shell/SettingsSearchInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
-import { ScrollSpyProvider } from '@kobato/web-admin/ui/settings/shell/useSettingsScrollSpy.tsx'
-import { SettingsSearchProvider } from '@kobato/web-admin/ui/settings/shell/useSettingsSearch.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+import { ScrollSpyProvider } from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
+import { SettingsSearchProvider } from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SettingGroup', () => {

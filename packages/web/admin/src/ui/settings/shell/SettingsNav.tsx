@@ -4,8 +4,8 @@ import type { SettingsNavGroup } from '@kobato/web-admin/ui/settings/display.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { NAV_GROUP_LABEL_KEYS } from '@kobato/web-admin/ui/settings/display.ts'
-import { useScrollSpyContext, useScrollSpyNav } from '@kobato/web-admin/ui/settings/shell/useSettingsScrollSpy.tsx'
-import { useSettingsSearch } from '@kobato/web-admin/ui/settings/shell/useSettingsSearch.tsx'
+import { useScrollSpyContext, useScrollSpyNav } from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
+import { useSettingsSearch } from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
 import {
   Activity,
   Archive,

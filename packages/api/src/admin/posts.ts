@@ -1,10 +1,10 @@
 import { revisionContract } from '@kobato/api/admin/revision.ts'
-import { contentRestoreResultDto } from '@kobato/contracts/admin-meta.ts'
 import {
   adminPostAnalyticsInputSchema,
   adminPostAnalyticsOutputSchema,
   adminPostsMySummaryOutputSchema,
 } from '@kobato/contracts/admin.ts'
+import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base.ts'
 import {
   adminPostDetailDto,
   adminPostIdInput,

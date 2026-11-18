@@ -12,7 +12,7 @@ import { describe, expect, it, vi } from 'vitest'
 // it — so the General card exposes the language selector and all four options
 // exactly as an admin sees it.
 
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
     commit: vi.fn(async () => ({ ok: true, section: {} })),
     isPending: false,

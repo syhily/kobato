@@ -13,7 +13,7 @@ import {
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CoverInputRow } from '@kobato/web-admin/ui/shared/CoverInputRow.tsx'
+import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { useAssetsSettingsOptional } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { useMutation, useQueryClient } from '@tanstack/react-query'

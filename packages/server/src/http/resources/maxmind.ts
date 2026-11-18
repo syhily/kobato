@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { Context } from 'hono'
 
 import { resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup.ts'
@@ -7,8 +7,8 @@ import { recordAuditEventFromContext } from '@kobato/server/domains/audit/servic
 import { errorJsonResponse } from '@kobato/server/http/errors.ts'
 import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
+import { MAXMIND_DB_PATH } from '@kobato/server/infra/data-paths.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
-import { MAXMIND_DB_PATH } from '@kobato/server/infra/paths.ts'
 import { Reader } from '@maxmind/geoip2-node'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'

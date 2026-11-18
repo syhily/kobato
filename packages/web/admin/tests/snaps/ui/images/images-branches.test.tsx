@@ -1,5 +1,5 @@
 import type { AdminImageDto } from '@kobato/contracts/images.ts'
-import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/useImagesReducer.ts'
+import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-reducer.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
@@ -43,7 +43,7 @@ const controller = vi.hoisted<ControllerShape>(() => ({
   activeFilters: [],
 }))
 
-vi.mock('@kobato/web-admin/ui/images/useImagesReducer.ts', () => ({
+vi.mock('@kobato/web-admin/ui/images/use-images-reducer.ts', () => ({
   useImagesReducer: () => controller,
 }))
 

@@ -9,12 +9,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/settings/useSettingsMutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
     commit,
     resetStatus: vi.fn(),

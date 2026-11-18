@@ -19,7 +19,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
 import { SettingsCheckbox } from '@kobato/web-admin/ui/settings/shell/SettingsCheckbox.tsx'
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/useSettingsCard.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import {
   resolveSortableMove,
   SortableDragHandle,

@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox.ts'
 import { page } from '@kobato/db/schema/page.ts'

@@ -13,11 +13,11 @@ import {
   type SigninFlowContext,
 } from '@kobato/server/domains/auth/services/shared.ts'
 import { consumeToken, issueSignInLinkToken } from '@kobato/server/domains/auth/verification-tokens.ts'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
 import { sendSignInLink } from '@kobato/server/infra/email/sender.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
 
 const log = getLogger('auth.magic-link')
 

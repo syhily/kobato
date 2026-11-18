@@ -10,7 +10,7 @@ import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
 import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { cx } from '@kobato/inkling-internal/utils/cx'
-import { getAccentColor } from '@kobato/inkling-internal/utils/getAccentColor'
+import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   Fragment,

@@ -1,5 +1,5 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { insertBackup } from '@kobato/db/operations/backup.ts'
 import { onErrorHandler } from '@kobato/server/http/errors.ts'

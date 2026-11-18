@@ -12,8 +12,12 @@
   `LocaleSyncProvider` notice, `toast-api-error`). Admin reuses them across the package boundary; new
   cross-surface modules go THERE (`packages/web/public/AGENTS.md` → Structure), never into this package.
 - **`ui/`** — grouped by domain, plus `shared/` and `shell/`.
-  - `shared/` — cross-domain modules (`useAdminInfiniteList`, `filterPillsReducer`, `sortable.tsx`, `mask.ts` — the
-    IP/display masking helpers, `use-file-upload.ts`). `useFileUpload`
+  - `shared/` — cross-domain modules, grouped by concern: `list/` (`AdminListPage`, `AdminInfiniteListFooter`,
+    `AdminPagination`, `use-admin-infinite-list`), `filter-bar/` (the pill engine plus `filter-pills-reducer`,
+    `date-filter`, `calendar-picker`), `image-edit/` (`UploadImageDialog`, `ImageEditorCanvas`, `CoverInputRow`,
+    `use-errored-src`), and `form/` (`LabelledCheckbox`, `LabelledRadio`). Only a module genuinely used by two or
+    more unrelated domains stays at the `shared/` root (`ConfirmDialog`, `sortable.tsx`, `mask.ts` — the IP/display
+    masking helpers, `SearchShortcutHint`, `use-file-upload.ts`). `useFileUpload`
     (`@kobato/web-admin/ui/shared/use-file-upload`) owns the CSRF read, accept/size guards, FormData POST, error
     unwrap, and toast choreography (the toast helpers live in `@kobato/web-public/ui/lib/toast-api-error`). Never hand-roll
     a fetch upload in a view. Hook copy is translated, never literal: a hook that only runs under the React tree
@@ -86,6 +90,22 @@ namespace so custom `--text-*`, `--color-*`, `--shadow-*` tokens land in the cor
 - Never write `dark:bg-foo` on a tier-1 token — the `.dark { }` rebind already handles the switch.
 - Adjacent dark surface tiers stay 3–8 L apart; no `--line-*` token shares a value with any `--surface-*` token (both
   the `border-line` outline and the `--accent` hover state vanish).
+
+## File naming
+
+Every module under `packages/web/{admin,public,client}/src` follows one of six shapes — a file that fits none is misplaced:
+
+- `PascalCase.tsx` — a React component (one exported component per file; `PasswordToggle.tsx`).
+- `use-kebab-case.ts(x)` — a hook; camelCase hook filenames are not allowed (`use-admin-infinite-list.ts`).
+- `kebab-case.ts` — a module of components; one `kebab-case.<ext>.tsx` if it renders JSX (`sortable.tsx`).
+- `*-context.tsx` — a React context provider (`music-player-context.tsx`, `analytics-state-context.tsx`).
+- `filter-fields.ts` — the filter-descriptor family, always `.ts` and always at the domain root.
+- `index.ts` — banned (no barrels).
+
+Directories are plural when they hold a collection of entities (`comments/`, `images/`, `webmentions/`) and match
+the `@kobato/api` contract group they drive; mass-noun domains stay singular (`music/`, `settings/`, `analytics/`).
+`tasks/` is the one intentional exception: the operator-facing noun is "task" (route `/admin/tasks`, copy
+`admin.tasks.*`) while its wire group is `jobs` — keep the UI noun and the `jobs` contract noun as they are.
 
 ## Component & styling rules
 

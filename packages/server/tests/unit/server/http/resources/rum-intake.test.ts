@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { SafeFetchOptions, SafeFetchResult } from '@kobato/server/infra/safe-fetch.ts'
 import type { FrontendRumRelay } from '@kobato/server/infra/trace/config.ts'
 

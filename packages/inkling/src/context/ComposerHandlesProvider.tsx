@@ -4,12 +4,12 @@ import { DragDropHandleContext } from '@kobato/inkling-internal/context/DragDrop
 import { FootnoteHandleContext } from '@kobato/inkling-internal/context/FootnoteHandleContext'
 import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContext'
 import { WordCountHandleContext } from '@kobato/inkling-internal/context/WordCountHandleContext'
-import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/cardPickerStore'
-import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/cardSelectionStore'
-import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/dragDropHandle'
-import { createFootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnoteHandle'
-import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
-import { createWordCountHandle } from '@kobato/inkling-internal/plugins/behaviour/wordCountHandle'
+import { createCardPickerStore } from '@kobato/inkling-internal/plugins/behaviour/card-picker-store'
+import { createCardSelectionStore } from '@kobato/inkling-internal/plugins/behaviour/card-selection-store'
+import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour/drag-drop-handle'
+import { createFootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
+import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
+import { createWordCountHandle } from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 import React from 'react'
 
 // Owns the composer's handle stack: one instance per handle per mounted

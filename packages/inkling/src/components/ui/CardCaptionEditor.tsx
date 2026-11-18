@@ -3,7 +3,7 @@ import type { EditorState, LexicalEditor } from 'lexical'
 import InklingCaptionEditor from '@kobato/inkling-internal/components/InklingCaptionEditor'
 import { TextInput } from '@kobato/inkling-internal/components/ui/TextInput'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import { isEditorEmpty } from '@kobato/inkling-internal/utils/isEditorEmpty'
+import { isEditorEmpty } from '@kobato/inkling-internal/utils/is-editor-empty'
 import React from 'react'
 
 interface CaptionInputProps {

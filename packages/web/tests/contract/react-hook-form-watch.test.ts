@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 // Contract: no render-time `.watch(...)` calls on react-hook-form instances.
 //
 // The client bundle runs through the React Compiler
-// (`packages/server/src/infra/react-compiler-plugin.ts`), which memoizes the call with
+// (`tools/toolchain/src/vite/react-compiler-plugin.ts`), which memoizes the call with
 // the stable `form` object as its only dependency — the watched value freezes
 // at its initial state and every controlled input fed by it snaps back on each
 // keystroke. Vitest never compiles, so only a source scan catches a regression.

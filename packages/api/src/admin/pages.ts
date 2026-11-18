@@ -1,5 +1,5 @@
 import { revisionContract } from '@kobato/api/admin/revision.ts'
-import { contentRestoreResultDto } from '@kobato/contracts/admin-meta.ts'
+import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base.ts'
 import {
   adminPageDetailDto,
   adminPageIdInput,

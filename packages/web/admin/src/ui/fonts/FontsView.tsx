@@ -29,8 +29,8 @@ import {
 } from '@kobato/web-admin/ui/fonts/dnd.ts'
 import { MAX_SLOT_FONTS, type SlotState, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots.ts'
 import { FontUploadButton } from '@kobato/web-admin/ui/fonts/FontUploadButton.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/AdminListPage.tsx'
 import { ConfirmDialog, type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
 import {
   SortableDragHandle,
   sortableIndexOf,

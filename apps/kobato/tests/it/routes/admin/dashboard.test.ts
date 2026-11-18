@@ -1,6 +1,5 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
-import { EMPTY_STATE_LINE_IDS } from '@kobato/contracts/dashboard.ts'
 import { comment as commentTable } from '@kobato/db/schema/comment.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
 import {
@@ -16,6 +15,7 @@ import {
 import { makeLoaderArgs } from '@kobato/test/context.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { adminSession, authorSession } from '@kobato/test/session.ts'
+import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 // The dashboard loader against the real engine: real rows + the ADOPTED

@@ -2,7 +2,7 @@ import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-
 import type { LexicalNodeConfig } from 'lexical'
 
 import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
-import { createDocument } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { createDocument } from '@kobato/inkling/tests/nodes-base/test-helpers'
 import { createHeadlessEditor } from '@lexical/headless'
 import { describe, expect, it } from 'vitest'
 

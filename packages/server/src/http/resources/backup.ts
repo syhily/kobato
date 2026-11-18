@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
 import { findFirstAdminUser, hasAdmin } from '@kobato/db/operations/user.ts'

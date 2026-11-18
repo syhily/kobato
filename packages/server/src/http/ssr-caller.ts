@@ -159,6 +159,6 @@ export function streamDetailExtras(
 ): { comments: Promise<DetailPageComments>; webmentions: Promise<PublicWebmentionWire[]> } {
   return {
     comments: caller.content.comments.byKey({ pageKey: commentKey }),
-    webmentions: caller.webmention.list({ page_key: commentKey }).then((r) => r.webmentions),
+    webmentions: caller.webmentions.list({ page_key: commentKey }).then((r) => r.webmentions),
   }
 }

@@ -1,4 +1,4 @@
-import type { TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tkHandle'
+import type { TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
 import type { LexicalEditor, NodeKey } from 'lexical'
 
 import { $isTKNode, TKNode } from '@kobato/inkling-internal/nodes/base'

@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/context.ts'
+import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { ASSET_ROUTES, resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
 import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'

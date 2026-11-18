@@ -1,7 +1,7 @@
 import type { ElementNode, HTMLConfig, LexicalEditor } from 'lexical'
 
 import { DEFAULT_BASE_NODES, DEFAULT_CONFIG } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument } from '@kobato/inkling/tests/nodes-base/test-utils/index'
+import { createDocument } from '@kobato/inkling/tests/nodes-base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'

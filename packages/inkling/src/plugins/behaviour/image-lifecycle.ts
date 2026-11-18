@@ -3,8 +3,8 @@ import type { LexicalEditor, NodeKey } from 'lexical'
 
 import { $isImageNode, type BaseImageNode } from '@kobato/inkling-internal/nodes/base/nodes/image/ImageNode'
 import { getDefaultImageCardWidth } from '@kobato/inkling-internal/nodes/base/utils/image-card-widths'
-import { dataSrcToFile } from '@kobato/inkling-internal/utils/dataSrcToFile'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
+import { dataSrcToFile } from '@kobato/inkling-internal/utils/data-src-to-file'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { $getNodeByKey } from 'lexical'
 
 // Image lifecycle — the image card's mount-time document-migration

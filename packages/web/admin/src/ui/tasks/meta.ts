@@ -3,7 +3,7 @@ import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { BadgeProps } from '@kobato/ui/components/badge.tsx'
 
-import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 
 // Shared presentation meta for the admin task center (TasksView + TaskCard + RunHistorySheet).

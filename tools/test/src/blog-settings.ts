@@ -4,7 +4,7 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { CACHE_BUCKET_FALLBACKS } from '@kobato/cache/types.ts'
-import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { analyticsDefaults } from '@kobato/settings/sections/analytics.ts'
 import { backupDefaults } from '@kobato/settings/sections/backup.ts'
 import { limitsDefaults } from '@kobato/settings/sections/limits.ts'

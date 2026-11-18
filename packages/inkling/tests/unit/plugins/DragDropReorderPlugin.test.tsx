@@ -40,7 +40,7 @@ const captured = vi.hoisted(() => ({
   resolveDrop: vi.fn(),
 }))
 
-vi.mock('@kobato/inkling-internal/utils/draggable/useDragDropContainer', () => ({
+vi.mock('@kobato/inkling-internal/utils/draggable/use-drag-drop-container', () => ({
   useDragDropContainer: (options: CapturedContainerOptions) => {
     captured.containerOptions = options
     return { refresh: vi.fn() }

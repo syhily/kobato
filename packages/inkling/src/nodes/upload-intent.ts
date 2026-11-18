@@ -12,9 +12,9 @@ import {
   type BaseFileNode,
   type BaseImageNode,
 } from '@kobato/inkling-internal/nodes/base'
-import { getAudioMetadata } from '@kobato/inkling-internal/utils/getAudioMetadata'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/getImageDimensions'
-import prettifyFileName from '@kobato/inkling-internal/utils/prettifyFileName'
+import { getAudioMetadata } from '@kobato/inkling-internal/utils/get-audio-metadata'
+import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
+import prettifyFileName from '@kobato/inkling-internal/utils/prettify-file-name'
 import { createPreviewLease, type PreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
 import { $getNodeByKey, type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
 
