@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/utils/roles.ts'
+import type { Role } from '@kobato/auth/roles.ts'
 
 import { user } from '@kobato/db/schema/user.ts'
 import { getThread, listInbox, unreadCount } from '@kobato/server/domains/notifications/service.ts'

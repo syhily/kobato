@@ -5,9 +5,9 @@
 // stay on the `node:sea` getAsset channel — worker threads cannot see the VFS
 // mount (their fs calls under it fail with ENOTDIR) but CAN read blob assets.
 // No-op / pass-through outside SEA mode. Import budget: node builtins +
-// `@kobato/contracts/sea/assets` (this module is bundled into the process worker).
+// `@kobato/distribution/sea-assets` (this module is bundled into the process worker).
 
-import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/contracts/sea/assets.ts'
+import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/distribution/sea-assets.ts'
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { join } from 'node:path'

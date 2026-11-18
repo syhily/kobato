@@ -1,14 +1,18 @@
-# Web package conventions
+# Web umbrella conventions
 
-`packages/web/src/` (`@kobato/web`) is the product-frontend package: browser behavior, data access, editor glue, and Kobato-specific public/admin components.
+`packages/web/` is the UMBRELLA directory for the web family — three sibling workspace packages, no package of its own:
 
-## Module seam
+- `admin/` — `@kobato/web-admin`: the admin frontend (admin components, domain controllers, the page editor composition, the admin style adapters).
+- `public/` — `@kobato/web-public`: the public frontend (public chrome, comments, widgets, music player) plus the cross-surface `ui/shared`/`ui/lib` tiers.
+- `client/` — `@kobato/web-client`: the browser platform below both product leaves (document-level hooks, the oRPC client, the root settings contexts, the cross-surface editor platform).
+- `tests/` — the umbrella Vitest roots (`web-unit` / `web-snaps`) and the CROSS-LEAF contract pins that must not live in any single leaf (see `tests/AGENTS.md`).
 
-`client/` is the LOWER layer: the browser platform — oRPC client, document-level hooks (RUM/consent, device beacon, chunk recovery, iOS zoom lock), the root settings provider, and the cross-surface editor platform shared by the page and comment composers. `ui/` is the product layer: product components, domain controllers, and the page/comment editor composition that wires that platform into concrete editors. The direction is strictly `ui/` → `client/`: a `client/` module NEVER imports `@kobato/web/ui/...`, and `apps/kobato/tests/arch/web-direction.test.ts` enforces this over the real import graph with NO exceptions — a client module that needs a ui module moves to ui. The reusable design system is separate: `@kobato/ui` owns base styles, primitives, icons, theme/i18n providers, and generic presentation hooks. Web may depend on UI; UI never depends on web.
+## Module seam and direction
 
-## Rules
+The direction is strictly `@kobato/web-admin` → `@kobato/web-public` → `@kobato/web-client` → `@kobato/ui`:
 
-- Everything here is browser-safe: no `node:*` value imports, no `@kobato/server` value imports. Server-only shapes (oRPC input/output types) come from `@kobato/contracts` (Zod `z.infer`), never from server source.
-- The ONE sanctioned server edge is the type-only `RouterClient<ApiRouter>` in `client/api/client.ts` (`@kobato/server` is a devDependency for exactly this). Any second type channel must go through a `@kobato/contracts` schema instead.
-- Imports use `@kobato/web/...` inside this package and `@kobato/ui/...`, the shared leaves (`@kobato/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts}` — never `@kobato/seo`), or `@kobato/inkling` across packages.
-- Subdirectory conventions load additively: `src/client/AGENTS.md`, `src/ui/AGENTS.md` (+ `src/ui/admin/settings/AGENTS.md`), and `src/styles/AGENTS.md`. Design tokens and generic style partials live in `packages/ui/src/styles/AGENTS.md`; app-owned compilation entries live in `apps/kobato/src/styles/AGENTS.md`.
+- admin may reuse AUDITED `@kobato/web-public` modules (the exact set is pinned by `ADMIN_PUBLIC_IMPORTS` in `apps/kobato/tests/arch/web-direction.test.ts`) — a long-term seam, not a transitional state;
+- a web-public module never imports `@kobato/web-admin` — a module both sides need belongs in `@kobato/web-public/ui/shared` (or moves down a leaf);
+- a web-client module never imports either product leaf.
+
+Each leaf carries its own AGENTS.md (`admin/AGENTS.md`, `public/AGENTS.md`, `client/AGENTS.md`) plus nested module docs; load them additively as you enter a tree.

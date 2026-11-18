@@ -2,8 +2,8 @@ import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
   type RouteManifestRoute,
-} from '@kobato/contracts/constants/route-warmup.ts'
-import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/contracts/sea/assets.ts'
+} from '@kobato/distribution/route-warmup.ts'
+import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets.ts'
 import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
 import { seaVfsRoot } from '@kobato/server/infra/sea.ts'
 import {

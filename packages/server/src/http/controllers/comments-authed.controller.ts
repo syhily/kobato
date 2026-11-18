@@ -1,10 +1,5 @@
-import {
-  commentsMyCountsOutputSchema,
-  commentsResolveEntityInputSchema,
-  commentsResolveEntityOutputSchema,
-} from '@kobato/contracts/admin.ts'
-import { ownCommentMutationDto } from '@kobato/contracts/comments.ts'
-import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
+import { commentsAuthedContract } from '@kobato/api/comments.ts'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments.ts'
 import { asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
 import {
   countMyComments,
@@ -17,127 +12,78 @@ import {
   requestOwnCommentDeletion,
 } from '@kobato/server/domains/comments/services/moderate.ts'
 import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
-import { authedProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/utils/comments.ts'
+import { implementAuthed, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { z } from 'zod'
 
-const updateOwn = authedProc
-  .route({ method: 'POST', path: '/comments/update-own' })
-  .input(z.object({ commentId: z.string(), body: commentEditorStateSchema }))
-  .output(ownCommentMutationDto)
-  .handler(async ({ input, context }) => {
-    const commentId = input.commentId ? idFromString(input.commentId) : 0
-    if (commentId === 0) {
-      throw localizedOrpcError(context, 'BAD_REQUEST', 'comments.error.commentIdRequired')
-    }
-    // The edit-lock flow (ownership, delete-request fence, has-replies
-    // lock, grace-window mutation, audit) lives in the comments domain.
-    const updated = await editOwnComment(context.db, input.commentId, input.body, context.viewer, context)
-    return { comment: asCommentItemWire(updated) }
-  })
+// Contract-first: method/path/input/output live in `@kobato/api/comments.ts`;
+// this controller only implements the signed-in own-comment procedures.
+const impl = implementAuthed(commentsAuthedContract)
 
-const requestDeleteOwn = authedProc
-  .route({ method: 'POST', path: '/comments/request-delete-own' })
-  .input(z.object({ commentId: z.string() }))
-  .output(ownCommentMutationDto)
-  .handler(async ({ input, context }) => {
-    // The request-delete flow (ownership, idempotent no-op, mutation,
-    // audit, fresh re-fetch) lives in the comments domain.
-    const updated = await requestOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
-    return { comment: asCommentItemWire(updated) }
-  })
+const updateOwn = impl.updateOwn.handler(async ({ input, context }) => {
+  const commentId = input.commentId ? idFromString(input.commentId) : 0
+  if (commentId === 0) {
+    throw localizedOrpcError(context, 'BAD_REQUEST', 'comments.error.commentIdRequired')
+  }
+  // The edit-lock flow (ownership, delete-request fence, has-replies
+  // lock, grace-window mutation, audit) lives in the comments domain.
+  const updated = await editOwnComment(context.db, input.commentId, input.body, context.viewer, context)
+  return { comment: asCommentItemWire(updated) }
+})
 
-const cancelDeleteOwn = authedProc
-  .route({ method: 'POST', path: '/comments/cancel-delete-own' })
-  .input(z.object({ commentId: z.string() }))
-  .output(ownCommentMutationDto)
-  .handler(async ({ input, context }) => {
-    // The cancel-delete flow (ownership, guarded mutation, audit, fresh
-    // re-fetch) lives in the comments domain.
-    const updated = await cancelOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
-    return { comment: asCommentItemWire(updated) }
-  })
+const requestDeleteOwn = impl.requestDeleteOwn.handler(async ({ input, context }) => {
+  // The request-delete flow (ownership, idempotent no-op, mutation,
+  // audit, fresh re-fetch) lives in the comments domain.
+  const updated = await requestOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
+  return { comment: asCommentItemWire(updated) }
+})
 
-const loadMine = authedProc
-  .route({ method: 'GET', path: '/comments/load-mine' })
-  .input(
-    z.object({
-      offset: z.coerce.number().min(0).default(0),
-      limit: z.coerce.number().min(1).max(100).default(20),
-      status: z.enum(['all', 'pending', 'deleteRequested', 'deleted']).optional(),
-      q: z.string().trim().max(200).optional(),
-      entity: z.string().max(2048).optional(),
-    }),
-  )
-  .output(
-    z.object({
-      items: z.array(
-        z.object({
-          id: z.string(),
-          body: commentEditorStateSchema,
-          content: z.string().nullable(),
-          createdAtIso: z.string(),
-          deletedAtIso: z.string().nullable(),
-          deleteRequestedAtIso: z.string().nullable(),
-          isPending: z.boolean(),
-          entity: z.object({ title: z.string(), permalink: z.string() }).nullable(),
-          parent: z.object({ name: z.string(), excerpt: z.string(), isDeleted: z.boolean() }).nullable(),
-        }),
-      ),
-      total: z.number().int(),
-      hasMore: z.boolean(),
-    }),
-  )
-  .handler(async ({ input, context }) => {
-    const userId = idFromString(context.viewer.id)
-    const entity = input.entity ? parseCommentEntity(input.entity) : null
-    const filters = {
-      status: input.status,
-      q: input.q,
-      entity: entity ?? undefined,
-    }
-    return loadMineCommentsPage(context.db, userId, input.offset, Math.min(input.limit, 100), filters)
-  })
+const cancelDeleteOwn = impl.cancelDeleteOwn.handler(async ({ input, context }) => {
+  // The cancel-delete flow (ownership, guarded mutation, audit, fresh
+  // re-fetch) lives in the comments domain.
+  const updated = await cancelOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
+  return { comment: asCommentItemWire(updated) }
+})
 
-const searchMineEntities = authedProc
-  .route({ method: 'GET', path: '/comments/search-mine-entities' })
-  .input(z.object({ q: z.string().trim().max(100).optional() }))
-  .output(z.object({ entities: z.array(z.object({ value: z.string(), label: z.string() })) }))
-  .handler(async ({ input, context }) => {
-    const userId = idFromString(context.viewer.id)
-    const rows = await listMyCommentEntities(context.db, userId, { q: input.q })
-    return {
-      entities: rows.map((e) => ({
-        value: serializeCommentEntity({ type: e.type, ownerId: e.ownerId }),
-        label: e.title,
-      })),
-    }
-  })
+const loadMine = impl.loadMine.handler(async ({ input, context }) => {
+  const userId = idFromString(context.viewer.id)
+  const entity = input.entity ? parseCommentEntity(input.entity) : null
+  const filters = {
+    status: input.status,
+    q: input.q,
+    entity: entity ?? undefined,
+  }
+  return loadMineCommentsPage(context.db, userId, input.offset, Math.min(input.limit, 100), filters)
+})
+
+const searchMineEntities = impl.searchMineEntities.handler(async ({ input, context }) => {
+  const userId = idFromString(context.viewer.id)
+  const rows = await listMyCommentEntities(context.db, userId, { q: input.q })
+  return {
+    entities: rows.map((e) => ({
+      value: serializeCommentEntity({ type: e.type, ownerId: e.ownerId }),
+      label: e.title,
+    })),
+  }
+})
 
 // Comment count tuple for the profile/dashboard cards — passes through unchanged.
-const myCounts = authedProc
-  .route({ method: 'GET', path: '/comments/my-counts' })
-  .output(commentsMyCountsOutputSchema)
-  .handler(async ({ context }) => countMyComments(context.db, idFromString(context.viewer.id)))
+const myCounts = impl.myCounts.handler(async ({ context }) =>
+  countMyComments(context.db, idFromString(context.viewer.id)),
+)
 
 // Entity resolve for `/admin/me/comments`: titles for entities pinned in
 // the URL but absent from the dropdown; malformed/hard-deleted → `null`.
-const resolveEntity = authedProc
-  .route({ method: 'GET', path: '/comments/resolve-entity' })
-  .input(commentsResolveEntityInputSchema)
-  .output(commentsResolveEntityOutputSchema)
-  .handler(async ({ input, context }) => {
-    const parsed = parseCommentEntity(input.entity)
-    if (parsed === null) {
-      return null
-    }
-    const resolved = await resolveEntitiesForComments(context.db, [parsed])
-    const hit = resolved.get(serializeCommentEntity(parsed))
-    return hit === undefined ? null : { value: serializeCommentEntity(parsed), label: hit.title }
-  })
+const resolveEntity = impl.resolveEntity.handler(async ({ input, context }) => {
+  const parsed = parseCommentEntity(input.entity)
+  if (parsed === null) {
+    return null
+  }
+  const resolved = await resolveEntitiesForComments(context.db, [parsed])
+  const hit = resolved.get(serializeCommentEntity(parsed))
+  return hit === undefined ? null : { value: serializeCommentEntity(parsed), label: hit.title }
+})
 
-export const commentsAuthedRouter = {
+export const commentsAuthedRouter = impl.router({
   updateOwn,
   requestDeleteOwn,
   cancelDeleteOwn,
@@ -145,4 +91,4 @@ export const commentsAuthedRouter = {
   searchMineEntities,
   myCounts,
   resolveEntity,
-}
+})

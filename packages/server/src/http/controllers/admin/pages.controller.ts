@@ -1,11 +1,5 @@
-import {
-  adminPageDetailDto,
-  adminPageDto,
-  listPageRevisionsOutputDto,
-  listPagesOutputDto,
-} from '@kobato/contracts/pages.ts'
+import { adminPagesContract } from '@kobato/api/admin/pages.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { listPagesSchema, upsertPageMetaSchema } from '@kobato/server/domains/pages/schema.ts'
 import {
   listPagesForAdmin,
   getPageDetailForAdmin,
@@ -20,87 +14,70 @@ import {
   updatePageMeta,
 } from '@kobato/server/domains/pages/services/mutate.ts'
 import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-router.ts'
-import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { z } from 'zod'
 
-const idInput = z.object({ id: z.string().min(1) })
+// Contract-first: method/path/input/output live in `@kobato/api/admin/pages.ts`;
+// this controller only implements the procedures (admin base — editing is
+// admin-only, so the revision pair passes no `viewer` ownership rule).
+const impl = implementAdmin(adminPagesContract)
 
-const list = adminProc
-  .route({ method: 'GET', path: '/admin/pages/list' })
-  .input(listPagesSchema)
-  .output(listPagesOutputDto)
-  .handler(({ input, context }) => listPagesForAdmin(context.db, input))
+const list = impl.list.handler(({ input, context }) => listPagesForAdmin(context.db, input))
 
-const get = adminProc
-  .route({ method: 'GET', path: '/admin/pages/get' })
-  .input(idInput)
-  .output(adminPageDetailDto)
+const get = impl.get.handler(({ input, context }) =>
   // NOT_FOUND comes from the service (DomainError, translated by
   // `domainErrorGuard`) — same contract as the posts controller.
-  .handler(({ input, context }) => getPageDetailForAdmin(context.db, idFromString(input.id)))
+  getPageDetailForAdmin(context.db, idFromString(input.id)),
+)
 
-const remove = adminProc
-  .route({ method: 'POST', path: '/admin/pages/remove' })
-  .input(idInput)
-  .output(z.void())
-  .handler(async ({ input, context }) => {
-    const result = await deletePage(context.db, idFromString(input.id))
-    if (!result.deleted) {
-      throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotFound', { entity: 'page' })
-    }
-    recordAuditEventFromContext(context, {
-      action: 'page_deleted',
-      resourceType: 'page',
-      resourceId: input.id,
-    })
+const remove = impl.delete.handler(async ({ input, context }) => {
+  const result = await deletePage(context.db, idFromString(input.id))
+  if (!result.deleted) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotFound', { entity: 'page' })
+  }
+  recordAuditEventFromContext(context, {
+    action: 'page_deleted',
+    resourceType: 'page',
+    resourceId: input.id,
   })
+})
 
-const restore = adminProc
-  .route({ method: 'POST', path: '/admin/pages/restore' })
-  .input(idInput)
-  .output(z.object({ success: z.boolean(), warning: z.string().optional() }))
-  .handler(async ({ input, context }) => {
-    const result = await restorePage(context.db, idFromString(input.id))
-    if (!result.restored) {
-      throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotDeleted', { entity: 'page' })
-    }
-    recordAuditEventFromContext(context, {
-      action: 'page_restored',
-      resourceType: 'page',
-      resourceId: input.id,
-    })
-    return {
-      success: true,
-      warning: formatWarningDescriptors(
-        result.warningDescriptors ?? [],
-        createServerTranslator(context.localization.locale),
-      ),
-    }
+const restore = impl.restore.handler(async ({ input, context }) => {
+  const result = await restorePage(context.db, idFromString(input.id))
+  if (!result.restored) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'content.error.entityNotDeleted', { entity: 'page' })
+  }
+  recordAuditEventFromContext(context, {
+    action: 'page_restored',
+    resourceType: 'page',
+    resourceId: input.id,
   })
+  return {
+    success: true,
+    warning: formatWarningDescriptors(
+      result.warningDescriptors ?? [],
+      createServerTranslator(context.localization.locale),
+    ),
+  }
+})
 
-const unpublish = adminProc
-  .route({ method: 'POST', path: '/admin/pages/unpublish' })
-  .input(z.object({ id: z.string().min(1) }))
-  .output(z.object({ page: adminPageDto }))
-  .handler(async ({ input, context }) => {
-    const page = await unpublishPage(context.db, idFromString(input.id))
-    recordAuditEventFromContext(context, {
-      action: 'page_unpublished',
-      resourceType: 'page',
-      resourceId: input.id,
-    })
-    return { page }
+const unpublish = impl.unpublish.handler(async ({ input, context }) => {
+  const page = await unpublishPage(context.db, idFromString(input.id))
+  recordAuditEventFromContext(context, {
+    action: 'page_unpublished',
+    resourceType: 'page',
+    resourceId: input.id,
   })
+  return { page }
+})
 
-// Shared revision factory; pages pass no `viewer` — editing is already
-// admin-only, so there is no ownership rule (see `revision-router.ts`).
+// Shared revision factory; pages hand in the admin implementer and pass no
+// `viewer` — there is no ownership rule to evaluate.
 const { saveDraft, publishLatest } = makeRevisionRouter({
-  proc: adminProc,
+  impl,
   adapter: pageLifecycleAdapter,
-  basePath: '/admin/pages',
   audit: {
     resourceType: 'page',
     draftSavedAction: 'page_draft_saved',
@@ -109,50 +86,42 @@ const { saveDraft, publishLatest } = makeRevisionRouter({
   passViewerToSaveBody: false,
 })
 
-const upsertMeta = adminProc
-  .route({ method: 'POST', path: '/admin/pages/upsert-meta' })
-  .input(upsertPageMetaSchema)
-  .output(z.object({ page: adminPageDto }))
-  .handler(async ({ input, context }) => {
-    const meta = {
-      slug: input.slug,
-      title: input.title,
-      summary: input.summary,
-      cover: input.cover,
-      og: input.og,
-      published: input.published,
-      commentsEnabled: input.commentsEnabled,
-      webmentionsEnabled: input.webmentionsEnabled,
-      showToc: input.showToc,
-      showUpdated: input.showUpdated,
-      contentLanguage: input.contentLanguage,
-      showFriends: input.showFriends,
-      publishedAt:
-        input.publishedAt === undefined || input.publishedAt === null ? input.publishedAt : new Date(input.publishedAt),
-    }
-    const sessionUserId = idFromString(context.viewer.id)
-    const page =
-      input.id === undefined
-        ? await createPage(context.db, meta, sessionUserId)
-        : await updatePageMeta(context.db, { id: idFromString(input.id), ...meta })
-    recordAuditEventFromContext(context, {
-      action: input.id === undefined ? 'page_created' : 'page_meta_updated',
-      resourceType: 'page',
-      resourceId: page.id,
-    })
-    return { page }
+const upsertMeta = impl.upsertMeta.handler(async ({ input, context }) => {
+  const meta = {
+    slug: input.slug,
+    title: input.title,
+    summary: input.summary,
+    cover: input.cover,
+    og: input.og,
+    published: input.published,
+    commentsEnabled: input.commentsEnabled,
+    webmentionsEnabled: input.webmentionsEnabled,
+    showToc: input.showToc,
+    showUpdated: input.showUpdated,
+    contentLanguage: input.contentLanguage,
+    showFriends: input.showFriends,
+    publishedAt:
+      input.publishedAt === undefined || input.publishedAt === null ? input.publishedAt : new Date(input.publishedAt),
+  }
+  const sessionUserId = idFromString(context.viewer.id)
+  const page =
+    input.id === undefined
+      ? await createPage(context.db, meta, sessionUserId)
+      : await updatePageMeta(context.db, { id: idFromString(input.id), ...meta })
+  recordAuditEventFromContext(context, {
+    action: input.id === undefined ? 'page_created' : 'page_meta_updated',
+    resourceType: 'page',
+    resourceId: page.id,
   })
+  return { page }
+})
 
-const listRevisions = adminProc
-  .route({ method: 'GET', path: '/admin/pages/list-revisions' })
-  .input(z.object({ id: z.string().min(1) }))
-  .output(listPageRevisionsOutputDto)
-  .handler(async ({ input, context }) => {
-    const revisions = await listPageRevisionsForAdmin(context.db, idFromString(input.id))
-    return { revisions }
-  })
+const listRevisions = impl.listRevisions.handler(async ({ input, context }) => {
+  const revisions = await listPageRevisionsForAdmin(context.db, idFromString(input.id))
+  return { revisions }
+})
 
-export const adminPagesRouter = {
+export const adminPagesRouter = impl.router({
   list,
   get,
   delete: remove,
@@ -162,4 +131,4 @@ export const adminPagesRouter = {
   publishLatest,
   upsertMeta,
   listRevisions,
-}
+})

@@ -32,7 +32,7 @@ import { ErrorBoundary, Layout, shouldRevalidate } from '@/root.tsx'
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
 // Under the jsdom/web transform pipeline the virtual specifier is resolved too
 // late — stub the component that owns the import as well.
-vi.mock('@kobato/web/client/components/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
+vi.mock('@kobato/web-client/components/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
 
 // Meta/Links/Scripts/ScrollRestoration need the framework build manifest a
 // memory router lacks — stub them, keep the rest real.

@@ -1,5 +1,5 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { SettingsWorkspace } from '@kobato/web/ui/admin/settings/shell/SettingsWorkspace.tsx'
+import { SettingsWorkspace } from '@kobato/web-admin/ui/settings/shell/SettingsWorkspace.tsx'
 import { useCallback } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 

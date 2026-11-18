@@ -1,4 +1,4 @@
-import { adminUserDto } from '@kobato/contracts/users.ts'
+import { adminUsersAdminContract } from '@kobato/api/admin/users.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
 import {
@@ -8,125 +8,107 @@ import {
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
 } from '@kobato/server/domains/users/services/admin.ts'
-import { adminProc, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { z } from 'zod'
 
-const successOutput = z.object({ success: z.boolean() })
+// Contract-first: method/path/input/output live in `@kobato/api/admin/users.ts`;
+// this controller group implements the admin-action slice (admin base).
+const impl = implementAdmin(adminUsersAdminContract)
 
-const mute = adminProc
-  .route({ method: 'POST', path: '/admin/users/mute' })
-  .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
-  .output(z.object({ user: adminUserDto }))
-  .handler(async ({ input, context }) => {
-    const dto = await muteUser(context.db, idFromString(input.id), input.muted)
+const mute = impl.mute.handler(async ({ input, context }) => {
+  const dto = await muteUser(context.db, idFromString(input.id), input.muted)
+  recordAuditEventFromContext(context, {
+    action: input.muted ? 'user_muted' : 'user_unmuted',
+    resourceType: 'user',
+    resourceId: input.id,
+  })
+  return { user: dto }
+})
+
+const updateRole = impl.updateRole.handler(async ({ input, context }) => {
+  const targetId = idFromString(input.id)
+  const updated = await updateUserRoleWithGuard(context.db, targetId, input.role, context.viewer.id)
+  if (updated) {
     recordAuditEventFromContext(context, {
-      action: input.muted ? 'user_muted' : 'user_unmuted',
+      action: 'user_role_changed',
       resourceType: 'user',
       resourceId: input.id,
+      details: { from: updated.previousRole, to: input.role },
     })
-    return { user: dto }
+  }
+  const dto = await fetchAdminUserDto(context.db, targetId)
+  return { user: dto }
+})
+
+const inviteAuthor = impl.inviteAuthor.handler(async ({ input, context }) => {
+  const [ipLimit, emailLimit] = await Promise.all([
+    tryInviteRateLimit(context.clientAddress),
+    tryInviteByEmailRateLimit(idFromString(context.viewer.id), input.email),
+  ])
+  if (ipLimit.exceeded || emailLimit.exceeded) {
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'users.error.inviteTooFrequent')
+  }
+
+  const origin = resolveSiteOrigin(context.request)
+  // No display name on the account: the invite email greets the recipient in
+  // the request locale instead of a hardcoded Chinese literal.
+  const inviterName =
+    context.viewer.name ??
+    createServerTranslator(context.localization.locale).format('email.authorInvite.defaultInviter')
+
+  const result = await inviteAuthorWithRollback(
+    context.db,
+    input.name,
+    input.email,
+    origin,
+    inviterName,
+    context.viewer.email,
+  )
+
+  recordAuditEventFromContext(context, {
+    action: 'author_invited',
+    resourceType: 'user',
+    resourceId: String(result.userId),
+    details: { email: input.email },
   })
+  return { success: true }
+})
 
-const updateRole = adminProc
-  .route({ method: 'POST', path: '/admin/users/update-role' })
-  .input(z.object({ id: z.string().min(1), role: z.enum(['admin', 'author', 'visitor']).nullable() }))
-  .output(z.object({ user: adminUserDto.nullable() }))
-  .handler(async ({ input, context }) => {
-    const targetId = idFromString(input.id)
-    const updated = await updateUserRoleWithGuard(context.db, targetId, input.role, context.viewer.id)
-    if (updated) {
-      recordAuditEventFromContext(context, {
-        action: 'user_role_changed',
-        resourceType: 'user',
-        resourceId: input.id,
-        details: { from: updated.previousRole, to: input.role },
-      })
-    }
-    const dto = await fetchAdminUserDto(context.db, targetId)
-    return { user: dto }
+const sendPasswordReset = impl.sendPasswordReset.handler(async ({ input, context }) => {
+  const user = await sendPasswordResetToUser(context.db, input.email, resolveSiteOrigin(context.request))
+
+  recordAuditEventFromContext(context, {
+    action: 'password_reset_sent',
+    resourceType: 'user',
+    resourceId: String(user.userId),
   })
+  return { success: true }
+})
 
-const inviteAuthor = adminProc
-  .route({ method: 'POST', path: '/admin/users/invite-author' })
-  .input(z.object({ email: z.email().min(1), name: z.string().min(1).max(100) }))
-  .output(successOutput)
-  .handler(async ({ input, context }) => {
-    const [ipLimit, emailLimit] = await Promise.all([
-      tryInviteRateLimit(context.clientAddress),
-      tryInviteByEmailRateLimit(idFromString(context.viewer.id), input.email),
-    ])
-    if (ipLimit.exceeded || emailLimit.exceeded) {
-      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'users.error.inviteTooFrequent')
-    }
-
-    const origin = resolveSiteOrigin(context.request)
-    // No display name on the account: the invite email greets the recipient in
-    // the request locale instead of a hardcoded Chinese literal.
-    const inviterName =
-      context.viewer.name ??
-      createServerTranslator(context.localization.locale).format('email.authorInvite.defaultInviter')
-
-    const result = await inviteAuthorWithRollback(
-      context.db,
-      input.name,
-      input.email,
-      origin,
-      inviterName,
-      context.viewer.email,
-    )
-
-    recordAuditEventFromContext(context, {
-      action: 'author_invited',
-      resourceType: 'user',
-      resourceId: String(result.userId),
-      details: { email: input.email },
-    })
-    return { success: true }
+// The passkey gate rides AFTER the base guard chain (role gate → domain-error
+// translation), matching the pre-contract `.use(passkeyGuard)` order.
+const clearPasskeys = impl.clearPasskeys.use(passkeyGuard).handler(async ({ input, context }) => {
+  const targetId = idFromString(input.id)
+  await deleteAllCredentials(context.db, targetId)
+  const dto = await fetchAdminUserDto(context.db, targetId)
+  if (!dto) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')
+  }
+  recordAuditEventFromContext(context, {
+    action: 'passkeys_cleared',
+    resourceType: 'user',
+    resourceId: input.id,
   })
+  return { user: dto }
+})
 
-const sendPasswordReset = adminProc
-  .route({ method: 'POST', path: '/admin/users/send-password-reset' })
-  .input(z.object({ email: z.email().min(1) }))
-  .output(successOutput)
-  .handler(async ({ input, context }) => {
-    const user = await sendPasswordResetToUser(context.db, input.email, resolveSiteOrigin(context.request))
-
-    recordAuditEventFromContext(context, {
-      action: 'password_reset_sent',
-      resourceType: 'user',
-      resourceId: String(user.userId),
-    })
-    return { success: true }
-  })
-
-const clearPasskeys = adminProc
-  .route({ method: 'POST', path: '/admin/users/clear-passkeys' })
-  .input(z.object({ id: z.string().min(1) }))
-  .output(z.object({ user: adminUserDto }))
-  .use(passkeyGuard)
-  .handler(async ({ input, context }) => {
-    const targetId = idFromString(input.id)
-    await deleteAllCredentials(context.db, targetId)
-    const dto = await fetchAdminUserDto(context.db, targetId)
-    if (!dto) {
-      throw localizedOrpcError(context, 'NOT_FOUND', 'users.error.notFound')
-    }
-    recordAuditEventFromContext(context, {
-      action: 'passkeys_cleared',
-      resourceType: 'user',
-      resourceId: input.id,
-    })
-    return { user: dto }
-  })
-
-export const adminUsersAdminRouter = {
+export const adminUsersAdminRouter = impl.router({
   mute,
   updateRole,
   inviteAuthor,
   sendPasswordReset,
   clearPasskeys,
-}
+})

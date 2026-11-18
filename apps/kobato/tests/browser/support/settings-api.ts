@@ -1,10 +1,10 @@
 // Authenticated HTTP staging for the browser journeys — sign-in, settings
 // patches, and the staged post. Same wire the HTTP e2e suite uses
-// (`#/_helpers/e2e-client` + `#/_helpers/e2e-rpc`), so the journeys never read
-// a real config or reach for a private database seam.
+// (`@kobato/harness/http.ts` + `@kobato/harness/rpc.ts`), so the journeys
+// never read a real config or reach for a private database seam.
 
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test/e2e-client.ts'
-import { callE2eRpc } from '@kobato/test/e2e-rpc.ts'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
+import { callE2eRpc } from '@kobato/harness/rpc.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 
 import type { BrowserEnv } from './env.ts'

@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest'
 // the trigger, never the raw `value` — via `items` on the root or a children
 // function on `<SelectValue>`.
 
-const UI_ROOTS = [resolve(process.cwd(), 'packages/web/src/ui/'), resolve(process.cwd(), 'apps/kobato/src/routes/')]
+const UI_ROOTS = [
+  resolve(process.cwd(), 'packages/web/admin/src/ui/'),
+  resolve(process.cwd(), 'apps/kobato/src/routes/'),
+]
 
 // Select family child tags, so they aren't mistaken for the root `<Select>`.
 const SELECT_CHILDREN = [

@@ -31,3 +31,19 @@ export const setFontSlotInputDto = z.object({
   fontIds: z.array(z.uuid()).max(8),
 })
 export type SetFontSlotInput = z.infer<typeof setFontSlotInputDto>
+
+// Admin fonts wire — the single Zod source the `@kobato/api` fonts contract
+// composes and the server validates against. (`upload` lives in a separate
+// Hono resource route — 60 MiB sources exceed the oRPC bridge's body limit.)
+
+export const adminFontsListInput = z.object({}).optional()
+export type AdminFontsListInput = z.infer<typeof adminFontsListInput>
+
+export const adminFontDeleteInput = z.object({ fontId: z.uuid() })
+export type AdminFontDeleteInput = z.infer<typeof adminFontDeleteInput>
+
+export const adminFontDeleteOutputDto = z.object({ font: adminFontDto })
+export type AdminFontDeleteOutput = z.infer<typeof adminFontDeleteOutputDto>
+
+export const adminFontSetSlotOutputDto = z.object({}).optional()
+export type AdminFontSetSlotOutput = z.infer<typeof adminFontSetSlotOutputDto>

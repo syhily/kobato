@@ -1,13 +1,16 @@
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { Setting } from '@kobato/db/types.ts'
-import type { SectionMeta } from '@kobato/server/domains/settings/sections/registry.ts'
 import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { SectionMeta } from '@kobato/settings/sections/registry.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { SECTION_REGISTRY, validateSectionDefaults } from '@kobato/server/domains/settings/sections/registry.ts'
-import { securitySection } from '@kobato/server/domains/settings/sections/security.ts'
+import {
+  SECTION_REGISTRY,
+  sectionWriteSchema,
+  validateSectionDefaults,
+} from '@kobato/server/domains/settings/sections/registry.ts'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
 import { applySectionPatch, encryptSecretsInRow } from '@kobato/server/domains/settings/services/secrets-write.ts'
@@ -22,6 +25,7 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { validateS3Config } from '@kobato/server/infra/storage/backends/s3.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { securitySection } from '@kobato/settings/sections/security.ts'
 import { isValidPasskeyDomain } from '@kobato/utils/safe-url.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
@@ -80,7 +84,7 @@ export async function updateBlogSettingsSection(
     const merged = mergeSectionPatch(base, payload)
     // The write path validates against the (optionally stricter) write
     // schema; hydration and the merge base keep the lenient read schema.
-    const parsed = (meta.writeSchema ?? meta.schema).safeParse(merged)
+    const parsed = sectionWriteSchema(section, meta).safeParse(merged)
     if (!parsed.success) {
       throw new DomainError('BAD_REQUEST', INVALID_SETTINGS_DESCRIPTOR, zodIssuesToWire(parsed.error.issues))
     }

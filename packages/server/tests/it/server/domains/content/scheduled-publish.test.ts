@@ -6,6 +6,7 @@ vi.useFakeTimers()
 import { content } from '@kobato/db/schema/content.ts'
 import { page } from '@kobato/db/schema/page.ts'
 import { post } from '@kobato/db/schema/post.ts'
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@kobato/server/infra/cache/registry.ts'
@@ -17,7 +18,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
-import { APP_VERSION } from '@kobato/utils/version.ts'
 
 // The job against the real engine: real rows drive next-due and the effect
 // is real filesystem cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.

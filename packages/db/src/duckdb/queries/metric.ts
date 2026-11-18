@@ -1,4 +1,4 @@
-import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/contracts/analytics.ts'
+import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
 import type { AnalyticsDatabase, AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates.ts'

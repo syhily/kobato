@@ -1,41 +1,9 @@
-import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/utils/safe-url.ts'
-import { honeypotField } from '@kobato/utils/schema.ts'
 import { z } from 'zod'
 
-const commentHoneypot = honeypotField('subtitle')
-
-// JSON callers send `rid` as a number; `0` means top-level reply and is
-// normalised to `undefined` before `createComment`.
-export const commentReplySchema = z
-  .object({
-    page_key: z.string(),
-    name: z.string().max(100),
-    email: z.email(),
-    link: httpUrlOrEmptyStringSchema.optional(),
-    body: commentEditorStateSchema,
-    /** Unused; retained for wire compatibility. */
-    rid: z.number().optional(),
-    /** Leave blank — used for bot filtering only; stripped before `createComment`. */
-    subtitle: commentHoneypot.schema,
-  })
-  .superRefine(commentHoneypot.refine)
-export type CommentReplyInput = z.infer<typeof commentReplySchema>
-
-export const commentRidSchema = z.object({
-  // Typed catalog id: the input-validation issue carries it (no prose).
-  rid: z.string().regex(/^\d+$/, { message: 'comments.error.idInvalid' as const }),
-})
-export type CommentRidInput = z.infer<typeof commentRidSchema>
-
-export const commentEditSchema = z.object({ rid: z.string(), body: commentEditorStateSchema })
-export type CommentEditInput = z.infer<typeof commentEditSchema>
-
-export const loadCommentsSchema = z.object({
-  page_key: z.string(),
-  offset: z.coerce.number(),
-})
-export type LoadCommentsInput = z.infer<typeof loadCommentsSchema>
+// The public comment wire schemas (`commentReplySchema` / `commentRidSchema` /
+// `commentEditInputSchema` / the list/token/own-edit family) live in
+// `@kobato/contracts/comments.ts` — the single Zod source the `@kobato/api`
+// comments contract composes. This module keeps the server-side-only inputs.
 
 export const loadAllCommentsSchema = z.object({
   offset: z.number().min(0),

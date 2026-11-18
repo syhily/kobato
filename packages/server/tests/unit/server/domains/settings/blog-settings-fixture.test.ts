@@ -1,5 +1,5 @@
-import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 

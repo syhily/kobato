@@ -28,3 +28,15 @@ export const updateJobStatusDto = z.object({
   targetVersion: z.string().optional(),
 })
 export type UpdateJobStatus = z.infer<typeof updateJobStatusDto>
+
+export const adminUpdateApplyInput = z.object({})
+export type AdminUpdateApplyInput = z.infer<typeof adminUpdateApplyInput>
+
+export const adminUpdateApplyOutputDto = z.object({ fromVersion: z.string(), toVersion: z.string() })
+export type AdminUpdateApplyOutput = z.infer<typeof adminUpdateApplyOutputDto>
+
+export const adminUpdateCheckInput = z.object({})
+export type AdminUpdateCheckInput = z.infer<typeof adminUpdateCheckInput>
+
+export const adminUpdateStatusInput = z.object({})
+export type AdminUpdateStatusInput = z.infer<typeof adminUpdateStatusInput>

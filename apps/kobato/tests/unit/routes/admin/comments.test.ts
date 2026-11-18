@@ -1,5 +1,5 @@
 import { rootMatchesWithI18n, tZhCN } from '@kobato/test/i18n.ts'
-import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
+import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@kobato/web-admin/ui/comments/useCommentsController.ts'
 import { describe, expect, it } from 'vitest'
 
 import { meta } from '@/routes/admin/comments.tsx'

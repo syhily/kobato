@@ -1,6 +1,6 @@
-import { RATE_LIMIT_BUCKET_KEYS } from '@kobato/server/domains/settings/sections/rate-limit.ts'
 import { rateLimitDefaults } from '@kobato/settings/defaults.ts'
-import { BUCKET_META } from '@kobato/web/ui/admin/settings/rate-limit/constants.ts'
+import { RATE_LIMIT_BUCKET_KEYS } from '@kobato/settings/sections/rate-limit.ts'
+import { BUCKET_META } from '@kobato/web-admin/ui/settings/rate-limit/constants.ts'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

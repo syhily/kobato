@@ -1,9 +1,9 @@
-import type { ResolvedAnalyticsQuery, TimeUnit, ViewsDto, ViewsPoint } from '@kobato/contracts/analytics.ts'
+import type { ResolvedAnalyticsQuery, TimeUnit, ViewsPoint, ViewsSeries } from '@kobato/db/duckdb/queries/types.ts'
 import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
-import { pickTimeUnit } from '@kobato/contracts/analytics.ts'
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates.ts'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter.ts'
+import { pickTimeUnit } from '@kobato/db/duckdb/queries/types.ts'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { sql } from 'kysely'
 
@@ -14,7 +14,7 @@ const UNIT_FORMAT: Record<TimeUnit, string> = {
   day: '%Y-%m-%d',
 }
 
-export async function queryViews(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<ViewsDto> {
+export async function queryViews(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<ViewsSeries> {
   const unit = input.unit ?? pickTimeUnit(input.range)
   const clientTimezone = getSafeTimezone(input.clientTimezone ?? 'Etc/UTC')
 

@@ -1,10 +1,11 @@
+import type { Post } from '@kobato/catalog/catalog.ts'
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Post } from '@kobato/contracts/catalog.ts'
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types.ts'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor.ts'
 
+import { hasAtLeast } from '@kobato/auth/roles.ts'
 import { findCategoryById, findCategoryNamesByIds } from '@kobato/db/operations/category.ts'
 import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag.ts'
 import { findTagsByNames, seedTagsIfMissing } from '@kobato/db/operations/tag.ts'
@@ -39,7 +40,6 @@ import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { hasAtLeast } from '@kobato/utils/roles.ts'
 
 const log = getLogger('posts.service')
 

@@ -26,7 +26,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
 
 // Loader-surface test; the shared view is covered by the route snapshots.
-vi.mock('@kobato/web/ui/admin/analytics/PostAnalyticsView.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/analytics/PostAnalyticsView.tsx', () => ({
   PostAnalyticsHeader: () => null,
   PostAnalyticsView: () => null,
 }))

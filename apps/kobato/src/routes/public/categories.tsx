@@ -1,7 +1,7 @@
 import { listingHeaders } from '@kobato/server/http/loaders/route-exports.ts'
 import { createSsrCaller, unwrapListingPayload } from '@kobato/server/http/ssr-caller.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CategoriesBody } from '@kobato/web/ui/public/post/CategoriesBody.tsx'
+import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody.tsx'
 import { data } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

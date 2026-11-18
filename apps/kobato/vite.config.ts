@@ -13,7 +13,7 @@ import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 import { z } from 'zod'
 
-import { inlinePackageDataPlugin } from '../../packages/tools/pack/src/sea/inline-package-data.ts'
+import { inlinePackageDataPlugin } from '../../tools/pack/src/sea/inline-package-data.ts'
 
 const pkgSchema = z.object({
   name: z.string(),
@@ -43,11 +43,18 @@ const appDeclared = new Set([...Object.keys(rawPkg.dependencies ?? {}), ...Objec
 // that resolves through the owning package's own node_modules.
 const depOwner = new Map<string, string>()
 for (const dir of [
+  'packages/api',
   'packages/db',
-  'packages/web',
+  'packages/web/client',
+  'packages/web/public',
+  'packages/web/admin',
   'packages/ui',
   'packages/server',
   'packages/shared/utils',
+  'packages/shared/auth',
+  'packages/shared/catalog',
+  'packages/shared/distribution',
+  'packages/shared/telemetry',
   'packages/shared/i18n',
   'packages/shared/cache',
   'packages/shared/settings',
@@ -189,7 +196,7 @@ export default defineConfig(({ command }) => ({
     //
     // pnpm isolation resolves a bare include hint against THIS package's
     // node_modules, so a dep owned by a sibling workspace package needs the
-    // nested form (`@kobato/web > date-fns`) that resolves through the
+    // nested form (`@kobato/web-admin > date-fns`) that resolves through the
     // owning package — the crawl reaches it through that package's imports.
     include: optimizeIncludeHints([
       'react/compiler-runtime',

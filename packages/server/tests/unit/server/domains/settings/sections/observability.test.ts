@@ -1,8 +1,5 @@
-import {
-  observabilityDefaults,
-  observabilitySchema,
-  observabilityWriteSchema,
-} from '@kobato/server/domains/settings/sections/observability.ts'
+import { observabilityWriteSchema } from '@kobato/server/domains/settings/sections/observability.ts'
+import { observabilityDefaults, observabilitySchema } from '@kobato/settings/sections/observability.ts'
 import { describe, expect, it } from 'vitest'
 
 const VALID = {

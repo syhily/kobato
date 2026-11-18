@@ -1,11 +1,11 @@
+import { upsertPageMetaSchema } from '@kobato/contracts/pages.ts'
+import { upsertPostMetaSchema } from '@kobato/contracts/posts.ts'
 import {
   CONTENT_LANGUAGE_MAX_LENGTH,
   canonicalContentLanguage,
   isContentLanguageInput,
 } from '@kobato/i18n/content-language.ts'
 import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields.ts'
-import { upsertPageMetaSchema } from '@kobato/server/domains/pages/schema.ts'
-import { upsertPostMetaSchema } from '@kobato/server/domains/posts/schema.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { describe, expect, it } from 'vitest'
 

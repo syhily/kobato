@@ -1,28 +1,20 @@
-import { publicMusicMetaDto } from '@kobato/contracts/music.ts'
+import { musicContract } from '@kobato/api/music.ts'
 import { getMusicMetaForPlayer } from '@kobato/server/domains/music/services/read.ts'
-import { localizedOrpcError, publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
-import { z } from 'zod'
+import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 
-const get = publicProc
-  .route({ method: 'GET', path: '/music/get' })
-  // Limiter before `.input(...)`: oRPC validates input at its declared
-  // index, so a trailing middleware never sees a malformed payload.
-  .use(resourceRateLimit)
-  .input(
-    z.object({
-      id: z
-        .string()
-        .trim()
-        .regex(/^[a-z0-9]{16}$/, 'invalid player id'),
-    }),
-  )
-  .output(z.object({ music: publicMusicMetaDto }))
-  .handler(async ({ input, context }) => {
-    const meta = await getMusicMetaForPlayer(context.db, input.id)
-    if (meta === null) {
-      throw localizedOrpcError(context, 'NOT_FOUND', 'music.error.notFoundOrOffline')
-    }
-    return { music: meta }
-  })
+// Contract-first: method/path/input/output live in `@kobato/api/music.ts`;
+// this controller only implements the procedures. The limiter rides the
+// implementer so it runs BEFORE the contract's input validation.
+const impl = implementPublic(musicContract).use(resourceRateLimit)
 
-export const musicRouter = { get }
+const get = impl.get.handler(async ({ input, context }) => {
+  const meta = await getMusicMetaForPlayer(context.db, input.id)
+  if (meta === null) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'music.error.notFoundOrOffline')
+  }
+  return { music: meta }
+})
+
+export const musicRouter = impl.router({
+  get,
+})

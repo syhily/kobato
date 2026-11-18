@@ -1,4 +1,4 @@
-import type { DetailPageShell, DraftMarker, Page } from '@kobato/contracts/catalog.ts'
+import type { DetailPageShell, DraftMarker, Page } from '@kobato/catalog/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 

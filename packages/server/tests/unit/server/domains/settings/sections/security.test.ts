@@ -1,4 +1,4 @@
-import { securitySchema } from '@kobato/server/domains/settings/sections/security.ts'
+import { securitySchema } from '@kobato/settings/sections/security.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('securitySchema', () => {

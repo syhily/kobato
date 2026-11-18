@@ -1,11 +1,11 @@
 // Latest-release lookup against the GitHub Releases API.
 // Shared by the public `github.release` procedure and the self-update domain.
 
+import { APP_REPOSITORY } from '@kobato/distribution/app.ts'
 import { through } from '@kobato/server/infra/cache/registry.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
-import { APP_REPOSITORY } from '@kobato/utils/version.ts'
 
 export interface LatestRelease {
   tagName: string

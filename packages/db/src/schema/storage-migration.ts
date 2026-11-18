@@ -1,7 +1,25 @@
-import type { StorageMigrationDirection, StorageMigrationPersistedPhase } from '@kobato/contracts/storage.ts'
-
 import { sql } from 'drizzle-orm'
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+
+// Persistence-canonical storage-migration vocabulary — the `$type` unions of
+// the singleton row's `direction`/`phase` columns. The wire twins (zod enums
+// + the status DTO with the derived `idle`/`interrupted` phases) live in
+// `@kobato/contracts/storage`; the lists stay value- and order-identical,
+// pinned by `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`.
+
+export const STORAGE_MIGRATION_DIRECTIONS = ['local-to-s3', 's3-to-local', 's3-to-s3'] as const
+export type StorageMigrationDirection = (typeof STORAGE_MIGRATION_DIRECTIONS)[number]
+
+/** Every phase the singleton row can persist; the wire adds the derived `idle` / `interrupted`. */
+export const STORAGE_MIGRATION_PERSISTED_PHASES = [
+  'copying',
+  'switching',
+  'catching-up',
+  'completed',
+  'failed',
+  'cancelled',
+] as const
+export type StorageMigrationPersistedPhase = (typeof STORAGE_MIGRATION_PERSISTED_PHASES)[number]
 
 // Storage migration state — a single-row table (id is pinned to 1) tracking
 // the current/last storage migration task. `target_storage` holds the S3

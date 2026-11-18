@@ -10,11 +10,11 @@ import {
   OBSERVABILITY_DASHBOARD_FILES,
   SEA_OBSERVABILITY_DASHBOARD_PREFIX,
   SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY,
-} from '@kobato/contracts/sea/assets.ts'
-import { RUM_PRIVACY_VRL_SHA256 } from '@kobato/contracts/trace-pipeline.ts'
+} from '@kobato/distribution/sea-assets.ts'
 import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { readAssetTextOrDisk } from '@kobato/server/infra/sea-asset.ts'
+import { RUM_PRIVACY_VRL_SHA256 } from '@kobato/telemetry/pipeline.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'

@@ -1,6 +1,6 @@
 # UI style conventions
 
-`packages/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and `@source` graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web`.
+`packages/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and `@source` graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-admin`.
 
 ## Generic styles
 

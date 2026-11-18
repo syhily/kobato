@@ -10,12 +10,12 @@ import {
   ensureMatchesSlot,
   putBrandingObject,
 } from '@kobato/server/domains/assets/services/storage.ts'
-import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { activeBackend } from '@kobato/server/infra/storage/registry.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 const log = getLogger('branding.management')

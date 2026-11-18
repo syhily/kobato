@@ -3,12 +3,12 @@
 
 import type { UpdateCheckResult } from '@kobato/contracts/update.ts'
 
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { startUpdateJob } from '@kobato/server/domains/update/job.ts'
 import { fetchLatestRelease } from '@kobato/server/domains/update/release.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { evaluateSelfUpdateGate } from '@kobato/server/infra/self-update-gate.ts'
-import { APP_VERSION } from '@kobato/utils/version.ts'
 
 // Semver-lite: numeric `x.y.z` triples, pre-release suffixes ignored.
 function parseTriple(version: string): [number, number, number] {

@@ -8,7 +8,9 @@
   },
   "devDependencies": {
     "@kobato/assets": "workspace:*",
+    "@kobato/auth": "workspace:*",
     "@kobato/cache": "workspace:*",
+    "@kobato/catalog": "workspace:*",
     "@kobato/contracts": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/lexical": "workspace:*",

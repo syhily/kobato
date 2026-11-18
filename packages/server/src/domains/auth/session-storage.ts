@@ -1,5 +1,5 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { Database } from '@kobato/db/database.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 import type { Session } from 'react-router'
 
 import { session as sessionTable } from '@kobato/db/schema/session.ts'

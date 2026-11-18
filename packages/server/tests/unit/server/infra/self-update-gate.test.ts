@@ -17,7 +17,7 @@ const seaMocks = vi.hoisted(() => ({ isSea: vi.fn() }))
 vi.mock('@kobato/server/infra/sea.ts', () => ({ isSea: seaMocks.isSea }))
 
 const versionState = vi.hoisted(() => ({ value: '6.4.0' }))
-vi.mock('@kobato/utils/version.ts', () => ({
+vi.mock('@kobato/distribution/app.ts', () => ({
   get APP_VERSION() {
     return versionState.value
   },

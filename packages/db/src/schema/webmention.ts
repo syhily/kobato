@@ -1,11 +1,34 @@
-import {
-  WEBMENTION_OUTBOX_STATUSES,
-  WEBMENTION_STATUSES,
-  WEBMENTION_TYPES,
-  WEBMENTION_VERIFY_STATUSES,
-} from '@kobato/contracts/webmentions.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+
+// Persistence-canonical webmention value lists — the single source for the
+// drizzle `text({ enum })` columns and the SQL CHECK literals below. The wire
+// twins (zod enums + DTOs) live in `@kobato/contracts/webmentions` and in
+// `domains/webmentions/schema.ts`; both sides must stay value- and
+// order-identical, pinned by
+// `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`. Order is
+// load-bearing: the CHECK literals are generated from these arrays.
+
+// Webmention moderation lifecycle: `pending` rows await admin review;
+// `rejected` rows are kept (auditable). `hidden` follows 7 consecutive
+// daily re-verification failures — only a manual re-verification restores `approved`.
+export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden'] as const
+export type WebmentionStatus = (typeof WEBMENTION_STATUSES)[number]
+
+// Webmention source verification state: `failed` carries the last failure message in `last_error`.
+export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
+export type WebmentionVerifyStatus = (typeof WEBMENTION_VERIFY_STATUSES)[number]
+
+// Webmention response type (W3C / IndieWeb mf2 classification): detected from
+// `u-in-reply-to` / `u-repost-of` / `u-like-of` markers, no marker = `mention`;
+// presentational grouping only — moderation and verification treat all types alike.
+export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
+export type WebmentionType = (typeof WEBMENTION_TYPES)[number]
+
+// Webmention send lifecycle: `sent` / `no-endpoint` / `failed` are terminal and kept (the row IS the send log);
+// a republish resets `no-endpoint` / `failed` back to `pending`, but never `sent`.
+export const WEBMENTION_OUTBOX_STATUSES = ['pending', 'sent', 'no-endpoint', 'failed'] as const
+export type WebmentionOutboxStatus = (typeof WEBMENTION_OUTBOX_STATUSES)[number]
 
 // CHECK literal built from the canonical enum arrays — the generated SQL
 // is byte-identical to a hand-written `IN ('a', 'b', …)` list, so changing

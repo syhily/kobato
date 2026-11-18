@@ -1,0 +1,63 @@
+import { Button } from '@kobato/ui/components/button.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import {
+  buildAnalyticsInput,
+  type AnalyticsScope,
+  type AnalyticsState,
+} from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
+import { orpc } from '@kobato/web-client/api/client.ts'
+import { DownloadIcon } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+
+export interface ExportButtonProps {
+  state: AnalyticsState
+  className?: string
+  scope?: AnalyticsScope
+}
+
+export function ExportButton({ state, className, scope }: ExportButtonProps) {
+  const { t } = useI18n()
+  const [pending, setPending] = useState(false)
+
+  const download = async () => {
+    setPending(true)
+    try {
+      const csv = await orpc.analytics.export(buildAnalyticsInput(state, { scope, limit: 500 }))
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `kobato-analytics-${formatStamp(state.range.startAt)}-${formatStamp(state.range.endAt)}.csv`
+      document.body.append(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error(t('admin.analytics.export.failed'))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={pending}
+      onClick={() => void download()}
+      className={cn('gap-1.5', className)}
+    >
+      <DownloadIcon data-icon aria-hidden />
+      {pending ? t('admin.analytics.export.exporting') : t('admin.analytics.export.csv')}
+    </Button>
+  )
+}
+
+function formatStamp(unixSec: number): string {
+  const d = new Date(unixSec * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
+}

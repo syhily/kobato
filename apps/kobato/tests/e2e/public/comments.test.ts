@@ -1,5 +1,5 @@
-import { E2eClient, e2eEnv, getAdminCsrfToken, getPublicCsrfToken, loginAdmin } from '@kobato/test/e2e-client.ts'
-import { callE2eRpc } from '@kobato/test/e2e-rpc.ts'
+import { E2eClient, e2eEnv, getAdminCsrfToken, getPublicCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
+import { callE2eRpc } from '@kobato/harness/rpc.ts'
 import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()

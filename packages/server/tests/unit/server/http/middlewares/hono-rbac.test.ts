@@ -1,6 +1,6 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'

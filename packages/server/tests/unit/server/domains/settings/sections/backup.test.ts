@@ -1,4 +1,4 @@
-import { backupSchema } from '@kobato/server/domains/settings/sections/backup.ts'
+import { backupSchema } from '@kobato/settings/sections/backup.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('contract/backup-schema', () => {

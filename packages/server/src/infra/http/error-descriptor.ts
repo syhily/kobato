@@ -14,10 +14,10 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type { z } from 'zod'
 
+import { zodIssueParams } from '@kobato/contracts/api-error.ts'
 import { BASE_LOCALE } from '@kobato/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { zodIssueParams } from '@kobato/utils/zod-issue-bounds.ts'
 
 /** The passthrough catalog key wrapping raw text. */
 export const RAW_MESSAGE_KEY = 'error.api.rawMessage'

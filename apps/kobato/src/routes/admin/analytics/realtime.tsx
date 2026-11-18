@@ -1,6 +1,6 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { RealtimeFeed } from '@kobato/web/ui/admin/analytics/RealtimeFeed.tsx'
+import { RealtimeFeed } from '@kobato/web-admin/ui/analytics/RealtimeFeed.tsx'
 
 export const loader = guardOnlyLoader('admin')
 

@@ -7,11 +7,11 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
 import type { z } from 'zod'
 
+import { zodIssueParams } from '@kobato/contracts/api-error.ts'
 import { checkMailReady } from '@kobato/server/infra/email/sender.ts'
 import { descriptorFor, isUiMessageId, messageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { zodIssueParams } from '@kobato/utils/zod-issue-bounds.ts'
 
 /** A flow error whose copy the sign-in route translates for the request locale. */
 export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>

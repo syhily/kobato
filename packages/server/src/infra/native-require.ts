@@ -11,7 +11,7 @@ import {
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
-} from '@kobato/contracts/sea/assets.ts'
+} from '@kobato/distribution/sea-assets.ts'
 import { getEmbeddedAsset, requireExternal } from '@kobato/server/infra/sea.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { join } from 'node:path'

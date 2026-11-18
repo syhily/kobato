@@ -1,11 +1,13 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { AnalyticsOverviewData, MetricRow } from '@kobato/contracts/analytics.ts'
 import type { DraftSummary } from '@kobato/contracts/dashboard.ts'
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { AccountProfile } from '@kobato/contracts/users.ts'
 import type { SettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 
 import { clearable, mergePatchInput } from '@kobato/contracts/merge-patch.ts'
+import { loginMethodSchema, newPasswordSchema, passkeyOptionsOutputSchema } from '@kobato/contracts/users.ts'
+import { type SettingsSection, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
 import { optionalHttpUrlSchema } from '@kobato/utils/safe-url.ts'
 import { z } from 'zod'
 
@@ -57,6 +59,72 @@ export interface AdminSessionDto extends AccountSessionDto {
 
 export const accountSessionsOutputSchema = z.custom<AccountSessionDto[]>()
 export type AccountSessionsOutput = z.infer<typeof accountSessionsOutputSchema>
+
+// Safe subset of user fields exposed back to the account owner after a
+// profile edit — deliberately excludes password, lastIp, lastUa and the
+// admin-only counters.
+export const accountUserDto = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  link: z.string().nullable(),
+  badgeName: z.string().nullable(),
+  badgeColor: z.string().nullable(),
+  badgeTextColor: z.string().nullable(),
+  role: z.enum(['admin', 'author', 'visitor']).nullable(),
+  emailVerified: z.boolean(),
+})
+export type AccountUserDto = z.infer<typeof accountUserDto>
+
+export const accountUpdateProfileOutputSchema = z.object({ user: accountUserDto })
+export type AccountUpdateProfileOutput = z.infer<typeof accountUpdateProfileOutputSchema>
+
+export const accountUpdatePasswordInput = z.object({
+  oldPassword: z.string().min(1),
+  newPassword: newPasswordSchema(),
+})
+export type AccountUpdatePasswordInput = z.infer<typeof accountUpdatePasswordInput>
+
+export const accountRevokeSessionInput = z.object({ id: z.string().min(1) })
+
+export const accountRevokeSessionOutputSchema = z.object({
+  success: z.boolean(),
+  currentSession: z.boolean(),
+})
+export type AccountRevokeSessionOutput = z.infer<typeof accountRevokeSessionOutputSchema>
+
+// Passkey credential list for the account security card.
+export const accountPasskeyListOutputSchema = z.object({
+  credentials: z.array(
+    z.object({
+      id: z.string(),
+      deviceName: z.string().nullable(),
+      createdAt: z.string(),
+      backedUp: z.boolean(),
+    }),
+  ),
+})
+export type AccountPasskeyListOutput = z.infer<typeof accountPasskeyListOutputSchema>
+
+// Registration options/finish come from `@simplewebauthn/server` — opaque to
+// the wire schema (`z.any()`), validated inside the auth domain.
+export const accountPasskeyRegisterBeginInput = z.object({ deviceName: z.string().max(100).optional() })
+export type AccountPasskeyRegisterBeginInput = z.infer<typeof accountPasskeyRegisterBeginInput>
+
+export const accountPasskeyRegisterBeginOutputSchema = passkeyOptionsOutputSchema
+
+export const accountPasskeyRegisterFinishInput = z.object({
+  response: z.any(),
+  deviceName: z.string().max(100).optional(),
+  challenge: z.string().min(1),
+})
+export type AccountPasskeyRegisterFinishInput = z.infer<typeof accountPasskeyRegisterFinishInput>
+
+export const accountPasskeyDeleteInput = z.object({ credentialId: z.string().min(1) })
+export type AccountPasskeyDeleteInput = z.infer<typeof accountPasskeyDeleteInput>
+
+export const accountSetLoginMethodInput = z.object({ method: loginMethodSchema })
+export type AccountSetLoginMethodInput = z.infer<typeof accountSetLoginMethodInput>
 
 export const adminUsersCountOutputSchema = z.number().int().nonnegative()
 
@@ -150,3 +218,21 @@ export const adminSettingsBootstrapOutputSchema = z.object({
   masks: z.custom<SecretMasks>(),
 })
 export type AdminSettingsBootstrapOutput = z.infer<typeof adminSettingsBootstrapOutputSchema>
+
+// `admin.settings.update` — a strict-keyed section patch. The section enum
+// covers every registry section; the payload is validated server-side against
+// the section's write schema (unknown keys reject with `unrecognizedKeys`).
+export const adminSettingsUpdateInput = z.object({
+  section: z.enum([...SETTINGS_SECTIONS] as [SettingsSection, ...SettingsSection[]]),
+  payload: z.record(z.string(), z.unknown()),
+})
+export type AdminSettingsUpdateInput = z.infer<typeof adminSettingsUpdateInput>
+
+// The response is authoritative: the merged, validated section in the admin
+// display shape. The client adopts it for DISPLAY — a save must never refetch
+// the document out from under the user's hands — while its form baseline
+// advances to the submitted values (patches are sparse, so the response also
+// carries fields this card never sent). The REAL runtime gate lives in the
+// server's `projectSectionForAdmin`.
+export const adminSettingsUpdateOutput = z.object({ section: z.unknown(), warnings: z.array(z.string()) })
+export type AdminSettingsUpdateOutput = z.infer<typeof adminSettingsUpdateOutput>

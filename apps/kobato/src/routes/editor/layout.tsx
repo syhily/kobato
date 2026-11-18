@@ -1,7 +1,7 @@
+import { hasAtLeast } from '@kobato/auth/roles.ts'
 import { getRequestContext } from '@kobato/server/http/request-context.ts'
-import { hasAtLeast } from '@kobato/utils/roles.ts'
-import { useDetachPublicCss } from '@kobato/web/client/hooks/use-detach-public-css.ts'
-import { AdminErrorFallback } from '@kobato/web/ui/admin/shell/AdminErrorFallback.tsx'
+import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback.tsx'
+import { useDetachPublicCss } from '@kobato/web-client/hooks/use-detach-public-css.ts'
 import { data, Outlet, redirect } from 'react-router'
 
 import type { RouteHandle } from '@/root.tsx'

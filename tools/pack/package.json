@@ -1,0 +1,21 @@
+{
+  "name": "@kobato/pack",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@duckdb/node-api": "catalog:",
+    "@kobato/contracts": "workspace:*",
+    "@kobato/distribution": "workspace:*",
+    "@kobato/harness": "workspace:*",
+    "@kobato/server": "workspace:*",
+    "@types/node": "catalog:",
+    "bcryptjs": "catalog:",
+    "sharp": "catalog:",
+    "vite": "catalog:",
+    "zod": "catalog:"
+  }
+}

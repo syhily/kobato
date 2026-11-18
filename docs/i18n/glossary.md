@@ -16,7 +16,7 @@ difference.
 - Snapshot date: 2026-11-08; source worktree `tmp/i18n-executor`, baseline commit `bcc0ccfe` plus the
   current slice's changes.
 - The UI figure 2793 is the planned baseline from plan 002. That worktree is being extended with keys by
-  parallel slices, so the current count per locale is whatever `packages/tools/i18n/src/regional-diff.ts` reports;
+  parallel slices, so the current count per locale is whatever `tools/i18n/src/regional-diff.ts` reports;
   the **values** in this table are still copied verbatim from the current catalogs.
 - Values in the tables are copied verbatim from the files above, not paraphrased or "suggested"
   translations. When a catalog changes, update this table and

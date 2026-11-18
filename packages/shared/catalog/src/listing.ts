@@ -1,0 +1,35 @@
+import type { ListingPostCardWithMetadata } from '@kobato/catalog/catalog.ts'
+import type { MetaDescriptor } from 'react-router'
+
+// Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
+// `/tags/:slug`, `/search/:keyword`); `extra` is the per-route slot for
+// sidebar/feature data. Lives in `shared/` so the `content.*` contracts
+// can type their listing output against it.
+export interface ListingPageLoaderData<TExtra = undefined> {
+  pageNum: number
+  totalPage: number
+  rootPath: string
+  resolvedPosts: ListingPostCardWithMetadata[]
+  title?: string
+  description?: string
+  /** Pre-computed `MetaDescriptor[]` ready to return from `meta()`. */
+  seo: MetaDescriptor[]
+  extra: TExtra
+  /** ISO instant captured once per loader run; thread into `formatShowDate` so SSR matches hydration. */
+  listingNowIso: string
+}
+
+/**
+ * Route-layer listing data: the content payload plus the request's minted
+ * analytics event id for the client beacon. The content API payload itself
+ * stays event-id-free — the route attaches the id.
+ */
+export interface PublicListingLoaderData<TExtra = undefined> extends ListingPageLoaderData<TExtra> {
+  eid: string | null
+}
+
+export interface ListingExtraArgs<TPost = ListingPostCardWithMetadata> {
+  resolvedPosts: TPost[]
+  pageNum: number
+  totalPage: number
+}

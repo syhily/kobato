@@ -1,5 +1,5 @@
-import { METRIC_TYPES } from '@kobato/contracts/analytics.ts'
 import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions.ts'
+import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types.ts'
 import { compileAnalyticsQuery, createAnalyticsQuery, createEnvMetricQuery } from '@kobato/db/duckdb/query.ts'
 import { describe, expect, it } from 'vitest'
 

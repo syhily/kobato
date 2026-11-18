@@ -1,24 +1,19 @@
+import { passkeyContract } from '@kobato/api/passkey.ts'
 import { generateAuthenticationOptions } from '@kobato/server/domains/auth/passkey/service.ts'
-import { passkeyGuard, publicProc } from '@kobato/server/http/orpc-base.ts'
+import { implementPublic, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryPasskeyAuthBeginRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { z } from 'zod'
+
+// Contract-first: method/path/input/output live in `@kobato/api/passkey.ts`;
+// this controller only implements the procedures.
 
 /**
  * Public passkey endpoints. `authBegin` is CSRF-less: it only returns a
  * single-use 5-minute challenge — no data is read or mutated.
  */
-
-const authBegin = publicProc
-  .route({ method: 'POST', path: '/passkey/auth-begin' })
-  .input(
-    z.object({
-      email: z.email().optional(),
-    }),
-  )
-  .output(z.object({ options: z.any() }))
-  .use(passkeyGuard)
+const authBegin = implementPublic(passkeyContract)
+  .authBegin.use(passkeyGuard)
   .handler(async ({ input, context }) => {
     const limit = await tryPasskeyAuthBeginRateLimit(context.clientAddress)
     if (limit.exceeded) {
@@ -28,6 +23,6 @@ const authBegin = publicProc
     return { options }
   })
 
-export const passkeyPublicRouter = {
+export const passkeyPublicRouter = implementPublic(passkeyContract).router({
   authBegin,
-}
+})

@@ -7,7 +7,7 @@
     "@kobato/inkling": "workspace:*",
     "@kobato/lexical": "workspace:*",
     "@kobato/ui": "workspace:*",
-    "@kobato/web": "workspace:*",
+    "@kobato/web-public": "workspace:*",
     "@lexical/list": "catalog:",
     "@lexical/react": "catalog:",
     "@tailwindcss/vite": "catalog:",

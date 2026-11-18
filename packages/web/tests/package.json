@@ -1,0 +1,23 @@
+{
+  "name": "@kobato/web-tests",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@kobato/catalog": "workspace:*",
+    "@kobato/inkling": "workspace:*",
+    "@kobato/lexical": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/ui": "workspace:*",
+    "@kobato/utils": "workspace:*",
+    "@kobato/web-admin": "workspace:*",
+    "@kobato/web-client": "workspace:*",
+    "@kobato/web-public": "workspace:*",
+    "@testing-library/react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,3 +1,3 @@
-import config from '@kobato/config/oxlint.config.ts'
+import config from '@kobato/toolchain/oxlint.config.ts'
 
 export default config

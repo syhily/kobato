@@ -1,0 +1,296 @@
+import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@kobato/contracts/comments.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+
+import { Badge } from '@kobato/ui/components/badge.tsx'
+import { Button } from '@kobato/ui/components/button.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { formatLocalDate } from '@kobato/utils/formatter.ts'
+import { orpc } from '@kobato/web-client/api/client.ts'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { ArrowRightIcon, CheckIcon, LightbulbIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Link } from 'react-router'
+import { toast } from 'sonner'
+
+const PAGE_SIZE = 3
+const ROW_DATE_FORMAT = 'LL-dd HH:mm'
+
+export interface PendingModerationPanelProps {
+  initial: ListPendingDashboardOutput
+  /** Catalog id picked by the loader — resolved here so the server never renders copy. */
+  emptyStateLineId: UiMessageId
+}
+
+export function PendingModerationPanel({ initial, emptyStateLineId }: PendingModerationPanelProps) {
+  const { t } = useI18n()
+  const [offset, setOffset] = useState(0)
+
+  const {
+    data,
+    isPending: isListPending,
+    refetch,
+  } = useQuery(
+    orpcQuery.admin.comments.listPendingDashboard.queryOptions({
+      input: { kind: 'all', offset, limit: PAGE_SIZE },
+      // The SSR payload is page 0 only — seeding it under later offsets would
+      // briefly show page-0 rows on every other page before refetch lands.
+      initialData: offset === 0 ? initial : undefined,
+    }),
+  )
+
+  const switchPage = (nextOffset: number) => {
+    if (nextOffset === offset || nextOffset < 0) {
+      return
+    }
+    setOffset(nextOffset)
+  }
+
+  const refresh = useCallback(() => {
+    void refetch()
+  }, [refetch])
+
+  const approveApi = useMutation({
+    mutationFn: (vars: { commentId: string }) => orpc.admin.comments.approve({ commentId: vars.commentId }),
+    onSuccess: () => {
+      toast.success(t('admin.welcome.pending.approved'))
+      refresh()
+    },
+    onError: onMutationError('admin.toast.operationFailedRefresh', t),
+  })
+  const rejectApi = useMutation({
+    mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
+    onSuccess: () => {
+      toast.success(t('admin.welcome.pending.rejected'))
+      refresh()
+    },
+    onError: onMutationError('admin.toast.operationFailedRefresh', t),
+  })
+  const approveDeletionApi = useMutation({
+    ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
+    onSuccess: (data) => {
+      toast.success(
+        data ? t('admin.welcome.pending.deletionHandled') : t('admin.welcome.pending.deletionHandledGeneric'),
+      )
+      refresh()
+    },
+    onError: onMutationError('admin.toast.operationFailedRefresh', t),
+  })
+
+  const onApprove = (item: AdminPendingItemDto) => {
+    approveApi.mutate({ commentId: item.id })
+  }
+  const onReject = (item: AdminPendingItemDto) => {
+    rejectApi.mutate({ commentId: item.id })
+  }
+  const onApproveDeletion = (item: AdminPendingItemDto) => {
+    approveDeletionApi.mutate({ commentId: item.id, approve: true })
+  }
+  const onRejectDeletion = (item: AdminPendingItemDto) => {
+    approveDeletionApi.mutate({ commentId: item.id, approve: false })
+  }
+
+  const anyMutationPending =
+    approveApi.isPending || rejectApi.isPending || approveDeletionApi.isPending || isListPending
+
+  // `data` is undefined only while a later page is loading — page 0 is always
+  // seeded from the SSR payload via `initialData`.
+  const totalPages = data === undefined ? 1 : Math.max(1, Math.ceil(data.total / PAGE_SIZE))
+  const currentPage = Math.floor(offset / PAGE_SIZE) + 1
+
+  return (
+    // Compact fixed-frame card: exactly five rows + slim chrome; the body is
+    // the only scroll container (header / pagination pinned via `shrink-0`).
+    <div className="flex min-h-[280px] flex-col rounded-xl border bg-card p-5">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-medium">
+            {t('admin.welcome.pending.title')}{' '}
+            <span className="ml-1 text-base font-normal text-muted-foreground">
+              · {data?.counts.all ?? initial.counts.all}
+            </span>
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('admin.welcome.pending.description')}</p>
+        </div>
+        {/* Both header CTAs share the same ghost-button shape so "refresh"
+            and "go to full moderation page" read as one inline action group. */}
+        <div className="flex items-center gap-1">
+          <Button type="button" variant="ghost" size="sm" onClick={refresh} disabled={anyMutationPending}>
+            <RefreshCwIcon data-icon /> <span className="hidden sm:inline">{t('admin.welcome.pending.refresh')}</span>
+          </Button>
+          <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/comments?status=pending" />}>
+            <span className="hidden sm:inline">{t('admin.welcome.pending.manage')}</span> <ArrowRightIcon data-icon />
+          </Button>
+        </div>
+      </div>
+
+      {/* The only scroll container. `min-h-0` lets the flex parent compute
+          available height so the inner `overflow-y-auto` actually engages. */}
+      <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+        {data === undefined ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">{t('common.state.loading')}</p>
+        ) : data.items.length === 0 ? (
+          <EmptyState line={t(emptyStateLineId)} />
+        ) : (
+          <ul className="flex flex-col divide-y divide-border">
+            {data.items.map((item) => (
+              <PendingRow
+                key={item.id}
+                item={item}
+                disabled={anyMutationPending}
+                onApprove={onApprove}
+                onReject={onReject}
+                onApproveDeletion={onApproveDeletion}
+                onRejectDeletion={onRejectDeletion}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {data !== undefined && data.total > PAGE_SIZE && (
+        <div className="mt-3 flex shrink-0 items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>
+            {t('admin.welcome.pending.pagination', {
+              total: data.total,
+              page: currentPage,
+              pages: totalPages,
+            })}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => switchPage(Math.max(0, offset - PAGE_SIZE))}
+              disabled={offset === 0 || anyMutationPending}
+            >
+              {t('common.pagination.previous')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => switchPage(offset + PAGE_SIZE)}
+              disabled={!data.hasMore || anyMutationPending}
+            >
+              {t('common.pagination.next')}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface PendingRowProps {
+  item: AdminPendingItemDto
+  disabled: boolean
+  onApprove: (item: AdminPendingItemDto) => void
+  onReject: (item: AdminPendingItemDto) => void
+  onApproveDeletion: (item: AdminPendingItemDto) => void
+  onRejectDeletion: (item: AdminPendingItemDto) => void
+}
+
+function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, onRejectDeletion }: PendingRowProps) {
+  const { t } = useI18n()
+  const config = useSiteIdentity()
+  const isDeletion = item.kind === 'deletion'
+  const timestampIso = isDeletion ? (item.deleteRequestedAtIso ?? item.createdAtIso) : item.createdAtIso
+  const timestampLabel = timestampIso ? formatLocalDate(new Date(timestampIso), ROW_DATE_FORMAT, config) : ''
+  return (
+    // Two-track row: stacks below `sm` so a phone user reads the excerpt first; on `sm+` the buttons float right.
+    <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4">
+      {/* Convention: admin layouts stack via flex gap, never `space-*` (boundaries contract test). */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
+          <span className="truncate font-medium text-foreground">{item.authorName}</span>
+          {isDeletion ? (
+            <Badge variant="destructive" className="h-5 px-1.5 text-xs font-normal">
+              {t('admin.welcome.pending.deletionBadge')}
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="h-5 px-1.5 text-xs font-normal">
+              {t('admin.welcome.pending.reviewBadge')}
+            </Badge>
+          )}
+          {item.pagePermalink && item.pageTitle ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <Link to={item.pagePermalink} className="truncate text-foreground hover:underline">
+                《{item.pageTitle}》
+              </Link>
+            </>
+          ) : (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="truncate">{t('admin.welcome.pending.targetDeleted')}</span>
+            </>
+          )}
+          {timestampLabel && (
+            <>
+              <span aria-hidden="true">·</span>
+              <time dateTime={timestampIso} className="tabular-nums" title={timestampIso}>
+                {timestampLabel}
+              </time>
+            </>
+          )}
+        </div>
+        <p className="line-clamp-2 leading-snug break-words text-(--text-admin-base) text-foreground">
+          {item.excerpt || t('admin.welcome.pending.emptyComment')}
+        </p>
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:flex-nowrap">
+        {isDeletion ? (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              disabled={disabled}
+              onClick={() => onApproveDeletion(item)}
+            >
+              <Trash2Icon data-icon /> {t('admin.welcome.pending.approveDeletion')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="border-ink-4"
+              disabled={disabled}
+              onClick={() => onRejectDeletion(item)}
+            >
+              <XIcon data-icon /> {t('admin.welcome.pending.rejectDeletion')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button type="button" size="sm" disabled={disabled} onClick={() => onApprove(item)}>
+              <CheckIcon data-icon /> {t('admin.welcome.pending.approve')}
+            </Button>
+            <Button type="button" size="sm" variant="destructive" disabled={disabled} onClick={() => onReject(item)}>
+              <Trash2Icon data-icon /> {t('admin.welcome.pending.reject')}
+            </Button>
+          </>
+        )}
+      </div>
+    </li>
+  )
+}
+
+function EmptyState({ line }: { line: string }) {
+  return (
+    <div className="flex flex-col items-center gap-4 py-10 text-center">
+      <div className="flex size-24 items-center justify-center rounded-full bg-status-warn-bg">
+        <LightbulbIcon
+          aria-hidden="true"
+          strokeWidth={1.4}
+          className="size-14 text-status-warn-fg drop-shadow-[0_2px_10px_var(--status-warn-fg)]"
+        />
+      </div>
+      <p className="max-w-md text-(--text-admin-base) text-muted-foreground">{line}</p>
+    </div>
+  )
+}

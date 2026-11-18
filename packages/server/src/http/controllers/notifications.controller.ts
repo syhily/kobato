@@ -1,14 +1,4 @@
-import {
-  listNotificationsInput,
-  listNotificationsOutput,
-  markNotificationsReadInput,
-  markNotificationsUnreadInput,
-  notificationThreadInput,
-  notificationThreadOutput,
-  replyNotificationInput,
-  replyNotificationOutput,
-  unreadCountOutput,
-} from '@kobato/contracts/notifications.ts'
+import { notificationsContract } from '@kobato/api/notifications.ts'
 import {
   getThread,
   listInbox,
@@ -17,71 +7,56 @@ import {
   replyToThread,
   unreadCount,
 } from '@kobato/server/domains/notifications/service.ts'
-import { authedProc, notificationReplyRateLimit, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { implementAuthed, notificationReplyRateLimit, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 
-const list = authedProc
-  .route({ method: 'GET', path: '/notifications/list' })
-  .input(listNotificationsInput)
-  .output(listNotificationsOutput)
-  .handler(({ input, context }) =>
-    listInbox(context.db, Number(context.viewer.id), {
-      tab: input.tab,
-      cursor: input.cursor !== undefined ? Number(input.cursor) : undefined,
-      limit: input.limit,
-      locale: context.localization.locale,
-    }),
+// Contract-first: method/path/input/output live in `@kobato/api/notifications.ts`;
+// this controller only implements the procedures.
+const impl = implementAuthed(notificationsContract)
+
+const list = impl.list.handler(({ input, context }) =>
+  listInbox(context.db, Number(context.viewer.id), {
+    tab: input.tab,
+    cursor: input.cursor !== undefined ? Number(input.cursor) : undefined,
+    limit: input.limit,
+    locale: context.localization.locale,
+  }),
+)
+
+const unread = impl.unreadCount.handler(({ context }) => ({
+  count: unreadCount(context.db, Number(context.viewer.id)),
+}))
+
+const markReadProc = impl.markRead.handler(({ input, context }) => {
+  const userId = Number(context.viewer.id)
+  markRead(
+    context.db,
+    userId,
+    input.ids?.map((id) => Number(id)),
   )
+  return { count: unreadCount(context.db, userId) }
+})
 
-const unread = authedProc
-  .route({ method: 'GET', path: '/notifications/unread-count' })
-  .output(unreadCountOutput)
-  .handler(({ context }) => ({ count: unreadCount(context.db, Number(context.viewer.id)) }))
-
-const markReadProc = authedProc
-  .route({ method: 'POST', path: '/notifications/mark-read' })
-  .input(markNotificationsReadInput)
-  .output(unreadCountOutput)
-  .handler(({ input, context }) => {
-    const userId = Number(context.viewer.id)
-    markRead(
-      context.db,
-      userId,
-      input.ids?.map((id) => Number(id)),
-    )
-    return { count: unreadCount(context.db, userId) }
-  })
-
-const markUnreadProc = authedProc
-  .route({ method: 'POST', path: '/notifications/mark-unread' })
-  .input(markNotificationsUnreadInput)
-  .output(unreadCountOutput)
-  .handler(({ input, context }) => {
-    const userId = Number(context.viewer.id)
-    markUnread(
-      context.db,
-      userId,
-      input.ids.map((id) => Number(id)),
-    )
-    return { count: unreadCount(context.db, userId) }
-  })
-
-const thread = authedProc
-  .route({ method: 'GET', path: '/notifications/thread' })
-  .input(notificationThreadInput)
-  .output(notificationThreadOutput)
-  .handler(({ input, context }) =>
-    getThread(context.db, context.viewer, Number(input.threadId), context.localization.locale),
+const markUnreadProc = impl.markUnread.handler(({ input, context }) => {
+  const userId = Number(context.viewer.id)
+  markUnread(
+    context.db,
+    userId,
+    input.ids.map((id) => Number(id)),
   )
+  return { count: unreadCount(context.db, userId) }
+})
+
+const thread = impl.thread.handler(({ input, context }) =>
+  getThread(context.db, context.viewer, Number(input.threadId), context.localization.locale),
+)
 
 // Replies write to other users' inboxes AND mail the admin team — gate the
-// per-IP resource bucket and a per-user bucket.
-const reply = authedProc
+// per-IP resource bucket and a per-user bucket. Both limiters ride the
+// implementer so they run BEFORE the contract's input validation.
+const reply = impl
   .use(resourceRateLimit)
   .use(notificationReplyRateLimit)
-  .route({ method: 'POST', path: '/notifications/reply' })
-  .input(replyNotificationInput)
-  .output(replyNotificationOutput)
-  .handler(async ({ input, context }) => {
+  .reply.handler(async ({ input, context }) => {
     const result = await replyToThread(context.db, context.viewer, {
       threadId: Number(input.threadId),
       body: input.body,
@@ -89,11 +64,11 @@ const reply = authedProc
     return { message: result.message, threadId: String(result.threadId) }
   })
 
-export const notificationsRouter = {
+export const notificationsRouter = impl.router({
   list,
   unreadCount: unread,
   markRead: markReadProc,
   markUnread: markUnreadProc,
   thread,
   reply,
-}
+})

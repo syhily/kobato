@@ -1,356 +1,60 @@
-import type { CacheBucketSlot, TunableCacheBucketId } from '@kobato/cache/types.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { RumClientIdentity } from '@kobato/settings/rum-client-identity.ts'
-import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@kobato/settings/sections.ts'
-import type { SocialNetwork } from '@kobato/settings/socials.ts'
-import type { AvatarSource } from '@kobato/utils/avatar.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { z } from 'zod'
 
-// The DB stores one row per section; `BlogSettingsBundle` is the in-memory
-// composition of those rows.
+import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
+import { analyticsSection } from '@kobato/settings/sections/analytics.ts'
+import { assetsSection } from '@kobato/settings/sections/assets.ts'
+import { backupSection } from '@kobato/settings/sections/backup.ts'
+import { cacheSection } from '@kobato/settings/sections/cache.ts'
+import { commentsSection } from '@kobato/settings/sections/comments.ts'
+import { contentSection } from '@kobato/settings/sections/content.ts'
+import { fontsSection } from '@kobato/settings/sections/fonts.ts'
+import { generalSection } from '@kobato/settings/sections/general.ts'
+import { limitsSection } from '@kobato/settings/sections/limits.ts'
+import { mailSection } from '@kobato/settings/sections/mail.ts'
+import { navigationSection } from '@kobato/settings/sections/navigation.ts'
+import { newsletterSection } from '@kobato/settings/sections/newsletter.ts'
+import { observabilitySection } from '@kobato/settings/sections/observability.ts'
+import { rateLimitSection } from '@kobato/settings/sections/rate-limit.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
+import { securitySection } from '@kobato/settings/sections/security.ts'
+import { seoSection } from '@kobato/settings/sections/seo.ts'
+import { sidebarSection } from '@kobato/settings/sections/sidebar.ts'
+import { socialsSection } from '@kobato/settings/sections/socials.ts'
+import { webmentionsSection } from '@kobato/settings/sections/webmentions.ts'
 
-export interface SiteIdentitySettings {
-  title: string
-  titleSeparator: string
-  description: string
-  website: string
-  keywords: string[]
-  author: { name: string; email: string; url: string }
-  /** The single global UI locale; drives public/admin/auth/editor copy, formatting and server output. */
-  locale: AppLocale
-  timeZone: string
-  /** `null` = follow the locale's `Intl` default; a string is the admin's custom token pattern. */
-  timeFormat: string | null
-  initialYear: number
-  icpNo?: string
-  moeIcpNo?: string
-}
+export type SiteIdentitySettings = z.infer<typeof generalSection.schema>
+export type NavigationSettings = z.infer<typeof navigationSection.schema>
+export type SocialsSettings = z.infer<typeof socialsSection.schema>
+export type ContentSettings = z.infer<typeof contentSection.schema>
+export type SidebarSettings = z.infer<typeof sidebarSection.schema>
+export type CommentsSettings = z.infer<typeof commentsSection.schema>
+export type WebmentionsSettings = z.infer<typeof webmentionsSection.schema>
+export type SeoSettings = z.infer<typeof seoSection.schema>
+export type MailSettings = z.infer<typeof mailSection.schema>
+export type NewsletterSettings = z.infer<typeof newsletterSection.schema>
+export type CacheSettings = z.infer<typeof cacheSection.schema>
+export type RateLimitSettings = z.infer<typeof rateLimitSection.schema>
+export type FontsSettings = z.infer<typeof fontsSection.schema>
+export type AssetsSettings = z.infer<typeof assetsSection.schema>
+export type BackupSettings = z.infer<typeof backupSection.schema>
+export type LimitsSettings = z.infer<typeof limitsSection.schema>
+export type AnalyticsSettings = z.infer<typeof analyticsSection.schema>
+export type SecuritySettings = z.infer<typeof securitySection.schema>
+export type ObservabilitySettings = z.infer<typeof observabilitySection.schema>
 
-export interface NavigationItem {
-  text: string
-  link: string
-  target?: string
-}
-
-export interface NavigationSettings {
-  navigation: {
-    sideNav: NavigationItem[]
-    footerNav: FooterNavItem[]
-  }
-}
-
-export interface SocialItem {
-  name: string
-  network: SocialNetwork
-  type: 'link' | 'qrcode'
-  title?: string
-  link: string
-}
-
-export interface SocialsSettings {
-  socials: SocialItem[]
-}
-
-export interface ContentSettings {
-  pagination: {
-    posts: number
-    category: number
-    tags: number
-    search: number
-  }
-  feed: {
-    full: boolean
-    size: number
-  }
-  post: {
-    sort: 'asc' | 'desc'
-    sortBy: 'publishedAt' | 'updatedAt'
-    featureEnabled: boolean
-  }
-  /** Filled by the schema's default (`DEFAULT_FOOTNOTES_SECTION_TITLE`) on every read, so always present post-hydration. */
-  footnotes: {
-    sectionTitle: string
-  }
-}
-
-export type SidebarWidgetType = 'search' | 'recentPosts' | 'recentComments' | 'randomTags' | 'todayCalendar'
-
-export interface SidebarWidget {
-  type: SidebarWidgetType
-  enabled: boolean
-  count?: number
-}
-
-/** Calendar daily-quote sources: remote providers fall back to the built-in bank on failure; `custom` uses admin uploads (≥10, schema-enforced) and behaves like `local` below that. */
-export type DailyQuoteSource = 'shanbay' | 'one' | 'hitokoto' | 'custom' | 'local'
-
-export interface CustomQuote {
-  content: string
-  author: string
-}
-
-export interface SidebarSettings {
-  sidebar: {
-    widgets: SidebarWidget[]
-    /** Filled by the schema's `.default(...)` on every read, so always present post-hydration. */
-    dailyQuote: {
-      source: DailyQuoteSource
-      customQuotes: CustomQuote[]
-    }
-  }
-}
-
-export interface CommentsSettings {
-  comments: {
-    /** Page size for the inline comment thread. */
-    size: number
-    avatar: {
-      mirror: string
-      /** Upstream fetch order; the site default avatar is the implicit final fallback. */
-      sources: AvatarSource[]
-    }
-    /** GitHub PAT for the Search API email lookup; encrypted at rest, skipped when unset. */
-    githubToken?: string
-    /** TTL for the temporary comment edit token (seconds). */
-    tokenTtlSeconds: number
-  }
-}
-
-export interface WebmentionsSettings {
-  webmention: {
-    /** Off → POST /webmention answers 410 and the endpoint declaration is removed; existing rows stay moderation-able. */
-    receiveEnabled: boolean
-    /** Public gate: off → approved mentions are not rendered under posts/pages. */
-    displayOnPosts: boolean
-  }
-}
-
-export interface SeoSettings {
-  toc: {
-    minHeadingLevel: number
-    maxHeadingLevel: number
-  }
-  og: {
-    width: number
-    height: number
-  }
-}
-
-export type FooterNavItemType = 'social' | 'themeToggle' | 'search'
-
-export interface FooterNavItem {
-  type: FooterNavItemType
-  network?: SocialNetwork // only when type === 'social'
-}
-
-export interface MailSettings {
-  mail: {
-    enabled: boolean
-    /** Send an email alongside direct messages and admin alerts. */
-    notificationEmails: boolean
-    sender: string
-    transport: 'smtp' | 'mailgun'
-    smtpHost: string
-    smtpPort: number
-    smtpUser: string
-    smtpPass?: string | undefined
-    smtpSecure: boolean
-    smtpRequireTls: boolean
-    smtpRejectUnauthorized: boolean
-    mailgunDomain: string
-    mailgunApiKey?: string | undefined
-  }
-}
-
-export interface NewsletterSettings {
-  newsletter: {
-    /** Master switch for the public subscribe endpoint. Default off. */
-    enabled: boolean
-    /** Display name used as the sender identity in newsletter emails. */
-    fromName: string
-    /** Prefix prepended to newsletter email subjects (e.g. the site name). */
-    subjectPrefix: string
-  }
-}
-
-// Slot list derives from the cache declaration registry, never hand-maintained.
-export interface CacheSettings {
-  cache: Record<TunableCacheBucketId, CacheBucketSlot>
-}
-
-// Backend a stored object lives in, recorded per asset so reads/deletes
-// and the local→S3 migration target the right place; shared so the
-// settings JSON shape and the server storage layer agree.
-export type StorageDriver = 's3' | 'local'
-
-// Per-asset metadata kept in the settings row. `etag` = sha256 of the
-// uploaded bytes, used as the HTTP ETag and the in-process cache key.
-export interface BrandingObjectRef {
-  etag: string
-  contentType: string
-  size: number
-  updatedAt: string
-  driver: StorageDriver
-}
-
-export interface SiteAssetBranding {
-  faviconSvg?: BrandingObjectRef
-  logoSvg?: BrandingObjectRef
-  logoDarkSvg?: BrandingObjectRef
-  logoLargeSvg?: BrandingObjectRef
-  logoLargeDarkSvg?: BrandingObjectRef
-  faviconIco?: BrandingObjectRef
-  appleTouchIcon?: BrandingObjectRef
-  icon192?: BrandingObjectRef
-  icon512?: BrandingObjectRef
-  openGraph?: BrandingObjectRef
-  blogPoster?: BrandingObjectRef
-  blogPosterDark?: BrandingObjectRef
-  defaultAvatar?: BrandingObjectRef
-  defaultMusicCover?: BrandingObjectRef
-  robotsTxt?: string
-}
-
-export interface AssetsSettings {
-  asset: { host: string; scheme: 'http' | 'https' }
-  storage: {
-    enabled: boolean
-    endpoint: string
-    region: string
-    bucket: string
-    accessKeyId: string
-    secretAccessKey?: string | undefined
-    forcePathStyle: boolean
-    urlTemplate: string
-  }
-  upload: {
-    maxBytes: number
-    jpegQuality: number
-  }
-  branding?: SiteAssetBranding
-}
-
-export interface RateLimitBucket {
-  windowSeconds: number
-  maxAttempts: number
-}
-
-// One bucket per scenario: the per-IP and per-email counters of a scenario share
-// its (window, maxAttempts). `rate-limit-bucket.ts` upgrades legacy
-// per-dimension rows on parse.
-export interface RateLimitSettings {
-  signIn: RateLimitBucket
-  otpSend: RateLimitBucket
-  otpVerify: RateLimitBucket
-  passwordReset: RateLimitBucket
-  passwordResetTarget: RateLimitBucket
-  comment: RateLimitBucket
-  like: RateLimitBucket
-  invite: RateLimitBucket
-  resource: RateLimitBucket
-  passkeyAuth: RateLimitBucket
-  passkeyManage: RateLimitBucket
-}
-
-export interface FontsSettings {
-  og: { family: string }
-  calendar: { family: string }
-  /** Ordered `font.id` UUIDs assigned to the site-wide UI slot. */
-  global: string[]
-  /** Ordered `font.id` UUIDs assigned to the article-body slot. */
-  post: string[]
-  /** Ordered `font.id` UUIDs assigned to the inline/block code slot. */
-  code: string[]
-}
-
-export interface BackupSettings {
-  scheduled: {
-    enabled: boolean
-    frequency: 'daily' | 'weekly' | 'monthly'
-    hour: number
-    minute: 0 | 30
-    dayOfWeek?: number
-    dayOfMonth?: number
-  }
-  retention: {
-    enabled: boolean
-    days: number
-  }
-  encryption: {
-    enabled: boolean
-    /** Decrypted in the in-memory bundle; redacted (masked) for admin DTOs. */
-    password?: string
-  }
-}
-
-export interface LimitsSettings {
-  maxRequestBodySize: number
-  sessionMaxAge: number
-  auditLogDbRetentionDays: number
-  auditLogArchiveRetentionDays: number
-}
-
-export interface AnalyticsSettings {
-  analytics: {
-    trackAdmin: boolean
-    keepBotRows: boolean
-    geoipAutoUpdate: boolean
-  }
-}
-
-export interface SecuritySettings {
-  csrf: {
-    enabled: boolean
-    exemptPaths: string[]
-  }
-  cors: {
-    enabled: boolean
-    origins: string[]
-  }
-  passkey: {
-    enabled: boolean
-  }
-}
-
-/**
- * OpenObserve observability. The site name doubles as the OpenObserve
- * organization; secrets are encrypted at rest and redacted for admin payloads.
- * `verifiedFingerprint` pins the configuration that last passed a connection test
- * (the runtime never activates an unverified fingerprint).
- */
-export interface ObservabilitySettings {
-  observability: {
-    enabled: boolean
-    endpoint: string
-    organization: string
-    username: string
-    password?: string | undefined
-    sampleRate: number
-    includeRedactedSql: boolean
-    /**
-     * Days OpenObserve keeps each Kobato-owned stream. 0 (the default) leaves
-     * the operator's own retention policy untouched; a positive value makes the
-     * server enforce it on every settings save and at boot.
-     */
-    retentionDays: number
-    logs: {
-      enabled: boolean
-    }
-    frontend: {
-      enabled: boolean
-      sessionSampleRate: number
-      /**
-       * `anonymous` (default): the relay forwards no request identity.
-       * `forward`: the relay attaches the client address + User-Agent and the
-       * visitor must pass the privacy consent gate first.
-       */
-      clientIdentity: RumClientIdentity
-    }
-    rumClientToken?: string | undefined
-    verifiedFingerprint: string
-    provisionedFingerprint: string
-  }
-}
+export type NavigationItem = NavigationSettings['navigation']['sideNav'][number]
+export type FooterNavItem = NavigationSettings['navigation']['footerNav'][number]
+export type FooterNavItemType = FooterNavItem['type']
+export type SocialItem = SocialsSettings['socials'][number]
+export type SidebarWidget = SidebarSettings['sidebar']['widgets'][number]
+export type SidebarWidgetType = SidebarWidget['type']
+export type DailyQuoteSource = SidebarSettings['sidebar']['dailyQuote']['source']
+export type CustomQuote = SidebarSettings['sidebar']['dailyQuote']['customQuotes'][number]
+export type SiteAssetBranding = NonNullable<AssetsSettings['branding']>
+export type BrandingObjectRef = NonNullable<SiteAssetBranding['faviconSvg']>
+export type StorageDriver = BrandingObjectRef['driver']
+export type RateLimitBucket = RateLimitSettings['signIn']
 
 export interface SecretMasks {
   mailSmtpPassMask: string | null
@@ -362,33 +66,12 @@ export interface SecretMasks {
   observabilityRumClientTokenMask: string | null
 }
 
-export interface BlogSettingsBundle {
-  siteIdentity: SiteIdentitySettings | null
-  assets: AssetsSettings | null
-  navigation: NavigationSettings | null
-  socials: SocialsSettings | null
-  content: ContentSettings | null
-  sidebar: SidebarSettings | null
-  comments: CommentsSettings | null
-  webmentions: WebmentionsSettings | null
-  seo: SeoSettings | null
-  mail: MailSettings | null
-  newsletter: NewsletterSettings | null
-  cache: CacheSettings | null
-  rateLimit: RateLimitSettings | null
-  fonts: FontsSettings | null
-  backup: BackupSettings | null
-  limits: LimitsSettings | null
-  analytics: AnalyticsSettings | null
-  security: SecuritySettings | null
-  observability: ObservabilitySettings | null
+export type BlogSettingsBundle = {
+  [Section in SettingsSection as (typeof SECTION_TO_BUNDLE_KEY)[Section]]: z.infer<
+    (typeof SECTION_REGISTRY)[Section]['schema']
+  > | null
 }
 
-/**
- * Bundle shape downstream settings routes consume (and the
- * `admin.settings.bootstrap` output). Every section is NonNullable
- * because the settings layout loader enforces the invariant once.
- */
 export type SettingsBundle = {
   [K in keyof BlogSettingsBundle]-?: NonNullable<BlogSettingsBundle[K]>
 }
@@ -399,11 +82,6 @@ type DeepPartial<T> = T extends readonly (infer Item)[]
     ? { [Key in keyof T]?: DeepPartial<T[Key]> }
     : T
 
-/** Settings-card write payload: the section literal selects the matching persisted DTO; every property optional because cards submit honest section patches. The server deep-merges (objects merge, arrays replace) then validates. */
 export type SettingsSectionPatch<Section extends SettingsSection> = DeepPartial<
   NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[Section]]>
 >
-
-// Compile-time parity: `BlogSettingsBundle` keys must mirror the
-// section → bundle-key mapping in `sections.ts`.
-type _blogSettingsBundleKeyParity = Assert<Equals<keyof BlogSettingsBundle, BundleKey>>

@@ -1,9 +1,9 @@
 import type { SettingsSection } from '@kobato/settings/sections.ts'
 
-import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { assertSectionPatchKeys } from '@kobato/server/domains/settings/services/section-patch.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { describe, expect, it } from 'vitest'
 
 // Stand-ins for `meta.defaults` in the sections that ship none (`defaults: null`).

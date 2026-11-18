@@ -1,59 +1,23 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
+import { MAX_PASSWORD_LENGTH } from '@kobato/auth/security.ts'
+import { newPasswordSchema } from '@kobato/contracts/users.ts'
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/safe-url.ts'
-import { MIN_PASSWORD_LENGTH } from '@kobato/utils/security.ts'
 import { z } from 'zod'
-
-/** Maximum password length to prevent DoS via oversized payloads. */
-export const MAX_PASSWORD_LENGTH = 128
-
-/**
- * bcrypt silently truncates at 72 BYTES, so a longer "password" is really just its
- * 72-byte prefix and two distinct secrets could compare equal. Creation paths cap by
- * byte length; signin keeps the 128-char DoS cap because a compare truncates both
- * sides identically, keeping legacy long passwords working.
- */
-export const MAX_PASSWORD_BYTES = 72
 
 /**
  * Custom validation-rule messages are typed UI-catalog ids, never prose: the server maps
  * them into wire descriptors at the boundary (`zodIssuesToWire`, `authFlowValidationError`).
+ * The password-rule ids live with the shared `newPasswordSchema` factory in
+ * `@kobato/contracts/users.ts` (`passwordValidationMessages`).
  */
 export const authValidationMessages = {
   siteNameRequired: 'auth.validation.siteNameRequired',
   nameRequired: 'auth.validation.nameRequired',
   emailInvalid: 'auth.validation.emailInvalid',
-  passwordTooShort: 'auth.validation.passwordTooShort',
-  passwordTooLong: 'auth.validation.passwordTooLong',
-  passwordComplexity: 'auth.validation.passwordComplexity',
   updateFieldRequired: 'auth.validation.updateFieldRequired',
 } as const satisfies Record<string, UiMessageId>
-
-export function passwordWithinBcryptLimit(value: string): boolean {
-  return new TextEncoder().encode(value).byteLength <= MAX_PASSWORD_BYTES
-}
-
-export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
-
-/** The one new-password rule set (bcrypt byte ceiling + complexity), shared by setup, reset and account change. */
-export function newPasswordSchema() {
-  return z
-    .string()
-    .min(MIN_PASSWORD_LENGTH, authValidationMessages.passwordTooShort)
-    .superRefine((value, ctx) => {
-      if (!passwordWithinBcryptLimit(value)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: authValidationMessages.passwordTooLong,
-          params: { max: MAX_PASSWORD_BYTES },
-        })
-      }
-      if (!PASSWORD_COMPLEXITY_RE.test(value)) {
-        ctx.addIssue({ code: 'custom', message: authValidationMessages.passwordComplexity })
-      }
-    })
-}
 
 export const signInSchema = z.object({
   email: z.email(),

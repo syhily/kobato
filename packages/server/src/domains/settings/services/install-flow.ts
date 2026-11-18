@@ -9,9 +9,10 @@ import type { AssetsSettings, SiteIdentitySettings } from '@kobato/settings/type
 
 import { upsertSetting } from '@kobato/db/operations/setting.ts'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
-import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@kobato/server/domains/settings/sections/assets.ts'
-import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
+import { buildDefaultSectionPayloads } from '@kobato/server/domains/settings/sections/registry.ts'
 import { descriptorFor, messageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@kobato/settings/sections/assets.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export interface InstallSeedInput {

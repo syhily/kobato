@@ -1,5 +1,5 @@
-import type { MetricType } from '@kobato/contracts/analytics.ts'
 import type { BlobName } from '@kobato/db/duckdb/access-events.ts'
+import type { MetricType } from '@kobato/db/duckdb/queries/types.ts'
 import type { RawBuilder } from 'kysely'
 
 import { blobColumns } from '@kobato/db/duckdb/access-events.ts'

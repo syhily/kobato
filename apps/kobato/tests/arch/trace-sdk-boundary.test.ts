@@ -27,6 +27,10 @@ const SOURCE_DIRS = [
   'packages/db/src',
   'packages/server/src',
   'packages/shared/contracts/src',
+  'packages/shared/auth/src',
+  'packages/shared/catalog/src',
+  'packages/shared/telemetry/src',
+  'packages/shared/distribution/src',
   'packages/shared/seo/src',
   'packages/shared/lexical/src',
   'packages/shared/utils/src',
@@ -36,14 +40,16 @@ const SOURCE_DIRS = [
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',
   'packages/ui/src',
-  'packages/web/src',
+  'packages/web/admin/src',
+  'packages/web/client/src',
+  'packages/web/public/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 
 /** The only modules allowed to import a real SDK. */
 export const APPROVED_SDK_ENTRIES = [
   'packages/server/src/infra/trace/runtime.ts',
   'packages/server/src/infra/trace/logs-runtime.ts',
-  'packages/web/src/client/lib/openobserve-rum.ts',
+  'packages/web/client/src/lib/openobserve-rum.ts',
 ] as const
 
 const TELEMETRY_PACKAGE_PATTERN = /^@(?:opentelemetry|openobserve)\//
@@ -130,7 +136,10 @@ describe('trace SDK source boundary', () => {
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/resource.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/log-record.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/logger/sink.ts'),
-      join(PROJECT_ROOT, 'packages/shared/contracts/src/trace.ts'),
+      join(PROJECT_ROOT, 'packages/shared/telemetry/src/rum.ts'),
+      join(PROJECT_ROOT, 'packages/shared/telemetry/src/logs.ts'),
+      join(PROJECT_ROOT, 'packages/shared/telemetry/src/metrics.ts'),
+      join(PROJECT_ROOT, 'packages/shared/telemetry/src/pipeline.ts'),
     ]
 
     expect(collectTelemetryViolations(protectedModules)).toEqual([])
@@ -207,8 +216,8 @@ describe('trace SDK source boundary', () => {
   })
 
   it('depends on the slim RUM package only — never the full RUM, browser-logs, or Replay recorder', () => {
-    // The browser SDK is the web package's dependency (the client bundle owner).
-    const packageJson = JSON.parse(readFileSync(join(PROJECT_ROOT, 'packages/web/package.json'), 'utf-8')) as {
+    // The browser SDK is the web-client package's dependency (the client bundle owner).
+    const packageJson = JSON.parse(readFileSync(join(PROJECT_ROOT, 'packages/web/client/package.json'), 'utf-8')) as {
       dependencies?: Record<string, string>
       devDependencies?: Record<string, string>
     }
@@ -238,13 +247,13 @@ describe('trace SDK source boundary', () => {
   })
 
   it('reaches the slim browser SDK only through the guarded dynamic import', () => {
-    const runtimeSource = readFileSync(join(PROJECT_ROOT, 'packages/web/src/client/lib/openobserve-rum.ts'), 'utf-8')
+    const runtimeSource = readFileSync(join(PROJECT_ROOT, 'packages/web/client/src/lib/openobserve-rum.ts'), 'utf-8')
     expect(getValueSpecifiers(runtimeSource).filter((specifier) => specifier.startsWith('@openobserve/'))).toEqual([
       '@openobserve/browser-rum-slim',
     ])
     expect(runtimeSource).toMatch(/await import\('@openobserve\/browser-rum-slim'\)/)
 
-    const hookSource = readFileSync(join(PROJECT_ROOT, 'packages/web/src/client/hooks/use-rum.ts'), 'utf-8')
+    const hookSource = readFileSync(join(PROJECT_ROOT, 'packages/web/client/src/hooks/use-rum.ts'), 'utf-8')
     // No static import edge to the RUM module — the only edge is the guarded
     // dynamic import below (type-only `typeof import(...)` carries no `from`).
     expect(hookSource).not.toMatch(/from ['"][^'"]*openobserve-rum(\.ts)?['"]/)
@@ -306,7 +315,7 @@ describe('trace SDK source boundary', () => {
     expect([...APPROVED_SDK_ENTRIES]).toEqual([
       'packages/server/src/infra/trace/runtime.ts',
       'packages/server/src/infra/trace/logs-runtime.ts',
-      'packages/web/src/client/lib/openobserve-rum.ts',
+      'packages/web/client/src/lib/openobserve-rum.ts',
     ])
   })
 })

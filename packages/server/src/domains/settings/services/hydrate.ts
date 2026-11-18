@@ -3,17 +3,13 @@ import type { BundleKey, SettingsSection } from '@kobato/settings/sections.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
-import {
-  buildDefaultSectionPayloads,
-  SECTION_REGISTRY,
-  sectionFromScope,
-  SETTINGS_SCOPE_PREFIX,
-} from '@kobato/server/domains/settings/sections/registry.ts'
+import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { migrateLegacySiteIdentityLocale } from '@kobato/server/domains/settings/services/locale-migration.ts'
 import { decryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
+import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 import { BUNDLE_KEYS, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { sectionFromScope, SETTINGS_SCOPE_PREFIX } from '@kobato/settings/sections/registry.ts'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 

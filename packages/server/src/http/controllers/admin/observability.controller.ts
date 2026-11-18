@@ -3,14 +3,7 @@ import type { ObservabilityProvisionOutcome } from '@kobato/contracts/observabil
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { AuthedHandlerContext } from '@kobato/server/http/orpc-base.ts'
 
-import {
-  observabilityProvisionInputSchema,
-  observabilityProvisionOutputSchema,
-  observabilityStatusInputSchema,
-  observabilityStatusOutputSchema,
-  observabilityTestConnectionInputSchema,
-  observabilityTestConnectionOutputSchema,
-} from '@kobato/contracts/observability.ts'
+import { adminObservabilityContract } from '@kobato/api/admin/observability.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { currentObservabilityAssetFingerprint } from '@kobato/server/domains/observability/assets.ts'
 import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
@@ -27,7 +20,7 @@ import {
   syncObservabilityRuntime,
 } from '@kobato/server/domains/observability/runtime-manager.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { safeBigInt } from '@kobato/server/infra/coerce.ts'
 import { carriesErrorMessageDescriptor, descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
@@ -88,110 +81,103 @@ async function provisionAfterConnectionTest(
   }
 }
 
-const testConnection = adminProc
-  .route({ method: 'POST', path: '/admin/observability/test-connection' })
-  .input(observabilityTestConnectionInputSchema)
-  .output(observabilityTestConnectionOutputSchema)
-  .handler(async ({ context }) => {
-    // Saved settings only: a connection test must never prove an unsaved draft.
-    const site = requireSavedSite(context)
-    const result = await testObservabilityConnection(site)
+// Contract-first: method/path/input/output live in
+// `@kobato/api/admin/observability.ts`; this controller only implements the
+// procedures (admin base).
+const impl = implementAdmin(adminObservabilityContract)
 
-    // The CONNECTION fingerprint (endpoint/org/credentials only) unlocks
-    // activation; flipping a sampling switch afterwards keeps it valid.
-    const fingerprint = observabilityConnectionFingerprint(site)
-    await settingsWriter(context)({ verifiedFingerprint: fingerprint })
+const testConnection = impl.testConnection.handler(async ({ context }) => {
+  // Saved settings only: a connection test must never prove an unsaved draft.
+  const site = requireSavedSite(context)
+  const result = await testObservabilityConnection(site)
 
-    const provisionOutcome = await provisionAfterConnectionTest(context, site)
+  // The CONNECTION fingerprint (endpoint/org/credentials only) unlocks
+  // activation; flipping a sampling switch afterwards keeps it valid.
+  const fingerprint = observabilityConnectionFingerprint(site)
+  await settingsWriter(context)({ verifiedFingerprint: fingerprint })
 
-    recordAuditEventFromContext(context, {
-      action: 'observability_connection_tested',
-      resourceType: 'observability',
-      resourceId: site.organization,
-      details: {
-        organizationCreated: result.organization === 'created',
-        version: result.version,
-        provision: provisionOutcome.status,
-        ...(provisionOutcome.status === 'succeeded'
-          ? { dashboards: provisionOutcome.dashboards, rumToken: provisionOutcome.rumToken }
-          : { provisionError: provisionOutcome.descriptor.messageKey }),
-      },
-    })
-    if (provisionOutcome.status === 'failed') {
-      // The connection event stays the single success event; the failed asset
-      // sync gets its own machine-readable record for diagnostics.
-      recordAuditEventFromContext(context, {
-        action: 'observability_provisioning_failed',
-        resourceType: 'observability',
-        resourceId: site.organization,
-        details: { messageKey: provisionOutcome.descriptor.messageKey },
-      })
-    }
+  const provisionOutcome = await provisionAfterConnectionTest(context, site)
 
-    await syncObservabilityRuntime()
-    return {
-      ok: true as const,
+  recordAuditEventFromContext(context, {
+    action: 'observability_connection_tested',
+    resourceType: 'observability',
+    resourceId: site.organization,
+    details: {
+      organizationCreated: result.organization === 'created',
       version: result.version,
-      organization: result.organization,
-      provision: provisionOutcome,
-    }
+      provision: provisionOutcome.status,
+      ...(provisionOutcome.status === 'succeeded'
+        ? { dashboards: provisionOutcome.dashboards, rumToken: provisionOutcome.rumToken }
+        : { provisionError: provisionOutcome.descriptor.messageKey }),
+    },
   })
-
-const provision = adminProc
-  .route({ method: 'POST', path: '/admin/observability/provision' })
-  .input(observabilityProvisionInputSchema)
-  .output(observabilityProvisionOutputSchema)
-  .handler(async ({ context }) => {
-    const site = requireSavedSite(context)
-    assertObservabilityProvisionable(site)
-
-    const result = await runObservabilityProvisioning({
-      client: createO2Client({
-        endpoint: site.endpoint,
-        organization: site.organization,
-        username: site.username,
-        password: site.password ?? '',
-      }),
-      organization: site.organization,
-      currentRumToken: site.rumClientToken ?? '',
-      persist: settingsWriter(context),
-    })
-
+  if (provisionOutcome.status === 'failed') {
+    // The connection event stays the single success event; the failed asset
+    // sync gets its own machine-readable record for diagnostics.
     recordAuditEventFromContext(context, {
-      action: 'observability_assets_provisioned',
+      action: 'observability_provisioning_failed',
       resourceType: 'observability',
       resourceId: site.organization,
-      details: {
-        organization: result.organization,
-        rumToken: result.rumToken,
-        pipeline: result.pipeline,
-        dashboards: result.dashboards,
-        provisionedFingerprint: result.provisionedFingerprint,
-      },
+      details: { messageKey: provisionOutcome.descriptor.messageKey },
     })
+  }
 
-    // The settings writes above already trigger the section handler; this is
-    // an explicit convergence pass after provisioning completes.
-    await syncObservabilityRuntime()
-    return result
+  await syncObservabilityRuntime()
+  return {
+    ok: true as const,
+    version: result.version,
+    organization: result.organization,
+    provision: provisionOutcome,
+  }
+})
+
+const provision = impl.provision.handler(async ({ context }) => {
+  const site = requireSavedSite(context)
+  assertObservabilityProvisionable(site)
+
+  const result = await runObservabilityProvisioning({
+    client: createO2Client({
+      endpoint: site.endpoint,
+      organization: site.organization,
+      username: site.username,
+      password: site.password ?? '',
+    }),
+    organization: site.organization,
+    currentRumToken: site.rumClientToken ?? '',
+    persist: settingsWriter(context),
   })
 
-const status = adminProc
-  .route({ method: 'GET', path: '/admin/observability/status' })
-  .input(observabilityStatusInputSchema)
-  .output(observabilityStatusOutputSchema)
-  .handler(({ context }) => {
-    const site = readSavedSite(context)
-    const currentAssets = currentObservabilityAssetFingerprint()
-    const stored = site?.provisionedFingerprint ?? ''
-    const runtime = getObservabilityRuntimeStatus()
-    return {
-      runtime: { phase: runtime.phase, lastError: runtime.lastError, lastExportError: runtime.lastExportError },
-      verified: isObservabilityConnectionVerified(site),
-      provisioned: stored !== '',
-      provisionedCurrent: stored !== '' && currentAssets !== null && stored === currentAssets,
-      version: getLastProbedVersion(),
-    }
+  recordAuditEventFromContext(context, {
+    action: 'observability_assets_provisioned',
+    resourceType: 'observability',
+    resourceId: site.organization,
+    details: {
+      organization: result.organization,
+      rumToken: result.rumToken,
+      pipeline: result.pipeline,
+      dashboards: result.dashboards,
+      provisionedFingerprint: result.provisionedFingerprint,
+    },
   })
 
-export const adminObservabilityRouter = { testConnection, provision, status }
+  // The settings writes above already trigger the section handler; this is
+  // an explicit convergence pass after provisioning completes.
+  await syncObservabilityRuntime()
+  return result
+})
+
+const status = impl.status.handler(({ context }) => {
+  const site = readSavedSite(context)
+  const currentAssets = currentObservabilityAssetFingerprint()
+  const stored = site?.provisionedFingerprint ?? ''
+  const runtime = getObservabilityRuntimeStatus()
+  return {
+    runtime: { phase: runtime.phase, lastError: runtime.lastError, lastExportError: runtime.lastExportError },
+    verified: isObservabilityConnectionVerified(site),
+    provisioned: stored !== '',
+    provisionedCurrent: stored !== '' && currentAssets !== null && stored === currentAssets,
+    version: getLastProbedVersion(),
+  }
+})
+
+export const adminObservabilityRouter = impl.router({ testConnection, provision, status })

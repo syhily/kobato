@@ -16,7 +16,7 @@ import {
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
-} from '@kobato/contracts/sea/assets.ts'
+} from '@kobato/distribution/sea-assets.ts'
 import { rollbackBinary } from '@kobato/server/infra/binary-rollback.ts'
 import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
 import {

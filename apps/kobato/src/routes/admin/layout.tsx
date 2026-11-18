@@ -1,9 +1,9 @@
+import { hasAtLeast } from '@kobato/auth/roles.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { hasAtLeast } from '@kobato/utils/roles.ts'
-import { useDetachPublicCss } from '@kobato/web/client/hooks/use-detach-public-css.ts'
-import { AdminErrorFallback } from '@kobato/web/ui/admin/shell/AdminErrorFallback.tsx'
-import { AdminShell } from '@kobato/web/ui/admin/shell/AdminShell.tsx'
+import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback.tsx'
+import { AdminShell } from '@kobato/web-admin/ui/shell/AdminShell.tsx'
+import { useDetachPublicCss } from '@kobato/web-client/hooks/use-detach-public-css.ts'
 import { data, Outlet, redirect } from 'react-router'
 
 import type { RouteHandle } from '@/root.tsx'

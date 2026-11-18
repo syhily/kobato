@@ -1,5 +1,5 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 
 import {
   createNotificationWithRecipients,

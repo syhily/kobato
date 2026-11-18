@@ -1,11 +1,6 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 
-import {
-  auditLogActorsOutput,
-  auditLogExportInput,
-  auditLogListInput,
-  auditLogListOutput,
-} from '@kobato/contracts/audit.ts'
+import { adminAuditLogContract } from '@kobato/api/admin/audit-log.ts'
 import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv.ts'
 import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight.ts'
 import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection.ts'
@@ -16,9 +11,8 @@ import {
   listAuditLogs,
   type AuditLogFilterInput,
 } from '@kobato/server/domains/audit/services/query.ts'
-import { adminProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { z } from 'zod'
 
 function assertValidActorId(context: HandlerContext, actorId: string | undefined): void {
   if (!actorId) {
@@ -33,77 +27,71 @@ function assertValidActorId(context: HandlerContext, actorId: string | undefined
 
 const EXPORT_MAX_ROWS = 10_000
 
-const list = adminProc
-  .route({ method: 'GET', path: '/admin/audit-log/list' })
-  .input(auditLogListInput)
-  .output(auditLogListOutput)
-  .handler(async ({ input, context }) => {
-    const { db } = context
+// Contract-first: method/path/input/output live in
+// `@kobato/api/admin/audit-log.ts`; this controller only implements the
+// procedures (admin base).
+const impl = implementAdmin(adminAuditLogContract)
 
-    assertValidActorId(context, input.actorId)
+const list = impl.list.handler(async ({ input, context }) => {
+  const { db } = context
 
-    const filters: AuditLogFilterInput = input
-    const total = await countAuditLogs(db, filters)
-    const rows = await listAuditLogs(db, filters, input.offset, input.limit)
-    const actorMap = await fetchAuditLogActorMap(db, rows)
+  assertValidActorId(context, input.actorId)
 
-    const items = rows.map((row) =>
-      toAuditLogItemDto(row, row.actorId ? (actorMap.get(String(row.actorId)) ?? null) : null),
-    )
+  const filters: AuditLogFilterInput = input
+  const total = await countAuditLogs(db, filters)
+  const rows = await listAuditLogs(db, filters, input.offset, input.limit)
+  const actorMap = await fetchAuditLogActorMap(db, rows)
 
-    await Promise.all(
-      items.map(async (item) => {
-        item.detailsHtml = await highlightAuditLogDetails(item.details)
-      }),
-    )
+  const items = rows.map((row) =>
+    toAuditLogItemDto(row, row.actorId ? (actorMap.get(String(row.actorId)) ?? null) : null),
+  )
 
-    return {
-      items,
-      total,
-      hasMore: input.offset + items.length < total,
-    }
-  })
+  await Promise.all(
+    items.map(async (item) => {
+      item.detailsHtml = await highlightAuditLogDetails(item.details)
+    }),
+  )
 
-const exportCsv = adminProc
-  .route({ method: 'POST', path: '/admin/audit-log/export' })
-  .input(auditLogExportInput)
-  .output(z.string())
-  .handler(async ({ input, context }) => {
-    const { db } = context
+  return {
+    items,
+    total,
+    hasMore: input.offset + items.length < total,
+  }
+})
 
-    assertValidActorId(context, input.actorId)
+const exportCsv = impl.exportCsv.handler(async ({ input, context }) => {
+  const { db } = context
 
-    const filters: AuditLogFilterInput = input
-    const total = await countAuditLogs(db, filters)
+  assertValidActorId(context, input.actorId)
 
-    if (total > EXPORT_MAX_ROWS) {
-      throw localizedOrpcError(context, 'BAD_REQUEST', 'audit.error.exportTooLarge', { max: EXPORT_MAX_ROWS })
-    }
+  const filters: AuditLogFilterInput = input
+  const total = await countAuditLogs(db, filters)
 
-    const rows = await listAuditLogs(db, filters, 0, EXPORT_MAX_ROWS)
-    const actorMap = await fetchAuditLogActorMap(db, rows)
+  if (total > EXPORT_MAX_ROWS) {
+    throw localizedOrpcError(context, 'BAD_REQUEST', 'audit.error.exportTooLarge', { max: EXPORT_MAX_ROWS })
+  }
 
-    return buildAuditLogCsv(rows, actorMap, { includeFullIp: input.includeFullIp })
-  })
+  const rows = await listAuditLogs(db, filters, 0, EXPORT_MAX_ROWS)
+  const actorMap = await fetchAuditLogActorMap(db, rows)
+
+  return buildAuditLogCsv(rows, actorMap, { includeFullIp: input.includeFullIp })
+})
 
 // Actors (distinct users with audit log entries)
 
-const actors = adminProc
-  .route({ method: 'GET', path: '/admin/audit-log/actors' })
-  .output(auditLogActorsOutput)
-  .handler(async ({ context }) => {
-    const { db } = context
-    const users = await fetchAuditLogActors(db)
+const actors = impl.actors.handler(async ({ context }) => {
+  const { db } = context
+  const users = await fetchAuditLogActors(db)
 
-    return users.map((u) => ({
-      actorId: String(u.id),
-      actorName: u.name,
-      email: u.email,
-    }))
-  })
+  return users.map((u) => ({
+    actorId: String(u.id),
+    actorName: u.name,
+    email: u.email,
+  }))
+})
 
-export const auditLogRouter = {
+export const auditLogRouter = impl.router({
   list,
   exportCsv,
   actors,
-}
+})

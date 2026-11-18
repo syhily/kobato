@@ -1,6 +1,6 @@
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { UserDetailView } from '@kobato/web/ui/admin/users/UserDetailView.tsx'
+import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

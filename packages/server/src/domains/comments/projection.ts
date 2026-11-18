@@ -2,12 +2,19 @@
 // and Date timestamps, which JSON.stringify mangles; the DTOs declare the
 // wire shape (string ids, ISO timestamps). Helpers are idempotent.
 
-import type { AdminCommentWire, CommentItemWire } from '@kobato/contracts/comments.ts'
-import type { AdminComment, CommentAndUser, CommentItem, LatestComment } from '@kobato/contracts/types/comments.ts'
+import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments.ts'
+import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/models.ts'
 import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared.ts'
+import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+import type { z } from 'zod'
 
+import { commentBaseDto } from '@kobato/contracts/comments.ts'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
 import { entityPermalink, trimSiteSuffix } from '@kobato/server/domains/content/urls.ts'
+
+type _publicWireKeyParity = Assert<
+  Equals<keyof z.infer<typeof commentBaseDto>, keyof Omit<CommentAndUser, 'ua' | 'ip' | 'email'>>
+>
 
 export function toLatestComment(row: PendingCommentRow): LatestComment {
   const slug = row.slug ?? ''

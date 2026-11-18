@@ -1,6 +1,6 @@
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/contracts/comments.ts'
-import type { AdminCommentsResult } from '@kobato/contracts/types/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
+import type { AdminCommentsResult } from '@kobato/server/domains/comments/models.ts'
 import type { AdminListFilters, AdminPendingKind } from '@kobato/server/domains/comments/repos/shared.ts'
 
 import { findMetricByPublicId } from '@kobato/db/operations/metric.ts'

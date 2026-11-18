@@ -3,8 +3,8 @@ import { createSsrCaller, isOrpcNotFound } from '@kobato/server/http/ssr-caller.
 import { notFound } from '@kobato/server/infra/http/status.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { idFromString } from '@kobato/utils/id.ts'
-import { PostAnalyticsHeader, PostAnalyticsView } from '@kobato/web/ui/admin/analytics/PostAnalyticsView.tsx'
-import { useAnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
+import { PostAnalyticsHeader, PostAnalyticsView } from '@kobato/web-admin/ui/analytics/PostAnalyticsView.tsx'
+import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 import { Link } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

@@ -1,4 +1,4 @@
-import type { RouteManifest } from '@kobato/contracts/constants/route-warmup.ts'
+import type { RouteManifest } from '@kobato/distribution/route-warmup.ts'
 
 import { collectManifestChunks, isWarmupManifest, parseClientManifest } from '@kobato/server/infra/warmup-manifest.ts'
 import { describe, expect, it } from 'vitest'

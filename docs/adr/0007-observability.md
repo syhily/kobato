@@ -262,7 +262,7 @@ bundled and dynamically imported, and `use-rum`'s `import.meta.env.SSR` early re
 removes the dynamic-import edge from the server graph, so the SSR/SEA bundle carries no
 browser SDK.
 
-The bootstrap from `shared/contracts/trace.ts` carries only
+The bootstrap from `@kobato/telemetry/rum.ts` carries only
 `{ applicationId, service, environment, sessionSampleRate, clientIdentity }` — no
 endpoint, organization, or credential. The SDK's mandatory `clientToken` is the public constant
 `RUM_RELAY_CLIENT_TOKEN` (`'kobato-relay'`), which never leaves the relay unrewritten;

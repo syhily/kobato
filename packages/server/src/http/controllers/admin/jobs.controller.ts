@@ -1,8 +1,6 @@
+import { adminJobsContract } from '@kobato/api/admin/jobs.ts'
 import {
   TASK_CATALOG,
-  jobHistoryInput,
-  jobHistoryOutput,
-  jobsListDto,
   type JobHistoryOutput,
   type JobRunDto,
   type JobSummaryDto,
@@ -10,13 +8,15 @@ import {
 } from '@kobato/contracts/jobs.ts'
 import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration.ts'
 import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats.ts'
-import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder.ts'
 import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils.ts'
 
 // Admin task center — read-only aggregation over the task catalog, the
 // scheduler's live states, the job_run history, and the webmention queue
 // tables. No audit events (read-only queries MUST NOT record them).
+// Contract-first: method/path/input/output live in `@kobato/api/admin/jobs.ts`.
+const impl = implementAdmin(adminJobsContract)
 
 function toJobRunDto(row: JobRunRow): JobRunDto {
   return {
@@ -31,40 +31,33 @@ function toJobRunDto(row: JobRunRow): JobRunDto {
   }
 }
 
-const list = adminProc
-  .route({ method: 'GET', path: '/admin/jobs/list' })
-  .output(jobsListDto)
-  .handler(async ({ context }): Promise<JobsListDto> => {
-    const latestRuns = latestJobRunsByTask()
-    const tasks: JobSummaryDto[] = []
-    for (const task of TASK_CATALOG) {
-      const live = getSchedulerTaskState(task.key)
-      const lastRun = latestRuns.get(task.key)
-      tasks.push({
-        taskKey: task.key,
-        label: task.label,
-        description: task.description,
-        kind: task.kind,
-        group: task.group,
-        scheduleHint: task.scheduleHint,
-        liveState:
-          live === null
-            ? null
-            : { suspended: live.suspended, nextRunAt: live.nextRunAt?.toISOString() ?? null, running: live.running },
-        lastRun: lastRun === undefined ? null : toJobRunDto(lastRun),
-        queue: await queueTaskStats(context.db, task.key),
-      })
-    }
-    return { tasks, storageMigration: await getStorageMigrationStatus(context.db) }
-  })
+const list = impl.list.handler(async ({ context }): Promise<JobsListDto> => {
+  const latestRuns = latestJobRunsByTask()
+  const tasks: JobSummaryDto[] = []
+  for (const task of TASK_CATALOG) {
+    const live = getSchedulerTaskState(task.key)
+    const lastRun = latestRuns.get(task.key)
+    tasks.push({
+      taskKey: task.key,
+      label: task.label,
+      description: task.description,
+      kind: task.kind,
+      group: task.group,
+      scheduleHint: task.scheduleHint,
+      liveState:
+        live === null
+          ? null
+          : { suspended: live.suspended, nextRunAt: live.nextRunAt?.toISOString() ?? null, running: live.running },
+      lastRun: lastRun === undefined ? null : toJobRunDto(lastRun),
+      queue: await queueTaskStats(context.db, task.key),
+    })
+  }
+  return { tasks, storageMigration: await getStorageMigrationStatus(context.db) }
+})
 
-const history = adminProc
-  .route({ method: 'GET', path: '/admin/jobs/history' })
-  .input(jobHistoryInput)
-  .output(jobHistoryOutput)
-  .handler(async ({ input }): Promise<JobHistoryOutput> => {
-    const { items, total } = listJobRuns({ taskKey: input.taskKey, offset: input.offset, limit: input.limit })
-    return { items: items.map(toJobRunDto), total, hasMore: input.offset + items.length < total }
-  })
+const history = impl.history.handler(async ({ input }): Promise<JobHistoryOutput> => {
+  const { items, total } = listJobRuns({ taskKey: input.taskKey, offset: input.offset, limit: input.limit })
+  return { items: items.map(toJobRunDto), total, hasMore: input.offset + items.length < total }
+})
 
-export const adminJobsRouter = { list, history }
+export const adminJobsRouter = impl.router({ list, history })

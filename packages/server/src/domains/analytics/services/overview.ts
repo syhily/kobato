@@ -1,9 +1,5 @@
-import type {
-  AnalyticsOverviewData,
-  MetricRow,
-  MetricType,
-  ResolvedAnalyticsQuery,
-} from '@kobato/contracts/analytics.ts'
+import type { AnalyticsOverviewData, MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
+import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
 import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'

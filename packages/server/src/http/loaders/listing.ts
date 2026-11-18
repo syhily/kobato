@@ -1,5 +1,5 @@
-import type { ListingPostCard } from '@kobato/contracts/catalog.ts'
-import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
+import type { ListingPostCard } from '@kobato/catalog/catalog.ts'
+import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/catalog/listing.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { FeedLinkOptions } from '@kobato/seo/meta.ts'

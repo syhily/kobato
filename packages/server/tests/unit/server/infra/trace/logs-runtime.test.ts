@@ -5,7 +5,6 @@ import type {
 } from '@kobato/server/infra/trace/config.ts'
 import type { LogRecordExporter, ReadableLogRecord } from '@opentelemetry/sdk-logs'
 
-import { TRACE_LOG_STREAM } from '@kobato/contracts/trace-logs.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { __resetLogSinkForTests, pushLogLine } from '@kobato/server/infra/logger/sink.ts'
 import {
@@ -16,6 +15,7 @@ import {
 } from '@kobato/server/infra/trace/facade.ts'
 import { buildLogPipeline } from '@kobato/server/infra/trace/logs-runtime.ts'
 import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
+import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
 import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
 import { SeverityNumber } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'

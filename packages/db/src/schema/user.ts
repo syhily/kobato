@@ -1,11 +1,13 @@
-import type { LoginMethod } from '@kobato/contracts/users.ts'
-
 import { USER_ROLES } from '@kobato/db/schema/shared.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// RBAC role enum. `text({ enum })` constrains at the drizzle layer; the
-// explicit CHECK keeps the DB-perimeter guarantee (a stray `UPDATE` from a DB client is rejected).
+// Per-user signin method (`user.login_method`): `password` default,
+// `magic-link` (needs a ready mail transport), `passkey` (needs a registered
+// passkey + global switch). Wire twin: `@kobato/contracts/users` (parity
+// pinned by `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`).
+export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const
+export type LoginMethod = (typeof LOGIN_METHODS)[number]
 
 export const user = sqliteTable(
   'user',

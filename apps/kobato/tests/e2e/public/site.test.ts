@@ -1,4 +1,4 @@
-import { E2eClient, e2eEnv } from '@kobato/test/e2e-client.ts'
+import { E2eClient, e2eEnv } from '@kobato/harness/http.ts'
 import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
@@ -15,7 +15,7 @@ describe('public site (HTTP e2e)', () => {
     const res = await client.get('/')
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toContain('text/html')
-    // 'Kobato Smoke' — the title seeded by packages/tools/pack/src/sea/instance.ts.
+    // 'Kobato Smoke' — the title seeded by @kobato/harness/seed.ts.
     expect(await res.text()).toContain('Kobato Smoke')
   })
 

@@ -1,12 +1,12 @@
-import type { ClientPostWithMetadata } from '@kobato/contracts/catalog.ts'
+import type { ClientPostWithMetadata } from '@kobato/catalog/catalog.ts'
 
 import { makePost } from '@kobato/test/catalog.ts'
 import { renderInRouter, renderToHtml } from '@kobato/test/render.tsx'
 import { Input } from '@kobato/ui/components/input.tsx'
-import { SettingsRow } from '@kobato/web/ui/admin/settings/SettingsSection.tsx'
-import { Pagination } from '@kobato/web/ui/public/post/Pagination.tsx'
-import { PostListingBody, PostSquare } from '@kobato/web/ui/public/post/PostListViews.tsx'
-import { SearchBar } from '@kobato/web/ui/public/Search.tsx'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
+import { Pagination } from '@kobato/web-public/ui/post/Pagination.tsx'
+import { PostListingBody, PostSquare } from '@kobato/web-public/ui/post/PostListViews.tsx'
+import { SearchBar } from '@kobato/web-public/ui/Search.tsx'
 import { describe, expect, it } from 'vitest'
 
 function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata {

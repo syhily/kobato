@@ -1,16 +1,16 @@
-import type { AdminSessionItem } from '@kobato/contracts/types/sessions.ts'
+import type { AdminSessionItem } from '@kobato/contracts/sessions.ts'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
 import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
 import { compareDisplayText } from '@kobato/utils/format.ts'
+import { SessionsView } from '@kobato/web-admin/ui/sessions/SessionsView.tsx'
 import {
   DEFAULT_ADMIN_SORT,
   SESSION_SORT_OPTIONS,
   parseSessionSort,
   type SessionSortState,
-} from '@kobato/utils/sessions-sort.ts'
-import { SessionsView } from '@kobato/web/ui/admin/sessions/SessionsView.tsx'
+} from '@kobato/web-admin/ui/sessions/sort.ts'
 import { data } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

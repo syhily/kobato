@@ -1,4 +1,4 @@
-import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/contracts/analytics.ts'
+import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
 import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates.ts'

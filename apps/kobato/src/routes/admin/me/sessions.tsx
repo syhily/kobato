@@ -1,14 +1,14 @@
-import type { MySessionItem } from '@kobato/contracts/types/sessions.ts'
+import type { MySessionItem } from '@kobato/contracts/sessions.ts'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
+import { MySessionsView } from '@kobato/web-admin/ui/my/MySessionsView.tsx'
 import {
   DEFAULT_MY_SORT,
   MY_SESSION_SORT_OPTIONS,
   parseSessionSort,
   type SessionSortState,
-} from '@kobato/utils/sessions-sort.ts'
-import { MySessionsView } from '@kobato/web/ui/admin/my/MySessionsView.tsx'
+} from '@kobato/web-admin/ui/sessions/sort.ts'
 import { data } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

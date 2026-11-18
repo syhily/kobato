@@ -1,5 +1,5 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { PageEditorRoute } from '@kobato/web/ui/admin/pages/PageEditorRoute.tsx'
+import { PageEditorRoute } from '@kobato/web-admin/ui/pages/PageEditorRoute.tsx'
 import { useNavigate } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

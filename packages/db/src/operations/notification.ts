@@ -1,5 +1,5 @@
-import type { NotificationKind } from '@kobato/contracts/notifications.ts'
 import type { Database } from '@kobato/db/database.ts'
+import type { NotificationKind } from '@kobato/db/schema/notification.ts'
 import type { NewNotificationRecipient, NotificationRecipientRow, NotificationRow } from '@kobato/db/types.ts'
 
 import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'

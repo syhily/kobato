@@ -1,4 +1,4 @@
-import type { PublicListingLoaderData } from '@kobato/contracts/types/listing.ts'
+import type { PublicListingLoaderData } from '@kobato/catalog/listing.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { postTag } from '@kobato/db/schema/post-tag.ts'

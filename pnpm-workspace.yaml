@@ -1,8 +1,9 @@
 packages:
   - 'apps/*'
   - 'packages/*'
-  - 'packages/tools/*'
+  - 'tools/*'
   - 'packages/shared/*'
+  - 'packages/web/*'
 
 # Single version source for every dependency. package.json references these
 # entries as "catalog:" — taze updates this table (catalogs are first-class
@@ -58,6 +59,7 @@ catalog:
   '@opentelemetry/sdk-metrics': ^3.1.1
   '@opentelemetry/sdk-trace': ^3.1.1
   '@orpc/client': ^1.16.2
+  '@orpc/contract': ^1.16.2
   '@orpc/react-query': ^1.16.2
   '@orpc/server': ^1.16.2
   '@playwright/test': ^1.65.1

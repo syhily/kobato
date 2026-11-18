@@ -1,5 +1,6 @@
-import type { AvatarSource } from '@kobato/utils/avatar.ts'
+import type { AvatarSource } from '@kobato/assets/avatar.ts'
 
+import { encodedEmail } from '@kobato/auth/security.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
@@ -23,7 +24,6 @@ import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { GRAVATAR_MIRROR_URLS } from '@kobato/utils/safe-url.ts'
-import { encodedEmail } from '@kobato/utils/security.ts'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

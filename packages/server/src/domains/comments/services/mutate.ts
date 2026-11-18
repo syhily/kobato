@@ -1,7 +1,8 @@
-import type { CommentAndUser, CommentReq } from '@kobato/contracts/types/comments.ts'
+import type { CommentReq } from '@kobato/contracts/comments.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { NewComment } from '@kobato/db/types.ts'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
+import type { CommentAndUser } from '@kobato/server/domains/comments/models.ts'
 import type { MetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 

@@ -17,6 +17,7 @@ const fileStoreMock = vi.hoisted(() => ({
 
 vi.mock('@kobato/server/infra/cache/file-store.ts', () => fileStoreMock)
 
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
 import {
   __resetCacheCountersForTests,
@@ -32,7 +33,6 @@ import {
 } from '@kobato/server/infra/cache/registry.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
-import { APP_VERSION } from '@kobato/utils/version.ts'
 
 // Content-addressed generations for the fixture settings — stable across runs.
 const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)

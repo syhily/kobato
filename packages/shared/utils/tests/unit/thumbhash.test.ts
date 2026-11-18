@@ -21,10 +21,10 @@ const SNAPSHOTS: Array<{
   thumbHashToDataURL: string
   rgbaToDataURL: string
 }> = JSON.parse(
-  readFileSync(resolve(__dirname, '../../../../tools/test/src/fixtures/thumbhash/snapshots.json'), 'utf-8'),
+  readFileSync(resolve(__dirname, '../../../../../tools/test/src/fixtures/thumbhash/snapshots.json'), 'utf-8'),
 )
 
-const FIXTURE_DIR = resolve(__dirname, '../../../../tools/test/src/fixtures/thumbhash')
+const FIXTURE_DIR = resolve(__dirname, '../../../../../tools/test/src/fixtures/thumbhash')
 
 async function loadRGBA(path: string): Promise<{ w: number; h: number; rgba: Uint8Array }> {
   const { data, info } = await sharp(path)

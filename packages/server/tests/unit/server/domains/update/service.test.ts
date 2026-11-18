@@ -10,7 +10,7 @@ vi.mock('@kobato/server/infra/self-update-gate.ts', () => ({
 }))
 vi.mock('@kobato/server/domains/update/release.ts', () => ({ fetchLatestRelease: releaseMocks.fetchLatestRelease }))
 vi.mock('@kobato/server/domains/update/job.ts', () => ({ startUpdateJob: jobMocks.startUpdateJob }))
-vi.mock('@kobato/utils/version.ts', () => ({ APP_VERSION: '6.4.0' }))
+vi.mock('@kobato/distribution/app.ts', () => ({ APP_VERSION: '6.4.0' }))
 
 const { checkForUpdate, applyUpdate, isNewerVersion } = await import('@kobato/server/domains/update/service.ts')
 

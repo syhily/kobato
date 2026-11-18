@@ -1,5 +1,5 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { PostEditorShell } from '@kobato/web/ui/admin/posts/PostEditorShell.tsx'
+import { PostEditorShell } from '@kobato/web-admin/ui/posts/PostEditorShell.tsx'
 import { useNavigate } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

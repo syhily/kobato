@@ -1,5 +1,5 @@
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
-import type { MarkdownHeading } from '@kobato/utils/toc.ts'
+import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
 
 import {
   createHeadingIdTracker as createHeadingSlugTracker,

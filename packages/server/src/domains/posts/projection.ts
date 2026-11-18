@@ -1,4 +1,4 @@
-import type { Post } from '@kobato/contracts/catalog.ts'
+import type { Post } from '@kobato/catalog/catalog.ts'
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
 

@@ -4,7 +4,7 @@ import {
   CHUNKS_SENTINEL,
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
-} from '@kobato/contracts/constants/route-warmup.ts'
+} from '@kobato/distribution/route-warmup.ts'
 import {
   collectManifestChunks,
   parseClientManifest,
@@ -83,9 +83,9 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   }
 }
 
-// The warmup entry lives in the web package; anchor it to this file's location
-// so the path holds no matter which directory the build runs from.
-const WARMUP_ENTRY = fileURLToPath(new URL('../../../web/src/client/scripts/route-warmup.entry.ts', import.meta.url))
+// The warmup entry lives in the web-client package; anchor it to this file's
+// location so the path holds no matter which directory the build runs from.
+const WARMUP_ENTRY = fileURLToPath(new URL('../../../web/client/src/scripts/route-warmup.entry.ts', import.meta.url))
 const VIRTUAL_ID = 'virtual:route-warmup-script'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 

@@ -1,90 +1,21 @@
 import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
-import type { z } from 'zod'
+import type { SectionMeta } from '@kobato/settings/sections/registry.ts'
 
-import { analyticsSection } from '@kobato/server/domains/settings/sections/analytics.ts'
-import { assetsSection } from '@kobato/server/domains/settings/sections/assets.ts'
-import { backupSection } from '@kobato/server/domains/settings/sections/backup.ts'
-import { cacheSection } from '@kobato/server/domains/settings/sections/cache.ts'
-import { commentsSection } from '@kobato/server/domains/settings/sections/comments.ts'
-import { contentSection } from '@kobato/server/domains/settings/sections/content.ts'
-import { fontsSection } from '@kobato/server/domains/settings/sections/fonts.ts'
-import { generalSection } from '@kobato/server/domains/settings/sections/general.ts'
-import { limitsSection } from '@kobato/server/domains/settings/sections/limits.ts'
-import { mailSection } from '@kobato/server/domains/settings/sections/mail.ts'
-import { navigationSection } from '@kobato/server/domains/settings/sections/navigation.ts'
-import { newsletterSection } from '@kobato/server/domains/settings/sections/newsletter.ts'
-import { observabilitySection } from '@kobato/server/domains/settings/sections/observability.ts'
-import { rateLimitSection } from '@kobato/server/domains/settings/sections/rate-limit.ts'
-import { securitySection } from '@kobato/server/domains/settings/sections/security.ts'
-import { seoSection } from '@kobato/server/domains/settings/sections/seo.ts'
-import { sidebarSection } from '@kobato/server/domains/settings/sections/sidebar.ts'
-import { socialsSection } from '@kobato/server/domains/settings/sections/socials.ts'
-import { webmentionsSection } from '@kobato/server/domains/settings/sections/webmentions.ts'
+import { observabilityWriteSchema } from '@kobato/server/domains/settings/sections/observability.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { SECTION_REGISTRY as SHARED_SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-export interface SectionMeta<
-  S extends z.ZodType = z.ZodType,
-  K extends keyof BlogSettingsBundle = keyof BlogSettingsBundle,
-> {
-  scope: string
-  schema: S
-  /**
-   * Stricter schema for the admin WRITE path only; defaults to `schema`. Keep write-only
-   * rules out of `schema` itself: hydration shares it, and a stored row the stricter
-   * rules reject (e.g. a legacy `http://` storage endpoint) would silently fall back to
-   * section defaults on boot.
-   */
-  writeSchema?: z.ZodType
-  key: K
-  defaults: Record<string, unknown> | null
-}
+export const SECTION_REGISTRY = SHARED_SECTION_REGISTRY
 
-// One module per section owns its schema, defaults, and metadata; adding a section means
-// one module plus one line here. This map is composition only — the parity assert below
-// pins every entry to its bundle slot.
-export const SECTION_REGISTRY = {
-  general: generalSection,
-  assets: assetsSection,
-  navigation: navigationSection,
-  socials: socialsSection,
-  content: contentSection,
-  sidebar: sidebarSection,
-  comments: commentsSection,
-  webmentions: webmentionsSection,
-  seo: seoSection,
-  mail: mailSection,
-  newsletter: newsletterSection,
-  cache: cacheSection,
-  rateLimit: rateLimitSection,
-  fonts: fontsSection,
-  backup: backupSection,
-  limits: limitsSection,
-  analytics: analyticsSection,
-  security: securitySection,
-  observability: observabilitySection,
-} as const satisfies Record<SettingsSection, SectionMeta>
-
-/** Common prefix used to fetch every settings row in one SELECT. */
-export const SETTINGS_SCOPE_PREFIX = 'blog.'
-
-/** Reverse lookup from a DB `scope` string; `null` when the row belongs to a surface we don't recognise. */
-export function sectionFromScope(scope: string): SettingsSection | null {
-  for (const section of SETTINGS_SECTIONS) {
-    if (SECTION_REGISTRY[section].scope === scope) {
-      return section
-    }
+export function sectionWriteSchema(section: SettingsSection, meta: SectionMeta) {
+  if (section === 'observability') {
+    return observabilityWriteSchema
   }
-  return null
+  return meta.writeSchema ?? meta.schema
 }
 
-/**
- * Validate one section's seed `defaults` against its own `schema`. The single defaults
- * validator — hydration backfill and the write path's merge base both go through it.
- */
 export function validateSectionDefaults(meta: SectionMeta): Record<string, unknown> {
   const check = meta.schema.safeParse(meta.defaults)
   if (!check.success) {
@@ -98,7 +29,6 @@ export function validateSectionDefaults(meta: SectionMeta): Record<string, unkno
   return unsafeCast<Record<string, unknown>>(check.data)
 }
 
-/** Every section with a non-null seed, validated against its own `schema`. */
 export function buildDefaultSectionPayloads(): {
   section: SettingsSection
   payload: Record<string, unknown>
@@ -113,24 +43,3 @@ export function buildDefaultSectionPayloads(): {
   }
   return out
 }
-
-// Compile-time parity over SECTION_REGISTRY × SECTION_TO_BUNDLE_KEY: each entry's `key`
-// must equal the shared mapping, and the schema's OUTPUT type must equal the bundle-slot
-// DTO (hydration writes `parsed.data` straight into the bundle). Missing entries fail the
-// `satisfies` clauses; disagreements fail here.
-type _SectionRegistryBundleParity = Assert<
-  Equals<
-    {
-      [S in SettingsSection]: Equals<
-        (typeof SECTION_REGISTRY)[S]['key'],
-        (typeof SECTION_TO_BUNDLE_KEY)[S]
-      > extends true
-        ? Equals<
-            z.infer<(typeof SECTION_REGISTRY)[S]['schema']>,
-            NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[S]]>
-          >
-        : false
-    },
-    Record<SettingsSection, true>
-  >
->

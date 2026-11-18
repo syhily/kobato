@@ -1,7 +1,7 @@
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 
+import { hasAtLeast, type Role } from '@kobato/auth/roles.ts'
 import { ActionFailure, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
-import { hasAtLeast, type Role } from '@kobato/utils/roles.ts'
 
 /** Structural minimum a viewer identity must carry; `RequestContext.viewer` satisfies it. */
 export interface ViewerIdentity {

@@ -1,0 +1,15 @@
+{
+  "name": "@kobato/distribution",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/distribution": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
+  }
+}

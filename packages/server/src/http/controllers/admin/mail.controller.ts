@@ -1,30 +1,31 @@
+import { adminMailContract } from '@kobato/api/admin/mail.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { adminProc } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { sendTestMail } from '@kobato/server/infra/email/sender.ts'
 import { ORPCError } from '@orpc/server'
-import { z } from 'zod'
 
-const sendTest = adminProc
-  .route({ method: 'POST', path: '/admin/mail/send-test' })
-  .input(z.object({ to: z.email() }))
-  .output(z.object({ success: z.boolean() }))
-  .handler(async ({ input, context }) => {
-    const result = await sendTestMail(input.to)
-    if (!result.ok) {
-      if (result.reason === 'unconfigured') {
-        throw new ORPCError('BAD_REQUEST', { message: result.message })
-      }
-      if (result.reason === 'upstream') {
-        throw new ORPCError('BAD_GATEWAY', { message: result.message })
-      }
-      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: result.message })
+// Contract-first: method/path/input/output live in
+// `@kobato/api/admin/mail.ts`; this controller only implements the
+// procedure (admin base).
+const impl = implementAdmin(adminMailContract)
+
+const sendTest = impl.sendTest.handler(async ({ input, context }) => {
+  const result = await sendTestMail(input.to)
+  if (!result.ok) {
+    if (result.reason === 'unconfigured') {
+      throw new ORPCError('BAD_REQUEST', { message: result.message })
     }
-    recordAuditEventFromContext(context, {
-      action: 'test_mail_sent',
-      resourceType: 'mail',
-      details: { email: input.to },
-    })
-    return { success: true }
+    if (result.reason === 'upstream') {
+      throw new ORPCError('BAD_GATEWAY', { message: result.message })
+    }
+    throw new ORPCError('INTERNAL_SERVER_ERROR', { message: result.message })
+  }
+  recordAuditEventFromContext(context, {
+    action: 'test_mail_sent',
+    resourceType: 'mail',
+    details: { email: input.to },
   })
+  return { success: true }
+})
 
-export const adminMailRouter = { sendTest }
+export const adminMailRouter = impl.router({ sendTest })

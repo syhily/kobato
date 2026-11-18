@@ -1,10 +1,10 @@
-import type { ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
+import type { ListingPageLoaderData } from '@kobato/catalog/listing.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { toClientPost, toListingPostCard } from '@kobato/contracts/catalog.ts'
+import { toClientPost, toListingPostCard } from '@kobato/catalog/catalog.ts'
 import { SEARCH_KEYWORD_MAX_LENGTH } from '@kobato/contracts/content.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { pagePath, searchRootPath } from '@kobato/server/domains/content/urls.ts'

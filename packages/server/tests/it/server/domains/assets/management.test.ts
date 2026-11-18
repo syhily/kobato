@@ -1,10 +1,10 @@
 import type { BrandingObjectRef } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 // Real settings table + storage registry seam; only the favicon-pack
 // generator (sharp) is mocked; writes are read back from SQLite.
-import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

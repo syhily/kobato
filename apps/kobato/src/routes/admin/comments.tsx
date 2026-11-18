@@ -1,7 +1,7 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CommentsView } from '@kobato/web/ui/admin/comments/CommentsView.tsx'
-import { parseCommentFiltersFromSearchParams } from '@kobato/web/ui/admin/comments/useCommentsController.ts'
+import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView.tsx'
+import { parseCommentFiltersFromSearchParams } from '@kobato/web-admin/ui/comments/useCommentsController.ts'
 import { useOutletContext, useSearchParams } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

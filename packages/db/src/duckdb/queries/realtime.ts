@@ -1,10 +1,10 @@
-import type { RealtimeEvent } from '@kobato/contracts/analytics.ts'
+import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types.ts'
 import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { sql } from 'kysely'
 
-/** Blob slots store '' for "no data" — the wire DTO keeps null semantics. */
+/** Blob slots store '' for "no data" — the row shape keeps null semantics. */
 function emptyToNull(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null
 }

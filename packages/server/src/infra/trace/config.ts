@@ -2,8 +2,8 @@
 // validated server/frontend projection. Never imports an OTel/OpenObserve SDK:
 // `runtime.ts` owns the implementation and consumes `ServerTraceRuntimeConfig`.
 
-import type { FrontendRumBootstrap } from '@kobato/contracts/trace.ts'
 import type { RumClientIdentity } from '@kobato/settings/rum-client-identity.ts'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import {

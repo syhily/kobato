@@ -16,9 +16,9 @@ import type {
   RumRelayOutcome,
 } from '@kobato/server/infra/trace/sanitize.ts'
 
-import { TRACE_METRIC_NAMES } from '@kobato/contracts/trace-metrics.ts'
 import { counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade.ts'
 import { sanitizeAttributeValue } from '@kobato/server/infra/trace/sanitize.ts'
+import { TRACE_METRIC_NAMES } from '@kobato/telemetry/metrics.ts'
 
 export const METRIC = TRACE_METRIC_NAMES
 

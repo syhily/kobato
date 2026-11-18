@@ -1,8 +1,8 @@
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { SettingsSection } from '@kobato/settings/sections.ts'
 
-import { SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { z } from 'zod'
 
 /**

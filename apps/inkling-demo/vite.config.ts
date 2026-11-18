@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url)
 // its alias points at the package sources because the playground reaches into
 // internals the exports map deliberately does not expose. The web/ui/lexical
 // aliases serve the demo's music-player route, which reuses the host product
-// components (`@kobato/web/ui/public/...` + the shared `@kobato/lexical`
+// components (`@kobato/web-public/ui/...` + the shared `@kobato/lexical`
 // card spec) instead of keeping a demo copy.
 export default defineConfig({
   plugins: [react({ compiler: true }), tailwindcss(), svgr()],
@@ -21,7 +21,7 @@ export default defineConfig({
     alias: {
       '@kobato/inkling/headless': resolve(import.meta.dirname, '../../packages/inkling/src/headless.ts'),
       '@kobato/inkling': resolve(import.meta.dirname, '../../packages/inkling/src'),
-      '@kobato/web': resolve(import.meta.dirname, '../../packages/web/src'),
+      '@kobato/web-public': resolve(import.meta.dirname, '../../packages/web/public/src'),
       '@kobato/ui': resolve(import.meta.dirname, '../../packages/ui/src'),
       '@kobato/lexical': resolve(import.meta.dirname, '../../packages/shared/lexical/src'),
       // Prevents double-bundling of yjs due to cjs/esm mismatch

@@ -33,6 +33,10 @@ const SCAN_ROOTS = [
   'packages/db/src',
   'packages/server/src',
   'packages/shared/contracts/src',
+  'packages/shared/auth/src',
+  'packages/shared/catalog/src',
+  'packages/shared/telemetry/src',
+  'packages/shared/distribution/src',
   'packages/shared/seo/src',
   'packages/shared/lexical/src',
   'packages/shared/utils/src',
@@ -42,7 +46,9 @@ const SCAN_ROOTS = [
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',
   'packages/ui/src',
-  'packages/web/src',
+  'packages/web/admin/src',
+  'packages/web/client/src',
+  'packages/web/public/src',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
@@ -57,69 +63,69 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/shared/utils/src/format.ts', rules: ['hardcoded-locale'] },
   // Weibo's share widget takes a hardcoded `language=zh_cn` PROTOCOL parameter;
   // it is never rendered to a reader.
-  { path: 'packages/web/src/ui/public/LikeActions.tsx', rules: ['hardcoded-locale'], text: 'zh_cn' },
+  { path: 'packages/web/public/src/ui/LikeActions.tsx', rules: ['hardcoded-locale'], text: 'zh_cn' },
   // Off-screen anti-bot honeypot fields: never visible, never localized (bots
   // fill them; translating would change the trap).
   {
-    path: 'packages/web/src/ui/public/comments/CommentReplyForm.tsx',
+    path: 'packages/web/public/src/ui/comments/CommentReplyForm.tsx',
     rules: ['jsx-text', 'jsx-attribute'],
     text: 'Subtitle',
   },
   {
-    path: 'packages/web/src/ui/public/comments/CommentReplyForm.tsx',
+    path: 'packages/web/public/src/ui/comments/CommentReplyForm.tsx',
     rules: ['jsx-text', 'jsx-attribute'],
     text: 'Honeypot',
   },
   {
-    path: 'packages/web/src/ui/public/friends/FriendApplyForm.tsx',
+    path: 'packages/web/public/src/ui/friends/FriendApplyForm.tsx',
     rules: ['jsx-text', 'jsx-attribute'],
     text: 'Contact',
   },
   {
-    path: 'packages/web/src/ui/public/friends/FriendApplyForm.tsx',
+    path: 'packages/web/public/src/ui/friends/FriendApplyForm.tsx',
     rules: ['jsx-text', 'jsx-attribute'],
     text: 'Honeypot',
   },
   // `&rarr;` is a decorative arrow glyph in a CTA, not copy.
-  { path: 'packages/web/src/ui/admin/auth/AdminInstallForm.tsx', rules: ['jsx-text'], text: '&rarr;' },
+  { path: 'packages/web/admin/src/ui/auth/AdminInstallForm.tsx', rules: ['jsx-text'], text: '&rarr;' },
   // "Setup Token" names a server-console credential — a protocol term.
-  { path: 'packages/web/src/ui/admin/auth/SetupTokenVerifyForm.tsx', rules: ['jsx-text'], text: 'Setup Token' },
+  { path: 'packages/web/admin/src/ui/auth/SetupTokenVerifyForm.tsx', rules: ['jsx-text'], text: 'Setup Token' },
   // Technical tokens that are never translated — SI units, provider names,
   // protocol paths, keyboard keys and example URLs.
-  { path: 'packages/web/src/ui/admin/settings/CommentsForm.tsx', rules: ['jsx-text'], text: 'ms' },
-  { path: 'packages/web/src/ui/admin/settings/GeneralForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'packages/web/admin/src/ui/settings/CommentsForm.tsx', rules: ['jsx-text'], text: 'ms' },
+  { path: 'packages/web/admin/src/ui/settings/GeneralForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
   {
-    path: 'packages/web/src/ui/admin/settings/SecurityForm.tsx',
+    path: 'packages/web/admin/src/ui/settings/SecurityForm.tsx',
     rules: ['jsx-attribute'],
     text: 'https://example.com',
   },
-  { path: 'packages/web/src/ui/admin/settings/SecurityForm.tsx', rules: ['jsx-attribute'], text: '/webhook/github' },
-  { path: 'packages/web/src/ui/admin/settings/StorageCards.tsx', rules: ['jsx-text'], text: 'S3 ·' },
-  { path: 'packages/web/src/ui/admin/shell/AdminSearchDialog.tsx', rules: ['jsx-text'], text: 'ESC' },
-  { path: 'packages/web/src/ui/admin/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'v' },
-  { path: 'packages/web/src/ui/admin/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'GitHub' },
+  { path: 'packages/web/admin/src/ui/settings/SecurityForm.tsx', rules: ['jsx-attribute'], text: '/webhook/github' },
+  { path: 'packages/web/admin/src/ui/settings/StorageCards.tsx', rules: ['jsx-text'], text: 'S3 ·' },
+  { path: 'packages/web/admin/src/ui/shell/AdminSearchDialog.tsx', rules: ['jsx-text'], text: 'ESC' },
+  { path: 'packages/web/admin/src/ui/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'v' },
+  { path: 'packages/web/admin/src/ui/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'GitHub' },
   // Technical tokens on the business admin surface — protocol names, URL
   // prefixes, field identifiers, example URLs and keyboard keys.
   {
-    path: 'packages/web/src/ui/admin/analytics/LocationsMap.tsx',
+    path: 'packages/web/admin/src/ui/analytics/LocationsMap.tsx',
     rules: ['jsx-text'],
     text: 'IP Geolocation by DB-IP',
   },
-  { path: 'packages/web/src/ui/admin/analytics/PostAnalyticsView.tsx', rules: ['jsx-text'], text: '/posts/' },
-  { path: 'packages/web/src/ui/admin/categories/CategoryRow.tsx', rules: ['jsx-text'], text: '/cats/' },
+  { path: 'packages/web/admin/src/ui/analytics/PostAnalyticsView.tsx', rules: ['jsx-text'], text: '/posts/' },
+  { path: 'packages/web/admin/src/ui/categories/CategoryRow.tsx', rules: ['jsx-text'], text: '/cats/' },
   {
-    path: 'packages/web/src/ui/admin/comments/EditUserDialog.tsx',
+    path: 'packages/web/admin/src/ui/comments/EditUserDialog.tsx',
     rules: ['jsx-attribute'],
     text: 'https://example.com',
   },
-  { path: 'packages/web/src/ui/admin/images/ImageDetailDialog.tsx', rules: ['jsx-text'], text: '×' },
-  { path: 'packages/web/src/ui/admin/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'playerId' },
-  { path: 'packages/web/src/ui/admin/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'sourceId' },
-  { path: 'packages/web/src/ui/admin/my/MyProfileView.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
-  { path: 'packages/web/src/ui/admin/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'Ctrl' },
-  { path: 'packages/web/src/ui/admin/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
-  { path: 'packages/web/src/ui/admin/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
-  { path: 'packages/web/src/ui/admin/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'packages/web/admin/src/ui/images/ImageDetailDialog.tsx', rules: ['jsx-text'], text: '×' },
+  { path: 'packages/web/admin/src/ui/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'playerId' },
+  { path: 'packages/web/admin/src/ui/musics/MusicDetailView.tsx', rules: ['jsx-text'], text: 'sourceId' },
+  { path: 'packages/web/admin/src/ui/my/MyProfileView.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
+  { path: 'packages/web/admin/src/ui/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'Ctrl' },
+  { path: 'packages/web/admin/src/ui/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
+  { path: 'packages/web/admin/src/ui/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
+  { path: 'packages/web/admin/src/ui/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
   // The editor slices' technical tokens. The locale→table aggregator
   // keys its map by locale tag — the tags ARE that mapping's identity. The
   // label tables themselves are a copy store (the editor chrome's catalog; the
@@ -128,9 +134,9 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
   // The client's dynamic `locale → label-table import` map: the tags are the
   // mapping's identity (the counterpart of the aggregator above), not copy.
-  { path: 'packages/web/src/client/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
-  { path: 'packages/web/src/ui/admin/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
-  { path: 'packages/web/src/ui/admin/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
+  { path: 'packages/web/client/src/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/web/admin/src/ui/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
+  { path: 'packages/web/admin/src/ui/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
   // Technical/developer invariants, never user copy. These files'
   // only DomainError literals are internal diagnostics (a missing meta row, a
   // missing id on a developer-only entry point, registry-default drift), so the
@@ -195,7 +201,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/server/src/infra/config.ts', rules: ['han-literal'] },
   { path: 'packages/server/src/infra/binary-rollback.ts', rules: ['han-literal'] },
   // Slash-menu search aliases: match keys, never rendered as interface copy.
-  { path: 'packages/web/src/ui/admin/editor/cards/menu-matches.ts', rules: ['han-literal'] },
+  { path: 'packages/web/admin/src/ui/editor/cards/menu-matches.ts', rules: ['han-literal'] },
   // Default content seeds and the content projection are spec'd as
   // untranslatable (they are stored/rendered content, not app chrome).
   { path: 'packages/shared/lexical/src/cards/solution.ts', rules: ['han-literal'], text: '解：' },
@@ -245,32 +251,32 @@ describe('production sources', () => {
         'packages/shared/i18n/src/locales.ts',
         'packages/shared/i18n/src/catalog.ts',
         'packages/shared/utils/src/format.ts',
-        'packages/web/src/ui/public/LikeActions.tsx',
-        'packages/web/src/ui/public/comments/CommentReplyForm.tsx',
-        'packages/web/src/ui/public/friends/FriendApplyForm.tsx',
-        'packages/web/src/ui/admin/auth/AdminInstallForm.tsx',
-        'packages/web/src/ui/admin/auth/SetupTokenVerifyForm.tsx',
-        'packages/web/src/ui/admin/settings/CommentsForm.tsx',
-        'packages/web/src/ui/admin/settings/GeneralForm.tsx',
-        'packages/web/src/ui/admin/settings/SecurityForm.tsx',
-        'packages/web/src/ui/admin/settings/StorageCards.tsx',
-        'packages/web/src/ui/admin/shell/AdminSearchDialog.tsx',
-        'packages/web/src/ui/admin/shell/VersionDialog.tsx',
-        'packages/web/src/ui/admin/analytics/LocationsMap.tsx',
-        'packages/web/src/ui/admin/analytics/PostAnalyticsView.tsx',
-        'packages/web/src/ui/admin/categories/CategoryRow.tsx',
-        'packages/web/src/ui/admin/comments/EditUserDialog.tsx',
-        'packages/web/src/ui/admin/images/ImageDetailDialog.tsx',
-        'packages/web/src/ui/admin/musics/MusicDetailView.tsx',
-        'packages/web/src/ui/admin/my/MyProfileView.tsx',
-        'packages/web/src/ui/admin/shared/SearchShortcutHint.tsx',
-        'packages/web/src/ui/admin/users/UserDetailView.tsx',
-        'packages/web/src/ui/admin/users/UserEditForm.tsx',
+        'packages/web/public/src/ui/LikeActions.tsx',
+        'packages/web/public/src/ui/comments/CommentReplyForm.tsx',
+        'packages/web/public/src/ui/friends/FriendApplyForm.tsx',
+        'packages/web/admin/src/ui/auth/AdminInstallForm.tsx',
+        'packages/web/admin/src/ui/auth/SetupTokenVerifyForm.tsx',
+        'packages/web/admin/src/ui/settings/CommentsForm.tsx',
+        'packages/web/admin/src/ui/settings/GeneralForm.tsx',
+        'packages/web/admin/src/ui/settings/SecurityForm.tsx',
+        'packages/web/admin/src/ui/settings/StorageCards.tsx',
+        'packages/web/admin/src/ui/shell/AdminSearchDialog.tsx',
+        'packages/web/admin/src/ui/shell/VersionDialog.tsx',
+        'packages/web/admin/src/ui/analytics/LocationsMap.tsx',
+        'packages/web/admin/src/ui/analytics/PostAnalyticsView.tsx',
+        'packages/web/admin/src/ui/categories/CategoryRow.tsx',
+        'packages/web/admin/src/ui/comments/EditUserDialog.tsx',
+        'packages/web/admin/src/ui/images/ImageDetailDialog.tsx',
+        'packages/web/admin/src/ui/musics/MusicDetailView.tsx',
+        'packages/web/admin/src/ui/my/MyProfileView.tsx',
+        'packages/web/admin/src/ui/shared/SearchShortcutHint.tsx',
+        'packages/web/admin/src/ui/users/UserDetailView.tsx',
+        'packages/web/admin/src/ui/users/UserEditForm.tsx',
         // The locale→label-table maps and the two glyph sites.
         'packages/shared/i18n/src/inkling-labels.ts',
-        'packages/web/src/client/editor/inkling-labels.ts',
-        'packages/web/src/ui/admin/editor-shell/RevisionsDrawer.tsx',
-        'packages/web/src/ui/admin/editor/pickers/ImageLibraryPicker.tsx',
+        'packages/web/client/src/editor/inkling-labels.ts',
+        'packages/web/admin/src/ui/editor-shell/RevisionsDrawer.tsx',
+        'packages/web/admin/src/ui/editor/pickers/ImageLibraryPicker.tsx',
         'packages/server/src/domains/content/repos/mutate.ts',
         'packages/server/src/domains/posts/services/mutate.ts',
         'packages/server/src/domains/pages/services/mutate.ts',
@@ -293,7 +299,7 @@ describe('production sources', () => {
         'packages/server/src/infra/intl-probe.ts',
         'packages/server/src/infra/config.ts',
         'packages/server/src/infra/binary-rollback.ts',
-        'packages/web/src/ui/admin/editor/cards/menu-matches.ts',
+        'packages/web/admin/src/ui/editor/cards/menu-matches.ts',
         'packages/shared/lexical/src/cards/solution.ts',
         'packages/shared/lexical/src/projection-state.ts',
         'packages/shared/settings/src/footnotes-section-title.ts',
@@ -327,20 +333,20 @@ describe('production sources', () => {
     // Formatting and registry modules.
     expect(scannedFiles).toEqual(
       expect.arrayContaining([
-        'packages/shared/settings/src/display.ts',
+        'packages/web/admin/src/ui/settings/display.ts',
         'packages/shared/cache/src/registry.ts',
         'packages/shared/cache/src/types.ts',
-        'packages/shared/utils/src/roles.ts',
+        'packages/shared/auth/src/roles.ts',
         'packages/shared/utils/src/formatter.ts',
-        'packages/web/src/ui/admin/analytics/time-labels.ts',
-        'packages/web/src/ui/admin/editor-shell/wall-clock.ts',
-        'packages/web/src/ui/admin/settings/cache/cache-formatters.ts',
-        'packages/web/src/ui/admin/tasks/meta.ts',
-        'packages/web/src/ui/shared/notifications/notification-meta.ts',
+        'packages/web/admin/src/ui/analytics/time-labels.ts',
+        'packages/web/admin/src/ui/editor-shell/wall-clock.ts',
+        'packages/web/admin/src/ui/settings/cache/cache-formatters.ts',
+        'packages/web/admin/src/ui/tasks/meta.ts',
+        'packages/web/public/src/ui/shared/notifications/notification-meta.ts',
         // The admin shell, settings pages and shared primitives.
-        'packages/web/src/ui/admin/shell/AdminShell.tsx',
-        'packages/web/src/ui/admin/settings/StorageCards.tsx',
-        'packages/web/src/ui/admin/settings/cache/BucketCard.tsx',
+        'packages/web/admin/src/ui/shell/AdminShell.tsx',
+        'packages/web/admin/src/ui/settings/StorageCards.tsx',
+        'packages/web/admin/src/ui/settings/cache/BucketCard.tsx',
         'apps/kobato/src/routes/admin/settings/layout.tsx',
         'apps/kobato/src/routes/admin/layout.tsx',
         'packages/ui/src/components/pagination.tsx',
@@ -348,11 +354,11 @@ describe('production sources', () => {
         // The editor routes, admin editor families and client glue.
         'apps/kobato/src/routes/editor/layout.tsx',
         'apps/kobato/src/routes/editor/post/analytics.tsx',
-        'packages/web/src/ui/admin/editor/PageBodyEditor.tsx',
-        'packages/web/src/ui/admin/editor-shell/EditorToolbar.tsx',
-        'packages/web/src/ui/admin/editor-shared/BasicInfoCard.tsx',
-        'packages/web/src/ui/admin/editor/cards/music-player.tsx',
-        'packages/web/src/ui/admin/editor/page-editor-card-config.ts',
+        'packages/web/admin/src/ui/editor/PageBodyEditor.tsx',
+        'packages/web/admin/src/ui/editor-shell/EditorToolbar.tsx',
+        'packages/web/admin/src/ui/editor-shared/BasicInfoCard.tsx',
+        'packages/web/admin/src/ui/editor/cards/music-player.tsx',
+        'packages/web/admin/src/ui/editor/page-editor-card-config.ts',
         // The server error protocol modules.
         'packages/server/src/infra/http/errors.ts',
         'packages/server/src/infra/http/error-descriptor.ts',
@@ -367,8 +373,8 @@ describe('production sources', () => {
         'packages/server/src/domains/auth/passkey/service.ts',
         'packages/server/src/domains/auth/session-guard.ts',
         'packages/server/src/domains/auth/schema.ts',
-        'packages/server/src/domains/settings/sections/assets.ts',
-        'packages/server/src/domains/settings/sections/security.ts',
+        'packages/shared/settings/src/sections/assets.ts',
+        'packages/shared/settings/src/sections/security.ts',
         'packages/server/src/domains/settings/services/section-patch.ts',
         'packages/server/src/http/middlewares/hono-rbac.ts',
         'packages/server/src/http/middlewares/rate-limit.ts',
@@ -377,10 +383,10 @@ describe('production sources', () => {
         'packages/server/src/http/localized-http-exception.ts',
         'packages/server/src/http/controllers/admin/settings.controller.ts',
         // Settings sections, taxonomies, content lifecycle.
-        'packages/server/src/domains/settings/sections/assets.ts',
-        'packages/server/src/domains/settings/sections/comments.ts',
-        'packages/server/src/domains/settings/sections/security.ts',
-        'packages/server/src/domains/settings/sections/backup.ts',
+        'packages/shared/settings/src/sections/assets.ts',
+        'packages/shared/settings/src/sections/comments.ts',
+        'packages/shared/settings/src/sections/security.ts',
+        'packages/shared/settings/src/sections/backup.ts',
         'packages/server/src/domains/taxonomies/shared.ts',
         'packages/server/src/domains/taxonomies/categories/services/mutate.ts',
         'packages/server/src/domains/content/lifecycle.ts',
@@ -419,7 +425,6 @@ describe('production sources', () => {
         'packages/server/src/domains/users/services/admin.ts',
         'packages/server/src/domains/users/services/account.ts',
         'packages/server/src/domains/friends/service.ts',
-        'packages/server/src/domains/friends/schema.ts',
         'packages/server/src/domains/newsletter/service.ts',
         'packages/server/src/domains/notifications/service.ts',
         'packages/server/src/domains/update/service.ts',
@@ -433,7 +438,7 @@ describe('production sources', () => {
         'packages/server/src/domains/update/pipeline.ts',
         'packages/shared/utils/src/safe-url.ts',
         // The Gravatar mirror preset labels render through `t()`.
-        'packages/web/src/ui/admin/settings/CommentsForm.tsx',
+        'packages/web/admin/src/ui/settings/CommentsForm.tsx',
         // Email templates/senders render server-catalog copy.
         'packages/server/src/infra/email/sender.ts',
         'packages/server/src/infra/email/templates/layout/EmailLayout.tsx',
@@ -630,7 +635,7 @@ describe('allowlist', () => {
   })
 
   it('exempts nothing outside the path prefix', () => {
-    const result = applyAllowlist(violations, [{ path: 'packages/web/src/ui/other.tsx' }])
+    const result = applyAllowlist(violations, [{ path: 'packages/web/admin/src/ui/other.tsx' }])
 
     expect(result.allowlisted).toHaveLength(0)
   })

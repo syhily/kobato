@@ -3,7 +3,8 @@
 @import 'tailwindcss' source(none);
 @import '@kobato/ui/styles/tailwind.css' reference;
 @import '@kobato/lexical/styles/cards.css';
-@import '@kobato/web/styles/admin.css';
+@import '@kobato/web-public/styles/admin-subset.css';
+@import '@kobato/web-admin/styles/admin.css';
 
 @source '../routes/admin';
 @source '../routes/auth';

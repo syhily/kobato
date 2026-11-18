@@ -1,4 +1,3 @@
-import type { WebmentionStatusCounts } from '@kobato/contracts/webmentions.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { NewWebmention, WebmentionRow } from '@kobato/db/types.ts'
@@ -8,6 +7,10 @@ import { webmention } from '@kobato/db/schema/webmention.ts'
 import { and, asc, count, desc, eq, gte, isNull, lt, lte, or, sql } from 'drizzle-orm'
 
 export type WebmentionStatus = WebmentionRow['status']
+
+/** Group-by-status row counts (`all` + one entry per lifecycle status). Wire
+ *  twin: `webmentionStatusCountsSchema` in `@kobato/contracts/webmentions`. */
+export type WebmentionStatusCounts = { all: number } & { [S in WebmentionStatus]: number }
 
 /**
  * Re-mention upsert outcome: `inserted` new pair, `updated` metadata refresh,

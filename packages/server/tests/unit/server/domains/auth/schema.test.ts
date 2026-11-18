@@ -1,5 +1,5 @@
+import { zodIssueParams } from '@kobato/contracts/api-error.ts'
 import { signInSchema, signUpAdminSchema, updateUserSchema } from '@kobato/server/domains/auth/schema.ts'
-import { zodIssueParams } from '@kobato/utils/zod-issue-bounds.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('auth/schema — password complexity', () => {

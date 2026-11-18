@@ -1,8 +1,8 @@
 // `kobato rollback` — swaps the `<binary>.bak` sibling back into place.
 // Runs from the SEA CLI before any bootstrap: no side effects; only node
-// builtins + `@kobato/utils/version`.
+// builtins + `@kobato/distribution/app`.
 
-import { APP_VERSION } from '@kobato/utils/version.ts'
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { rename, rm } from 'node:fs/promises'

@@ -4,7 +4,7 @@
 // function, so the three keys exist exactly once and the shipped signals share
 // one identity. No host/OS/process/env detector is involved.
 
-import { APP_VERSION } from '@kobato/utils/version.ts'
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 
 const SERVICE_NAME = 'kobato'
 const DEPLOYMENT_ENVIRONMENT = 'development'

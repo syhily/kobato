@@ -1,5 +1,6 @@
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 import {
   __resetCacheCountersForTests,
   bumpCounter,
@@ -13,7 +14,6 @@ import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { APP_VERSION } from '@kobato/utils/version.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

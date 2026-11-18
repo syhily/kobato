@@ -1,4 +1,4 @@
-import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/contracts/sea/assets.ts'
+import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/distribution/sea-assets.ts'
 import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea.ts'
 import { createHash } from 'node:crypto'
 import { zstdDecompressSync } from 'node:zlib'
@@ -10,7 +10,7 @@ import {
   SEA_COMPRESSION_MIN_BYTES,
   shouldPackAsset,
   sortManifestFiles,
-} from '../../../../../../packages/tools/pack/src/sea/assets.ts'
+} from '../../../../../../tools/pack/src/sea/assets.ts'
 
 // SEA blob compression contract: the writer and reader must agree on the
 // packed format, with the manifest asset riding uncompressed as the
@@ -223,7 +223,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
   })
 })
 
-describe('packages/tools/pack/src/sea/assets — shouldPackAsset packing policy', () => {
+describe('tools/pack/src/sea/assets — shouldPackAsset packing policy', () => {
   it('packs only the native dynamic libraries', () => {
     expect(shouldPackAsset('natives/sharp.node')).toBe(true)
     expect(shouldPackAsset('natives/skia.node')).toBe(true)
@@ -246,7 +246,7 @@ describe('packages/tools/pack/src/sea/assets — shouldPackAsset packing policy'
   })
 })
 
-describe('packages/tools/pack/src/sea/assets — isDrizzleSnapshotArtifact', () => {
+describe('tools/pack/src/sea/assets — isDrizzleSnapshotArtifact', () => {
   it('excludes drizzle-kit snapshot artifacts in both layouts', () => {
     expect(isDrizzleSnapshotArtifact('20260514000001_init_schema/snapshot.json')).toBe(true)
     expect(isDrizzleSnapshotArtifact('snapshot.json')).toBe(true)

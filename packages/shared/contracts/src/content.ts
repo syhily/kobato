@@ -1,4 +1,5 @@
 import type { ResolvedFonts } from '@kobato/assets/fonts.ts'
+import type { Role } from '@kobato/auth/roles.ts'
 import type {
   Category,
   ClientTag,
@@ -10,12 +11,11 @@ import type {
   ListingPostCard,
   ListingPostCardWithMetadata,
   SidebarPostLink,
-} from '@kobato/contracts/catalog.ts'
-import type { DetailPageComments, LatestComment } from '@kobato/contracts/types/comments.ts'
-import type { ListingPageLoaderData } from '@kobato/contracts/types/listing.ts'
+} from '@kobato/catalog/catalog.ts'
+import type { ListingPageLoaderData } from '@kobato/catalog/listing.ts'
+import type { DetailPageComments, LatestComment } from '@kobato/contracts/comments.ts'
 import type { KobatoInklingLabelTable } from '@kobato/i18n/inkling-labels/en-US.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { z } from 'zod'

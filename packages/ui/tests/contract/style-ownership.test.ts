@@ -16,7 +16,7 @@ describe('UI style ownership', () => {
   it('never scans or imports product-layer sources', () => {
     for (const name of readdirSync(STYLES).filter((entry) => entry.endsWith('.css'))) {
       const source = readFileSync(resolve(STYLES, name), 'utf8')
-      expect(source).not.toContain('@kobato/web/')
+      expect(source).not.toContain('@kobato/web')
       expect(source).not.toMatch(/@source[^;]*(?:apps|packages\/web|packages\/shared)/)
     }
   })

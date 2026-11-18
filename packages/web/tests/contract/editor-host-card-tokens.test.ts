@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 // inkling shadows, so adding a host card or bumping the inkling/Tailwind
 // scale fails here instead of regressing silently in the canvas.
 
-const editorCss = readFileSync(resolve(process.cwd(), 'packages/web/src/styles/inkling-editor.css'), 'utf8')
+const editorCss = readFileSync(resolve(process.cwd(), 'packages/web/admin/src/styles/inkling-editor.css'), 'utf8')
 const inklingCss = readFileSync(resolve(process.cwd(), 'packages/inkling/src/styles/index.css'), 'utf8')
 const tailwindCss = readFileSync(resolve(process.cwd(), 'packages/ui/src/styles/tailwind.css'), 'utf8')
 

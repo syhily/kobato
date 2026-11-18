@@ -1,8 +1,10 @@
 // Analytics wire types, the shared query schema and time-range primitives.
 // Consumed by the server query layer and the React dashboard — isomorphic, no
-// server-only imports.
+// server-only imports. The DuckDB persistence twins (resolved query + query
+// IO + the same time primitives) live in `@kobato/db/duckdb/queries/types.ts`,
+// pinned value-identical by the server's db-wire parity test.
 
-import { safeBoolean } from '@kobato/utils/schema.ts'
+import { safeBoolean } from '@kobato/contracts/primitives.ts'
 import { z } from 'zod'
 
 export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30d', 'last-90d', 'last-365d'] as const
@@ -213,6 +215,20 @@ export const metricRowDto = z.object({
   visitors: z.number().int().nonnegative(),
 })
 export type MetricRow = z.infer<typeof metricRowDto>
+
+// `analytics.metrics` — a query plus the dimension to break it down by. The
+// row cap is tighter than the query default: the dashboard table paginates.
+export const analyticsMetricsInputSchema = analyticsQuerySchema.extend({
+  type: z.enum(METRIC_TYPE_VALUES),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
+})
+export type AnalyticsMetricsInput = z.infer<typeof analyticsMetricsInputSchema>
+
+export const analyticsMetricsOutputSchema = z.array(metricRowDto)
+export const analyticsHeatmapOutputSchema = z.array(heatmapCellDto)
+
+/** CSV text export grouped by path (views / visitors / referers). */
+export const analyticsExportOutputSchema = z.string()
 
 export interface AnalyticsOverviewData {
   counters: CountersDto

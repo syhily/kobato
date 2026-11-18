@@ -5,11 +5,11 @@
 import type { UpdateJobState } from '@kobato/contracts/update.ts'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
+import { APP_REPOSITORY } from '@kobato/distribution/app.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { APP_REPOSITORY } from '@kobato/utils/version.ts'
 import { createHash } from 'node:crypto'
 import { createReadStream, createWriteStream } from 'node:fs'
 import { chmod, mkdir, open, rename, rm } from 'node:fs/promises'

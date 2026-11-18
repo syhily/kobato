@@ -1,8 +1,8 @@
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { AnalyticsDashboard } from '@kobato/web/ui/admin/analytics/AnalyticsDashboard.tsx'
-import { ExportButton } from '@kobato/web/ui/admin/analytics/ExportButton.tsx'
-import { useAnalyticsState } from '@kobato/web/ui/admin/analytics/use-analytics-state.ts'
+import { AnalyticsDashboard } from '@kobato/web-admin/ui/analytics/AnalyticsDashboard.tsx'
+import { ExportButton } from '@kobato/web-admin/ui/analytics/ExportButton.tsx'
+import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 
 import type { Route } from './+types/overview'
 

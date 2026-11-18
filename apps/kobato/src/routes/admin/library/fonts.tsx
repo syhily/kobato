@@ -1,5 +1,5 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { FontsView } from '@kobato/web/ui/admin/fonts/FontsView.tsx'
+import { FontsView } from '@kobato/web-admin/ui/fonts/FontsView.tsx'
 
 import { titleMeta } from '@/seo/title-meta.ts'
 

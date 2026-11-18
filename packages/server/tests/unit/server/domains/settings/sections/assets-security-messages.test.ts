@@ -1,6 +1,6 @@
-import { assetsValidationMessages, assetsWriteSchema } from '@kobato/server/domains/settings/sections/assets.ts'
-import { securitySchema, securityValidationMessages } from '@kobato/server/domains/settings/sections/security.ts'
 import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor.ts'
+import { assetsValidationMessages, assetsWriteSchema } from '@kobato/settings/sections/assets.ts'
+import { securitySchema, securityValidationMessages } from '@kobato/settings/sections/security.ts'
 import { describe, expect, it } from 'vitest'
 
 // Settings Zod prose is a typed catalog id at the schema; zodIssuesToWire turns it into a

@@ -1,16 +1,11 @@
 import type { BackupSettings, CommentsSettings, MailSettings } from '@kobato/settings/types.ts'
-import type { AvatarSource } from '@kobato/utils/avatar.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 
-import { AVATAR_SOURCES } from '@kobato/utils/avatar.ts'
+import { AVATAR_SOURCES } from '@kobato/assets/avatar.ts'
 import { z } from 'zod'
 
 // Per-slot status surfaced to the admin form. `etag` drives cache-busting and the
 // "is configured?" check; only the hash is sent, never the bytes.
-export interface BrandingSlotStatus {
-  /** Empty string when the slot has no custom upload. */
-  etag: string
-}
+export type BrandingSlotStatus = z.infer<typeof brandingSlotStatusSchema>
 
 // Zod twins of the two masked loader shapes — the runtime gate of the settings save
 // response (see `projectSectionForAdmin`): the save round-trip must produce exactly
@@ -94,75 +89,16 @@ export const backupLoaderShapeSchema = z.object({
   passwordMask: z.string().nullable(),
 })
 
-export interface AssetsLoaderShape {
-  asset: { host: string; scheme: 'http' | 'https' }
-  storage: {
-    enabled: boolean
-    endpoint: string
-    region: string
-    bucket: string
-    accessKeyId: string
-    forcePathStyle: boolean
-    urlTemplate: string
-  }
-  /** Last 4 chars of the stored secret access key, or `null` when unset. */
-  secretAccessKeyMask: string | null
-  upload: { maxBytes: number; jpegQuality: number }
-  branding: {
-    faviconSvg: BrandingSlotStatus
-    faviconIco: BrandingSlotStatus
-    appleTouchIcon: BrandingSlotStatus
-    icon192: BrandingSlotStatus
-    icon512: BrandingSlotStatus
-    logoSvg: BrandingSlotStatus
-    logoDarkSvg: BrandingSlotStatus
-    logoLargeSvg: BrandingSlotStatus
-    logoLargeDarkSvg: BrandingSlotStatus
-    openGraph: BrandingSlotStatus
-    blogPoster: BrandingSlotStatus
-    blogPosterDark: BrandingSlotStatus
-    defaultAvatar: BrandingSlotStatus
-    defaultMusicCover: BrandingSlotStatus
-    /** robots.txt content (inline configuration, not an S3-backed asset). */
-    robotsTxt: string
-  }
-}
+export type AssetsLoaderShape = z.infer<typeof assetsLoaderShapeSchema>
 
 // Mirrors `MailSettings` with the two secrets swapped for their masks; the outer
 // `mail:` wrapper matches `mailSchema` so card patches validate without translation.
-export interface MailLoaderShape {
-  mail: {
-    enabled: boolean
-    notificationEmails: boolean
-    sender: string
-    transport: 'smtp' | 'mailgun'
-    smtpHost: string
-    smtpPort: number
-    smtpUser: string
-    smtpPassMask: string | null
-    smtpSecure: boolean
-    smtpRequireTls: boolean
-    smtpRejectUnauthorized: boolean
-    mailgunDomain: string
-    mailgunApiKeyMask: string | null
-  }
-}
+export type MailLoaderShape = z.infer<typeof mailLoaderShapeSchema>
 
 // Mirrors `CommentsSettings` with the GitHub token swapped for its mask; the outer
 // `comments:` wrapper matches `commentsSchema` so card patches validate without
 // translation.
-export interface CommentsLoaderShape {
-  comments: {
-    size: number
-    avatar: {
-      mirror: string
-      sources: AvatarSource[]
-    }
-    /** Last 4 chars of the stored GitHub token, or `null` when unset. */
-    githubTokenMask: string | null
-    tokenTtlSeconds: number
-  }
-}
+export type CommentsLoaderShape = z.infer<typeof commentsLoaderShapeSchema>
 
 interface RawBrandingRef {
   etag?: string
@@ -295,13 +231,7 @@ export function projectCommentsForAdmin(
 // Mirrors `BackupSettings` plus the password mask slot; the redacted
 // `encryption.password` ('') rides along so card patches keep validating against
 // the section schema.
-export interface BackupLoaderShape {
-  scheduled: BackupSettings['scheduled']
-  retention: BackupSettings['retention']
-  encryption: BackupSettings['encryption']
-  /** Last 4 chars of the stored backup encryption password, or `null` when unset. */
-  passwordMask: string | null
-}
+export type BackupLoaderShape = z.infer<typeof backupLoaderShapeSchema>
 
 /** Project raw `BackupSettings` into the shape `<BackupView>` expects: encryption password masking. */
 export function projectBackupForAdmin(backup: BackupSettings, passwordMask?: string | null): BackupLoaderShape {
@@ -311,10 +241,3 @@ export function projectBackupForAdmin(backup: BackupSettings, passwordMask?: str
     passwordMask: passwordMask ?? (password === '' ? null : password.slice(-4)),
   }
 }
-
-// Compile-time parity: the Zod twins must stay isomorphic to the hand-written
-// interfaces the forms consume.
-type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
-type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>
-type _commentsShapeParity = Assert<Equals<z.infer<typeof commentsLoaderShapeSchema>, CommentsLoaderShape>>
-type _backupShapeParity = Assert<Equals<z.infer<typeof backupLoaderShapeSchema>, BackupLoaderShape>>

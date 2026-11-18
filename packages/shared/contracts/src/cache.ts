@@ -54,3 +54,12 @@ export const clearCacheResultDto = z.object({
   refreshedStats: adminCacheStatsDto,
 })
 export type ClearCacheResultDto = z.infer<typeof clearCacheResultDto>
+
+// Admin cache wire inputs — the single Zod source the `@kobato/api` cache
+// contract composes and the server validates against.
+
+export const adminCacheGetStatsInput = z.object({})
+export type AdminCacheGetStatsInput = z.infer<typeof adminCacheGetStatsInput>
+
+export const adminCacheClearInput = z.object({ target: z.union([z.enum(CACHE_BUCKET_IDS), z.literal('all')]) })
+export type AdminCacheClearInput = z.infer<typeof adminCacheClearInput>

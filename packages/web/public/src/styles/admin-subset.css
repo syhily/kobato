@@ -1,0 +1,9 @@
+/* Partial: the precise web-public subset the admin surface renders.
+   Composed by apps/kobato/src/styles/admin.css without a second Tailwind compile. */
+@source '../ui/shared';
+@source '../ui/lib';
+@source '../ui/music-player';
+@source '../ui/chrome';
+@source '../ui/comments/*.{ts,tsx}';
+@source '../ui/widgets';
+@source '../ui/Search.tsx';

@@ -53,3 +53,6 @@ export const auditLogActorDto = z.object({
 export type AuditLogActorDto = z.infer<typeof auditLogActorDto>
 
 export const auditLogActorsOutput = z.array(auditLogActorDto)
+
+export const auditLogExportOutput = z.string()
+export type AuditLogExportOutput = z.infer<typeof auditLogExportOutput>

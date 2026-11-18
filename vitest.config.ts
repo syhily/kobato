@@ -12,6 +12,7 @@ export default defineConfig({
     projects: [
       'packages/shared/tests/unit/vitest.config.ts',
       'packages/shared/tests/snaps/vitest.config.ts',
+      'packages/api/tests/unit/vitest.config.ts',
       'packages/db/tests/unit/vitest.config.ts',
       'packages/db/tests/it/vitest.config.ts',
       'packages/server/tests/unit/vitest.config.ts',
@@ -21,7 +22,7 @@ export default defineConfig({
       'packages/web/tests/unit/vitest.config.ts',
       'packages/web/tests/snaps/vitest.config.ts',
       'packages/inkling/tests/vitest.config.ts',
-      'packages/tools/trace/tests/unit/vitest.config.ts',
+      'tools/trace/tests/unit/vitest.config.ts',
       'apps/kobato/tests/unit/vitest.config.ts',
       'apps/kobato/tests/it/vitest.config.ts',
       'apps/kobato/tests/snaps/vitest.config.ts',
@@ -30,14 +31,22 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['packages/*/src/**', 'packages/shared/*/src/**', 'apps/kobato/src/**'],
+      include: [
+        'packages/*/src/**',
+        'packages/shared/*/src/**',
+        'packages/web/admin/src/**',
+        'packages/web/client/src/**',
+        'packages/web/public/src/**',
+        'apps/kobato/src/**',
+      ],
       exclude: [
         'packages/*/src/**/*.d.ts',
         'apps/kobato/src/**/*.d.ts',
         'packages/db/src/schema/**',
         'packages/db/src/types/**',
         'packages/ui/src/**',
-        'packages/web/src/ui/**',
+        'packages/web/admin/src/ui/**',
+        'packages/web/public/src/ui/**',
         // The inkling editor tree is covered by its own vitest project
         // (packages/inkling/tests, jsdom) whose historical thresholds
         // (~56/54/49) sit below the root 60 — excluding it here keeps the

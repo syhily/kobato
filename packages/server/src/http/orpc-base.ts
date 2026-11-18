@@ -6,8 +6,10 @@ import type { CommentTokenCookie } from '@kobato/server/domains/comments/service
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { AnyContractRouter } from '@orpc/contract'
 import type { z } from 'zod'
 
+import { hasAtLeast, type Role } from '@kobato/auth/roles.ts'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
 import {
   parseCommentTokensCookie,
@@ -27,8 +29,7 @@ import {
   tryNotificationReplyRateLimit,
   tryResourceRateLimit,
 } from '@kobato/server/infra/rate-limit.ts'
-import { hasAtLeast, type Role } from '@kobato/utils/roles.ts'
-import { ORPCError, os } from '@orpc/server'
+import { implementerInternal, ORPCError, os } from '@orpc/server'
 
 // Context every oRPC procedure sees — `responseHeaders` merges onto the final `Response`.
 export interface HandlerContext {
@@ -261,3 +262,39 @@ export const authedProc = root.use(requireAuth).use(domainErrorGuard)
 
 export const adminProc = root.use(requireRole('admin')).use(domainErrorGuard)
 export const authorProc = root.use(requireRole('author')).use(domainErrorGuard)
+
+// Contract-first bases — the `implement(contract)` counterparts of the four
+// procedure bases above, with the SAME guard order (auth gate outermost, the
+// domain-error translation innermost). A controller implements a
+// `@kobato/api` contract through these; `impl.<key>.handler(...)` carries the
+// contract's route/input/output, and `impl.router({ ... })` type-checks the
+// implementation against the full contract shape. Auth, CSRF, and trace stay
+// server-side — the contract package carries metadata only.
+//
+// The guards are wired through `implementerInternal(contract, config, middlewares)`
+// — the exact primitive `implement(...).use(...)` reduces to — because the
+// public `.use` over a generic contract widens into a procedure-vs-router
+// union TypeScript cannot call.
+export function implementPublic<T extends AnyContractRouter>(contract: T) {
+  return implementerInternal<T, HandlerContext, HandlerContext>(contract, {}, [domainErrorGuard])
+}
+
+// The authed bases narrow the current context to `AuthedHandlerContext` —
+// exactly what the guard chain guarantees at runtime.
+export function implementAuthed<T extends AnyContractRouter>(contract: T) {
+  return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [requireAuth, domainErrorGuard])
+}
+
+export function implementAuthor<T extends AnyContractRouter>(contract: T) {
+  return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [
+    requireRole('author'),
+    domainErrorGuard,
+  ])
+}
+
+export function implementAdmin<T extends AnyContractRouter>(contract: T) {
+  return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [
+    requireRole('admin'),
+    domainErrorGuard,
+  ])
+}

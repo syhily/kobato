@@ -1,7 +1,12 @@
 # `@kobato/settings`
 
-The settings model — everything the `blog.<section>` setting table projects into, before any wire shape. Owner of: `sections` (the section registry) + `defaults` + `getters` + `projection` (the `BlogSettingsBundle` in `types`), `snapshot` (the process-wide snapshot slot; `snapshot.revision` = `<bootId>:<counter>` is request identity / locale sync only, never a cache generation), `representation-scopes` (the section→scope dependency table + the content-addressed per-scope generation hash), `app-localization` (`resolveAppLocalization` + `createLazyAppSnapshot` — the per-request capture pinning bundle AND localization), `rum-client-identity` (`anonymous | forward`), `rate-limit-bucket`, `display`, `socials`, `presentation` (the sidebar/social/branding presentation readers: `getSidebarWidgetCount` / `isSidebarWidgetEnabled` / `extractXHandle` / `brandingVersionSuffix`), `footnotes-section-title`.
+The isomorphic settings model and its single source of truth.
 
-- Allowed deps: `@kobato/i18n`, `@kobato/cache`, `@kobato/utils`. NEVER `@kobato/contracts` — settings sits below the wire layer; contracts imports settings, not the reverse (the settings write-schema contract-pinning fixtures are tests-only).
-- Bans: no React, no persistence, no server runtime — server hydration/merge lives in `@kobato/server/src/domains/settings`, UI per-section hooks in `@kobato/web`.
-- Tests: `tests/unit/` (umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`).
+- `sections/<section>.ts` owns each Section's read schema, pure defaults, write-shape schema, scope, and bundle slot. `sections/registry.ts` composes the 19 Sections and owns scope lookup. Section TS types in `types.ts` derive from these schemas; never add hand-written setting-shape twins.
+- Read schemas stay migration-tolerant. Strict write rules must not silently reject legacy rows during hydration. The server's `domains/settings/sections/registry.ts` adds server-only write validation (currently the Observability origin/organization gate); persistence, encryption, merge, and install flows stay in `@kobato/server`.
+- `secrets.ts` owns `SECRET_FIELDS`, `declareSecret`, redaction, and mask metadata. Encryption and secret-preserving writes stay server-side.
+- `projection.ts` owns admin projections and their runtime schemas; loader shapes are `z.infer` derivatives, never parallel interfaces.
+- `types.ts` derives the Section aliases and `BlogSettingsBundle` from `SECTION_REGISTRY`; it also owns `SettingsBundle`, `SettingsSectionPatch`, and `SecretMasks`.
+- `snapshot`, `app-localization`, `representation-scopes`, `rate-limit-bucket`, `rum-client-identity`, `socials`, `presentation`, `footnotes-section-title`, `timezones`, and `defaults` remain isomorphic model helpers. Admin navigation display metadata belongs to `@kobato/web-admin`, not this package.
+- Allowed deps: `@kobato/i18n`, `@kobato/cache`, `@kobato/assets` (the avatar source vocabulary), `@kobato/utils`. Never `@kobato/contracts`, server, db, web, UI, or React.
+- Tests: `tests/unit/` under the umbrella `shared-unit` project. Server write/hydration/secret tests remain in `packages/server/tests`; navigation display tests live with the web consumer.

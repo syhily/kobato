@@ -1,27 +1,21 @@
+import { imageContract } from '@kobato/api/image.ts'
 import { resolveImageRef } from '@kobato/server/domains/images/services/resolve.ts'
-import { publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
-import { z } from 'zod'
+import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 
-const resolveThumbhash = publicProc
-  .route({ method: 'GET', path: '/image/resolve-thumbhash' })
-  // Limiter before `.input(...)`: oRPC validates input at its declared
-  // index, so a trailing middleware never sees a malformed payload.
-  .use(resourceRateLimit)
-  .input(z.object({ src: z.string().trim().min(1).max(2000) }))
-  .output(
-    z.object({
-      thumbhash: z.string().nullable(),
-      width: z.number().nullable(),
-      height: z.number().nullable(),
-    }),
-  )
-  .handler(async ({ input, context }) => {
-    const image = await resolveImageRef(context.db, input.src)
-    return {
-      thumbhash: image?.thumbhash ?? null,
-      width: image?.width ?? null,
-      height: image?.height ?? null,
-    }
-  })
+// Contract-first: method/path/input/output live in `@kobato/api/image.ts`;
+// this controller only implements the procedures. The limiter rides the
+// implementer so it runs BEFORE the contract's input validation.
+const impl = implementPublic(imageContract).use(resourceRateLimit)
 
-export const imageRouter = { resolveThumbhash }
+const resolveThumbhash = impl.resolveThumbhash.handler(async ({ input, context }) => {
+  const image = await resolveImageRef(context.db, input.src)
+  return {
+    thumbhash: image?.thumbhash ?? null,
+    width: image?.width ?? null,
+    height: image?.height ?? null,
+  }
+})
+
+export const imageRouter = impl.router({
+  resolveThumbhash,
+})

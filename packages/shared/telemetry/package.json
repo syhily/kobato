@@ -1,0 +1,16 @@
+{
+  "name": "@kobato/telemetry",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/settings": "workspace:*",
+    "@kobato/telemetry": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

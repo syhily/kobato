@@ -1,33 +1,13 @@
-import { CONTENT_LANGUAGE_MAX_LENGTH, canonicalContentLanguage } from '@kobato/i18n/content-language.ts'
+import { canonicalContentLanguage } from '@kobato/i18n/content-language.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { safeBoolean } from '@kobato/utils/schema.ts'
-import { z } from 'zod'
-
-/**
- * Field-level zod pieces shared by the post and page admin input schemas. The
- * slug alphabet allows `[._-]` between segments so legacy page URLs survive.
- */
-export const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(80)
-  .regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/, 'Invalid slug')
-
-/**
- * Structural shape of the writable content-language field only. The BCP 47 grammar
- * check runs in {@link resolveContentLanguage}: oRPC input-schema failures travel
- * outside the descriptor channel, while the mutation's `DomainError` carries the
- * catalog id plus the `contentLanguage` path.
- */
-export const contentLanguageField = z.string().trim().max(CONTENT_LANGUAGE_MAX_LENGTH).nullable().optional()
 
 /**
  * Normalize an upsert's content language: `undefined` = leave untouched, blank /
  * `null` = clear, a well-formed BCP 47 tag = its canonical spelling (not limited to
  * the four UI locales). Anything else rejects the write with a descriptor-carrying
- * `BAD_REQUEST` from this single authority.
+ * `BAD_REQUEST` from this single authority. The wire field's structural shape and
+ * the upsert-meta input base live in `@kobato/contracts/admin-meta.ts`.
  */
 export function resolveContentLanguage(value: string | null | undefined): string | null | undefined {
   if (value === undefined || value === null || value.trim() === '') {
@@ -40,38 +20,3 @@ export function resolveContentLanguage(value: string | null | undefined): string
   }
   return canonical
 }
-
-export const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .transform((value) => value ?? '')
-
-/**
- * Upsert-meta skeleton every content entity shares — the writable shared meta
- * columns; entity schemas `.extend()` it with their extras.
- */
-export const upsertMetaBaseSchema = z.object({
-  id: z.string().min(1).optional(),
-  slug: slugSchema.optional(),
-  title: z.string().trim().min(1).max(200),
-  summary: optionalText(500),
-  cover: z.string().trim().max(500).optional().default(''),
-  og: z
-    .string()
-    .trim()
-    .max(500)
-    .nullable()
-    .optional()
-    .transform((value) => (value === undefined || value === '' ? null : value)),
-  published: safeBoolean().optional(),
-  commentsEnabled: safeBoolean().optional(),
-  webmentionsEnabled: safeBoolean().optional(),
-  showToc: safeBoolean().optional(),
-  showUpdated: safeBoolean().optional(),
-  contentLanguage: contentLanguageField,
-  // `null` = explicit cancel-schedule; omitted = leave the column untouched.
-  publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
-})

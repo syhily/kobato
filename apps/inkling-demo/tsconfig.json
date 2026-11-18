@@ -6,7 +6,7 @@
   // declarations, ambient markdown-it plugin types, and app globals; the
   // paths mirror apps/inkling-demo/vite.config.ts aliases because the playground reaches
   // into inkling internals the package exports map does not expose.
-  "extends": "../../packages/tools/config/tsconfig.base.json",
+  "extends": "../../tools/toolchain/tsconfig.base.json",
   "include": ["./**/*", "../../apps/kobato/src/**/*.d.ts", "../../packages/inkling/src/**/*.d.ts"],
   "compilerOptions": {
     "jsx": "react-jsx",
@@ -14,7 +14,7 @@
       "@kobato/inkling/headless": ["../../packages/inkling/src/headless.ts"],
       "@kobato/inkling": ["../../packages/inkling/src/index.ts"],
       "@kobato/inkling/*": ["../../packages/inkling/src/*"],
-      "@kobato/web/*": ["../../packages/web/src/*"],
+      "@kobato/web-public/*": ["../../packages/web/public/src/*"],
       "@kobato/ui/*": ["../../packages/ui/src/*"],
       "@kobato/lexical/*": ["../../packages/shared/lexical/src/*"]
     },

@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net'
 
 import { type ServerType, serve } from '@hono/node-server'
 import { type ServeStaticOptions, serveStatic } from '@hono/node-server/serve-static'
-import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/contracts/sea/assets.ts'
+import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets.ts'
 import { serverConfig } from '@kobato/server/infra/config.ts'
 import { getViteDevServer } from '@kobato/server/infra/hono/dev-server-ref.ts'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@kobato/server/infra/hono/helpers.ts'

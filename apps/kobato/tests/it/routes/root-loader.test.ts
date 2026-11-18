@@ -11,7 +11,7 @@ const session = makeSession({ csrfToken: 'test-csrf-token' })
 
 // Real settings snapshot: the empty table hydrates to null (the pre-install state).
 
-vi.mock('@kobato/web/client/api/query-client.ts', () => ({
+vi.mock('@kobato/web-client/api/query-client.ts', () => ({
   makeQueryClient: vi.fn(() => ({})),
 }))
 

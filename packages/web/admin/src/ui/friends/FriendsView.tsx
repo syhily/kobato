@@ -1,0 +1,234 @@
+import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
+
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { EditFriendDialog } from '@kobato/web-admin/ui/friends/EditFriendDialog.tsx'
+import { FriendRow, FriendsSkeleton } from '@kobato/web-admin/ui/friends/FriendRow.tsx'
+import { PendingFriendRow } from '@kobato/web-admin/ui/friends/PendingFriendRow.tsx'
+import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/AdminInfiniteListFooter.tsx'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/AdminListPage.tsx'
+import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
+import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/useAdminInfiniteList.ts'
+import { orpc } from '@kobato/web-client/api/client.ts'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+import { useDebouncedSearch } from '@kobato/web-public/ui/shared/use-debounced-search.ts'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { PlusIcon, SearchIcon } from 'lucide-react'
+import { Fragment, useCallback, useState } from 'react'
+import { toast } from 'sonner'
+
+const PAGE_SIZE = 30
+
+// A single bounded page is enough for the pending-review bucket.
+const PENDING_LIMIT = 50
+
+type EditTarget = AdminFriendDto | null | undefined
+
+// `admin.friends.delete` wire input.
+interface DeleteFriendInput {
+  id: string
+}
+
+export function FriendsView() {
+  const { t } = useI18n()
+  const [q, setQ] = useState('')
+  const [includeHidden, setIncludeHidden] = useState(false)
+  const queryClient = useQueryClient()
+  const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+
+  // Pending bucket: applications arrive as `visible: false` and surface on top for one-click review.
+  const pendingQuery = useQuery(
+    orpcQuery.admin.friends.list.queryOptions({ input: { visible: false, limit: PENDING_LIMIT } }),
+  )
+  const pendingRows = pendingQuery.data?.friends ?? []
+
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.friends.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      q: q || undefined,
+      includeHidden: includeHidden ? true : undefined,
+      offset,
+      limit: PAGE_SIZE,
+    }),
+    selectRows: (page) => page.friends,
+    noun: 'admin.list.noun.friendLinks',
+  })
+
+  const invalidateList = useCallback(() => {
+    // One procedure key covers both buckets — `.key()` partial-matches every cached input across both operation types.
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.friends.list.key() })
+  }, [queryClient])
+
+  const deleteMutation = useMutation({
+    mutationFn: (input: DeleteFriendInput) => orpc.admin.friends.delete({ id: input.id }),
+    onSuccess: () => {
+      toast.success(t('admin.friends.deleted'))
+      invalidateList()
+    },
+    onError: onMutationError('admin.toast.friendDeleteFailed', t),
+  })
+
+  // One-click approve flips `visible` via the existing upsert path; rows without a poster can't pass the schema.
+  const approveMutation = useMutation({
+    mutationFn: (friend: AdminFriendDto) =>
+      orpc.admin.friends.upsert({
+        id: friend.id,
+        website: friend.website,
+        description: friend.description,
+        homepage: friend.homepage,
+        poster: friend.poster,
+        rssUrl: friend.rssUrl,
+        visible: true,
+      }),
+    onSuccess: () => {
+      toast.success(t('admin.friends.approved'))
+      invalidateList()
+    },
+    onError: onMutationError('admin.toast.friendApproveFailed', t),
+  })
+
+  const [qInput, setQInput] = useDebouncedSearch({
+    delayMs: 300,
+    onChange: (value) => setQ(value),
+  })
+
+  const isDialogOpen = editTarget !== undefined
+
+  const handleDelete = useCallback(
+    (row: AdminFriendDto) => {
+      setConfirm({
+        title: t('admin.friends.deleteTitle', { website: row.website }),
+        description: t('admin.friends.deleteBody'),
+        actionLabel: t('common.action.delete'),
+        destructive: true,
+        onConfirm: () => deleteMutation.mutate({ id: row.id }),
+      })
+    },
+    [deleteMutation, t],
+  )
+
+  return (
+    <>
+      <AdminListPage>
+        <AdminListPage.Header
+          title={
+            <>
+              {t('admin.friends.title')} <span className="text-sm font-normal text-muted-foreground">{total}</span>
+            </>
+          }
+          description={t('admin.friends.description')}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-56">
+              <SearchIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                size="sm"
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
+                placeholder={t('admin.friends.searchPlaceholder')}
+                aria-label={t('admin.friends.searchAria')}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex h-9 items-center gap-2 rounded-sm border border-line-muted px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:shadow-focus">
+              <Checkbox
+                id="friends-include-hidden"
+                checked={includeHidden}
+                onCheckedChange={(value) => setIncludeHidden(value === true)}
+              />
+              <label htmlFor="friends-include-hidden" className="text-sm select-none">
+                {t('admin.friends.includeHidden')}
+              </label>
+            </div>
+            <Button type="button" size="sm" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
+              <PlusIcon data-icon />
+              {t('admin.friends.new')}
+            </Button>
+          </div>
+        </AdminListPage.Header>
+
+        <AdminListPage.Body>
+          {pendingRows.length > 0 && (
+            <section className="mb-6" aria-label={t('admin.friends.pendingSectionAria')}>
+              <h2 className="mb-3 text-admin-base font-semibold">
+                {t('admin.friends.pendingTitle')}{' '}
+                <span className="text-sm font-normal text-muted-foreground">{pendingRows.length}</span>
+              </h2>
+              <div className="divide-y rounded-xl border">
+                {pendingRows.map((row) => (
+                  <PendingFriendRow
+                    key={row.id}
+                    friend={row}
+                    disabled={isDialogOpen}
+                    approving={approveMutation.isPending}
+                    onApprove={() => approveMutation.mutate(row)}
+                    onEdit={() => setEditTarget(row)}
+                    onDelete={() => handleDelete(row)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {isLoading ? (
+            <FriendsSkeleton />
+          ) : rows.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchIcon />
+                </EmptyMedia>
+                <EmptyTitle>{t('admin.friends.empty')}</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div className="divide-y rounded-xl border">
+              {rows.map((row, index) => {
+                const friendRow = (
+                  <FriendRow
+                    friend={row}
+                    disabled={isDialogOpen}
+                    onEdit={() => setEditTarget(row)}
+                    onDelete={() => handleDelete(row)}
+                  />
+                )
+                return index === rows.length - 1 ? (
+                  <Fragment key={row.id} ref={sentinelRef}>
+                    {friendRow}
+                  </Fragment>
+                ) : (
+                  <Fragment key={row.id}>{friendRow}</Fragment>
+                )
+              })}
+            </div>
+          )}
+
+          <AdminInfiniteListFooter
+            noun={t('admin.list.noun.friendLinks')}
+            rowCount={rows.length}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+        </AdminListPage.Body>
+      </AdminListPage>
+
+      <EditFriendDialog
+        friend={editTarget}
+        onClose={() => setEditTarget(undefined)}
+        onSaved={() => {
+          setEditTarget(undefined)
+          invalidateList()
+        }}
+      />
+
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+    </>
+  )
+}

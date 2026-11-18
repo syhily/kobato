@@ -2,7 +2,7 @@
 
 `apps/kobato/src/routes/` holds route modules — loader / action / meta / component orchestration. Read session/context at
 the perimeter, call orchestrators (`@kobato/server/http/loaders/*`, domain-surface services), project DTOs through
-the shared leaves (`@kobato/{contracts,settings,i18n,...}`), render with `@kobato/web` components. No DB queries, cache access, or markdown parsing inline — never import
+the shared leaves (`@kobato/{contracts,settings,i18n,...}`), render with `@kobato/web-admin` / `@kobato/web-public` components. No DB queries, cache access, or markdown parsing inline — never import
 `@kobato/db/operations/*` (package-dag contract test). `routes.ts` is the URL contract, route ids derive from
 the file path; URLs and physical paths stay stable. Non-page requests (API, feeds, sitemap, generated images) are
 Hono routes in `server.ts`, not resource routes; components take plain props, never `server/*` in JSX.
@@ -78,7 +78,7 @@ introduce a new pattern.
 ## Content patterns
 
 - `post` + `content` → `/posts/:slug`; `page` + `content` → `/:slug`. Both render the saved `bodyHtml` projection
-  through `DetailBodyChrome` (see `packages/web/src/ui/AGENTS.md` → Content editors); public URLs use `slug`, not internal id.
+  through `DetailBodyChrome` (see `packages/web/admin/src/ui/AGENTS.md` → Content editors); public URLs use `slug`, not internal id.
 - `visible=false` posts are hidden from the public home and random-post widgets but stay in archives, tags,
   search, sitemap, feeds, and category/tag listings (`packages/server/AGENTS.md` → Content).
 

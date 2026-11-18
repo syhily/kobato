@@ -1,6 +1,6 @@
 import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
 
-import { SECRET_FIELDS } from '@kobato/server/domains/settings/secrets.ts'
+import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 
 /**
  * Last-4 mask of every configured secret, `null` when unset. The explicit initializer

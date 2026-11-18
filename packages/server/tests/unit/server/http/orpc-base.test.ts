@@ -2,6 +2,8 @@ import { parseCommentTokensCookie } from '@kobato/server/domains/comments/servic
 import {
   authedProc,
   commentTokenCookie,
+  implementAuthed,
+  implementPublic,
   orpcInputValidationInterceptor,
   passkeyGuard,
   publicProc,
@@ -15,6 +17,7 @@ import {
   TEST_BLOG_SETTINGS_BUNDLE,
 } from '@kobato/test/blog-settings.ts'
 import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
+import { oc } from '@orpc/contract'
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -382,5 +385,77 @@ describe('commentTokenCookie oRPC middleware', () => {
       code: 'NOT_FOUND',
     })
     expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')
+  })
+})
+
+// The contract-first counterparts of the procedure bases: a `@kobato/api`
+// contract implemented through `implementPublic`/`implementAuthed` must behave
+// like the `os`-built bases — guard order, one run per request, and the
+// contract's schemas validating input before the handler.
+const implementerContract = {
+  ping: oc
+    .route({ method: 'POST', path: '/impl/ping' })
+    .input(z.object({ msg: z.string() }))
+    .output(z.object({ ok: z.boolean() })),
+  boom: oc
+    .route({ method: 'POST', path: '/impl/boom' })
+    .input(z.object({}))
+    .output(z.object({ ok: z.boolean() })),
+}
+
+const publicImpl = implementPublic(implementerContract)
+const publicImplRouter = publicImpl.router({
+  ping: publicImpl.ping.handler(({ context }) => ({ ok: context.viewer === null })),
+  boom: publicImpl.boom.handler(() => {
+    throw new DomainError('BAD_REQUEST', 'impl boom')
+  }),
+})
+
+const authedContract = {
+  me: oc
+    .route({ method: 'POST', path: '/impl/me' })
+    .input(z.object({}))
+    .output(z.object({ id: z.string() })),
+}
+const authedImpl = implementAuthed(authedContract)
+const authedImplRouter = authedImpl.router({
+  me: authedImpl.me.handler(({ context }) => ({ id: context.viewer.id })),
+})
+
+describe('contract implementer bases', () => {
+  it('flows the HandlerContext and validates the contract input before the handler', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(publicImplRouter.ping, { msg: 'hi' }, { context: ctx })).resolves.toEqual({ ok: true })
+    // The contract types the input, so the invalid call goes through the
+    // narrowest test escape to prove the runtime validation still fires.
+    await expect(
+      call(publicImplRouter.ping, { wrong: 1 } as unknown as { msg: string }, { context: ctx }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+  })
+
+  it('translates DomainError through the shared domain guard', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(publicImplRouter.boom, {}, { context: ctx })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'impl boom',
+      data: {
+        descriptor: { messageKey: 'error.api.rawMessage', params: { message: 'impl boom' } },
+      },
+    })
+  })
+
+  it('mounts the base middleware exactly once per procedure', () => {
+    for (const procedure of [publicImplRouter.ping, publicImplRouter.boom]) {
+      expect(procedure['~orpc'].middlewares).toHaveLength(1)
+    }
+  })
+
+  it('keeps the auth gate outermost on the authed base', async () => {
+    await expect(call(authedImplRouter.me, {}, { context: makePublicCtx() })).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+      message: '需要登录后再操作。',
+    })
   })
 })

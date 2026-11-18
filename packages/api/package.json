@@ -1,0 +1,17 @@
+{
+  "name": "@kobato/api",
+  "version": "8.0.3-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@kobato/api": "workspace:*",
+    "@kobato/contracts": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@orpc/contract": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -1,8 +1,9 @@
 // Shared column enums. SQLite has no CREATE TYPE — `text({ enum })`
 // constrains at the app layer, and drizzle-kit emits a CHECK into the
-// migration SQL (DB-perimeter guard). The webmention lists are NOT here —
-// their canonical home is `@kobato/contracts/webmentions` (single source
-// for the drizzle columns, the CHECK literals, and the zod enums).
+// migration SQL (DB-perimeter guard). Per-domain persistence enums live in
+// their owning schema module (`webmention.ts`, `notification.ts`, `job-run.ts`,
+// `user.ts`, `storage-migration.ts`); their wire twins in `@kobato/contracts`
+// are pinned by the server's db-wire parity test.
 
 export const USER_ROLES = ['admin', 'author', 'visitor'] as const
 

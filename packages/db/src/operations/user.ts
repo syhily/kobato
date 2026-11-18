@@ -1,5 +1,5 @@
-import type { LoginMethod } from '@kobato/contracts/users.ts'
 import type { Database } from '@kobato/db/database.ts'
+import type { LoginMethod } from '@kobato/db/schema/user.ts'
 import type { NewUser, User } from '@kobato/db/types.ts'
 
 import { user } from '@kobato/db/schema/user.ts'

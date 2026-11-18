@@ -5,7 +5,7 @@ import {
   parseTextFilter,
   TEXT_FILTER_OPERATORS,
   textFilterLabel as textFilterLabelBase,
-} from '@kobato/web/ui/admin/comments/filter-fields.ts'
+} from '@kobato/web-admin/ui/comments/filter-fields.ts'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   isSingleDateFilterOperator,
@@ -13,7 +13,7 @@ import {
   resolveSingleDateFilterBounds,
   SINGLE_DATE_FILTER_OPERATORS,
   singleDateFilterLabel as singleDateFilterLabelBase,
-} from '@kobato/web/ui/admin/shared/date-filter.ts'
+} from '@kobato/web-admin/ui/shared/date-filter.ts'
 import { describe, expect, it } from 'vitest'
 
 const textFilterLabel = (value: Parameters<typeof textFilterLabelBase>[0]) => textFilterLabelBase(value, tZhCN)

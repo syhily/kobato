@@ -1,0 +1,22 @@
+import {
+  adminFriendUpsertOutputDto,
+  adminFriendsListOutputDto,
+  friendIdSchema,
+  listFriendsSchema,
+  upsertFriendSchema,
+} from '@kobato/contracts/friends.ts'
+import { voidOutput } from '@kobato/contracts/primitives.ts'
+import { oc } from '@orpc/contract'
+
+// Admin friends RPC contract — admin base on the server.
+export const adminFriendsContract = {
+  list: oc
+    .route({ method: 'GET', path: '/admin/friends/list' })
+    .input(listFriendsSchema)
+    .output(adminFriendsListOutputDto),
+  upsert: oc
+    .route({ method: 'POST', path: '/admin/friends/upsert' })
+    .input(upsertFriendSchema)
+    .output(adminFriendUpsertOutputDto),
+  delete: oc.route({ method: 'POST', path: '/admin/friends/remove' }).input(friendIdSchema).output(voidOutput),
+}

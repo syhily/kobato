@@ -43,13 +43,17 @@ const IGNORE_DIRS = new Set([
 ])
 
 /**
- * The former `@kobato/shared` package: nine leaf packages under
+ * The former `@kobato/shared` package: thirteen leaf packages under
  * `packages/shared/*`, each importable by name (`@kobato/utils`, …).
  */
 const SHARED_SPLIT = [
   '@kobato/utils',
   '@kobato/i18n',
   '@kobato/cache',
+  '@kobato/auth',
+  '@kobato/catalog',
+  '@kobato/distribution',
+  '@kobato/telemetry',
   '@kobato/settings',
   '@kobato/assets',
   '@kobato/lexical',
@@ -63,6 +67,10 @@ const REPO_PACKAGES = [
   { name: 'kobato', dir: 'apps/kobato' },
   { name: '@kobato/inkling', dir: 'packages/inkling' },
   { name: '@kobato/utils', dir: 'packages/shared/utils' },
+  { name: '@kobato/auth', dir: 'packages/shared/auth' },
+  { name: '@kobato/catalog', dir: 'packages/shared/catalog' },
+  { name: '@kobato/distribution', dir: 'packages/shared/distribution' },
+  { name: '@kobato/telemetry', dir: 'packages/shared/telemetry' },
   { name: '@kobato/i18n', dir: 'packages/shared/i18n' },
   { name: '@kobato/cache', dir: 'packages/shared/cache' },
   { name: '@kobato/settings', dir: 'packages/shared/settings' },
@@ -71,17 +79,22 @@ const REPO_PACKAGES = [
   { name: '@kobato/sanitize', dir: 'packages/shared/sanitize' },
   { name: '@kobato/contracts', dir: 'packages/shared/contracts' },
   { name: '@kobato/seo', dir: 'packages/shared/seo' },
+  { name: '@kobato/api', dir: 'packages/api' },
   { name: '@kobato/db', dir: 'packages/db' },
   { name: '@kobato/server', dir: 'packages/server' },
   { name: '@kobato/ui', dir: 'packages/ui' },
-  { name: '@kobato/web', dir: 'packages/web' },
-  { name: '@kobato/config', dir: 'packages/tools/config' },
-  { name: '@kobato/test', dir: 'packages/tools/test' },
-  { name: '@kobato/trace', dir: 'packages/tools/trace' },
-  { name: '@kobato/email', dir: 'packages/tools/email' },
-  { name: '@kobato/i18n-tools', dir: 'packages/tools/i18n' },
-  { name: '@kobato/pack', dir: 'packages/tools/pack' },
-  { name: '@kobato/browser', dir: 'packages/tools/browser' },
+  { name: '@kobato/web-admin', dir: 'packages/web/admin' },
+  { name: '@kobato/web-tests', dir: 'packages/web/tests' },
+  { name: '@kobato/web-client', dir: 'packages/web/client' },
+  { name: '@kobato/web-public', dir: 'packages/web/public' },
+  { name: '@kobato/toolchain', dir: 'tools/toolchain' },
+  { name: '@kobato/test', dir: 'tools/test' },
+  { name: '@kobato/trace', dir: 'tools/trace' },
+  { name: '@kobato/email', dir: 'tools/email' },
+  { name: '@kobato/i18n-tools', dir: 'tools/i18n' },
+  { name: '@kobato/pack', dir: 'tools/pack' },
+  { name: '@kobato/harness', dir: 'tools/harness' },
+  { name: '@kobato/browser', dir: 'tools/browser' },
   { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
 ] as const
 
@@ -102,12 +115,17 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   // settings → contracts (contract-pinning fixtures),
   // i18n → inkling (the label-table suite pins the barrel's DEFAULT_LABELS).
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n', '@kobato/test'],
+  '@kobato/auth': ['@kobato/auth', '@kobato/i18n', '@kobato/test'],
+  '@kobato/catalog': ['@kobato/catalog', '@kobato/lexical', '@kobato/test'],
+  '@kobato/distribution': ['@kobato/distribution', '@kobato/test'],
+  '@kobato/telemetry': ['@kobato/telemetry', '@kobato/settings', '@kobato/test'],
   '@kobato/i18n': ['@kobato/i18n', '@kobato/inkling', '@kobato/test'],
   '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
   '@kobato/settings': [
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/cache',
+    '@kobato/assets',
     '@kobato/utils',
     '@kobato/contracts',
     '@kobato/test',
@@ -126,6 +144,8 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/sanitize': ['@kobato/sanitize', '@kobato/test'],
   '@kobato/contracts': [
     '@kobato/contracts',
+    '@kobato/auth',
+    '@kobato/catalog',
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/utils',
@@ -135,32 +155,103 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  '@kobato/db': [
+  // The oRPC contract-first layer: Zod wire schemas from contracts, nothing else.
+  '@kobato/api': ['@kobato/api', '@kobato/contracts', '@kobato/test'],
+  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/test', '@kobato/utils'],
+  // server's web-admin entry exists only for its test fixtures; the api entry is the
+  // contract-first surface its controllers implement.
+  '@kobato/server': [
+    '@kobato/server',
+    '@kobato/api',
     '@kobato/db',
-    '@kobato/contracts',
-    '@kobato/settings',
-    '@kobato/lexical',
+    '@kobato/inkling',
+    '@kobato/web-admin',
     '@kobato/test',
-    '@kobato/utils',
+    ...SHARED_SPLIT,
   ],
-  // server's web entry exists only for its test fixtures.
-  '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', '@kobato/web', '@kobato/test', ...SHARED_SPLIT],
-  '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  // web's server entry is the documented RouterClient type-only channel.
-  '@kobato/web': [
-    '@kobato/web',
+  '@kobato/ui': [
+    '@kobato/ui',
+    '@kobato/settings',
+    '@kobato/i18n',
+    '@kobato/utils',
+    '@kobato/web-admin',
+    '@kobato/test',
+  ],
+  // web-admin consumes the public oRPC contract; server is a tests-only fixture
+  // edge; web-client is the browser platform leaf and web-public the
+  // public-frontend leaf whose audited modules admin reuses as long-term
+  // seams.
+  '@kobato/web-admin': [
+    '@kobato/web-admin',
+    '@kobato/web-client',
+    '@kobato/web-public',
     '@kobato/ui',
     '@kobato/inkling',
+    '@kobato/api',
     '@kobato/server',
     '@kobato/test',
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/cache',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/distribution',
+    '@kobato/telemetry',
     '@kobato/settings',
     '@kobato/assets',
     '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
+  ],
+  // The browser platform leaf (hooks, oRPC client, editor platform). `@kobato/lexical`
+  // is a tests-only edge (editor fixtures pin the storage schemas); production never
+  // reaches back into `@kobato/web-admin` — the product leaves compose this
+  // package, never the reverse.
+  '@kobato/web-client': [
+    '@kobato/web-client',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/api',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/settings',
+    '@kobato/telemetry',
+    '@kobato/distribution',
+    '@kobato/contracts',
+    '@kobato/lexical',
+    '@kobato/test',
+  ],
+  // The public-frontend leaf (public chrome/comments/widgets plus the
+  // cross-surface shared/lib tiers). Composes web-client; never imports back
+  // into `@kobato/web-admin` (admin reuses audited modules of THIS package,
+  // never the reverse) and never `@kobato/server`.
+  '@kobato/web-public': [
+    '@kobato/web-public',
+    '@kobato/web-client',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/settings',
+    '@kobato/assets',
+    '@kobato/lexical',
+    '@kobato/sanitize',
+    '@kobato/contracts',
+    '@kobato/test',
+  ],
+  // Cross-leaf contract/snapshot tests have no production src tree.
+  '@kobato/web-tests': [
+    '@kobato/catalog',
+    '@kobato/inkling',
+    '@kobato/lexical',
+    '@kobato/test',
+    '@kobato/ui',
+    '@kobato/utils',
+    '@kobato/web-admin',
+    '@kobato/web-client',
+    '@kobato/web-public',
   ],
   // test-helpers fixtures touch every layer.
   '@kobato/test': [
@@ -169,10 +260,15 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/inkling',
     '@kobato/server',
     '@kobato/ui',
-    '@kobato/web',
+    '@kobato/web-admin',
+    '@kobato/web-client',
+    '@kobato/web-public',
     ...SHARED_SPLIT,
   ],
-  '@kobato/config': [],
+  '@kobato/toolchain': [],
+  // The out-of-process instance harness: drives built artifacts, not source
+  // graphs — its internal surface is deliberately narrow (see its AGENTS.md).
+  '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
   // Orchestration and tooling layers may depend on anything internal.
   kobato: INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
@@ -191,14 +287,20 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   // The editor island imports no @kobato/* package at all.
   '@kobato/inkling': [],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
+  '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
+  '@kobato/catalog': ['@kobato/catalog', '@kobato/lexical'],
+  '@kobato/distribution': ['@kobato/distribution'],
+  '@kobato/telemetry': ['@kobato/telemetry', '@kobato/settings'],
   '@kobato/i18n': ['@kobato/i18n'],
   '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils'],
-  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/utils'],
+  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils'],
   '@kobato/assets': ['@kobato/assets'],
   '@kobato/lexical': ['@kobato/lexical', '@kobato/inkling', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
   '@kobato/sanitize': ['@kobato/sanitize'],
   '@kobato/contracts': [
     '@kobato/contracts',
+    '@kobato/auth',
+    '@kobato/catalog',
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/utils',
@@ -207,18 +309,63 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/cache',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
-  '@kobato/db': ['@kobato/db', '@kobato/contracts', '@kobato/settings', '@kobato/lexical', '@kobato/utils'],
-  '@kobato/server': ['@kobato/server', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
+  // Contract procedures compose contracts schemas; the server implements them.
+  '@kobato/api': ['@kobato/api', '@kobato/contracts'],
+  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/utils'],
+  '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
-  // web's server entry is the documented RouterClient type-only channel.
-  '@kobato/web': [
-    '@kobato/web',
+  // web-admin consumes the public oRPC contract, never the server
+  // implementation; it composes the browser platform leaf (web-client) and
+  // reuses the audited modules of the public-frontend leaf (web-public).
+  '@kobato/web-admin': [
+    '@kobato/web-admin',
+    '@kobato/web-client',
+    '@kobato/web-public',
     '@kobato/ui',
     '@kobato/inkling',
-    '@kobato/server',
+    '@kobato/api',
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/cache',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/distribution',
+    '@kobato/telemetry',
+    '@kobato/settings',
+    '@kobato/assets',
+    '@kobato/lexical',
+    '@kobato/sanitize',
+    '@kobato/contracts',
+  ],
+  // The browser platform leaf: hooks, the oRPC client, and the editor platform.
+  // Never `@kobato/web-admin` (product leaves compose client, never the
+  // reverse) and never
+  // `@kobato/server` — the oRPC client is typed through `@kobato/api` only.
+  '@kobato/web-client': [
+    '@kobato/web-client',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/api',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/settings',
+    '@kobato/telemetry',
+    '@kobato/distribution',
+    '@kobato/contracts',
+  ],
+  // The public-frontend leaf: public chrome/comments/widgets plus the
+  // cross-surface shared/lib tiers. Composes web-client; never
+  // `@kobato/web-admin` (admin reuses this package, never the reverse) and
+  // never `@kobato/server`.
+  '@kobato/web-public': [
+    '@kobato/web-public',
+    '@kobato/web-client',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/auth',
+    '@kobato/catalog',
     '@kobato/settings',
     '@kobato/assets',
     '@kobato/lexical',
@@ -231,11 +378,15 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/inkling',
     '@kobato/server',
     '@kobato/ui',
-    '@kobato/web',
+    '@kobato/web-admin',
+    '@kobato/web-client',
+    '@kobato/web-public',
     ...SHARED_SPLIT,
   ],
-  '@kobato/config': [],
+  '@kobato/toolchain': [],
   kobato: INTERNAL_SCOPES,
+  // The instance harness keeps the same narrow src DAG as its declarations.
+  '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
   // Tooling packages (SEA pipeline, OpenObserve DEV container, journey
   // runner, preview/report generators) may reach any internal package from
   // their src trees.
@@ -252,14 +403,12 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
  *  · web's api client needs the router type to build the typed RouterClient —
  *    the single sanctioned web→server channel.
  */
-const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = [
-  { file: 'packages/web/src/client/api/client.ts', specifier: '@kobato/server/http/api-router.ts' },
-]
+const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []
 
 /**
  * Relative imports that cross a package boundary. Every entry is a TEST
  * reaching into a sibling tree without going through its package surface —
- * `packages/tools/pack/**` (SEA tooling: no exports map, not a declared dependency
+ * `tools/pack/**` (SEA tooling: no exports map, not a declared dependency
  * of any package) or `apps/inkling-demo/**` (inkling's playground host) —
  * plus the one web→inkling case: the host-card parity test reaches two
  * internals the inkling exports map deliberately does not expose (inkling's
@@ -269,16 +418,16 @@ const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = [
  * a build output without a package specifier.
  */
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
-  'packages/web/tests/unit/ui/admin/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/labels/inkling-labels.ts',
-  'packages/web/tests/unit/ui/admin/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
+  'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/labels/inkling-labels.ts',
+  'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx:../../../../../../../inkling/src/nodes/cards/host-card-registry.ts',
   // Contract tests pinning the SEA tooling sources textually.
-  'packages/shared/contracts/tests/unit/sea/inline-package-data.test.ts:../../../../../../packages/tools/pack/src/sea/inline-package-data.ts',
-  'packages/shared/contracts/tests/unit/sea/native-specifiers.test.ts:../../../../../../packages/tools/pack/src/sea/redirect-native-requires.ts',
-  'packages/shared/contracts/tests/unit/sea/bundle-globals.test.ts:../../../../../../packages/tools/pack/src/sea/check-bundle.ts',
-  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../packages/tools/pack/src/sea/assets.ts',
+  'packages/shared/distribution/tests/unit/sea/inline-package-data.test.ts:../../../../../../tools/pack/src/sea/inline-package-data.ts',
+  'packages/shared/distribution/tests/unit/sea/native-specifiers.test.ts:../../../../../../tools/pack/src/sea/redirect-native-requires.ts',
+  'packages/shared/distribution/tests/unit/sea/bundle-globals.test.ts:../../../../../../tools/pack/src/sea/check-bundle.ts',
+  'packages/server/tests/unit/server/infra/sea-compression.test.ts:../../../../../../tools/pack/src/sea/assets.ts',
   // The SEA server entry pulls the app's built bundle into the single-file
   // vite build; a build output has no package specifier to import by.
-  'packages/tools/pack/src/sea/server-entry.ts:../../../../../apps/kobato/build/server/index.js',
+  'tools/pack/src/sea/server-entry.ts:../../../../apps/kobato/build/server/index.js',
   // The demo playground is inkling's host app; its glue implements the
   // host contract inkling's suite type-checks and tests against.
   'packages/inkling/tests/typecheck/demo-host-contracts.ts:../../../../apps/inkling-demo/utils/fetchEmbed',
@@ -460,7 +609,7 @@ describe('package DAG', () => {
 
   it('the @/ app alias appears only inside the app package', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'scripts', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
       if (file.startsWith(`${APP_PACKAGE_DIR}/`)) {
         continue
       }
@@ -494,10 +643,13 @@ describe('package DAG', () => {
     const rootAnchored = new Set([
       'kobato',
       ...SHARED_SPLIT,
+      '@kobato/api',
       '@kobato/db',
       '@kobato/server',
       '@kobato/ui',
-      '@kobato/web',
+      '@kobato/web-admin',
+      '@kobato/web-client',
+      '@kobato/web-public',
     ])
     const offenders: string[] = []
     for (const pkg of REPO_PACKAGES.filter((entry) => rootAnchored.has(entry.name))) {
@@ -517,7 +669,7 @@ describe('package DAG', () => {
     // @kobato/inkling straight at the package source and deliberately reaches
     // internals (apps/inkling-demo/vite.config.ts).
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'scripts')) {
+    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools')) {
       if (file.startsWith('apps/inkling-demo/')) {
         continue
       }

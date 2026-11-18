@@ -16,19 +16,19 @@
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { O2StreamType } from '@kobato/server/domains/observability/o2-client.ts'
 
-import { TRACE_LOG_STREAM } from '@kobato/contracts/trace-logs.ts'
-import { isTraceMetricStreamName } from '@kobato/contracts/trace-metrics.ts'
-import { RUM_STREAM_NAME } from '@kobato/contracts/trace-pipeline.ts'
 import { isObservabilityConnectionVerified } from '@kobato/server/domains/observability/connection.ts'
 import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
+import { isTraceMetricStreamName } from '@kobato/telemetry/metrics.ts'
+import { RUM_STREAM_NAME } from '@kobato/telemetry/pipeline.ts'
 
 const log = getLogger('observability.retention')
 
 const STREAM_TYPES: readonly O2StreamType[] = ['logs', 'traces', 'metrics']
 
-/** OTLP traces land in the organization-wide default traces stream (packages/tools/trace's TRACE_STREAM). */
+/** OTLP traces land in the organization-wide default traces stream (tools/trace's TRACE_STREAM). */
 const TRACES_STREAM = 'default'
 
 /** Streams Kobato owns: RUM, traces, server logs, and the closed metric set. */

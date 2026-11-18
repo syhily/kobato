@@ -5,19 +5,8 @@ import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
 import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { toListingPostCard } from '@kobato/contracts/catalog.ts'
-import {
-  contentArchivesInputSchema,
-  contentArchivesOutputSchema,
-  contentCategoriesListInputSchema,
-  contentCategoriesListOutputSchema,
-  contentHomeInputSchema,
-  contentHomeOutputSchema,
-  contentPostsListInputSchema,
-  contentPostsListOutputSchema,
-  contentSearchInputSchema,
-  contentSearchOutputSchema,
-} from '@kobato/contracts/content.ts'
+import { contentListingsContract } from '@kobato/api/content.ts'
+import { toListingPostCard } from '@kobato/catalog/catalog.ts'
 import { trackPageView } from '@kobato/server/domains/analytics/track.ts'
 import {
   countPublicPosts,
@@ -31,7 +20,7 @@ import { translateThrownResponse } from '@kobato/server/http/content-signals.ts'
 import { loadHomeData } from '@kobato/server/http/loaders/home.ts'
 import { listingLoader } from '@kobato/server/http/loaders/listing.ts'
 import { searchLoader } from '@kobato/server/http/loaders/search.ts'
-import { publicProc, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 import {
   etagHeaderMatches,
   listingCalendarDay,
@@ -39,6 +28,10 @@ import {
   listingRepresentation,
 } from '@kobato/server/infra/http/etag.ts'
 import { ORPCError } from '@orpc/server'
+
+// Contract-first: method/path/input/output live in `@kobato/api/content.ts`;
+// this controller only implements the listing procedures.
+const impl = implementPublic(contentListingsContract)
 
 type ListingOutput<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
 type PayloadOutput<T> = ContentNotModifiedSignal | { kind: 'ok'; etag: string; payload: T }
@@ -150,53 +143,26 @@ async function scopedPostsListing({
 
 // The home listing — the whole pipeline lives in `loadHomeData`; this
 // only wraps the thrown-Response → union translation.
-const home = publicProc
-  .route({ method: 'GET', path: '/content/home' })
-  .input(contentHomeInputSchema)
-  .output(contentHomeOutputSchema)
-  .handler(async ({ input, context }) => {
-    return runListing(context, input.ifNoneMatch, () =>
-      loadHomeData({
-        db: context.db,
-        session: context.session,
-        num: input.num,
-        locale: context.localization.locale,
-        settings: context.settings,
-        revision: context.localization.revisions.listing,
-      }),
-    )
-  })
+const home = impl.home.handler(async ({ input, context }) => {
+  return runListing(context, input.ifNoneMatch, () =>
+    loadHomeData({
+      db: context.db,
+      session: context.session,
+      num: input.num,
+      locale: context.localization.locale,
+      settings: context.settings,
+      revision: context.localization.revisions.listing,
+    }),
+  )
+})
 
 // Scoped listings (`/tags/:slug`, `/cats/:slug`); unknown slug → NOT_FOUND.
-const postsList = publicProc
-  .route({ method: 'GET', path: '/content/posts/list' })
-  .input(contentPostsListInputSchema)
-  .output(contentPostsListOutputSchema)
-  .handler(async ({ input, context }) => {
-    const db = context.db
+const postsList = impl.postsList.handler(async ({ input, context }) => {
+  const db = context.db
 
-    if (input.scope.type === 'tag') {
-      const tag = await findTagBySlug(db, input.scope.slug)
-      if (!tag) {
-        throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
-      }
-
-      return runListing(context, input.ifNoneMatch, () =>
-        scopedPostsListing({
-          db,
-          num: input.num,
-          filters: { includeHidden: true, includeScheduled: false, tag: tag.name },
-          rootPath: `/tags/${tag.slug}`,
-          title: tag.name,
-          locale: context.localization.locale,
-          settings: context.settings,
-          ogImageUrl: tag.ogImage || undefined,
-        }),
-      )
-    }
-
-    const category = await findCategoryBySlug(db, input.scope.slug)
-    if (!category) {
+  if (input.scope.type === 'tag') {
+    const tag = await findTagBySlug(db, input.scope.slug)
+    if (!tag) {
       throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
     }
 
@@ -204,82 +170,88 @@ const postsList = publicProc
       scopedPostsListing({
         db,
         num: input.num,
-        filters: { includeHidden: true, includeScheduled: false, categoryId: category.id },
-        rootPath: `/cats/${category.slug}`,
-        title: category.name,
-        description: category.description,
+        filters: { includeHidden: true, includeScheduled: false, tag: tag.name },
+        rootPath: `/tags/${tag.slug}`,
+        title: tag.name,
         locale: context.localization.locale,
         settings: context.settings,
-        ogImageUrl: category.og ?? `/images/og/cats/${category.slug}.png`,
+        ogImageUrl: tag.ogImage || undefined,
       }),
     )
-  })
+  }
+
+  const category = await findCategoryBySlug(db, input.scope.slug)
+  if (!category) {
+    throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
+  }
+
+  return runListing(context, input.ifNoneMatch, () =>
+    scopedPostsListing({
+      db,
+      num: input.num,
+      filters: { includeHidden: true, includeScheduled: false, categoryId: category.id },
+      rootPath: `/cats/${category.slug}`,
+      title: category.name,
+      description: category.description,
+      locale: context.localization.locale,
+      settings: context.settings,
+      ogImageUrl: category.og ?? `/images/og/cats/${category.slug}.png`,
+    }),
+  )
+})
 
 // Keyword search — the empty-keyword 302, overflow redirects, and the audit event stay inside `searchLoader`.
 // Every miss is a full-corpus LIKE scan and every distinct keyword with hits
-// writes a slug list to the cache + an audit row, so the procedure is throttled.
-const search = publicProc
-  .route({ method: 'GET', path: '/content/search' })
-  // Limiter before `.input(...)`: oRPC validates input at its declared
-  // index, so a trailing middleware never sees a malformed payload.
-  .use(resourceRateLimit)
-  .input(contentSearchInputSchema)
-  .output(contentSearchOutputSchema)
-  .handler(async ({ input, context }) => {
-    const auditContext: AuditContext = {
-      viewer: context.viewer,
-      clientAddress: context.clientAddress,
-      requestFacts: context.requestFacts,
-    }
-    return runListing(context, input.ifNoneMatch, () =>
-      searchLoader(context.db, {
-        keyword: input.keyword,
-        num: input.num,
-        locale: context.localization.locale,
-        settings: context.settings,
-        auditContext,
-      }),
-    )
-  })
+// writes a slug list to the cache + an audit row, so the procedure is throttled;
+// the limiter rides the implementer, BEFORE the contract's input validation.
+const search = impl.use(resourceRateLimit).search.handler(async ({ input, context }) => {
+  const auditContext: AuditContext = {
+    viewer: context.viewer,
+    clientAddress: context.clientAddress,
+    requestFacts: context.requestFacts,
+  }
+  return runListing(context, input.ifNoneMatch, () =>
+    searchLoader(context.db, {
+      keyword: input.keyword,
+      num: input.num,
+      locale: context.localization.locale,
+      settings: context.settings,
+      auditContext,
+    }),
+  )
+})
 
-const categoriesList = publicProc
-  .route({ method: 'GET', path: '/content/categories/list' })
-  .input(contentCategoriesListInputSchema)
-  .output(contentCategoriesListOutputSchema)
-  .handler(async ({ input, context }) => {
-    return runListingPayload(context, input.ifNoneMatch, async () => ({
-      categories: await listAllCategories(context.db),
-    }))
-  })
+const categoriesList = impl.categoriesList.handler(async ({ input, context }) => {
+  return runListingPayload(context, input.ifNoneMatch, async () => ({
+    categories: await listAllCategories(context.db),
+  }))
+})
 
 // The archives payload (up to 10k posts + 4 metadata statements) is a
 // deliberate full-corpus fan-out — throttle it like the other expensive reads.
-const archives = publicProc
-  .route({ method: 'GET', path: '/content/archives' })
-  .input(contentArchivesInputSchema)
-  .output(contentArchivesOutputSchema)
-  .use(resourceRateLimit)
-  .handler(async ({ input, context }) => {
-    return runListingPayload(context, input.ifNoneMatch, async () => {
-      const db = context.db
-      const listingNowIso = new Date().toISOString()
-      // Archives promise completeness — explicit 10k bound (helper defaults to 200);
-      // revisit with year-grouped pagination past ~2,000 live posts.
-      const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
-      const posts = rawPosts.map(toListingPostCard)
-      const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
-        likes: true,
-        views: true,
-        comments: false,
-      })
-      return { resolvedPosts, listingNowIso }
+// The limiter attaches per procedure, after input validation (the original
+// chain declared it after `.output(...)`).
+const archives = impl.archives.use(resourceRateLimit).handler(async ({ input, context }) => {
+  return runListingPayload(context, input.ifNoneMatch, async () => {
+    const db = context.db
+    const listingNowIso = new Date().toISOString()
+    // Archives promise completeness — explicit 10k bound (helper defaults to 200);
+    // revisit with year-grouped pagination past ~2,000 live posts.
+    const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
+    const posts = rawPosts.map(toListingPostCard)
+    const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
+      likes: true,
+      views: true,
+      comments: false,
     })
+    return { resolvedPosts, listingNowIso }
   })
+})
 
-export const contentListingsRouter = {
+export const contentListingsRouter = impl.router({
   home,
   postsList,
   search,
   categoriesList,
   archives,
-}
+})

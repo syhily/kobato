@@ -1,0 +1,149 @@
+import type { AdminImageDto } from '@kobato/contracts/images.ts'
+
+import { Button } from '@kobato/ui/components/button.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'
+import { Input } from '@kobato/ui/components/input.tsx'
+import { cn } from '@kobato/ui/lib/cn.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { UploadImageDialog } from '@kobato/web-admin/ui/shared/UploadImageDialog.tsx'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { useQuery } from '@tanstack/react-query'
+import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
+import { isValidElement, useState } from 'react'
+
+// Customizable trigger; `onPick` passes the full `AdminImageDto` (publicUrl + storagePath).
+
+export interface ImageLibraryPickerProps {
+  trigger?: React.ReactNode
+  onPick: (image: AdminImageDto) => void
+  /** Optional controlled-open pair — drive the dialog imperatively (e.g.
+   *  editor slash-command) instead of a `trigger` click; `trigger` becomes optional. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChange }: ImageLibraryPickerProps) {
+  const { t } = useI18n()
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (next: boolean) => {
+    if (openProp === undefined) {
+      setOpenInternal(next)
+    }
+    onOpenChange?.(next)
+  }
+  const [q, setQ] = useState('')
+  const [uploadOpen, setUploadOpen] = useState(false)
+
+  const listQuery = useQuery(
+    orpcQuery.admin.images.list.queryOptions({
+      input: { kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() },
+      enabled: open,
+    }),
+  )
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {openProp === undefined ? (
+          <DialogTrigger
+            render={
+              trigger !== undefined && isValidElement(trigger) ? (
+                trigger
+              ) : (
+                <Button variant="outline" type="button">
+                  <ImageIcon /> {t('admin.editor.imagePicker.choose')}
+                </Button>
+              )
+            }
+          />
+        ) : null}
+        <DialogContent className="max-h-dialog-max-h max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t('admin.editor.imagePicker.title')}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t('admin.editor.imagePicker.search')}
+              className="max-w-md"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => {
+                setOpen(false)
+                setUploadOpen(true)
+              }}
+            >
+              <UploadIcon /> {t('admin.images.upload')}
+            </Button>
+          </div>
+          <div className="max-h-dialog-max-h-sm overflow-y-auto">
+            {listQuery.isPending ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">{t('common.state.loading')}</div>
+            ) : listQuery.data?.images.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">{t('admin.editor.imagePicker.empty')}</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {listQuery.data?.images.map((image: AdminImageDto) => (
+                  <ImageTile
+                    key={image.id}
+                    image={image}
+                    onClick={() => {
+                      onPick(image)
+                      setOpen(false)
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <UploadImageDialog
+        open={uploadOpen}
+        kind={{ kind: 'generic' }}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={(image) => {
+          setUploadOpen(false)
+          onPick(image)
+        }}
+      />
+    </>
+  )
+}
+
+interface ImageTileProps {
+  image: AdminImageDto
+  onClick: () => void
+}
+
+function ImageTile({ image, onClick }: ImageTileProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group relative aspect-square overflow-hidden rounded-xl border bg-muted/30',
+        'transition hover:ring-2 hover:ring-primary',
+      )}
+      title={image.storagePath}
+    >
+      <img
+        src={image.publicUrl}
+        alt={image.note ?? image.storagePath}
+        loading="lazy"
+        decoding="async"
+        className="size-full object-cover"
+      />
+      <span className="pointer-events-none absolute right-1 bottom-1 rounded bg-black/60 px-1.5 py-0.5 text-badge text-white opacity-0 transition group-hover:opacity-100">
+        {image.width}×{image.height}
+      </span>
+    </button>
+  )
+}

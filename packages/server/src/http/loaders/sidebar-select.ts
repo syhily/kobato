@@ -1,4 +1,4 @@
-import type { ClientTag } from '@kobato/contracts/catalog.ts'
+import type { ClientTag } from '@kobato/catalog/catalog.ts'
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { SidebarSettings } from '@kobato/settings/types.ts'

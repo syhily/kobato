@@ -1,7 +1,7 @@
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
+import { applyFriendSchema } from '@kobato/contracts/friends.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { applyFriendSchema } from '@kobato/server/domains/friends/schema.ts'
 import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/utils/safe-url.ts'

@@ -1,0 +1,13 @@
+/* Partial: composed by a surface entry's single Tailwind compile (apps/kobato/src/styles/admin.css), never compiled alone. */
+@source '../ui';
+
+@layer utilities {
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}

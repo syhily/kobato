@@ -1,5 +1,5 @@
 import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { UsersView } from '@kobato/web/ui/admin/users/UsersView.tsx'
+import { UsersView } from '@kobato/web-admin/ui/users/UsersView.tsx'
 
 import { titleMeta } from '@/seo/title-meta.ts'
 

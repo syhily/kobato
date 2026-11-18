@@ -1,71 +1,51 @@
-import { adminTagDto } from '@kobato/contracts/tags.ts'
+import { adminTagsContract } from '@kobato/api/admin/tags.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@kobato/server/domains/taxonomies/tags/service.ts'
-import { adminProc, authorProc, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
+import { implementAdmin, implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
-import { z } from 'zod'
 
-const list = authorProc
-  .route({ method: 'GET', path: '/admin/tags/list' })
-  .input(
-    z.object({
-      q: z.string().optional(),
-      offset: z.coerce.number().optional(),
-      limit: z.coerce.number().optional(),
-    }),
-  )
-  .output(z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() }))
-  .handler(({ input, context }) =>
-    listTagsForAdmin(context.db, { q: input.q, offset: input.offset, limit: input.limit }),
-  )
+// Contract-first: method/path/input/output live in
+// `@kobato/api/admin/tags.ts`. Mixed bases map per procedure exactly as
+// before: `list`/`upsert` run on the author base, `delete` on the admin base
+// (deleting shared tags is admin-only — the in-use CONFLICT enumerates the
+// posts carrying the tag, which would leak other authors' post titles to any
+// author probing tag ids).
+const authorImpl = implementAuthor(adminTagsContract)
+const adminImpl = implementAdmin(adminTagsContract)
 
-const upsert = authorProc
-  .route({ method: 'POST', path: '/admin/tags/upsert' })
-  .input(
-    z.object({
-      id: z.string().min(1).optional(),
-      name: z.string().trim().min(1).max(20),
-      slug: z.string().optional(),
-      ogImage: z.string().optional(),
-    }),
+const list = authorImpl.list.handler(({ input, context }) =>
+  listTagsForAdmin(context.db, { q: input.q, offset: input.offset, limit: input.limit }),
+)
+
+const upsert = authorImpl.upsert.handler(async ({ input, context }) => {
+  const tag = await upsertAdminTag(
+    context.db,
+    {
+      id: input.id !== undefined ? idFromString(input.id) : undefined,
+      name: input.name,
+      slug: input.slug,
+      ogImage: input.ogImage,
+    },
+    context.viewer,
   )
-  .output(z.object({ tag: adminTagDto }))
-  .handler(async ({ input, context }) => {
-    const tag = await upsertAdminTag(
-      context.db,
-      {
-        id: input.id !== undefined ? idFromString(input.id) : undefined,
-        name: input.name,
-        slug: input.slug,
-        ogImage: input.ogImage,
-      },
-      context.viewer,
-    )
-    recordAuditEventFromContext(context, {
-      action: input.id === undefined ? 'tag_created' : 'tag_updated',
-      resourceType: 'tag',
-      resourceId: tag.id,
-    })
-    return { tag }
+  recordAuditEventFromContext(context, {
+    action: input.id === undefined ? 'tag_created' : 'tag_updated',
+    resourceType: 'tag',
+    resourceId: tag.id,
   })
+  return { tag }
+})
 
-// Deleting shared tags is admin-only (like renaming): the in-use CONFLICT
-// enumerates the posts carrying the tag, which would leak other authors'
-// post titles to any author probing tag ids.
-const remove = adminProc
-  .route({ method: 'POST', path: '/admin/tags/remove' })
-  .input(z.object({ id: z.string().min(1) }))
-  .output(z.void())
-  .handler(async ({ input, context }) => {
-    const ok = await deleteAdminTag(context.db, idFromString(input.id), context.viewer)
-    if (!ok) {
-      throw localizedOrpcError(context, 'NOT_FOUND', 'taxonomy.error.notFound', { entity: 'tag' })
-    }
-    recordAuditEventFromContext(context, {
-      action: 'tag_deleted',
-      resourceType: 'tag',
-      resourceId: input.id,
-    })
+const remove = adminImpl.delete.handler(async ({ input, context }) => {
+  const ok = await deleteAdminTag(context.db, idFromString(input.id), context.viewer)
+  if (!ok) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'taxonomy.error.notFound', { entity: 'tag' })
+  }
+  recordAuditEventFromContext(context, {
+    action: 'tag_deleted',
+    resourceType: 'tag',
+    resourceId: input.id,
   })
+})
 
-export const adminTagsRouter = { list, upsert, delete: remove }
+export const adminTagsRouter = authorImpl.router({ list, upsert, delete: remove })

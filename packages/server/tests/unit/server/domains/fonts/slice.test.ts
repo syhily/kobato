@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 // Schema-drift canary for the vendored cn-font-split WASM bundle: a version split between
 // cnfs.mjs and cnfs.wasm breaks the protobuf round-trip.
 
-const TTF_PATH = resolve(__dirname, '../../../../../../tools/test/src/fixtures/fonts/Barlow-Regular.ttf')
+const TTF_PATH = resolve(__dirname, '../../../../../../../tools/test/src/fixtures/fonts/Barlow-Regular.ttf')
 
 describe('sliceFont', () => {
   // Each fontSplit call instantiates the wasm fresh — nothing to reset.

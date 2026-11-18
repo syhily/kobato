@@ -1,5 +1,10 @@
 # Web test conventions
 
-- **`tests/{unit,snaps}/`** plus `tests/contract/` (`web-unit`, `web-snaps`) — product hooks/components, host-style contracts, and SSR snapshots, mirroring `src/`: `packages/web/src/ui/public/post/PostListViews.tsx` → `packages/web/tests/snaps/ui/public/post/post-list-views.test.tsx`. Design-system primitives and CSS/token contracts live in `packages/ui/tests/`.
-- Run with `npx vitest run --project web-unit` / `--project web-snaps`.
-- Shared utilities (render helpers, query mocks, dialog stubs) come from `@kobato/test` (see `packages/tools/test/AGENTS.md`).
+`packages/web/tests/` holds the umbrella Vitest roots and cross-leaf contract tests for `@kobato/web-client`, `@kobato/web-public`, and `@kobato/web-admin`. It is not a production package.
+
+- `package.json` is the private, tests-only `@kobato/web-tests` manifest: it supplies dependency resolution for cross-leaf tests and declares no source surface. Production code must not import it.
+- Leaf suites live in `packages/web/{client,public,admin}/tests/{unit,snaps}` and mirror their owning `src/` trees. Cross-leaf contract pins stay here; a test that imports sibling leaves must not force a reverse package dependency.
+- `tests/unit/vitest.config.ts` (`web-unit`) anchors at the repository root and includes all three leaf unit trees plus this directory's `unit/` and `contract/`. `tests/snaps/vitest.config.ts` (`web-snaps`) does the same for snapshots.
+- Examples: `contract/lexical-node-whitelist.test.ts` pins both composers against `@kobato/lexical`; `unit/client/editor/use-editor-body-reset.test.ts` pins the client reset hook against the public comment composer.
+- Run with `npx vitest run --project web-unit` / `--project web-snaps`. Filters resolve from the repository root, for example `npx vitest run --project web-unit packages/web/admin/tests/unit/`.
+- Shared render helpers, query mocks, and dialog stubs come from `@kobato/test` (see `tools/test/AGENTS.md`).

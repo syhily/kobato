@@ -1,10 +1,11 @@
+import type { RevisionContract } from '@kobato/api/admin/revision.ts'
 import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '@kobato/server/domains/content/lifecycle.ts'
-import type { authorProc, HandlerContext } from '@kobato/server/http/orpc-base.ts'
+import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
 
-import { saveBodyInput, saveResultOutput } from '@kobato/contracts/revision.ts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { saveBody } from '@kobato/server/domains/content/lifecycle.ts'
 import { getPublicMusicMetasByIds } from '@kobato/server/domains/music/services/read.ts'
+import { implementAuthor } from '@kobato/server/http/orpc-base.ts'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { idFromString } from '@kobato/utils/id.ts'
@@ -15,12 +16,17 @@ export interface RevisionRouterAudit {
   publishedAction: string
 }
 
+// The per-procedure implementer pair both content controllers hand in.
+// `implementAuthor` and `implementAdmin` return the same type — the role gate
+// differs at runtime only — so posts (author base) and pages (admin base)
+// both satisfy it.
+const revisionImplementer = implementAuthor<RevisionContract>
+type RevisionRouterImplementer = Pick<ReturnType<typeof revisionImplementer>, 'saveDraft' | 'publishLatest'>
+
 export interface MakeRevisionRouterOptions<TMeta, TPreview> {
-  /** Base procedure carrying the role gate: posts use `authorProc` (author+), pages `adminProc`. */
-  proc: typeof authorProc
+  /** Contract implementer for the save-draft/publish-latest pair: posts use `implementAuthor(...)`, pages `implementAdmin(...)`. */
+  impl: RevisionRouterImplementer
   adapter: ContentEntityAdapter<TMeta, TPreview>
-  /** Route prefix, e.g. `/admin/posts` — procedures mount at `${basePath}/save-draft` etc. */
-  basePath: `/${string}`
   audit: RevisionRouterAudit
   /**
    * Whether `saveBody` receives `context.viewer` so the adapter's access gate
@@ -37,69 +43,63 @@ function localizeSaveResult(result: SaveBodyOutcome, context: HandlerContext): S
 }
 
 /** The save-draft / publish-latest pair shared by the posts and pages
- *  controllers. NOT_FOUND surfaces via the adapter's `assertAccess`. */
+ *  controllers. Route paths and wire schemas live in the per-domain
+ *  `revisionContract(basePath)` spread inside `@kobato/api/admin/*`; NOT_FOUND
+ *  surfaces via the adapter's `assertAccess`. */
 export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterOptions<TMeta, TPreview>) {
-  const { proc, adapter, basePath, audit, passViewerToSaveBody } = options
+  const { impl, adapter, audit, passViewerToSaveBody } = options
 
-  const saveDraft = proc
-    .route({ method: 'POST', path: `${basePath}/save-draft` })
-    .input(saveBodyInput)
-    .output(saveResultOutput)
-    .handler(async ({ input, context }) => {
-      const result = await saveBody(
-        context.db,
-        adapter,
-        {
-          entityId: idFromString(input.id),
-          body: input.body,
-          resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(context.db, playerIds),
-          expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-          force: input.force,
-          authorId: idFromString(context.viewer.id),
-        },
-        'draft',
-        passViewerToSaveBody ? context.viewer : undefined,
-      )
-      if (result.status === 'saved') {
-        recordAuditEventFromContext(context, {
-          action: audit.draftSavedAction,
-          resourceType: audit.resourceType,
-          resourceId: input.id,
-        })
-      }
-      return localizeSaveResult(result, context)
-    })
+  const saveDraft = impl.saveDraft.handler(async ({ input, context }) => {
+    const result = await saveBody(
+      context.db,
+      adapter,
+      {
+        entityId: idFromString(input.id),
+        body: input.body,
+        resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(context.db, playerIds),
+        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
+        force: input.force,
+        authorId: idFromString(context.viewer.id),
+      },
+      'draft',
+      passViewerToSaveBody ? context.viewer : undefined,
+    )
+    if (result.status === 'saved') {
+      recordAuditEventFromContext(context, {
+        action: audit.draftSavedAction,
+        resourceType: audit.resourceType,
+        resourceId: input.id,
+      })
+    }
+    return localizeSaveResult(result, context)
+  })
 
-  const publishLatest = proc
-    .route({ method: 'POST', path: `${basePath}/publish-latest` })
-    .input(saveBodyInput)
-    .output(saveResultOutput)
-    .handler(async ({ input, context }) => {
-      const result = await saveBody(
-        context.db,
-        adapter,
-        {
-          entityId: idFromString(input.id),
-          body: input.body,
-          resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(context.db, playerIds),
-          expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-          force: input.force,
-          authorId: idFromString(context.viewer.id),
-          publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
-        },
-        'publish',
-        passViewerToSaveBody ? context.viewer : undefined,
-      )
-      if (result.status === 'saved') {
-        recordAuditEventFromContext(context, {
-          action: audit.publishedAction,
-          resourceType: audit.resourceType,
-          resourceId: input.id,
-          details: { publishedAt: input.publishedAt },
-        })
-      }
-      return localizeSaveResult(result, context)
-    })
+  const publishLatest = impl.publishLatest.handler(async ({ input, context }) => {
+    const result = await saveBody(
+      context.db,
+      adapter,
+      {
+        entityId: idFromString(input.id),
+        body: input.body,
+        resolveMusicEmbeds: (playerIds) => getPublicMusicMetasByIds(context.db, playerIds),
+        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
+        force: input.force,
+        authorId: idFromString(context.viewer.id),
+        publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
+      },
+      'publish',
+      passViewerToSaveBody ? context.viewer : undefined,
+    )
+    if (result.status === 'saved') {
+      recordAuditEventFromContext(context, {
+        action: audit.publishedAction,
+        resourceType: audit.resourceType,
+        resourceId: input.id,
+        details: { publishedAt: input.publishedAt },
+      })
+    }
+    return localizeSaveResult(result, context)
+  })
 
   return { saveDraft, publishLatest }
 }

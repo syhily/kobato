@@ -1,5 +1,5 @@
+import type { DetailPageComments } from '@kobato/contracts/comments.ts'
 import type { ContentNotModifiedSignal, ContentRedirectSignal, ContentSignal } from '@kobato/contracts/content.ts'
-import type { DetailPageComments } from '@kobato/contracts/types/comments.ts'
 import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 import type { ApiRouter } from '@kobato/server/http/api-router.ts'

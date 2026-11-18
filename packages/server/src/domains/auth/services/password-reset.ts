@@ -4,15 +4,16 @@
 import type { Database } from '@kobato/db/database.ts'
 import type { User } from '@kobato/db/types.ts'
 
+import {
+  MAX_PASSWORD_BYTES,
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_COMPLEXITY_RE,
+  passwordWithinBcryptLimit,
+} from '@kobato/auth/security.ts'
 import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user.ts'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
 import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
-import {
-  MAX_PASSWORD_BYTES,
-  PASSWORD_COMPLEXITY_RE,
-  passwordWithinBcryptLimit,
-} from '@kobato/server/domains/auth/schema.ts'
 import {
   authFlowError,
   authFlowSuccess,
@@ -23,7 +24,6 @@ import { consumeToken, issueResetToken, revokeTokensFor } from '@kobato/server/d
 import { sendPasswordReset } from '@kobato/server/infra/email/sender.ts'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { resolveSiteOrigin } from '@kobato/server/infra/site-origin.ts'
-import { MIN_PASSWORD_LENGTH } from '@kobato/utils/security.ts'
 import bcrypt from 'bcryptjs'
 
 /**

@@ -7,7 +7,8 @@ const SOURCE_ROOTS = [
   { packageRoot: 'apps/kobato', sourceRoot: 'apps/kobato/src' },
   { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo' },
   { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
-  { packageRoot: 'packages/web', sourceRoot: 'packages/web/src' },
+  { packageRoot: 'packages/web/admin', sourceRoot: 'packages/web/admin/src' },
+  { packageRoot: 'packages/web/public', sourceRoot: 'packages/web/public/src' },
   { packageRoot: 'packages/shared/lexical', sourceRoot: 'packages/shared/lexical/src' },
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
@@ -15,29 +16,33 @@ const SOURCE_ROOTS = [
 // @source owners without their own Tailwind compile: surface entries compose them via CSS @import.
 const SOURCE_PARTIALS = [
   { file: 'packages/shared/lexical/src/styles/cards.css', specifier: '@kobato/lexical/styles/cards.css' },
-  { file: 'packages/web/src/styles/public.css', specifier: '@kobato/web/styles/public.css' },
-  { file: 'packages/web/src/styles/admin.css', specifier: '@kobato/web/styles/admin.css' },
+  { file: 'packages/web/public/src/styles/public.css', specifier: '@kobato/web-public/styles/public.css' },
+  { file: 'packages/web/public/src/styles/admin-subset.css', specifier: '@kobato/web-public/styles/admin-subset.css' },
+  { file: 'packages/web/admin/src/styles/admin.css', specifier: '@kobato/web-admin/styles/admin.css' },
 ] as const
 
-// Scan-coverage lock: the exact `@source` set each web partial must declare, relative to the
-// partial. `ui/shared` (NotificationsDrawer) and `ui/lib` (LocaleSyncProvider) render on BOTH
-// app surfaces, so every composing surface compile must scan them — the ownership test above
-// only checks direction (no cross-package scans) and would keep passing while a surface
-// silently dropped those tiers' utilities from its CSS. Admin's public entries stay the
-// precise per-module subset admin actually renders; a blanket `../ui/public` would fail the
-// exact-set comparison instead of dragging public-only modules into the admin sheet.
+// Scan-coverage lock: the exact `@source` set each web-family partial must
+// declare, relative to the partial. The public leaf's `public.css` scans the
+// whole package ui tree (the public modules plus the cross-surface `ui/shared`
+// (NotificationsDrawer) and `ui/lib` (LocaleSyncProvider) tiers that render on
+// BOTH app surfaces); `admin-subset.css` holds the precise per-module subset
+// admin actually renders — a long-term seam, so a blanket `../ui` would drag
+// public-only modules into the admin sheet. The admin leaf's `admin.css`
+// scans its whole `ui` tree. The ownership test above only checks direction
+// (no cross-package scans) and would keep passing while a surface silently
+// dropped a tier's utilities from its CSS.
 const WEB_PARTIAL_REQUIRED_SOURCES = {
-  'packages/web/src/styles/public.css': ['../ui/public', '../ui/shared', '../ui/lib'],
-  'packages/web/src/styles/admin.css': [
-    '../ui/admin',
+  'packages/web/public/src/styles/public.css': ['../ui'],
+  'packages/web/public/src/styles/admin-subset.css': [
     '../ui/shared',
     '../ui/lib',
-    '../ui/public/music-player',
-    '../ui/public/chrome',
-    '../ui/public/comments/*.{ts,tsx}',
-    '../ui/public/widgets',
-    '../ui/public/Search.tsx',
+    '../ui/music-player',
+    '../ui/chrome',
+    '../ui/comments/*.{ts,tsx}',
+    '../ui/widgets',
+    '../ui/Search.tsx',
   ],
+  'packages/web/admin/src/styles/admin.css': ['../ui'],
 } as const
 
 function collectFiles(root: string, matches: (fileName: string) => boolean): string[] {
@@ -77,8 +82,9 @@ describe('Tailwind source ownership', () => {
         'apps/kobato/src/styles/admin.css',
         'apps/inkling-demo/styles/public.css',
         'packages/ui/src/styles/ui.css',
-        'packages/web/src/styles/public.css',
-        'packages/web/src/styles/admin.css',
+        'packages/web/public/src/styles/public.css',
+        'packages/web/public/src/styles/admin-subset.css',
+        'packages/web/admin/src/styles/admin.css',
         'packages/shared/lexical/src/styles/cards.css',
         'packages/inkling/src/styles/index.css',
       ]),
@@ -90,7 +96,7 @@ describe('Tailwind source ownership', () => {
       const source = readFileSync(file, 'utf8')
       const declared = [...source.matchAll(/@source\s+['"]([^'"]+)['"]/g)].map((match) => match[1]).sort()
       // Exact set: a missing entry drops that tier's utilities from the surface CSS; an extra
-      // entry (e.g. admin scanning all of `../ui/public`) breaks the per-surface bundling.
+      // entry (e.g. the admin subset scanning all of `../ui`) breaks the per-surface bundling.
       expect(declared, file).toEqual([...required].sort())
       // The scanned tier must still exist — a rename would leave the scan matching nothing.
       const partialDir = dirname(resolve(REPO_ROOT, file))

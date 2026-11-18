@@ -16,8 +16,9 @@ import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
 const CLIENT_LAYERS = [
-  'packages/web/src/ui',
-  'packages/web/src/client',
+  'packages/web/admin/src/ui',
+  'packages/web/client/src',
+  'packages/web/public/src',
   'packages/ui/src',
   'apps/kobato/src/routes',
   'packages/shared/contracts/src',
@@ -267,8 +268,9 @@ function collectServerOnlyImportViolations(filePaths: readonly string[], rule: S
 }
 
 const I18N_SCANNED_ROOTS = [
-  'packages/web/src/ui',
-  'packages/web/src/client',
+  'packages/web/admin/src/ui',
+  'packages/web/client/src',
+  'packages/web/public/src',
   'packages/ui/src',
   'apps/kobato/src/routes',
   'packages/shared/contracts/src',
@@ -381,11 +383,11 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
     'packages/shared/i18n/src/inkling-labels.ts',
     // The client seam owns the ONE sanctioned dynamic per-locale load for
     // public documents (each locale is its own chunk).
-    'packages/web/src/client/editor/inkling-labels.ts',
+    'packages/web/client/src/editor/inkling-labels.ts',
   ],
 }
 
-const INKLING_LABEL_RESOLVER = 'packages/web/src/client/editor/inkling-labels.ts'
+const INKLING_LABEL_RESOLVER = 'packages/web/client/src/editor/inkling-labels.ts'
 
 describe('inkling label bundle boundary', () => {
   it('client layers and the root route never value-import an Inkling label table', () => {

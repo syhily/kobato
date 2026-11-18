@@ -1,9 +1,22 @@
-import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS, type JobRunStatus, type JobRunTrigger } from '@kobato/contracts/jobs.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Single source: the CHECK enums are generated from the wire contract's
-// constant arrays (same pattern as schema/webmention.ts).
+// Persistence-canonical `job_run` enums — the single source for the columns
+// and the CHECK literals below. The wire twins (zod enums + history DTOs)
+// live in `@kobato/contracts/jobs`; the lists stay value- and
+// order-identical, pinned by
+// `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`.
+
+/** `job_run.trigger` values. */
+export const JOB_RUN_TRIGGERS = ['scheduled', 'manual'] as const
+export type JobRunTrigger = (typeof JOB_RUN_TRIGGERS)[number]
+
+/** `job_run.status` values. */
+export const JOB_RUN_STATUSES = ['running', 'success', 'failed', 'cancelled'] as const
+export type JobRunStatus = (typeof JOB_RUN_STATUSES)[number]
+
+// Single source: the CHECK enums are generated from the constant arrays
+// above (same pattern as schema/webmention.ts).
 const sqlEnumList = (values: readonly string[]) => sql.raw(values.map((value) => `'${value}'`).join(', '))
 
 // Background-job execution history — one row per run attempt (scheduled or

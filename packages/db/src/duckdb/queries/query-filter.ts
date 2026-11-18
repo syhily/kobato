@@ -1,14 +1,14 @@
 import type { RawBuilder } from 'kysely'
 
+import { index1Of } from '@kobato/db/duckdb/access-events.ts'
+import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions.ts'
 import {
   METRIC_TYPES,
   computeDateRange,
-  type AnalyticsQuery,
+  type AnalyticsRangeInput,
   type DateRange,
   type ResolvedAnalyticsQuery,
-} from '@kobato/contracts/analytics.ts'
-import { index1Of } from '@kobato/db/duckdb/access-events.ts'
-import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions.ts'
+} from '@kobato/db/duckdb/queries/types.ts'
 import { sql } from 'kysely'
 
 /**
@@ -55,7 +55,7 @@ export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<
 }
 
 /** Range resolution: an explicit valid [startAt, endAt) pair wins; otherwise the preset (default last-7d). */
-export function resolveAnalyticsRange(query: Pick<AnalyticsQuery, 'preset' | 'startAt' | 'endAt'>): DateRange {
+export function resolveAnalyticsRange(query: AnalyticsRangeInput): DateRange {
   if (query.startAt !== undefined && query.endAt !== undefined && query.endAt > query.startAt) {
     return { startAt: query.startAt, endAt: query.endAt }
   }

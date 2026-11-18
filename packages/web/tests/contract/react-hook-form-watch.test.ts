@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 // Use `useWatch({ control, name })` instead: hook calls re-execute on every
 // render, so the compiler cannot cache the subscribed value away.
 
-const SCANNED_ROOTS = ['packages/web/src/ui/', 'packages/web/src/client/', 'apps/kobato/src/routes/']
+const SCANNED_ROOTS = ['packages/web/admin/src/ui/', 'packages/web/client/src/', 'apps/kobato/src/routes/']
 const SOURCE_FILE = /\.[tj]sx?$/
 const WATCH_CALL = /\.\s*watch\s*\(/
 

@@ -1,6 +1,6 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { SafeUser } from '@kobato/db/operations/user.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 
 import { findUserById, updateLastLogin } from '@kobato/db/operations/user.ts'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'

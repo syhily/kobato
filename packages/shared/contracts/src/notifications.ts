@@ -4,7 +4,10 @@ import { z } from 'zod'
 // Notification kinds: `direct` (admin ↔ user private thread, always
 // replyable), `admin` (system-generated, fanned out to every admin at creation,
 // never replyable), `broadcast` (system- or admin-created, fanned out to every
-// user at creation; only the admin-created flavor is replyable).
+// user at creation; only the admin-created flavor is replyable). The
+// persistence twin (column + CHECK literal) lives in
+// `@kobato/db/schema/notification.ts`, pinned value-identical by the server's
+// db-wire parity test.
 export const NOTIFICATION_KINDS = ['direct', 'admin', 'broadcast'] as const
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 

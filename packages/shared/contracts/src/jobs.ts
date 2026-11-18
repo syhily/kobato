@@ -6,9 +6,10 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
 // Jobs wire contract — the single source for the background-task catalog
-// (server aggregation + admin UI), the `job_run` trigger/status enums
-// (zod enum AND the SQL CHECK constraint in `infra/db/schema/job-run`) and the
-// list/history DTOs.
+// (server aggregation + admin UI), the `job_run` trigger/status wire enums and
+// the list/history DTOs. The persistence twins (columns + SQL CHECK literals)
+// live in `@kobato/db/schema/job-run.ts`, pinned value-identical by the
+// server's db-wire parity test.
 
 /** `job_run.trigger` values — zod enum and SQL CHECK share this array. */
 export const JOB_RUN_TRIGGERS = ['scheduled', 'manual'] as const

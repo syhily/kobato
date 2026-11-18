@@ -1,5 +1,9 @@
-import { WEBMENTION_OUTBOX_STATUSES, WEBMENTION_STATUSES } from '@kobato/contracts/webmentions.ts'
 import { z } from 'zod'
+
+// Admin moderation wire schemas (`adminWebmentionListSchema` /
+// `adminWebmentionOutboxListSchema`) and the public list schema
+// (`webmentionPublicListSchema`) live in `@kobato/contracts/webmentions.ts`;
+// this module keeps the W3C receive surface.
 
 // W3C receive payload — form-encoded `source` + `target`; the caps stop a
 // junk POST from smuggling a large body into the parser (the route also caps content-length).
@@ -27,24 +31,3 @@ export const webmentionReceiveSchema = z.object({
   target: httpUrlField('target'),
 })
 export type WebmentionReceiveInput = z.infer<typeof webmentionReceiveSchema>
-
-// Public display list (headless API, `public.webmention.list`) — keyed by
-// `page_key` (same flow as `public.comments.list`); a miss resolves to NOT_FOUND.
-export const webmentionPublicListSchema = z.object({
-  page_key: z.string(),
-})
-
-// Admin moderation list — `rejected` is a stored terminal state (not a
-// delete); `hidden` follows 7 consecutive daily re-verification failures.
-export const adminWebmentionListSchema = z.object({
-  offset: z.number().min(0),
-  limit: z.number().min(1).max(100),
-  status: z.enum(['all', ...WEBMENTION_STATUSES]).optional(),
-})
-
-// Outbound send-log list — read-only; `all` carries no status constraint.
-export const adminWebmentionOutboxListSchema = z.object({
-  offset: z.number().min(0),
-  limit: z.number().min(1).max(100),
-  status: z.enum(['all', ...WEBMENTION_OUTBOX_STATUSES]).optional(),
-})

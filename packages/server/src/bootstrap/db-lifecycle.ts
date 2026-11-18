@@ -1,9 +1,9 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
 import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications.ts'
-import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/contracts/sea/assets.ts'
 import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
 import { migrateDatabase } from '@kobato/db/migrate.ts'
+import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets.ts'
 import {
   closeAnalyticsForRestore,
   initAnalyticsDatabase,

@@ -1,6 +1,6 @@
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { MyProfileView } from '@kobato/web/ui/admin/my/MyProfileView.tsx'
+import { MyProfileView } from '@kobato/web-admin/ui/my/MyProfileView.tsx'
 import { data } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'

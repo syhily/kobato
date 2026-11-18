@@ -1,9 +1,16 @@
-import { NOTIFICATION_KINDS, type NotificationKind } from '@kobato/contracts/notifications.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// Single source: the CHECK enum is generated from the wire contract's
-// constant array (same pattern as schema/job-run.ts).
+// Persistence-canonical notification kinds — the single source for the
+// `kind` column and the CHECK literal below. The wire twin lives in
+// `@kobato/contracts/notifications`; the lists stay value- and
+// order-identical, pinned by
+// `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`.
+export const NOTIFICATION_KINDS = ['direct', 'admin', 'broadcast'] as const
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
+
+// Single source: the CHECK enum is generated from the constant array
+// above (same pattern as schema/job-run.ts).
 const sqlEnumList = (values: readonly string[]) => sql.raw(values.map((value) => `'${value}'`).join(', '))
 
 // Notification center — one row per message. Root messages carry

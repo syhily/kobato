@@ -1,5 +1,5 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Role } from '@kobato/utils/roles.ts'
 
 import { user } from '@kobato/db/schema/user.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'

@@ -1,8 +1,8 @@
 import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/seo/meta.ts'
 import { detailHeaders } from '@kobato/server/http/loaders/route-exports.ts'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller.ts'
-import { PostDetailBody } from '@kobato/web/ui/public/post/PostDetailBody.tsx'
-import { WebmentionList } from '@kobato/web/ui/public/webmentions/WebmentionList.tsx'
+import { PostDetailBody } from '@kobato/web-public/ui/post/PostDetailBody.tsx'
+import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList.tsx'
 import { Suspense, useMemo } from 'react'
 import { Await, data } from 'react-router'
 

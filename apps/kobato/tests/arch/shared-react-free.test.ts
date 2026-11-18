@@ -1,9 +1,9 @@
 /**
- * The nine leaf packages of the former `@kobato/shared`
+ * The thirteen leaf packages of the former `@kobato/shared`
  * (`packages/shared/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts,seo}`)
  * are UI-runtime-free: they must never carry React into either bundle. The
- * product settings contexts/hooks live in `@kobato/web`
- * (`@kobato/web/client/settings/blog-settings-context`); this scan pins that
+ * product settings contexts/hooks live in `@kobato/web-client`
+ * (`@kobato/web-client/settings/blog-settings-context`); this scan pins that
  * migration result — no `.tsx` source file and no `react` / `react-dom`
  * import (value OR type) anywhere under those `src` trees.
  *
@@ -17,6 +17,10 @@ import { describe, expect, it } from 'vitest'
 const PROJECT_ROOT = process.cwd()
 const SHARED_SRC_ROOTS = [
   'packages/shared/utils/src',
+  'packages/shared/auth/src',
+  'packages/shared/catalog/src',
+  'packages/shared/distribution/src',
+  'packages/shared/telemetry/src',
   'packages/shared/i18n/src',
   'packages/shared/cache/src',
   'packages/shared/settings/src',
@@ -93,7 +97,7 @@ describe('arch: the shared leaf packages are UI-runtime-free', () => {
     const tsxFiles = sourceFiles.filter((filePath) => filePath.endsWith('.tsx'))
     expect(
       tsxFiles.map(relativePath),
-      `React components found in the shared leaf packages (move them to @kobato/web):\n${tsxFiles.map(relativePath).join('\n')}`,
+      `React components found in the shared leaf packages (move them to @kobato/web-admin):\n${tsxFiles.map(relativePath).join('\n')}`,
     ).toEqual([])
   })
 

@@ -1,8 +1,8 @@
-import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@kobato/contracts/catalog.ts'
+import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@kobato/catalog/catalog.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { PostMetaRow } from '@kobato/db/types.ts'
 
-import { toListingPostCard } from '@kobato/contracts/catalog.ts'
+import { toListingPostCard } from '@kobato/catalog/catalog.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { queryMetadata } from '@kobato/server/domains/comments/services/likes.ts'
 import { applyLimitOffset } from '@kobato/server/domains/content/pagination.ts'

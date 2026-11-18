@@ -1,9 +1,9 @@
-import type { FrontendRumBootstrap } from '@kobato/contracts/trace.ts'
 import type {
   FrontendRumRelay,
   ServerTraceRuntimeConfig,
   TraceConfigResolution,
 } from '@kobato/server/infra/trace/config.ts'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 
 import { activeFrontendRelay, activeFrontendRum, traceEnvironment } from '@kobato/server/infra/trace/config.ts'
 import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade.ts'

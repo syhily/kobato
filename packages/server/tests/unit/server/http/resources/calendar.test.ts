@@ -1,8 +1,8 @@
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { APP_VERSION } from '@kobato/utils/version.ts'
 import { HTTPException } from 'hono/http-exception'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

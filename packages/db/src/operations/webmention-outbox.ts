@@ -1,4 +1,3 @@
-import type { WebmentionOutboxStatusCounts } from '@kobato/contracts/webmentions.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { WebmentionOutboxRow } from '@kobato/db/types.ts'
 
@@ -6,6 +5,10 @@ import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
 import { and, asc, count, desc, eq, inArray, isNull, lt, lte, or } from 'drizzle-orm'
 
 export type WebmentionOutboxStatus = WebmentionOutboxRow['status']
+
+/** Group-by-status row counts (`all` + one entry per send status). Wire
+ *  twin: `webmentionOutboxStatusCountsSchema` in `@kobato/contracts/webmentions`. */
+export type WebmentionOutboxStatusCounts = { all: number } & { [S in WebmentionOutboxStatus]: number }
 
 /** Dedup on UNIQUE(source_url, target_url): a republish resets `no-endpoint`/`failed`
  *  rows to `pending`; `sent` rows stay untouched. Waterline raises are one-way. */
