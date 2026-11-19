@@ -5,11 +5,11 @@
 - `toolchain` ↔ `@kobato/toolchain` — the shared TypeScript configuration (`tsconfig.base.json`, consumed by `tsconfig.json` and the app tsconfigs through its exports map) plus the app's build-time Vite plugins (`src/vite/`: the React Compiler pass and the route-warmup tierer). See `toolchain/AGENTS.md`.
 - `test` ↔ `@kobato/test` — in-process Vitest fixtures/doubles only (see `test/AGENTS.md`).
 - `harness` ↔ `@kobato/harness` — the out-of-process instance harness (see `harness/AGENTS.md`).
-- `trace` ↔ `@kobato/trace` — OpenObserve DEV container tooling (see `trace/README.md`); it consumes `pack/sea/paths.ts` for the shared observability-asset location and `@kobato/telemetry` for protocol names.
+- `trace` ↔ `@kobato/trace` — OpenObserve DEV container tooling (see `trace/AGENTS.md`); it consumes `pack/sea/paths.ts` for the shared observability-asset location and `@kobato/telemetry` for protocol names.
 - `browser` ↔ `@kobato/browser` — the real-browser Playwright journey runner (`test:browser` / `sea:browser`) and the Playwright config itself.
 - `email` ↔ `@kobato/email` — localized email-template previews (`emails:generate`).
 - `i18n` ↔ `@kobato/i18n-tools` — regional terminology diff report (`i18n:regional-diff`).
-- `pack` ↔ `@kobato/pack` — packaging tooling: the SEA pipeline (`pack/src/sea/`, own AGENTS.md) and release automation (`pack/src/release.ts`).
+- `pack` ↔ `@kobato/pack` — packaging tooling: the SEA pipeline and release automation (`pack/src/release.ts`); see `pack/AGENTS.md`.
 
 ## Boundary rules
 

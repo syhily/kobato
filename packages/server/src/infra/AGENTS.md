@@ -17,7 +17,7 @@
 
 ## SEA runtime rules
 
-- Build-side mechanics (VFS constraints, bundles, natives, commands) live in `tools/pack/src/sea/AGENTS.md`. Native packages (`sharp`, `@napi-rs/canvas`, `@duckdb/node-api`) are statically imported — the bundler inlines them and the redirect plugin rewrites their platform loads; a `requireExternal('sharp' | ...)` call site hides the package from the bundler and crashes under SEA. `requireExternal` remains only as `nativeRequire`'s resolver.
+- Build-side mechanics (VFS constraints, bundles, natives, commands) live in `tools/pack/AGENTS.md`. Native packages (`sharp`, `@napi-rs/canvas`, `@duckdb/node-api`) are statically imported — the bundler inlines them and the redirect plugin rewrites their platform loads; a `requireExternal('sharp' | ...)` call site hides the package from the bundler and crashes under SEA. `requireExternal` remains only as `nativeRequire`'s resolver.
 - Enforcement: the boundaries contract test bans native `requireExternal(...)` sites, and the native-specifiers test enumerates every platform `require` in the installed packages so a new specifier fails at upgrade time.
 - SEA-safe file reads go through `seaAssetPath` (raw assets, main thread only) or `getEmbeddedAsset` (packed `natives/*` + `natives-meta/*`, the worker-safe channel). Never `seaAssetPath` a `natives/*` key — it throws on zstd bytes. New resource types go into `tools/pack/src/sea/assets.ts` AND are read via the sea helpers with a non-SEA fallback.
 - Embedded asset keys are owned by `packages/shared/distribution/src/sea-assets.ts`; never hardcode one in `scripts/` or `packages/server/src/` (`packages/shared/distribution/tests/unit/sea/assets.test.ts`).
