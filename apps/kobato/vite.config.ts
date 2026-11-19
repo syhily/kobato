@@ -42,8 +42,7 @@ const appDeclared = new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.k
 // isolation a bare include hint resolves only against THIS package's
 // node_modules, so a sibling-owned dep needs the nested `owner > dep` form
 // that resolves through the owning package's own node_modules.
-const depOwner = new Map<string, string>()
-for (const dir of [
+const manifests = [
   'packages/api',
   'packages/db',
   'packages/web/client',
@@ -64,11 +63,26 @@ for (const dir of [
   'packages/shared/contracts',
   'packages/shared/seo',
   'packages/inkling',
-]) {
-  const manifest = workspacePkgSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8')))
-  for (const dep of [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]) {
-    if (!depOwner.has(dep)) {
-      depOwner.set(dep, manifest.name)
+].map((dir) => workspacePkgSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8'))))
+
+const depOwner = new Map<string, string>()
+// External dep → the workspace package that declares it. Under pnpm
+// isolation a bare include hint resolves only against THIS package's
+// node_modules, so a sibling-owned dep needs the nested `owner > dep` form
+// that resolves through the owning package's own node_modules. Vite resolves
+// the OWNER from this app first, so the owner must itself be declared here —
+// otherwise the basedir falls back to the app root, where isolation makes
+// the dep unresolvable (e.g. dompurify owned by the undeclared
+// @kobato/sanitize). App-declared owners therefore register first.
+for (const appDeclaredOnly of [true, false]) {
+  for (const manifest of manifests) {
+    if (appDeclared.has(manifest.name) !== appDeclaredOnly) {
+      continue
+    }
+    for (const dep of [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]) {
+      if (!depOwner.has(dep)) {
+        depOwner.set(dep, manifest.name)
+      }
     }
   }
 }
@@ -248,6 +262,7 @@ export default defineConfig(({ command }) => ({
       '@lexical/react/LexicalComposer',
       '@lexical/react/LexicalComposerContext',
       '@lexical/react/LexicalContentEditable',
+      '@lexical/react/LexicalExtensionComposer',
       '@lexical/react/LexicalHistoryPlugin',
       '@lexical/react/LexicalLinkPlugin',
       '@lexical/react/LexicalListPlugin',
@@ -256,6 +271,7 @@ export default defineConfig(({ command }) => ({
       '@lexical/react/LexicalOnChangePlugin',
       '@lexical/react/LexicalRichTextPlugin',
       '@lexical/react/LexicalTypeaheadMenuPlugin',
+      '@lexical/react/ReactExtension',
       '@lexical/rich-text',
       '@lexical/selection',
       '@lexical/table',
@@ -272,7 +288,9 @@ export default defineConfig(({ command }) => ({
       '@codemirror/view',
       '@lezer/highlight',
       'emoji-mart',
-      '@emoji-mart/data',
+      // NOT @emoji-mart/data: its entry is a bare JSON file
+      // (sets/15/native.json), which can never match the optimizer's JS entry
+      // pattern — pinning it only warns and Vite serves JSON deps unbundled.
       'react-colorful',
       'fast-average-color',
       'markdown-it',
