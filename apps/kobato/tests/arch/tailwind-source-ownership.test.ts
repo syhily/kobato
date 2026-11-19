@@ -121,6 +121,23 @@ describe('Tailwind source ownership', () => {
     }
   })
 
+  it('keeps surface entries importing the UI token sheet without reference (emitting)', () => {
+    const entries = [
+      'apps/kobato/src/styles/admin.css',
+      'apps/kobato/src/styles/public.css',
+      'apps/inkling-demo/styles/public.css',
+    ]
+    for (const file of entries) {
+      const source = readFileSync(resolve(REPO_ROOT, file), 'utf8')
+      expect(source, `${file}: must import the UI token sheet non-reference`).toContain(
+        `@import '@kobato/ui/styles/tailwind.css';`,
+      )
+      expect(source, `${file}: a reference import drops theme-var emission and the base border default`).not.toContain(
+        `@kobato/ui/styles/tailwind.css' reference`,
+      )
+    }
+  })
+
   it('keeps source partials free of their own Tailwind compile', () => {
     for (const { file } of SOURCE_PARTIALS) {
       const source = readFileSync(file, 'utf8')
