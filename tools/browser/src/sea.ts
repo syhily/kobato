@@ -1,13 +1,15 @@
 import { runBrowserSuite } from '@kobato/browser/run.ts'
 import { fail } from '@kobato/pack/sea/exec.ts'
-import { seaBinaryPath } from '@kobato/pack/sea/paths.ts'
+import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths.ts'
 import { resolve as resolvePath } from 'node:path'
 
 const arg = process.argv[2]
 if (arg?.startsWith('--')) {
   fail('Usage: node tools/browser/src/sea.ts [path-to-binary]')
 }
-const binaryPath = arg === undefined ? seaBinaryPath() : resolvePath(arg)
+// The package script runs with cwd at tools/browser; resolve a relative CLI
+// path against the repository root, as the root scripts always have.
+const binaryPath = arg === undefined ? seaBinaryPath() : resolvePath(repoRoot, arg)
 
 try {
   const status = await runBrowserSuite({ binaryPath, forceBoot: true })

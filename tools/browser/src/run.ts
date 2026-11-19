@@ -71,7 +71,7 @@ export async function runBrowserSuite(options: BrowserSuiteOptions = {}): Promis
     return runExternal(externalBaseUrl.replace(/\/+$/, ''))
   }
 
-  const binaryPath = options.binaryPath ? resolvePath(options.binaryPath) : seaBinaryPath()
+  const binaryPath = options.binaryPath ? resolvePath(repoRoot, options.binaryPath) : seaBinaryPath()
   await ensureBinaryExists(binaryPath)
 
   const dirs = await makeTempDirs()
