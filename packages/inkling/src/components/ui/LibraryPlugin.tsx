@@ -9,7 +9,7 @@ import {
 } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import { useLibraryBrowser } from '@kobato/inkling-internal/hooks/useLibraryBrowser'
 import { useSelectorPlaceholderLifecycle } from '@kobato/inkling-internal/hooks/useSelectorPlaceholderLifecycle'
-import { INSERT_FROM_LIBRARY_COMMAND } from '@kobato/inkling-internal/plugins/InklingSelectorPlugin'
+import { INSERT_FROM_LIBRARY_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 

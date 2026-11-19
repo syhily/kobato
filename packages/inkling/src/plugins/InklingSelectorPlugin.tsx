@@ -11,12 +11,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { mergeRegister, COMMAND_PRIORITY_LOW } from 'lexical'
 import React from 'react'
 
-export { OPEN_GIF_SELECTOR_COMMAND }
-export {
-  INSERT_FROM_GIF_COMMAND,
-  INSERT_FROM_LIBRARY_COMMAND,
-} from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
-
 const SELECTOR_OPEN_COMMANDS = [
   [OPEN_GIF_SELECTOR_COMMAND, GifPlugin],
   [OPEN_IMAGE_LIBRARY_COMMAND, LibraryPlugin],
