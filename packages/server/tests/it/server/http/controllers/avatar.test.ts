@@ -12,16 +12,13 @@ const db = getTestDb()
 describe('avatarRouter.find', () => {
   beforeEach(() => {
     __resetRateLimitsForTests()
-    setBlogSettingsBundleForTests({
-      ...TEST_BLOG_SETTINGS_BUNDLE,
-      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: 'https://example.test' },
-    })
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
   it('returns a hash-based avatar path', async () => {
     const ctx = makePublicCtx({ db })
     const res = await call(avatarRouter.find, { email: 'user@example.com' }, { context: ctx })
-    expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/[0-9a-f]{64}\.png\?s=120$/)
+    expect(res.avatar).toMatch(/^\/images\/avatar\/[0-9a-f]{64}\.png\?s=120$/)
   })
 
   it('returns different paths for different emails', async () => {

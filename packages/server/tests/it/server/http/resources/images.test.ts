@@ -218,11 +218,11 @@ describe('images resource', () => {
     expect(Buffer.from(await res.arrayBuffer())).toEqual(Buffer.from('av'))
   })
 
-  it('maps a redirect outcome to the default avatar URL', async () => {
+  it('maps a redirect outcome to the default avatar path', async () => {
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(302)
-    expect(res.headers.get('Location')).toBe('https://example.com/images/default-avatar.png')
+    expect(res.headers.get('Location')).toBe('/images/default-avatar.png')
   })
 
   it("threads the `?s=` size into the domain call, defaulting to the default's bucket", async () => {

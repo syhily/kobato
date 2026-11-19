@@ -47,9 +47,15 @@ export function resolveAvatarSize(raw: string | undefined): number {
   return bucketAvatarSize(Math.min(MAX_AVATAR_SIZE, Math.max(MIN_AVATAR_SIZE, Math.trunc(parsed))))
 }
 
-export function defaultAvatarUrl(): string {
+export function defaultAvatarPath(): string {
   const suffix = brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.defaultAvatar)
-  return joinUrl(requireBlogSettingsSection('siteIdentity').website, `/images/default-avatar.png${suffix}`)
+  return `/images/default-avatar.png${suffix}`
+}
+
+// Absolute form for the external gravatar `d=` fallback: mirrors can only
+// redirect to a fully qualified URL, never to a site-relative path.
+export function defaultAvatarUrl(): string {
+  return joinUrl(requireBlogSettingsSection('siteIdentity').website, defaultAvatarPath())
 }
 
 function fetchErrorMessage(err: unknown): string {

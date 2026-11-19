@@ -5,6 +5,7 @@ import { encodedEmail } from '@kobato/auth/security.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
+  defaultAvatarPath,
   defaultAvatarUrl,
   fetchAvatarByChain,
   fetchAvatarImage,
@@ -173,6 +174,11 @@ describe('domains/comments/services/avatar — defaultAvatarUrl', () => {
     const url = defaultAvatarUrl()
     expect(url).toMatch(/images\/default-avatar\.png$/)
     expect(url.startsWith('http')).toBe(true)
+  })
+
+  it('derives from the same site-relative path the browser redirect uses', () => {
+    expect(defaultAvatarUrl().endsWith(defaultAvatarPath())).toBe(true)
+    expect(defaultAvatarPath()).toMatch(/^\/images\/default-avatar\.png(\?|$)/)
   })
 })
 

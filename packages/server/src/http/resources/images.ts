@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { Context } from 'hono'
 
-import { defaultAvatarUrl, resolveAvatarSize, serveAvatar } from '@kobato/server/domains/comments/services/avatar.ts'
+import { defaultAvatarPath, resolveAvatarSize, serveAvatar } from '@kobato/server/domains/comments/services/avatar.ts'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
 import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query.ts'
 import { findPublicPostMetaBySlug } from '@kobato/server/domains/posts/services/single.ts'
@@ -156,12 +156,12 @@ export const imagesRouter = new Hono<Env>()
     async (c) => {
       const hash = stripPng(c.req.param('filename'))
       if (!hash) {
-        return c.redirect(defaultAvatarUrl())
+        return c.redirect(defaultAvatarPath())
       }
       const size = resolveAvatarSize(c.req.query('s'))
       const avatar = await serveAvatar(c.var.requestContext.db, hash, size)
       if (avatar.kind === 'redirect') {
-        return c.redirect(defaultAvatarUrl())
+        return c.redirect(defaultAvatarPath())
       }
       return respondPng(c, avatar.buffer, AVATAR_HEADERS)
     },
