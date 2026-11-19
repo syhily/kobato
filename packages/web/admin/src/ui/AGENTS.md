@@ -66,6 +66,10 @@
     `editor-shell/EditorScreen`; it holds presentation/controllers only, never route loading.
   - `account/` — the `/admin/me` account domain (profile, login method, passkey, password, sessions, own
     comments); the route family name stays `me`, the UI module follows the `account.*` API group.
+  - `music/` — the library domain (views, add-music + meting search, detail, cards) plus the two
+    visuals both subfamilies render (`Equalizer`, `LyricsDisplay`); `music/player/` is the playback
+    machinery mounted once by the admin shell (`music-player-context`, bar/float, slider,
+    `format-time`, `use-dominant-color`).
   - `branding/` — the `/admin/library/branding` branding view; images, fonts, and music remain their own domains.
   - `settings/` — card autosave model and section-grouped settings views: `packages/web/admin/src/ui/settings/AGENTS.md`.
 

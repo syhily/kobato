@@ -3,16 +3,23 @@
 ## Layout
 
 Cross-section framework files stay at the root (`SettingsSection`, `SettingsHintTooltip`, `display`,
-`feature-flags`, `useSettingsMutation`, `use-locale-switch`, `gravatar-mirror-presets`). Each
-non-trivial section owns a subdirectory with its cards, dialogs, and controller:
+`feature-flags`, `useSettingsMutation`, `use-locale-switch`, `gravatar-mirror-presets`). Every
+multi-card section owns a subdirectory: the entry form, one file per card (and per sortable row),
+and a kebab-case `model.ts`/`form-schema.ts` for the shared schema and constants. A section stays
+at the root only while it is genuinely a single card (`AnalyticsForm`, `AssetsForm`, …):
 
-- `general/` — the general section form and its four cards (identity, footer/ICP, author, locale/time-zone) plus the shared `form-schema.ts`; it crossed the ≤500 LOC line and moved out of the root.
+- `general/` — the general section form and its four cards (identity, footer/ICP, author, locale/time-zone) plus the shared `form-schema.ts`.
+- `navigation/` — the navigation editor: SideNav/FooterNav cards, their sortable rows, and the shared `row-model.ts`.
+- `sidebar/` — the sidebar widgets card, the daily-quote card (upload/validation state machine), and the shared `model.ts`.
+- `security/` — CSRF toggle/exempt-paths, CORS policy, and passkey cards plus `model.ts`.
+- `comments/` — comments pagination/avatar/token cards, the sortable avatar-source row, and `model.ts`.
+- `content/` — content pagination/feed/sort/footnotes cards plus `model.ts` (sort option tables).
 - `backup/` — backup/restore view, schedule, encryption/file list, restore progress, restore controller.
 - `mail/` — mail section form and transport/provider cards.
 - `observability/` — connection, reporting, assets, provision summary, section form.
 - `storage/` — storage cards and migration dialog/controller.
 - `cache/` — cache status cards plus `CacheView` (the section view owns its directory, like `backup/`).
-- `rate-limit/` — threshold form plus its constants/formatters/validation.
+- `rate-limit/` — the threshold form plus its bounds constants.
 - `shell/` — workspace chrome, flush/search/scroll-spy controllers, and form wrappers.
 
 A new section with more than one file gets its own subdirectory; do not flatten cards back into the root.

@@ -6,7 +6,7 @@ import {
   useMusicPlayerActions,
   useMusicPlayerState,
   useMusicPlayerTime,
-} from '@kobato/web-admin/ui/music/music-player-context.tsx'
+} from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // The SSR `renderHook` harness runs a single pass with no effects, so the

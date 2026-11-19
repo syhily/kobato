@@ -3,7 +3,7 @@ import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Equalizer } from '@kobato/web-admin/ui/music/Equalizer.tsx'
-import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/music-player-context.tsx'
+import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { Image } from '@kobato/web-public/ui/widgets/Image.tsx'
 import { Play, Pause } from 'lucide-react'
 

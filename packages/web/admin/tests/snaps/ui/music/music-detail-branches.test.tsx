@@ -35,7 +35,7 @@ const playerState = vi.hoisted(() => ({
   currentTime: 0,
 }))
 
-vi.mock('@kobato/web-admin/ui/music/music-player-context.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/music/player/music-player-context.tsx', () => ({
   useMusicPlayerActions: () => ({
     load: vi.fn(),
     toggle: vi.fn(),

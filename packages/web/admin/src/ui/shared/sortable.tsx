@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
@@ -19,6 +20,9 @@ import { GripVerticalIcon } from 'lucide-react'
 // container styling.
 
 /** Pointer + keyboard sensors; every admin sortable list uses this exact set. */
+/** DnD modifier shared by every sortable settings list: vertical dragging only. */
+export const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
+
 export function useSortableSensors() {
   return useSensors(
     useSensor(PointerSensor),

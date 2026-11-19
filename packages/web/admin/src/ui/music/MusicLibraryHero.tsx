@@ -5,7 +5,7 @@ import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-m
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
-import { useMusicPlayerState } from '@kobato/web-admin/ui/music/music-player-context.tsx'
+import { useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { transitions } from '@kobato/web-client/lib/motion.ts'
 import { useEffect, useMemo, useRef, useState } from 'react'
 

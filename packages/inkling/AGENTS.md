@@ -56,6 +56,21 @@ This package has one closed public surface (`src/index.ts` React barrel) and one
 - `utils/` holds pure helpers and `utils/draggable/` only; `services/` is the state-machine layer (gif/library/pintura/collaboration request machines), one level above utils. Non-component modules are `kebab-case.ts`;
   PascalCase is reserved for component files, `$`-prefixed for Lexical helpers.
 
+### Public-barrel export policy (deliberate, do NOT prune)
+
+`src/index.ts` exports the editor's full API, not the subset today's hosts consume. Names with zero
+current consumers — the LibraryBrowser family, PinturaConfig, CORE_PLUGINS, FocusModePlugin, the
+ten stock node families with their guards/factories, the markdown transformers, `version`, the
+plugin re-exports, `COMMAND_PRIORITY_*` — stay exported ON PURPOSE:
+
+- inkling is a host-agnostic editor island; the barrel is its stable API for ANY host (including
+  the demo app and future embeds), so "unused in kobato today" is not dead surface.
+- Tree-shaking owns dead-code elimination at each consumer's bundler; the barrel is not where
+  payload is decided.
+- Pruning by consumer count would churn the public API on every product change and break the
+  closed-surface guarantee (any removal is a breaking release).
+  Do not "clean up" the barrel; extend it only with deliberately-public API.
+
 ## Architecture notes
 
 Glossary owned here: **card** (a decorator-node block), **card adjacency**, **card spec**, **card declaration**, **render target**, **host card**,

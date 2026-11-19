@@ -92,7 +92,11 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/web/admin/src/ui/auth/SetupTokenVerifyForm.tsx', rules: ['jsx-text'], text: 'Setup Token' },
   // Technical tokens that are never translated — SI units, provider names,
   // protocol paths, keyboard keys and example URLs.
-  { path: 'packages/web/admin/src/ui/settings/CommentsForm.tsx', rules: ['jsx-text'], text: 'ms' },
+  {
+    path: 'packages/web/admin/src/ui/settings/comments/CommentsAvatarCard.tsx',
+    rules: ['jsx-text'],
+    text: 'ms',
+  },
   {
     path: 'packages/web/admin/src/ui/settings/general/GeneralIdentityCard.tsx',
     rules: ['jsx-attribute'],
@@ -104,11 +108,15 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     text: 'https://example.com',
   },
   {
-    path: 'packages/web/admin/src/ui/settings/SecurityForm.tsx',
+    path: 'packages/web/admin/src/ui/settings/security/CorsPolicyCard.tsx',
     rules: ['jsx-attribute'],
     text: 'https://example.com',
   },
-  { path: 'packages/web/admin/src/ui/settings/SecurityForm.tsx', rules: ['jsx-attribute'], text: '/webhook/github' },
+  {
+    path: 'packages/web/admin/src/ui/settings/security/CsrfExemptPathsCard.tsx',
+    rules: ['jsx-attribute'],
+    text: '/webhook/github',
+  },
   { path: 'packages/web/admin/src/ui/settings/storage/StorageCards.tsx', rules: ['jsx-text'], text: 'S3 ·' },
   { path: 'packages/web/admin/src/ui/shell/AdminSearchDialog.tsx', rules: ['jsx-text'], text: 'ESC' },
   { path: 'packages/web/admin/src/ui/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'v' },
@@ -269,10 +277,11 @@ describe('production sources', () => {
         'packages/web/public/src/ui/friends/FriendApplyForm.tsx',
         'packages/web/admin/src/ui/auth/AdminInstallForm.tsx',
         'packages/web/admin/src/ui/auth/SetupTokenVerifyForm.tsx',
-        'packages/web/admin/src/ui/settings/CommentsForm.tsx',
+        'packages/web/admin/src/ui/settings/comments/CommentsAvatarCard.tsx',
         'packages/web/admin/src/ui/settings/general/GeneralIdentityCard.tsx',
         'packages/web/admin/src/ui/settings/general/GeneralAuthorCard.tsx',
-        'packages/web/admin/src/ui/settings/SecurityForm.tsx',
+        'packages/web/admin/src/ui/settings/security/CorsPolicyCard.tsx',
+        'packages/web/admin/src/ui/settings/security/CsrfExemptPathsCard.tsx',
         'packages/web/admin/src/ui/settings/storage/StorageCards.tsx',
         'packages/web/admin/src/ui/shell/AdminSearchDialog.tsx',
         'packages/web/admin/src/ui/shell/VersionDialog.tsx',
@@ -447,7 +456,7 @@ describe('production sources', () => {
         'packages/server/src/domains/update/pipeline.ts',
         'packages/shared/utils/src/url-schema.ts',
         // The Gravatar mirror preset labels render through `t()`.
-        'packages/web/admin/src/ui/settings/CommentsForm.tsx',
+        'packages/web/admin/src/ui/settings/comments/CommentsAvatarCard.tsx',
         // Email templates/senders render server-catalog copy.
         'packages/server/src/infra/email/sender.ts',
         'packages/server/src/infra/email/templates/layout/EmailLayout.tsx',

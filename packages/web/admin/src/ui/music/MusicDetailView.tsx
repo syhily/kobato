@@ -6,12 +6,12 @@ import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { LyricsDisplay } from '@kobato/web-admin/ui/music/LyricsDisplay.tsx'
+import { buildMusicUpdate } from '@kobato/web-admin/ui/music/music-update.ts'
 import {
   useMusicPlayerActions,
   useMusicPlayerState,
   useMusicPlayerTime,
-} from '@kobato/web-admin/ui/music/music-player-context.tsx'
-import { buildMusicUpdate } from '@kobato/web-admin/ui/music/music-update.ts'
+} from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { ConfirmDialog, type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
 import { orpc } from '@kobato/web-client/api/client.ts'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'

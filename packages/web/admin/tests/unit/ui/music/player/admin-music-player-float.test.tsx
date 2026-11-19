@@ -56,7 +56,7 @@ const player = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@kobato/web-admin/ui/music/music-player-context.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/music/player/music-player-context.tsx', () => ({
   useMusicPlayerState: () => player.state,
   useMusicPlayerTime: () => player.time,
   useMusicPlayerActions: () => player.actions,
@@ -64,7 +64,7 @@ vi.mock('@kobato/web-admin/ui/music/music-player-context.tsx', () => ({
 
 // Import lazily so the module under test picks up the stubbed hooks.
 async function renderFloat(initialPath = '/admin/dashboard') {
-  const { AdminMusicPlayerFloat } = await import('@kobato/web-admin/ui/music/AdminMusicPlayerFloat.tsx')
+  const { AdminMusicPlayerFloat } = await import('@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat.tsx')
   return stableHtml(renderInRouter(<AdminMusicPlayerFloat />, initialPath))
 }
 

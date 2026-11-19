@@ -11,7 +11,7 @@ function renderUi(ui: ReactElement) {
 }
 import type { NavigationSettings } from '@kobato/settings/types.ts'
 
-import { NavigationEditor } from '@kobato/web-admin/ui/settings/NavigationEditor.tsx'
+import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()

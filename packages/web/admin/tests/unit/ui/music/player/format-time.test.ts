@@ -1,4 +1,4 @@
-import { formatTime } from '@kobato/web-admin/ui/music/format-time.ts'
+import { formatTime } from '@kobato/web-admin/ui/music/player/format-time.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('formatTime', () => {

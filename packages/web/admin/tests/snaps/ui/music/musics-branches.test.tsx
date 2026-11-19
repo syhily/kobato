@@ -5,9 +5,9 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView.tsx'
 import { LyricsDisplay } from '@kobato/web-admin/ui/music/LyricsDisplay.tsx'
-import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/music-player-context.tsx'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView.tsx'
 import { MusicsView, SortIcon } from '@kobato/web-admin/ui/music/MusicsView.tsx'
+import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
