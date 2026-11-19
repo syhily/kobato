@@ -228,7 +228,7 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
             </>
           )}
         </div>
-        <p className="line-clamp-2 leading-snug break-words text-(--text-admin-base) text-foreground">
+        <p className="line-clamp-2 text-admin-base leading-snug break-words text-foreground">
           {item.excerpt || t('admin.welcome.pending.emptyComment')}
         </p>
       </div>
@@ -280,7 +280,7 @@ function EmptyState({ line }: { line: string }) {
           className="size-14 text-status-warn-fg drop-shadow-[0_2px_10px_var(--status-warn-fg)]"
         />
       </div>
-      <p className="max-w-md text-(--text-admin-base) text-muted-foreground">{line}</p>
+      <p className="max-w-md text-admin-base text-muted-foreground">{line}</p>
     </div>
   )
 }

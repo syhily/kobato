@@ -6,6 +6,16 @@
 }
 
 .comment-body.active {
-  animation: var(--animate-comment-flash);
+  animation: comment-flash 1.5s ease-out forwards;
   border-radius: var(--radius-sm);
+}
+
+@keyframes comment-flash {
+  0%,
+  40% {
+    background-color: color-mix(in oklab, var(--brand) 16%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
 }

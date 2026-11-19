@@ -18,7 +18,7 @@ export function Friends({ friends }: FriendsProps) {
 
   if (list.length === 0) {
     return (
-      <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
+      <div className="flex h-empty-state flex-auto flex-col text-center">
         <div className="my-auto">
           <div>{t('public.friends.empty')}</div>
         </div>

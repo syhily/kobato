@@ -16,8 +16,8 @@ interface ChartDatum {
   visitors: number
 }
 
-const COLOR_VISITS = 'var(--color-chart-1)'
-const COLOR_VISITORS = 'var(--color-chart-2)'
+const COLOR_VISITS = 'var(--chart-1)'
+const COLOR_VISITORS = 'var(--chart-2)'
 
 export interface ViewsChartInnerProps {
   points: ViewsPoint[]

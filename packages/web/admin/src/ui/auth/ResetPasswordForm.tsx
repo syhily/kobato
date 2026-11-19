@@ -26,7 +26,7 @@ export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: Re
       <input type="hidden" name="reset_token" value={token} />
       {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
       <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
+        <Label htmlFor="loginForm-password" className="text-admin-base font-semibold">
           {t('auth.reset.newPassword')}
         </Label>
         <div className="relative w-full">
@@ -49,7 +49,7 @@ export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: Re
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           t('auth.reset.saving')

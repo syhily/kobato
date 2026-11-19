@@ -8,6 +8,7 @@
     "./components/*": "./src/components/*",
     "./icons/*": "./src/icons/*",
     "./lib/*": "./src/lib/*",
+    "./styles/base-defaults.css": "./src/styles/base-defaults.css",
     "./styles/dark-variant.css": "./src/styles/dark-variant.css",
     "./styles/tailwind.css": "./src/styles/tailwind.css",
     "./styles/typeset.css": "./src/styles/typeset.css",

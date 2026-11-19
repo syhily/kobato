@@ -25,7 +25,7 @@ export function ErrorView({ error, isDev }: ErrorViewProps) {
   }
 
   return (
-    <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
+    <div className="flex h-empty-state flex-auto flex-col text-center">
       <div className="my-auto">
         <h1 className="font-number text-empty-state-hero">
           <span className="sr-only">{title}</span>

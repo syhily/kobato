@@ -14,7 +14,7 @@ interface AreaDatum {
   count: number
 }
 
-const COLOR_AREA = 'var(--color-chart-1)'
+const COLOR_AREA = 'var(--chart-1)'
 const MAP_AREA_IDS = new Set(WorldMapTopoJSON.objects.countries.geometries.map((feature) => feature.id))
 
 export interface LocationsMapInnerProps {

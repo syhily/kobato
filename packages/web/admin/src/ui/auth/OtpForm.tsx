@@ -57,7 +57,7 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
       <Form method="post" action="?action=verifyotp" id="otpForm" className="flex w-full flex-col gap-6">
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
         <div className="flex w-full flex-col gap-2">
-          <Label htmlFor="otpForm-otp" className="font-semibold text-(--text-admin-base)">
+          <Label htmlFor="otpForm-otp" className="text-admin-base font-semibold">
             {t('auth.otp.code')}
           </Label>
           <Input
@@ -78,7 +78,7 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+          className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
         >
           {isSubmitting ? (
             t('auth.otp.verifying')

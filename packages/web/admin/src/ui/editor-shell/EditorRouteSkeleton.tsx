@@ -8,7 +8,7 @@ export function EditorRouteSkeleton() {
         <Skeleton className="h-5 w-48" />
       </div>
       <div className="grid grow gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <Skeleton className="min-h-(--spacing-editor-min)" />
+        <Skeleton className="min-h-editor-min" />
         <div className="flex flex-col gap-4">
           <Skeleton className="h-48" />
           <Skeleton className="h-32" />

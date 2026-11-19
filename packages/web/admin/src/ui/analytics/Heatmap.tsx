@@ -94,7 +94,7 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
       return 'color-mix(in srgb, var(--foreground) 5%, transparent)'
     }
     const alpha = Math.max(0.1, value / maxValue)
-    const base = metric === 'visits' ? 'var(--color-chart-1)' : 'var(--color-chart-2)'
+    const base = metric === 'visits' ? 'var(--chart-1)' : 'var(--chart-2)'
     return `color-mix(in srgb, ${base} ${Math.round(alpha * 100)}%, transparent)`
   }
 

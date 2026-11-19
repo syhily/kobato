@@ -146,8 +146,8 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full max-w-xs" preserveAspectRatio="none">
       <defs>
         <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
         </linearGradient>
       </defs>
       {areaPath && <path d={areaPath} fill="url(#trendGradient)" />}
@@ -155,7 +155,7 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
         <path
           d={linePath}
           fill="none"
-          stroke="var(--color-primary)"
+          stroke="var(--primary)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"

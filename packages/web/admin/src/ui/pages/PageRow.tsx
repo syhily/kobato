@@ -32,7 +32,7 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
   const { t } = useI18n()
   if (page.deletedAt !== null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
         {t('admin.content.status.deleted')}
       </span>
@@ -40,7 +40,7 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
   }
   if (!page.published) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-pink-500">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-pink-500">
         <span className="size-1.5 rounded-full bg-pink-500" />
         {t('admin.content.status.draft')}
       </span>
@@ -48,13 +48,13 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
   }
   if (page.publishedRevisionId === null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-amber-600">
         <span className="size-1.5 rounded-full bg-amber-600" />
         {t('admin.content.status.draftOnly')}
       </span>
     )
   }
-  return <span className="text-(--text-admin-sm) text-muted-foreground">{t('admin.content.status.published')}</span>
+  return <span className="text-admin-sm text-muted-foreground">{t('admin.content.status.published')}</span>
 }
 
 export function PageRow({ page }: PageRowProps) {
@@ -72,7 +72,7 @@ export function PageRow({ page }: PageRowProps) {
       )}
       data-deleted={isDeleted || undefined}
     >
-      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[16/10] w-admin-thumb flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {page.cover ? (
           <Image src={page.cover} alt="" width={200} height={125} className="size-full object-cover" loading="lazy" />
         ) : (
@@ -83,14 +83,11 @@ export function PageRow({ page }: PageRowProps) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <Link
-          to={`/editor/page/${page.id}`}
-          className="truncate font-semibold text-(--text-admin-base) hover:underline"
-        >
+        <Link to={`/editor/page/${page.id}`} className="truncate text-admin-base font-semibold hover:underline">
           {page.title}
         </Link>
 
-        <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
+        <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
           <span className="font-mono">/{page.slug}</span>
           {' · '}
           {page.authorName || '—'}
@@ -105,7 +102,7 @@ export function PageRow({ page }: PageRowProps) {
 
       <Link
         to={`/admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}
-        className="hidden w-(--spacing-admin-col-narrow) shrink-0 items-center gap-1 text-(--text-admin-sm) text-muted-foreground transition-colors hover:text-foreground md:flex"
+        className="hidden w-admin-col-narrow shrink-0 items-center gap-1 text-admin-sm text-muted-foreground transition-colors hover:text-foreground md:flex"
       >
         <MessageSquareIcon className="size-4" />
         <span className="tabular-nums">{page.commentCount}</span>
@@ -113,7 +110,7 @@ export function PageRow({ page }: PageRowProps) {
 
       <Link
         to={`/editor/page/${page.id}`}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />

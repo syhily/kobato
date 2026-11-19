@@ -199,7 +199,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           </button>
         </div>
         <div className="flex w-full flex-col gap-2">
-          <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
+          <Label htmlFor="loginForm-password" className="text-admin-base font-semibold">
             {t('auth.signin.password')}
           </Label>
           <div className="relative w-full">
@@ -229,7 +229,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+          className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
         >
           {isSubmitting ? (
             t('auth.signin.submitting')
@@ -255,7 +255,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="identifyForm-email" className="font-semibold text-(--text-admin-base)">
+            <Label htmlFor="identifyForm-email" className="text-admin-base font-semibold">
               {t('auth.signin.email')}
             </Label>
             {isPasskeyStep && (
@@ -288,7 +288,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             onClick={() => {
               void runPasskey()
             }}
-            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {passkeyPending ? (
               t('auth.signin.waitingAuthenticator')
@@ -303,7 +303,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isSubmitting ? (
               t('auth.signin.submitting')

@@ -90,7 +90,7 @@ function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
           </span>
         ) : null}
       </div>
-      <div className="max-h-(--spacing-editor-min) overflow-y-auto p-3">
+      <div className="max-h-editor-min overflow-y-auto p-3">
         <DiffPanel diff={diff} side={side} />
       </div>
     </div>

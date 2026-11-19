@@ -1,4 +1,5 @@
 @import './dark-variant.css';
+@import './base-defaults.css';
 
 @custom-variant sidebar {
   &:where([data-sidebar='sidebar'], [data-sidebar='sidebar'] *) {
@@ -672,18 +673,6 @@ pre.shiki span {
 
   --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
 
-  --animate-comment-flash: comment-flash 1.5s ease-out forwards;
-
-  @keyframes comment-flash {
-    0%,
-    40% {
-      background-color: color-mix(in oklab, var(--brand) 16%, transparent);
-    }
-    100% {
-      background-color: transparent;
-    }
-  }
-
   --color-status-info-bg: var(--status-info-bg);
   --color-status-info-fg: var(--status-info-fg);
   --color-status-info-border: var(--status-info-border);
@@ -741,25 +730,6 @@ pre.shiki span {
     100% {
       background-position: -200% 0;
     }
-  }
-}
-
-@layer base {
-  :root {
-    text-autospace: normal;
-  }
-
-  svg {
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--border);
   }
 }
 

@@ -75,7 +75,7 @@ function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: str
         hasSidebar ? 'xl:w-content-main' : 'xl:w-full',
       )}
     >
-      <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
+      <div className="flex h-empty-state flex-auto flex-col text-center">
         <div className="my-auto">
           <div className="mb-2 inline-flex size-16 items-center justify-center rounded-full bg-brand/10 text-brand">
             <PenLineIcon className="size-8" aria-hidden />
@@ -127,7 +127,7 @@ export function PostListingBody({
           )}
         </div>
         {resolvedPosts.length === 0 ? (
-          <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
+          <div className="flex h-empty-state flex-auto flex-col text-center">
             <div className="my-auto">
               <h1 className="font-number text-empty-state-hero">404</h1>
               <div>{t('error.notFound.description')}</div>

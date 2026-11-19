@@ -33,7 +33,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   const { t } = useI18n()
   if (post.deletedAt !== null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
         {t('admin.content.status.deleted')}
       </span>
@@ -41,7 +41,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (!post.published) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-draft-fg">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-draft-fg">
         <span className="size-1.5 rounded-full bg-status-draft-fg" />
         {t('admin.content.status.draft')}
       </span>
@@ -49,7 +49,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (post.publishedRevisionId === null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-warn-fg">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-warn-fg">
         <span className="size-1.5 rounded-full bg-status-warn-fg" />
         {t('admin.content.status.draftOnly')}
       </span>
@@ -57,13 +57,13 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (!post.visible) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-warn-fg">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-warn-fg">
         <span className="size-1.5 rounded-full bg-status-warn-fg" />
         {t('admin.content.status.unlisted')}
       </span>
     )
   }
-  return <span className="text-(--text-admin-sm) text-muted-foreground">{t('admin.content.status.published')}</span>
+  return <span className="text-admin-sm text-muted-foreground">{t('admin.content.status.published')}</span>
 }
 
 export function PostRow({ post, onFilterCategory }: PostRowProps) {
@@ -81,7 +81,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       )}
       data-deleted={isDeleted || undefined}
     >
-      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[16/10] w-admin-thumb flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {post.cover ? (
           <Image src={post.cover} alt="" width={200} height={125} className="size-full object-cover" loading="lazy" />
         ) : (
@@ -93,16 +93,13 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <Link
-            to={`/editor/post/${post.id}`}
-            className="truncate font-semibold text-(--text-admin-base) hover:underline"
-          >
+          <Link to={`/editor/post/${post.id}`} className="truncate text-admin-base font-semibold hover:underline">
             {post.title}
           </Link>
           {post.pinnedAt !== null && <PinIcon className="size-3.5 shrink-0 text-status-warn-fg" />}
         </div>
 
-        <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
+        <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
           {tRich('admin.posts.row.authorIn', {
             author: post.authorName || '—',
             categoryName: post.category || t('admin.posts.row.noCategory'),
@@ -131,7 +128,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
 
       <Link
         to={`/admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}
-        className="hidden w-(--spacing-admin-col-narrow) shrink-0 items-center gap-1 text-(--text-admin-sm) text-muted-foreground transition-colors hover:text-foreground md:flex"
+        className="hidden w-admin-col-narrow shrink-0 items-center gap-1 text-admin-sm text-muted-foreground transition-colors hover:text-foreground md:flex"
       >
         <MessageSquareIcon className="size-4" />
         <span className="tabular-nums">{post.commentCount}</span>
@@ -139,7 +136,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
 
       <Link
         to={`/editor/post/${post.id}`}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />

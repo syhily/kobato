@@ -76,7 +76,7 @@ function MusicPlayerAwareMain({
       <div
         className={cn(
           focused && 'flex min-h-0 flex-1 flex-col',
-          focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-(--container-admin) p-8 md:p-10 lg:p-12',
+          focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-admin p-8 md:p-10 lg:p-12',
         )}
       >
         {children}

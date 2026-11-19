@@ -1,6 +1,7 @@
 @layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
-@import '@kobato/ui/styles/tailwind.css';
+@import '@kobato/ui/styles/tailwind.css' reference;
+@import '@kobato/ui/styles/base-defaults.css';
 @import '@kobato/inkling/styles/cards.css';
 @import '@kobato/web-public/styles/public.css';
 

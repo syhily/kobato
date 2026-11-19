@@ -18,7 +18,7 @@ export function LostPasswordForm({ action, isSubmitting, csrfToken }: LostPasswo
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
       {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
       <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="loginForm-email" className="font-semibold text-(--text-admin-base)">
+        <Label htmlFor="loginForm-email" className="text-admin-base font-semibold">
           {t('auth.lost.title')}
         </Label>
         <Input
@@ -35,7 +35,7 @@ export function LostPasswordForm({ action, isSubmitting, csrfToken }: LostPasswo
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           t('auth.lost.sending')
@@ -45,7 +45,7 @@ export function LostPasswordForm({ action, isSubmitting, csrfToken }: LostPasswo
           </>
         )}
       </Button>
-      <p className="text-center text-(--text-admin-sm) text-muted-foreground">
+      <p className="text-center text-admin-sm text-muted-foreground">
         <Link to="/admin/signin" className="transition-colors hover:text-foreground">
           {t('auth.lost.back')}
         </Link>

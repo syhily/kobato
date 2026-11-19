@@ -41,7 +41,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
   return (
     <div
       data-slot="admin-comment-row"
-      className="group grid grid-cols-1 gap-4 px-4 py-3 transition-colors hover:bg-muted/50 md:grid-cols-[minmax(0,1fr)_var(--spacing-admin-thumb)]"
+      className="group grid grid-cols-1 gap-4 px-4 py-3 transition-colors hover:bg-muted/50 md:grid-cols-[minmax(0,1fr)_var(--size-admin-thumb)]"
     >
       <div className="flex min-w-0 items-start gap-3">
         <Avatar className="size-10 shrink-0">
@@ -236,7 +236,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
       </div>
 
       {comment.pageCover ? (
-        <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 self-start overflow-hidden rounded-xl bg-muted md:block">
+        <div className="hidden aspect-[16/10] w-admin-thumb shrink-0 self-start overflow-hidden rounded-xl bg-muted md:block">
           <Image
             src={comment.pageCover}
             alt=""
@@ -247,7 +247,7 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
           />
         </div>
       ) : comment.pageTitle ? (
-        <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 items-center justify-center self-start rounded-xl bg-muted text-muted-foreground md:flex">
+        <div className="hidden aspect-[16/10] w-admin-thumb shrink-0 items-center justify-center self-start rounded-xl bg-muted text-muted-foreground md:flex">
           <ImageIcon className="size-5" />
         </div>
       ) : null}

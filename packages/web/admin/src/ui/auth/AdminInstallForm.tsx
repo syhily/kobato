@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 const inputClasses =
-  'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+  'h-auth-input rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 type InstallMode = 'install' | 'restore'
 
@@ -169,7 +169,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           <input type="hidden" name="locale" value={selectedLocale} />
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-title" className="font-semibold text-(--text-admin-base)">
+            <Label htmlFor="install-title" className="text-admin-base font-semibold">
               {t('auth.install.siteName')}
             </Label>
             <Input
@@ -185,7 +185,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-name" className="font-semibold text-(--text-admin-base)">
+            <Label htmlFor="install-name" className="text-admin-base font-semibold">
               {t('auth.install.nickname')}
             </Label>
             <Input
@@ -201,7 +201,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-email" className="font-semibold text-(--text-admin-base)">
+            <Label htmlFor="install-email" className="text-admin-base font-semibold">
               {t('auth.install.email')}
             </Label>
             <Input
@@ -217,7 +217,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-password" className="font-semibold text-(--text-admin-base)">
+            <Label htmlFor="install-password" className="text-admin-base font-semibold">
               {t('auth.install.password')}
             </Label>
             <div className="relative w-full">
@@ -248,7 +248,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isSubmitting ? (
               t('auth.install.creating')
@@ -269,7 +269,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
         >
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="restore-file" className="font-semibold text-(--text-admin-base)">
+            <Label htmlFor="restore-file" className="text-admin-base font-semibold">
               {t('auth.install.backupFile')}
             </Label>
             <input
@@ -322,7 +322,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           <Button
             type="submit"
             disabled={isRestoring || restoreError !== null}
-            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isRestoring ? t('auth.install.restoring') : t('auth.install.uploadRestore')}
           </Button>

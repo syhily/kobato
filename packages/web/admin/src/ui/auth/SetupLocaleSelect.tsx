@@ -16,7 +16,7 @@ export function SetupLocaleSelect({ value, onValueChange, disabled = false }: Se
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <Label htmlFor="setup-locale" className="font-semibold text-(--text-admin-base)">
+      <Label htmlFor="setup-locale" className="text-admin-base font-semibold">
         {t('auth.setup.locale')}
       </Label>
       <Select<AppLocale>
@@ -31,7 +31,7 @@ export function SetupLocaleSelect({ value, onValueChange, disabled = false }: Se
       >
         <SelectTrigger
           id="setup-locale"
-          className="h-(--spacing-auth-input) w-full rounded-xl border-0 bg-muted/50 px-4 text-xl focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 md:text-xl"
+          className="h-auth-input w-full rounded-xl border-0 bg-muted/50 px-4 text-xl focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 md:text-xl"
           aria-describedby="setup-locale-hint"
         >
           <SelectValue>

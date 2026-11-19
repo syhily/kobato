@@ -75,7 +75,7 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-[12vh] -translate-y-0 overflow-hidden rounded-xl border-0 p-0 shadow-2xl sm:max-w-[var(--container-popup-md)]"
+        className="top-[12vh] -translate-y-0 overflow-hidden rounded-xl border-0 p-0 shadow-2xl sm:max-w-popup-md"
         onKeyDown={(event) => {
           if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') {
             return

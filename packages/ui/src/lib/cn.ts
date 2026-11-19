@@ -143,7 +143,7 @@ const RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl', 'input'] as const
 
 const FONT_TOKENS = ['code'] as const
 
-const ANIMATE_TOKENS = ['comments-shimmer', 'comment-flash'] as const
+const ANIMATE_TOKENS = ['comments-shimmer'] as const
 
 const Z_INDEX_TOKENS = ['modal', 'aside-drawer'] as const
 

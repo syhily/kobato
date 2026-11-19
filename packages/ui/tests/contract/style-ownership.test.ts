@@ -10,7 +10,7 @@ describe('UI style ownership', () => {
       readdirSync(STYLES)
         .filter((name) => name.endsWith('.css'))
         .sort(),
-    ).toEqual(['dark-variant.css', 'tailwind.css', 'typeset.css', 'ui.css'])
+    ).toEqual(['base-defaults.css', 'dark-variant.css', 'tailwind.css', 'typeset.css', 'ui.css'])
   })
 
   it('never scans or imports product-layer sources', () => {

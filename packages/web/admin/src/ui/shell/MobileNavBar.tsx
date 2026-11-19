@@ -53,7 +53,7 @@ export function MobileNavBar({ role }: { role: AdminShellProps['currentUser']['r
     >
       <div
         className={cn(
-          'mx-auto grid h-14 w-full max-w-[var(--container-popup-sm)] items-center justify-items-center px-5',
+          'mx-auto grid h-14 w-full max-w-popup-sm items-center justify-items-center px-5',
           showAdminItems ? 'grid-cols-4' : showAuthorItems ? 'grid-cols-2' : 'grid-cols-1',
         )}
       >

@@ -1,0 +1,27 @@
+/*
+ * Base-layer defaults every Tailwind compile must emit AFTER its own
+ * preflight. Each surface sheet loads after the root sheet, and inside
+ * @layer base a later rule beats an earlier one regardless of origin — so a
+ * sheet whose preflight stops at `border: 0 solid` (currentColor) overrides
+ * the root sheet's border default and every bordered element renders black.
+ * Surface entries import this partial non-reference for exactly this rule;
+ * the compile-contract suite pins the ordering.
+ */
+@layer base {
+  :root {
+    text-autospace: normal;
+  }
+
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+}

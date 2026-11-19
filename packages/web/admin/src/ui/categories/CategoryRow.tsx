@@ -47,7 +47,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         <GripVerticalIcon className="size-4" />
       </button>
 
-      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[16/10] w-admin-thumb flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {category.cover ? (
           <Image
             src={category.cover}
@@ -61,14 +61,10 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
       </div>
 
       <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          onClick={onEdit}
-          className="truncate font-semibold text-(--text-admin-base) hover:underline"
-        >
+        <button type="button" onClick={onEdit} className="truncate text-admin-base font-semibold hover:underline">
           {category.name}
         </button>
-        <p className="mt-0.5 flex items-center gap-1 truncate text-(--text-admin-sm) text-muted-foreground">
+        <p className="mt-0.5 flex items-center gap-1 truncate text-admin-sm text-muted-foreground">
           <a
             href={`/cats/${category.slug}`}
             target="_blank"
@@ -89,7 +85,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
 
       <Link
         to={`/admin/posts?category=${encodeURIComponent(category.id)}`}
-        className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums hover:text-foreground md:flex"
+        className="hidden w-admin-col-narrow shrink-0 justify-end text-admin-sm text-muted-foreground tabular-nums hover:text-foreground md:flex"
       >
         {t('admin.categories.postCount', { count: category.postCount })}
       </Link>
@@ -97,7 +93,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
       <button
         type="button"
         onClick={onEdit}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title={t('common.action.edit')}
       >
         <SquarePenIcon className="size-4" />
@@ -106,7 +102,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
       <button
         type="button"
         onClick={onDelete}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
         title={t('common.action.delete')}
       >
         <Trash2Icon className="size-4" />
@@ -125,7 +121,7 @@ function CategoryDescription({ description }: CategoryDescriptionProps) {
       <Tooltip.Trigger
         as="button"
         type="button"
-        className="cursor-help truncate text-left text-(--text-admin-sm) text-muted-foreground hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="cursor-help truncate text-left text-admin-sm text-muted-foreground hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         {description}
       </Tooltip.Trigger>
@@ -141,14 +137,14 @@ export function CategoriesSkeleton() {
         <Fragment key={`skeleton-${i}`}>
           <div className="flex items-center gap-4 px-4 py-3">
             <Skeleton className="size-6 shrink-0 rounded-sm" />
-            <Skeleton className="aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 rounded-xl" />
+            <Skeleton className="aspect-[16/10] w-admin-thumb shrink-0 rounded-xl" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <Skeleton className="h-4 w-1/3" />
               <Skeleton className="h-3 w-1/4" />
             </div>
-            <Skeleton className="hidden h-4 w-(--spacing-admin-col-narrow) md:block" />
-            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
-            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
+            <Skeleton className="hidden h-4 w-admin-col-narrow md:block" />
+            <Skeleton className="h-sidebar-item w-admin-col-narrow rounded-xl" />
+            <Skeleton className="h-sidebar-item w-admin-col-narrow rounded-xl" />
           </div>
         </Fragment>
       ))}

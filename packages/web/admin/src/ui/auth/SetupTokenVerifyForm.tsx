@@ -5,7 +5,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { Form } from 'react-router'
 
 const inputClasses =
-  'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+  'h-auth-input rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 export interface SetupTokenVerifyFormProps {
   isSubmitting: boolean
@@ -29,7 +29,7 @@ export function SetupTokenVerifyForm({ isSubmitting, csrfToken, actionData }: Se
         <input type="hidden" name="intent" value="verify-token" />
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
         <div className="flex w-full flex-col gap-2">
-          <Label htmlFor="setup-token" className="font-semibold text-(--text-admin-base)">
+          <Label htmlFor="setup-token" className="text-admin-base font-semibold">
             Setup Token
           </Label>
           <Input
@@ -47,7 +47,7 @@ export function SetupTokenVerifyForm({ isSubmitting, csrfToken, actionData }: Se
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+          className="mt-7 h-auth-btn w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
         >
           {isSubmitting ? t('auth.setupToken.submitting') : t('auth.setupToken.submit')}
         </Button>
