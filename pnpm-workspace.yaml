@@ -58,10 +58,10 @@ catalog:
   '@opentelemetry/sdk-logs': ^3.1.1
   '@opentelemetry/sdk-metrics': ^3.1.1
   '@opentelemetry/sdk-trace': ^3.1.1
-  '@orpc/client': ^1.16.3
-  '@orpc/contract': ^1.16.3
-  '@orpc/react-query': ^1.16.3
-  '@orpc/server': ^1.16.3
+  '@orpc/client': ^1.16.4
+  '@orpc/contract': ^1.16.4
+  '@orpc/react-query': ^1.16.4
+  '@orpc/server': ^1.16.4
   '@playwright/test': ^1.65.1
   '@prettier/sync': ^0.6.1
   '@react-router/dev': ^8.5.2
