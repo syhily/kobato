@@ -5,7 +5,7 @@ const REPO_ROOT = process.cwd()
 
 const CLIENT_ROOT = 'packages/web/client/src'
 const PUBLIC_ROOT = 'packages/web/public/src'
-const ADMIN_ROOT = 'packages/web/admin/src/ui'
+const ADMIN_ROOTS = ['packages/web/admin/src/ui', 'packages/web/admin/src/styles']
 const ADMIN_PUBLIC_IMPORTS = [
   '@kobato/web-public/ui/chrome/use-chrome-clock.ts',
   '@kobato/web-public/ui/comments/CommentContentHtml.tsx',
@@ -86,7 +86,9 @@ describe('web direction', () => {
 
   it('keeps admin reuse of public components on the audited module set', () => {
     const files: string[] = []
-    walk(`${REPO_ROOT}/${ADMIN_ROOT}`, files)
+    for (const root of ADMIN_ROOTS) {
+      walk(`${REPO_ROOT}/${root}`, files)
+    }
 
     const actual = new Set<string>()
     for (const file of files.sort()) {

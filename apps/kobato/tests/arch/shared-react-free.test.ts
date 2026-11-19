@@ -3,27 +3,17 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const SHARED_SRC_ROOTS = [
-  'packages/shared/utils/src',
-  'packages/shared/auth/src',
-  'packages/shared/catalog/src',
-  'packages/shared/distribution/src',
-  'packages/shared/telemetry/src',
-  'packages/shared/i18n/src',
-  'packages/shared/cache/src',
-  'packages/shared/settings/src',
-  'packages/shared/assets/src',
-  'packages/shared/sanitize/src',
-  'packages/shared/contracts/src',
-  'packages/shared/seo/src',
-]
+// Auto-discovered: every directory under packages/shared/ that owns a src/ tree
+// is a leaf and is covered — a newly split leaf cannot be missed by a stale list.
+// packages/shared/tests is the umbrella vitest root (no src), so it never matches.
+const SHARED_SRC_ROOTS = readdirSync(join(PROJECT_ROOT, 'packages/shared'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => join(PROJECT_ROOT, 'packages/shared', entry.name, 'src'))
+  .filter((srcDir) => existsSync(srcDir))
 
 const sourceFiles: string[] = []
 for (const root of SHARED_SRC_ROOTS) {
-  const dir = join(PROJECT_ROOT, root)
-  if (existsSync(dir)) {
-    walk(dir, (filePath) => sourceFiles.push(filePath))
-  }
+  walk(root, (filePath) => sourceFiles.push(filePath))
 }
 
 function walk(dir: string, callback: (filePath: string) => void): void {
@@ -75,6 +65,13 @@ function isReactSpecifier(specifier: string): boolean {
 }
 
 describe('arch: the shared leaf packages are UI-runtime-free', () => {
+  it('discovers the shared leaf src trees automatically', () => {
+    expect(
+      SHARED_SRC_ROOTS.length,
+      'expected at least the twelve documented leaves — the umbrella collapsed or moved',
+    ).toBeGreaterThanOrEqual(12)
+  })
+
   it('has no .tsx source files', () => {
     const tsxFiles = sourceFiles.filter((filePath) => filePath.endsWith('.tsx'))
     expect(
