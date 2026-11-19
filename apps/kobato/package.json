@@ -42,6 +42,7 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/lexical": "workspace:*",
+    "@kobato/pack": "workspace:*",
     "@kobato/seo": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/settings": "workspace:*",

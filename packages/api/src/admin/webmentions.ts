@@ -1,6 +1,6 @@
-import { adminWebmentionsPendingCountOutputSchema } from '@kobato/contracts/admin.ts'
 import { voidOutput } from '@kobato/contracts/primitives.ts'
 import {
+  adminWebmentionsPendingCountOutputSchema,
   adminWebmentionDto,
   adminWebmentionIdInput,
   adminWebmentionListSchema,

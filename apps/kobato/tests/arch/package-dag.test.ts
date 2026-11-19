@@ -86,6 +86,7 @@ const REPO_PACKAGES = [
   { name: '@kobato/ui', dir: 'packages/ui' },
   { name: '@kobato/web-admin', dir: 'packages/web/admin' },
   { name: '@kobato/web-tests', dir: 'packages/web/tests' },
+  { name: '@kobato/shared-tests', dir: 'packages/shared/tests' },
   { name: '@kobato/web-client', dir: 'packages/web/client' },
   { name: '@kobato/web-public', dir: 'packages/web/public' },
   { name: '@kobato/toolchain', dir: 'tools/toolchain' },
@@ -254,6 +255,8 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/web-client',
     '@kobato/web-public',
   ],
+  // The shared umbrella's vitest roots: no production src tree.
+  '@kobato/shared-tests': ['@kobato/test'],
   // test-helpers fixtures touch every layer.
   '@kobato/test': [
     '@kobato/test',
@@ -428,14 +431,14 @@ const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'apps/kobato/tests/arch/client-bundle.test.ts',
   'packages/inkling/tests/unit/nodes/card-layering-imports.test.ts',
   'packages/inkling/tests/unit/utils/utils-import-guard.test.ts',
-  'packages/shared/tests/unit/vitest.config.ts',
-  'packages/shared/tests/snaps/vitest.config.ts',
   'packages/ui/tests/contract/dark-variant.test.ts',
 ])
 
 const RELATIVE_IMPORT_PREFIX_EXCEPTIONS = [
-  // Playwright loads its config/support modules before tsconfig-path mapping.
-  'apps/kobato/tests/browser/',
+  // Playwright loads the config itself WITHOUT tsconfig path mapping (only
+  // test files get it — see the browser tree's own tsconfig.json), so the
+  // config's single local import stays relative.
+  'apps/kobato/tests/browser/playwright.config.ts',
 ] as const
 
 function isAllowedRelativeImport(file: string, specifier: string): boolean {

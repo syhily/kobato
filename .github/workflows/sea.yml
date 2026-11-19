@@ -94,10 +94,9 @@ jobs:
       - name: Package Ubuntu x64 deb with checksum
         if: matrix.target == 'linux-x64'
         run: |
-          version="$(node -p "require('./apps/kobato/package.json').version" | tr '-' '~')"
-          bash scripts/build-deb.sh dist-sea/kobato-linux-x64 "$version" "dist-sea/kobato_${version}_amd64.deb"
-          (cd dist-sea && sha256sum "kobato_${version}_amd64.deb" > "kobato_${version}_amd64.deb.sha256")
-          (cd dist-sea && sha256sum -c "kobato_${version}_amd64.deb.sha256")
+          raw_version="$(node -p "require('./apps/kobato/package.json').version")"
+          deb="$(basename "$(bash scripts/build-deb.sh dist-sea/kobato-linux-x64 "$raw_version" dist-sea)")"
+          (cd dist-sea && sha256sum "$deb" > "$deb.sha256" && sha256sum -c "$deb.sha256")
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}

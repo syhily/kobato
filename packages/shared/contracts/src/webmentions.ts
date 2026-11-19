@@ -138,3 +138,5 @@ export const webmentionPublicListSchema = z.object({ page_key: z.string() })
 
 export const webmentionPublicListOutputSchema = z.object({ webmentions: z.array(publicWebmentionDto) })
 export type WebmentionPublicListOutput = z.infer<typeof webmentionPublicListOutputSchema>
+
+export const adminWebmentionsPendingCountOutputSchema = z.number().int().nonnegative()

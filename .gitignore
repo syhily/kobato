@@ -47,8 +47,6 @@ data/
 # Hide the SQL session
 *.session.sql
 
-# Git Hooks (Vite+ managed runtime dir — the committed hooks live in .vite-hooks/*)
-.vite-hooks/_/
 
 .history/
 

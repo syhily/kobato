@@ -1,41 +1,10 @@
-import type { AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// The page editor's metadata model: the `admin.pages.upsert-meta` wire
-// input/output (row DTOs are zod-derived in `@kobato/contracts/pages`),
-// the sidebar metadata draft, and the toggle-field registry.
-
-// `id` absent → create a new row. Present → update the matching row.
-// `slug` is wire-optional: when omitted, the server derives one from `title`.
-export interface UpsertPageMetaInput {
-  id?: string
-  slug?: string
-  title: string
-  summary?: string
-  cover?: string
-  og?: string | null
-  published?: boolean
-  commentsEnabled?: boolean
-  webmentionsEnabled?: boolean
-  showToc?: boolean
-  /** Toggle the "Updated on XXXX" secondary timestamp on the public detail page. */
-  showUpdated?: boolean
-  /**
-   * Author-declared BCP 47 language of the prose (any well-formed tag).
-   * `null` clears it; omitted leaves the stored value untouched.
-   */
-  contentLanguage?: string | null
-  /** Toggle the page-bottom friends grid. */
-  showFriends?: boolean
-  /** ISO-8601 string; admin date-picker sets this on a re-publish. `null` cancels a pending schedule. */
-  publishedAt?: string | null
-}
-
-export interface UpsertPageMetaOutput {
-  page: AdminPageDto
-}
+// The page editor's metadata model: the sidebar metadata draft and the
+// toggle-field registry. The `admin.pages.upsert-meta` wire shapes are
+// zod-derived in `@kobato/contracts/pages` — import them there, never here.
 
 // Single source of truth for the editor/sidebar metadata draft shape.
 export interface PageMetaDraft {

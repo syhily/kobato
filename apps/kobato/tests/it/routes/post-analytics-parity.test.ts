@@ -1,10 +1,8 @@
-import type { AdminPostAnalyticsData } from '@kobato/contracts/admin.ts'
 import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
+import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/contracts/analytics.ts'
 // Parity net: both analytics shells must return identical loader data for the same post. Real
-// engine: real rows + the seeded DuckDB sidecar adopted into the lifecycle; only the view module
-// is mocked.
-import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'
+// engine: real rows + the seeded DuckDB sidecar adopted into the lifecycle; om '@kobato/contracts/analytics.ts'
 import { postTag } from '@kobato/db/schema/post-tag.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
 import { tag as tagTable } from '@kobato/db/schema/taxonomy.ts'

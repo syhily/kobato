@@ -601,21 +601,21 @@ importers:
         specifier: 'catalog:'
         version: 0.35.5(@types/node@26.6.6)
     devDependencies:
+      '@kobato/pack':
+        specifier: workspace:*
+        version: link:tools/pack
+      '@kobato/test':
+        specifier: workspace:*
+        version: link:tools/test
       '@kobato/toolchain':
         specifier: workspace:*
         version: link:tools/toolchain
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.65.1
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
-      '@vitejs/plugin-react':
-        specifier: 'catalog:'
-        version: 6.3.0(oxc-transform-react@0.158.0)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.1.0(vitest@5.1.0)
@@ -637,9 +637,6 @@ importers:
       oxlint-tsgolint:
         specifier: 'catalog:'
         version: 7.0.2007
-      prettier:
-        specifier: 'catalog:'
-        version: 3.10.1
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.5
@@ -754,6 +751,9 @@ importers:
       '@kobato/lexical':
         specifier: workspace:*
         version: link:../../packages/shared/lexical
+      '@kobato/pack':
+        specifier: workspace:*
+        version: link:../../tools/pack
       '@kobato/seo':
         specifier: workspace:*
         version: link:../../packages/shared/seo
@@ -1573,6 +1573,15 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.6.7
+
+  packages/shared/tests:
+    devDependencies:
+      '@kobato/test':
+        specifier: workspace:*
+        version: link:../../../tools/test
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/shared/utils:
     devDependencies:

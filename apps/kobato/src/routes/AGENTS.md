@@ -63,7 +63,7 @@ introduce a new pattern.
   token (the browser posts to the same-origin `/api/rum/intake` relay). `App` mounts
   `useRum(loaderData.rum ?? null)` once; it runs the DNT/GPC check before the dynamic SDK import.
 - **Admin SSR data goes through oRPC too.** `routes/admin/**` and `routes/editor/**` loaders compose
-  `account.*`, `comments.*`, `analytics.*`, `admin.*` (`@kobato/contracts/admin.ts`) via the same
+  `account.*`, `comments.*`, `analytics.*`, `admin.*` (per-domain `@kobato/contracts/*` modules) via the same
   `createSsrCaller`, which also returns `viewer`/`session` for `requireRole` gates and `isCurrent`.
 - Admin loaders keep `requireRole`, compose with their own `Promise.all` (role-conditional branches) and map
   `ORPCError` codes (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts); no

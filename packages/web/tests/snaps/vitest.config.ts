@@ -36,7 +36,7 @@ export default defineConfig({
     // The project root is the repository root, whose package.json declares no
     // @kobato/test link — pin the file path ('@kobato/test/setup/snaps.ts'
     // through @kobato/test's exports map).
-    setupFiles: ['tools/test/src/setup/snaps.ts'],
+    setupFiles: ['@kobato/test/setup/snaps.ts'],
     testTimeout: 10_000,
   },
 })

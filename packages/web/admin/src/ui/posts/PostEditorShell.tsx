@@ -1,13 +1,16 @@
-import type { AdminPostDetailDto, AdminPostDto } from '@kobato/contracts/posts.ts'
-import type { EditorAdapterConfig } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter.ts'
-import type { PostMetaDraft, UpsertPostMetaInput, UpsertPostMetaOutput } from '@kobato/web-admin/ui/posts/post-meta.ts'
+import type {
+  AdminPostDetailDto,
+  AdminPostDto,
+  AdminPostUpsertMetaOutput as UpsertPostMetaOutput,
+  UpsertPostMetaInput,
+} from '@kobato/contracts/posts.ts'
 import type { NavigateFunction } from 'react-router'
 
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { EditorScreen } from '@kobato/web-admin/ui/editor-shell/EditorScreen.tsx'
-import { makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter.ts'
+import { type EditorAdapterConfig, makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter.ts'
 import { buildPostUpsertPayload } from '@kobato/web-admin/ui/posts/build-post-upsert-payload.ts'
-import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual } from '@kobato/web-admin/ui/posts/post-meta.ts'
+import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta.ts'
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web-admin/ui/posts/PostMetaSidebar.tsx'
 import { orpc } from '@kobato/web-client/api/client.ts'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'

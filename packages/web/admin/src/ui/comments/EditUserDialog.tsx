@@ -1,5 +1,5 @@
-import type { AdminUserUpdateInput } from '@kobato/contracts/admin.ts'
 import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
+import type { AdminUserUpdateInput } from '@kobato/contracts/users.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Checkbox } from '@kobato/ui/components/checkbox.tsx'

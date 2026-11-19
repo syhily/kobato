@@ -30,13 +30,12 @@
 // stubbed with a placeholder path) for inlined literals. Node builtins are external
 // automatically for SSR builds — no externals config is needed.
 
+import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data.ts'
+import { redirectNativeRequiresPlugin } from '@kobato/pack/sea/redirect-native-requires.ts'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { z } from 'zod'
-
-import { inlinePackageDataPlugin } from './tools/pack/src/sea/inline-package-data.ts'
-import { redirectNativeRequiresPlugin } from './tools/pack/src/sea/redirect-native-requires.ts'
 
 const pkgSchema = z.object({
   name: z.string(),

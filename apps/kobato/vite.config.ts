@@ -1,5 +1,6 @@
 import type { Plugin, PluginOption } from 'vite'
 
+import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data.ts'
 import { reactRouterHonoServer } from '@kobato/server/infra/hono/dev.ts'
 import { processWorkerEntryPlugin } from '@kobato/server/infra/image/worker-entry-plugin.ts'
 import { reactCompilerPlugin } from '@kobato/toolchain/src/vite/react-compiler-plugin.ts'
@@ -12,8 +13,6 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 import { z } from 'zod'
-
-import { inlinePackageDataPlugin } from '../../tools/pack/src/sea/inline-package-data.ts'
 
 const pkgSchema = z.object({
   name: z.string(),

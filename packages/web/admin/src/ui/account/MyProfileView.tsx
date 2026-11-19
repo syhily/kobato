@@ -1,8 +1,6 @@
-import type { AccountUpdateProfileInput } from '@kobato/contracts/admin.ts'
-import type { LoginMethod } from '@kobato/contracts/users.ts'
-
 import { avatarImageUrl } from '@kobato/assets/avatar.ts'
 import { ROLE_LABEL_KEYS } from '@kobato/auth/roles.ts'
+import { type AccountUpdateProfileInput, type LoginMethod } from '@kobato/contracts/users.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'

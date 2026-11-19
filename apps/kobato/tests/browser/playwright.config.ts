@@ -6,6 +6,8 @@
 
 import { defineConfig } from '@playwright/test'
 
+// The one relative import: Playwright loads the config itself WITHOUT tsconfig
+// path mapping (only test files get it), so the alias cannot resolve here.
 import { browserEnv } from './support/env.ts'
 
 const env = browserEnv()
@@ -14,6 +16,7 @@ const channel = process.env.KOBATO_BROWSER_CHANNEL ?? (process.env.CI ? 'chromiu
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
+  // A path option (resolved against this config file), not a module import.
   globalSetup: './support/global-setup.ts',
   // One shared instance with mutable settings and cross-tab journeys — never parallel.
   fullyParallel: false,

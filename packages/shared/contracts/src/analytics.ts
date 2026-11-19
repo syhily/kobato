@@ -4,6 +4,8 @@
 // IO + the same time primitives) live in `@kobato/db/duckdb/queries/types.ts`,
 // pinned value-identical by the server's db-wire parity test.
 
+import type { AdminPostDto } from '@kobato/contracts/posts.ts'
+
 import { safeBoolean } from '@kobato/contracts/primitives.ts'
 import { z } from 'zod'
 
@@ -294,3 +296,30 @@ export const deviceEnvBeaconSchema = z.object({
 })
 
 export type DeviceEnvBeacon = z.infer<typeof deviceEnvBeaconSchema>
+
+// `search` carries the raw query string; the URL grammar (`parseAnalyticsSearch`)
+// stays server-side in the analytics domain (`domains/analytics/services/query-input`).
+export const adminAnalyticsSearchInputSchema = z.object({
+  search: z.string().max(16_384),
+})
+export type AdminAnalyticsSearchInput = z.infer<typeof adminAnalyticsSearchInputSchema>
+
+export const adminAnalyticsOverviewOutputSchema = z.custom<AnalyticsOverviewData>()
+
+export const adminAnalyticsMentionsOutputSchema = z.object({
+  referers: z.custom<MetricRow[]>(),
+})
+
+// Per-post analytics payload: the admin post DTO plus the overview
+// fan-out scoped to that post.
+export const adminPostAnalyticsInputSchema = z.object({
+  postId: z.number().int().positive(),
+  search: z.string().max(16_384),
+})
+export type AdminPostAnalyticsInput = z.infer<typeof adminPostAnalyticsInputSchema>
+
+export interface AdminPostAnalyticsData extends AnalyticsOverviewData {
+  post: AdminPostDto
+}
+export const adminPostAnalyticsOutputSchema = z.custom<AdminPostAnalyticsData>()
+export type AdminPostAnalyticsOutput = z.infer<typeof adminPostAnalyticsOutputSchema>

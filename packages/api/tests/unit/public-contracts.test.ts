@@ -1,5 +1,3 @@
-import type { AnyContractProcedure } from '@orpc/contract'
-
 import { accountContract } from '@kobato/api/account.ts'
 import { analyticsContract } from '@kobato/api/analytics.ts'
 import { avatarContract } from '@kobato/api/avatar.ts'
@@ -25,27 +23,9 @@ import { notificationsContract } from '@kobato/api/notifications.ts'
 import { passkeyContract } from '@kobato/api/passkey.ts'
 import { webmentionsContract } from '@kobato/api/webmentions.ts'
 import {
-  accountPasskeyDeleteInput,
-  accountPasskeyListOutputSchema,
-  accountPasskeyRegisterBeginInput,
-  accountPasskeyRegisterBeginOutputSchema,
-  accountPasskeyRegisterFinishInput,
-  accountProfileOutputSchema,
-  accountRevokeSessionInput,
-  accountRevokeSessionOutputSchema,
-  accountSessionsOutputSchema,
-  accountSetLoginMethodInput,
-  accountUpdatePasswordInput,
-  accountUpdateProfileInput,
-  accountUpdateProfileOutputSchema,
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
   adminAnalyticsSearchInputSchema,
-  commentsMyCountsOutputSchema,
-  commentsResolveEntityInputSchema,
-  commentsResolveEntityOutputSchema,
-} from '@kobato/contracts/admin.ts'
-import {
   analyticsExportOutputSchema,
   analyticsHeatmapOutputSchema,
   analyticsMetricsInputSchema,
@@ -55,6 +35,9 @@ import {
   viewsDto,
 } from '@kobato/contracts/analytics.ts'
 import {
+  commentsMyCountsOutputSchema,
+  commentsResolveEntityInputSchema,
+  commentsResolveEntityOutputSchema,
   avatarFindInputSchema,
   avatarFindOutputSchema,
   commentEditInputSchema,
@@ -117,9 +100,25 @@ import {
   unreadCountOutput,
 } from '@kobato/contracts/notifications.ts'
 import { successDto } from '@kobato/contracts/primitives.ts'
-import { passkeyAuthBeginInputSchema, passkeyOptionsOutputSchema } from '@kobato/contracts/users.ts'
+import {
+  accountPasskeyDeleteInput,
+  accountPasskeyListOutputSchema,
+  accountPasskeyRegisterBeginInput,
+  accountPasskeyRegisterBeginOutputSchema,
+  accountPasskeyRegisterFinishInput,
+  accountProfileOutputSchema,
+  accountRevokeSessionInput,
+  accountRevokeSessionOutputSchema,
+  accountSessionsOutputSchema,
+  accountSetLoginMethodInput,
+  accountUpdatePasswordInput,
+  accountUpdateProfileInput,
+  accountUpdateProfileOutputSchema,
+  passkeyAuthBeginInputSchema,
+  passkeyOptionsOutputSchema,
+} from '@kobato/contracts/users.ts'
 import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/contracts/webmentions.ts'
-import { isContractProcedure } from '@orpc/contract'
+import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
 /**

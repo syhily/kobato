@@ -1,3 +1,9 @@
+import type {
+  LikeDecreaseOutput as DecreaseLikeOutput,
+  LikeIncreaseOutput as IncreaseLikeOutput,
+  LikeValidateOutput as ValidateLikeTokenOutput,
+} from '@kobato/contracts/likes.ts'
+
 import { Button } from '@kobato/ui/components/button.tsx'
 import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
 import { QQIcon, WechatIcon, WeiboIcon } from '@kobato/ui/icons/brand.tsx'
@@ -11,24 +17,6 @@ import { QRDialog } from '@kobato/web-public/ui/widgets/QRDialog.tsx'
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
 import { startTransition, Suspense, lazy, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
-
-// `likes.*` wire outputs — the like mutations resolve their `key` against the
-// metric's public UUID and the client mirrors the verdict into its own state.
-export interface ValidateLikeTokenOutput {
-  key: string
-  valid: boolean
-}
-
-export interface IncreaseLikeOutput {
-  key: string
-  likes: number
-  token?: string
-}
-
-export interface DecreaseLikeOutput {
-  key: string
-  likes: number
-}
 
 export interface LikeButtonProps {
   /** Stable URL — used as the `localStorage` namespace for the like token. */

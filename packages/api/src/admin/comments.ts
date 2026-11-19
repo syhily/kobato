@@ -1,5 +1,5 @@
-import { adminCommentsPendingCountOutputSchema } from '@kobato/contracts/admin.ts'
 import {
+  adminCommentsPendingCountOutputSchema,
   adminAvatarMirrorProbeOutputDto,
   adminCommentApproveDeletionInput,
   adminCommentApproveDeletionOutputDto,

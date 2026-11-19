@@ -1,17 +1,9 @@
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto, AdminMusicUpdateInput } from '@kobato/contracts/music.ts'
 
 // Edit draft: the single `/`-separated artist string splits back into the list shape the update expects.
 export interface MusicEditDraft {
   name: string
   artist: string
-  album: string
-  lyric?: string
-}
-
-export interface MusicUpdateInput {
-  id: string
-  name: string
-  artist: string[]
   album: string
   lyric?: string
 }
@@ -29,7 +21,7 @@ export function splitArtistDraft(draft: string): string[] {
 export function buildMusicUpdate(
   music: Pick<AdminMusicDto, 'id' | 'name' | 'artist' | 'album'>,
   draft: MusicEditDraft,
-): MusicUpdateInput {
+): AdminMusicUpdateInput {
   const artist = splitArtistDraft(draft.artist)
   return {
     id: music.id,

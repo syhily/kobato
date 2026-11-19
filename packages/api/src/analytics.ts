@@ -2,8 +2,6 @@ import {
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
   adminAnalyticsSearchInputSchema,
-} from '@kobato/contracts/admin.ts'
-import {
   analyticsExportOutputSchema,
   analyticsHeatmapOutputSchema,
   analyticsMetricsInputSchema,

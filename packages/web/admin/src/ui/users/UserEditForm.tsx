@@ -1,6 +1,4 @@
-import type { AdminUserUpdateInput } from '@kobato/contracts/admin.ts'
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
-
+import { type AdminUserDto, type AdminUserUpdateInput } from '@kobato/contracts/users.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
 import { Checkbox } from '@kobato/ui/components/checkbox.tsx'

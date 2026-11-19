@@ -1,8 +1,8 @@
 import type { Browser } from '@playwright/test'
 
-import { browserEnv } from './support/env.ts'
-import { expect, test } from './support/fixtures.ts'
-import { collectConsoleIssues, waitForHydration } from './support/journey.ts'
+import { browserEnv } from '@tests/browser/support/env.ts'
+import { expect, test } from '@tests/browser/support/fixtures.ts'
+import { collectConsoleIssues, waitForHydration } from '@tests/browser/support/journey.ts'
 
 const env = browserEnv()
 const MOTION_CHUNK = /\/node_modules\/\.vite\/deps\/motion_react\.js|\/assets\/lazy-motion-[^/]+\.js/

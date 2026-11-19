@@ -1,4 +1,4 @@
-import type { AdminUserUpdateInput } from '@kobato/contracts/admin.ts'
+import type { AdminUserUpdateInput } from '@kobato/contracts/users.ts'
 
 // The admin user-update wire input now derives from the shared merge-patch
 // contract (`adminUserUpdateInput`) instead of the server router: the form and

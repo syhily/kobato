@@ -1,3 +1,4 @@
+import type { Role } from '@kobato/auth/roles.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import {
@@ -6,7 +7,9 @@ import {
   passwordWithinBcryptLimit,
   PASSWORD_COMPLEXITY_RE,
 } from '@kobato/auth/security.ts'
+import { clearable, mergePatchInput } from '@kobato/contracts/merge-patch.ts'
 import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
+import { optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
 // Per-user signin method: `password` default, `magic-link` (needs a ready
@@ -157,3 +160,133 @@ export type PasskeyAuthBeginInput = z.input<typeof passkeyAuthBeginInputSchema>
 // WebAuthn options blobs come from `@simplewebauthn/server` — opaque to the
 // wire schema (`z.any()`), validated inside the auth domain.
 export const passkeyOptionsOutputSchema = z.object({ options: z.any() })
+
+// `getAccountProfile`'s full projection (deleted-mid-session rows degrade
+// to empty fields) plus the two feature switches the profile page renders.
+export const accountProfileOutputSchema = z.object({
+  user: z.custom<AccountProfile>(),
+  passkeyEnabled: z.boolean(),
+  mailReady: z.boolean(),
+})
+export type AccountProfileOutput = z.infer<typeof accountProfileOutputSchema>
+
+// `account.update-profile` wire input — session-identity profile edits (no
+// caller-supplied id, deliberately NOT merge-patch). The profile view derives
+// its payload type from this schema instead of the server router.
+export const accountUpdateProfileInput = z.object({
+  name: z.string().min(1).max(50).optional(),
+  // http(s)-only like the admin user-edit schema — a bare z.url() would
+  // accept javascript:/data: hrefs into the profile link.
+  link: clearable(optionalHttpUrlSchema),
+  badgeName: clearable(z.string().max(20)),
+  badgeColor: clearable(z.string().max(7)),
+  badgeTextColor: clearable(z.string().max(7)),
+  receiveEmail: z.boolean().optional(),
+})
+export type AccountUpdateProfileInput = z.infer<typeof accountUpdateProfileInput>
+
+// Session-list wire rows. The UA label is rendered server-side
+// (`formatUaLabel`, node-device-detector) — the browser never parses a UA.
+export interface AccountSessionDto {
+  sid: string
+  userId: number
+  label: string
+  ip: string
+  loginAt: Date
+  lastActiveAt: Date
+  expiresAt: Date
+}
+
+export interface AdminSessionDto extends AccountSessionDto {
+  userName: string
+  userEmail: string
+  userRole: Role | null
+}
+
+export const accountSessionsOutputSchema = z.custom<AccountSessionDto[]>()
+export type AccountSessionsOutput = z.infer<typeof accountSessionsOutputSchema>
+
+// Safe subset of user fields exposed back to the account owner after a
+// profile edit — deliberately excludes password, lastIp, lastUa and the
+// admin-only counters.
+export const accountUserDto = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  link: z.string().nullable(),
+  badgeName: z.string().nullable(),
+  badgeColor: z.string().nullable(),
+  badgeTextColor: z.string().nullable(),
+  role: z.enum(['admin', 'author', 'visitor']).nullable(),
+  emailVerified: z.boolean(),
+})
+export type AccountUserDto = z.infer<typeof accountUserDto>
+
+export const accountUpdateProfileOutputSchema = z.object({ user: accountUserDto })
+export type AccountUpdateProfileOutput = z.infer<typeof accountUpdateProfileOutputSchema>
+
+export const accountUpdatePasswordInput = z.object({
+  oldPassword: z.string().min(1),
+  newPassword: newPasswordSchema(),
+})
+export type AccountUpdatePasswordInput = z.infer<typeof accountUpdatePasswordInput>
+
+export const accountRevokeSessionInput = z.object({ id: z.string().min(1) })
+
+export const accountRevokeSessionOutputSchema = z.object({
+  success: z.boolean(),
+  currentSession: z.boolean(),
+})
+export type AccountRevokeSessionOutput = z.infer<typeof accountRevokeSessionOutputSchema>
+
+// Passkey credential list for the account security card.
+export const accountPasskeyListOutputSchema = z.object({
+  credentials: z.array(
+    z.object({
+      id: z.string(),
+      deviceName: z.string().nullable(),
+      createdAt: z.string(),
+      backedUp: z.boolean(),
+    }),
+  ),
+})
+export type AccountPasskeyListOutput = z.infer<typeof accountPasskeyListOutputSchema>
+
+// Registration options/finish come from `@simplewebauthn/server` — opaque to
+// the wire schema (`z.any()`), validated inside the auth domain.
+export const accountPasskeyRegisterBeginInput = z.object({ deviceName: z.string().max(100).optional() })
+export type AccountPasskeyRegisterBeginInput = z.infer<typeof accountPasskeyRegisterBeginInput>
+
+export const accountPasskeyRegisterBeginOutputSchema = passkeyOptionsOutputSchema
+
+export const accountPasskeyRegisterFinishInput = z.object({
+  response: z.any(),
+  deviceName: z.string().max(100).optional(),
+  challenge: z.string().min(1),
+})
+export type AccountPasskeyRegisterFinishInput = z.infer<typeof accountPasskeyRegisterFinishInput>
+
+export const accountPasskeyDeleteInput = z.object({ credentialId: z.string().min(1) })
+export type AccountPasskeyDeleteInput = z.infer<typeof accountPasskeyDeleteInput>
+
+export const accountSetLoginMethodInput = z.object({ method: loginMethodSchema })
+export type AccountSetLoginMethodInput = z.infer<typeof accountSetLoginMethodInput>
+
+export const adminUsersCountOutputSchema = z.number().int().nonnegative()
+
+export const adminUsersListSessionsOutputSchema = z.custom<AdminSessionDto[]>()
+
+export const adminUsersPasskeyFlagOutputSchema = z.boolean()
+
+// `admin.users.update` wire input — the merge-patch field-update contract for
+// the admin user editor. The web form derives its payload type from this
+// schema, so the form and the server validate against one shape.
+export const adminUserUpdateInput = mergePatchInput({
+  name: z.string().min(1).optional(),
+  email: z.email().optional(),
+  link: clearable(optionalHttpUrlSchema),
+  badgeName: clearable(z.string()),
+  badgeColor: clearable(z.string()),
+  badgeTextColor: clearable(z.string()),
+})
+export type AdminUserUpdateInput = z.infer<typeof adminUserUpdateInput>

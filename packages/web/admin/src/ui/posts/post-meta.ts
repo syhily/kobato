@@ -1,44 +1,10 @@
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// The post editor's metadata model: the `admin.posts.upsert-meta` wire
-// input/output (row DTOs are zod-derived in `@kobato/contracts/posts`),
-// the sidebar metadata draft, and the toggle-field registry.
-
-// `id` absent → create a new row. Present → update the matching row.
-// `slug` is wire-optional: when omitted, the server derives one from `title`.
-export interface UpsertPostMetaInput {
-  id?: string
-  slug?: string
-  title: string
-  summary?: string
-  cover?: string
-  og?: string | null
-  published?: boolean
-  commentsEnabled?: boolean
-  webmentionsEnabled?: boolean
-  showToc?: boolean
-  /** Toggle the「修改于 XXXX」secondary timestamp; defaults `false` on create. */
-  showUpdated?: boolean
-  /**
-   * Author-declared BCP 47 language of the prose (any well-formed tag).
-   * `null` clears it; omitted leaves the stored value untouched.
-   */
-  contentLanguage?: string | null
-  visible?: boolean
-  /** ISO to set; `null` cancels a pending schedule; omitted = leave untouched. */
-  publishedAt?: string | null
-  categoryId?: string | null
-  tags?: string[]
-  alias?: string[]
-  pinnedAt?: string | null
-}
-
-export interface UpsertPostMetaOutput {
-  post: AdminPostDto
-}
+// The post editor's metadata model: the sidebar metadata draft and the
+// toggle-field registry. The `admin.posts.upsert-meta` wire shapes are
+// zod-derived in `@kobato/contracts/posts` — import them there, never here.
 
 // Single source of truth for the editor/sidebar metadata draft shape.
 export interface PostMetaDraft {

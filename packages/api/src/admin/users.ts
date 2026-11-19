@@ -1,11 +1,9 @@
+import { successDto, voidOutput } from '@kobato/contracts/primitives.ts'
 import {
   adminUserUpdateInput,
   adminUsersCountOutputSchema,
   adminUsersListSessionsOutputSchema,
   adminUsersPasskeyFlagOutputSchema,
-} from '@kobato/contracts/admin.ts'
-import { successDto, voidOutput } from '@kobato/contracts/primitives.ts'
-import {
   adminBulkApproveCommentsOutputDto,
   adminBulkDeleteCommentsOutputDto,
   adminRevokeSessionInput,

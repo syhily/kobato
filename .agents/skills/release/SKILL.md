@@ -23,7 +23,7 @@ Both `$version` and `$next_version` must be present and match `X.Y.Z` or `X.Y.Z-
 
 - Run `git branch --show-current` — must be on `develop`.
 - Run `git status --porcelain` — working tree must be clean. If dirty, stop and tell the user to commit or stash.
-- Run `node scripts/release.ts since-last` — note the last released tag.
+- Run `node tools/pack/src/release.ts since-last` — note the last released tag.
 
 ## Step 2: Analyze commits
 
@@ -61,7 +61,7 @@ Show the draft to the user and ask for approval or edits. Wait for their respons
 After the user approves the release notes, run:
 
 ```
-node scripts/release.ts bump $version
+node tools/pack/src/release.ts bump $version
 ```
 
 Verify the commit was created:
@@ -77,10 +77,10 @@ Now execute the full publish sequence automatically:
 3. `git merge develop --ff-only` — fast-forward merge. If this fails (diverged histories), stop and tell the user to resolve manually.
 4. `git push origin main`
 5. Write the approved release notes to `/tmp/kobato-release-notes.md`
-6. `node scripts/release.ts tag --notes-file /tmp/kobato-release-notes.md` — creates git tag and GitHub release
+6. `node tools/pack/src/release.ts tag --notes-file /tmp/kobato-release-notes.md` — creates git tag and GitHub release
 7. `git checkout develop`
 8. `git merge main --ff-only` — sync main back to develop
-9. `node scripts/release.ts prepare-next $next_version` — sets develop to `$next_version`
+9. `node tools/pack/src/release.ts prepare-next $next_version` — sets develop to `$next_version`
 10. `git push origin develop`
 
 After all steps complete, report the release URL and the new development version.
@@ -89,5 +89,5 @@ After all steps complete, report the release URL and the new development version
 
 ## Recovery (when the full flow is interrupted)
 
-- Tag/publish only: run `node scripts/release.ts tag --notes-file /tmp/kobato-release-notes.md` from `main` with the release commit already present.
-- Prepare next cycle only: run `node scripts/release.ts prepare-next <next_version>` from `develop`.
+- Tag/publish only: run `node tools/pack/src/release.ts tag --notes-file /tmp/kobato-release-notes.md` from `main` with the release commit already present.
+- Prepare next cycle only: run `node tools/pack/src/release.ts prepare-next <next_version>` from `develop`.

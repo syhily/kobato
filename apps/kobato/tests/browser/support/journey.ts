@@ -3,12 +3,10 @@
 // ids the settings rows own) and ARIA roles — never on styling.
 
 import type { BrowserContext, Locator, Page } from '@playwright/test'
+import type { BrowserEnv } from '@tests/browser/support/env.ts'
 
 import { expect } from '@playwright/test'
-
-import type { BrowserEnv } from './env.ts'
-
-import { BASELINE_GENERAL } from './settings-api.ts'
+import { BASELINE_GENERAL } from '@tests/browser/support/settings-api.ts'
 
 /** Endonyms, deliberately NOT translated (see `LOCALE_DISPLAY_NAMES`). */
 export const LOCALE_LABELS = {

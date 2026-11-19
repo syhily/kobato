@@ -2,8 +2,6 @@ import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
   commentsResolveEntityOutputSchema,
-} from '@kobato/contracts/admin.ts'
-import {
   commentEditInputSchema,
   commentGetRawOutputSchema,
   commentIdInputSchema,

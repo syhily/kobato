@@ -3,8 +3,8 @@
 // the returned teardown removes what the run created. Everything goes through the admin
 // HTTP surface of the instance the browser drives — no database seam, config file or secret.
 
-import { browserEnv } from './env.ts'
-import { SettingsApi } from './settings-api.ts'
+import { browserEnv } from '@tests/browser/support/env.ts'
+import { SettingsApi } from '@tests/browser/support/settings-api.ts'
 
 export default async function globalSetup() {
   const env = browserEnv()

@@ -1,10 +1,9 @@
-import type { PageMetaDraft, UpsertPageMetaInput } from '@kobato/web-admin/ui/pages/page-meta.ts'
-
-import { upsertPageMetaSchema } from '@kobato/contracts/pages.ts'
+import { type UpsertPageMetaInput, upsertPageMetaSchema } from '@kobato/contracts/pages.ts'
 import {
   EMPTY_PAGE_META_DRAFT,
   PAGE_META_TOGGLE_FIELDS,
   pageMetaDraftsEqual,
+  type PageMetaDraft,
 } from '@kobato/web-admin/ui/pages/page-meta.ts'
 import { POST_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/posts/post-meta.ts'
 import { describe, expect, it } from 'vitest'

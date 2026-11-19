@@ -2,7 +2,7 @@ import {
   adminSettingsBootstrapOutputSchema,
   adminSettingsUpdateInput,
   adminSettingsUpdateOutput,
-} from '@kobato/contracts/admin.ts'
+} from '@kobato/contracts/settings.ts'
 import { oc } from '@orpc/contract'
 
 // Admin settings RPC contract — admin base on the server. `update` is the

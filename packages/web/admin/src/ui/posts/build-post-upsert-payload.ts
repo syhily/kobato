@@ -1,4 +1,5 @@
-import type { PostMetaDraft, UpsertPostMetaInput } from '@kobato/web-admin/ui/posts/post-meta.ts'
+import type { UpsertPostMetaInput } from '@kobato/contracts/posts.ts'
+import type { PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta.ts'
 
 import { isContentLanguageInput } from '@kobato/i18n/content-language.ts'
 
@@ -31,7 +32,8 @@ export function buildPostUpsertPayload({
       : {}),
     visible: meta.visible,
     pinnedAt: meta.pinned ? new Date().toISOString() : null,
-    categoryId: meta.categoryId === '' ? null : meta.categoryId,
+    // The category <Select> yields the numeric id as a string; the wire takes the number.
+    categoryId: meta.categoryId === '' ? null : Number(meta.categoryId),
     tags: meta.tags,
     alias: meta.alias,
     ...(publishedAt !== undefined ? { publishedAt } : {}),

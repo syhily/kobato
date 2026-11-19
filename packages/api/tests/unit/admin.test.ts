@@ -1,5 +1,3 @@
-import type { AnyContractProcedure } from '@orpc/contract'
-
 import { adminAuditContract } from '@kobato/api/admin/audit.ts'
 import { adminBackupContract } from '@kobato/api/admin/backup.ts'
 import { adminCacheContract } from '@kobato/api/admin/cache.ts'
@@ -29,20 +27,7 @@ import {
   adminUsersSessionsContract,
 } from '@kobato/api/admin/users.ts'
 import { adminWebmentionsContract } from '@kobato/api/admin/webmentions.ts'
-import {
-  adminPostAnalyticsInputSchema,
-  adminPostAnalyticsOutputSchema,
-  adminPostsMySummaryOutputSchema,
-  adminSettingsBootstrapOutputSchema,
-  adminSettingsUpdateInput,
-  adminSettingsUpdateOutput,
-  adminUserUpdateInput,
-  adminUsersCountOutputSchema,
-  adminUsersListSessionsOutputSchema,
-  adminUsersPasskeyFlagOutputSchema,
-  adminCommentsPendingCountOutputSchema,
-  adminWebmentionsPendingCountOutputSchema,
-} from '@kobato/contracts/admin.ts'
+import { adminPostAnalyticsInputSchema, adminPostAnalyticsOutputSchema } from '@kobato/contracts/analytics.ts'
 import {
   auditLogActorsOutput,
   auditLogExportInput,
@@ -76,6 +61,7 @@ import {
   adminCategoryUpsertOutputDto,
 } from '@kobato/contracts/categories.ts'
 import {
+  adminCommentsPendingCountOutputSchema,
   adminAvatarMirrorProbeOutputDto,
   adminCommentApproveDeletionInput,
   adminCommentApproveDeletionOutputDto,
@@ -160,6 +146,7 @@ import {
   upsertPageMetaSchema,
 } from '@kobato/contracts/pages.ts'
 import {
+  adminPostsMySummaryOutputSchema,
   adminPostDetailDto,
   adminPostIdInput,
   adminPostUnpublishOutputDto,
@@ -178,6 +165,11 @@ import {
   adminRenderReprojectOutputDto,
 } from '@kobato/contracts/renders.ts'
 import { saveBodyInput, saveResultOutput } from '@kobato/contracts/revision.ts'
+import {
+  adminSettingsBootstrapOutputSchema,
+  adminSettingsUpdateInput,
+  adminSettingsUpdateOutput,
+} from '@kobato/contracts/settings.ts'
 import {
   adminStorageStartMigrationInput,
   adminStorageStatsOutputDto,
@@ -199,6 +191,10 @@ import {
   updateJobStatusDto,
 } from '@kobato/contracts/update.ts'
 import {
+  adminUserUpdateInput,
+  adminUsersCountOutputSchema,
+  adminUsersListSessionsOutputSchema,
+  adminUsersPasskeyFlagOutputSchema,
   adminBulkApproveCommentsOutputDto,
   adminBulkDeleteCommentsOutputDto,
   adminRevokeSessionInput,
@@ -216,6 +212,7 @@ import {
   adminUsersListOutputDto,
 } from '@kobato/contracts/users.ts'
 import {
+  adminWebmentionsPendingCountOutputSchema,
   adminWebmentionDto,
   adminWebmentionIdInput,
   adminWebmentionListSchema,
@@ -223,7 +220,7 @@ import {
   adminWebmentionOutboxOutputDto,
   adminWebmentionsLoadAllOutputDto,
 } from '@kobato/contracts/webmentions.ts'
-import { isContractProcedure } from '@orpc/contract'
+import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
 /** The deployed admin wire surface — drift here is a breaking URL change. */

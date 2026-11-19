@@ -46,11 +46,11 @@
     "sharp": "catalog:"
   },
   "devDependencies": {
+    "@kobato/pack": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
     "@playwright/test": "catalog:",
-    "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "husky": "catalog:",
     "lint-staged": "catalog:",
@@ -58,7 +58,6 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "prettier": "catalog:",
     "tailwindcss": "catalog:",
     "taze": "catalog:",
     "typescript": "catalog:",

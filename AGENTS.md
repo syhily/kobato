@@ -27,10 +27,11 @@ All module imports are absolute. The single workspace path table is `@kobato/too
 No source or test file uses a relative module specifier. The only exceptions are:
 
 - React Router generated `./+types/*` imports.
-- The Playwright runner's `apps/kobato/tests/browser/` config/support tree, which Playwright resolves before tsconfig paths.
-- Standalone Vite/Vitest config files that load before path mapping (the two `packages/shared/tests/*/vitest.config.ts` files).
+- `apps/kobato/tests/browser/playwright.config.ts`'s single local import — Playwright loads the config itself WITHOUT tsconfig path mapping (only test files get it); every spec/support file in that tree resolves `@tests/browser/...` through the tree's own `tsconfig.json`, which extends the shared base by relative path.
 - Build-output entry imports (`tools/pack/src/sea/server-entry.ts`) and generated JavaScript quoted inside the SEA capability probe.
 - Import-scanner tests that quote relative specifiers as fixtures; real imports in those files are still absolute.
+
+Build-time configs import through package specifiers like everything else: `apps/kobato/vite.config.ts` and the root `vite.sea.config.ts` reach the SEA plugins through `@kobato/pack/sea/*` (both owners declare the workspace link), and the `packages/shared/tests/*/vitest.config.ts` roots import `@kobato/test/*` (the umbrella `@kobato/shared-tests` package declares the link, mirroring `@kobato/web-tests`).
 
 When adding a package, add its source and test aliases to the shared table and declare its workspace links. Do not add a package-level `paths` table. `apps/kobato/tests/arch/package-dag.test.ts` enforces the single path table, alias confinement, and the no-relative rule across every source and test tree.
 

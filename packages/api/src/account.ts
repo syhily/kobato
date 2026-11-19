@@ -1,3 +1,4 @@
+import { successDto } from '@kobato/contracts/primitives.ts'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
@@ -12,8 +13,7 @@ import {
   accountUpdatePasswordInput,
   accountUpdateProfileInput,
   accountUpdateProfileOutputSchema,
-} from '@kobato/contracts/admin.ts'
-import { successDto } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/users.ts'
 import { oc } from '@orpc/contract'
 
 // The account RPC contract — the single source of each procedure's HTTP route

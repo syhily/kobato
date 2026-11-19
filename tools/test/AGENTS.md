@@ -31,7 +31,7 @@ Out-of-process helpers do NOT live here — everything that drives a real kobato
 
 ## Setup files
 
-`setup/unit.ts` and `setup/snaps.ts` register inert global stubs for `sonner` and `@kobato/web-admin/ui/settings/useSettingsMutation` — do NOT copy those `vi.mock` blocks into new test files. A file declares its own mock only when it asserts on `toast` or programs `commit` (a file-level `vi.mock` overrides the setup-level one). The real `useDebouncedSearch` returns `['', setter]` under SSR — never stub it with that exact value; stub it only when a test drives the search text.
+`setup/unit.ts`, `setup/it.ts`, and `setup/snaps.ts` register inert global stubs for `sonner` and `@kobato/web-admin/ui/settings/useSettingsMutation` — do NOT copy those `vi.mock` blocks into new test files. A file declares its own mock only when it asserts on `toast` or programs `commit` (a file-level `vi.mock` overrides the setup-level one). The real `useDebouncedSearch` returns `['', setter]` under SSR — never stub it with that exact value; stub it only when a test drives the search text.
 
 `setup/unit.ts` imports `@date-fns/tz` up front so `TZDate` binds the real `Date` constructor before any test file calls `vi.useFakeTimers()` — a fake-Date-derived `TZDate` silently falls back to the system timezone and breaks `computeNextRun` whenever the system zone differs from the settings zone.
 

@@ -38,7 +38,7 @@ export default defineConfig({
     // The project root is the repository root, whose package.json declares no
     // @kobato/test link — pin the file path ('@kobato/test/setup/unit.ts'
     // through @kobato/test's exports map).
-    setupFiles: ['tools/test/src/setup/unit.ts'],
+    setupFiles: ['@kobato/test/setup/unit.ts'],
     testTimeout: 10_000,
   },
 })

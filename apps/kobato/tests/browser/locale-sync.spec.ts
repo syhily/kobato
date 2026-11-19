@@ -1,7 +1,7 @@
 // The suite mutates the shared instance's general settings; beforeEach
 // restores the deterministic baseline over the admin HTTP surface.
 
-import { expect, test } from './support/fixtures.ts'
+import { expect, test } from '@tests/browser/support/fixtures.ts'
 import {
   chooseTimeZone,
   collectConsoleIssues,
@@ -13,8 +13,8 @@ import {
   replaceInput,
   switchLocale,
   waitForSettingsReady,
-} from './support/journey.ts'
-import { BASELINE_GENERAL } from './support/settings-api.ts'
+} from '@tests/browser/support/journey.ts'
+import { BASELINE_GENERAL } from '@tests/browser/support/settings-api.ts'
 
 test.describe.configure({ mode: 'serial' })
 

@@ -3,11 +3,11 @@
 // (`@kobato/harness/http.ts` + `@kobato/harness/rpc.ts`), so the journeys
 // never read a real config or reach for a private database seam.
 
+import type { BrowserEnv } from '@tests/browser/support/env.ts'
+
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
 import { callE2eRpc } from '@kobato/harness/rpc.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
-
-import type { BrowserEnv } from './env.ts'
 
 /** Deterministic site state every journey starts from (restored after each test). */
 export const BASELINE_GENERAL = {

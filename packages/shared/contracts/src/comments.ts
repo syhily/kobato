@@ -1,7 +1,5 @@
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
-
 import { honeypotField, idString, isoDateTime, successDto } from '@kobato/contracts/primitives.ts'
-import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
+import { commentEditorStateSchema, type CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
@@ -251,10 +249,6 @@ export interface CommentReq {
   rid?: number
 }
 
-export interface ErrorResp {
-  msg: string
-}
-
 export type CommentReplyInput = z.input<typeof commentReplySchema>
 
 export type ReplyCommentInput = CommentReplyInput
@@ -264,25 +258,6 @@ export type CommentRidInput = z.infer<typeof commentRidSchema>
 export type CommentEditInput = z.infer<typeof commentEditInputSchema>
 
 export type LoadCommentsInput = z.input<typeof commentListInputSchema>
-
-export interface LoadAllCommentsInput {
-  offset: number
-  limit: number
-  pageKey?: string
-  userId?: string
-  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
-  q?: string
-  match?: 'contains' | 'does-not-contain'
-  createdAfter?: string
-  createdBefore?: string
-}
-
-export interface FilterAutocompleteInput {
-  q?: string
-  limit?: number
-  ids?: string | string[]
-  key?: string
-}
 
 export type ReplyCommentOutput = z.infer<typeof replyCommentOutputSchema>
 
@@ -294,32 +269,9 @@ export type MyCommentsOutput = z.infer<typeof myCommentsOutputSchema>
 
 export type RevokeCommentTokenOutput = z.infer<typeof commentRevokeTokenOutputSchema>
 
-export interface SearchPagesOutput {
-  pages: { key: string; title: string | null }[]
-}
-
-export interface SearchAuthorsOutput {
-  authors: { id: string; name: string }[]
-}
-
-export type LoadAllInput = LoadAllCommentsInput
-
-export interface LoadAllOutput {
-  comments: AdminCommentWire[]
-  total: number
-  hasMore: boolean
-  statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
-}
-
 export type FindAvatarInput = z.input<typeof avatarFindInputSchema>
 
 export type FindAvatarOutput = z.infer<typeof avatarFindOutputSchema>
-
-export interface ListPendingDashboardInput {
-  kind?: AdminPendingKind
-  offset?: number
-  limit?: number
-}
 
 export type ListPendingDashboardOutput = AdminPendingDashboardDto
 
@@ -400,3 +352,29 @@ export const adminAvatarMirrorProbeOutputDto = z.object({
   results: z.array(z.object({ url: z.string(), reachable: z.boolean(), latencyMs: z.number() })),
 })
 export type AdminAvatarMirrorProbeOutput = z.infer<typeof adminAvatarMirrorProbeOutputDto>
+
+// The full `countMyComments` tuple — the profile card renders all four
+// counters; the service tuple passes through unchanged.
+export const commentsMyCountsOutputSchema = z.object({
+  total: z.number().int().nonnegative(),
+  pending: z.number().int().nonnegative(),
+  deleteRequested: z.number().int().nonnegative(),
+  deleted: z.number().int().nonnegative(),
+})
+export type CommentsMyCountsOutput = z.infer<typeof commentsMyCountsOutputSchema>
+
+// Follow-up resolve for a URL-pinned `type:ownerId` entity not in the
+// mine-comments list; null when malformed or hard-deleted.
+export const commentsResolveEntityInputSchema = z.object({
+  entity: z.string().min(1).max(2048),
+})
+export const commentsResolveEntityOutputSchema = z.object({ value: z.string(), label: z.string() }).nullable()
+export type CommentsResolveEntityOutput = z.infer<typeof commentsResolveEntityOutputSchema>
+
+// `countAdminPendingDashboard` projected to the `{ all }` badge the
+// admin layout renders; the approval/deletion split stays server-side.
+export const adminCommentsPendingCountOutputSchema = z.object({
+  all: z.number().int().nonnegative(),
+})
+
+export const adminWebmentionsPendingCountOutputSchema = z.number().int().nonnegative()

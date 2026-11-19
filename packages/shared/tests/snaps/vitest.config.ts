@@ -1,7 +1,6 @@
+import { testDefine } from '@kobato/test/vitest.define.ts'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
-
-import { testDefine } from '../../../../tools/test/src/vitest.define.ts'
 
 // This file sits four levels below the repository root
 // (packages/shared/tests/snaps) while the suites it owns span the thirteen split
@@ -31,7 +30,7 @@ export default defineConfig({
     // Package specifiers don't resolve from the repo root (the root
     // package.json declares no @kobato/test link), so pin the file path —
     // '@kobato/test/setup/snaps.ts' through @kobato/test's exports map.
-    setupFiles: ['tools/test/src/setup/snaps.ts'],
+    setupFiles: ['@kobato/test/setup/snaps.ts'],
     testTimeout: 10_000,
   },
 })

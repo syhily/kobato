@@ -1,4 +1,5 @@
-import type { PageMetaDraft, UpsertPageMetaInput } from '@kobato/web-admin/ui/pages/page-meta.ts'
+import type { UpsertPageMetaInput } from '@kobato/contracts/pages.ts'
+import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta.ts'
 
 import { isContentLanguageInput } from '@kobato/i18n/content-language.ts'
 

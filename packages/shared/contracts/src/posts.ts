@@ -78,3 +78,20 @@ export const listPostRevisionsOutputDto = z.object({
   revisions: z.array(adminRevisionDto),
 })
 export type ListPostRevisionsOutput = z.infer<typeof listPostRevisionsOutputDto>
+
+/** The dashboard card shape shared by the wire output and the server projection. */
+export interface DraftSummary {
+  id: string
+  title: string
+  updatedAtIso: string
+}
+
+// Draft/published counts + the two recent-5 lists the dashboard cards
+// consume (projected to `DraftSummary`, identical to `loaders/dashboard.ts`).
+export const adminPostsMySummaryOutputSchema = z.object({
+  draftCount: z.number().int().nonnegative(),
+  publishedCount: z.number().int().nonnegative(),
+  recentDrafts: z.custom<DraftSummary[]>(),
+  recentPublished: z.custom<DraftSummary[]>(),
+})
+export type AdminPostsMySummaryOutput = z.infer<typeof adminPostsMySummaryOutputSchema>
