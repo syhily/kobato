@@ -3,7 +3,6 @@ import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { idFromString } from '@kobato/utils/id.ts'
 import { AnalyticsDashboard, type AnalyticsDashboardData } from '@kobato/web-admin/ui/analytics/AnalyticsDashboard.tsx'
-import { ExportButton } from '@kobato/web-admin/ui/analytics/ExportButton.tsx'
 import { type AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 import { Link } from 'react-router'
 
@@ -30,12 +29,5 @@ export interface PostAnalyticsViewProps extends AnalyticsDashboardData {
 
 export function PostAnalyticsView({ post, state, counters, initialMetrics }: PostAnalyticsViewProps) {
   const scope = { entityType: 'post' as const, entityId: idFromString(post.id) }
-  return (
-    <>
-      <div className="flex justify-end">
-        <ExportButton state={state} scope={scope} />
-      </div>
-      <AnalyticsDashboard data={{ counters, initialMetrics }} state={state} scope={scope} />
-    </>
-  )
+  return <AnalyticsDashboard data={{ counters, initialMetrics }} state={state} scope={scope} />
 }

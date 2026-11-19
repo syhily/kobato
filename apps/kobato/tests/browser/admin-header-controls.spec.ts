@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@tests/browser/support/fixtures.ts'
 import { waitForHydration } from '@tests/browser/support/journey.ts'
@@ -163,5 +163,32 @@ test('uses shared sizes for dashboard quick actions and analytics export', async
   await expect(exportButton).toBeVisible()
   await waitForHydration(adminPage, 'main button')
   expect((await exportButton.boundingBox())?.height).toBe(expectedHeight)
+
+  const includeUnknown = adminPage.locator('label[for="analytics-include-unknown"]')
+  await expect(includeUnknown).toBeVisible()
+  const box = (locator: Locator): Promise<{ left: number; right: number; top: number; bottom: number }> =>
+    locator.evaluate((element) => {
+      const { left, right, top, bottom } = element.getBoundingClientRect()
+      return { left, right, top, bottom }
+    })
+
+  // Desktop: the export action sits immediately right of the include-unknown switch.
+  const [desktopLabel, desktopButton] = await Promise.all([box(includeUnknown), box(exportButton)])
+  expect(desktopButton.top).toBeLessThan(desktopLabel.bottom)
+  expect(desktopButton.bottom).toBeGreaterThan(desktopLabel.top)
+  expect(desktopButton.left).toBeGreaterThanOrEqual(desktopLabel.right)
+  expect(desktopButton.left - desktopLabel.right).toBeLessThanOrEqual(32)
   await adminPage.screenshot({ path: test.info().outputPath('header-admin-analytics.png') })
+
+  // Mobile: same row as the switch, flush with the time-range picker row's right edge.
+  await adminPage.setViewportSize({ width: 390, height: 844 })
+  const [mobileLabel, mobileButton, mobilePicker] = await Promise.all([
+    box(includeUnknown),
+    box(exportButton),
+    box(adminPage.locator('main [aria-label="时间范围"]')),
+  ])
+  expect(mobileButton.top).toBeLessThan(mobileLabel.bottom)
+  expect(mobileButton.bottom).toBeGreaterThan(mobileLabel.top)
+  expect(Math.abs(mobileButton.right - mobilePicker.right)).toBeLessThanOrEqual(1)
+  await adminPage.screenshot({ path: test.info().outputPath('header-admin-analytics-mobile.png') })
 })

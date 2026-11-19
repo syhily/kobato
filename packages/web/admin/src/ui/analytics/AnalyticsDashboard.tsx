@@ -8,6 +8,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
 import { Counters } from '@kobato/web-admin/ui/analytics/Counters.tsx'
 import { DateRangePicker } from '@kobato/web-admin/ui/analytics/DateRangePicker.tsx'
+import { ExportButton } from '@kobato/web-admin/ui/analytics/ExportButton.tsx'
 import { FiltersBar } from '@kobato/web-admin/ui/analytics/Filters.tsx'
 import { LocationsMap } from '@kobato/web-admin/ui/analytics/LocationsMap.tsx'
 import { MetricsGroup } from '@kobato/web-admin/ui/analytics/MetricsGroup.tsx'
@@ -51,15 +52,18 @@ export function AnalyticsDashboard({ data, state, scope }: AnalyticsDashboardPro
               onSelect={state.setPreset}
               onSelectRange={state.setRange}
             />
-            <div className="flex items-center gap-2">
-              <Switch
-                id="analytics-include-unknown"
-                checked={state.includeUnknown}
-                onCheckedChange={(checked) => state.setIncludeUnknown(checked === true)}
-              />
-              <label htmlFor="analytics-include-unknown" className="cursor-pointer text-xs text-muted-foreground">
-                {t('admin.analytics.includeUnknown')}
-              </label>
+            <div className="ml-auto flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="analytics-include-unknown"
+                  checked={state.includeUnknown}
+                  onCheckedChange={(checked) => state.setIncludeUnknown(checked === true)}
+                />
+                <label htmlFor="analytics-include-unknown" className="cursor-pointer text-xs text-muted-foreground">
+                  {t('admin.analytics.includeUnknown')}
+                </label>
+              </div>
+              <ExportButton state={state} scope={scope} />
             </div>
           </div>
           <FiltersBar filters={state.filters} onClear={state.clearFilter} onClearAll={state.clearAllFilters} />
