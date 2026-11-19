@@ -1,12 +1,12 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { serve } from '@hono/node-server'
-import { hasAdmin } from '@kobato/db/operations/user.ts'
 import { getDb } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { getSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
 import { upgradeObservabilityProvisioningAtBoot } from '@kobato/server/domains/observability/provision.ts'
 import { syncObservabilityRetention } from '@kobato/server/domains/observability/retention.ts'
 import { syncObservabilityRuntime } from '@kobato/server/domains/observability/runtime-manager.ts'
+import { getInstallState } from '@kobato/server/domains/settings/install-gate.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
 import { hydrateBlogSettings, refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { migrateSecretsEncryption } from '@kobato/server/domains/settings/services/migrate-secrets.ts'
@@ -85,7 +85,7 @@ if (!hmr?.secretsMigrated) {
 }
 
 try {
-  if (!(await hasAdmin(getDb()))) {
+  if ((await getInstallState(getDb())) === 'noAdmin') {
     await getSetupToken(getDb())
   }
 } catch (err) {
