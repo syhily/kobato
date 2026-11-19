@@ -3,8 +3,8 @@
 import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

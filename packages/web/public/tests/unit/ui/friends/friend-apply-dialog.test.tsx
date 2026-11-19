@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'

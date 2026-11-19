@@ -17,8 +17,8 @@ import {
   type OutboxHooks,
 } from '@kobato/server/domains/webmentions/outbox.ts'
 import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { installFetch } from '@kobato/test/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
 const db = getTestDb()
 

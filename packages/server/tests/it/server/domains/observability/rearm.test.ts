@@ -9,9 +9,9 @@ import {
 } from '@kobato/server/domains/observability/runtime-manager.ts'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
+import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const runtimeMock = vi.hoisted(() => ({

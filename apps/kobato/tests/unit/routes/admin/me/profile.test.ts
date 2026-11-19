@@ -1,4 +1,4 @@
-import { rootMatchesWithI18n } from '@kobato/test/i18n.ts'
+import { rootMatchesWithI18n } from '@tests/utils/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 import { meta } from '@/routes/admin/me/profile.tsx'

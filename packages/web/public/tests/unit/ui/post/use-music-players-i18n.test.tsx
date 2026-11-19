@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { renderHookWithI18n } from '@kobato/test/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { useMusicPlayers } from '@kobato/web-public/ui/post/use-music-players.tsx'
 import { act } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'

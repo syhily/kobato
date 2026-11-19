@@ -1,5 +1,6 @@
 import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -13,7 +14,7 @@ export default defineConfig({
     maxWorkers: 4,
     environment: 'node',
     include: ['**/*.test.{ts,tsx}', '../contract/**/*.test.{ts,tsx}'],
-    setupFiles: ['@kobato/test/setup/unit.ts'],
+    setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/unit.ts')],
     testTimeout: 10_000,
   },
 })

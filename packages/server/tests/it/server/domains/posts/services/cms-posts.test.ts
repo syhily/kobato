@@ -1,5 +1,5 @@
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

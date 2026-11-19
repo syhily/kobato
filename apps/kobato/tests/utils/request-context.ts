@@ -6,7 +6,7 @@ import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
-import { regularSession } from '@kobato/test/session.ts'
+import { regularSession } from '@tests/utils/session.ts'
 
 type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
   Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>

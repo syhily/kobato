@@ -1,9 +1,9 @@
 import { post } from '@kobato/db/schema/post.ts'
 import { webmention } from '@kobato/db/schema/webmention.ts'
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/domains/webmentions/email.ts', () => ({

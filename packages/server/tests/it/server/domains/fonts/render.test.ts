@@ -1,6 +1,6 @@
 import { font } from '@kobato/db/schema/font.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/domains/fonts/services/read.ts', { spy: true })

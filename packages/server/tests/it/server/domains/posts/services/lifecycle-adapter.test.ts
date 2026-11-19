@@ -1,7 +1,7 @@
 import type { PostMetaRow } from '@kobato/db/types.ts'
 
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
-import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'
+import { adminUser, authorUser, regularUser } from '@kobato/server/tests/utils/session.ts'
 import { describe, expect, it } from 'vitest'
 
 const AUTHOR_ID = Number(authorUser().id)

@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render.tsx'
 import { SearchBar, SearchIconButton } from '@kobato/web-public/ui/Search.tsx'
 import { describe, expect, it } from 'vitest'
 

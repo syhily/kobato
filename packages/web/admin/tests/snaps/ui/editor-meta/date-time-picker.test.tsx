@@ -1,4 +1,4 @@
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker.tsx'
 import { describe, expect, it } from 'vitest'
 

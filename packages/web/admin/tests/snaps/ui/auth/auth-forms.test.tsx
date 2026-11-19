@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { LoginForm } from '@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx'
 import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm.tsx'
 import { LostPasswordForm } from '@kobato/web-admin/ui/auth/LostPasswordForm.tsx'

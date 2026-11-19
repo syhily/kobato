@@ -1,7 +1,7 @@
 import type { PageMetaRow } from '@kobato/db/types.ts'
 
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
-import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'
+import { adminUser, authorUser, regularUser } from '@kobato/server/tests/utils/session.ts'
 import { describe, expect, it } from 'vitest'
 
 const meta = { authorId: null } as PageMetaRow

@@ -30,9 +30,9 @@ import {
   TWO_COLUMN_NESTED_EDITORS,
 } from '@kobato/lexical/cards/two-column.ts'
 import { MUSIC_PLAYER_NODE_TYPE, SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@kobato/lexical/node-whitelist.ts'
-import { makeAdminMusic } from '@kobato/test/catalog.ts'
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
-import { tZhCN, makeTranslator } from '@kobato/test/i18n.ts'
+import { makeAdminMusic } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { tZhCN, makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
 import {
   BaseMusicPlayerNode,
   MusicCardPicker,

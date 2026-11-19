@@ -15,8 +15,8 @@ import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/test/blog-settings.ts'
-import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
+} from '@kobato/server/tests/utils/blog-settings.ts'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { oc } from '@orpc/contract'
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'

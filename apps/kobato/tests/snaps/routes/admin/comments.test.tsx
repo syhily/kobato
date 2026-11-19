@@ -1,4 +1,4 @@
-import { renderInRouterWithOutlet } from '@kobato/test/render.tsx'
+import { renderInRouterWithOutlet } from '@tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import CommentsRoute from '@/routes/admin/comments.tsx'

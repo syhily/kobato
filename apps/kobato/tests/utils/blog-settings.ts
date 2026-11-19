@@ -1,9 +1,9 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { CACHE_BUCKET_FALLBACKS } from '@kobato/cache/types.ts'
 import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { analyticsDefaults } from '@kobato/settings/sections/analytics.ts'
 import { backupDefaults } from '@kobato/settings/sections/backup.ts'
+import { cacheDefaults } from '@kobato/settings/sections/cache.ts'
 import { limitsDefaults } from '@kobato/settings/sections/limits.ts'
 import { mailDefaults } from '@kobato/settings/sections/mail.ts'
 import { newsletterDefaults } from '@kobato/settings/sections/newsletter.ts'
@@ -100,11 +100,11 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   newsletter: newsletterDefaults,
   cache: {
     cache: {
-      og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },
-      calendar: { ...CACHE_BUCKET_FALLBACKS.calendar, ttlSeconds: 60 * 60 * 24 },
-      avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
+      og: { ...cacheDefaults.cache.og, ttlSeconds: 60 * 60 * 24 * 7 },
+      calendar: { ...cacheDefaults.cache.calendar, ttlSeconds: 60 * 60 * 24 },
+      avatar: { ...cacheDefaults.cache.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
 
-      searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
+      searchResult: { ...cacheDefaults.cache.searchResult },
     },
   },
   rateLimit: rateLimitDefaults,

@@ -1,4 +1,5 @@
 import { testDefine } from '@kobato/test/vitest.define.ts'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { configDefaults, defineConfig } from 'vitest/config'
 
@@ -24,7 +25,7 @@ export default defineConfig({
       'packages/web/public/tests/unit/**/*.test.{ts,tsx}',
     ],
     exclude: [...configDefaults.exclude],
-    setupFiles: ['@kobato/test/setup/unit.ts'],
+    setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/unit.ts')],
     testTimeout: 10_000,
   },
 })

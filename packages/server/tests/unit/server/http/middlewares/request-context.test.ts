@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
 
-import { adminUser, makeSession } from '@kobato/test/session.ts'
+import { adminUser, makeSession } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -82,7 +82,8 @@ describe('requestContextMiddleware', () => {
 
   it('pins the settings bundle and localization from ONE snapshot capture', async () => {
     const { app } = await buildApp()
-    const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
+    const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } =
+      await import('@kobato/server/tests/utils/blog-settings.ts')
     const { resolveAppLocalization } = await import('@kobato/settings/app-localization.ts')
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 

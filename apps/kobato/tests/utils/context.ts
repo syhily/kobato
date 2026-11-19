@@ -1,7 +1,7 @@
-import type { MakeRequestContextOptions } from '@kobato/test/request-context.ts'
+import type { MakeRequestContextOptions } from '@tests/utils/request-context.ts'
 
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { makeRequestContext } from '@kobato/test/request-context.ts'
+import { makeRequestContext } from '@tests/utils/request-context.ts'
 import { RouterContextProvider } from 'react-router'
 
 export type MakeContextOptions = MakeRequestContextOptions

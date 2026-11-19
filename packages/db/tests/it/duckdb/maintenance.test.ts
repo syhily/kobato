@@ -7,7 +7,7 @@ import {
   seedAccessEvents,
   seedDeviceEnvClientRows,
   seedDeviceEnvServerRows,
-} from '@kobato/test/analytics-db.ts'
+} from '@kobato/db/tests/utils/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 interface CapturedLog {

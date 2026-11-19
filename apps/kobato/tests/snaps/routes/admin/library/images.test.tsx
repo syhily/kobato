@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import ImagesRoute from '@/routes/admin/library/images.tsx'

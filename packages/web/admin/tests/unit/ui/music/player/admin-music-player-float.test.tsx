@@ -2,7 +2,7 @@
 
 import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const track: AdminMusicDto = {

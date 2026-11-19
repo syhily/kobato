@@ -3,9 +3,9 @@ import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { generalSchema } from '@kobato/settings/sections/general.ts'
-import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

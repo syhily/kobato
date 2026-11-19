@@ -20,7 +20,6 @@
     "@kobato/test": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@kobato/web-admin": "workspace:*",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
@@ -33,6 +32,7 @@
     "react-day-picker": "catalog:",
     "react-dom": "catalog:",
     "react-intl": "catalog:",
+    "react-router": "catalog:",
     "sonner": "catalog:",
     "tailwindcss": "catalog:",
     "vitest": "catalog:"

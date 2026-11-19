@@ -1,7 +1,7 @@
 import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

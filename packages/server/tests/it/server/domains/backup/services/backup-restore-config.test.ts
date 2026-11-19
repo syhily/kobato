@@ -1,5 +1,5 @@
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { packTar } from '@kobato/test/backup-buffer.ts'
+import { packTar } from '@kobato/server/tests/utils/backup-buffer.ts'
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

@@ -1,7 +1,7 @@
 import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
 import { countEntryFiles, resolveCacheRoot, setItem } from '@kobato/server/infra/cache/file-store.ts'
 import { __resetCacheCountersForTests, getCounter } from '@kobato/server/infra/cache/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'

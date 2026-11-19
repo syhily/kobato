@@ -1,7 +1,12 @@
 import type { LexicalNodeJson } from '@kobato/lexical/schema.ts'
 
+import {
+  emptyLexicalBody,
+  lexicalBodyWith,
+  lexicalHeading,
+  lexicalParagraph,
+} from '@kobato/lexical/tests/utils/lexical.ts'
 import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/lexical/walk.ts'
-import { emptyLexicalBody, lexicalBodyWith, lexicalHeading, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 function quote(children: unknown[]) {

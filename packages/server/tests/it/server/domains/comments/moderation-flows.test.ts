@@ -11,9 +11,9 @@ import {
   resolveCommentDeleteRequest,
 } from '@kobato/server/domains/comments/services/moderate.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { makeCommentBody } from '@kobato/test/catalog.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
+import { makeCommentBody } from '@kobato/server/tests/utils/catalog.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

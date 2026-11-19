@@ -1,7 +1,7 @@
 import { findSettingByScope } from '@kobato/db/operations/setting.ts'
 import { setting } from '@kobato/db/schema/config.ts'
 import { runZeaburMailCleanupAtBoot } from '@kobato/server/domains/settings/services/zeabur-mail-cleanup.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

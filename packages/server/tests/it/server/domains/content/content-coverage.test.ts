@@ -10,8 +10,8 @@ import {
   listRevisions,
 } from '@kobato/server/domains/content/revisions.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

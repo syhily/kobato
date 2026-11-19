@@ -122,7 +122,7 @@ types) — the directory names the API group, not the page.
 - Icons: named imports from `lucide-react` only; `@kobato/ui/icons` is static-export. No `<Icon name="..." />` lookups.
 - Interface copy is a UI message id resolved through `useI18n()`, including the accessible labels inside
   `@kobato/ui/components` primitives (`common.*` in the UI catalog). A test rendering one of those primitives directly must
-  mount `I18nProvider` (`@kobato/test/i18n-render.ts`).
+  mount `I18nProvider` (`@kobato/web-admin/tests/utils/i18n-render.tsx`).
 - Animation is Motion Only: JS-driven animation uses the `@kobato/ui/components/lazy-motion` facade (`LazyMotion*` /
   `LazyAnimatePresence`; browser-only popups that cannot tolerate a static-node swap use `EagerMotion*` /
   `EagerAnimatePresence`) with constants from `@kobato/web-client/lib/motion` — never React `<ViewTransition>` or
@@ -166,5 +166,5 @@ types) — the directory names the API group, not the page.
   appends the global friends grid below the body before the Like button; the body format has no `friends` block.
 - Adding a toggle touches: db schema + migration + snapshot, page projection, page service + schema, shared DTOs,
   `MetaSidebar` + `PageEditorShell`, and the `PageMetaDraft` meta type in `@kobato/web-admin/ui/pages/page-meta` (the post
-  twin lives in `@kobato/web-admin/ui/posts/post-meta`; both flow through to `@kobato/web-admin/ui/editor-shell/drafts/use-create-draft` by the editor shell). Test fixtures in `@kobato/test/catalog.ts` and the page
+  twin lives in `@kobato/web-admin/ui/posts/post-meta`; both flow through to `@kobato/web-admin/ui/editor-shell/drafts/use-create-draft` by the editor shell). Test fixtures in `@kobato/web-admin/tests/utils/catalog.ts` and the page
   service tests under `packages/server/tests/it/server/domains/pages/` need the new default.

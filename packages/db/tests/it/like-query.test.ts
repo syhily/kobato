@@ -1,6 +1,6 @@
 import { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } from '@kobato/db/operations/like.ts'
 import { like } from '@kobato/db/schema/metric.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

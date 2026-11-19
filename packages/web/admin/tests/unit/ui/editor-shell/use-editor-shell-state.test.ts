@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test/hook.tsx'
+import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 const mutate = vi.fn()
@@ -33,7 +33,7 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts', () => ({
 
 import type { EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
 
-import { emptyLexicalBody } from '@kobato/test/lexical.ts'
+import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
 import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
 
 interface Meta {

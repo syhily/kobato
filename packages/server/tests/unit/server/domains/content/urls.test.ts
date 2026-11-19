@@ -5,7 +5,7 @@ import {
   searchRootPath,
   trimSiteSuffix,
 } from '@kobato/server/domains/content/urls.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('server/domains/content/urls — canonicalPostPath', () => {

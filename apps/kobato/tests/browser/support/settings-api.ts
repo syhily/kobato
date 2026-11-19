@@ -2,7 +2,7 @@ import type { BrowserEnv } from '@tests/browser/support/env.ts'
 
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
 import { callE2eRpc } from '@kobato/harness/rpc.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@tests/utils/lexical.ts'
 
 export const BASELINE_GENERAL = {
   locale: 'zh-CN',

@@ -9,9 +9,9 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/test/analytics-db.ts'
-import { getTestDb } from '@kobato/test/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
+} from '@kobato/server/tests/utils/analytics-db.ts'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 

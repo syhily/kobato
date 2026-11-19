@@ -19,8 +19,8 @@ vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
-import { renderHook } from '@kobato/test/hook.tsx'
-import { emptyLexicalBody } from '@kobato/test/lexical.ts'
+import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
+import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
 import { useCreateDraft, type CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts'
 
 const config: CreateDraftConfig<LexicalEditorState> = {

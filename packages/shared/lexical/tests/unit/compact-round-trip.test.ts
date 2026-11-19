@@ -1,7 +1,10 @@
+// @vitest-environment jsdom
+
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
-import { createEditor } from '@kobato/inkling/tests/transforms/utils'
+import { DEFAULT_NODES, createHeadlessEditor } from '@kobato/inkling'
 import { compactLexicalEditorState } from '@kobato/lexical/dialect.ts'
+import { withDOM } from '@lexical/headless/dom'
 import { describe, expect, it } from 'vitest'
 
 // Contract between the compact storage dialect and the real 0.53 parser:
@@ -216,17 +219,27 @@ function jsonRoundTrip(value: unknown): unknown {
 
 describe('compact storage dialect', () => {
   it('re-parses to the identical full export through the real Lexical parser', () => {
-    const editor = createEditor()
-    const full = jsonRoundTrip(editor.parseEditorState(JSON.stringify(CORPUS)).toJSON())
+    const editor = createHeadlessEditor({
+      nodes: DEFAULT_NODES,
+      onError: (error) => {
+        throw error
+      },
+    })
+    const full = withDOM(() => jsonRoundTrip(editor.parseEditorState(JSON.stringify(CORPUS)).toJSON()))
 
     const compact = compactLexicalEditorState(full as LexicalEditorState)
-    const reparsed = jsonRoundTrip(editor.parseEditorState(JSON.stringify(compact)).toJSON())
+    const reparsed = withDOM(() => jsonRoundTrip(editor.parseEditorState(JSON.stringify(compact)).toJSON()))
 
     expect(reparsed).toEqual(full)
   })
 
   it('shrinks the stored payload', () => {
-    const editor = createEditor()
+    const editor = createHeadlessEditor({
+      nodes: DEFAULT_NODES,
+      onError: (error) => {
+        throw error
+      },
+    })
     const full = jsonRoundTrip(editor.parseEditorState(JSON.stringify(CORPUS)).toJSON())
     const compact = compactLexicalEditorState(full as LexicalEditorState)
 

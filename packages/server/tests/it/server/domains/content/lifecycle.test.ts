@@ -5,7 +5,7 @@ import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
@@ -13,7 +13,7 @@ import {
   lexicalMusicPlayer,
   lexicalParagraph,
   stubMusicResolver,
-} from '@kobato/test/lexical.ts'
+} from '@kobato/server/tests/utils/lexical.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

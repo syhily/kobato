@@ -1,8 +1,8 @@
 import { githubRouter } from '@kobato/server/http/controllers/github.controller.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
-import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
-import { parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const { RPCHandler } = await import('@orpc/server/fetch')

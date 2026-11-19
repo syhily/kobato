@@ -9,9 +9,9 @@
   "devDependencies": {
     "@formatjs/icu-messageformat-parser": "catalog:",
     "@kobato/i18n": "workspace:*",
-    "@kobato/inkling": "workspace:*",
     "@kobato/test": "workspace:*",
     "happy-dom": "catalog:",
+    "react-intl": "catalog:",
     "vitest": "catalog:"
   }
 }

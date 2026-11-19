@@ -1,8 +1,8 @@
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
-import { makeAdminTag } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminTag } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog.tsx'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

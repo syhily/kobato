@@ -21,7 +21,7 @@ import { callE2eRpc } from '@kobato/harness/rpc.ts'
 import { seedInstalledInstance } from '@kobato/harness/seed.ts'
 import { TRACE_METRIC_STREAMS } from '@kobato/telemetry/metrics.ts'
 import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/trace/lexical-fixtures.ts'
 import {
   buildState,
   docker,

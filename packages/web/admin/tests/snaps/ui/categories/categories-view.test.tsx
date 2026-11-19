@@ -1,5 +1,5 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView.tsx'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

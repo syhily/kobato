@@ -5,19 +5,24 @@
   "type": "module",
   "devDependencies": {
     "@kobato/catalog": "workspace:*",
+    "@kobato/contracts": "workspace:*",
+    "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/lexical": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@kobato/web-admin": "workspace:*",
     "@kobato/web-client": "workspace:*",
     "@kobato/web-public": "workspace:*",
+    "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-router": "catalog:",
     "vitest": "catalog:"
   }
 }

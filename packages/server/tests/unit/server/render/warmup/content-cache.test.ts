@@ -1,4 +1,4 @@
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/render/og/render.ts', () => ({

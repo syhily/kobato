@@ -1,9 +1,9 @@
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
-import { makeLoaderArgs } from '@kobato/test/context.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeSession } from '@kobato/test/session.ts'
+import { resetBlogSettingsForTests } from '@tests/utils/blog-settings.ts'
+import { makeLoaderArgs } from '@tests/utils/context.ts'
+import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
+import { makeSession } from '@tests/utils/session.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

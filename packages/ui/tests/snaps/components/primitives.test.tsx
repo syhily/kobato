@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
-import { renderToHtml } from '@kobato/test/render.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'
@@ -91,6 +90,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
 import { Textarea } from '@kobato/ui/components/textarea.tsx'
 import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
+import { renderToHtml } from '@kobato/ui/tests/utils/render.tsx'
 
 describe('snapshot: Button primitives', () => {
   it('renders the default variant', () => {

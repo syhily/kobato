@@ -1,6 +1,6 @@
 import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 const { toCmsPage } = await import('@kobato/server/domains/pages/projection.ts')

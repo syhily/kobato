@@ -3,7 +3,7 @@ import {
   scanI18nLiterals,
   scanSourceForI18nLiterals,
   type ScanAllowlistEntry,
-} from '@kobato/test/i18n-literals.ts'
+} from '@tests/utils/i18n-literals.ts'
 import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

@@ -9,7 +9,7 @@ import type {
 } from '@kobato/settings/types.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
 import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm.tsx'
 import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'

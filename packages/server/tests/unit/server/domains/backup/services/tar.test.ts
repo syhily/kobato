@@ -1,5 +1,5 @@
 import { isTarArchive } from '@kobato/server/domains/backup/services/tar.ts'
-import { packTar, unpackTar } from '@kobato/test/backup-buffer.ts'
+import { packTar, unpackTar } from '@kobato/server/tests/utils/backup-buffer.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('backup/services/tar', () => {

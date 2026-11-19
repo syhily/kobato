@@ -26,13 +26,13 @@ vi.mock('@kobato/server/infra/scheduler-utils.ts', async (importOriginal) => {
   }
 })
 
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
 const { rescheduleBackup } = await import('@kobato/server/domains/backup/scheduler.ts')
 const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
 
-const { getTestDb } = await import('@kobato/test/integration-db.ts')
+const { getTestDb } = await import('@kobato/server/tests/utils/integration-db.ts')
 const testDb = getTestDb()
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: testDb }) as never })
 

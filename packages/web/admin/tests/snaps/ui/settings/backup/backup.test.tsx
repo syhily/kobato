@@ -2,7 +2,7 @@ import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
 import type { BackupLoaderShape } from '@kobato/settings/projection.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { BackupFileList } from '@kobato/web-admin/ui/settings/backup/BackupFileList.tsx'
 import { BackupScheduleForm } from '@kobato/web-admin/ui/settings/backup/BackupScheduleForm.tsx'
 import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView.tsx'

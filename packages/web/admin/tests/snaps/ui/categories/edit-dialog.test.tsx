@@ -1,8 +1,8 @@
 import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
-import { makeAdminCategory } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminCategory } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog.tsx'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'

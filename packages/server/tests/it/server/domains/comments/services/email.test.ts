@@ -4,8 +4,8 @@ import { post } from '@kobato/db/schema/post.ts'
 import { sendNewComment } from '@kobato/server/domains/comments/services/email.ts'
 import { sendTestMail } from '@kobato/server/infra/email/sender.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

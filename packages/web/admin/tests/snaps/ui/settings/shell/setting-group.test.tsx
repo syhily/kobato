@@ -1,5 +1,5 @@
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { Input } from '@kobato/ui/components/input.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
 import { SettingsCloseButton } from '@kobato/web-admin/ui/settings/shell/SettingsHeader.tsx'

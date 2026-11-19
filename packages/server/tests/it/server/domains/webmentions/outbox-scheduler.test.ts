@@ -13,8 +13,8 @@ import { OUTBOX_MIN_DELAY_MS, rescheduleWebmentionOutbox } from '@kobato/server/
 import { OUTBOX_BATCH_SIZE } from '@kobato/server/domains/webmentions/outbox.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
 const db = getTestDb()
 

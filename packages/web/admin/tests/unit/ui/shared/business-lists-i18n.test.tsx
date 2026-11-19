@@ -3,7 +3,7 @@
 import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 import type { MetingSearchHit } from '@kobato/contracts/music.ts'
 
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { PendingFriendRow } from '@kobato/web-admin/ui/friends/PendingFriendRow.tsx'
 import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem.tsx'
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'

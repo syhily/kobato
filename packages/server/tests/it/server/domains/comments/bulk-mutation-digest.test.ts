@@ -3,7 +3,7 @@ import { post } from '@kobato/db/schema/post.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/lexical/comment-schema.ts'
 import { latestComments } from '@kobato/server/domains/comments/services/public-query.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/infra/email/sender.ts', () => ({
@@ -12,7 +12,7 @@ vi.mock('@kobato/server/infra/email/sender.ts', () => ({
   invalidateMailTransportCache: vi.fn(),
 }))
 
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
 
 const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
   await import('@kobato/server/domains/comments/services/moderate.ts')

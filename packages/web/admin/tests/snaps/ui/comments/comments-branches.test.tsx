@@ -3,9 +3,9 @@ import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter
 import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
-import { makeAdminComment } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminComment } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

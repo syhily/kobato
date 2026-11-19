@@ -1,4 +1,5 @@
 import { testDefine } from '@kobato/test/vitest.define.ts'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
@@ -19,7 +20,7 @@ export default defineConfig({
     include: [
       'packages/shared/{utils,i18n,cache,auth,catalog,settings,assets,lexical,sanitize,contracts,telemetry,distribution,seo}/tests/snaps/**/*.test.{ts,tsx}',
     ],
-    setupFiles: ['@kobato/test/setup/snaps.ts'],
+    setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/snaps.ts')],
     testTimeout: 10_000,
   },
 })

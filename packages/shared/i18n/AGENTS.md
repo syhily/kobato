@@ -2,7 +2,7 @@
 
 The locale layer. Owner of: `locales` (the four supported tags, alias normalization, `og:locale` spelling, endonyms), `content-language` (author metadata, never a UI-locale selector), `messages/ui/*` + `messages/server/*` (English defines the message-id types; the other three `satisfies` them), `catalog` (aggregation + English fallback merge + ICU validation; server-only value import), `catalog-scope` (the client-safe `public | workspace` classifier), `fallback-messages` (the only message module the client may import directly), and `inkling-labels/*` (the editor chrome's flat tables, outside ICU because Inkling's `{max}`/`{cardType}` tokens are `string.replace`).
 
-- Allowed deps: none — this is a leaf. Its single `@kobato/inkling` edge is TESTS-ONLY (the label suite pins the barrel's `DEFAULT_LABELS`); `src/` imports nothing.
+- Allowed deps: none — this is a leaf. `src/` imports nothing. The inkling-label parity pin lives in `packages/inkling/tests/`, so the reverse test edge no longer exists.
 - Key contracts: `uiMessagesForScope(locale, scope)` is memoized and frozen — public scope is the `PUBLIC_MESSAGE_PREFIXES` allowlist, pinned by `apps/kobato/tests/arch/public-message-namespaces.test.ts`; the `inkling-labels` aggregator is a server-only value import and no client module may statically import a table (`apps/kobato/tests/arch/client-bundle.test.ts`).
 - Bans: no React, no display formatting (that is `@kobato/utils/format`).
 - Tests: `tests/unit/` (umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`).

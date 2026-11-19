@@ -9,7 +9,7 @@ import {
 } from '@kobato/settings/app-localization.ts'
 import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 const withIdentity = (locale: AppLocale, timeZone: string, timeFormat: string | null = null): BlogSettingsBundle => ({

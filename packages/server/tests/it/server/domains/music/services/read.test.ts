@@ -1,5 +1,5 @@
 import { music } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const publicUrlMock = vi.hoisted(() => ({

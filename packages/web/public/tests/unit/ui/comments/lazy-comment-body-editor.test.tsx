@@ -1,4 +1,4 @@
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'

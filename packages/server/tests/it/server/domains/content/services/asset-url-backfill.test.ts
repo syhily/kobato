@@ -10,8 +10,13 @@ import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
 } from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import {
+  emptyLexicalBody,
+  lexicalBodyWith,
+  lexicalImage,
+  lexicalParagraph,
+} from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -12,7 +12,7 @@ import {
   sweepOrphanedJobRuns,
   wireJobFailureNotifier,
 } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

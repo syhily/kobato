@@ -24,7 +24,7 @@ vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
-import { emptyLexicalBody } from '@kobato/test/lexical.ts'
+import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
 import {
   draftEditKey,
   useDraftSession,

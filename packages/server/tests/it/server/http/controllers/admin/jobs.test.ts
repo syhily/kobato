@@ -9,8 +9,8 @@ import {
   scheduleJob,
   stopAllScheduledJobs,
 } from '@kobato/server/infra/scheduler-utils.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

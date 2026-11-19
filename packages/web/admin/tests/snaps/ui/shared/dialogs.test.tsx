@@ -1,6 +1,6 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { SidebarProvider } from '@kobato/ui/components/sidebar.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx'
 import { AdminSearchDialog } from '@kobato/web-admin/ui/shell/AdminSearchDialog.tsx'
 import { AdminShell } from '@kobato/web-admin/ui/shell/AdminShell.tsx'

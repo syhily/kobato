@@ -1,4 +1,4 @@
-import { makeTranslator } from '@kobato/test/i18n.ts'
+import { makeTranslator } from '@kobato/web-public/tests/utils/i18n.ts'
 import {
   formatNotificationTime,
   notificationMeta,

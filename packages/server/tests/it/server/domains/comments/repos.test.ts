@@ -61,7 +61,7 @@ import {
   requestDeleteComment,
   softDeleteCommentById,
 } from '@kobato/server/domains/comments/services/moderate.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'

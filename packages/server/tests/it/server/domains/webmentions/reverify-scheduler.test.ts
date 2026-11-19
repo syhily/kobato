@@ -14,9 +14,9 @@ import { REVERIFY_MIN_DELAY_MS } from '@kobato/server/domains/webmentions/reveri
 import { REVERIFY_BATCH_SIZE } from '@kobato/server/domains/webmentions/reverify.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
 const db = getTestDb()
 

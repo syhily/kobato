@@ -4,14 +4,14 @@ import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { makeRouteContext } from '@kobato/test/context.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { emptySession } from '@kobato/test/session.ts'
+import { makeRouteContext } from '@tests/utils/context.ts'
+import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
+import { emptySession } from '@tests/utils/session.ts'
 import { eq, sql } from 'drizzle-orm'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/http/request-context.ts', async () => {
-  const { createRequestContextMockModule } = await import('@kobato/test/auth-context-mock.ts')
+  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock.ts')
   return createRequestContextMockModule()
 })
 

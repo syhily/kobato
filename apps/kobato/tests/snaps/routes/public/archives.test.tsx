@@ -1,5 +1,5 @@
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
+import { renderInRouter, stableHtml } from '@tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import ArchivesRoute from '@/routes/public/archives.tsx'

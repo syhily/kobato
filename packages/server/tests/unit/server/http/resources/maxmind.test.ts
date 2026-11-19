@@ -1,6 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
-import { adminSession, adminUser } from '@kobato/test/session.ts'
+import { adminSession, adminUser } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

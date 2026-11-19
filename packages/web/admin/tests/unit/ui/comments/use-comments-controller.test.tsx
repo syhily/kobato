@@ -2,9 +2,9 @@ import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comment
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { ReactNode } from 'react'
 
-import { makeAdminComment, makeCommentBody } from '@kobato/test/catalog.ts'
-import { renderHook } from '@kobato/test/hook.tsx'
-import { tZhCN } from '@kobato/test/i18n.ts'
+import { makeAdminComment, makeCommentBody } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
+import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
 import {
   type CommentFilterFieldKey,
   buildCommentFilterFields,

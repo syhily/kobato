@@ -1,4 +1,4 @@
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render.tsx'
 import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm.tsx'
 import { describe, expect, it } from 'vitest'
 

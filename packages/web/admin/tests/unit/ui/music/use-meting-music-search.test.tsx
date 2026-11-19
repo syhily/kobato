@@ -21,7 +21,7 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({
   },
 }))
 
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { dedupeSearchHits, useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search.ts'
 
 function makeWrapper() {

@@ -10,8 +10,8 @@ import { flushDeviceEnvBeacons } from '@kobato/server/domains/analytics/services
 import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
-import { makeRequestContext } from '@kobato/test/request-context.ts'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 

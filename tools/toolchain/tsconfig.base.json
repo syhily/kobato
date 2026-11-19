@@ -36,6 +36,7 @@
       "@kobato/web-public/*": ["../../packages/web/public/src/*"],
       "@kobato/web-public/tests/*": ["../../packages/web/public/tests/*"],
       "@kobato/web-tests/*": ["../../packages/web/tests/*"],
+      "@kobato/shared-tests/*": ["../../packages/shared/tests/*"],
       "@kobato/utils/*": ["../../packages/shared/utils/src/*"],
       "@kobato/utils/tests/*": ["../../packages/shared/utils/tests/*"],
       "@kobato/i18n/*": ["../../packages/shared/i18n/src/*"],

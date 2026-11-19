@@ -9,7 +9,6 @@ import {
 import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
 import { kobatoInklingLabelsZhHK } from '@kobato/i18n/inkling-labels/zh-HK.ts'
 import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'
-import { DEFAULT_LABELS } from '@kobato/inkling'
 import { describe, expect, it } from 'vitest'
 
 const EN_KEYS = Object.keys(kobatoInklingLabelsEnUS).sort() as KobatoInklingLabelKey[]
@@ -52,15 +51,6 @@ describe('i18n/inkling-labels — used-key parity', () => {
       for (const prefix of UNMOUNTED_FEATURE_PREFIXES) {
         expect(key.startsWith(prefix), key).toBe(false)
       }
-    }
-  })
-
-  it('keeps every built-in English value byte-identical to Inkling DEFAULT_LABELS', () => {
-    for (const key of EN_KEYS) {
-      if ((HOST_MENU_KEYS as readonly string[]).includes(key)) {
-        continue
-      }
-      expect(kobatoInklingLabelsEnUS[key]).toBe(DEFAULT_LABELS[key as keyof typeof DEFAULT_LABELS])
     }
   })
 

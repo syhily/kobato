@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 // SSR-render the editor route Component wrappers (loader gate, navigate wiring, layout
 // context). The TipTap editors cannot fully SSR, so assert the wrapper renders without
@@ -9,6 +7,8 @@ import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@tests/utils/blog-settings.ts'
+import { renderInRouter, stableHtml } from '@tests/utils/render.tsx'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'

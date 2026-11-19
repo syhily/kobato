@@ -1,7 +1,7 @@
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

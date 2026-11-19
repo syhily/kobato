@@ -1,6 +1,6 @@
 import { get } from '@kobato/server/infra/cache/registry.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

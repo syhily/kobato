@@ -3,7 +3,7 @@ import {
   computeBodyProjections,
   computeCommentContentProjection,
 } from '@kobato/server/infra/lexical/lexical-projection.ts'
-import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 function parse(state: unknown): LexicalEditorState {

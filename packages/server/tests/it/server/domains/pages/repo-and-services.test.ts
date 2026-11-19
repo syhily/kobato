@@ -1,17 +1,17 @@
 import { content } from '@kobato/db/schema/content.ts'
 import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
 import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { emptyLexicalBody, stubMusicResolver } from '@kobato/test/lexical.ts'
-import { adminUser } from '@kobato/test/session.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { emptyLexicalBody, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
+import { adminUser } from '@kobato/server/tests/utils/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/domains/pages/repo.ts', { spy: true })
 vi.mock('@kobato/server/domains/pages/services/public-query.ts', { spy: true })
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/test/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
 
 const repo = await import('@kobato/server/domains/pages/repo.ts')
 const publicQuery = await import('@kobato/server/domains/pages/services/public-query.ts')

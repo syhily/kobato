@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -13,6 +13,7 @@
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
+    "react-intl": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

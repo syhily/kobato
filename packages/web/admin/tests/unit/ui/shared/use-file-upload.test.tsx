@@ -18,7 +18,7 @@ vi.mock('sonner', () => ({ toast: toastMock }))
 
 const fetchMock = vi.hoisted(() => vi.fn())
 
-import { makeTranslator } from '@kobato/test/i18n.ts'
+import { makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { useFileUpload, type UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload.ts'
 
 const t = makeTranslator('zh-CN')

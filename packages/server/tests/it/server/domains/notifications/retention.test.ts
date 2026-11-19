@@ -12,7 +12,7 @@ import {
 } from '@kobato/server/domains/notifications/service.ts'
 import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { count, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

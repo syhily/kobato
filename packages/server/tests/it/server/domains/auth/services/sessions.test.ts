@@ -1,7 +1,7 @@
 import { session as sessionTable } from '@kobato/db/schema/session.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { listAllSessions, revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

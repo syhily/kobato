@@ -1,8 +1,8 @@
 import type { Database } from '@kobato/db/database.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
-import { seedMetric } from '@kobato/test/db.ts'
-import { regularSession } from '@kobato/test/session.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { seedMetric } from '@kobato/server/tests/utils/db.ts'
+import { regularSession } from '@kobato/server/tests/utils/session.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/domains/comments/services/shared.ts', () => ({

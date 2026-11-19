@@ -2,14 +2,13 @@
 
 import type { ReactElement } from 'react'
 
-import { fireEvent, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { renderWithI18n } from '@kobato/test/i18n-render.tsx'
 import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog.tsx'
 import {
   Pagination,
@@ -22,6 +21,7 @@ import { Sheet, SheetContent, SheetTitle } from '@kobato/ui/components/sheet.tsx
 import { SidebarProvider, SidebarTrigger } from '@kobato/ui/components/sidebar.tsx'
 import { Toaster } from '@kobato/ui/components/sonner.tsx'
 import { Table, TableBody, TableCell, TableRow } from '@kobato/ui/components/table.tsx'
+import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 
 function render(node: ReactElement, locale: AppLocale) {
   return renderWithI18n(node, { locale })
@@ -167,34 +167,5 @@ describe('shared primitives — en-US', () => {
   it('labels the toast region', () => {
     render(<Toaster />, 'en-US')
     expect(screen.getByLabelText(/^Notifications/)).toBeTruthy()
-  })
-})
-
-describe('combobox defaults', () => {
-  it('falls back to the localized placeholder and empty copy when no props are given', async () => {
-    const { SettingsCombobox } = await import('@kobato/web-admin/ui/settings/shell/SettingsCombobox.tsx')
-    const { ComboboxContent, ComboboxTrigger, ComboboxValue } = await import('@kobato/ui/components/combobox.tsx')
-
-    render(
-      <SettingsCombobox<{ value: string; label: string }>
-        name="zone"
-        items={[{ value: 'UTC', label: 'UTC' }]}
-        value={{ value: 'UTC', label: 'UTC' }}
-        save={() => {}}
-      >
-        <ComboboxTrigger aria-label="timezone">
-          <ComboboxValue />
-        </ComboboxTrigger>
-        <ComboboxContent<{ value: string; label: string }>>
-          {(item) => <div key={item.value}>{item.label}</div>}
-        </ComboboxContent>
-      </SettingsCombobox>,
-      'en-US',
-    )
-
-    fireEvent.click(screen.getByRole('combobox', { name: 'timezone' }))
-    expect(screen.getByPlaceholderText('Search…')).toBeTruthy()
-    fireEvent.change(screen.getByPlaceholderText('Search…'), { target: { value: 'zzz' } })
-    expect(await screen.findByText('No matching results')).toBeTruthy()
   })
 })

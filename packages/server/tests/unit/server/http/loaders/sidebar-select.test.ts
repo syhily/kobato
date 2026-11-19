@@ -7,9 +7,9 @@ import {
   sidebarSelection,
   sidebarSelectionSeed,
 } from '@kobato/server/http/loaders/sidebar-select.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { makePost, makeTag } from '@kobato/server/tests/utils/catalog.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
-import { makePost, makeTag } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'
 
 const SIDEBAR_SETTINGS = TEST_BLOG_SETTINGS_BUNDLE.sidebar!

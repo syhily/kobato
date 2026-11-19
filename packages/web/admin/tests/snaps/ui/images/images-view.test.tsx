@@ -2,7 +2,7 @@ import type { AdminImageDto } from '@kobato/contracts/images.ts'
 import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-reducer.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { ImageDetailDialog } from '@kobato/web-admin/ui/images/ImageDetailDialog.tsx'
 import { ImagesFilterBar } from '@kobato/web-admin/ui/images/ImagesFilterBar.tsx'
 import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView.tsx'

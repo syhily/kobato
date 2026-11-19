@@ -37,7 +37,7 @@ socket, a child process, or a temp dir, it lives HERE.
 - `http.ts` — `E2eClient` (cookie-jar fetch client, manual redirects),
   `e2eEnv` (the `KOBATO_E2E_*` env contract), CSRF extraction, real signin.
 - `rpc.ts` — `callE2eRpc`: oRPC-over-HTTP, same wire format as
-  `@kobato/test/rpc-call.ts` plus the `x-csrf-token` header `/rpc/*` requires.
+  the package-local `packages/server/tests/utils/rpc-call.ts` plus the `x-csrf-token` header `/rpc/*` requires.
 - `smtp.ts` — `SmtpCapture` loopback capture server (just enough SMTP for
   nodemailer's plaintext path) + `decodeMail` / OTP / magic-link extractors.
 

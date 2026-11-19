@@ -4,7 +4,7 @@ import {
   commentReplySchema,
   commentRidSchema,
 } from '@kobato/contracts/comments.ts'
-import { makeCommentBody } from '@kobato/test/catalog.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { describe, expect, it } from 'vitest'
 
 const HELLO_BODY = makeCommentBody('Thoughtful comment.')

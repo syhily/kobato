@@ -1,4 +1,4 @@
-import { makeTranslator } from '@kobato/test/i18n.ts'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 describe('i18n — meta.listing keys', () => {

@@ -1,4 +1,4 @@
-import type { SeedAccessEvent, SeedDeviceEnvClientRow } from '@kobato/test/analytics-db.ts'
+import type { SeedAccessEvent, SeedDeviceEnvClientRow } from '@kobato/db/tests/utils/analytics-db.ts'
 
 import { queryMetric } from '@kobato/db/duckdb/queries/metric.ts'
 import {
@@ -7,7 +7,7 @@ import {
   createTestAnalyticsDb,
   seedAccessEvents,
   seedDeviceEnvClientRows,
-} from '@kobato/test/analytics-db.ts'
+} from '@kobato/db/tests/utils/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const handle = await createTestAnalyticsDb()

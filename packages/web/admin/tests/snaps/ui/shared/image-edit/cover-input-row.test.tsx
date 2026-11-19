@@ -1,4 +1,4 @@
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
 import { describe, expect, it, vi } from 'vitest'
 

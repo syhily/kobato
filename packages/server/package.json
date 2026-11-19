@@ -32,7 +32,6 @@
     "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@kobato/web-admin": "workspace:*",
     "@maxmind/geoip2-node": "catalog:",
     "@napi-rs/canvas": "catalog:",
     "@opentelemetry/api": "catalog:",

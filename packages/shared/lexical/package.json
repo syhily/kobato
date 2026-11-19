@@ -13,6 +13,7 @@
     "@kobato/sanitize": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
+    "@lexical/headless": "catalog:",
     "tailwindcss": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

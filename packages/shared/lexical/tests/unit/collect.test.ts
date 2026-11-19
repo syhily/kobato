@@ -10,7 +10,7 @@ import {
   lexicalImage,
   lexicalMusicPlayer,
   lexicalParagraph,
-} from '@kobato/test/lexical.ts'
+} from '@kobato/lexical/tests/utils/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 function quote(children: unknown[]) {

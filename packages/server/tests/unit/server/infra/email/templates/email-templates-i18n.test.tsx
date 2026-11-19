@@ -12,7 +12,7 @@ import { PasswordReset } from '@kobato/server/infra/email/templates/PasswordRese
 import { SignInLink } from '@kobato/server/infra/email/templates/SignInLink.tsx'
 import { SignInOtp } from '@kobato/server/infra/email/templates/SignInOtp.tsx'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF]/

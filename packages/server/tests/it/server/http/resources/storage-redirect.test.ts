@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
-import { makeRequestContext } from '@kobato/test/request-context.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'

@@ -7,7 +7,7 @@ import { buildAdminListConditions } from '@kobato/server/domains/comments/repos/
 import { liveContentWhere } from '@kobato/server/domains/content/schemas/live-gate.ts'
 import { searchPosts } from '@kobato/server/domains/posts/services/search-query.ts'
 import { bumpCounter } from '@kobato/server/infra/cache/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { and } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -1,8 +1,8 @@
 import { findSlugRegistryBySlug } from '@kobato/db/operations/slug-registry.ts'
 import { slugRegistry } from '@kobato/db/schema/config.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

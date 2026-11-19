@@ -1,8 +1,8 @@
 import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
-import { makeAdminCategory } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminCategory } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView.tsx'
 import { CategoriesSkeleton, CategoryRow } from '@kobato/web-admin/ui/categories/CategoryRow.tsx'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog.tsx'

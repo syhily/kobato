@@ -1,6 +1,11 @@
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot.ts'
-import { lexicalBodyWith, lexicalMusicPlayer, lexicalParagraph, stubMusicResolver } from '@kobato/test/lexical.ts'
+import {
+  lexicalBodyWith,
+  lexicalMusicPlayer,
+  lexicalParagraph,
+  stubMusicResolver,
+} from '@kobato/server/tests/utils/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 const META = {

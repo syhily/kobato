@@ -4,8 +4,8 @@ import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events.ts'
 import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration.ts'
 import { openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/db/tests/utils/analytics-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

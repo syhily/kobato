@@ -160,7 +160,7 @@ Two embedded engines, zero services:
 ### Images
 
 - `image` table; bytes in the active storage backend (`infra/storage/registry::activeBackend` — S3 when configured, local filesystem otherwise). Each row persists `storageDriver` so a local→S3 switch keeps old rows readable. Writes use `activeBackend()`, reads/deletes `backendFor(driver)`; whole-fleet scans iterate `allBackends()` — never import a backend directly. S3 configuration, the storage lock, the migration task, key policy, and site-owned asset URLs: `src/domains/storage/AGENTS.md`.
-- Test seam: `__setStorageBackendForTests` / `__resetStorageBackendsForTests` substitute a driver→backend mapping (e.g. `@kobato/test/memory-storage.ts`) so storage-touching tests run without mocking the registry. All URL → image-meta resolution flows through `domains/images/services/resolve`.
+- Test seam: `__setStorageBackendForTests` / `__resetStorageBackendsForTests` substitute a driver→backend mapping (e.g. `@kobato/server/tests/utils/memory-storage.ts`) so storage-touching tests run without mocking the registry. All URL → image-meta resolution flows through `domains/images/services/resolve`.
 
 ### Audit Log
 

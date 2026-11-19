@@ -3,8 +3,8 @@ import { content as contentTable, postSearchIndex } from '@kobato/db/schema/cont
 import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

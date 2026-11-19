@@ -1,10 +1,10 @@
 import { setting } from '@kobato/db/schema/config.ts'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { resetBlogSettingsForTests } from '@kobato/test/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
-import { callRpc } from '@kobato/test/rpc-call.ts'
+import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { callRpc } from '@kobato/server/tests/utils/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

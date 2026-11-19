@@ -1,5 +1,5 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml } from '@kobato/test/render.tsx'
+import { renderToHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CategoryField } from '@kobato/web-admin/ui/posts/meta/CategoryField.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

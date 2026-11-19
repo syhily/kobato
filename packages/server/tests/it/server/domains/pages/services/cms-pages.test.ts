@@ -5,14 +5,14 @@ import * as adminQuery from '@kobato/server/domains/pages/services/admin-query.t
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
 import * as mutate from '@kobato/server/domains/pages/services/mutate.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalHeading,
   lexicalImage,
   stubMusicResolver,
-} from '@kobato/test/lexical.ts'
+} from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

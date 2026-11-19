@@ -6,7 +6,7 @@ import {
   slugify as slugifyHeadingText,
 } from '@kobato/inkling/headless'
 import { collectLexicalHeadings } from '@kobato/lexical/collect.ts'
-import { lexicalBodyWith, lexicalHeading } from '@kobato/test/lexical.ts'
+import { lexicalBodyWith, lexicalHeading } from '@kobato/lexical/tests/utils/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 const HEADING_TEXTS = [

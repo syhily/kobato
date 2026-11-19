@@ -14,9 +14,13 @@ import { flushAccessLog } from '@kobato/server/domains/analytics/services/batche
 import { flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAccessEvents, closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analytics-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+} from '@kobato/server/tests/utils/analytics-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

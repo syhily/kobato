@@ -3,13 +3,13 @@ import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
 import { music } from '@kobato/db/schema/media.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/test/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
 
 const s3Memory = makeMemoryBackend({ driver: 's3' })
 const localMemory = makeMemoryBackend({ driver: 'local' })

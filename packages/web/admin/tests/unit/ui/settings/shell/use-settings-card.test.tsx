@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/test/hook.tsx'
+import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

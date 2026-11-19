@@ -5,9 +5,13 @@ import {
   __resetAnalyticsEngineForTests,
   snapshotAnalyticsTo,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '@kobato/test/analytics-db.ts'
-import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
+import {
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '@kobato/server/tests/utils/analytics-db.ts'
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -21,7 +25,7 @@ import { category } from '@kobato/db/schema/taxonomy.ts'
 import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@kobato/server/domains/backup/services/backup.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { extractBackupFile, unpackBackupPayload } from '@kobato/test/backup-buffer.ts'
+import { extractBackupFile, unpackBackupPayload } from '@kobato/server/tests/utils/backup-buffer.ts'
 
 const mem = makeMemoryBackend()
 

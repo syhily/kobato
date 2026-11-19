@@ -1,6 +1,6 @@
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
-import { parseRpcJson } from '@kobato/test/rpc-call.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const serviceMocks = vi.hoisted(() => ({

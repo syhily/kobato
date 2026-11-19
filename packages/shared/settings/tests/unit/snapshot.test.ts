@@ -1,5 +1,5 @@
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const seq = (revision: string): number => Number(revision.slice(revision.lastIndexOf(':') + 1))

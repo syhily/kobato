@@ -9,8 +9,8 @@ import { createPost, updatePostMeta } from '@kobato/server/domains/posts/service
 import { upsertAdminCategory } from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/test/lexical.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

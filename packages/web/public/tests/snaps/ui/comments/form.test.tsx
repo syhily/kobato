@@ -1,8 +1,8 @@
 import type { CommentFormUser } from '@kobato/catalog/model.ts'
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
-import { makeCommentBody } from '@kobato/test/catalog.ts'
-import { renderInRouter } from '@kobato/test/render.tsx'
+import { makeCommentBody } from '@kobato/web-public/tests/utils/catalog.ts'
+import { renderInRouter } from '@kobato/web-public/tests/utils/render.tsx'
 import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm.tsx'
 import { Comments } from '@kobato/web-public/ui/comments/Comments.tsx'
 import { describe, expect, it } from 'vitest'

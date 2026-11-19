@@ -1,9 +1,9 @@
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters.ts'
 
-import { makeAdminUser } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminUser } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UsersView } from '@kobato/web-admin/ui/users/UsersView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

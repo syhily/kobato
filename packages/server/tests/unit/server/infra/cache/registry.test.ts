@@ -31,8 +31,8 @@ import {
   through,
   wipeCacheForRestore,
 } from '@kobato/server/infra/cache/registry.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 
 const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)
 

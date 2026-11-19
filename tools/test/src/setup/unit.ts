@@ -2,8 +2,6 @@
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
 import '@testing-library/jest-dom/vitest'
-import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
 // Evaluate @date-fns/tz against the REAL Date constructor, before any test
 // module calls `vi.useFakeTimers()`. `TZDateMini extends Date` binds whatever
@@ -23,15 +21,6 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
   Toaster: () => null,
 }))
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
 // `safeFetch` resolves hostnames before dialing; tests stub `fetch`, so DNS
 // must not depend on the machine's resolver (VPN/fake-IP setups answer every
 // name with 198.18.0.0/15, which the SSRF blocklist correctly rejects).
@@ -41,10 +30,7 @@ vi.mock('node:dns/promises', () => ({
 }))
 
 silenceLocalStorageWarning()
-setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 afterEach(() => {
   cleanup()
-  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  setAnalyticsQueryExecutor(null)
 })

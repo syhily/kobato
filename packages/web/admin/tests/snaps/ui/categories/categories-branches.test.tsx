@@ -1,6 +1,6 @@
 import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { toast } from 'sonner'

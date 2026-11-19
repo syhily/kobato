@@ -1,6 +1,6 @@
 import { uiMessagesFor } from '@kobato/i18n/catalog.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { renderInRouter } from '@kobato/test/render.tsx'
+import { renderInRouter } from '@kobato/web-admin/tests/utils/render.tsx'
 import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField.tsx'
 import { describe, expect, it } from 'vitest'
 

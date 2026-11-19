@@ -1,8 +1,8 @@
 import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
 
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { setBlogSettingsBundleForTests } from '@kobato/web-public/tests/utils/blog-settings.ts'
+import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents.tsx'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'

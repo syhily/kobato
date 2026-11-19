@@ -1,6 +1,6 @@
 import { startQueryDiagnostics, stopQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { getTestDb } from '@kobato/test/integration-db.ts'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { sql } from 'drizzle-orm'
 import diagnostics_channel from 'node:diagnostics_channel'
 import { DatabaseSync } from 'node:sqlite'

@@ -6,8 +6,8 @@ import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/m
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

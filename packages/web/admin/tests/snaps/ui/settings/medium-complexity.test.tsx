@@ -13,7 +13,7 @@ import type {
 } from '@kobato/settings/types.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm.tsx'
 import { AssetsForm } from '@kobato/web-admin/ui/settings/AssetsForm.tsx'
 import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'

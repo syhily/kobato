@@ -3,8 +3,8 @@
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { ReactElement, ReactNode } from 'react'
 
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
+import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

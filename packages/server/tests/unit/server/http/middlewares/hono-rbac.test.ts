@@ -4,8 +4,8 @@ import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts
 
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
-import { makeRequestContext } from '@kobato/test/request-context.ts'
-import { makeSession } from '@kobato/test/session.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { makeSession } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'

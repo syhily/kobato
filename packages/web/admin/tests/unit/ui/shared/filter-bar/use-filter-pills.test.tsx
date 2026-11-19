@@ -4,7 +4,7 @@ import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import type { ReactNode } from 'react'
 
-import { tZhCN } from '@kobato/test/i18n.ts'
+import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

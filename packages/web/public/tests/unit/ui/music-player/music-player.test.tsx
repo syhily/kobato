@@ -10,7 +10,7 @@ import {
   renderMusicPlayerCard,
 } from '@kobato/lexical/cards/music-player.ts'
 import { diffHtmlStructures, structureFromHtml } from '@kobato/test/dom-structure.ts'
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { MusicPlayerCard } from '@kobato/web-public/ui/music-player/music-player.tsx'
 import { __resetProgrammaticVolumeSupportForTests } from '@kobato/web-public/ui/music-player/use-music-playback.ts'
 import { fireEvent, render } from '@testing-library/react'

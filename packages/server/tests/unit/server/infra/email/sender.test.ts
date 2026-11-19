@@ -51,7 +51,7 @@ import {
   sendSignInOtp,
   sendTestMail,
 } from '@kobato/server/infra/email/sender.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 
 beforeEach(() => {
   transportSendMock.mockReset()

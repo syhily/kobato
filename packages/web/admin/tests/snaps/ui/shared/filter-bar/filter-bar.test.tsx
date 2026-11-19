@@ -1,7 +1,7 @@
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
-import { tZhCN } from '@kobato/test/i18n.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { buildMyCommentFilterFields } from '@kobato/web-admin/ui/account/filter-fields.ts'
 import { buildAuditFilterFields, type AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
 import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields.ts'

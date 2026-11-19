@@ -1,6 +1,6 @@
 import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER, toProjectionState } from '@kobato/lexical/projection-state.ts'
 import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/lexical/schema.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/lexical/tests/utils/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
 function parse(state: unknown): LexicalEditorState {

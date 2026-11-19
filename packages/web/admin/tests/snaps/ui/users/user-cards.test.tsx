@@ -1,6 +1,6 @@
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -2,7 +2,7 @@ import { findSettingByScope } from '@kobato/db/operations/setting.ts'
 import { setting } from '@kobato/db/schema/config.ts'
 import { serverConfig } from '@kobato/server/infra/config.ts'
 import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

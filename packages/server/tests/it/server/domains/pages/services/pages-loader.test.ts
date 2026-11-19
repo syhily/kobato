@@ -4,9 +4,9 @@ import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
-import { adminUser } from '@kobato/test/session.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { adminUser } from '@kobato/server/tests/utils/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

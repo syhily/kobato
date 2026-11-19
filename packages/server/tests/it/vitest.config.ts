@@ -1,6 +1,7 @@
 import { duckdbTestFilesUnder } from '@kobato/test/duckdb-files.ts'
 import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
+import path from 'node:path'
 import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -15,7 +16,7 @@ export default defineConfig({
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('packages/server/tests')],
-    setupFiles: ['@kobato/test/setup/it.ts'],
+    setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/it.ts')],
     testTimeout: 30_000,
     hookTimeout: 120_000,
   },

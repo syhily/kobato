@@ -1,6 +1,6 @@
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { makeTranslator } from '@kobato/test/i18n.ts'
+import { makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { PAGE_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/pages/page-meta.ts'
 import { POST_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/posts/post-meta.ts'
 import { describe, expect, it } from 'vitest'

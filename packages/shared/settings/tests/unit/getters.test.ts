@@ -6,8 +6,10 @@ import {
   requireBlogSettingsSection,
 } from '@kobato/settings/getters.ts'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterEach, describe, expect, it } from 'vitest'
+
+setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 const SECTION_KEYS = Object.keys(TEST_BLOG_SETTINGS_BUNDLE) as Array<keyof typeof TEST_BLOG_SETTINGS_BUNDLE>
 
@@ -38,7 +40,7 @@ describe('settings/getters — requireBlogSettingsBundle', () => {
   })
 
   it('returns the bundle when hydrated', () => {
-    expect(requireBlogSettingsBundle()).toBe(TEST_BLOG_SETTINGS_BUNDLE)
+    expect(requireBlogSettingsBundle()).toStrictEqual(TEST_BLOG_SETTINGS_BUNDLE)
   })
 })
 
@@ -85,7 +87,7 @@ describe('settings/getters — requireBlogSettingsSection', () => {
       if (value === null) {
         continue
       }
-      expect(requireBlogSettingsSection(key)).toBe(value)
+      expect(requireBlogSettingsSection(key)).toStrictEqual(value)
     }
   })
 

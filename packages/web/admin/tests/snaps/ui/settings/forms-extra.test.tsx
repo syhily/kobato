@@ -1,7 +1,7 @@
 import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
 import { describe, expect, it, vi } from 'vitest'
 

@@ -1,6 +1,6 @@
 import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/web-admin/tests/utils/lexical.ts'
 import {
   planBodySave,
   planCreatePublishedAt,

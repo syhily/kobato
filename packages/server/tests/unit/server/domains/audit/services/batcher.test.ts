@@ -9,7 +9,7 @@ import {
   replayDeadLetterAuditLog,
 } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables } from '@kobato/test/integration-db.ts'
+import { clearAllTables } from '@kobato/server/tests/utils/integration-db.ts'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 let handle: DatabaseHandle

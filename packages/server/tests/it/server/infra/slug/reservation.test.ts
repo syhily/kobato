@@ -5,7 +5,7 @@ import { findPageMetaBySlugForUpdate } from '@kobato/server/domains/pages/repo.t
 import { findPostMetaBySlugForUpdate } from '@kobato/server/domains/posts/services/single.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

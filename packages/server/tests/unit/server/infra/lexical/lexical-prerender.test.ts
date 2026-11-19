@@ -20,7 +20,7 @@ vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
 
 import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
 
 function parse(state: unknown) {
   return lexicalEditorStateSchema.parse(state)

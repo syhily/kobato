@@ -1,6 +1,6 @@
 import { upsertImageByStoragePath } from '@kobato/db/operations/image.ts'
 import { image } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -1,6 +1,6 @@
-import { makeAdminUser } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminUser } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { UserEditForm } from '@kobato/web-admin/ui/users/UserEditForm.tsx'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'

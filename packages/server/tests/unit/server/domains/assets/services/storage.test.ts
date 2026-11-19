@@ -8,7 +8,7 @@ import {
   s3KeyForSlot,
 } from '@kobato/server/domains/assets/services/storage.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mem = makeMemoryBackend()

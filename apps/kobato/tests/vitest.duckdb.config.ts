@@ -1,11 +1,8 @@
 import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files.ts'
 import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import { defineConfig } from 'vitest/config'
-
-const require = createRequire(import.meta.url)
 
 export default defineConfig({
   plugins: [routeWarmupScriptStubPlugin()],
@@ -24,7 +21,10 @@ export default defineConfig({
     environment: 'node',
 
     include: [...DUCKDB_TEST_FILES],
-    setupFiles: [require.resolve('@kobato/test/setup/unit.ts'), require.resolve('@kobato/test/setup/it.ts')],
+    setupFiles: [
+      path.resolve(import.meta.dirname, 'utils/setup/unit.ts'),
+      path.resolve(import.meta.dirname, 'utils/setup/it.ts'),
+    ],
     testTimeout: 30_000,
     hookTimeout: 120_000,
     pool: 'forks',

@@ -2,7 +2,7 @@ import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { MetaDescriptor } from 'react-router'
 
 import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 type MetaEntry = MetaDescriptor & Record<string, unknown>

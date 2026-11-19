@@ -1,8 +1,8 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { deepFreeze } from '@kobato/test/deep-freeze.ts'
 import { describe, expect, it } from 'vitest'
 

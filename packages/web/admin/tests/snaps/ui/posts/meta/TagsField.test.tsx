@@ -1,5 +1,5 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { TagsField } from '@kobato/web-admin/ui/posts/meta/TagsField.tsx'
 import { describe, expect, it } from 'vitest'
 

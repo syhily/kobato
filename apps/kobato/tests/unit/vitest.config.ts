@@ -1,5 +1,6 @@
 import { duckdbTestFilesUnder } from '@kobato/test/duckdb-files.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
+import path from 'node:path'
 import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -16,7 +17,7 @@ export default defineConfig({
     include: ['**/*.test.{ts,tsx}', '../arch/**/*.test.{ts,tsx}'],
 
     exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('apps/kobato/tests')],
-    setupFiles: ['@kobato/test/setup/unit.ts'],
+    setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/unit.ts')],
     testTimeout: 10_000,
   },
 })

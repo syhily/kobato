@@ -1,7 +1,7 @@
 import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
 
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
-import { makeCommentBody } from '@kobato/test/catalog.ts'
+import { makeCommentBody } from '@kobato/server/tests/utils/catalog.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { describe, expect, it } from 'vitest'
 

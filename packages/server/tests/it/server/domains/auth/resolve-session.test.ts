@@ -5,7 +5,7 @@ import { session as sessionTable } from '@kobato/db/schema/session.ts'
 import { user as userTable } from '@kobato/db/schema/user.ts'
 import { resolveSessionContext } from '@kobato/server/domains/auth/primitives.ts'
 import { buildSessionWithSid, commitSession } from '@kobato/server/domains/auth/session-storage.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

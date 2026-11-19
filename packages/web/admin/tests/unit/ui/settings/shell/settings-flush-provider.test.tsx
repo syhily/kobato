@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/test/render.tsx'
+import { renderToHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import {
   SettingsFlushProvider,
   useSettingsFlushContext,

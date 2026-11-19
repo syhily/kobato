@@ -3,7 +3,7 @@ import type { Role } from '@kobato/auth/roles.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { getThread, listInbox, unreadCount } from '@kobato/server/domains/notifications/service.ts'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

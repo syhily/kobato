@@ -9,6 +9,7 @@
   "devDependencies": {
     "@kobato/contracts": "workspace:*",
     "@kobato/harness": "workspace:*",
+    "@kobato/lexical": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",

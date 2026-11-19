@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
+    "jsdom": "catalog:",
     "vitest": "catalog:"
   }
 }

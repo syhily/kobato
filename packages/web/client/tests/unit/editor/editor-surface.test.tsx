@@ -5,8 +5,6 @@ import type { InklingComposerProps } from '@kobato/inkling'
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
-import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import { THEME_COOKIE } from '@kobato/utils/theme-cookie.ts'
 import {
@@ -14,6 +12,8 @@ import {
   type EditorSurfaceComposerProps,
   useEditorSurface,
 } from '@kobato/web-client/editor/editor-surface.tsx'
+import { wrapWithI18n } from '@kobato/web-client/tests/utils/i18n-render.tsx'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/web-client/tests/utils/lexical.ts'
 import { act, render, renderHook } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

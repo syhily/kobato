@@ -77,14 +77,14 @@ const REPO_PACKAGES = [
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/lexical', '@kobato/test'],
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/i18n', '@kobato/test'],
 
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n', '@kobato/test'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n', '@kobato/test'],
   '@kobato/catalog': ['@kobato/catalog', '@kobato/lexical', '@kobato/test'],
   '@kobato/distribution': ['@kobato/distribution', '@kobato/test'],
   '@kobato/telemetry': ['@kobato/telemetry', '@kobato/settings', '@kobato/test'],
-  '@kobato/i18n': ['@kobato/i18n', '@kobato/inkling', '@kobato/test'],
+  '@kobato/i18n': ['@kobato/i18n', '@kobato/test'],
   '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
   '@kobato/settings': [
     '@kobato/settings',
@@ -123,23 +123,8 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/api': ['@kobato/api', '@kobato/contracts', '@kobato/test'],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/test', '@kobato/utils'],
 
-  '@kobato/server': [
-    '@kobato/server',
-    '@kobato/api',
-    '@kobato/db',
-    '@kobato/inkling',
-    '@kobato/web-admin',
-    '@kobato/test',
-    ...SHARED_SPLIT,
-  ],
-  '@kobato/ui': [
-    '@kobato/ui',
-    '@kobato/settings',
-    '@kobato/i18n',
-    '@kobato/utils',
-    '@kobato/web-admin',
-    '@kobato/test',
-  ],
+  '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', '@kobato/test', ...SHARED_SPLIT],
+  '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-admin': [
     '@kobato/web-admin',
@@ -196,8 +181,11 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   ],
   '@kobato/web-tests': [
     '@kobato/catalog',
+    '@kobato/contracts',
+    '@kobato/i18n',
     '@kobato/inkling',
     '@kobato/lexical',
+    '@kobato/settings',
     '@kobato/test',
     '@kobato/ui',
     '@kobato/utils',
@@ -206,19 +194,9 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/web-public',
   ],
 
-  '@kobato/shared-tests': ['@kobato/test'],
+  '@kobato/shared-tests': ['@kobato/settings', '@kobato/test'],
 
-  '@kobato/test': [
-    '@kobato/test',
-    '@kobato/db',
-    '@kobato/inkling',
-    '@kobato/server',
-    '@kobato/ui',
-    '@kobato/web-admin',
-    '@kobato/web-client',
-    '@kobato/web-public',
-    ...SHARED_SPLIT,
-  ],
+  '@kobato/test': ['@kobato/test'],
   '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
 
   '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
@@ -312,17 +290,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
-  '@kobato/test': [
-    '@kobato/test',
-    '@kobato/db',
-    '@kobato/inkling',
-    '@kobato/server',
-    '@kobato/ui',
-    '@kobato/web-admin',
-    '@kobato/web-client',
-    '@kobato/web-public',
-    ...SHARED_SPLIT,
-  ],
+  '@kobato/test': ['@kobato/test'],
   '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
   kobato: INTERNAL_SCOPES,
   '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],

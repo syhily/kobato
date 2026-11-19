@@ -1,5 +1,5 @@
 import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
-import { makeTranslator } from '@kobato/test/i18n.ts'
+import { makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { NAV_GROUP_LABEL_KEYS, SECTION_DISPLAY } from '@kobato/web-admin/ui/settings/display.ts'
 import { describe, expect, it } from 'vitest'
 

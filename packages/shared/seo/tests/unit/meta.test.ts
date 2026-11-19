@@ -14,7 +14,7 @@ import {
   seoForPage,
   seoForPost,
 } from '@kobato/seo/meta.ts'
-import { setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { setBlogSettingsBundleForTests } from '@kobato/seo/tests/utils/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const fixture: BlogSettingsBundle = {

@@ -1,4 +1,4 @@
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/infra/email/sender.ts', () => ({

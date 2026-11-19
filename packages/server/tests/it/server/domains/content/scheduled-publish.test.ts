@@ -12,12 +12,12 @@ import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@kobato/server/infra/cache/registry.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
-import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 
 const db = getTestDb()
 

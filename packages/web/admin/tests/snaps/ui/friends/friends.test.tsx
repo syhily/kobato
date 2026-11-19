@@ -1,8 +1,8 @@
 import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
 
-import { makeAdminFriend } from '@kobato/test/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminFriend } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { EditFriendDialog } from '@kobato/web-admin/ui/friends/EditFriendDialog.tsx'
 import { FriendRow, FriendsSkeleton } from '@kobato/web-admin/ui/friends/FriendRow.tsx'
 import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView.tsx'

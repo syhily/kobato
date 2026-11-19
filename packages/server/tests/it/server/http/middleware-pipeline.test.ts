@@ -4,10 +4,10 @@ import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/test/blog-settings.ts'
-import { getTestDb } from '@kobato/test/integration-db.ts'
-import { makeRequestContext } from '@kobato/test/request-context.ts'
-import { emptySession } from '@kobato/test/session.ts'
+} from '@kobato/server/tests/utils/blog-settings.ts'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { emptySession } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

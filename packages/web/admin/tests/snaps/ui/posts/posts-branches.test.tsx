@@ -2,10 +2,10 @@ import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { PostFilterFieldKey } from '@kobato/web-admin/ui/posts/filter-fields.ts'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
-import { makeAdminPost } from '@kobato/test/catalog.ts'
-import { tZhCN } from '@kobato/test/i18n.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
+import { makeAdminPost } from '@kobato/web-admin/tests/utils/catalog.ts'
+import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
+import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { PostsView } from '@kobato/web-admin/ui/posts/PostsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
