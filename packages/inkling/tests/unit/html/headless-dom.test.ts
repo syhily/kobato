@@ -29,7 +29,6 @@ describe('resolveHeadlessDom', () => {
 
     const resolved = await resolveHeadlessDom()
 
-    // the real global window object, not a fabricated {document} shell
     expect(resolved.window).toBe(globalWindow)
   })
 
@@ -54,7 +53,6 @@ describe('resolveHeadlessDom', () => {
     const load = vi.fn(async () => loaded)
 
     await expect(resolveHeadlessDom(undefined, load)).resolves.toBe(loaded)
-    // a second resolution must not hit the loader again, even with a new one
     const other = { window: { document: document.implementation.createHTMLDocument('') } }
     await expect(
       resolveHeadlessDom(

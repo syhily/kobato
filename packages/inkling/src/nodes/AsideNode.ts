@@ -12,8 +12,6 @@ export class AsideNode extends BaseAsideNode {
     return element
   }
 
-  // Mutation
-
   insertNewAfter() {
     const newBlock = $createParagraphNode()
     const direction = this.getDirection()

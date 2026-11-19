@@ -1,6 +1,4 @@
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
-// SSR-render a selection of admin route Component exports; each is pure given loaderData,
-// so fixtures suffice and no loader/DB chain is needed.
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { describe, expect, it } from 'vitest'
 
@@ -49,7 +47,7 @@ describe('admin routes — Component SSR renders', () => {
       },
     ]
     const html = stableHtml(renderInRouter(<MySessionsRoute loaderData={{ items }} />, '/admin/me/sessions'))
-    // IP octets are masked — assert the server-rendered labels + current-session badge.
+
     expect(html).toContain('Chrome 120 · macOS')
     expect(html).toContain('curl 8')
     expect(html).toContain('当前会话')
@@ -130,7 +128,7 @@ describe('admin routes — Component SSR renders', () => {
     )
     expect(html).toContain('news.example.com')
     expect(html).toContain('直接访问')
-    // Visit + visitor counts are rendered via toLocaleString; assert the digits appear.
+
     expect(html).toContain('42')
   })
 

@@ -8,8 +8,6 @@ export type LyricsPanelProps = {
   onSeek: (second: number) => void
 }
 
-/** Synced scrolling lyrics: the active line is highlighted and kept centered;
- *  clicking a line seeks to its timestamp. */
 export function LyricsPanel({ lrc, currentTime, onSeek }: LyricsPanelProps) {
   const lines = useMemo(() => parseLrc(lrc), [lrc])
   const containerRef = useRef<HTMLDivElement>(null)

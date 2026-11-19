@@ -72,21 +72,17 @@ describe('Comments — clicking 回复 activates the inline composer', () => {
   it('mounts the reply form under the target comment, eager and focused', async () => {
     renderComments()
 
-    // Top-level form is interaction-gated: placeholder, no composer yet.
     expect(screen.queryByTestId('composer')).toBeNull()
 
     // The second 回复 button belongs to the nested comment (id 2).
     fireEvent.click(screen.getAllByText('回复')[1])
 
     const composer = await waitFor(() => screen.getByTestId('composer'))
-    // The form moved under the target's thread (inside the root comment's
-    // subtree, right after the nested target row) — one #respond in total.
     const target = document.getElementById('user-comment-2')!
     const respond = document.getElementById('respond')!
     expect(target.parentElement!.contains(respond)).toBe(true)
     expect(document.querySelectorAll('#respond')).toHaveLength(1)
 
-    // The composer landed ready for input.
     expect(document.activeElement).toBe(composer)
     expect(loader.load).toHaveBeenCalledWith('zh-CN')
   })
@@ -95,7 +91,6 @@ describe('Comments — clicking 回复 activates the inline composer', () => {
     renderComments()
 
     const respond = document.getElementById('respond')!
-    // Outside the comment list — the form sits above it, placeholder-gated.
     expect(document.getElementById('user-comment-1')!.contains(respond)).toBe(false)
     expect(screen.queryByTestId('composer')).toBeNull()
   })

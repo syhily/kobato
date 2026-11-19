@@ -2,7 +2,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
 
-// Element wrappers stay lazy; static DOM fallbacks forward DOM props and strip animation-only props.
 const MotionDiv = lazy(() => import('motion/react').then((module) => ({ default: module.motion.div })))
 const MotionButton = lazy(() => import('motion/react').then((module) => ({ default: module.motion.button })))
 const MotionSpan = lazy(() => import('motion/react').then((module) => ({ default: module.motion.span })))
@@ -112,7 +111,6 @@ export function LazyMotionP({ children, fallbackStyle, ...props }: LazyMotionPPr
   )
 }
 
-/** `AnimatePresence` behind the same lazy boundary; only exit animations wait for the chunk. */
 export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeof AnimatePresence>) {
   return (
     <Suspense fallback={<>{children}</>}>

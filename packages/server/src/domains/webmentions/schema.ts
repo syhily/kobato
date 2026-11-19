@@ -1,10 +1,5 @@
 import { z } from 'zod'
 
-// Admin moderation wire schemas (`adminWebmentionListSchema` /
-// `adminWebmentionOutboxListSchema`) and the public list schema
-// (`webmentionPublicListSchema`) live in `@kobato/contracts/webmentions.ts`;
-// this module keeps the W3C receive surface.
-
 // W3C receive payload — form-encoded `source` + `target`; the caps stop a
 // junk POST from smuggling a large body into the parser (the route also caps content-length).
 const MAX_URL_LENGTH = 2048

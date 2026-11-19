@@ -6,7 +6,6 @@ import TagsRoute from '@/routes/admin/taxonomy/tags.tsx'
 describe('snapshot: routes/admin/taxonomy/tags', () => {
   it('renders the tags route', () => {
     const html = stableHtml(renderInRouter(<TagsRoute />, '/admin/taxonomy/tags'))
-    // List-page chrome + table header — fails if SSR degrades into an error boundary.
     expect(html).toContain('标签管理')
     expect(html).toContain('aria-label="搜索标签"')
     expect(html).toContain('新增标签')

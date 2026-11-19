@@ -160,7 +160,7 @@ describe('DateSingleFilterEditor helpers', () => {
     const parsed = parseDateInput('2024-03-12')
     expect(parsed).toBeInstanceOf(Date)
     expect(parsed!.getFullYear()).toBe(2024)
-    expect(parsed!.getMonth()).toBe(2) // March
+    expect(parsed!.getMonth()).toBe(2)
     expect(parsed!.getDate()).toBe(12)
   })
 
@@ -203,7 +203,6 @@ describe('snapshot: TextFilterEditor', () => {
     expect(html).toContain('aria-label="搜索评论内容"')
     expect(html).toContain('placeholder="搜索评论内容…"')
     expect(html).toContain('value="hello"')
-    // With more than one operator the trigger is shown.
     expect(html).toContain('包含')
   })
 
@@ -217,7 +216,6 @@ describe('snapshot: TextFilterEditor', () => {
       ),
     )
     expect(html).toContain('aria-label="搜索评论内容"')
-    // Single operator → no dropdown trigger markup.
     expect(html).not.toMatch(/<button[^>]*>\s*包含/u)
   })
 })

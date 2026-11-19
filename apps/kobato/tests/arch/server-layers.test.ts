@@ -47,13 +47,10 @@ function walk(dir: string, out: string[]): string[] {
   return out
 }
 
-// Comments may quote specifiers; only real import statements count.
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-// Whole-file match: static `from`, side-effect/dynamic `import`, and vi.mock
-// module paths — the shapes a bundler or test runner would resolve.
 function importSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   const specifierRe = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+|\bvi\.mock\(\s*)['"]([^'"]+)['"]/g
@@ -63,10 +60,6 @@ function importSpecifiers(source: string): string[] {
   return specifiers
 }
 
-/**
- * A server-internal path (`infra/logger.ts`, `domains/posts/repo.ts`, …)
- * classified into its layer, plus the owning domain for `domains/*` paths.
- */
 interface Classified {
   layer: string | null
   domain: string | null
@@ -97,13 +90,6 @@ function offendersOf(entries: typeof scanned): string[] {
   return entries.map((entry) => `packages/server/src/${entry.path}: ${entry.specifier}`)
 }
 
-/**
- * The hand-audited `render/*` → `domains/*` seams for the documented render
- * products (the feed's body projections, the sitemap/OG queries, and the
- * content warmup wire; see `packages/server/AGENTS.md`). This table pins the
- * exact module pairs: any NEW pair fails, and a removed pair must drop its
- * row. Only files that actually import a domain carry a row.
- */
 const RENDER_DOMAIN_IMPORTS: Record<string, readonly string[]> = {
   'feed/generator.tsx': [
     'domains/content/services/body-html.ts',
@@ -117,16 +103,7 @@ const RENDER_DOMAIN_IMPORTS: Record<string, readonly string[]> = {
   'warmup/content-cache.ts': ['domains/content/render-warmup.ts'],
 }
 
-/**
- * The hand-audited cross-domain import DAG (`domains/<x>` → `domains/<y>`).
- * Platform domains are leaves — cross-domain imports INTO them compose at the
- * perimeter (`http/controllers/*`), never from another domain, so their rows
- * are empty; every other row lists the domains it may sit on. Same-domain
- * imports are free by construction, and composition at the perimeter is
- * outside this table.
- */
 const ALLOWED_CROSS_DOMAIN_IMPORTS: Record<string, readonly string[]> = {
-  // Platform leaves.
   analytics: [],
   audit: [],
   backup: [],
@@ -134,7 +111,6 @@ const ALLOWED_CROSS_DOMAIN_IMPORTS: Record<string, readonly string[]> = {
   observability: [],
   settings: [],
   update: [],
-  // Core + feature domains.
   assets: ['settings'],
   auth: ['audit', 'settings'],
   comments: ['analytics', 'audit', 'auth', 'content'],
@@ -151,7 +127,6 @@ const ALLOWED_CROSS_DOMAIN_IMPORTS: Record<string, readonly string[]> = {
   users: ['auth'],
   webmentions: ['content', 'pages', 'posts'],
 }
-
 describe('server layers', () => {
   it('keeps every intra-server import package-anchored (no relative specifier)', () => {
     const offenders = offendersOf(scanned.filter((entry) => entry.specifier.startsWith('.')))

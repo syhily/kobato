@@ -28,7 +28,6 @@ const FAVICON_DERIVED_SLOTS = [
   'icon512',
 ] as const satisfies readonly BinarySlot[]
 
-// On any failure, delete every object put so far — no stale bytes or partial pack.
 export async function uploadBrandingAsset(
   db: Database,
   slot: BrandingSlot,
@@ -64,7 +63,6 @@ export async function uploadBrandingAsset(
   }
 }
 
-// Clearing `faviconSvg` also removes the derived icons; bytes are deleted from the backend each ref records.
 export async function clearBrandingAsset(db: Database, slot: BrandingSlot): Promise<void> {
   const slotsToClear: BrandingSlot[] = slot === 'faviconSvg' ? [slot, ...FAVICON_DERIVED_SLOTS] : [slot]
   const row = await readAssetsRow(db)

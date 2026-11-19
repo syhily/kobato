@@ -110,12 +110,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
   wireSessionStorageDb({ getDb })
-  // Job-run history recorder: unwired = silent no-op. Pure setter — the
-  // crash-recovery sweep is a boot-only call (see initDatabase).
   wireJobRunRecorder({ getDb })
-  // Terminal job failures surface in the admin inbox (deduped per task key
-  // inside the recorder); notifyAdmins returns null pre-install, so the
-  // pre-install boot stays quiet.
   wireJobFailureNotifier(({ taskKey, error }) => {
     notifyAdmins(getDb(), {
       titleKey: 'notification.job.failed.title',
@@ -185,12 +180,8 @@ if (!isVitest()) {
 
 await initDatabase()
 
-// 'sqlite.db.query' channel → debug-level statement timings. Process-level
-// and idempotent; a no-op above the debug log level and under vitest.
 startQueryDiagnostics()
 
-// Fire-and-forget dead-letter replay: batch files from a crashed flush
-// are re-ingested once per boot (each replay logs its own failures).
 if (!isVitest()) {
   await initAnalyticsDatabase(getDb())
   void replayAllDeadLetters()
@@ -210,9 +201,6 @@ wireRestoreMachine({
   },
   prepareForSwap: prepareDatabaseForRestore,
   reopenAfterSwap: reopenDatabaseAndGetDb,
-  // The completion chain (rollback → reopen → reschedule → migrate →
-  // ANALYZE → cache wipe → restart) lives in the backup domain; only the
-  // engine access and post-restore side effects are wired here.
   complete: createRestoreCompletion({
     reopenDatabase,
     getDb,
@@ -230,10 +218,8 @@ wireRestoreMachine({
   }),
 })
 
-// Composition root: section-change handlers register here, keeping the registry module
 // inert. A save advances the snapshot revision, so the previous localized renders are
 // unreachable by construction; these handlers only RECLAIM the orphaned entries
-// (rename-to-trash), and a reclaim failure reaches the section-change warning channel.
 const reclaimLocalizedOutputs = () => clearLocalizedOutputs()
 registerSectionChangeHandler('general', reclaimLocalizedOutputs)
 registerSectionChangeHandler('content', reclaimLocalizedOutputs)
@@ -244,29 +230,18 @@ registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)
 registerSectionChangeHandler('analytics', rescheduleGeoipUpdate)
-// Hot-apply the observability runtime on every save; an unverified or disabled
-// fingerprint stops the providers instead of starting them. The opt-in stream
-// retention sync rides the same hook (a no-op while `retentionDays` is 0).
 registerSectionChangeHandler('observability', () =>
   Promise.all([syncObservabilityRuntime(), syncObservabilityRetention()]).then(() => undefined),
 )
-
-// Migrate once per process (HMR-safe via the 'migrationsRan' slot);
-// vitest's per-graph :memory: DBs must migrate themselves.
 
 if (!migrationsRanInHmr()) {
   await migrateContentDatabase(getDb())
   markMigrationsRanInHmr()
 }
 
-// One-time rewrite of legacy data (baked CDN-absolute asset URLs → site-owned
-// `/storage/<key>`), flag-gated and failure-swallowing inside; fire-and-forget
-// so boot never waits on (or fails on) the corpus scan.
 if (!isVitest()) {
   void (async () => {
     await runAssetUrlBackfillOnceAtBoot(getDb())
-    // Legacy Zeabur mail rows disable themselves here; the admin alert rides
-    // the notifications domain, injected so settings never imports it.
     await runZeaburMailCleanupAtBoot(getDb(), (message) => {
       notifyAdmins(getDb(), message)
     })
@@ -283,7 +258,6 @@ export async function prepareDatabaseForRestore(): Promise<void> {
   await closeAnalyticsForRestore()
 }
 
-/** Reopen BOTH databases on (possibly swapped) files; no-op when the content handle is already open. */
 export async function reopenDatabase(): Promise<DatabaseHandle> {
   const open = engine.peek()
   if (open !== null) {

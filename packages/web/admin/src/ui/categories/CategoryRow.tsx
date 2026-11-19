@@ -33,7 +33,6 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         isDragging && 'opacity-50',
       )}
     >
-      {/* Custom chrome (sizing + disabled state) over the shared dnd plumbing. */}
       <button
         type="button"
         {...dragHandleProps.attributes}

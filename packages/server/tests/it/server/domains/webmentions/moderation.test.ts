@@ -64,7 +64,6 @@ describe('integration / admin webmentions moderation', () => {
     expect(all.total).toBe(3)
     expect(all.hasMore).toBe(false)
     expect(all.statusCounts).toEqual({ all: 3, pending: 1, approved: 1, rejected: 1, hidden: 0 })
-    // Newest first.
     expect(all.mentions.map((m) => m.status)).toEqual(['rejected', 'approved', 'pending'])
     const wire = all.mentions[2]!
     expect(wire.id).toMatch(/^\d+$/)

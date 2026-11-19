@@ -1,10 +1,3 @@
-/**
- * The autolink semantics pinned as a synchronous test table: the matcher
- * policy (scheme/www/bare-domain/email, tiptap `defaultProtocol`, trailing
- * punctuation) plus the upstream `registerAutoLink` machinery the plugin
- * mounts — creation on typing, reversion on edit, and the boundaries the
- * widened separator set admits.
- */
 import type { ElementNode, LexicalEditor } from 'lexical'
 
 import {
@@ -59,7 +52,7 @@ describe('autolink matcher policy', () => {
   it('rejects IPv4 literals and dotless hosts (tiptap shouldAutoLink parity)', () => {
     expect(match('192.168.0.1')).toBeNull()
     expect(match('localhost:3000')).toBeNull()
-    // a scheme URL links regardless of the host shape
+
     expect(match('http://localhost:3000')).not.toBeNull()
   })
 

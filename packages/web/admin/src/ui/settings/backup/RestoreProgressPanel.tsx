@@ -18,7 +18,6 @@ const STEP_LABELS: Record<RestoreStep, UiMessageId> = {
 
 interface RestoreProgressPanelProps {
   current: RestoreStep
-  /** 0-100 for the current step, or null when indeterminate. */
   percent: number | null
   /** The decrypt row only renders for encrypted uploads. */
   hasDecrypt: boolean

@@ -8,15 +8,12 @@ export interface ActionBannerState {
 }
 
 export interface ActionBannerController {
-  /** Banner visible above the editor; null while a save flow counts legs or after dismiss. */
   banner: ActionBannerState | null
   /** Arm the countdown for a save flow — the banner appears once `legs` successful legs are noted; the caller owns the leg count. */
   begin: (kind: ActionBannerKind, legs: number) => void
   /** Record one successful leg; shows the banner with `slug` once the countdown reaches zero. */
   noteLeg: (slug: string) => void
-  /** Drop an armed countdown without showing the banner (conflict / error paths). */
   cancel: () => void
-  /** Hide the visible banner. */
   dismiss: () => void
 }
 

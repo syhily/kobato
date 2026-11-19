@@ -21,7 +21,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   const user = viewer ?? undefined
   const role = viewer?.role ?? null
-  // Open to visitors so a logged-in commenter reaches their own profile; other routes gate themselves.
   if (!hasAtLeast(role, 'visitor')) {
     const redirectPath = new URL(request.url).pathname
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
@@ -37,7 +36,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return data({
     currentUser: {
       id: user?.id ?? '',
-      // Display fallbacks are translated by the shell chrome, never here.
       name: user?.name ?? '',
       email: user?.email ?? '',
       role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,

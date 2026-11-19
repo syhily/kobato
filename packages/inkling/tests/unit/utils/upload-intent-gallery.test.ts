@@ -9,10 +9,6 @@ vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
   getImageDimensions: vi.fn(),
 }))
 
-// The gallery's multi-file intent as a synchronous table: previews publish
-// to the mirror overlay first, results merge back by fileName, and the
-// failure path cleans up in-flow.
-
 describe('galleryUploadIntent', () => {
   let setImages: Mock<(images: GalleryImage[]) => void>
   let setPreviewImages: Mock<(images: GalleryImage[]) => void>
@@ -60,13 +56,11 @@ describe('galleryUploadIntent', () => {
 
     await runIntent({ upload, files })
 
-    // previews first: two previewSrc-carrying entries, never touching the node
     const previewBatch = setPreviewImages.mock.calls[0][0] as GalleryImage[]
     expect(previewBatch).toHaveLength(2)
     expect(previewBatch.every((image) => typeof image.previewSrc === 'string')).toBe(true)
     expect(setImages).not.toHaveBeenCalledWith(previewBatch)
 
-    // then the merge: urls land, previews cleared
     const merged = setImages.mock.calls.at(-1)?.[0] as GalleryImage[]
     expect(merged.map((image) => image.src)).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg'])
     expect(merged.every((image) => image.previewSrc === undefined)).toBe(true)
@@ -86,7 +80,7 @@ describe('galleryUploadIntent', () => {
     await runIntent({ upload, files, images })
 
     expect(setErrorMessage).toHaveBeenCalledExactlyOnceWith('Galleries are limited to 9 images')
-    // only one of the three files made it through
+
     const previewBatch = setPreviewImages.mock.calls[0][0] as GalleryImage[]
     expect(previewBatch).toHaveLength(9)
   })
@@ -115,7 +109,7 @@ describe('galleryUploadIntent', () => {
     expect(setErrorMessage).toHaveBeenCalledExactlyOnceWith(
       'Something went wrong while uploading images. Please refresh the page and try again',
     )
-    // the failed image stays in the list with its preview stripped
+
     const cleaned = setImages.mock.calls.at(-1)?.[0] as GalleryImage[]
     expect(cleaned).toHaveLength(1)
     expect(cleaned[0].previewSrc).toBeUndefined()
@@ -167,8 +161,6 @@ describe('galleryUploadIntent', () => {
 
     await expect(runIntent({ upload, files })).rejects.toThrow('cannot decode')
 
-    // both batch previews are revoked — the failed decode's AND its
-    // sibling's — and nothing was published or uploaded
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob://preview-a.jpg')
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob://preview-b.jpg')
     expect(setPreviewImages).not.toHaveBeenCalled()

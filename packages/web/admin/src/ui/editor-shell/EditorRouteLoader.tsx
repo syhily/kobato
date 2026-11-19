@@ -6,7 +6,6 @@ import { EditorRouteError } from '@kobato/web-admin/ui/editor-shell/EditorRouteE
 import { EditorRouteSkeleton } from '@kobato/web-admin/ui/editor-shell/EditorRouteSkeleton.tsx'
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
 
-/** The editor shell contract this loader mounts once the detail DTO arrives. */
 type EditorShellComponent<TDetail> = ComponentType<{
   mode: 'create' | 'edit'
   detail?: TDetail
@@ -14,18 +13,13 @@ type EditorShellComponent<TDetail> = ComponentType<{
 }>
 
 export interface EditorRouteLoaderProps<TDetail, TError extends Error = Error> {
-  /** Display-noun message id for the error state (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
-  /** Admin list path the error state's back button returns to. */
   listPath: string
-  /** oRPC detail query (`orpcQuery.admin.<posts|pages>.get.queryOptions`). */
   queryOptions: UseQueryOptions<TDetail, TError>
-  /** The configured entity shell (`PostEditorShell` / `PageEditorShell`). */
   shell: EditorShellComponent<TDetail>
   navigate: NavigateFunction
 }
 
-/** Wrapper owning the detail-fetch lifecycle; kept separate so the shells stay plain-props. */
 export function EditorRouteLoader<TDetail, TError extends Error = Error>({
   entityLabelId,
   listPath,

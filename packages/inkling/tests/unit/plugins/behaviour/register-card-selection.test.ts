@@ -39,7 +39,6 @@ function createSelectionHarness(
   const setSelectedCardKey = vi.fn()
   const setIsEditingCard = vi.fn()
   const store = createCardSelectionStore()
-  // seed before subscribing so the spies only record listener-driven writes
   if (initial.selectedCardKey) {
     store.setState({ selectedCardKey: initial.selectedCardKey })
   }
@@ -104,7 +103,6 @@ function readSelectedCardKeys(editor: LexicalEditor) {
   })
 }
 
-/** Tags of every delivered update, in order (updates that change nothing are not delivered to listeners). */
 function recordUpdateTags(editor: LexicalEditor) {
   const log: Array<Array<string>> = []
   editor.registerUpdateListener(({ tags }) => {
@@ -135,7 +133,6 @@ describe('registerCardSelection', () => {
 
   it('marks a card selection restored by a historic update as protected without touching the setters', async () => {
     const { editor, cardKey } = await setupEditorWithCard()
-    // the mirror already holds the restored card, as after an undo/redo
     const harness = createSelectionHarness(editor, { selectedCardKey: cardKey })
 
     await selectCard(editor, cardKey, { tag: 'historic' })
@@ -143,7 +140,6 @@ describe('registerCardSelection', () => {
     expect(harness.setSelectedCardKey).not.toHaveBeenCalled()
     expect(harness.setIsEditingCard).not.toHaveBeenCalled()
     expect(readSelectedCardKeys(editor)).toEqual([cardKey])
-    // the guard itself is a closure local; the next test proves it was set
 
     harness.dispose()
   })
@@ -157,30 +153,19 @@ describe('registerCardSelection', () => {
 
       await selectCard(editor, cardKey, { tag: 'historic' })
 
-      // transient clear #1 (decorator reconciliation side-effect after undo):
-      // the store keeps the card selected — no re-select update is issued
-      // (re-selecting feeds the reconciliation cycle) and no setter fires
       await clearSelection(editor)
-
       expect(harness.setSelectedCardKey).not.toHaveBeenCalled()
       expect(harness.setIsEditingCard).not.toHaveBeenCalled()
       expect(countHistoryMergeUpdates(tagLog)).toBe(0)
       expect(readSelectedCardKeys(editor)).toBeNull()
 
-      // transient clear #2 — under load the reconciliation can cycle more
-      // than once; the time-windowed guard survives it (a one-shot ref would
-      // release on the first clear and let this one win)
       await clearSelection(editor)
-
       expect(harness.setSelectedCardKey).not.toHaveBeenCalled()
       expect(harness.setIsEditingCard).not.toHaveBeenCalled()
       expect(countHistoryMergeUpdates(tagLog)).toBe(0)
 
-      // the store (the behavioural truth) still holds the card
       expect(harness.store.getState()).toEqual({ selectedCardKey: cardKey, isEditingCard: false })
 
-      // once the protection window elapses, a clear is a legitimate
-      // deselection and goes through the deselect path exactly once
       vi.advanceTimersByTime(1001)
       await clearSelection(editor)
 
@@ -224,9 +209,6 @@ describe('registerCardSelection', () => {
 
       await selectCard(editor, cardKey, { tag: 'historic' })
 
-      // An untagged update within the confirm grace still counts as
-      // reconciliation — the guard must survive it; the following clear
-      // proves the store keeps the card and the deselect path stays closed.
       await touchDocument(editor)
       await clearSelection(editor)
 
@@ -235,17 +217,12 @@ describe('registerCardSelection', () => {
       expect(harness.store.getState()).toEqual({ selectedCardKey: cardKey, isEditingCard: false })
       expect(countHistoryMergeUpdates(tagLog)).toBe(0)
 
-      // once the grace elapsed, an untagged update with the card still
-      // selected is a genuine confirm and drops the guard silently
       vi.advanceTimersByTime(201)
       await selectCard(editor, cardKey)
 
       expect(harness.setSelectedCardKey).not.toHaveBeenCalled()
       expect(harness.setIsEditingCard).not.toHaveBeenCalled()
       expect(readSelectedCardKeys(editor)).toEqual([cardKey])
-
-      // a later deselection is therefore not blocked (contrast with the
-      // protected case above, where this clear would be kept)
       await clearSelection(editor)
 
       expect(harness.setSelectedCardKey).toHaveBeenCalledTimes(1)
@@ -254,7 +231,6 @@ describe('registerCardSelection', () => {
       expect(harness.setIsEditingCard).toHaveBeenCalledWith(false)
       expect(readSelectedCardKeys(editor)).toBeNull()
       expect(countHistoryMergeUpdates(tagLog)).toBe(0)
-
       harness.dispose()
     } finally {
       vi.useRealTimers()
@@ -294,7 +270,6 @@ describe('registerCardSelection', () => {
 
     nestedHarness.dispose()
 
-    // positive control: the same selection is mirrored once the guard is gone
     const harness = createSelectionHarness(editor)
     await touchDocument(editor)
     expect(harness.setSelectedCardKey).toHaveBeenCalledWith(cardKey)
@@ -326,7 +301,6 @@ describe('registerCardSelection', () => {
       decoratorHost.remove()
     }
 
-    // positive control: once focus leaves the decorator the guard is gone
     await touchDocument(editor)
     expect(harness.setSelectedCardKey).toHaveBeenCalledWith(cardKey)
 
@@ -359,8 +333,6 @@ describe('registerCardSelection', () => {
     expect(harness.setIsEditingCard).toHaveBeenCalledWith(true)
     expect(clearOpenInEditMode).toHaveBeenCalledTimes(1)
     expect(readSelectedCardKeys(editor)).toEqual([cardKey])
-    // Exact call counts and the final isEditingCard value stay intentionally
-    // unpinned so this test pins branch behavior, not deps wiring.
 
     harness.dispose()
   })

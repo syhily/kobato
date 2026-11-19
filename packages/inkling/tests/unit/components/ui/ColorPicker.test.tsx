@@ -107,15 +107,12 @@ describe('ColorPicker', () => {
     const picker = document.querySelector('.react-colorful') as HTMLElement
     fireEvent.mouseDown(picker)
 
-    // clicking inside the picker returns focus to the hex input and arms the
-    // per-gesture document listeners
     expect(document.activeElement).toBe(input)
     expect(addListenerSpy).toHaveBeenCalledWith('mouseup', expect.any(Function))
     expect(addListenerSpy).toHaveBeenCalledWith('touchend', expect.any(Function))
 
     fireEvent.mouseUp(picker)
 
-    // releasing the gesture keeps focus on the hex input and removes the listeners
     expect(document.activeElement).toBe(input)
     expect(removeListenerSpy).toHaveBeenCalledWith('mouseup', expect.any(Function))
     expect(removeListenerSpy).toHaveBeenCalledWith('touchend', expect.any(Function))

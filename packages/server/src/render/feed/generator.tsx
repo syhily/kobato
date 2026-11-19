@@ -92,7 +92,6 @@ export async function generateFeeds(db: Database, options: FeedOptions) {
     // No XML stylesheet — browsers are deprecating XSLT for XML documents.
   })
 
-  // Batch-resolve tags and categories to avoid N+1 queries inside the loop.
   const allTagNames = [...new Set(feedPosts.flatMap((p) => p.tags))]
   const allCategoryNames = [...new Set(feedPosts.map((p) => p.category).filter(Boolean))]
 

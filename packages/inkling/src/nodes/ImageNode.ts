@@ -8,15 +8,8 @@ export type { SerializedImageNode } from '@kobato/inkling-internal/nodes/base/no
 export { INSERT_IMAGE_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 export type { ImageNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-/**
- * The registered class, assembled once from the card declaration by
- * `assembleCardNodeOnce`; `$isImageNode` and the upload accessors are canonical
- * on the base node. The instance type carries the spec-derived `__*` field map,
- * so `$createImageNode` needs no cast.
- */
 export const ImageNode = assembleCardNodeOnce(imageDeclaration)
 export type ImageNode = InstanceType<typeof ImageNode>
-
 export const $createImageNode = (dataset: ImageNodeDataset = {}, key?: NodeKey): ImageNode => {
   return new ImageNode(dataset, key)
 }

@@ -21,7 +21,6 @@ type JsonRecord = Record<string, unknown>
 type Projected = JsonRecord
 
 export interface RumEventScope {
-  /** Document origin, e.g. `http://localhost:4321`. */
   origin: string
   route: RumRouteContext
 }

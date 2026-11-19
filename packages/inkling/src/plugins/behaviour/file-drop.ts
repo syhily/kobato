@@ -20,16 +20,10 @@ import { $getRoot, $getSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, D
 // return is deliberate: it lets host-registered lower-priority handlers also run.
 
 export interface FileDropPorts {
-  /** The host uploader's presence — drops are ignored without one. */
   hasUploader: () => boolean
-  /** The host's per-mime-type upload constraints (fileUploader.fileTypes). */
   fileTypes: () => FileUploader['fileTypes']
 }
 
-/**
- * Claims dropped files per acceptable mime type and dispatches each claim through
- * INSERT_MEDIA_COMMAND, the shared media insert path.
- */
 export function handleFileDrop(editor: LexicalEditor, files: File[], ports: FileDropPorts): void {
   if (!ports.hasUploader()) {
     return
@@ -84,27 +78,18 @@ export function registerFileDropCommands(editor: LexicalEditor, ports: FileDropP
   }
 }
 
-/**
- * The DOM half: dragover/dragleave suppression (drops keep the original selection, so
- * the cursor must not track the drag — except over a card, whose own drop targets keep
- * native behaviour) and the html-drop fallback, which inserts rich text at the current
- * selection, defaulting to the document end. Returns the teardown; a no-op when the
- * editor has no root element.
- */
 export function registerDragOverSuppression(editor: LexicalEditor): () => void {
   const rootElement = editor.getRootElement()
   if (!rootElement) {
     return () => {
-      /* noop — no root element, nothing was registered */
+      /* noop */
     }
   }
-
   const handleDragOver = (event: DragEvent) => {
     const target = event.target instanceof HTMLElement ? event.target : null
     if (!event.dataTransfer || target?.closest('[data-inkling-card]')) {
       return
     }
-
     event.stopPropagation()
     event.preventDefault()
   }
@@ -114,7 +99,6 @@ export function registerDragOverSuppression(editor: LexicalEditor): () => void {
   }
 
   const handleDrop = (event: DragEvent) => {
-    // image dragged in from a browser window
     const { dataTransfer } = event
     if (!dataTransfer) {
       return

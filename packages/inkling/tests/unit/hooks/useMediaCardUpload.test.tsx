@@ -58,7 +58,6 @@ describe('useMediaCardUpload', () => {
     )
     const clickSpy = vi.spyOn(container.querySelector('input')!, 'click')
 
-    // the dialog trigger defers the click + flag clear behind a setTimeout
     await act(async () => {
       await tick()
     })

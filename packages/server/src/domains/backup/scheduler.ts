@@ -29,7 +29,6 @@ async function runBackupJob(): Promise<void> {
   }
 }
 
-// Domain scheduling policy; the shared `scheduleJob` seam owns the timer.
 function nextBackupDelayMs(): number | null {
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
@@ -40,9 +39,7 @@ function nextBackupDelayMs(): number | null {
   }
 
   const backupSettings = bundle.backup
-  // Backups run regardless of S3 config — S3 off lands them in local storage.
   if (!backupSettings?.scheduled.enabled) {
-    // Suspending still lets the seam pick the timer up once enabled.
     return null
   }
 

@@ -37,8 +37,6 @@ export function registerLinkMatching(editor: LexicalEditor, deps: LinkMatchingDe
       // degrades to the plain-link branch below.
       const BookmarkNodeClass = getRegisteredNodeMap(editor).get('bookmark')?.klass
 
-      // if a link is pasted in a blank text node, insert a bookmark card
-      // (Shift-paste always takes the plain-link branch below)
       if (
         selectionContent.length === 0 &&
         nodeContent.length === 0 &&
@@ -54,7 +52,6 @@ export function registerLinkMatching(editor: LexicalEditor, deps: LinkMatchingDe
         return true
       }
 
-      // if a link is pasted in a populated text node or pasted with Shift pressed, insert a link
       if (nodeContent.length > 0 || isShiftPressed.current === true || !BookmarkNodeClass) {
         const link = linkMatch[1]
         if (!link) {

@@ -24,9 +24,6 @@ interface BlockJSON {
   [key: string]: unknown
 }
 
-// The editing leg: one paragraph aligned through the toolbar surgery, on an
-// editor wired like an InklingComposer surface (DEFAULT_NODES + the default
-// transforms with the surface's alignment policy).
 async function editAlignedParagraph(
   alignment: 'strip' | 'keep',
   format: BlockAlignment | '',
@@ -106,9 +103,6 @@ describe('text-align: the editing → serialization leg', () => {
 })
 
 describe('text-align: serialization → HTML export → HTML import round trip', () => {
-  // Each case: the serialized state (the exportJSON leg), the exact exported
-  // HTML both render paths must produce (the exportDOM leg), and the format
-  // the keep-import must read back (the importDOM leg).
   const cases: { name: string; state: string; html: string; format: string }[] = [
     ...(['left', 'center', 'right'] as const).map((alignment) => ({
       name: `paragraph ${alignment}`,
@@ -138,12 +132,9 @@ describe('text-align: serialization → HTML export → HTML import round trip',
 
   for (const { name, state, html, format } of cases) {
     it(`${name}: survives both export paths and the keep-import, byte-exact on re-export`, async () => {
-      // exportDOM leg — live (InklingComposer shape) and headless (the
-      // kobato server path) agree byte-exactly
       expect(renderLive(state)).toBe(html)
       await expect(renderHeadless(state)).resolves.toBe(html)
 
-      // importDOM leg with the kobato setting
       const imported = htmlToLexical(html, {
         alignment: 'keep',
         editorConfig: {
@@ -154,7 +145,6 @@ describe('text-align: serialization → HTML export → HTML import round trip',
       }) as unknown as { root: { children: BlockJSON[] } }
       expect(imported.root.children[0].format).toBe(format)
 
-      // closing the loop: re-exporting the imported state reproduces the HTML
       expect(renderLive(JSON.stringify(imported))).toBe(html)
     })
   }

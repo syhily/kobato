@@ -18,11 +18,6 @@ import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { count, gt } from 'drizzle-orm'
 
-// Admin view over the shared cache declarations; bucket IDs are the stable
-// directory names under `<storage.data>/cache`. Sessions and rate-limit
-// counters are reserved (read-only via `RESERVED_CACHE_BUCKETS`). The registry
-// stores message ids, so labels are translated here, not shipped across the wire.
-
 function cacheTranslator() {
   return createServerTranslator(resolveAppLocalization().locale)
 }
@@ -92,7 +87,6 @@ async function countReservedBucket(db: Database, id: ReservedCacheBucketId): Pro
   return rateLimitEntryCount()
 }
 
-/** Count the read-only reserved buckets (live sessions, rate-limit windows) — visibility without a clear button. */
 export async function snapshotReservedBuckets(db: Database): Promise<ReservedCacheBucketStats[]> {
   const t = cacheTranslator()
   return Promise.all(

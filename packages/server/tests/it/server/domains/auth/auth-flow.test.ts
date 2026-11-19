@@ -96,7 +96,6 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
     const assets = byScope.get('blog.assets')!.data as Record<string, any>
     expect(assets.asset).toEqual({ host: 'localhost', scheme: 'https' })
 
-    // refreshBlogSettings ran: the in-process snapshot now reflects the seed.
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
 
     const sessions = await db.select().from(sessionTable)
@@ -110,7 +109,6 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
   })
 
   it('refuses a duplicate stage-1 install (no DB writes)', async () => {
-    // An admin already exists → the gate trips before any write.
     await db.insert(userTable).values({
       name: 'Existing',
       email: 'existing@example.com',
@@ -165,7 +163,6 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
       }),
     ).rejects.toThrow()
 
-    // The transaction rolled back atomically: no admin row, no settings.
     const users = await db.select().from(userTable)
     expect(users).toHaveLength(1)
     expect(users[0]!.role).toBe('visitor')

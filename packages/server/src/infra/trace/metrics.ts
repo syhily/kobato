@@ -61,12 +61,10 @@ export function isAllowedMetricName(name: string): name is MetricName {
   return Object.hasOwn(METRIC_DEFINITIONS, name)
 }
 
-/** The declared instrument kind for a name, or null for an unknown metric. */
 export function metricKind(name: string): MetricKind | null {
   return isAllowedMetricName(name) ? METRIC_DEFINITIONS[name].kind : null
 }
 
-/** A metric value is finite and non-negative; anything else is dropped. */
 export function sanitizeMetricValue(value: number): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null
 }

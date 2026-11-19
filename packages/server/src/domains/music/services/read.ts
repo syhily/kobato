@@ -54,11 +54,9 @@ export async function findMusicDtoById(db: Database, id: number): Promise<AdminM
 
 /**
  * Fallback cover for tracks whose stored cover has no buildable public URL.
- * Served by the default-asset route (`defaultMusicCover` slot — `packages/server/src/domains/assets/services/routes.ts`).
  */
 export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
 
-/** The default-cover URL with the slot's `?v=` cache-buster when customized. */
 function defaultMusicCoverUrl(): string {
   return `${DEFAULT_MUSIC_COVER_URL}${brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.defaultMusicCover)}`
 }
@@ -83,19 +81,11 @@ function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
   }
 }
 
-/**
- * Public projection for the SSR `<MusicPlayer />` and `GET music.get`.
- * Returns `null` when the row is missing or soft-deleted.
- */
 export async function getMusicMetaForPlayer(db: Database, playerId: string): Promise<PublicMusicMeta | null> {
   const row = await findMusicByPlayerId(db, playerId)
   return row === null ? null : toPublicMusicMeta(row)
 }
 
-/**
- * Batch variant of `getMusicMetaForPlayer` — one query per page. Callers
- * wire it into the Lexical embed seam (`@/server/domains/content/services/lexical/embeds`).
- */
 export async function getPublicMusicMetasByIds(
   db: Database,
   playerIds: readonly string[],

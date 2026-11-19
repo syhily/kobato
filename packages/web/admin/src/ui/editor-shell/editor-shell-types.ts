@@ -67,7 +67,6 @@ export interface UseEditorShellStateArgs<
 > {
   mode: 'create' | 'edit'
 
-  /** Pre-loaded detail (edit-mode only). */
   detail?: EditorShellDetail<TEntity>
 
   emptyMeta: TMeta
@@ -93,16 +92,13 @@ export interface UseEditorShellStateArgs<
     force?: boolean
   }) => Promise<SaveBodyOutput>
 
-  // Routing
   editPath: (id: string) => string
   navigate: NavigateFunction
 }
 
-/** Narrow slice consumed by the toolbar row. */
 export interface EditorToolbarState {
   metaOpen: boolean
   setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
-  /** `meta.published` — drives the unpublish button. */
   published: boolean
   isPending: boolean
   isSavingDraft: boolean
@@ -118,7 +114,6 @@ export interface EditorToolbarState {
   persistUnpublish: () => void
 }
 
-/** Narrow slice consumed by the meta panel (aside / Sheet). */
 export interface EditorSidebarState<TMeta> {
   draft: TMeta
   onChange: React.Dispatch<React.SetStateAction<TMeta>>
@@ -131,10 +126,8 @@ export interface EditorSidebarState<TMeta> {
   adoptRevisionFromHistory: (revision: { body: LexicalEditorState; revisionNo: number }) => void
 }
 
-/** Narrow slice consumed by the draft-conflict dialog. */
 export interface EditorDialogState {
   conflict: { localBody: LexicalEditorState; localSavedAt: number } | null
-  /** Baseline body the server holds — the dialog's "server version". */
   serverBody: LexicalEditorState
   baselineUpdatedAtMs: number | null
   adoptLocalDraft: () => Promise<void>

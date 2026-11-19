@@ -12,15 +12,13 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { mergeRegister, COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
 import React from 'react'
 
-// the nested editor the Enter key hands focus to (Header subheader, Toggle
-// content) — structurally the part of LexicalEditor the hand-off needs
 export type FocusNextTarget = { focus: (fn: () => void) => void; getRootElement: () => HTMLElement | null }
 
 function InklingNestedEditorPlugin({
   autoFocus,
   focusNext,
   hasSettingsPanel,
-  // Enter will focus the next card if this is true
+
   defaultInklingEnterBehaviour = false,
 }: {
   autoFocus?: boolean
@@ -80,13 +78,10 @@ function InklingNestedEditorPlugin({
         (event) => {
           const parentEditor = getParentEditor(editor)
 
-          // don't swallow events meant for an open typeahead menu — the
-          // protocol module explains why this can't be priority-based yet
           if (isTypeaheadMenuOpen()) {
             return false
           }
 
-          // meta/ctrl+Enter belongs to the parent editor: re-dispatch there
           if (event && (event.metaKey || event.ctrlKey)) {
             if (!parentEditor) {
               return true
@@ -95,7 +90,6 @@ function InklingNestedEditorPlugin({
             return true
           }
 
-          // move focus to the next editor if it exists (e.g. from header to content editor)
           if (focusNext && !event?.shiftKey) {
             event?.preventDefault()
             focusNext.focus(() => {
@@ -104,9 +98,6 @@ function InklingNestedEditorPlugin({
             return true
           }
 
-          // anything the plugin-specific branches above didn't claim falls
-          // through to the shared Enter hand-off below (registered only when
-          // defaultInklingEnterBehaviour is on)
           return false
         },
         COMMAND_PRIORITY_LOW,
@@ -117,8 +108,7 @@ function InklingNestedEditorPlugin({
       // listeners in registration order, so the plugin-specific branches get
       // first refusal and the hand-off only sees what they decline.
       ...(defaultInklingEnterBehaviour ? [registerNestedEnterHandoff(editor, () => getParentEditor(editor))] : []),
-      // the blur → card-reselect choreography lives in the nested-editor
-      // protocol beside the Enter hand-off
+
       registerNestedBlurCardReselect(editor, {
         parentCardNodeKey,
         hasSettingsPanel: !!hasSettingsPanel,

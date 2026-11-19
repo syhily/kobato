@@ -60,7 +60,6 @@ describe('DropIndicator', () => {
     const first = createIndicator()
     const second = createIndicator()
 
-    // two editors on one page: neither adopts the other's element
     expect(first.element).not.toBe(second.element)
     expect(first.editorContainer.contains(first.element)).toBe(true)
     expect(second.editorContainer.contains(second.element)).toBe(true)
@@ -85,7 +84,6 @@ describe('DropIndicator', () => {
 
     expect(element.style.width).toBe('200px')
     expect(element.style.height).toBe('4px')
-    // left: 20 - 5, top: 100 - 2 (above the top edge) - 10
     expect(element.style.left).toBe('15px')
     expect(element.style.top).toBe('88px')
     expect(element.style.opacity).toBe('1')
@@ -97,7 +95,6 @@ describe('DropIndicator', () => {
     indicator.show(droppable, 'bottom-right')
     vi.advanceTimersByTime(150)
 
-    // top: 100 + 50 - 2 (below the bottom edge) - 10
     expect(element.style.top).toBe('138px')
     expect(element.style.opacity).toBe('1')
   })
@@ -127,7 +124,6 @@ describe('DropIndicator', () => {
     vi.advanceTimersByTime(150)
     expect(element.style.opacity).toBe('1')
 
-    // sub-pixel shift within the +-1px tolerance: not a move
     geometry.getDroppableBox = vi.fn(() => ({
       ...droppableBox,
       top: droppableBox.top + 0.6,
@@ -150,7 +146,6 @@ describe('DropIndicator', () => {
     expect(vi.getTimerCount()).toBe(0)
     expect(element.style.opacity).toBe('0')
 
-    // the cancelled re-position never lands
     vi.advanceTimersByTime(1000)
     expect(element.style.left).toBe('')
   })

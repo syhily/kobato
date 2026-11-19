@@ -51,7 +51,6 @@ const NOW_ISO = '2024-06-01T00:00:00.000Z'
 const TIME_ZONE = 'Asia/Shanghai'
 const TIME_FORMAT = 'yyyy-LL-dd HH:mm'
 
-/** Mirrors a public route: it reads the provider only, no props. */
 function I18nProbe() {
   const { locale, t } = useI18n()
   return (
@@ -67,7 +66,6 @@ function I18nProbe() {
   )
 }
 
-/** Renders only keys the minimal fallback module carries (no missing-key noise). */
 function FallbackProbe() {
   const { locale, t } = useI18n()
   return (
@@ -94,7 +92,6 @@ function rootDataFor(locale: 'zh-CN' | 'zh-TW' | 'en-US', messages: Record<strin
   }
 }
 
-/** Root Layout + one child route; `rootLoaderData` undefined simulates a root-loader failure. */
 function makeRoutes(rootLoaderData: unknown, element: ReactNode = <I18nProbe />): RouteObject[] {
   return [
     {
@@ -143,7 +140,6 @@ describe('root i18n — Layout → provider → <html lang>', () => {
     const html = renderToStaticMarkup(<RouterProvider router={makeRouter(undefined, <FallbackProbe />)} />)
 
     expect(html).toContain(`<html lang="${DEFAULT_LOCALE}"`)
-    // Only the fallback module's keys resolve without a payload.
     expect(html).toContain(fallbackMessages['common.action.reload'])
     expect(html).toContain('2024-06-01 08:00')
   })
@@ -154,11 +150,6 @@ describe('root i18n — jsdom hydration', () => {
     return <RouterProvider router={makeRouter(rootLoaderData)} />
   }
 
-  /**
-   * Server-render the document, install it in jsdom, hydrate with
-   * `clientTree()`. React reports a mismatch through `onRecoverableError`, so
-   * the spy is the assertion surface.
-   */
   function hydrateDocument(
     rootLoaderData: unknown,
     element?: ReactNode,
@@ -168,8 +159,7 @@ describe('root i18n — jsdom hydration', () => {
     const serverHtml = renderToString(serverTree)
     const openTag = /^<html([^>]*)>/i.exec(serverHtml)?.[1] ?? ''
     document.documentElement.innerHTML = serverHtml.slice(serverHtml.indexOf('>') + 1)
-    // `innerHTML` cannot carry the root element's own attributes — copy `lang`
-    // (the attribute this contract is about) onto the real <html>.
+
     const lang = /lang="([^"]*)"/.exec(openTag)?.[1]
     if (lang === undefined) {
       document.documentElement.removeAttribute('lang')
@@ -194,7 +184,7 @@ describe('root i18n — jsdom hydration', () => {
     expect(document.querySelector('[data-testid="probe-locale"]')?.textContent).toBe('zh-CN')
     expect(document.querySelector('[data-testid="probe-save"]')?.textContent).toBe('保存')
     expect(document.querySelector('[data-testid="probe-count"]')?.textContent).toBe('2 项')
-    // Site time zone, not the browser's: 00:00Z is 08:00 in Asia/Shanghai.
+
     expect(document.querySelector('[data-testid="probe-now"]')?.textContent).toBe('2024-06-01 08:00')
   })
 
@@ -221,7 +211,6 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
   const boom = () => new Error('boom')
 
   it('renders only the minimal ErrorView (fallback copy, no BaseLayout chrome) without an i18n payload', async () => {
-    // A non-Error keeps the dev branch from replacing the description with a message.
     const html = await prerenderToHtml(
       <RouterProvider
         router={makeRouter(
@@ -233,7 +222,7 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
 
     expect(html).toContain(fallbackMessages['error.boundary.title'])
     expect(html).toContain(fallbackMessages['error.boundary.description'])
-    // BaseLayout chrome (skip link text from the public shell) must not mount.
+
     expect(html).not.toContain('跳转到主要内容')
     expect(html).not.toContain('Skip to main content')
   })
@@ -257,12 +246,11 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
     expect(html).toContain('<html lang="en-US"')
     expect(html).toContain('Skip to main content')
     expect(html).toContain('Internal error')
-    // Dev mode shows the thrown message instead of the catalog description.
+
     expect(html).toContain('boom')
     expect(html).toContain('Skip to main content')
   })
 })
-
 describe('root shouldRevalidate — payload scope boundary', () => {
   function args(currentPath: string, nextPath: string, formAction?: string, defaultShouldRevalidate = false) {
     return {
@@ -274,10 +262,9 @@ describe('root shouldRevalidate — payload scope boundary', () => {
   }
 
   it('revalidates when a navigation crosses public ↔ workspace', () => {
-    // Into the workspace: the next document needs the full catalog + labels.
     expect(shouldRevalidate(args('/', '/admin/settings'))).toBe(true)
     expect(shouldRevalidate(args('/posts/hello', '/editor/post/new'))).toBe(true)
-    // Back out: the public payload must drop the admin namespace again.
+
     expect(shouldRevalidate(args('/admin/settings', '/'))).toBe(true)
     expect(shouldRevalidate(args('/admin/signin', '/posts/hello'))).toBe(true)
   })
@@ -290,12 +277,10 @@ describe('root shouldRevalidate — payload scope boundary', () => {
   })
 
   it('always defers to the default policy for form actions', () => {
-    // Form actions can change the settings the payload derives from (locale,
-    // theme cookie, identity) — every action revalidates, not only auth.
     expect(shouldRevalidate(args('/', '/', '/admin/signin', true))).toBe(true)
     expect(shouldRevalidate(args('/admin/settings', '/admin/settings', '/admin/settings/general', true))).toBe(true)
     expect(shouldRevalidate(args('/', '/', '/signout', true))).toBe(true)
-    // The default veto (e.g. a hash-only submission) is preserved.
+
     expect(shouldRevalidate(args('/', '/', '/signout', false))).toBe(false)
   })
 })

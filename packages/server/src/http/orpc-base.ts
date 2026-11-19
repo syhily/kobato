@@ -31,10 +31,8 @@ import {
 } from '@kobato/server/infra/rate-limit.ts'
 import { implementerInternal, ORPCError, os } from '@orpc/server'
 
-// Context every oRPC procedure sees — `responseHeaders` merges onto the final `Response`.
 export interface HandlerContext {
   request: Request
-  /** Transport-agnostic facts extracted by the bridge; services never touch the raw `Request`. */
   requestFacts: RequestFacts
   session: BlogSession
   viewer: SessionUser | null
@@ -46,7 +44,6 @@ export interface HandlerContext {
   localization: AppLocalization
 }
 
-// Narrowed by `requireAuth`/`requireRole`: `viewer` is guaranteed non-null.
 export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
   viewer: SessionUser
 }
@@ -78,7 +75,6 @@ export function localizedOrpcError(
   return localizedOrpcErrorDescriptor(context, code, descriptorFor(messageKey, params))
 }
 
-/** Variant for callers that already built the descriptor (e.g. a domain helper's result). */
 export function localizedOrpcErrorDescriptor(
   context: HandlerContext,
   code: OrpcErrorCode,
@@ -91,7 +87,6 @@ export function localizedOrpcErrorDescriptor(
   })
 }
 
-// Translate domain failures to `ORPCError` — foreign exceptions become a generic 500.
 const domainErrorGuard = root.middleware(async ({ context, next }) => {
   try {
     return await next({})
@@ -172,7 +167,6 @@ const requireAuth = root.middleware(({ context, next }) => {
   })
 })
 
-// Throws ORPCError('FORBIDDEN') unless `viewer.role` is at least `role`.
 function requireRole(role: Role) {
   return root.middleware(({ context, next }) => {
     const viewer = ensureViewer(context)
@@ -188,7 +182,6 @@ function requireRole(role: Role) {
   })
 }
 
-// Rate-limit guard for expensive public procedures — `resource` bucket; Hono routes use `rateLimitByIp`.
 export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   const { exceeded } = await tryResourceRateLimit(context.clientAddress)
   if (exceeded) {
@@ -227,7 +220,6 @@ export const notificationReplyRateLimit = root.middleware(async ({ context, next
   return next({})
 })
 
-// Passkey guard: disabled → `DomainError('BAD_REQUEST')`, translated by `domainErrorGuard`.
 export const passkeyGuard = root.middleware(({ next }) => {
   if (!isPasskeyEnabled()) {
     throw new DomainError('BAD_REQUEST', descriptorFor('error.api.passkeyDisabled'))
@@ -239,7 +231,6 @@ export const passkeyGuard = root.middleware(({ next }) => {
 // in a `finally` so it survives throws.
 export interface CommentTokenCookieJar {
   cookie: CommentTokenCookie
-  /** Assign the cleaned cookie here to schedule the `Set-Cookie` refresh. */
   refreshed?: CommentTokenCookie
 }
 
@@ -279,8 +270,6 @@ export function implementPublic<T extends AnyContractRouter>(contract: T) {
   return implementerInternal<T, HandlerContext, HandlerContext>(contract, {}, [domainErrorGuard])
 }
 
-// The authed bases narrow the current context to `AuthedHandlerContext` —
-// exactly what the guard chain guarantees at runtime.
 export function implementAuthed<T extends AnyContractRouter>(contract: T) {
   return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [requireAuth, domainErrorGuard])
 }

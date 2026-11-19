@@ -40,9 +40,7 @@ describe('snapshot: Comments render branches', () => {
     expect(html).toContain('Alice')
     expect(html).toContain('Bob')
     expect(html).toContain('Carol')
-    // All roots loaded → no load-more button.
     expect(html).not.toContain('加载更多')
-    // Reply form present (no active reply target).
     expect(html).toContain('id="respond"')
   })
 
@@ -80,21 +78,18 @@ describe('snapshot: Comments render branches', () => {
     expect(html).toContain('Root')
     expect(html).toContain('Child')
     expect(html).toContain('Grandchild')
-    // Single root shipped, rootsTotal=1 → no load-more.
     expect(html).not.toContain('加载更多')
   })
 
   it('renders the load-more button in its loading state via the mutation isPending flag', () => {
     queryMocks.mutation.isPending = true
     const items = [makeComment({ id: '1', name: 'Solo' })]
-    // count=10, only 1 root shipped → LoadMore renders.
     const html = stableHtml(
       renderInRouter(
         <Comments commentKey="/posts/long" comments={commentsData(10, 10)} items={items} />,
         '/posts/long',
       ),
     )
-    // Pending mutation → "加载中…" + disabled.
     expect(html).toContain('加载中…')
     expect(html).toContain('disabled=""')
     queryMocks.mutation.isPending = false
@@ -102,7 +97,6 @@ describe('snapshot: Comments render branches', () => {
 
   it('renders the load-more button while fewer roots are loaded than the total', () => {
     const items = [makeComment({ id: '1' }), makeComment({ id: '2' }), makeComment({ id: '3' })]
-    // 3 roots shipped, 10 total → the load-more button renders, not disabled.
     const html = stableHtml(
       renderInRouter(
         <Comments commentKey="/posts/paged" comments={commentsData(10, 10)} items={items} />,
@@ -121,7 +115,6 @@ describe('snapshot: Comments render branches', () => {
     expect(html).toContain('(0)')
     expect(html).not.toContain('user-comment-')
     expect(html).not.toContain('加载更多')
-    // Reply form still accepts a top-level comment.
     expect(html).toContain('id="respond"')
   })
 
@@ -130,7 +123,6 @@ describe('snapshot: Comments render branches', () => {
       renderInRouter(<Comments commentKey="/posts/broken" comments={null} items={[]} />, '/posts/broken'),
     )
     expect(html).toContain('评论加载失败')
-    // Early-return bypasses the orchestrator chrome — only the failure wrapper remains.
     expect(html).not.toContain('id="respond"')
     expect(html).not.toContain('加载更多')
   })
@@ -157,12 +149,10 @@ describe('snapshot: Comments render branches', () => {
     )
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('id="user-comment-2"')
-    // rootsLoaded (2) >= rootsTotal (2) → load-more returns null.
     expect(html).not.toContain('加载更多')
   })
 
   it('renders the reply form slot when no active reply target is set', () => {
-    // Default state: replyToId === 0 → the slot renders the reply form.
     const html = stableHtml(
       renderInRouter(
         <Comments commentKey="/posts/reply" comments={commentsData(1, 1)} items={[makeComment({ id: '1' })]} />,

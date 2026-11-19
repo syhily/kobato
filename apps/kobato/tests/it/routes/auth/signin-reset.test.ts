@@ -54,7 +54,6 @@ beforeEach(async () => {
   // Flush before teardown: pending events reference rows the next clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
-  // Seed one admin — seedUser's default 'visitor' does not satisfy the install gate.
   await db.insert(user).values({
     name: 'Gatekeeper',
     email: 'gatekeeper@example.com',
@@ -135,7 +134,6 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
       counter: 0,
       transports: [],
     })
-    // Two pre-existing sessions — the reset invariant must destroy both.
     for (const sid of ['old-sid-1', 'old-sid-2']) {
       await db.insert(sessionTable).values({
         id: sid,
@@ -146,12 +144,10 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
     }
     const { token } = issueResetToken(db, admin.id)
 
-    // A redirect Response on success; `data()` and `redirect()` share the call surface.
     const response = (await callResetAction({ reset_token: token, password: 'LongEnough1' })) as Response
     expect(response.status).toBe(302)
     expect(response.headers.get('Set-Cookie')).toMatch(/^__session=/)
 
-    // Revocation invariant: both old sessions destroyed, one new row owned by the user.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(admin.id)

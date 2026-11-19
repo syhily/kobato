@@ -39,7 +39,6 @@ describe('clampWithinSpacing', () => {
   })
 
   it('clamps a bottom-offscreen panel up to the bottom spacing', () => {
-    // bottom edge 800, viewport 768 → y = 768 - 100 - 20
     expect(clamp(100, 700)).toEqual({ x: 100, y: 648 })
   })
 
@@ -56,7 +55,6 @@ describe('clampWithinSpacing', () => {
   })
 
   it('keeps a tighter previous spacing instead of pulling the panel back', () => {
-    // lastSpacing.top -50 wins over the requested 66, so y = 0 stays
     expect(clamp(0, 0, { lastSpacing: { top: -50, bottom: 20, right: 20, left: -50 } })).toEqual({ x: 0, y: 0 })
   })
 
@@ -66,17 +64,14 @@ describe('clampWithinSpacing', () => {
 
   it('clamps relative to the origin when the card carries a transform', () => {
     const cardOrigin = { x: 50, y: 40 }
-    // y + origin.y = 60 < top spacing 66 → y = 66 - 40
     expect(clamp(100, 20, { origin: cardOrigin })).toEqual({ x: 100, y: 26 })
   })
 
   it('detects a left-offscreen panel when a wide card bleeds the origin left', () => {
-    // wide card origin sits 100px left of the window: rendered left edge 50-100 = -50 < 20 → clamped to 20 rendered
     expect(clamp(50, 100, { origin: { x: -100, y: 0 } })).toEqual({ x: 120, y: 100 })
   })
 
   it('does not clamp a left-bleeding local x when the origin keeps the rendered edge onscreen', () => {
-    // rendered left edge 5+100 = 105 ≥ 20 → untouched
     expect(clamp(5, 100, { origin: { x: 100, y: 0 } })).toEqual({ x: 5, y: 100 })
   })
 })
@@ -102,7 +97,7 @@ describe('clampOnResize', () => {
         origin,
         lastSpacing: { top: -50, bottom: 20, right: 20, left: 20 },
       }),
-    ).toEqual({ x: 20, y: 10 }) // y: settle keeps 0, boundary lifts to 10
+    ).toEqual({ x: 20, y: 10 })
   })
 })
 
@@ -111,7 +106,6 @@ describe('resolveInitialPanelPosition', () => {
   const panel = { width: 320, height: 400 }
 
   it('positions right of the card, vertically centered on its visible height, on desktop', () => {
-    // visible height 300-100 = 200 → y = 100 + 100 - 200 = 0, settled to top spacing 66
     expect(resolveInitialPanelPosition({ cardRect, panelSize: panel, viewport, origin, mobile: false })).toEqual({
       x: 520,
       y: 66,
@@ -122,7 +116,7 @@ describe('resolveInitialPanelPosition', () => {
     const mobileViewport = { width: 375, height: 700 }
     expect(
       resolveInitialPanelPosition({ cardRect, panelSize: panel, viewport: mobileViewport, origin, mobile: true }),
-    ).toEqual({ x: 375 / 2 - 160, y: 290 }) // 320 below the card, pulled up 30 by the drag boundary (400-tall panel)
+    ).toEqual({ x: 375 / 2 - 160, y: 290 })
   })
 
   it('detects mobile viewports', () => {
@@ -172,7 +166,6 @@ describe('resolveCardWidthTransition', () => {
     })
     const cardOrigin = { x: cardRect.left + WIDE_CARD_ORIGIN_OFFSET.x, y: cardRect.top + WIDE_CARD_ORIGIN_OFFSET.y }
     expect(transition?.cardOrigin).toEqual(cardOrigin)
-    // 500-122=378, 400-81=319 — inside spacing, so the clamp leaves them
     expect(transition?.position).toEqual({ x: 500 - cardOrigin.x, y: 400 - cardOrigin.y })
   })
 
@@ -191,7 +184,6 @@ describe('resolveCardWidthTransition', () => {
   })
 
   it('settle-clamps the re-based position', () => {
-    // entering wide at a position that lands offscreen-left after the re-base
     const transition = resolveCardWidthTransition({
       ...base,
       position: { x: 130, y: 90 },
@@ -200,7 +192,6 @@ describe('resolveCardWidthTransition', () => {
       from: 'regular',
       to: 'wide',
     })
-    // re-based x = 130-122 = 8 → clamped to left spacing 20
     expect(transition?.position.x).toBe(20)
   })
 })
@@ -214,7 +205,7 @@ describe('driftTowardsInitial', () => {
         { width: 1024, height: 768 },
         { width: 1024, height: 800 },
       ),
-    ).toEqual({ x: 100, y: 132 }) // height grew 32 → y moves 32 of the 50 gap
+    ).toEqual({ x: 100, y: 132 })
   })
 
   it('caps the drift at the initial position', () => {

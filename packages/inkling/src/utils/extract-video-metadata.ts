@@ -16,7 +16,6 @@ export default async function extractVideoMetadata(file: File): Promise<VideoMet
   video.muted = true
   video.playsInline = true
 
-  // The object URL lives behind a lease so every settle path revokes it exactly once.
   const lease = createPreviewLease(file)
 
   try {

@@ -50,7 +50,6 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
   } else if (filters.role === 'visitor') {
     conditions.push(eq(user.role, 'visitor'))
   } else if (filters.role === 'normal') {
-    // Non-admin users: author, visitor, or role-less anonymous.
     conditions.push(or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role)))
   }
   if (filters.q && filters.q.trim() !== '') {

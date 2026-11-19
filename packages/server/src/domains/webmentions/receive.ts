@@ -22,7 +22,6 @@ const log = getLogger('webmentions.receive')
 
 export interface ReceiveWebmentionResult {
   row: WebmentionRow
-  /** Upsert outcome driving the notification decision. */
   outcome: WebmentionUpsertOutcome
 }
 
@@ -31,10 +30,6 @@ export interface VerifiedSource {
   type: WebmentionType
 }
 
-/**
- * The shared verification core: fetch the source (SSRF-guarded, 1 MB cap),
- * confirm the link, classify. Throws DomainError so callers share `lastError` wording.
- */
 export async function verifyWebmentionSource(sourceUrl: string, targetCanonicalUrl: string): Promise<VerifiedSource> {
   const html = await fetchSourceHtml(sourceUrl)
   if (!sourceLinksToTarget(html, sourceUrl, targetCanonicalUrl)) {

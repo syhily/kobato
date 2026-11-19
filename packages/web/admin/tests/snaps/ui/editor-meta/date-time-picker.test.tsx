@@ -11,16 +11,13 @@ describe('snapshot: DateTimePicker', () => {
   it('renders the empty-state trigger label when value is blank', () => {
     const html = stableHtml(renderToHtml(<DateTimePicker value="" onChange={noop} />))
     expect(html).toContain('选择日期与时间')
-    // The trigger carries the empty data attribute used for muted styling.
     expect(html).toContain('data-empty="true"')
   })
 
   it('renders a localized date + time label when a value is set', () => {
     // A future date so the local-input parse is deterministic regardless of TZ.
     const html = stableHtml(renderToHtml(<DateTimePicker value="2099-06-15T14:30" onChange={noop} />))
-    // Locale-appropriate short format in an explicit wall-clock zone (zh-CN 24h).
     expect(html).toContain('2099/6/15 14:30')
-    // Not empty => the muted styling flag is off.
     expect(html).toContain('data-empty="false"')
   })
 
@@ -41,7 +38,6 @@ describe('snapshot: DateTimePicker', () => {
   })
 
   it('renders the popover trigger even when the value is unparseable garbage', () => {
-    // Garbage → parseLocal returns null; trigger falls back to the empty label.
     const html = stableHtml(renderToHtml(<DateTimePicker value="not-a-date" onChange={noop} />))
     expect(html).toContain('选择日期与时间')
     expect(html).toContain('data-empty="true"')

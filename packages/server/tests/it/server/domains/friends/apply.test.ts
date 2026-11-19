@@ -105,7 +105,6 @@ describe('integration / friends apply', () => {
       visible: false,
     })
 
-    // The pending row never leaks into the public projection.
     expect(await listPublicFriends(db)).toEqual([])
 
     await vi.waitFor(() => {
@@ -225,7 +224,6 @@ describe('integration / friends apply → admin approve', () => {
     expect(before[0]!.visible).toBe(false)
     expect(await listPublicFriends(db)).toEqual([])
 
-    // The approve action reuses the existing admin upsert path.
     const adminId = await seedAdmin()
     const approveRes = await call(
       adminFriendsRouter.upsert,

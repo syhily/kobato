@@ -15,7 +15,6 @@ function etagToTimestamp(etag: string): number {
   return parseInt(etag.slice(0, 8), 16)
 }
 
-/** Settings `fonts` → per-slot `{ family, href }` lists; stale ids drop silently. @param wantsPostFonts when false, `post`/`code` resolve to `[]` (routes opt in via `handle.postFonts`). */
 export async function resolveFontsForRender(
   db: Database,
   settings: FontsSettings,

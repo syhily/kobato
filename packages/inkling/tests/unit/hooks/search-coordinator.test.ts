@@ -70,7 +70,6 @@ describe('createSearchCoordinator', () => {
   it('ignores stale responses that resolve out of order', async () => {
     const first = deferred<SearchResult[]>()
     const second = deferred<SearchResult[]>()
-    // route by term: the default prefetch (term undefined) never consumes a query mock
     const searchLinks = vi.fn<(term?: string) => Promise<SearchResult[]>>((term) => {
       if (term === 'first') {
         return first.promise
@@ -89,7 +88,6 @@ describe('createSearchCoordinator', () => {
     coordinator.setQuery('second')
     scheduler.flush()
 
-    // the older response lands last — it must not overwrite the newer one
     second.resolve(resultsFor('second'))
     await tick()
     first.resolve(resultsFor('first'))
@@ -124,7 +122,6 @@ describe('createSearchCoordinator', () => {
 
     first.resolve(resultsFor('stale'))
     await tick()
-    // the stale first response neither shows nor settles the search
     expect(coordinator.getSnapshot().isSearching).toBe(true)
     expect(coordinator.getSnapshot().listOptions).toEqual([])
 
@@ -370,6 +367,6 @@ describe('createSearchCoordinator', () => {
 
     const snapshot = coordinator.getSnapshot()
     expect(snapshot.listOptions).toEqual([])
-    expect(snapshot.isSearching).toBe(true) // never settled: the request was invalidated
+    expect(snapshot.isSearching).toBe(true)
   })
 })

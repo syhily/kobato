@@ -1,8 +1,3 @@
-// Settings → infra runtime projection for the observability domain. The infra
-// layer takes a fully composed OTLP credential and owns no business semantics;
-// this module owns the mapping (site name → organization, admin credentials →
-// Basic header) and the two fingerprints that gate activation and hot restarts.
-
 import type { TraceRuntimeSettings } from '@kobato/server/infra/trace/config.ts'
 import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
@@ -72,7 +67,6 @@ function fingerprint(scope: 'connection' | 'runtime', payload: Record<string, un
   return secretHmac(FINGERPRINT_PURPOSE, JSON.stringify({ version: FINGERPRINT_VERSION, scope, ...payload }))
 }
 
-/** `Basic base64(username:password)`, or `null` while either half is unset. */
 export function basicAuthorizationHeader(username: string, password: string): string | null {
   if (username === '' || password === '') {
     return null
@@ -80,7 +74,6 @@ export function basicAuthorizationHeader(username: string, password: string): st
   return `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`
 }
 
-/** Map the settings section onto the infra runtime input. */
 export function toTraceRuntimeSettings(site: ObservabilitySettingsSlice): TraceRuntimeSettings {
   return {
     enabled: site.enabled,

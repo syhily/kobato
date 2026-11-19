@@ -13,10 +13,6 @@ import { asRoute } from '@kobato/test/route-test-utils.tsx'
 
 import LoginRouteRaw from '@/routes/auth/signin.tsx'
 
-// The sign-in route maps stable query codes to catalog messages per locale —
-// `invalid_credentials` never renders a literal. Unknown codes keep the legacy
-// raw rendering for external callers.
-
 const LoginRoute = asRoute(LoginRouteRaw)
 
 const baseLoader = {

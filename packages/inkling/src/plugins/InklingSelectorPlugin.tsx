@@ -11,25 +11,16 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { mergeRegister, COMMAND_PRIORITY_LOW } from 'lexical'
 import React from 'react'
 
-// defined with the other card commands (`@kobato/inkling-internal/nodes/cards/card-commands`)
-// and in the selector-insertion behaviour module; re-exported here as part of
-// this module's public surface
 export { OPEN_GIF_SELECTOR_COMMAND }
 export {
   INSERT_FROM_GIF_COMMAND,
   INSERT_FROM_LIBRARY_COMMAND,
 } from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
 
-// the insert surgeries and their command registrations live in
-// `@kobato/inkling-internal/plugins/behaviour/selector-insertion`; this plugin keeps only the
-// OPEN_* placeholder dispatches, which name the React overlay components.
-// The two registrations are one skeleton folded through a table — the
-// overlay component is the only datum that varies.
 const SELECTOR_OPEN_COMMANDS = [
   [OPEN_GIF_SELECTOR_COMMAND, GifPlugin],
   [OPEN_IMAGE_LIBRARY_COMMAND, LibraryPlugin],
 ] as const
-
 export const InklingSelectorPlugin = () => {
   const [editor] = useLexicalComposerContext()
 

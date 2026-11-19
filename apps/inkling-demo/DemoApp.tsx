@@ -70,9 +70,7 @@ const defaultCardConfig: CardConfig = {
       },
     ]),
   siteUrl: window.location.origin,
-  // Enables the internal linking feature; disable with `/#/?searchLinks=false`.
   searchLinks: async (term?: string): Promise<SearchResult[]> => {
-    // Default to showing latest posts when the term is empty; no delay simulates pre-loaded posts.
     if (!term) {
       return [
         {
@@ -341,10 +339,8 @@ function DemoComposer({
 
   const fileUploader: FileUploader = { useFileUpload: useFileUpload({ isMultiplayer }), fileTypes }
 
-  // Sidebar state stays here because the breakout adjustment below reads it; the chrome itself lives in DemoChrome.
   const { onMouseDown, onClick } = useFocusBelowCanvas({ editorAPI, containerRef })
 
-  // Sidebar uses useLexicalComposerContext so it must be inside a InklingComposer.
   const demoChrome = <DemoChrome editorType={editorType || 'full'} saveContent={saveContent} sidebar={sidebar} />
 
   const demoLayout = (children: React.ReactNode) => (
@@ -416,12 +412,10 @@ function DemoApp({ editorType, isMultiplayer }: DemoAppProps) {
   const [selectionWordCount, setSelectionWordCount] = useState<number | null>(null)
   const [tkCount, setTKCount] = useState(0)
 
-  // Forces re-initialization when the URL changes; content is memoized and goes stale when switching editor types.
   const location = useLocation()
 
   return (
     <div key={location.key} className={`inkling-lexical top`}>
-      {/* Outside DemoComposer to avoid re-renders and flaky tests when word count changes. */}
       <WordCount selectionWordCount={selectionWordCount} tkCount={tkCount} wordCount={wordCount} />
 
       <MemoizedDemoComposer

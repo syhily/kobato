@@ -1,6 +1,3 @@
-// The suite mutates the shared instance's general settings; beforeEach
-// restores the deterministic baseline over the admin HTTP surface.
-
 import { expect, test } from '@tests/browser/support/fixtures.ts'
 import {
   chooseTimeZone,
@@ -58,8 +55,7 @@ test('a failed dirty-card flush vetoes the locale switch', async ({ adminPage: p
   // window time to close before asserting the veto (the rollback/focus restore
   // runs on a later frame).
   await page.waitForTimeout(1_000)
-  // The transaction closed: the trigger is no longer busy, and focus is back
-  // on the anchor (the picked option lives in a portal and is gone).
+
   await expect(page.locator('#general-locale')).not.toHaveAttribute('aria-busy', 'true')
   await expect(page.locator('#general-locale')).toBeFocused()
 
@@ -70,12 +66,9 @@ test('a failed dirty-card flush vetoes the locale switch', async ({ adminPage: p
   await expect(page.locator('#general-description')).toHaveValue(unsavedDescription)
   await expect(page.locator('#general-locale')).toHaveText(LOCALE_LABELS['zh-CN'])
 
-  // The server still serves the old language (the tab did not reload, so this
-  // is the authoritative check that the switch was vetoed server-side too).
   expect(await fetchHtmlLang(page)).toBe('zh-CN')
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
 
-  // Closing a dirty page fires the framework's pagehide flush; leave the form clean for the next test.
   await page.unroute('**/rpc/admin/settings/update')
   await replaceInput(page, page.locator('#general-description'), BASELINE_GENERAL.description)
 })
@@ -93,15 +86,13 @@ test('a successful switch saves the dirty card, reloads once, and hydrates clean
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW')
   await expect(page.locator('#general-description')).toHaveValue(savedDescription)
-  // The admin chrome comes from the zh-TW catalog — the settings nav group is
-  // the stable "menu" witness (it is not user content).
+
   await expect(page.getByRole('heading', { name: '站點', exact: true }).first()).toBeVisible()
 
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW')
   await expect(page.getByText('跳至主要內容', { exact: false }).first()).toBeVisible()
 
-  // React hydration faults are console errors (#418/#423 family or prose).
   expect(issues.hydration).toEqual([])
 })
 
@@ -140,8 +131,6 @@ test('two tabs: A switches the language while B saves its own field and never wr
     await openSettings(pageA)
     await openSettings(pageB)
 
-    // B's writes are inspected for a locale field: the timezone commit must be
-    // field-scoped, and the sync-triggered flush must only carry B's own title.
     const bSettingsWrites: string[] = []
     pageB.on('request', (request) => {
       if (request.method() === 'POST' && request.url().includes('/rpc/admin/settings/update')) {
@@ -156,8 +145,6 @@ test('two tabs: A switches the language while B saves its own field and never wr
     await timeZoneSaved
     await expect(pageB.locator('#general-timezone')).toContainText('Asia/Tokyo')
 
-    // B holds a dirty title when A switches. The receiver must flush it before
-    // reloading.
     const bTitle = `B dirty title ${Date.now()}`
     await replaceInput(pageB, pageB.locator('#general-title'), bTitle)
 
@@ -187,15 +174,13 @@ test('an editor with unsaved content is not hard-reloaded by the locale broadcas
   try {
     await openSettings(settings)
     await editor.goto('/editor/post/new')
-    // The inkling surface mounts only after hydration (`useHydrated`) — its
-    // presence is the "events are live" signal for the editor tree.
+
     await expect(editor.locator('[contenteditable="true"]').first()).toBeVisible({ timeout: 30_000 })
 
     const title = editor.getByRole('textbox', { name: '文章标题', exact: true })
     await expect(title).toBeVisible()
     const draftTitle = `Unsaved draft ${Date.now()}`
     await replaceInput(editor, title, draftTitle)
-
     const body = editor.locator('[contenteditable="true"]').first()
     await body.click()
     await editor.keyboard.type('Unsaved prose that a hard reload would discard.')
@@ -215,8 +200,6 @@ test('an editor with unsaved content is not hard-reloaded by the locale broadcas
     expect(await readWindowMarker(editor)).toBe('editor-unsaved')
     await expect(title).toHaveValue(draftTitle)
 
-    // The root provider never reloads a document it cannot inspect; it offers
-    // an explicit notice with a user-triggered Reload instead.
     const notice = editor.getByRole('alert').filter({ hasText: '其他标签页已切换语言' })
     await expect(notice).toBeVisible({ timeout: 10_000 })
     await expect(notice.getByRole('button', { name: '刷新' })).toBeVisible()

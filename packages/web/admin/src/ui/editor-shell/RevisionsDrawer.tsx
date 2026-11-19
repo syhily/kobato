@@ -18,9 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 export interface RevisionHistoryDrawerProps {
   type: 'page' | 'post'
   ownerId: string
-  /** Token of the currently displayed revision; used to highlight the row. */
   currentToken: string | null
-  /** Lexical body currently displayed in the editor. */
   currentBody: LexicalEditorState
   onAdoptRevision: (revision: AdminRevisionDto) => void
 }
@@ -296,7 +294,6 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
   )
 }
 
-/** The two scroll-synced diff panes. Remounted per revision (key) so scroll starts at the top. */
 function RevisionPanes({ diff }: { diff: ReturnType<typeof diffBodies> }) {
   const { t } = useI18n()
   const leftScrollRef = useRef<HTMLDivElement>(null)

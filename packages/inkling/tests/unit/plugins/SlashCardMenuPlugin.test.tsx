@@ -126,7 +126,6 @@ async function setupSlashPlugin() {
   return { editor, rootElement, dispatchCommandSpy }
 }
 
-/** The rendered selection marker: CardMenu's flat data-inkling-cardmenu-idx. */
 function selectedMenuIndex(): string | null | undefined {
   return document.querySelector('[data-inkling-cardmenu-selected="true"]')?.getAttribute('data-inkling-cardmenu-idx')
 }
@@ -235,8 +234,6 @@ describe('SlashCardMenuPlugin', () => {
       expect(document.querySelector('[data-inkling-slash-menu]')).toBeInTheDocument()
     })
 
-    // Enter resolves the item from buildCardMenu's flat list and dispatches
-    // its insert command directly — no menu DOM involved in the selection
     await act(async () => {
       editor.dispatchCommand(KEY_ENTER_COMMAND, new KeyboardEvent('keydown', { key: 'Enter' }))
     })
@@ -250,8 +247,6 @@ describe('SlashCardMenuPlugin', () => {
     })
   })
 
-  // Plugin-level pins for the menu navigator wiring; the state machine itself
-  // is table-tested in ../hooks/card-menu-navigation.test.ts.
   it('moves the rendered selection on arrow keys and wraps around at both ends', async () => {
     const { editor } = await setupSlashPlugin()
 
@@ -263,8 +258,6 @@ describe('SlashCardMenuPlugin', () => {
       expect(document.querySelector('[data-inkling-slash-menu]')).toBeInTheDocument()
     })
 
-    // CardMenuItem stamps data-inkling-cardmenu-idx on both the li and the
-    // button, so count the buttons for the true item count.
     const itemCount = document.querySelectorAll('button[data-inkling-cardmenu-idx]').length
     expect(itemCount).toBeGreaterThan(1)
     expect(selectedMenuIndex()).toBe('0')
@@ -276,7 +269,6 @@ describe('SlashCardMenuPlugin', () => {
       expect(selectedMenuIndex()).toBe('1')
     })
 
-    // at the last item, down wraps back to the first
     await act(async () => {
       for (let i = 0; i < itemCount - 1; i++) {
         editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, new KeyboardEvent('keydown', { key: 'ArrowDown' }))
@@ -286,7 +278,6 @@ describe('SlashCardMenuPlugin', () => {
       expect(selectedMenuIndex()).toBe('0')
     })
 
-    // up from the first item wraps to the last
     await act(async () => {
       editor.dispatchCommand(KEY_ARROW_UP_COMMAND, new KeyboardEvent('keydown', { key: 'ArrowUp' }))
     })

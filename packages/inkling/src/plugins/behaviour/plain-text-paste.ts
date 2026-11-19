@@ -23,11 +23,9 @@ export function handlePlainTextPaste(
 ): boolean {
   const text = clipboardData.getData(MIME_TEXT_PLAIN)
 
-  // Use shared URL validator so mailto:, ftp:, tel: etc. are handled consistently.
   const linkMatch: readonly [string, string] | null = text && isPasteableLinkUrl(text) ? [text, text] : null
   if (linkMatch) {
     if (!skipCardShortcutGuard) {
-      // avoid any conversion if we're pasting onto a card shortcut
       const selection = $getSelection()
       const node = $isRangeSelection(selection) ? selection.anchor.getNode() : null
       if (node?.getTextContent().startsWith('/')) {

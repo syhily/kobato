@@ -4,7 +4,6 @@ import type { EntityType } from '@kobato/db/target.ts'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@kobato/db/operations/like.ts'
 import { ensureMetricsBatch } from '@kobato/db/operations/metric.ts'
 
-/** Engagement fields every admin list row gets from the metrics/comment batch. */
 export interface AdminListEngagement {
   commentCount: number
   commentPublicId: string
@@ -22,22 +21,15 @@ export interface ListForAdminOptions<
   Extras extends object,
   Dto,
 > {
-  /** Discriminator for the metrics/comment fan-out. */
   entityType: EntityType
   filters: Filters
-  /** Applied when `filters.limit` is undefined. */
   defaultLimit: number
   listRows: (db: Database, filters: Filters & { limit: number; offset: number }) => Promise<Row[]>
   countRows: (db: Database, filters: Filters) => Promise<number>
-  /** Domain-specific enrichment loaded in the same batch; keyed by row id, missing rows get `undefined`. */
   loadExtras?: (db: Database, rows: Row[]) => Promise<Map<number, Extras>>
   toDto: (row: Row, engagement: AdminListEngagement, extras: Extras | undefined) => Dto
 }
 
-/**
- * Shared orchestration for the posts/pages admin lists: the domains keep their
- * repos and DTO mappers; only the fan-out shape lives here.
- */
 export async function listForAdmin<
   Filters extends { limit?: number; offset?: number },
   Row extends { id: number },

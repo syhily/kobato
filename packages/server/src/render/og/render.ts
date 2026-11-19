@@ -123,8 +123,6 @@ export interface OpenGraphProps {
   cover: string
 }
 
-// Font registration lives in `canvas-fonts.ts` (`ensureCanvasFont`): one single-flight
-// per slot, shared with the calendar renderer.
 function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | null> {
   return ensureCanvasFont('og', settings)
 }

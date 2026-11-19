@@ -17,7 +17,6 @@ interface RegisteredBatcher {
   settle?(): Promise<unknown>
   /** Drain + hold flushes for an external consistency window (analytics backup). */
   pause?(): Promise<unknown>
-  /** Release a pause — buffered payloads flush immediately. */
   resume?(): void
   /** Detach process-level registrations (shutdown hooks) before the instance is dropped. */
   dispose?(): void
@@ -26,7 +25,6 @@ interface RegisteredBatcher {
 interface BatcherEntry {
   name: string
   init: (handle: DatabaseHandle) => RegisteredBatcher
-  /** Boot-time replay of this batcher's dead-letter file (optional). */
   replayDeadLetter?: () => Promise<unknown>
   instance: RegisteredBatcher | undefined
 }
@@ -54,7 +52,6 @@ export function registerBatcher(
 
 export function initAllBatchers(handle: DatabaseHandle): void {
   for (const entry of entries) {
-    // HMR path: dispose the replaced instance's hook (same contract as reset).
     entry.instance?.dispose?.()
     entry.instance = entry.init(handle)
   }

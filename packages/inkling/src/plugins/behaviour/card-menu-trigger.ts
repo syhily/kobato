@@ -3,20 +3,6 @@ import type { LexicalEditor } from 'lexical'
 import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-node'
 import { $createParagraphNode, $getSelection, $isParagraphNode, $isRangeSelection } from 'lexical'
 
-// Card-menu trigger — the headless half of the slash and plus card menus:
-// the observe→extract→verdict loop (registerTriggerUpdates). Editor state and
-// DOM-selection/geometry facts come in through the resolvers below; typed
-// verdicts go out — { query, close } for the slash menu, { show, hide } for
-// the plus button — and a null resolution means "no verdict: leave the
-// consumer's state as it is" (mid-composition, a selection inside the open
-// menu, a hover outside the editor or over a card). Per-trigger policy lives
-// in the resolvers as data-shaped verdicts; the plugins keep only their DOM
-// event wiring, driving the popup through its handle — the session, anchor
-// chrome, and rendering are CardMenuPopup's.
-
-// The shared observe→emit loop: resolve the trigger's verdict on each editor
-// update and emit it. A null resolution emits nothing — the consumer's state
-// stays as it is.
 function registerTriggerUpdates<V>(
   editor: LexicalEditor,
   resolve: () => V | null,
@@ -37,10 +23,6 @@ export interface SlashPressEvent {
   metaKey: boolean
 }
 
-// The valid-press grammar behind the slash menu's keypress wiring: a bare
-// '/' — no modifiers, not mid-composition — with the editor focused and the
-// selection either a collapsed caret on an empty top-level paragraph or a
-// full-paragraph selection (the '/' replaces the paragraph text either way).
 export function isSlashTriggerPress(editor: LexicalEditor, event: SlashPressEvent): boolean {
   const { key, isComposing, ctrlKey, metaKey } = event
 
@@ -52,7 +34,6 @@ export function isSlashTriggerPress(editor: LexicalEditor, event: SlashPressEven
   if (!rootElement?.matches(':focus')) {
     return false
   }
-
   return editor.getEditorState().read(() => {
     const selection = $getSelection()
     if (!$isRangeSelection(selection)) {
@@ -76,43 +57,28 @@ export function isSlashTriggerPress(editor: LexicalEditor, event: SlashPressEven
 }
 
 export type SlashMenuVerdict =
-  // the caret sits in a '/query params' paragraph — track the typed query
-  // and lease the cursor range so the session can restore it on Escape
   | { type: 'query'; query: string; commandParams: string[]; cursorRange: Range | null }
-  // the selection left the slash-command paragraph — close the menu
   | { type: 'close' }
 
 export interface SlashCardMenuTriggerHandlers {
   onVerdict: (verdict: SlashMenuVerdict) => void
 }
 
-// The slash menu's per-update policy: close when the selection has left the
-// slash-command paragraph (a non-collapsed selection, a top-level element
-// that isn't a '/'-paragraph, or a native caret that isn't a text node
-// inside the editor); otherwise extract the query and command params from
-// the paragraph text after '/'. Null when no verdict applies — mid-composition,
-// or a non-collapsed native selection inside the open menu (clicking a menu
-// section moves the DOM selection there; that is not a close).
 function resolveSlashMenuVerdict(editor: LexicalEditor): SlashMenuVerdict | null {
   return editor.getEditorState().read(() => {
     if (editor.isComposing()) {
       return null
     }
-
     const selection = $getSelection()
-
     if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-      // don't close the menu if the selection is inside a card-menu section
       const anchorParent = window.getSelection()?.anchorNode?.parentNode
       const isMenuSection = anchorParent instanceof HTMLElement ? anchorParent.dataset.cardMenuSection : undefined
 
       if (isMenuSection) {
         return null
       }
-
       return { type: 'close' }
     }
-
     const node = getSelectedNode(selection).getTopLevelElement()
 
     if (!node || !$isParagraphNode(node) || !node.getTextContent().startsWith('/')) {
@@ -141,20 +107,12 @@ export function registerSlashCardMenuTrigger(
   return registerTriggerUpdates(editor, () => resolveSlashMenuVerdict(editor), onVerdict)
 }
 
-export type PlusButtonVerdict =
-  // anchor the button to this empty paragraph
-  | { type: 'show'; paragraph: Element }
-  // no valid anchor — hide the button
-  | { type: 'hide' }
+export type PlusButtonVerdict = { type: 'show'; paragraph: Element } | { type: 'hide' }
 
 export interface PlusCardMenuTriggerHandlers {
   onVerdict: (verdict: PlusButtonVerdict) => void
 }
 
-// The plus button's caret policy: show the button anchored to the caret's
-// paragraph when a collapsed selection sits in an empty paragraph and the
-// native selection's anchor is that <p> element inside the editor; hide it
-// for anything else. Null mid-composition — the button stays as it is.
 function resolvePlusCaretButtonVerdict(editor: LexicalEditor): PlusButtonVerdict | null {
   return editor.getEditorState().read(() => {
     if (editor.isComposing()) {
@@ -166,16 +124,13 @@ function resolvePlusCaretButtonVerdict(editor: LexicalEditor): PlusButtonVerdict
     if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
       return { type: 'hide' }
     }
-
     const node = getSelectedNode(selection)
-
     if (!$isParagraphNode(node) || node.getTextContent() !== '') {
       return { type: 'hide' }
     }
 
     const p = window.getSelection()?.anchorNode
     const rootElement = editor.getRootElement()
-
     if (!p || !(p instanceof Element) || p.tagName !== 'P' || !rootElement?.contains(p)) {
       return { type: 'hide' }
     }
@@ -191,11 +146,6 @@ export function registerPlusCardMenuTrigger(
   return registerTriggerUpdates(editor, () => resolvePlusCaretButtonVerdict(editor), onVerdict)
 }
 
-// The plus button's hover policy, resolved from a mousemove's page
-// coordinates: hovering an empty <p> inside the editor shows the button
-// anchored to it; hovering anything else inside the editor falls back to the
-// caret policy; hovering outside the editor or over a card returns null —
-// the button stays as it is.
 export function resolvePlusHoverButtonVerdict(
   editor: LexicalEditor,
   pageX: number,
@@ -222,14 +172,9 @@ export function resolvePlusHoverButtonVerdict(
   if (hoveredElem.tagName === 'P' && hoveredElem.textContent === '') {
     return { type: 'show', paragraph: hoveredElem }
   }
-
   return resolvePlusCaretButtonVerdict(editor)
 }
 
-// The selectionchange hide rule: a native selection anchored outside the
-// editor hides the button — except while the menu is open and the selection
-// landed inside it (clicking a menu entry moves the DOM selection there, so
-// the plugin passes its menu container only while the menu is showing).
 export function shouldHidePlusButtonOnSelectionChange(
   anchorNode: Node | null,
   rootElement: HTMLElement | null,
@@ -257,7 +202,6 @@ export function $swapTriggerParagraph(dispatch: () => void): void {
   }
 
   const focusPNode = selection.focus.getNode().getTopLevelElement()
-
   if (!focusPNode) {
     return
   }

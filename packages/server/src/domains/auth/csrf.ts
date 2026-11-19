@@ -43,7 +43,6 @@ export function deriveStatelessCsrfToken(cookieValue: string): string {
 }
 
 export function buildCsrfCookieHeader(cookieValue: string): string {
-  // Session-scoped: the token is re-derived every visit.
   const parts = [`${CSRF_COOKIE_NAME}=${cookieValue}`, 'Path=/', 'HttpOnly', 'SameSite=Lax']
   if (import.meta.env.PROD) {
     parts.push('Secure')

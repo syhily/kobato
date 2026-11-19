@@ -7,9 +7,6 @@ import { regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// page.detail serves the saved `body_html` projection straight through — real engine: seeded meta
-// row + published content revision.
-
 const db = getTestDb()
 const session = regularSession()
 

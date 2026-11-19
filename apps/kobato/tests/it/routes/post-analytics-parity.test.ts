@@ -1,8 +1,6 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
 import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/contracts/analytics.ts'
-// Parity net: both analytics shells must return identical loader data for the same post. Real
-// engine: real rows + the seeded DuckDB sidecar adopted into the lifecycle; om '@kobato/contracts/analytics.ts'
 import { postTag } from '@kobato/db/schema/post-tag.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
 import { tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
@@ -23,7 +21,6 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
 
-// Loader-surface test; the shared view is covered by the route snapshots.
 vi.mock('@kobato/web-admin/ui/analytics/PostAnalyticsView.tsx', () => ({
   PostAnalyticsHeader: () => null,
   PostAnalyticsView: () => null,
@@ -75,7 +72,6 @@ async function seedPostTag(postId: number, name: string): Promise<void> {
   await db.insert(postTag).values({ postId, tagId: tag!.id })
 }
 
-/** Seed three page views (two distinct visitors, one referer) inside the 1000–2000s range. */
 async function seedViews(postId: number): Promise<void> {
   await seedAccessEvents(analytics.handle, [
     {
@@ -103,7 +99,7 @@ async function seedViews(postId: number): Promise<void> {
       entityId: postId,
       country: 'US',
     },
-    // A different post's view — must NOT leak into this post's numbers.
+
     {
       ts: new Date(1_500_000),
       visitorHash: 'c',
@@ -148,7 +144,7 @@ describe('post analytics route parity (real db + real analytics)', () => {
       expect(Object.keys(data.initialMetrics).sort()).toEqual(METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!).sort())
       expect(data.post.id).toBe(String(postId))
       expect(data.post.tags).toEqual(['typescript'])
-      // Real scoped numbers: the other post's view stayed out.
+
       expect(data.counters).toEqual({ visits: 3, visitors: 2, referers: 1 })
     }
   })

@@ -22,13 +22,11 @@ import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-edito
 import { PageBodyEditor } from '@kobato/web-admin/ui/editor/PageBodyEditor.tsx'
 import { useMemo } from 'react'
 
-/** Entity shape the screen itself reads (toolbar links, panel extras). */
 export interface EditorScreenEntity extends EntityLike {
   title: string
   deletedAt: string | null
 }
 
-/** Entity parameterization of the editor screen — all entity differences. */
 export interface EditorScreenAdapter<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EditorScreenEntity,
@@ -36,15 +34,10 @@ export interface EditorScreenAdapter<
   TUpsertMetaInput,
 > {
   entityKind: 'post' | 'page'
-  /** Display-noun message id woven into toolbar / panel / dialog copy (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
-  /** Admin list route (back button, delete navigation). */
   listPath: string
-  /** Public URL prefix for the post-save preview banner (`/posts` / ``). */
   bannerBasePath: string
-  /** Public detail URL of the entity being edited. */
   publicPath: (slug: string) => string
-  /** Analytics dashboard URL; omit when the entity has none (pages). */
   analyticsPath?: (id: string) => string
   editPath: (id: string) => string
 
@@ -72,10 +65,8 @@ export interface EditorScreenAdapter<
 
   deleteEntityFn: (id: string) => Promise<unknown>
   restoreEntityFn: (id: string) => Promise<unknown>
-  /** Invalidate the entity's admin list cache namespace. */
   invalidateList: () => void
 
-  /** Entity meta sidebar (post adds category / tags / alias + feature gate). */
   renderMetaSidebar: (props: MetaSidebarSlotProps<TMeta>) => React.ReactNode
 }
 
@@ -91,8 +82,6 @@ export interface EditorScreenProps<
   adapter: EditorScreenAdapter<TMeta, TEntity, TDetail, TUpsertMetaInput>
 }
 
-/** The shared editor screen for both entities — differences arrive through
- *  the adapter; shared state lives in `useEditorShellState`. */
 export function EditorScreen<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EditorScreenEntity,
@@ -156,7 +145,6 @@ export function EditorScreen<
         />
       ) : null}
 
-      {/* Layout grid: [editor | meta] when the meta panel is open, [editor] otherwise. */}
       <div
         className={cn(
           'mt-4 grid grow gap-4 md:mt-0',

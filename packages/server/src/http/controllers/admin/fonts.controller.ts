@@ -5,9 +5,7 @@ import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/fonts.ts`; this controller only implements the
-// procedures (admin base). `upload` lives in a separate Hono resource route
+// `upload` lives in a separate Hono resource route (`fonts-package.ts`):
 // (`fonts-package.ts`): 60 MiB sources exceed the oRPC bridge's body limit.
 const impl = implementAdmin(adminFontsContract)
 

@@ -19,7 +19,6 @@ export async function getInstallState(db: Database): Promise<InstallState> {
   return 'installed'
 }
 
-/** Loader/action helper for `/admin/setup`. */
 export async function ensureNoAdminOrRedirect(db: Database): Promise<null> {
   const state = await getInstallState(db)
   if (state === 'noAdmin') {
@@ -28,7 +27,6 @@ export async function ensureNoAdminOrRedirect(db: Database): Promise<null> {
   throw redirect('/admin/signin', { status: 303 })
 }
 
-/** Loader/action helper for `/admin/signin`. */
 export async function ensureInstalledOrRedirect(db: Database): Promise<null> {
   const state = await getInstallState(db)
   if (state === 'noAdmin') {

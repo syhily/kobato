@@ -12,7 +12,6 @@ export interface UpdateMusicMetadataInputs {
   name: string
   artist: string[]
   album: string
-  /** `null` clears the stored lyric. */
   lyric: string | null
 }
 
@@ -43,7 +42,6 @@ export async function updateMusicMetadata(
     throw new DomainError('NOT_FOUND', descriptorFor('music.error.notFound'))
   }
 
-  // Re-fetch so the response carries the joined `uploaderName`.
   const projected = await findAdminMusicRowById(db, input.id)
   if (projected === null) {
     throw new DomainError('NOT_FOUND', descriptorFor('music.error.notFound'))

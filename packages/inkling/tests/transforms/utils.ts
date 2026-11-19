@@ -8,14 +8,12 @@ import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import assert from 'node:assert/strict'
 
 export const defaultNodes: LexicalNodeConfig[] = [
-  // basic HTML nodes
   HeadingNode,
   LinkNode,
   ListItemNode,
   ListNode,
   QuoteNode,
 
-  // Inkling nodes
   ...DEFAULT_BASE_NODES,
 ]
 

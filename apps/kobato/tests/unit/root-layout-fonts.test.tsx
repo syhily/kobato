@@ -62,12 +62,10 @@ describe('root Layout font slots', () => {
   it('renders every slot link and the --font-serif override on handle.postFonts routes', () => {
     const html = renderLayout('/posts/x', rootData)
 
-    // One self-hosted stylesheet link per configured font.
     expect(html).toContain('/fonts/embedded/aaaa/result.css')
     expect(html).toContain('/fonts/embedded/bbbb/result.css')
     expect(html).toContain('/fonts/embedded/cccc/result.css')
 
-    // Slot families are prepended to the CSS token stacks on <html>.
     expect(html).toContain('--font-body')
     expect(html).toContain('Global Sans')
     expect(html).toContain('--font-serif')

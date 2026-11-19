@@ -17,7 +17,6 @@ function whereViewerVisible(pendingValues: boolean[], currentUserId?: number) {
   )
 }
 
-// Both totals in one round-trip via a filtered aggregate.
 export async function countCommentsAndRoots(
   db: Database,
   target: EntityTarget,

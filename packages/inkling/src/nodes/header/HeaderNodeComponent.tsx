@@ -63,8 +63,6 @@ function HeaderNodeComponent({
     config: pinturaConfig,
   })
 
-  // the background-image show/hide/remove policy lives in the hook; the
-  // component only supplies the node src, the write seam, and the file dialog
   const {
     showBackgroundImage,
     showImage: handleShowBackgroundImage,
@@ -78,7 +76,6 @@ function HeaderNodeComponent({
     openFileDialog: () => fileInputRef.current?.click(),
   })
 
-  // field-name-as-data write handlers (header-field-writer)
   const field = headerFieldWriter(write)
 
   const handleAlignment = field.set('alignment')
@@ -136,9 +133,7 @@ function HeaderNodeComponent({
           alignment,
           backgroundColor,
           backgroundImageSrc,
-          // the dataset admits arbitrary strings from older documents; the
-          // card UI speaks fixed vocabularies, so narrow at the render
-          // boundary with the node's own defaults (the callout color idiom)
+
           backgroundSize: backgroundSize === 'contain' ? 'contain' : 'cover',
           buttonColor,
           buttonEnabled,
@@ -192,10 +187,6 @@ function HeaderNodeComponent({
 
 export default HeaderNodeComponent
 
-/**
- * Header's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderHeaderCard(node: HeaderNode) {
   return (
     <HeaderNodeComponent

@@ -205,7 +205,6 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
     mockFetch([new Response(new Uint8Array(body), { status: 200, headers: { 'Content-Type': 'image/png' } })])
     const result = await withAllowedMirror(() => fetchAvatarImage('hash', 120))
     expect(result).not.toBeNull()
-    // Real sharp round-trip: the compressed payload stays a 512px image.
     expect(await imageWidth(result!)).toBe(512)
   })
 
@@ -803,7 +802,6 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   })
 
   it('persists a HAVE_AVATAR entry with a null buffer as NO_AVATAR and redirects without fetching', async () => {
-    // encodeAvatar normalizes a payload-less positive to the NO_AVATAR sentinel byte.
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
     await set('avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
@@ -821,7 +819,6 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const result = await serveAvatar(db, '../../etc/passwd', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
-    // Invalid hashes must not grow the avatar cache.
     expect(await cachedAvatar(120, '../../etc/passwd')).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
   })
@@ -876,7 +873,6 @@ describe('domains/comments/services/avatar — probeAvatarMirrors', () => {
     for (const result of results) {
       expect(result.latencyMs).toBeGreaterThanOrEqual(1)
     }
-    // Every preset got exactly one probe request, at the d=404 probe URL.
     expect(fetchFn).toHaveBeenCalledTimes(GRAVATAR_MIRROR_URLS.length)
     expect(String(fetchFn.mock.calls[0]![0])).toMatch(/\/d41d8cd98f00b204e9800998ecf8427e\?s=32&d=404$/)
   })

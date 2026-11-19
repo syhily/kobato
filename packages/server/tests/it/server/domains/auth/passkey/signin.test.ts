@@ -145,7 +145,6 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
   it('refuses when the finish rate limit trips', async () => {
     setBlogSettingsBundleForTests(passkeyFinishBucket(1))
 
-    // First reach consumes the single-slot budget.
     const first = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm('nope'), '/admin')
     expect(first.type).toBe('error')
 
@@ -181,22 +180,18 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
     expect(result.to).toBe('/admin')
     expect(result.setCookie).toMatch(/^__session=/)
 
-    // One real session row, owned by the user, login meta stamped.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(userId)
     expect(sessions[0]!.ip).toBe(CLIENT)
 
-    // Last-login touch landed on the real user row.
     const [row] = await db.select().from(userTable).where(eq(userTable.id, userId))
     expect(row!.lastIp).toBe(CLIENT)
     expect(row!.lastUa).toBe('vitest')
 
-    // The credential counter advanced through the real service.
     const [cred] = await db.select().from(passkeyCredential).where(eq(passkeyCredential.credentialId, 'cred-1'))
     expect(cred!.counter).toBe(1)
 
-    // Exactly one login audit, attributed to the new sid, method passkey.
     await flushAuditLog()
     const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
     expect(logins).toHaveLength(1)

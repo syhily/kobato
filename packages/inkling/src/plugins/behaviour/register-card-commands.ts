@@ -23,7 +23,6 @@ import { $getNodeByKey, $getSelection, $isNodeSelection, $isRangeSelection, COMM
 
 interface CardCommandDeps {
   store: CardSelectionStore
-  /** The pick seam's request store — the `openPicker` payload flag writes here. */
   pickerStore: CardPickerStore
 }
 
@@ -76,7 +75,6 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
       ({ cardKey }) => {
         const { selectedCardKey, isEditingCard } = store.getState()
 
-        // already selected: delete when empty (exiting edit mode)
         if (selectedCardKey === cardKey && isEditingCard) {
           const cardNode = $getNodeByKey(cardKey)
           if (cardNode && $isInklingCard(cardNode) && cardNode.isEmpty?.()) {
@@ -137,7 +135,6 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
         const nextSibling = cardNode.getNextSibling()
 
         if (direction === 'backward' && previousSibling) {
-          // from-mode: cardNode comes from the payload, not the selection
           const previousCard = $getLogicallyAdjacentCard('previous', cardNode)
           if (previousCard) {
             $selectCard(editor, previousCard, { focus: 'always' })
@@ -145,7 +142,6 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
             previousSibling.selectEnd()
           }
         } else if (nextSibling) {
-          // from-mode: cardNode comes from the payload, not the selection
           const nextCard = $getLogicallyAdjacentCard('next', cardNode)
           if (nextCard) {
             $selectCard(editor, nextCard, { focus: 'always' })
@@ -153,17 +149,12 @@ export function registerCardCommands(editor: LexicalEditor, deps: CardCommandDep
             nextSibling.selectStart()
           }
         } else {
-          // keep a paragraph when the deleted card was the only node
           $ensureParagraphAfterCard(cardNode, { select: true })
         }
 
         cardNode.remove()
 
-        // caret-selection paths: focus moves back to the editor by hand
-        // ($selectCard's 'always' leg already repaired it on the card paths;
-        // a second focus on the active element is a no-op)
         focusEditorRoot(editor)
-
         store.setState({ selectedCardKey: null, isEditingCard: false })
         return true
       },

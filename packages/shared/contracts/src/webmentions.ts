@@ -92,10 +92,6 @@ export const webmentionOutboxStatusCountsSchema = z.object({
 })
 export type WebmentionOutboxStatusCounts = z.infer<typeof webmentionOutboxStatusCountsSchema>
 
-// Admin moderation wire inputs — moved from the server webmentions domain so
-// the `@kobato/api` contract composes the same schema objects the server
-// validates against.
-
 // Admin moderation list — `rejected` is a stored terminal state (not a
 // delete); `hidden` follows 7 consecutive daily re-verification failures.
 export const adminWebmentionListSchema = z.object({

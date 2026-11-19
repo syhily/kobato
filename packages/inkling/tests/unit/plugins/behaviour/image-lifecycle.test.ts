@@ -102,7 +102,6 @@ describe('backfillImageDimensions', () => {
     })
   }
 
-  // the test-local write seam: narrows through the guard, never a cast
   function writeNode(mutator: (node: BaseImageNode) => void) {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey)
@@ -131,7 +130,6 @@ describe('backfillImageDimensions', () => {
       node.width = 10
       node.height = 10
     })
-    // let the microtask commit land before the backfill reads
     await tick()
 
     const fired = await backfillImageDimensions(

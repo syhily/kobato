@@ -30,8 +30,6 @@ function MathLivePreview({ tex, renderMath }: MathLivePreviewProps) {
   const [preview, setPreview] = React.useState<MathPreviewState>({ html: null, error: null })
 
   const isRenderable = !!renderMath && !!tex && tex.trim() !== ''
-  // adjust state during render: clear the preview when the source stops being
-  // renderable (no channel, or blank TeX)
   const [prevRenderable, setPrevRenderable] = React.useState(isRenderable)
   if (prevRenderable !== isRenderable) {
     setPrevRenderable(isRenderable)

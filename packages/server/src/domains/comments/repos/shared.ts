@@ -198,10 +198,6 @@ export function mineVisibleClause(userId: number, cutoff: Date = mineSoftDeleteC
 export interface MyCommentsFilters {
   status?: MyCommentsStatus
   q?: string
-  /**
-   * Narrow to a specific post/page the user commented on (`?entity=` on
-   * `/admin/me/comments`).
-   */
   entity?: { type: EntityType; ownerId: number }
 }
 

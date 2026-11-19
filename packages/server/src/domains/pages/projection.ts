@@ -5,7 +5,6 @@ import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
 import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection.ts'
 import { readRevisionProjection } from '@kobato/server/domains/content/projection-read.ts'
 
-// Catalog-facing projection; pages without a published revision surface with an empty body and no headings.
 export function toCmsPage(
   meta: PageMetaRow,
   publishedRevision: ContentRow | null,

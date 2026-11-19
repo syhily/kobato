@@ -67,17 +67,12 @@ export function CodeBlockCard({
   const { codeEditor } = React.useContext(InklingUiPrefsContext)
 
   if (isEditing) {
-    // plain surfaces (the host's comment composer) edit the source in a
-    // static textarea — no lazy boundary, so the codemirror chunk is never
-    // fetched
     if (codeEditor === 'plain') {
       return <CodeBlockPlainEditor code={code} language={language} updateCode={updateCode} onEscape={onEscape} />
     }
     return (
       <LazyCardEditor
         fallback={
-          // static read-only mirror of the editor's initial state — the
-          // display-mode code box at the editing container's min-height
           <div className="min-h-[17rem]">
             <CodeBlock code={code} darkMode={darkMode} language={language} />
           </div>

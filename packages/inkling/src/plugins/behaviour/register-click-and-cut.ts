@@ -12,9 +12,6 @@ export function registerClickAndCut(editor: LexicalEditor) {
       (event) => {
         const target = event.target
         if (target instanceof HTMLElement && target.matches('[data-lexical-decorator="true"]')) {
-          // clicked on a decorator node, select it
-          // - only fires when the padding above a card is clicked — cards
-          //   have their own click handlers
           event.preventDefault()
           const cardNode = $getNearestNodeFromDOMNode(target)
           if (cardNode) {
@@ -30,7 +27,6 @@ export function registerClickAndCut(editor: LexicalEditor) {
     editor.registerCommand(
       CUT_COMMAND,
       (event) => {
-        // prevent cut events inside card editors triggering lexical behaviour
         if (shouldIgnoreEvent(event)) {
           return true
         }

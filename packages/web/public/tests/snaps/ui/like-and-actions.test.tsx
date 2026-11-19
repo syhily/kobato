@@ -69,7 +69,6 @@ describe('snapshot: LikeButton', () => {
     try {
       const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={42} />))
       expect(html).toContain('disabled=""')
-      // Copy stays the same; only the disabled flag toggles.
       expect(html).toContain('点赞')
     } finally {
       queryMocks.mutation.isPending = false
@@ -96,7 +95,6 @@ describe('snapshot: LikeShare (page permalink)', () => {
     // The QQ / Weibo share URLs embed the absolute URL (joined with the
     // test-bundle website `https://example.com`).
     expect(html).toContain('url=https%3A%2F%2Fexample.com%2Fabout')
-    // Weibo title wraps the post title, URL-encoded in the href.
     expect(html).toContain('title=%E3%80%90%E5%85%B3%E4%BA%8E%E3%80%91')
   })
 })
@@ -113,7 +111,6 @@ describe('snapshot: CommentActions', () => {
       ),
     )
     expect(html).toContain('回复')
-    // Foreign comment + non-admin viewer => edit / own-edit / delete hidden.
     expect(html).not.toContain('编辑')
     expect(html).not.toContain('修改')
     expect(html).not.toContain('申请删除')
@@ -135,7 +132,6 @@ describe('snapshot: CommentActions', () => {
         '/admin',
       ),
     )
-    // Reply + admin edit (admin viewer → admin branch of the edit gate).
     expect(html).toContain('回复')
     expect(html).toContain('编辑')
     expect(html).toContain('通过')
@@ -176,7 +172,6 @@ describe('snapshot: CommentActions', () => {
         '/posts/1',
       ),
     )
-    // Owned by viewer → own-edit + request-delete; admin branches hidden.
     expect(html).toContain('回复')
     expect(html).toContain('修改')
     expect(html).toContain('申请删除')
@@ -203,7 +198,6 @@ describe('snapshot: CommentActions', () => {
         '/posts/1',
       ),
     )
-    // Pending delete → own-edit hidden, request-delete replaced by cancel.
     expect(html).toContain('撤回删除')
     expect(html).not.toContain('修改')
     expect(html).not.toContain('申请删除')
@@ -220,12 +214,10 @@ describe('snapshot: CommentReplyForm', () => {
     )
     expect(html).toContain('/images/default-avatar.png')
     expect(html).toContain('data-test="comment-body-editor"')
-    // Anonymous-mode identity inputs are visible (not hidden).
     expect(html).toContain('id="comment-name"')
     expect(html).toContain('id="comment-email"')
     expect(html).toContain('id="comment-url"')
     expect(html).not.toContain('再想想')
-    // Non-admin viewers see the honeypot.
     expect(html).toContain('发表评论')
     expect(html).toContain('name="subtitle"')
   })
@@ -249,11 +241,9 @@ describe('snapshot: CommentReplyForm', () => {
         '/posts/1',
       ),
     )
-    // Reply overlay quotes the target author + a clipped snippet.
     expect(html).toContain('回复 @雨帆')
     expect(html).toContain('回复内容片段。')
     expect(html).toContain('再想想')
-    // The hidden rid input carries the target id.
     expect(html).toContain('value="42"')
   })
 
@@ -266,7 +256,6 @@ describe('snapshot: CommentReplyForm', () => {
           '/posts/1',
         ),
       )
-      // Pending mutation → submit copy flips + the textarea is disabled.
       expect(html).toContain('发表中…')
       expect(html).toContain('disabled=""')
     } finally {

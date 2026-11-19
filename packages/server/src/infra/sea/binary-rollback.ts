@@ -12,11 +12,8 @@ const PRE_ROLLBACK_SUFFIX = '.pre-rollback'
 const BAK_VERSION_TIMEOUT_MS = 10_000
 
 export interface RollbackOptions {
-  /** Defaults to `process.execPath`. */
   execPath?: string
-  /** Defaults to the baked-in `APP_VERSION`. */
   currentVersion?: string
-  /** Reads `<bak> --version`; injectable. */
   readBackupVersion?: (bakPath: string) => string | null
 }
 
@@ -25,7 +22,6 @@ export interface RollbackResult {
   previousVersion: string
 }
 
-/** Swap the `.bak` sibling back after the preflight checks; the restart belongs to the service manager. */
 export async function rollbackBinary(options: RollbackOptions = {}): Promise<RollbackResult> {
   const execPath = options.execPath ?? process.execPath
   const currentVersion = options.currentVersion ?? APP_VERSION

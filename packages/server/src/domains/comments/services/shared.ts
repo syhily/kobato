@@ -10,8 +10,6 @@ export interface MetricTarget {
   ownerId: number
 }
 
-/** Narrow a `type` column to comment-attachable types, avoiding `as` casts;
- *  `null` for unknown types (the throwing wrapper is `resolveMetricTarget`). */
 export function asCommentTarget(type: string | null, ownerId: number | null): MetricTarget | null {
   if (type === null || ownerId === null) {
     return null

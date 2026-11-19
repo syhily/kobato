@@ -40,10 +40,6 @@ export function MathNodeComponent({ nodeKey, tex, mathml, svg }: MathNodeCompone
   )
 }
 
-/**
- * Math's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderMathCard(node: MathNode) {
   return <MathNodeComponent mathml={node.mathml} nodeKey={node.getKey()} svg={node.svg} tex={node.tex} />
 }

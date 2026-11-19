@@ -34,8 +34,6 @@ function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
   )
 }
 
-/** Payloads are plain JSON (strings + epoch-ms numbers); this guard is a
- *  second-line check against shape drift after decode. */
 function decodeTokenPayload(raw: unknown): CommentTokenPayload | null {
   try {
     if (!isCommentTokenPayload(raw)) {
@@ -76,7 +74,6 @@ export async function revokeCommentToken(db: Database, token: string): Promise<v
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`))
 }
 
-/** Drop cookie entries whose `expiresAt` passed or whose DB row is gone/expired. */
 export async function cleanupExpiredTokens(
   db: Database,
   cookie: CommentTokenCookie,
@@ -88,7 +85,6 @@ export async function cleanupExpiredTokens(
   const validEntries: Array<{ token: string; payload: CommentTokenPayload; expiresAt: number }> = []
   const now = Date.now()
 
-  // Verify all non-expired entries in one query, not N round-trips.
   const candidates: Array<{ pageKey: string; entry: CommentTokenCookieEntry }> = []
   for (const [pageKey, entries] of Object.entries(cookie)) {
     for (const entry of entries) {
@@ -137,10 +133,6 @@ function serializedCookieSize(cookie: CommentTokenCookie): number {
   return encodeURIComponent(JSON.stringify(cookie)).length
 }
 
-/**
- * Remove the oldest entry (by `expiresAt`) from the jar, skipping the
- * protected token. Returns false when nothing evictable remains.
- */
 function evictOldestEntry(cookie: CommentTokenCookie, protectToken: string): boolean {
   let oldest: { pageKey: string; index: number; expiresAt: number } | null = null
   for (const [pageKey, entries] of Object.entries(cookie)) {
@@ -165,8 +157,6 @@ function evictOldestEntry(cookie: CommentTokenCookie, protectToken: string): boo
   return true
 }
 
-/** Append a freshly-issued token, evicting oldest entries to enforce the
- *  MAX_TOKEN_ENTRIES / MAX_COOKIE_JSON_BYTES bounds. */
 export function appendCommentToken(
   existing: CommentTokenCookie,
   pageKey: string,
@@ -192,8 +182,6 @@ export function appendCommentToken(
   return next
 }
 
-/** The caller's valid token for a comment, or `null`, plus the cleaned
- *  cookie with expired and invalid entries dropped. */
 export async function verifyCommentOwnership(
   db: Database,
   cookie: CommentTokenCookie,

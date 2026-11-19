@@ -28,7 +28,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
 async function mountRegistrar(editor: LexicalEditor) {
   mockComposerContext(editor)
   renderHook(() => CardInsertPlugin())
-  // allow React effects to register commands
   await tick()
 }
 

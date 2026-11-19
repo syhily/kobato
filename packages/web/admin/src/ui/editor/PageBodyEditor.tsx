@@ -19,11 +19,8 @@ import { useEffect, useMemo } from 'react'
 export interface PageBodyEditorProps {
   /** Initial Lexical body. Only read on first mount + when `bodyKey` changes. */
   initialBody: LexicalEditorState
-  /** Identity of the body source — a change resets the editor content from `initialBody`. */
   bodyKey: string
-  /** Fired on every editor update with the freshly-serialized Lexical state. */
   onBodyChange: (body: LexicalEditorState) => void
-  /** When true, the editor becomes read-only. */
   disabled?: boolean
   /** Chrome rendered inside the scroll container above the canvas (the
    *  title/slug strip) so it scrolls with the document as one centered

@@ -5,11 +5,9 @@ export const defaultTransition = { duration: 0.15, ease: geistEase }
 
 export const transitions = {
   spring: { type: 'spring' as const, stiffness: 300, damping: 30 },
-  /** Gentle spring — suited for large panels. */
   gentle: { type: 'spring' as const, stiffness: 200, damping: 25 },
   drawer: { type: 'spring' as const, stiffness: 400, damping: 35 },
   fade: { duration: 0.3, ease: 'easeOut' as const },
-  /** Player track swap — directional slide + fade (exit/enter mirrored). */
   trackSwap: { duration: 0.2, ease: 'easeOut' as const },
   detailFade: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   stagger: { staggerChildren: 0.05 },

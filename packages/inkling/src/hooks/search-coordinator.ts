@@ -4,17 +4,7 @@ import { runTrackedRequest } from '@kobato/inkling-internal/services/service-mac
 import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 import React from 'react'
 
-// Headless owner of the link-search flow behind useSearchLinks: two request
-// tracks (debounced query search, default-options prefetch) built on the
-// request-track primitives, the URL short-circuit, and the cross-track waiting.
-// The churn (stale responses, superseded queries, rejections, cancellation) sits
-// here behind injected ports — the scheduler and the searchLinks factory — so the
-// race matrix is a synchronous test table. The query track's async core is
-// runTrackedRequest. The surface stays method-style (setQuery/start), not the
-// dispatch protocol: a lifecycle start is not an intent.
-
 export const SEARCH_DEBOUNCE_MS = 100
-
 // A third URL table, deliberately not unified with either side of the
 // clipboard protocol's policy pair: it classifies link-search-box queries
 // (accepts mailto/tel, not ftp), not pasted links (`isPasteableLinkUrl` in
@@ -22,9 +12,6 @@ export const SEARCH_DEBOUNCE_MS = 100
 // in `@kobato/inkling-internal/nodes/base/utils/is-safe-url`).
 const URL_QUERY_REGEX = /^http|^#|^\/|^mailto:|^tel:/
 
-// English fallbacks for the URL option — the React adapter (useSearchLinks)
-// injects the resolved labels from the host's labels table; the headless
-// module stays self-sufficient with these.
 const DEFAULT_URL_OPTION_LABEL = 'Link to web page'
 const DEFAULT_URL_OPTION_HINT = 'Enter URL to create link'
 
@@ -125,7 +112,6 @@ export interface SearchCoordinatorSnapshot {
   defaultListOptions: ListOptionSection[]
 }
 
-/** Scheduler port for the debounced query track — an alias of the request track's `RequestScheduler`. */
 export type SearchScheduler = RequestScheduler
 
 interface CreateSearchCoordinatorOptions {
@@ -151,12 +137,8 @@ export function createSearchCoordinator({
     defaultListOptions: [],
   })
 
-  // the coordinator's own no-results fallback, carrying the injected (or
-  // English-default) URL option labels
   const fallbackNoResultOptions = noResultOptions ?? (() => defaultNoResultOptions(urlOptionLabel, urlOptionHint))
 
-  // query track (debounced) and default (prefetch) track — the latest-wins
-  // guards are the shared request-track primitive
   const queryTrack = createRequestTrack({ scheduler })
   const defaultTrack = createRequestTrack()
   let defaultRequest: { id: number; promise: Promise<void> } | null = null
@@ -208,7 +190,7 @@ export function createSearchCoordinator({
           })
         }
       } catch {
-        // Default suggestions are best-effort.
+        /* noop */
       }
     })()
 
@@ -235,8 +217,6 @@ export function createSearchCoordinator({
     setQuery(query: string) {
       const requestId = queryTrack.next()
 
-      // URL queries skip the debounced search so the "Link to web page"
-      // option updates more responsively
       if (URL_QUERY_REGEX.test(query)) {
         queryTrack.cancelScheduled()
         store.emit({ listOptions: urlQueryOptions(query, urlOptionLabel), isSearching: false })
@@ -261,13 +241,11 @@ export function createSearchCoordinator({
       queryTrack.schedule(() => void runSearch(requestId, query), debounceMs)
     },
 
-    /** Begin the default-options prefetch (adapter mount). */
     start() {
       defaultOptionsLoaded = false
       void startDefaultOptionsFetch()
     },
 
-    /** Invalidate every in-flight request (adapter unmount / recreation) and drop the store's listeners. */
     dispose() {
       queryTrack.dispose()
       defaultTrack.dispose()

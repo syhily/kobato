@@ -32,7 +32,6 @@ export const analyticsEventsRouter = new Hono<Env>()
       lastSeen = new Date(Date.now() - 60_000)
     }
 
-    // The connection registry + per-session cap live in the analytics domain; this keeps only the SSE plumbing.
     const connectionKey = realtimeConnectionKey(c.var.requestContext.session.id, c.var.requestContext.clientAddress)
     const releaseConnection = acquireRealtimeConnection(connectionKey)
     if (releaseConnection === null) {
@@ -58,7 +57,7 @@ export const analyticsEventsRouter = new Hono<Env>()
           try {
             controller.close()
           } catch {
-            /* already closed */
+            /* noop */
           }
         }
         closeStream = close

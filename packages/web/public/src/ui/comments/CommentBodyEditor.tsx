@@ -23,9 +23,7 @@ import { useCallback } from 'react'
 export interface CommentBodyEditorProps {
   /** Initial comment state; reseeded on mount and when `bodyKey` changes. */
   initialBody: CommentEditorState
-  /** Identity of the body source; a change reseeds the content from `initialBody`. */
   bodyKey: string
-  /** Fired on every editor update with the serialized comment state. */
   onBodyChange: (body: CommentEditorState) => void
   disabled?: boolean
   className?: string

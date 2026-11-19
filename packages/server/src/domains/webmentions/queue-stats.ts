@@ -8,10 +8,6 @@ import {
 } from '@kobato/db/operations/webmention-outbox.ts'
 import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention.ts'
 
-// Queue-depth stats backing the admin task center (`admin.jobs.list`) — one
-// branch per webmention queue task; non-queue tasks get null.
-
-/** `'now'` surfaces as the current instant — the queue is due immediately. */
 function dueAtToIso(due: Date | 'now' | null): string | null {
   if (due === null) {
     return null

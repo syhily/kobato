@@ -8,15 +8,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 export interface UseEditorDeleteRestoreArgs {
-  /** Edit-mode entity; `undefined` in create mode (buttons stay unmounted). */
   entity: { id: string; title: string } | undefined
-  /** Display-noun message id woven into the confirm / toast copy (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
-  /** Admin list route to return to after a successful delete. */
   listPath: string
   deleteFn: (id: string) => Promise<unknown>
   restoreFn: (id: string) => Promise<unknown>
-  /** Invalidate the entity's admin list cache namespace. */
   invalidateList: () => void
   navigate: NavigateFunction
 }

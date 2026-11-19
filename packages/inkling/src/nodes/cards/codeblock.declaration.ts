@@ -13,8 +13,6 @@ export const codeBlockDeclaration = checkedCardDeclaration({
   decorateTarget: {
     wrapperStyle: 'code-card',
   },
-  // Trimmed comment-level surfaces have no fence-typing habit, so the menu entry
-  // stays available there; the full surface keeps the markdown fence path.
   menu: [
     {
       label: 'Code',
@@ -31,8 +29,7 @@ export const codeBlockDeclaration = checkedCardDeclaration({
   dragIcon: 'codeblock',
   // Live e2e selector contract ("code-block"), deliberately not a transform of "codeblock"
   toolbarLabel: 'code-block',
-  // Markdown-eligible without a card fence: `CODE_BLOCK` in
-  // `@kobato/inkling-internal/markdown/transformers` owns the fence.
+
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<
   'codeblock',

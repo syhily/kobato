@@ -68,8 +68,6 @@ describe('registerTkNodeTracking', () => {
     })
     await tick()
 
-    // the card key wins over the node's own top-level element — the card's
-    // indicator owns every TK inside it
     expect(handle.addEditorTkNode).toHaveBeenCalledWith(editor.getKey(), 'card-key-1', tkKey)
   })
 
@@ -154,7 +152,6 @@ describe('applyTkHoverHighlight', () => {
     })
     await tick()
 
-    // the parent is a decorator: the highlight must not touch the TK elements
     applyTkHoverHighlight(editor, cardKey, [tkKey], classes, true)
     expect(element?.classList.contains('tk-hot')).toBe(false)
   })

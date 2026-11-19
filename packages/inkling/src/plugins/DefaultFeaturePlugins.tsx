@@ -20,21 +20,16 @@ export interface FeaturePluginEntry {
   Component: React.ComponentType
 }
 
-// The feature plugin entries InklingEditor adds on top of CORE_PLUGINS
-// (./CorePlugins) — as data, in render order; the default editor surface is
-// the concatenation of the two lists.
 export const DEFAULT_FEATURE_PLUGINS: readonly FeaturePluginEntry[] = [
-  // Lexical
-  { key: 'list', Component: ListPlugin }, // adds indent/outdent/remove etc support
-  // Inkling
+  { key: 'list', Component: ListPlugin },
   { key: 'card-menu', Component: CardMenuPlugin },
   { key: 'snippet', Component: InklingSnippetPlugin },
-  { key: 'selector', Component: InklingSelectorPlugin }, // gif + image-library overlays
+  { key: 'selector', Component: InklingSelectorPlugin },
   { key: 'emoji-picker', Component: EmojiPickerPlugin },
   { key: 'at-link', Component: AtLinkPlugin },
   { key: 'em-en-dash', Component: EmEnDashPlugin },
   { key: 'typography', Component: TypographyPlugin },
-  // Cards
+
   { key: 'card-insert', Component: CardInsertPlugin },
   { key: 'horizontal-rule', Component: HorizontalRulePlugin },
   { key: 'math-inline', Component: MathInlinePlugin },

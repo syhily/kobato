@@ -6,9 +6,6 @@ import { useSnippets } from '@kobato/inkling-demo/hooks/use-snippets'
 import { klipyConfig, tenorConfig } from '@kobato/inkling-demo/utils/gifConfig'
 import React, { useState } from 'react'
 
-// Shared editor shell for the secondary demo surfaces; a surface passes only its facts — an optional node set
-// and its inner plugin(s).
-
 const cardConfig: CardConfig = {
   tenor: tenorConfig ?? undefined,
   klipy: klipyConfig ?? undefined,

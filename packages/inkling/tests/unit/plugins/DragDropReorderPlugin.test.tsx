@@ -150,11 +150,9 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     }
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [droppable] })
 
-    const result = getCapturedOnDrop()(
-      // The image branch carries ImageNodeDataset directly; the surgery consumes it unasserted.
-      imageDrag({ dataset: { src: '/dragged.png', width: 320, height: 180 } }),
-      { insertIndex: 0 },
-    )
+    const result = getCapturedOnDrop()(imageDrag({ dataset: { src: '/dragged.png', width: 320, height: 180 } }), {
+      insertIndex: 0,
+    })
 
     expect(result).toBe(true)
     await settleEditor()
@@ -169,8 +167,6 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
   })
 
   it('reports failure and leaves the tree untouched when the image insert resolves no slot', async () => {
-    // An empty drop-time scan gives $insertDraggedImage no slot: the drop fails,
-    // and reporting failure is what keeps the source node in place.
     captured.resolveDrop.mockReturnValue({ draggableIndex: -1, droppables: [] })
     const before = readTopLevelKeys()
 

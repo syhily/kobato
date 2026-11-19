@@ -3,13 +3,6 @@ import { cx } from '@kobato/inkling-internal/utils/cx'
 import { POPUP_LIST_MAX_HEIGHT } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import React, { useLayoutEffect } from 'react'
 
-/**
- * Note: when using the DropdownContainer, make sure the input and the dropdown both are in a relative container with a defined z-index (or new stacking context)
- * Make sure the input has a background color, to avoid the shadow of the dropdown showing through
- *
- * Displays the dropdown above or below the parent element, depending on the space available in the viewport.
- * The parent should be positioned relative.
- */
 interface DropdownContainerProps {
   dataTestId?: string
   className?: string

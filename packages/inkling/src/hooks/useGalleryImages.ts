@@ -10,19 +10,11 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getNodeByKey, type NodeKey } from 'lexical'
 import React from 'react'
 
-/**
- * The React adapter of the gallery images mirror (see gallery-images-mirror.ts):
- * nodeKey in, the rendered image list plus the two-phase setters out. The node
- * subscription starts on mount and the snapshot resyncs whenever the node's
- * images change externally (within-card undo, collab) while the card stays
- * mounted. Node writes go through the card write seam (useCardWriter).
- */
 export interface GalleryImagesBinding {
   images: GalleryImage[]
   setImages: GalleryImagesMirror['setImages']
   setPreviewImages: GalleryImagesMirror['setPreviewImages']
 }
-
 export function useGalleryImages(nodeKey: NodeKey): GalleryImagesBinding {
   const [editor] = useLexicalComposerContext()
   const write = useCardWriter(nodeKey, $isGalleryNode)
@@ -53,8 +45,6 @@ export function useGalleryImages(nodeKey: NodeKey): GalleryImagesBinding {
     }
   }, [mirror])
 
-  // the mirror's methods are closure-bound, so they ride
-  // useSyncExternalStore and the binding straight through
   const images = React.useSyncExternalStore(mirror.subscribe, mirror.getSnapshot)
 
   return { images, setImages: mirror.setImages, setPreviewImages: mirror.setPreviewImages }

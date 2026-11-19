@@ -11,8 +11,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { isValidElement, useState } from 'react'
 
-// Local admin library picker with an inline add flow; new tracks are prepended.
-
 export interface MusicPickerDialogProps {
   trigger?: React.ReactNode
   onPick: (music: AdminMusicDto) => void

@@ -32,8 +32,6 @@ import {
 import { idFromString } from '@kobato/utils/id.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/account.ts`;
-// this controller only implements the procedures.
 const impl = implementAuthed(accountContract)
 
 function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {
@@ -50,8 +48,6 @@ function isRegistrationResponseJSON(value: unknown): value is RegistrationRespon
   return typeof resp.clientDataJSON === 'string' && typeof resp.attestationObject === 'string'
 }
 
-// `/admin/me/profile`: the domain's full `AccountProfile` projection plus
-// the two feature switches; raw service output, no projection here.
 const profile = impl.profile.handler(async ({ context }) => {
   const { db, viewer } = context
   const user = await getAccountProfile(db, idFromString(viewer.id))

@@ -15,15 +15,8 @@ export type FootnoteDefinitionNodeDataset = FootnoteDefinitionData & {
   contentEditorInitialState?: EditorState
 }
 
-/**
- * The registered footnote-definition card class, assembled once from its
- * declaration by `assembleCardNodeOnce`; `$isFootnoteDefinitionNode` stays
- * canonical on the base node. The instance type carries the spec-derived `__*`
- * field map, so `$createFootnoteDefinitionNode` needs no cast.
- */
 export const FootnoteDefinitionNode = assembleCardNodeOnce(footnoteDefinitionDeclaration)
 export type FootnoteDefinitionNode = InstanceType<typeof FootnoteDefinitionNode>
-
 export const $createFootnoteDefinitionNode = (dataset?: FootnoteDefinitionNodeDataset): FootnoteDefinitionNode => {
   return new FootnoteDefinitionNode(dataset)
 }

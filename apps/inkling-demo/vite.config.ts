@@ -7,14 +7,6 @@ import svgr from 'vite-plugin-svgr'
 
 const require = createRequire(import.meta.url)
 
-// The standalone inkling editor playground (`pnpm demo`). Outside the product
-// build: not part of the app build, the `type` pass, or the vitest run. The
-// Inkling core is self-contained (it imports no other `@kobato/*` package);
-// its alias points at the package sources because the playground reaches into
-// internals the exports map deliberately does not expose. The web/ui/lexical
-// aliases serve the demo's music-player route, which reuses the host product
-// components (`@kobato/web-public/ui/...` + the shared `@kobato/lexical`
-// card spec) instead of keeping a demo copy.
 export default defineConfig({
   plugins: [react({ compiler: true }), tailwindcss(), svgr()],
   resolve: {

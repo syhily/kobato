@@ -1,5 +1,3 @@
-// OTP signin flow. The `pendingOtpUser` / `otpFailCount` session keys are read and written ONLY here.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { BlogSession, PendingOtpUser } from '@kobato/server/domains/auth/session-storage.ts'
 
@@ -59,9 +57,6 @@ function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUs
   }
 }
 
-/**
- * Send the OTP email; upstream failures and exceptions funnel into the same error result.
- */
 async function sendOtpSafely(
   user: { name: string; email: string },
   otpCode: string,
@@ -78,10 +73,6 @@ async function sendOtpSafely(
   }
 }
 
-/**
- * Issue + send + stage + audit, shared by initial staging and resend; returns an error
- * result on failure, null on success.
- */
 async function issueAndSendOtp(
   ctx: SigninFlowContext,
   request: Request,

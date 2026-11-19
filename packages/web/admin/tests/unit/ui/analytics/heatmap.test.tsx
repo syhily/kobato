@@ -57,21 +57,17 @@ describe('ui/admin/analytics/Heatmap keyboard navigation', () => {
     buttons[0]!.focus()
     expect(document.activeElement).toBe(buttons[0])
 
-    // ArrowRight → same row, next hour.
     fireEvent.keyDown(buttons[0]!, { key: 'ArrowRight' })
     expect(document.activeElement).toBe(buttons[1])
     expect(buttons[1]!.tabIndex).toBe(0)
     expect(buttons[0]!.tabIndex).toBe(-1)
 
-    // ArrowDown → next weekday row, same hour.
     fireEvent.keyDown(buttons[1]!, { key: 'ArrowDown' })
     expect(document.activeElement).toBe(buttons[1 + 24])
 
-    // ArrowUp → back to the first row.
     fireEvent.keyDown(buttons[1 + 24]!, { key: 'ArrowUp' })
     expect(document.activeElement).toBe(buttons[1])
 
-    // ArrowLeft at the row start stays put.
     fireEvent.keyDown(buttons[0]!, { key: 'ArrowLeft' })
     expect(document.activeElement).toBe(buttons[0])
   })

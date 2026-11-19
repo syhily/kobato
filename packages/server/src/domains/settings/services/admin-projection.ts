@@ -18,8 +18,6 @@ import {
 import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 
-// Per-section runtime gate for the admin display shape: assets/mail/comments validate
-// against their loader-shape Zod twins, every other section against the registry schema.
 const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   assets: assetsLoaderShapeSchema,
   mail: mailLoaderShapeSchema,

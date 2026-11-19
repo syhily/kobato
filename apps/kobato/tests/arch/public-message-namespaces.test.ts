@@ -23,7 +23,6 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 const APP_SRC = join(REPO_ROOT, 'apps/kobato/src')
 
-/** Workspace package name → source root (repo-relative). */
 const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web-admin': 'packages/web/admin/src',
   '@kobato/web-client': 'packages/web/client/src',
@@ -42,10 +41,8 @@ const PACKAGE_SRC: Record<string, string> = {
   '@kobato/test': 'tools/test/src',
 }
 
-/** Route trees whose modules render public documents. */
 const PUBLIC_ENTRY_DIRS = ['apps/kobato/src/routes/public'] as const
 
-/** Server-only subtrees: these never render client copy from the shipped catalog. */
 const SERVER_ONLY_PREFIXES = ['packages/server/src/'] as const
 
 const CATALOG_KEYS = new Set(Object.keys(uiMessagesEnUS))
@@ -61,7 +58,6 @@ function listSources(dir: string, out: string[]): void {
   }
 }
 
-/** Static + side-effect + dynamic import specifiers (type-only imports are erased). */
 function valueSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   const fromRegex =
@@ -85,7 +81,6 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
   if (specifier.startsWith('@/')) {
     base = join(APP_SRC, specifier.slice(2))
   } else if (specifier === '@kobato/server' || specifier.startsWith('@kobato/server/')) {
-    // Server-only package: never part of the public browser graph.
     return null
   } else if (specifier === '@kobato/inkling') {
     base = join(REPO_ROOT, 'packages/inkling/src/index')
@@ -113,12 +108,10 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
   return null
 }
 
-/** Repo-relative, POSIX-separated path. */
 function repoRelative(file: string): string {
   return relative(REPO_ROOT, file).replace(/\\/g, '/')
 }
 
-/** Every source file the public browser graph can reach. */
 function collectPublicGraph(): Map<string, string> {
   const entries: string[] = [join(APP_SRC, 'root.tsx')]
   for (const dir of PUBLIC_ENTRY_DIRS) {
@@ -147,7 +140,6 @@ function collectPublicGraph(): Map<string, string> {
   return reached
 }
 
-/** Every catalog key appearing as a plain string literal. */
 function referencedMessageKeys(source: string): string[] {
   const keys: string[] = []
   for (const match of source.matchAll(/'([^'\n]+)'/g)) {
@@ -180,7 +172,6 @@ describe('public message namespaces', () => {
   })
 
   it('does not let the allowlist grow into a workspace family by accident', () => {
-    // Structural guard: the allowlist is a small registry, not a catch-all.
     expect(PUBLIC_MESSAGE_PREFIXES.length).toBeLessThanOrEqual(10)
     for (const prefix of PUBLIC_MESSAGE_PREFIXES) {
       expect(prefix.endsWith('.'), prefix).toBe(true)

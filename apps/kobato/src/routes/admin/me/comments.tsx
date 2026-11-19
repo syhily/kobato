@@ -25,7 +25,6 @@ function parseStatus(raw: string | null): MyCommentsStatus {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  // Self-service path — any logged-in role can see their own comments.
   requireRole(viewer ?? undefined, 'visitor')
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
@@ -36,7 +35,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { entities } = await caller.comments.searchMineEntities({})
   const entityOptions = [...entities]
 
-  // The URL may pin an entity outside the result set — resolve it so the trigger can render its title.
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
     const resolved = await caller.comments.resolveEntity({ entity: entityValue! })
     if (resolved !== null) {

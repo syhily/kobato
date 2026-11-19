@@ -80,7 +80,6 @@ describe('passkey — registration round-trip', () => {
 
     expect(result.options.challenge).toBe('reg-challenge-1')
 
-    // The challenge lands in `one_time_token` as plain JSON with a 300s TTL.
     const tokens = await db
       .select()
       .from(oneTimeToken)
@@ -328,7 +327,6 @@ describe('passkey — authentication round-trip', () => {
 
     expect(result.options.challenge).toBe('auth-challenge-1')
 
-    // No email → no allowCredentials, and the challenge payload records it.
     const callArg = swaMocks.generateAuthenticationOptions.mock.calls[0]![0]
     expect(callArg.allowCredentials).toBeUndefined()
     const tokens = await db
@@ -437,7 +435,6 @@ describe('passkey — authentication round-trip', () => {
 
     expect(result.user.id).toBe(userId)
     expect(result.authMethod).toBe('passkey')
-    // The returned user is the SafeUser accessor result — no sensitive fields.
     expect(result.user).not.toHaveProperty('password')
     expect(result.user).not.toHaveProperty('lastIp')
     expect(result.user).not.toHaveProperty('lastUa')
@@ -664,7 +661,6 @@ describe('passkey — passkey login method blocks password login', () => {
     if (result.type === 'error') {
       expect(result.descriptor).toMatchObject({ messageKey: 'auth.signin.error.passkeyRequired' })
     }
-    // loginMethod='passkey' makes this a mutation-free error: no setCookie, no dirty session.
     expect(result.setCookie).toBeUndefined()
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
@@ -753,8 +749,6 @@ describe('passkey — deleting last credential reverts to password login', () =>
       .then((r) => r[0])
     expect(dbUserRow.loginMethod).toBe('passkey')
 
-    // Delete the only credential — the service owns the invariant and
-    // reverts the login method itself.
     const ok = await passkeyService.deleteCredential(db, 'cred-force', userId)
     expect(ok).toBe(true)
 

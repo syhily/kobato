@@ -33,7 +33,6 @@ const ASSET_FINGERPRINT_VERSION = 1
 
 export interface ObservabilityDashboardAsset {
   file: string
-  /** Raw JSON text — part of the fingerprint payload, exactly as the asset ships. */
   raw: string
   body: Record<string, unknown>
 }
@@ -41,7 +40,6 @@ export interface ObservabilityDashboardAsset {
 export interface ObservabilityAssets {
   vrl: string
   dashboards: ObservabilityDashboardAsset[]
-  /** HMAC over the VRL text plus every dashboard's raw JSON, in stable order. */
   fingerprint: string
 }
 
@@ -86,7 +84,6 @@ export function observabilityAssetFingerprint(contents: readonly string[]): stri
   return secretHmac(ASSET_FINGERPRINT_PURPOSE, JSON.stringify({ version: ASSET_FINGERPRINT_VERSION, contents }))
 }
 
-/** Read (and memoize) the bundled assets. Throws when an asset is missing or malformed. */
 export function getObservabilityAssets(): ObservabilityAssets {
   if (cached !== undefined) {
     return cached
@@ -115,7 +112,6 @@ export function currentObservabilityAssetFingerprint(): string | null {
   }
 }
 
-/** Test seam: drop the memoized asset payload. */
 export function __resetObservabilityAssetsForTests(): void {
   cached = undefined
 }

@@ -4,12 +4,6 @@ import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 
-/**
- * Minimal USTAR writer/reader for the backup archive (content DB, optional
- * analytics sidecar, optional config file), no deps; the buffer-tier
- * pack/unpack lives in tests/_helpers/backup-buffer.ts.
- */
-
 /** The tar block size — exported so the test-tier reader in
  *  tests/_helpers/backup-buffer.ts shares the offset math. */
 export const TAR_BLOCK = 512
@@ -66,7 +60,6 @@ export function tarPaddingSize(size: number): number {
   return remainder === 0 ? 0 : BLOCK - remainder
 }
 
-/** Stream an archive without ever holding a full file in memory; ends with the two zero blocks. */
 export function createTarReadStream(entries: { name: string; path: string; size: number }[]): Readable {
   return Readable.from(
     (async function* () {
@@ -85,7 +78,6 @@ export function createTarReadStream(entries: { name: string; path: string; size:
 
 export interface TarEntryMeta {
   name: string
-  /** Offset of the entry's payload inside the archive file. */
   offset: number
   size: number
 }
@@ -100,7 +92,6 @@ export function readOctal(buffer: Buffer, offset: number, length: number): numbe
   return Number.parseInt(readCString(buffer.subarray(offset, offset + length)).trim(), 8)
 }
 
-/** List an archive file's entries by reading headers sequentially — memory stays O(header). */
 export async function listTarEntriesInFile(rawPath: string): Promise<TarEntryMeta[]> {
   const handle = await open(rawPath, 'r')
   try {

@@ -64,7 +64,6 @@ describe('ReplacementStringsPlugin in nested editors', () => {
       </TestWrapper>,
     )
 
-    // Wait for React effects to run so the transform is registered
     await tick()
 
     await updateEditor(nestedEditor, () => {

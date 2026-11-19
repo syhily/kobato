@@ -28,7 +28,6 @@ export interface CommentReplyFormProps {
   user?: CommentFormUser
   /** Currently active reply target id; 0 means top-level reply. */
   replyToId: number
-  /** Resolved reply target (for the quoted-author overlay). */
   replyTarget?: CommentItemType
   onCancel: () => void
   onReplied: (comment: CommentItemType, rid: number) => void

@@ -18,10 +18,8 @@ const PROJECT_ROOT = process.cwd()
 const CLIENT_DIR = join(PROJECT_ROOT, 'apps/kobato/build/client')
 const SERVER_DIR = join(PROJECT_ROOT, 'apps/kobato/build/server')
 
-/** Runtime string literals shipped only by the slim RUM SDK (never the loader). */
 const RUM_SDK_MARKERS = ['o2-api-key', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 
-/** A loader-only marker: the RUM status poll path. */
 const RUM_LOADER_MARKER = '/api/rum/status'
 
 /**
@@ -32,7 +30,6 @@ const RUM_LOADER_MARKER = '/api/rum/status'
  */
 const SERVER_FORBIDDEN_RUM_MARKERS = ['@openobserve/', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 
-/** The Rollup/Rolldown entry + root chunks of the client document graph. */
 const EAGER_CHUNK_PATTERNS = [/\/entry\.client-[^/]+\.js$/, /\/root-[^/]+\.js$/] as const
 
 const SERVER_OTEL_MARKERS = ['OTLPTraceExporter', 'BatchSpanProcessor', 'PeriodicExportingMetricReader'] as const
@@ -67,7 +64,6 @@ function containsAny(path: string, markers: readonly string[]): boolean {
   return markers.some((marker) => text.includes(marker))
 }
 
-/** Every chunk URL the warmup plugin may preload (tier1 + the idle tiers). */
 function preloadedClientChunks(): Set<string> {
   const manifestPath = join(CLIENT_DIR, 'assets', 'warmup-manifest.json')
   expect(existsSync(manifestPath), 'warmup manifest is missing from the client build').toBe(true)
@@ -107,18 +103,15 @@ describe.skipIf(!available)('production bundle telemetry composition', () => {
     const loaderFiles = clientFiles.filter((file) => read(file).includes(RUM_LOADER_MARKER))
     expect(loaderFiles.length, 'the RUM loader chunk is missing from the client build').toBeGreaterThan(0)
 
-    // The eager document graph must stay RUM-free in its own bytes…
     for (const eager of eagerFiles) {
       for (const marker of [...RUM_SDK_MARKERS, RUM_LOADER_MARKER]) {
         expect(read(eager), `${relative(PROJECT_ROOT, eager)} contains ${marker}`).not.toContain(marker)
       }
     }
-    // …and the SDK loader must be a distinct chunk, not an eager file.
     for (const sdkFile of sdkFiles) {
       expect(eagerFiles, `${relative(PROJECT_ROOT, sdkFile)} is an eager chunk`).not.toContain(sdkFile)
     }
 
-    // Nothing RUM-bearing may be preloaded: an unconfigured site never fetches it.
     const preloaded = preloadedClientChunks()
     for (const file of [...sdkFiles, ...loaderFiles]) {
       expect(preloaded.has(file.slice(file.lastIndexOf('/') + 1))).toBe(false)

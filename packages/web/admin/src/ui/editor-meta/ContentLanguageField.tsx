@@ -4,7 +4,6 @@ import { Label } from '@kobato/ui/components/label.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 export interface ContentLanguageFieldProps {
-  /** `<Input>` id + label htmlFor (`post-content-language` / `page-content-language`). */
   id: string
   /** Draft value; empty string = unset (no `lang` on the public body container). */
   value: string

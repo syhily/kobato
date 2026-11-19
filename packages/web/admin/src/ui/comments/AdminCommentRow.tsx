@@ -110,7 +110,6 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             )}
           </p>
 
-          {/* "Replied to" hint — only when the parent is in the loaded list */}
           {parent && (
             <p className="mt-1 truncate text-sm text-muted-foreground">
               <ReplyIcon className="mr-1 inline size-3 align-[-2px]" />
@@ -122,7 +121,6 @@ export function AdminCommentRow({ comment, parentLookup, actions }: AdminComment
             </p>
           )}
 
-          {/* Body — the saved feed-variant HTML projection, sanitized at render. */}
           <CommentContentHtml
             content={comment.content}
             className="comment-content typeset typeset-comment mt-2 leading-copy wrap-break-word whitespace-normal"

@@ -14,7 +14,6 @@ import {
 export interface InklingRootExtensionInput {
   nodes: CreateEditorArgs['nodes']
   onError: (error: Error) => void
-  /** The mount-time state: `null` when collaboration owns the bootstrap. */
   initialEditorState: InitialEditorStateType | undefined
 }
 
@@ -60,9 +59,6 @@ export function buildInklingRootExtension({ nodes, onError, initialEditorState }
     theme: defaultTheme,
     html: DEFAULT_CONFIG.html,
     nodes,
-    // Lexical calls its onError with (Error, LexicalEditor); the public
-    // callback follows the React error-boundary shape, so only the error is
-    // forwarded — the original callback stays in context for the boundary
     onError: (error: Error) => onError(error),
     $initialEditorState: toExtensionInitialState(initialEditorState),
     dependencies: [configExtension(ReactExtension, { ErrorBoundary: InklingErrorBoundary })],

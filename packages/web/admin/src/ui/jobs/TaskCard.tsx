@@ -129,7 +129,6 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
   )
 }
 
-// Queue depth/attention/due lines for queue-kind tasks.
 function QueueStatsLines({ queue }: { queue: QueueTaskStatsDto }) {
   const { t } = useI18n()
   const date = useFormatAdminDate()
@@ -148,7 +147,6 @@ function QueueStatsLines({ queue }: { queue: QueueTaskStatsDto }) {
   )
 }
 
-// Migration phase/progress/error lines for the storage-migration task.
 function MigrationStatusLines({ migration }: { migration: StorageMigrationStatus }) {
   const { locale, t } = useI18n()
   return (

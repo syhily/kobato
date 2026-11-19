@@ -21,9 +21,6 @@ export function LinkActionToolbarWithSearch({ anchorElem, href, onClose }: LinkA
 
   const linkToolbarRef = React.useRef<HTMLDivElement | null>(null)
 
-  // Position the link input and search results below the selected text,
-  // flipping above it at the bottom of the document; the deep module owns
-  // rect resolution and the flip.
   const anchor = React.useMemo(() => createSelectionAnchor(editor), [editor])
   const containerRect = React.useCallback(() => anchorElem.parentElement?.getBoundingClientRect() ?? null, [anchorElem])
   useSelectionAnchoredPopup({ editor, popupRef: linkToolbarRef, anchor, containerRect, aboveGap: 55 })
@@ -41,7 +38,7 @@ export function LinkActionToolbarWithSearch({ anchorElem, href, onClose }: LinkA
           const target = isInternalUrl(updatedHref, siteUrl) ? 'internal' : 'external'
           trackEvent('Link dropdown: URL entered', { context: 'text', target })
         } catch {
-          // noop
+          /* noop */
         }
       }
     })

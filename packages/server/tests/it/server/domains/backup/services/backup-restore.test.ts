@@ -58,7 +58,6 @@ describe('backup and restore integration', () => {
       { ts: new Date(), path: '/one', visitorHash: 'v1' },
       { ts: new Date(), path: '/two', visitorHash: 'v2' },
     ])
-    // A post carries its author-declared content language into the archive.
     await db
       .insert(post)
       .values({
@@ -68,7 +67,6 @@ describe('backup and restore integration', () => {
         publishedAt: new Date(),
       })
       .run()
-    // A system notification carries its i18n descriptor columns into the archive.
     createNotificationWithRecipients(
       db,
       {
@@ -95,7 +93,6 @@ describe('backup and restore integration', () => {
     expect(buffer).toBeDefined()
     expect(buffer!.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
 
-    // Decompressed payload is a tar archive with both engine files, each magic-valid.
     const payload = unpackBackupPayload(extractBackupFile(buffer!))
     expect(payload.content!.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
     expect(payload.analytics).not.toBeNull()
@@ -104,7 +101,6 @@ describe('backup and restore integration', () => {
     const downloaded = await getBackupBuffer(db, timestamp)
     expect(downloaded.equals(buffer!)).toBe(true)
 
-    // Seeded category survives in the archive; the restore DB is written to a NEW path.
     const { mkdtempSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')
     const { join } = await import('node:path')
@@ -146,7 +142,6 @@ describe('backup and restore integration', () => {
       await closeAnalyticsDatabase(restoredAnalytics)
     }
 
-    // The staged (streaming) restore path extracts the same archive without holding it in memory.
     const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
     const staged = await stageBackup(buffer!)
     const { rmSync } = await import('node:fs')
@@ -185,7 +180,6 @@ describe('backup and restore integration', () => {
     expect(row).not.toBeNull()
 
     const stored = await getBackupBuffer(db, timestamp)
-    // Gzip magic intact from byte zero — not a truncation.
     expect(stored.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
     expect(row!.byteSize).toBe(stored.length)
     expect(size).toBe(stored.length)
@@ -228,12 +222,10 @@ describe('encrypted backups', () => {
     expect(buffer).toBeDefined()
     expect(isEncryptedBackup(buffer!.subarray(0, 8))).toBe(true)
 
-    // Row-level probes the restore controller and the list DTO rely on.
     expect(await isBackupEncrypted(db, timestamp)).toBe(true)
     const { files } = await listBackups(db)
     expect(files.find((file) => file.key === timestamp)?.encrypted).toBe(true)
 
-    // No password: the staging error keeps the temp dir for the parked-upload flow.
     const noPassword: unknown = await stageBackup(buffer!).catch((caught: unknown) => caught)
     expect(noPassword).toBeInstanceOf(EncryptedBackupPasswordRequired)
     rmSync((noPassword as InstanceType<typeof EncryptedBackupPasswordRequired>).dir, {
@@ -241,10 +233,8 @@ describe('encrypted backups', () => {
       force: true,
     })
 
-    // A wrong password fails the first GCM tag check — surfaced as a 400.
     await expect(stageBackup(buffer!, { password: 'wrong-password' })).rejects.toThrow(ActionFailure)
 
-    // The right password stages exactly like the plaintext round-trip.
     const staged = await stageBackup(buffer!, { password: 'correct horse battery staple' })
     try {
       expect(staged.content).not.toBeNull()
@@ -287,7 +277,6 @@ describe('encrypted backups', () => {
       const { fileName } = await createBackup(db, null, { passwordOverride: 'one-off-password' })
       const buffer = mem.store.get(`backup/${fileName}`)?.body
       expect(buffer).toBeDefined()
-      // The settings password does NOT fit this archive.
       await expect(stageBackup(buffer!, { password: 'settings-password' })).rejects.toThrow(ActionFailure)
       const staged = await stageBackup(buffer!, { password: 'one-off-password' })
       rmSync(staged.dir, { recursive: true, force: true })

@@ -28,8 +28,6 @@ describe('CardActionToolbar', () => {
   beforeEach(async () => {
     editor = createEditor({ namespace: 'test', nodes: [ButtonNode], onError: () => {} })
     mockComposerContext(editor)
-    // the toolbar label resolves from the node's own type via the card
-    // declaration, so the toolbar renders against a real card node
     nodeKey = await new Promise<NodeKey>((resolve) => {
       editor.update(
         () => {
@@ -152,7 +150,6 @@ describe('CardActionToolbar', () => {
       expect(toolbars[0].querySelector('ul')).toBeNull()
       expect(toolbars[0].querySelector('[data-testid="snippet-name"]')).toBeTruthy()
 
-      // closing the input returns to the menu toolbar
       fireEvent.keyDown(screen.getByTestId('snippet-name'), { key: 'Escape' })
 
       toolbars = getToolbars(container)
@@ -208,7 +205,6 @@ describe('CardActionToolbar', () => {
         props: { items: [{ ...addItem }, { kind: 'separator', hide: false }, { kind: 'snippet' }] },
       })
 
-      // no createSnippet configured, but the explicit separator stays
       const toolbar = getToolbars(container)[0]
       expect(toolbar.querySelectorAll('li')).toHaveLength(2)
     })

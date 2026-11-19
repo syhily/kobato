@@ -36,7 +36,6 @@ export interface AssetUrlBackfillResult {
   pages: number
   friends: number
   categories: number
-  /** Content rows left untouched: body is not a Lexical state, or the row threw. */
   skippedContentRows: number
 }
 
@@ -77,7 +76,6 @@ function nonEmpty(path: string | null): string | null {
   return path === null || path === '' ? null : path
 }
 
-/** `/storage/<key>` rewrite target for a resolved storage path. */
 function siteOwnedSrc(storagePath: string): string {
   return `/storage/${storagePath.startsWith('/') ? storagePath.slice(1) : storagePath}`
 }
@@ -132,12 +130,6 @@ function rewriteHtmlImgSrcs(html: string, rewrite: (src: string) => string | nul
   return { html: next, changed }
 }
 
-/**
- * Rewrite every image node of a Lexical body in place: nodes carrying a non-empty
- * `storagePath` re-stamp `src` unconditionally; the rest rewrite only when the src
- * provably resolves to site-owned storage. Nested host-card HTML rewrites its `<img>` srcs
- * through the same predicate. Mutates in place.
- */
 export function rewriteLexicalBodyAssetUrls(
   state: LexicalEditorState,
   publicBaseUrl: string | null,
@@ -183,7 +175,6 @@ export function rewriteLexicalBodyAssetUrls(
   return { state, changed }
 }
 
-/** A canonical Lexical editor state is an object with a `root.children` array. */
 function isLexicalBody(body: unknown): boolean {
   return isRecord(body) && isRecord(body.root) && Array.isArray(body.root.children)
 }
@@ -216,7 +207,6 @@ async function persistRewrittenLexicalRow(db: Database, id: number, state: Lexic
     .where(eq(content.id, id))
 }
 
-/** Rewrite one stored cover/poster URL; `null` when unchanged or not site-owned. */
 export function rewriteAssetReference(url: string, publicBaseUrl: string | null): string | null {
   if (url === '') {
     return null

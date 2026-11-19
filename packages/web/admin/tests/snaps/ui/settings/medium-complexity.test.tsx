@@ -328,7 +328,6 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('公共资源限流')
     expect(html).toContain('高级选项')
     expect(html).toContain('恢复默认')
-    // Advanced buckets stay hidden behind the collapsed disclosure.
     expect(html).not.toContain('OTP 发送限流')
     expect(html).not.toContain('邀请限流')
   })

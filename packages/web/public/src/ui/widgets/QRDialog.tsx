@@ -11,7 +11,6 @@ export interface QRDialogProps extends VariantProps<typeof buttonVariants> {
   url: string
   name: string
   title: string
-  /** Icon markup inside the trigger button (e.g. `<WechatIcon />`). */
   trigger: ReactNode
   className?: string
 }

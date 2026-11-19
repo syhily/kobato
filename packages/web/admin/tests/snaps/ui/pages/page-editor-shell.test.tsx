@@ -112,11 +112,9 @@ describe('snapshot: PagesView', () => {
 
   it('renders the header chrome (title, filter bar, new-page link) regardless of query state', () => {
     const html = renderView()
-    // Title always renders; the total span stays 0 until the list resolves.
     expect(html).toContain('页面管理')
     expect(html).toContain('新建页面')
     expect(html).toContain('href="/editor/page/new"')
-    // No active filters — just the pill-bar 筛选 trigger in the header slot.
     expect(html).toContain('筛选')
     expect(html).not.toContain('添加筛选')
   })
@@ -125,7 +123,6 @@ describe('snapshot: PagesView', () => {
     const html = renderView()
     expect(html).toContain('页面管理')
     expect(html).toContain('skeleton')
-    // Empty-state copy is NOT shown while loading.
     expect(html).not.toContain('未找到页面')
   })
 
@@ -153,13 +150,11 @@ describe('snapshot: PagesView', () => {
   })
 
   it('renders the author pill with the label resolved from the seeded author list', () => {
-    // Author field options come from the seeded users query.
     queryMocks.query = { data: { users: [makeAdminUser({ name: '雨帆' })], total: 1 }, isPending: false, error: null }
     queryMocks.filters = [{ field: 'author', value: '1', label: '雨帆' }]
     const html = renderView()
     expect(html).toContain('作者')
     expect(html).toContain('雨帆')
-    // Active filters bring the 添加筛选 / 清除 affordances.
     expect(html).toContain('添加筛选')
     expect(html).toContain('清除')
   })

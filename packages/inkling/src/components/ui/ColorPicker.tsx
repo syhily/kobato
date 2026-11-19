@@ -50,7 +50,6 @@ declare global {
 const CONIC_RING_BACKGROUND =
   'conic-gradient(hsl(360,100%,50%),hsl(315,100%,50%),hsl(270,100%,50%),hsl(225,100%,50%),hsl(180,100%,50%),hsl(135,100%,50%),hsl(90,100%,50%),hsl(45,100%,50%),hsl(0,100%,50%))'
 
-/** The rainbow ring marking "custom color" on the selector and picker-toggle buttons. */
 export function ConicRing() {
   return (
     <div
@@ -75,22 +74,16 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
 
     const isInputField = e.target instanceof HTMLInputElement
 
-    // Allow text selection for events on the input field
     if (isInputField) {
       return
     }
 
-    // Prevent closing the color picker when clicking somewhere inside it
     hexInputRef.current?.focus()
 
     e.preventDefault()
   }, [])
 
-  // the per-gesture document listener, so stop can remove it without the
-  // listener self-referencing its own binding. The gesture's only real effect is
-  // returning focus to the hex input on release.
   const gestureStopRef = useRef<(() => void) | null>(null)
-
   const stopUsingColorPicker = useCallback(() => {
     hexInputRef.current?.focus()
 
@@ -124,7 +117,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
         const result = await eyeDropper.open()
         onChange(result.sRGBHex)
       } catch {
-        // EyeDropper was cancelled or failed — pointer events are restored in finally
+        /* noop */
       } finally {
         document.body.style.removeProperty('pointer-events')
         hexInputRef.current?.focus()
@@ -137,11 +130,8 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
     hexInputRef.current?.focus()
   }, [])
 
-  // the keyword grammar ('accent'/'transparent' vs raw hex) lives in
-  // @/components/ui/color-swatch; the picker's HexColorPicker takes '' for transparent
   const editorRoot = useEditorRootElement()
   const hexValue = resolveSwatchDisplayColor(value, { transparentAs: '', rootElement: editorRoot })
-
   const focusHexInputOnClick = useCallback(() => {
     hexInputRef.current?.focus()
   }, [])
@@ -277,19 +267,15 @@ export function ColorIndicator({
     e.preventDefault()
   }, [])
 
-  // the indicator paints 'transparent' as white (the button needs a visible
-  // paint); the picker and swatch resolutions share the one grammar module
   const editorRoot = useEditorRootElement()
   const backgroundColor = resolveSwatchDisplayColor(value, { transparentAs: 'white', rootElement: editorRoot })
   let selectedSwatch: string | undefined = resolveSelectedSwatchTitle(value, swatches)
-
   if (isExpanded) {
     selectedSwatch = undefined
   }
 
   const handleColorPickerChange = (newValue: string): void => {
     onChange(newValue)
-    // Don't close the popover when using the color picker
   }
 
   return (

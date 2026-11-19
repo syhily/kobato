@@ -62,7 +62,6 @@ export function computeNextRun(
     return candidate
   }
 
-  // monthly
   if (typeof settings.dayOfMonth !== 'number' || settings.dayOfMonth < 1 || settings.dayOfMonth > 31) {
     throw new DomainError('BAD_REQUEST', descriptorFor('backup.error.monthlyDayRequired'))
   }
@@ -95,33 +94,25 @@ export function nextDailyMaintenanceDelayMs(): number {
 // policy (next-fire/run closures), this module owns the mechanics. Jobs
 // close over the db-handle GETTER so a reopened handle is picked up.
 
-/** Catalog task binding — opt-in live-state tracking plus optional history. */
 export interface ScheduledJobTask {
-  /** Catalog task key (`@kobato/contracts/jobs`). */
   key: string
-  /** Persist each fire to `job_run` via the recorder. */
   recordHistory?: boolean
 }
 
 export interface ScheduledJobOptions {
-  /** Logger scope. */
   name: string
   /** Milliseconds until the next fire, or `null` to suspend (re-check after `suspendedRetryMs`); computed fresh on every reschedule. */
   nextDelayMs: () => number | null
   run: () => Promise<void> | void
-  /** Re-check delay while suspended (default 30s). */
   suspendedRetryMs?: number
-  /** Bind a catalog task: live-state tracking, plus `job_run` history when `recordHistory` is set. */
   task?: ScheduledJobTask
 }
 
 export interface ScheduledJob {
-  /** Clear the pending fire and recompute (settings changed, boot). */
   reschedule(): void
   stop(): void
 }
 
-/** Read-only live state for a tracked task (admin task center). */
 export interface TaskLiveState {
   suspended: boolean
   nextRunAt: Date | null
@@ -130,13 +121,11 @@ export interface TaskLiveState {
 
 const taskStates = new Map<string, TaskLiveState>()
 
-/** Snapshot of a tracked task's live state; null when the key never ran through `scheduleJob`. */
 export function getSchedulerTaskState(taskKey: string): TaskLiveState | null {
   const state = taskStates.get(taskKey)
   return state === undefined ? null : { ...state }
 }
 
-/** Test seam: drop all tracked live states (unit-test isolation). */
 export function __resetSchedulerTaskStatesForTests(): void {
   taskStates.clear()
 }
@@ -297,7 +286,6 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   return job
 }
 
-/** Stop every registered job (shutdown hook and test cleanup). */
 export function stopAllScheduledJobs(): void {
   // Backwards: stop() deregisters from the array mid-iteration.
   for (let i = registeredJobs.length - 1; i >= 0; i--) {

@@ -57,7 +57,6 @@ describe('useTypeaheadTriggerMatch', () => {
   })
 
   it('restarts the match at a later trigger occurrence', () => {
-    // the trigger char cannot appear in the query, so the last `:` wins
     const match = getMatcher()(':sm:ok')
     expect(match).toEqual({ leadOffset: 3, matchingString: 'ok', replaceableString: ':ok' })
   })

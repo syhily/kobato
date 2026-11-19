@@ -17,9 +17,6 @@ import { randomUUID } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// post/page.detail loaders against the real engine; the seams are wrapped probes that gate
-// per-test assertions.
-
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
   findPostBySlug: vi.fn(),
@@ -38,7 +35,6 @@ vi.mock('@kobato/server/domains/auth/primitives.ts', async () => {
   return { ...actual, resolveSessionContext: mocks.resolveSessionContext }
 })
 
-// Wrapped (not replaced): the 304 tests assert the full meta load is skipped.
 vi.mock('@kobato/server/domains/posts/services/single.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/posts/services/single.ts')>(
     '@kobato/server/domains/posts/services/single.ts',
@@ -47,7 +43,6 @@ vi.mock('@kobato/server/domains/posts/services/single.ts', async () => {
   return { ...actual, findPostBySlug: mocks.findPostBySlug }
 })
 
-// Wrapped (not replaced): the page 304 tests assert `findPageBySlug` is skipped.
 vi.mock('@kobato/server/domains/pages/services/public-query.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/pages/services/public-query.ts')>(
     '@kobato/server/domains/pages/services/public-query.ts',
@@ -56,7 +51,6 @@ vi.mock('@kobato/server/domains/pages/services/public-query.ts', async () => {
   return { ...actual, findPageBySlug: mocks.findPageBySlug }
 })
 
-// Wrapped: the full-table read must be skipped when the page hides the section.
 vi.mock('@kobato/server/domains/friends/service.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/friends/service.ts')>(
     '@kobato/server/domains/friends/service.ts',
@@ -65,7 +59,6 @@ vi.mock('@kobato/server/domains/friends/service.ts', async () => {
   return { ...actual, listAllFriends: mocks.listAllFriends }
 })
 
-// Wrapped: gated so the orchestrator must start without waiting for this read.
 vi.mock('@kobato/server/domains/taxonomies/tags/service.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/taxonomies/tags/service.ts')>(
     '@kobato/server/domains/taxonomies/tags/service.ts',
@@ -82,7 +75,6 @@ vi.mock('@kobato/server/http/loaders/detail-critical.ts', async () => {
   return { ...actual, loadDetailCritical: mocks.loadDetailCritical }
 })
 
-// Wrapped: the body_html fallback projection runs in parallel with friends.
 vi.mock('@kobato/server/domains/content/services/body-html.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/content/services/body-html.ts')>(
     '@kobato/server/domains/content/services/body-html.ts',
@@ -122,7 +114,6 @@ async function seedPost(opts: Partial<typeof postTable.$inferInsert> & { body?: 
   return postId
 }
 
-/** A post with no live row at all: one draft revision, no published pointer. */
 async function seedDraftPost(slug: string, authorId = 1): Promise<number> {
   const rows = await db
     .insert(postTable)
@@ -174,8 +165,6 @@ async function seedFriend(): Promise<void> {
     .values({ website: 'Alice', homepage: 'https://alice.example', poster: '/images/alice.png' })
 }
 
-/** Holds one mocked read open until `release` fires, so ordering tests can
- *  observe what the loader starts while the read is still in flight. */
 function gateOnce(mock: (typeof mocks)[keyof typeof mocks]): { release: () => void } {
   const base = mock.getMockImplementation() as (...args: unknown[]) => unknown
   let release!: () => void
@@ -223,7 +212,6 @@ describe('routes/post.detail loader', () => {
   })
 
   it('404s when the slug is missing for an anonymous visitor', async () => {
-    // A missing slug must 404 even anonymously — never leak a draft preview.
     await expect(
       postRoute.loader(
         makeLoaderArgs({
@@ -256,8 +244,7 @@ describe('routes/post.detail loader', () => {
 
     expect(data.post.title).toBe('Hello')
     expect(data.post.permalink).toBe('/posts/hello')
-    // Seeded with no projection column — the on-the-fly fallback projection
-    // renders the empty Lexical body rather than failing the page.
+
     expect(data.bodyHtml).toBe('')
     expect(data.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
@@ -276,19 +263,15 @@ describe('routes/post.detail loader', () => {
       ),
     )
 
-    // The document UI locale is independent; only the body container stamps this.
     expect(data.post.contentLanguage).toBe('zh-CN')
   })
 })
 
-// `data()` keeps status/headers under `.init` — the 200 ETag lives there.
 function loaderEtag(result: unknown): string | null {
   const init = (result as { init?: { headers?: Record<string, string> } }).init
   return init?.headers?.ETag ?? null
 }
 
-// The request projection every detail ETag is built from. Tests override one
-// dimension at a time; production threads `context.localization`.
 const LOCALIZATION: AppLocalization = {
   locale: 'zh-CN',
   timeZone: 'Asia/Shanghai',
@@ -365,8 +348,7 @@ describe('routes/post.detail loader — representation ETag', () => {
     expect(headers.get('Content-Language')).toBe('zh-CN')
     expect(headers.get('Cache-Control')).toBe(CACHE_PROFILES.detail)
     expect(headers.get('Vary')).toBe('Cookie')
-    // Correctness first: the tag covers the WHOLE payload, so the full load
-    // always runs — there is no published_at probe that can pre-empt it.
+
     expect(mocks.findPostBySlug).toHaveBeenCalled()
   })
 
@@ -396,8 +378,7 @@ describe('routes/post.detail loader — representation ETag', () => {
 
     const first = await callPostDetail('hello')
     const data = unwrapLoaderData<{ sidebarPosts: { permalink: string }[] }>(first.result)
-    // The seeded pick rotates per site day; within the same day it is stable,
-    // so the full-payload ETag still matches on the next request.
+
     expect(data.sidebarPosts).toHaveLength(5)
 
     const second = await callPostDetail('hello', { ifNoneMatch: first.etag! })
@@ -409,13 +390,11 @@ describe('routes/post.detail loader — representation ETag', () => {
     const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
     const first = await callPostDetail('hello')
 
-    // Republish without touching `published_at`: only the revision pointer moves.
     const revisions = await db
       .insert(contentTable)
       .values({ type: 'post', ownerId: postId, revisionNo: 2, status: 'published', body: emptyLexicalBody() })
       .returning({ id: contentTable.id })
     await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
-
     const republished = await callPostDetail('hello', { ifNoneMatch: first.etag! })
     expect(republished.response).toBeUndefined()
     expect(republished.etag).not.toBe(first.etag)
@@ -436,15 +415,11 @@ describe('routes/post.detail loader — representation ETag', () => {
     const postId = await seedPost({ slug: 'hello' })
     const first = await callPostDetail('hello')
 
-    // The critical payload carries likes (metric.vote_up) and the comment key
-    // (metric.public_id); both are part of the served representation. The first
-    // request created the metric row via `ensureCommentPage`.
     const metricWhere = and(eq(metricTable.type, 'post'), eq(metricTable.ownerId, postId))
     await db.update(metricTable).set({ voteUp: 3 }).where(metricWhere)
     const liked = await callPostDetail('hello', { ifNoneMatch: first.etag! })
     expect(liked.response).toBeUndefined()
     expect(liked.etag).not.toBe(first.etag)
-
     await db.update(metricTable).set({ publicId: randomUUID() }).where(metricWhere)
     const rekeyed = await callPostDetail('hello', { ifNoneMatch: liked.etag! })
     expect(rekeyed.response).toBeUndefined()
@@ -480,7 +455,6 @@ describe('routes/post.detail loader — render waterfall', () => {
   it('starts the detail orchestrator without waiting for the tag/sidebar/prerender block', async () => {
     await seedPost({ slug: 'hello' })
 
-    // Hold the tags read open — serial composition would reach the orchestrator only after it settles.
     const { release } = gateOnce(mocks.getTagsByNames)
     const pending = postRoute.loader(
       makeLoaderArgs({
@@ -536,8 +510,6 @@ describe('routes/page.detail loader', () => {
   })
 
   it('throws instead of re-resolving the session when the canonical request context is missing', async () => {
-    // A missing canonical request context is a programming error — throws, never consults
-    // resolveSessionContext.
     const ctx = new RouterContextProvider()
 
     await expect(
@@ -601,7 +573,6 @@ describe('routes/page.detail loader — friends gating', () => {
       ),
     )
 
-    // showFriends=false: no full-table scan; the payload stays an honest empty list.
     expect(mocks.listAllFriends).not.toHaveBeenCalled()
     expect(result.showFriends).toBe(false)
     expect(result.friends).toEqual([])
@@ -610,7 +581,6 @@ describe('routes/page.detail loader — friends gating', () => {
   it('loads friends when the page shows the section', async () => {
     await seedPage({ slug: 'links', showFriends: true })
     await seedFriend()
-
     const result = unwrapLoaderData<{ friends: { website: string }[]; showFriends: boolean }>(
       await pageRoute.loader(
         makeLoaderArgs({
@@ -632,7 +602,6 @@ describe('routes/page.detail loader — render waterfall', () => {
   it('starts the body_html resolution as soon as the preview resolves, without waiting for friends', async () => {
     await seedPage({ slug: 'links', showFriends: true })
 
-    // Hold the friends read open — serial composition would reach the body only after it settles.
     const { release } = gateOnce(mocks.listAllFriends)
     const pending = pageRoute.loader(
       makeLoaderArgs({
@@ -730,7 +699,6 @@ describe('routes/page.detail loader — representation ETag', () => {
     const preview = unwrapLoaderData<{ draftMarker: string | null }>(first)
     expect(preview.draftMarker).toBe('unpublished-draft')
 
-    // A draft preview may swap the body, so no published tag may short-circuit it.
     const repeated = unwrapLoaderData<{ draftMarker: string | null }>(await load('W/"anything"'))
     expect(repeated.draftMarker).toBe('unpublished-draft')
   })

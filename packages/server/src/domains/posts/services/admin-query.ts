@@ -11,7 +11,6 @@ import { makeMetaListQueries } from '@kobato/server/domains/content/entities/met
 import { postDescriptor } from '@kobato/server/domains/posts/descriptor.ts'
 import { buildPostsOrderBy, buildPostsWhere } from '@kobato/server/domains/posts/repos/shared.ts'
 
-// List/count come from the shared list-query factory with the post where/orderBy legs.
 const listQueries = makeMetaListQueries<PostMetaRow, ListPostsFilters>(postMetaTable, {
   buildWhere: buildPostsWhere,
   orderBy: buildPostsOrderBy,

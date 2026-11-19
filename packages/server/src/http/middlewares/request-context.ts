@@ -42,7 +42,6 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
 
 export interface DerivedRequest {
   requestContext: RequestContext
-  /** Middleware-only reader for the dirty flag behind `markSessionDirty`. */
   isSessionDirty(): boolean
 }
 
@@ -67,7 +66,6 @@ function readCookieValue(header: string | null, name: string): string | null {
 // requests carry none and the CSRF guard rejects them.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
-/** Derive the canonical `RequestContext` once per request; `directRemoteAddress` is the raw socket peer. */
 export async function deriveRequestContext(input: {
   request: Request
   directRemoteAddress: string | undefined
@@ -124,7 +122,6 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   const cookieHeader = c.req.raw.headers.get('cookie')
   let csrfCookieToSet: string | null = null
   if (readCookieValue(cookieHeader, SESSION_COOKIE_NAME) !== null) {
-    // Token is minted lazily on first access; subsequent requests reuse it.
     const tokenBefore = requestContext.session.get('csrfToken')
     ensureCsrfToken(requestContext.session)
     if (requestContext.session.get('csrfToken') !== tokenBefore) {

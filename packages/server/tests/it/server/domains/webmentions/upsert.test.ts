@@ -59,7 +59,6 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     expect(row.status).toBe('pending')
     expect(row.title).toBe('Edited title')
     expect(row.summary).toBe('edited summary')
-    // The mf2 classification refreshes with the rest of the extraction.
     expect(row.type).toBe('reply')
     expect(row.updatedAt.getTime()).toBeGreaterThanOrEqual(first.row.updatedAt.getTime())
   })

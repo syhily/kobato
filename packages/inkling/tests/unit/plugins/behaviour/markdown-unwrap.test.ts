@@ -12,13 +12,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Synchronous test table for the markdown special-markup unwrap grammar —
-// one row per markup (code/superscript/subscript/strikethrough), the
-// {{variable}} replacement string special case, and the caret offset
-// compensation, pinned by calling the unwrap body directly on a headless
-// editor. The keyboard plumbing (at-end-of-element gate, preventDefault)
-// stays in registerKeyboardNavigation.test.ts.
-
 function createTestEditor(): LexicalEditor {
   return createHeadlessEditor({
     namespace: 'test',
@@ -33,16 +26,14 @@ interface UnwrapCase {
   name: string
   input: string
   format: TextFormatType
-  // collapsed caret offset before the unwrap; defaults to end of input
+
   caret?: number
   expected: string
   expectedCaret: number
-  // the node's format bitmask after the unwrap; defaults to 0 (cleared)
+
   expectedFormat?: number
 }
 
-// Awaits the commit like the neighboring behaviour tests do — headless
-// updates flush on a deferred callback, not synchronously.
 async function runUnwrap(
   editor: LexicalEditor,
   { input, format, caret = input.length }: Omit<UnwrapCase, 'name' | 'expected' | 'expectedCaret'>,
@@ -75,9 +66,6 @@ async function runUnwrap(
 }
 
 const cases: UnwrapCase[] = [
-  // one row per markup: the markup is re-added around the text, then the
-  // last character (the closing markup's tail) is dropped — the one
-  // backspace would have eaten — and the caret shifts by the net delta
   { name: 'unwraps code', input: 'code', format: 'code', expected: '`code', expectedCaret: 5 },
   {
     name: 'unwraps superscript',
@@ -94,8 +82,7 @@ const cases: UnwrapCase[] = [
     expected: '~~strikethrough~',
     expectedCaret: 16,
   },
-  // offset compensation: the caret sits where backspace left it, pushed by
-  // the markup delta (markup.length - 1), not reset to the node end
+
   {
     name: 'pushes a mid-text caret by the markup delta',
     input: 'code',
@@ -104,8 +91,6 @@ const cases: UnwrapCase[] = [
     expected: '`code',
     expectedCaret: 3,
   },
-  // {{variable}} replacement strings: no markup is re-added — the text just
-  // loses its last character (ReplacementStringsPlugin assumption)
   {
     name: 'strips the last character of a replacement string without re-adding markup',
     input: '{{variable}}',
@@ -113,8 +98,7 @@ const cases: UnwrapCase[] = [
     expected: '{{variable}',
     expectedCaret: 11,
   },
-  // the replacement-string guard requires a closing brace NOT followed by a
-  // letter/space — a brace inside ordinary code text still gets the markup
+
   {
     name: 're-adds markup when the brace is not a replacement string',
     input: 'a{b} ',

@@ -10,14 +10,7 @@ import {
   KEY_ENTER_COMMAND,
 } from 'lexical'
 
-/**
- * The one command inkling dispatches when the writer asks to edit an inline
- * math node — double-click on the preview, or Enter while a node selection
- * holds exactly one MathInlineNode. The editing UI is host-owned: the host
- * registers a listener, and inkling never renders an editor for the node.
- */
 export const EDIT_MATH_INLINE_COMMAND = createCommand<{ nodeKey: NodeKey }>('EDIT_MATH_INLINE_COMMAND')
-
 /**
  * Double-click half of the edit gesture: resolves the math inline node under
  * the event target (the preview is a plain DOM subtree — createDOM renders
@@ -51,12 +44,6 @@ export function dispatchEditMathInlineAtTarget(editor: LexicalEditor, target: Ev
   return true
 }
 
-/**
- * Keyboard half of the edit gesture: Enter on a node selection holding
- * exactly one MathInlineNode dispatches `EDIT_MATH_INLINE_COMMAND` and
- * swallows the key (otherwise Enter would split the paragraph around the
- * selected node).
- */
 export function registerMathInlineEnter(editor: LexicalEditor): () => void {
   return editor.registerCommand(
     KEY_ENTER_COMMAND,

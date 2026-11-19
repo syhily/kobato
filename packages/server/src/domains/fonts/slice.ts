@@ -3,9 +3,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('fonts.slice')
 
-// Slicing wrapper around the vendored cn-font-split wasm core
-// (`vendor/wasm-split.ts`); the caller owns buffer + storage lifecycle.
-
 // No manual chunkSize / languageAreas / subsets — the wasm core's defaults win.
 export interface SliceOptions {
   fontFamily?: string

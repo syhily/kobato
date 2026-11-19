@@ -11,9 +11,6 @@ import { DEFAULT_BASE_NODES } from '@kobato/inkling-internal/nodes/base'
 import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
 import { describe, expect, it } from 'vitest'
 
-// Node-set entries are either node classes or Lexical replacement descriptors
-// ({ replace, with }). Pin both, marking replacements so the two forms can
-// never be confused for each other.
 function nodeSetSnapshot(nodes: readonly unknown[]): string[] {
   return nodes.map((entry) => {
     if (typeof entry === 'function' && 'getType' in entry && typeof entry.getType === 'function') {
@@ -29,8 +26,6 @@ function nodeSetSnapshot(nodes: readonly unknown[]): string[] {
   })
 }
 
-// A card transformer is pinned by the node types it depends on (exactly one
-// card node class per transformer today).
 function transformerSnapshot(transformers: readonly Transformer[]): string[] {
   return transformers.map((transformer) => {
     if (!('dependencies' in transformer) || !Array.isArray(transformer.dependencies)) {
@@ -46,13 +41,6 @@ function transformerSnapshot(transformers: readonly Transformer[]): string[] {
   })
 }
 
-// Node-set drift guard. These literals pin the derived registries — every
-// registry is a derived view over the card declarations, composed in
-// declaration order (registration order carries no runtime semantics: node
-// types are unique and replacements ride the named pairs). The literals
-// guard against DRIFT from declaration order, not against history — when a
-// card is added or reordered in the declarations, update the literals to
-// the new derived order.
 describe('derived node sets match the pinned literals', () => {
   it('@kobato/inkling-internal/nodes/DefaultNodes (web editor node set)', () => {
     expect(nodeSetSnapshot(DEFAULT_NODES)).toEqual([

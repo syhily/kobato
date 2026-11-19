@@ -7,20 +7,12 @@ import { dataSrcToFile } from '@kobato/inkling-internal/utils/data-src-to-file'
 import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { $getNodeByKey } from 'lexical'
 
-// Image lifecycle — the image card's mount-time document-migration
-// policies, headless so they are jsdom-testable through real editors: the
-// Google-Docs data:-URL upload migration, the dimension backfill for older
-// serialized/external images, and the allowed-widths clamp. The component
-// invokes them from one mount effect each and keeps only the ports.
-
 export interface ImageLifecyclePorts {
-  /** Runs the card's upload intent for a file (the media-card upload channel's runner). */
   runUpload: (file: File) => unknown
-  /** The card's write seam. */
+
   write: (mutator: (node: BaseImageNode) => void) => void
   onError: (error: unknown) => void
 }
-
 /**
  * The data:-URL migration (copy/paste from Google Docs): converts the src to
  * a File and uploads it through the card's channel. Skips non-data: srcs and
@@ -48,14 +40,6 @@ export async function migrateImageDataUrl(
   }
 }
 
-/**
- * The dimension backfill: older serialized state and externally sourced
- * images may carry no dimensions — read them from the src and write them
- * through the seam. Skips when the node already has dimensions, when the
- * card is mid-insert (initial file / dialog trigger), or when there is no
- * src. A broken/unloadable src reports through onError and leaves the
- * dimensions unset. Returns true when the write landed.
- */
 export async function backfillImageDimensions(
   editor: LexicalEditor,
   nodeKey: NodeKey,
@@ -66,7 +50,6 @@ export async function backfillImageDimensions(
     const node = $getNodeByKey(nodeKey)
     return $isImageNode(node) && (!node.width || !node.height)
   })
-
   if (!hasMissingDimensions || !src || initialFile || triggerFileDialog) {
     return false
   }
@@ -84,13 +67,6 @@ export async function backfillImageDimensions(
   }
 }
 
-/**
- * The allowed-widths clamp: a cardWidth outside the host's allowed set (a
- * config change, an older document) rewrites to the default through the
- * seam — the node write is enough, decorate() re-reads cardWidth on the
- * commit. Returns the clamped width when it fired, null when the current
- * width is allowed.
- */
 export function clampImageCardWidth(
   current: CardWidth,
   allowed: CardWidth[],

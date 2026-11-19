@@ -44,8 +44,6 @@ export async function queryLikes(db: Database, target: EntityTarget): Promise<nu
   return metricVoteUp(db, target)
 }
 
-/** Batch metric read keyed on `targetKey(target)`; each entry carries the
- *  `publicId` UUID. `views` merges the page-view batcher's unflushed delta. */
 export async function queryMetadata(
   db: Database,
   targets: EntityTarget[],
@@ -98,13 +96,11 @@ export async function validateLikeToken(db: Database, target: EntityTarget, toke
   return existsActiveLikeToken(db, target, token)
 }
 
-/** Soft-deleted like tokens older than 30 days; safe from a cron job and also invoked by the in-process sweep below. */
 export async function purgeStaleLikeTokens(db: Database): Promise<void> {
   const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
   await purgeOldLikeTokens(db, thirtyDaysAgo)
 }
 
-/** Purges soft-deleted like tokens once an hour; the module-level guard prevents duplicate timers. */
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 let sweepTimer: NodeJS.Timeout | undefined
@@ -122,7 +118,6 @@ export function startLikeTokenSweep(db: Database): void {
       })
     }
   }, SWEEP_INTERVAL_MS)
-  // Don't pin the Node event loop — the timer is purely opportunistic.
   sweepTimer.unref?.()
 }
 

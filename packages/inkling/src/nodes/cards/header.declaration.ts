@@ -29,5 +29,4 @@ export const headerDeclaration = checkedCardDeclaration({
     },
   ],
   toolbarLabel: 'header',
-  // No markdown entry: the header card has no markdown representation.
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)

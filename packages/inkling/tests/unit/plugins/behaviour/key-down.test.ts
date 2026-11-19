@@ -27,8 +27,6 @@ describe('registerKeyDownPassthrough', () => {
   beforeEach(() => {
     editor = createTestEditor()
     registerKeyDownPassthrough(editor, deps)
-    // same-priority listener registered afterwards only runs when the
-    // passthrough lets the event through (returns false)
     fallthrough = vi.fn<(event: KeyboardEvent) => boolean>(() => false)
     editor.registerCommand(KEY_DOWN_COMMAND, fallthrough, COMMAND_PRIORITY_LOW)
   })

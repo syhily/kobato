@@ -15,7 +15,6 @@ describe('createSnapshotStore', () => {
     expect(store.getSnapshot()).toEqual({ items: [1], isLoading: false, error: 'boom' })
     expect(listener).toHaveBeenCalledTimes(2)
 
-    // each emit publishes a fresh snapshot reference (useSyncExternalStore)
     const before = store.getSnapshot()
     store.emit({ isLoading: true })
     expect(store.getSnapshot()).not.toBe(before)
@@ -61,10 +60,8 @@ describe('createSnapshotStore', () => {
     store.dispose()
     store.emit({ count: 1 })
     expect(listener).not.toHaveBeenCalled()
-    // the snapshot itself still moves — a late emit is a no-op only for listeners
     expect(store.getSnapshot()).toEqual({ count: 1 })
 
-    // a reused instance re-subscribes and keeps receiving emits
     store.subscribe(listener)
     store.emit({ count: 2 })
     expect(listener).toHaveBeenCalledTimes(1)

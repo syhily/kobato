@@ -4,12 +4,6 @@ import { createTKHandleWrapper } from '@kobato/inkling/tests/utils/tk-handle'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Thin per-instance suite: the generic handle semantics (partial setState,
-// change guard, subscribe/unsubscribe, fallback) live in
-// composer-handle.test.ts. What remains here is the tk channel's own state
-// shape, its throttled derivation of the top-level node map, and its
-// per-composer provider behaviour.
-
 describe('createTKHandle', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -44,7 +38,6 @@ describe('createTKHandle', () => {
     handle.addEditorTkNode('editor-2', 'top-2', 'tk-3')
     handle.addEditorTkNode('editor-2', 'top-2', 'tk-4')
 
-    // still inside the throttle window: no intermediate derivation
     expect(listener).not.toHaveBeenCalled()
     expect(handle.getState().tkCount).toBe(1)
 

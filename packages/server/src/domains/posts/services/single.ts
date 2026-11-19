@@ -12,8 +12,6 @@ import { toCmsPost } from '@kobato/server/domains/posts/projection.ts'
 import { hydratePostImages } from '@kobato/server/domains/posts/repos/hydrate.ts'
 import { and, eq, sql, type SQL } from 'drizzle-orm'
 
-// No post-specific fork: reads come from the shared meta CRUD
-// (`content/entities/meta-repo.ts`) bound to the post table.
 const crud = makeMetaCrud<PostMetaRow, NewPostMeta>(postMetaTable)
 
 export const findPostMetaById = crud.findMetaById
@@ -21,10 +19,6 @@ export const findPostMetaBySlug = crud.findMetaBySlug
 export const findPostMetaBySlugForUpdate = crud.findMetaBySlugForUpdate
 export const findPublicPostMetaBySlug = crud.findPublicMetaBySlug
 
-/**
- * Slim live-by-slug lookup (id + title only) for cross-domain consumers
- * (e.g. webmention target resolution) — no post-table query of their own.
- */
 export async function findLivePostBySlug(db: Database, slug: string): Promise<{ id: number; title: string } | null> {
   const rows = await db
     .select({ id: postMetaTable.id, title: postMetaTable.title })
@@ -92,7 +86,6 @@ export async function findPostBySlug(db: Database, slug: string): Promise<Post |
     findTagNamesByPostId(db, result.meta.id),
     resolveCategoryName(db, result.meta.categoryId),
   ])
-  // `toCmsPost` returns the shared `Post` DTO directly — hydrate in place.
   const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post

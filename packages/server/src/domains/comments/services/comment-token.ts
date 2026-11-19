@@ -28,7 +28,7 @@ export function parseCommentTokensCookie(cookieHeader: string | null): CommentTo
     const parsed: unknown = JSON.parse(raw)
     return commentTokenCookieSchema.parse(parsed)
   } catch {
-    // malformed cookie — treat as empty
+    /* noop */
   }
   return {}
 }

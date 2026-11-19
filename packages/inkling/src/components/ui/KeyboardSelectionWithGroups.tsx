@@ -13,14 +13,6 @@ export interface KeyboardSelectionWithGroupsProps<T extends { value: string | nu
   isLoading?: boolean
 }
 
-/**
- * The grouped render shell over the keyboard-selection machine (useKeyboardListSelection
- * owns the keydown policy): renders each group's header and items, wiring the flat
- * selection index, the scroll-into-view latch, and the hover wiring through
- * getItem. Null-valued items are non-interactive placeholders — never shown
- * selected, hover ignored. A flat option list is one degenerate group (see
- * InputList).
- */
 export function KeyboardSelectionWithGroups<T extends { value: string | null } = ListOptionItem>({
   groups,
   getItem,
@@ -51,7 +43,6 @@ export function KeyboardSelectionWithGroups<T extends { value: string | null } =
               if (item.value) {
                 hoverIndex(absoluteIndex)
               } else {
-                // hovering a placeholder still clears the scroll latch
                 hoverIndex(selectedIndex)
               }
             }

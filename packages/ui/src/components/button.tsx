@@ -31,13 +31,11 @@ const buttonVariants = cva(
         iconMd: 'relative size-btn-icon-md',
         iconLg: 'relative size-11',
       },
-      /** Corner radius. `default` inherits `rounded-md` from the base. */
       shape: {
         default: '',
         circle: 'rounded-full',
         pill: 'rounded-[4rem]',
       },
-      /** Layout. `default` keeps `inline-flex` from the base; `block` stretches to the parent's width. */
       block: {
         true: 'block w-full',
         false: '',

@@ -11,10 +11,6 @@ import { getRequestContext, type RequestContext } from '@kobato/server/http/requ
 import { safeRedirectPath } from '@kobato/utils/safe-url.ts'
 import { data, redirect } from 'react-router'
 
-// Flow routing behind `routes/auth/signin.tsx`: token peek and OTP-session
-// branching. Redirects are thrown; two `data(...)` payload shapes drive the
-// login/verify-otp/lost-password/reset-password forms.
-
 // Only these URL actions name a GET view; any other action is a POST
 // handler — treating those as views would unmount the login form on revalidation.
 const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])
@@ -94,8 +90,6 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
     }
   }
 
-  // OTP pending state: the domain owns the session keys and the expiry
-  // rule — the loader only consumes the projection.
   const otpState = readLivePendingOtp(session)
   if (otpState.expired) {
     // The expired pending entry was just cleared from the session — mark

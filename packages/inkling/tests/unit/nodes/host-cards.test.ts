@@ -39,20 +39,11 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
 
 const INSERT_MUSIC_PLAYER_COMMAND = createCommand('INSERT_MUSIC_PLAYER_COMMAND')
 
-// The host card's own insert command is derived from its node type, exactly
-// like a built-in card's — resolved through the same memoized resolver the
-// menu projection and the insert registrar read, so all three name one object
 const DERIVED_MUSIC_PLAYER_INSERT = resolveCardInsertCommand('musicPlayer')
-
 const CustomMenuIcon: ComponentType<SVGProps<SVGSVGElement>> = () => null
 const CustomDragIcon: ComponentType<SVGProps<SVGSVGElement>> = () => null
 const CustomIndicatorIcon: ComponentType<SVGProps<SVGSVGElement>> = () => null
 
-// The rich host card: menu (both icon paths, both command forms — the
-// derived `'insert'` name and a raw host-defined LexicalCommand), insert
-// spec, decorate target with an indicator icon, explicit drag icon.
-// Registered at module top level, mirroring the host idiom (defineCard
-// before any composer mounts).
 const musicPlayer = defineCard({
   nodeType: 'musicPlayer',
   baseNode: generateDecoratorNode({
@@ -75,8 +66,6 @@ const musicPlayer = defineCard({
   dragIcon: CustomDragIcon,
   toolbarLabel: 'music-player',
   render: (node) => {
-    // the render's node is InstanceType of THIS baseNode — the declared
-    // properties are typed with no narrowing (positive pin)…
     const src: string = node.src
     expect(typeof src).toBe('string')
     // @ts-expect-error …and undeclared properties are a compile error (negative pin)
@@ -85,9 +74,6 @@ const musicPlayer = defineCard({
   },
 })
 
-// The minimal host card: required fields only — no menu, insert, decorate
-// target, or drag icon. `uploadType` reuses a media key (the only shape the
-// closed upload-claiming seam allows a host card).
 const hostWidget = defineCard({
   nodeType: 'hostWidget',
   baseNode: generateDecoratorNode({ nodeType: 'hostWidget' }),
@@ -95,10 +81,6 @@ const hostWidget = defineCard({
   uploadType: 'image',
   render: () => null,
 })
-
-// The type-preservation fixture: a host spec with const-asserted spec arrays
-// (the base node module idiom), so the literal field names and value types
-// survive into the returned card.node's `__*` field map.
 const typedWidgetTransientProps = [
   {
     name: 'triggerFileDialog',
@@ -126,9 +108,7 @@ const typedWidget = defineCard({
 describe('defineCard', () => {
   it('registers the card in the host registry, in registration order, with the raw spec stored verbatim', () => {
     expect(getHostCards().map((host) => host.nodeType)).toEqual(['musicPlayer', 'hostWidget', 'typedWidget'])
-    // the registry is a neutral fact store: the raw spec, complete at
-    // registration — the views derive every projection (including the
-    // assembled class, see the insert-registration test below)
+
     expect(getHostCard('musicPlayer')?.spec.nodeType).toBe('musicPlayer')
     expect(getHostCard('musicPlayer')?.spec.toolbarLabel).toBe('music-player')
   })
@@ -179,8 +159,6 @@ describe('defineCard', () => {
     }
 
     expect(() =>
-      // deliberately not a generateDecoratorNode product: the assertion is
-      // the fixture's own marker that this input is invalid BY CONSTRUCTION
       defineCard({
         nodeType: 'notACard',
         baseNode: NotACardNode as unknown as CardBaseNodeClass,
@@ -193,7 +171,6 @@ describe('defineCard', () => {
   it('assembles a class whose instances pass $isInklingCard with no host-side ceremony', () => {
     const editor = createHeadlessEditor({ nodes: [musicPlayer.node], onError: () => {} })
 
-    // node construction needs an active editor (the constructor assigns the key)
     editor.update(() => {
       const node = new musicPlayer.node({ src: 'https://example.com/song.mp3' })
       expect(node).toBeInstanceOf(InklingDecoratorNode)
@@ -207,9 +184,6 @@ describe('defineCard', () => {
     editor.update(() => {
       const node = new typedWidget.node({ body: '<p>x</p>' })
 
-      // positive pins: the spec-derived field names AND value types — the
-      // nested editor honors its `nullable: true`, the transient accessor
-      // carries its `initial` lambda's return type
       const bodyEditor: LexicalEditor | null = node.__bodyEditor
       const initialState: EditorState | undefined = node.__bodyEditorInitialState
       const flag: boolean = node.__triggerFileDialog
@@ -217,12 +191,9 @@ describe('defineCard', () => {
       expect(initialState).toBeUndefined()
       expect(flag).toBe(false)
 
-      // the accessor pair is genuinely defined on the assembled prototype
       node.triggerFileDialog = true
       expect(node.__triggerFileDialog).toBe(true)
 
-      // negative pins: undeclared fields, widened nullability, and wrong
-      // accessor value types are all compile errors
       // @ts-expect-error — no spec entry named 'missing'
       void node.__missing
       // @ts-expect-error — the entry is nullable: true, so the field is LexicalEditor | null
@@ -240,17 +211,15 @@ describe('defineCard', () => {
     expect(getCardMenu(hostWidget.nodeType)).toBeUndefined()
   })
 })
-
 describe('host cards in the derived views', () => {
   it('resolves menu entries through both icon paths and binds each entry command', () => {
     const menu = getCardMenu('musicPlayer')
 
     expect(menu?.map((item) => item.label)).toEqual(['Music', 'Music (legacy)'])
-    // the id path resolves through the built-in icon table; a component passes through
+
     expect(menu?.[0]?.Icon).toBe(resolveCardIcon('audio'))
     expect(menu?.[1]?.Icon).toBe(CustomMenuIcon)
-    // the 'insert' name resolves to the card's derived insert command; a raw
-    // host-defined command passes through
+
     expect(menu?.map((item) => item.insertCommand)).toEqual([DERIVED_MUSIC_PLAYER_INSERT, INSERT_MUSIC_PLAYER_COMMAND])
 
     expect(getCardMenu('hostWidget')).toBeUndefined()
@@ -278,7 +247,7 @@ describe('host cards in the derived views', () => {
 
     expect(hostRegistration?.node).toBe(musicPlayer.node)
     expect(hostRegistration?.command).toBe(DERIVED_MUSIC_PLAYER_INSERT)
-    // the minimal card carries no insert spec and drops out
+
     expect(registrations.some((registration) => registration.nodeType === 'hostWidget')).toBe(false)
   })
 
@@ -297,11 +266,10 @@ describe('host cards in the derived views', () => {
     expect(getRegisteredCardNodes(new Set()).map(([nodeType]) => nodeType)).toEqual([])
     expect(getRegisteredCardNodes(new Set(['image'])).map(([nodeType]) => nodeType)).toEqual(['image'])
   })
-
   it('falls back to the host record for the toolbar label', () => {
     expect(getCardToolbarLabel('musicPlayer')).toBe('music-player')
     expect(getCardToolbarLabel('hostWidget')).toBe('host-widget')
-    // built-in labels resolve from the declarations first
+
     expect(getCardToolbarLabel('audio')).toBe('audio')
   })
 })
@@ -320,7 +288,6 @@ describe('host card insert integration', () => {
   async function mountRegistrar(target: LexicalEditor) {
     mockComposerContext(target)
     renderHook(() => CardInsertPlugin())
-    // allow React effects to register commands
     await tick()
   }
 

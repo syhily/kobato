@@ -36,8 +36,6 @@ export const TitleTextBox = React.forwardRef<TitleTextBoxRef, TitleTextBoxProps>
       setTitle(e.target.value)
     }
 
-    // Move the cursor to the editor on Tab; on Arrow Down/Right while the input is empty or the caret is at the
-    // end; on Enter, creating an empty paragraph when the editor is not empty.
     const handleTitleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
       if (!editorAPI) {
         return

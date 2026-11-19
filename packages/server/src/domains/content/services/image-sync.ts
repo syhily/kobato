@@ -6,10 +6,6 @@ import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// Save-time sync for `image` nodes: library nodes re-resolve from the
-// canonical `image` row and write back `alt`; external nodes are left
-// alone. Failures are swallowed.
-
 interface ImageNodeView extends LexicalNodeJson {
   src: string
   alt: string
@@ -24,7 +20,6 @@ export async function syncLibraryImageBlocks(db: Database, state: LexicalEditorS
   const targets: ImageNodeView[] = []
   visitLexicalNodes(state, (node) => {
     if (node.type === 'image') {
-      // The schema pins the image dataset shape; the view exposes the fields this pass mutates.
       targets.push(unsafeCast<ImageNodeView>(node))
     }
   })
@@ -40,7 +35,7 @@ export async function syncLibraryImageBlocks(db: Database, state: LexicalEditorS
     try {
       idTargets.push({ id: idFromString(target.imageId), target })
     } catch {
-      // ignore malformed imageId
+      /* noop */
     }
   }
   if (idTargets.length === 0) {

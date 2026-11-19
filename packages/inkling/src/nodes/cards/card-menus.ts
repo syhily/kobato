@@ -21,11 +21,6 @@ import VideoCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-ty
 import { resolveCardMenuCommand } from '@kobato/inkling-internal/nodes/cards/card-commands'
 import { resolveCardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
 
-/**
- * The menu/drag icons the declarations name by `CardIconId`: every icon is an SVGR
- * component (`*.svg?react`), so the map cannot live in the React-free declaration
- * modules.
- */
 const CARD_ICONS = {
   audio: AudioCardIcon,
   bookmark: BookmarkCardIcon,
@@ -44,21 +39,9 @@ const CARD_ICONS = {
   video: VideoCardIcon,
 } satisfies Record<CardIconId, NonNullable<MenuItem['Icon']>>
 
-/**
- * Resolves a menu/drag icon named by `CardIconId` to its SVGR component. Exported
- * for `defineCard`: host menu entries may name a built-in icon by id instead of
- * passing a component.
- */
 export function resolveCardIcon(id: CardIconId): NonNullable<MenuItem['Icon']> {
   return CARD_ICONS[id]
 }
-
-/**
- * The one menu projection every view shares: the icon (a built-in `CardIconId` or,
- * for host cards, an SVG component directly) becomes the SVGR component and the
- * entry's named `command` becomes its `insertCommand`. Built-in declarations and
- * host specs flow through the same function.
- */
 function projectMenuEntries(
   nodeType: string,
   menu: readonly (CardMenuEntrySpec | HostCardMenuEntrySpec)[],
@@ -69,14 +52,7 @@ function projectMenuEntries(
     insertCommand: typeof command === 'string' ? resolveCardMenuCommand(command, nodeType) : command,
   }))
 }
-
-/**
- * Resolves a card's slash/plus menu entries from its merged facts. A card whose
- * declaration carries no `menu` resolves none.
- */
 export function resolveCardMenuEntries(facts: CardFacts): MenuItem[] | undefined {
-  // `in` narrows the built-in union to the declarations carrying the
-  // optional menu entry
   const menu =
     facts.source === 'builtin'
       ? 'menu' in facts.declaration
@@ -86,12 +62,6 @@ export function resolveCardMenuEntries(facts: CardFacts): MenuItem[] | undefined
   return menu === undefined ? undefined : projectMenuEntries(facts.nodeType, menu)
 }
 
-/**
- * Resolves a card's drag-preview icon from its merged facts. An explicit `dragIcon`
- * on the declaration wins; otherwise menu-bearing cards use their first menu entry's
- * icon (Image's two-entry menu keeps the Image icon, not the GIF one). The menu-less
- * footnote definition resolves no icon.
- */
 export function resolveCardDragIcon(facts: CardFacts): MenuItem['Icon'] {
   const raw =
     facts.source === 'builtin'
@@ -101,10 +71,6 @@ export function resolveCardDragIcon(facts: CardFacts): MenuItem['Icon'] {
   return raw === undefined ? undefined : typeof raw === 'string' ? resolveCardIcon(raw) : raw
 }
 
-/**
- * Resolves a card's drag-preview icon by node type. The built-in-first /
- * host-fallback merge lives in `@kobato/inkling-internal/nodes/cards/card-facts`.
- */
 export function getCardDragIcon(nodeType: string): MenuItem['Icon'] {
   const facts = resolveCardFacts(nodeType)
   return facts === undefined ? undefined : resolveCardDragIcon(facts)

@@ -13,7 +13,6 @@ const TabView = ({
 }) => {
   const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? '')
 
-  // The stored tab can go stale when the `tabs` prop changes; fall back to the first tab instead of rendering nothing.
   const currentTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : (tabs[0]?.id ?? '')
 
   const handleTabChange = (tabId: string) => {

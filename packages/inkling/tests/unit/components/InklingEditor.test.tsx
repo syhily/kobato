@@ -14,10 +14,6 @@ vi.mock('@lexical/react/LexicalMarkdownShortcutPlugin', () => ({
   MarkdownShortcutPlugin: vi.fn(() => null),
 }))
 
-// MarkdownShortcutPlugin's default is the card-free MINIMAL set; InklingEditor
-// pins the full DEFAULT set explicitly so the `.` surface's shortcut
-// behaviour is unchanged.
-
 function lastTransformersArg() {
   const calls = vi.mocked(LexicalMarkdownShortcutPlugin).mock.calls
   return calls[calls.length - 1]?.[0]?.transformers
@@ -48,8 +44,6 @@ describe('InklingEditor markdown shortcut defaults', () => {
   })
 
   it('mounts DEFAULT_TRANSFORMERS on the full-editor surface', () => {
-    // the `.` configuration: InklingComposer defaults to DEFAULT_NODES, which
-    // the feature plugins InklingEditor mounts rely on
     render(
       <InklingComposer>
         <InklingEditor />

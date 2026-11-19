@@ -151,7 +151,6 @@ function registerExtendedTextEntity(
     }
 
     if (text.length > match.end) {
-      // This will split out the rest of the text as simple text
       node.splitText(match.end)
 
       return
@@ -169,7 +168,6 @@ function registerExtendedTextEntity(
     if ($isTextNode(nextSibling) && nextSibling.isTextEntity()) {
       replaceWithSimpleText(nextSibling)
 
-      // This may have already been converted in the previous block
       if (isTargetNode(node)) {
         replaceWithSimpleText(node)
       }

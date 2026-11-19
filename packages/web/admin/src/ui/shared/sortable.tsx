@@ -60,12 +60,9 @@ export interface SortableDragHandleProps {
 }
 
 export interface SortableRowChrome {
-  /** Ref for the row element dnd-kit measures and transforms. */
   setNodeRef: (element: HTMLElement | null) => void
-  /** Transform + transition style for the row element. */
   style: CSSProperties
   isDragging: boolean
-  /** Spread onto `<SortableDragHandle>`. */
   dragHandleProps: SortableDragHandleProps
 }
 
@@ -76,7 +73,6 @@ export interface SortableRowChrome {
 export function useSortableRow(options: {
   id: UniqueIdentifier
   data?: Record<string, unknown>
-  /** Forwarded to `useSortable` — a disabled row stays put and ignores drags. */
   disabled?: boolean
 }): SortableRowChrome {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable(options)
@@ -90,7 +86,6 @@ export function useSortableRow(options: {
   }
 }
 
-/** The grip button every sortable row leads with. */
 export function SortableDragHandle({ attributes, listeners }: SortableDragHandleProps) {
   const { t } = useI18n()
   return (

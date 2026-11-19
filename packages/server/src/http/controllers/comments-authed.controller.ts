@@ -15,8 +15,6 @@ import { resolveEntitiesForComments } from '@kobato/server/domains/content/entit
 import { implementAuthed, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/comments.ts`;
-// this controller only implements the signed-in own-comment procedures.
 const impl = implementAuthed(commentsAuthedContract)
 
 const updateOwn = impl.updateOwn.handler(async ({ input, context }) => {
@@ -24,22 +22,16 @@ const updateOwn = impl.updateOwn.handler(async ({ input, context }) => {
   if (commentId === 0) {
     throw localizedOrpcError(context, 'BAD_REQUEST', 'comments.error.commentIdRequired')
   }
-  // The edit-lock flow (ownership, delete-request fence, has-replies
-  // lock, grace-window mutation, audit) lives in the comments domain.
   const updated = await editOwnComment(context.db, input.commentId, input.body, context.viewer, context)
   return { comment: asCommentItemWire(updated) }
 })
 
 const requestDeleteOwn = impl.requestDeleteOwn.handler(async ({ input, context }) => {
-  // The request-delete flow (ownership, idempotent no-op, mutation,
-  // audit, fresh re-fetch) lives in the comments domain.
   const updated = await requestOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
   return { comment: asCommentItemWire(updated) }
 })
 
 const cancelDeleteOwn = impl.cancelDeleteOwn.handler(async ({ input, context }) => {
-  // The cancel-delete flow (ownership, guarded mutation, audit, fresh
-  // re-fetch) lives in the comments domain.
   const updated = await cancelOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
   return { comment: asCommentItemWire(updated) }
 })
@@ -66,13 +58,10 @@ const searchMineEntities = impl.searchMineEntities.handler(async ({ input, conte
   }
 })
 
-// Comment count tuple for the profile/dashboard cards — passes through unchanged.
 const myCounts = impl.myCounts.handler(async ({ context }) =>
   countMyComments(context.db, idFromString(context.viewer.id)),
 )
 
-// Entity resolve for `/admin/me/comments`: titles for entities pinned in
-// the URL but absent from the dropdown; malformed/hard-deleted → `null`.
 const resolveEntity = impl.resolveEntity.handler(async ({ input, context }) => {
   const parsed = parseCommentEntity(input.entity)
   if (parsed === null) {

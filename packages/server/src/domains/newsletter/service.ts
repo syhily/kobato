@@ -18,8 +18,6 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 const log = getLogger('newsletter.service')
 
-// Confirm tokens use the shared token primitives, stored as a sha256 hash;
-// 24h TTL keeps pending rows from lingering indefinitely.
 const CONFIRM_TTL_MS = 24 * 60 * 60 * 1000
 const CONFIRM_TTL_HOURS = CONFIRM_TTL_MS / (60 * 60 * 1000)
 

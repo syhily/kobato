@@ -95,10 +95,6 @@ export function AudioNodeComponent({
   )
 }
 
-/**
- * Audio's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderAudioCard(node: AudioNode) {
   return (
     <AudioNodeComponent

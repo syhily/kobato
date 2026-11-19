@@ -144,7 +144,6 @@ describe('searchEmojis query policy', () => {
 
     expect(smile[0]?.id).toBe('smile')
     expect(dashSmile[0]?.id).toBe('smile')
-    // searching 'frown' ranks the 'frowning' emoji first
     expect(frown[0]?.id).toBe('frowning')
     expect(dashFrown[0]?.id).toBe('frowning')
   })
@@ -188,7 +187,6 @@ describe('registerEmojiExactMatchCompletion', () => {
   it('does not complete when the first hit is not an exact match', async () => {
     const editor = createTestEditor()
     const onCommit = vi.fn<(result: EmojiCommitResult) => void>()
-    // 'smi' searches fine (top hit 'smile') but is not itself an emoji id
     const cleanup = registerEmojiExactMatchCompletion(editor, { getQuery: () => 'smi', onCommit })
     await buildParagraph(editor, [{ text: ':smi' }], { segment: 0, offset: 4 })
 
@@ -278,8 +276,6 @@ describe('$insertEmojiCompletion', () => {
 
   it('deletes exactly id.length + 1 characters (the query and its leading colon)', async () => {
     const editor = createTestEditor()
-    // a prefix makes the deleted span observable: one character too few
-    // would leave the leading ':' behind
     await buildParagraph(editor, [{ text: 'say :taco' }], { segment: 0, offset: 9 })
 
     await drainEnqueuedUpdates(editor, () => {
@@ -287,7 +283,7 @@ describe('$insertEmojiCompletion', () => {
     })
 
     expect(rootText(editor)).toBe('say 🌮')
-    // the caret ends up right after the inserted emoji
+
     editor.read(() => {
       const selection = $getSelection()
       if (!$isRangeSelection(selection)) {
@@ -380,8 +376,6 @@ describe('$insertSelectedEmoji', () => {
   })
 
   it('keeps a legitimately typed colon before the trigger untouched', async () => {
-    // "note: :tac" — the trigger colon rides nodeToRemove, so the previous
-    // sibling's trailing ':' (the legit one) must survive the commit
     const editor = createTestEditor()
     await buildParagraph(editor, [{ text: 'note: :tac' }], { segment: 0, offset: 10 })
 

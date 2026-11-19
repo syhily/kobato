@@ -6,8 +6,6 @@ import { localizedHttpException } from '@kobato/server/http/localized-http-excep
 import { readBucket, tryKeyedRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { createMiddleware } from 'hono/factory'
 
-/** Rate-limit middleware keyed on client IP; accepts a live settings bucket key or an
- *  explicit bucket. On exceed throws a localized 429 for the perimeter `onError` shape. */
 export function rateLimitByIp(key: string, bucketOrName: RateLimitBucket | keyof RateLimitSettings) {
   return createMiddleware<Env>(async (c, next) => {
     const bucket: RateLimitBucket = typeof bucketOrName === 'string' ? readBucket(bucketOrName) : bucketOrName

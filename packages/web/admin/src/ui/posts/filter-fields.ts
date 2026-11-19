@@ -7,7 +7,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { deriveStatusQueryFields } from '@kobato/web-admin/ui/shared/filter-bar/status-fields.ts'
 import { FolderIcon, ListChecksIcon, TagsIcon, UserIcon } from 'lucide-react'
 
-// Posts-list filter-pill specs, URL seed/sync helpers, and `toQuery` mappers onto `admin.posts.list` input.
 export type PostFilterFieldKey = 'status' | 'category' | 'tag' | 'author'
 
 export type PostStatusFilter = 'all' | 'published' | 'draft' | 'unlisted' | 'deleted'
@@ -36,7 +35,6 @@ export function deriveStatusFields(status: PostStatusFilter): {
   return deriveStatusQueryFields(status, POST_STATUS_FIELDS)
 }
 
-/** The `admin.posts.list` input contributed by the active pills. */
 export interface PostsFilterQuery {
   deletedStatus?: 'all' | 'deleted' | 'normal'
   published?: boolean
@@ -46,7 +44,6 @@ export interface PostsFilterQuery {
   authorId?: string
 }
 
-/** Async option-list sources the factory closes over. */
 export interface PostFilterFieldSources {
   categories: readonly { id: string; name: string }[]
   tags: readonly string[]

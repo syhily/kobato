@@ -34,10 +34,6 @@ export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> 
   unpublish: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<TAdminDto>
 }
 
-/**
- * The five-function meta-mutation skeleton every content entity shares; entity
- * behavior attaches through the descriptor hooks.
- */
 export function makeEntityMutations<
   TMeta extends MetaRowBase,
   TNew,
@@ -74,7 +70,6 @@ export function makeEntityMutations<
         })
         const inserted = repos.insertMeta(
           tx,
-          // Shared columns + insertExtras build the row; the table union guarantees the shape.
           unsafeCast<TNew>({
             slug,
             title: input.title,
@@ -203,7 +198,6 @@ export function makeEntityMutations<
 
     let restoreWarning: ErrorMessageDescriptor | undefined
     if (restored) {
-      // `restored` implies the tx gathered a context (possibly the descriptor's own null/undefined).
       restoreWarning = await mutations.afterRestore?.(db, unsafeCast<TRestore>(ctx))
       rescheduleScheduledPublish()
     }
@@ -219,7 +213,6 @@ export function makeEntityMutations<
     const updated = repos.updateMetaById(
       db,
       id,
-      // Single-column patch; structural across the table union.
       unsafeCast<Partial<Omit<TNew, 'id' | 'createdAt'>>>({ published: false }),
     )
     if (updated === null) {

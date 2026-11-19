@@ -20,17 +20,10 @@ import { renderMathCard } from '@kobato/inkling-internal/nodes/MathNodeComponent
 import { renderToggleCard } from '@kobato/inkling-internal/nodes/ToggleNodeComponent'
 import { renderVideoCard } from '@kobato/inkling-internal/nodes/VideoNodeComponent'
 
-/**
- * The React-bearing half of a card's decorate-target: the node→component render and,
- * for Html, the indicator icon. Lives beside each card component in the
- * `*NodeComponent` files because the declaration modules must stay React-free.
- * Method-syntax `render` keeps each card's node parameter type assignable here.
- */
 interface CardDecorateModule {
   render(node: LexicalNode): ReactNode
   IndicatorIcon?: ComponentType<SVGProps<SVGSVGElement>>
 }
-
 /**
  * The per-card decorate modules, keyed by card node type with an exhaustive
  * `Record`, so a declaration added without its module fails typecheck. The only
@@ -54,35 +47,20 @@ const CARD_DECORATE_MODULES: Record<CardNodeType, CardDecorateModule> = {
   video: { render: renderVideoCard },
 }
 
-/**
- * Wrapper-layer projection of the card declarations: each declaration paired with
- * the React-bearing half of its decorate-target, the indicator icon gated by the
- * declaration's `decorateTarget.hasIndicatorIcon` flag (Html only). The shared
- * adapter (`@kobato/inkling-internal/nodes/decorate-card`) renders these through
- * `InklingCardWrapper`.
- */
 export const CARD_DECORATE_TARGETS = CARD_DECLARATIONS.map((declaration) => {
-  // `in` narrows the union to the declarations carrying the optional decorate-target entry
   const decorateTarget: DecorateTargetSpec | undefined =
     'decorateTarget' in declaration ? declaration.decorateTarget : undefined
   const module = CARD_DECORATE_MODULES[declaration.nodeType]
-  // Fresh object: the projection's added keys must never mutate the shared declaration
   return Object.assign({}, declaration, {
     decorateTarget,
     render: (node: LexicalNode) => module.render(node),
     IndicatorIcon: decorateTarget?.hasIndicatorIcon ? module.IndicatorIcon : undefined,
   })
 })
-
 const CARD_DECORATE_TARGETS_BY_TYPE = new Map(
   CARD_DECORATE_TARGETS.map((target): [string, (typeof CARD_DECORATE_TARGETS)[number]] => [target.nodeType, target]),
 )
 
-/**
- * The structural decorate-target type `getCardDecorateTarget` returns: it admits both
- * the precise built-in targets in `CARD_DECORATE_TARGETS` and the host card
- * projections, which carry the same facts derived from the raw registry spec.
- */
 export interface CardDecorateTarget {
   nodeType: string
   decorateTarget: DecorateTargetSpec | undefined
@@ -90,12 +68,6 @@ export interface CardDecorateTarget {
   IndicatorIcon?: ComponentType<SVGProps<SVGSVGElement>>
 }
 
-/**
- * The one decorate-target projection every consumer shares: built-in declarations
- * resolve to their paired `CARD_DECORATE_TARGETS` entry; a host spec projects its own
- * `render`, `decorateTarget`, and indicator icon through the same `hasIndicatorIcon`
- * gate.
- */
 export function resolveCardDecorateTarget(facts: CardFacts): CardDecorateTarget | undefined {
   if (facts.source === 'builtin') {
     return CARD_DECORATE_TARGETS_BY_TYPE.get(facts.nodeType)
@@ -109,10 +81,6 @@ export function resolveCardDecorateTarget(facts: CardFacts): CardDecorateTarget 
   }
 }
 
-/**
- * Resolves a card's decorate target by node type. The built-in-first /
- * host-fallback merge lives in `@kobato/inkling-internal/nodes/cards/card-facts`.
- */
 export function getCardDecorateTarget(nodeType: string): CardDecorateTarget | undefined {
   const facts = resolveCardFacts(nodeType)
   return facts === undefined ? undefined : resolveCardDecorateTarget(facts)

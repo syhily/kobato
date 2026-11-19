@@ -121,8 +121,6 @@ describe('BookmarkCard', () => {
     fireEvent.keyDown(screen.getByTestId('bookmark-url'), { key: 'Enter' })
 
     expect(handleUrlSubmit).toHaveBeenCalledTimes(1)
-    // a bare URL query short-circuits the dropdown to a 'url'-typed option,
-    // which Enter selects — the submit is still a plain string pair
     expect(handleUrlSubmit).toHaveBeenCalledWith('https://example.com', 'url')
   })
 

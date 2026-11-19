@@ -15,7 +15,6 @@ export const SETTINGS_LOCALE_CHANNEL = 'kobato.settings.locale'
 
 const MESSAGE_KIND = 'settings.locale-changed'
 
-/** What a peer tab receives: the committed locale plus the sender's representation token. */
 export interface LocaleChangeAnnouncement {
   locale: AppLocale
   /**
@@ -42,7 +41,6 @@ function randomOrigin(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
 }
 
-/** Fresh id for one mounted sync provider. */
 export function createLocaleSyncOrigin(): string {
   return randomOrigin()
 }

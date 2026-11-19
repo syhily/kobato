@@ -77,17 +77,13 @@ describe('snapshot: ImagesView', () => {
   it('renders the page shell with header, upload button and filter bar under SSR (pending/loading)', () => {
     const html = renderInRouter(<ImagesView />, '/admin/library/images')
 
-    // Title + total-count render off the pending query (total defaults to 0).
     expect(html).toContain('图片管理')
     expect(html).toContain('上传图片')
 
-    // No-filter trigger shows the bare "筛选" label.
     expect(html).toContain('筛选')
 
-    // Loading branch → skeleton placeholder tiles.
     expect(html).toMatch(/rounded-xl/)
 
-    // The upload affordance is a real button surfaced to AT users.
     expect(html).toMatch(/<button[^>]*>/)
   })
 
@@ -99,7 +95,6 @@ describe('snapshot: ImagesView', () => {
       data: { pages: [{ images: [], total: 0, hasMore: false }] },
     }
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
-    // The "未找到图片" empty card replaces the grid; total stays 0.
     expect(html).toContain('图片管理')
     expect(html).toContain('共 0 条')
     expect(html).toContain('未找到图片')
@@ -165,7 +160,6 @@ describe('snapshot: ImagesFilterBar', () => {
     )
     expect(html).toContain('搜索')
     expect(html).toContain('poster')
-    // Kind chip label is hardcoded to "用途".
     expect(html).toContain('用途')
     expect(html).toContain('添加筛选')
     expect(html).toContain('清除')

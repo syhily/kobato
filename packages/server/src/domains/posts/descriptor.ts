@@ -48,7 +48,6 @@ export interface PostAdminExtras {
   categoryName: string
 }
 
-/** Everything the search re-index needs, gathered inside the restore transaction. */
 interface IndexablePostData {
   id: number
   title: string
@@ -90,11 +89,6 @@ const INDEX_FAILURE_WARNING = {
   fallbackMessage: 'The search index update failed; this post may not appear in search results.',
 } as const satisfies ErrorMessageDescriptor
 
-/**
- * The post entity: RBAC ownership, author+ draft preview, tag/category
- * relations, visible/pinned/alias columns, search-index side effects;
- * the body lifecycle and meta CRUD skeleton come from `content/entities/*`.
- */
 export const postDescriptor: MetaEntityDescriptor<
   PostMetaRow,
   NewPostMeta,
@@ -144,7 +138,6 @@ export const postDescriptor: MetaEntityDescriptor<
         log.warn('index post failed', { postId: meta.id, error: err })
         warnings.push(INDEX_FAILURE_WARNING)
       }
-      // Cross-domain extensions run through the seam — see `posts/publish-hooks.ts`.
       await runPostPublishHooks(db, meta, body, warnings)
     },
   },

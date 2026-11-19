@@ -20,15 +20,9 @@ type MetaEnv<T> = {
 }
 
 type ReactRouterHonoServerPluginOptions = {
-  /**
-   * Path to the server file, relative to `vite.config.ts`; defaults to
-   * `${appDirectory}/server[.ts | /index.ts]`, else a virtual module.
-   */
   serverEntryPoint?: string
   dev?: {
-    /** Paths not served by the dev-server; defaults include `appDirectory` content. */
     exclude?: DevServerOptions['exclude']
-    /** Export name to use for the server; defaults to `default`. */
     export?: DevServerOptions['export']
   }
 }

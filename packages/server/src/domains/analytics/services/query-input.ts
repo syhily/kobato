@@ -15,12 +15,6 @@ const SEARCH_KEYS = [
   'includeUnknown',
 ] as const
 
-/**
- * URL-grammar entry point for callers whose input is a query string (the
- * controllers' `search`): lenient per field, validated through the shared
- * zod schema, then mapped onto the db-owned resolved query (range resolution
- * stays in `@kobato/db`'s query-filter).
- */
 export function parseAnalyticsSearch(searchParams: URLSearchParams): ResolvedAnalyticsQuery {
   const fields: Record<string, string> = {}
   for (const key of [...SEARCH_KEYS, ...METRIC_TYPES]) {

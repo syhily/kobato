@@ -73,10 +73,6 @@ function getPositionStyles() {
   }
 }
 
-// the typeahead menu body, hoisted out of the plugin render so menuRenderFn
-// carries no component definition. A plain render function, NOT a component:
-// the typeahead contract hands over the anchor as a ref to read at call
-// time, which is only permitted outside a component body
 function renderEmojiMenu(
   anchorElementRef: React.RefObject<HTMLElement | null>,
   searchResults: EmojiOption[] | null,
@@ -116,30 +112,18 @@ function renderEmojiMenu(
   )
 }
 
-// Emoji picker adapter: owns the typeahead menu rendering and the query state,
-// and delegates behaviour to the headless module in
-// ./behaviour/emoji-completion (index lifecycle, query policy, exact-match
-// completion, insertion surgeries). Analytics stays here — it is product
-// glue, not tree policy; the surgeries return commit results to attach it to.
 export function EmojiPickerPlugin() {
   const [editor] = useLexicalComposerContext()
   const [queryString, setQueryString] = React.useState<string | null>(null)
   const [fetchedResults, setSearchResults] = React.useState<EmojiOption[] | null>(null)
-  // a closed query never shows stale results — derived at render instead of
-  // cleared by an effect
   const searchResults = queryString ? fetchedResults : null
-
   const checkForTriggerMatch = useTypeaheadTriggerMatch(':', { minLength: 1 })
 
-  // the exact-match handler reads the query lazily so its registration is
-  // stable per editor instead of re-registering on every keystroke
   const queryRef = React.useRef<string | null>(null)
   React.useEffect(() => {
     queryRef.current = queryString
   }, [queryString])
 
-  // the typeahead menu does not account for an exact match typed like
-  // :emoji: — this closes it
   React.useEffect(() => {
     return registerEmojiExactMatchCompletion(editor, {
       getQuery: () => queryRef.current,
@@ -147,11 +131,7 @@ export function EmojiPickerPlugin() {
     })
   }, [editor])
 
-  // latest-wins: a slow response from a superseded query must not overwrite
-  // the newer query's results — compared against a ref, not state, so the
-  // guard never closes over a stale query
   const latestQueryRef = React.useRef<string | null>(null)
-
   React.useEffect(() => {
     if (!queryString) {
       return

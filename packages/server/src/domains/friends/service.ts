@@ -64,7 +64,6 @@ export async function listPublicFriends(db: Database): Promise<PublicFriend[]> {
 export interface AdminFriendsListResult {
   friends: AdminFriendDto[]
   total: number
-  /** True when another page exists. */
   hasMore: boolean
 }
 
@@ -123,7 +122,6 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', descriptorFor('friends.error.notFound'))
   }
-  // Reject the URL only when another row already owns it.
   if (existing.homepage !== input.homepage) {
     const dup = await findFriendByHomepage(db, input.homepage)
     if (dup !== null && dup.id !== input.id) {
@@ -158,8 +156,6 @@ export interface ApplyFriendInputs {
   rssUrl?: string
 }
 
-// Public `friends.apply`: rows land `visible: false` (pending); the admin
-// notification is fire-and-forget.
 export async function applyFriend(db: Database, input: ApplyFriendInputs): Promise<void> {
   const dup = await findFriendByHomepage(db, input.homepage)
   if (dup !== null) {

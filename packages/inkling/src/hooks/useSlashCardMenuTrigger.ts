@@ -4,22 +4,10 @@ import type { LexicalEditor } from 'lexical'
 import { registerSlashCardMenuTrigger } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import React from 'react'
 
-// Slash trigger binding — the React adapter between the slash card-menu trigger
-// (registerSlashCardMenuTrigger) and the card-menu session.
-// It owns the slash trigger state (the typed query and its command params)
-// and translates verdicts into session calls: a query verdict leases the
-// cursor range into the session (so Escape can restore it) and tracks the
-// query; a close verdict runs the close policy. Every close path the session
-// owns (Escape, outside mousedown, insert-and-close) resets the state here in
-// one place, so the session itself stays trigger-agnostic. CardMenuPopup is
-// the sole consumer, enabling the binding only for its 'slash' trigger
-// syntax.
-
 export interface SlashCardMenuTriggerState {
   query: string
   commandParams: string[]
 }
-
 export function useSlashCardMenuTrigger(
   editor: LexicalEditor,
   session: Pick<CardMenuSession, 'isOpen' | 'closeMenu' | 'saveCursor'>,

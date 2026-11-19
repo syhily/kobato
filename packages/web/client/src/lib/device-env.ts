@@ -4,7 +4,6 @@ import type { DeviceEnvBeacon } from '@kobato/contracts/analytics.ts'
 // OMITTED from the payload (the wire contract makes every dimension optional),
 // never sent as null — `null` is not a valid beacon value.
 
-/** Session-static block: collected once per browser session. */
 export type DeviceEnvStaticFields = Pick<
   DeviceEnvBeacon,
   | 'screenW'
@@ -21,7 +20,6 @@ export type DeviceEnvStaticFields = Pick<
   | 'deviceMemory'
 >
 
-/** Per-page block: collected on every beacon. */
 export type DeviceEnvDynamicFields = Pick<
   DeviceEnvBeacon,
   | 'viewportW'
@@ -58,7 +56,6 @@ function nonEmptyString(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined
 }
 
-/** `matchMedia` result, or undefined where the API does not exist. */
 function mediaMatches(query: string): boolean | undefined {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return undefined
@@ -74,7 +71,6 @@ function hasBrowserGlobals(): boolean {
   return typeof window !== 'undefined' && typeof navigator !== 'undefined'
 }
 
-/** Screen / touch / locale / hardware — sent once per browser session. */
 export function collectStaticEnv(): DeviceEnvStaticFields {
   if (!hasBrowserGlobals()) {
     return {}
@@ -124,7 +120,6 @@ export function collectStaticEnv(): DeviceEnvStaticFields {
   }
 }
 
-/** Viewport / DPR / preferences / network — sent on every beacon. */
 export function collectDynamicEnv(): DeviceEnvDynamicFields {
   if (!hasBrowserGlobals()) {
     return {}

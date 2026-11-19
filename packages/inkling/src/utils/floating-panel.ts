@@ -1,8 +1,3 @@
-// The settings panel's layout decisions (clamp math, card origin, initial placement,
-// wide-card transition, drag session). The grab/listener choreography lives in
-// panel-drag-session, the re-clamp resolutions in panel-resize-choreography, and the React
-// DOM adapter in useFloatingPanel.
-
 import {
   createPressThresholdSession,
   type PressThresholdSession,
@@ -31,23 +26,18 @@ export interface PanelViewport {
   height: number
 }
 
-/** Default distance between the card and its settings panel. */
 export const CARD_SPACING = 20
 
-/** Minimum spacing between the panel and the viewport edges when settling (initial position, resize). */
-export const MIN_PANEL_SPACING: PanelSpacing = { top: 66, bottom: 20, right: 20, left: 20 } // top: 66 is publish menu and word count size
+export const MIN_PANEL_SPACING: PanelSpacing = { top: 66, bottom: 20, right: 20, left: 20 }
 
-/** Hard boundary spacing applied while dragging. */
 export const DRAG_BOUNDARY_SPACING = 10
 
-/** Distance in px the pointer must travel before a press becomes a drag. */
 export const DRAG_MOVE_THRESHOLD = 3
 
 export function isMobileViewport(viewport: PanelViewport): boolean {
   return viewport.width < 768 && viewport.height > viewport.width
 }
 
-/** The origin every clamp agrees on; the module's single direct DOM read. Reads the card element when a wide-card transform makes it the coordinate origin. */
 export function resolveCardOrigin(cardElement: HTMLElement | null): PanelPosition {
   if (!cardElement || window.getComputedStyle(cardElement).transform === 'none') {
     return { x: 0, y: 0 }
@@ -59,9 +49,9 @@ export function resolveCardOrigin(cardElement: HTMLElement | null): PanelPositio
 export interface ClampInput {
   x: number
   y: number
-  /** Null when the panel element is missing — the position passes through (origin-adjusted) unclamped. */
+
   panelSize: PanelSize | null
-  /** Viewport with any host chrome adjustment already subtracted from the width. */
+
   viewport: PanelViewport
   origin: PanelPosition
   spacing: PanelSpacing
@@ -111,7 +101,6 @@ export function clampWithinSpacing({
 
 type ClampRest = Omit<ClampInput, 'spacing' | 'lastSpacing'>
 
-/** Drag clamp: hard boundary spacing on every edge, previous spacing ignored. */
 export function clampOnDrag(input: ClampRest): PanelPosition {
   return clampWithinSpacing({
     ...input,
@@ -124,14 +113,12 @@ export function clampOnDrag(input: ClampRest): PanelPosition {
   })
 }
 
-/** Settle clamp: minimum spacing honouring previous spacing, then the drag boundary. */
 export function clampOnResize(input: ClampRest & { lastSpacing?: PanelSpacing | null }): PanelPosition {
   const { lastSpacing, ...rest } = input
   const settled = clampWithinSpacing({ ...rest, spacing: MIN_PANEL_SPACING, lastSpacing })
-  // the boundary pass ignores previous spacing, matching the drag clamp
+
   return clampOnDrag({ ...rest, x: settled.x, y: settled.y })
 }
-
 export interface InitialPanelPositionInput {
   cardRect: { top: number; bottom: number; right: number }
   panelSize: PanelSize
@@ -140,11 +127,6 @@ export interface InitialPanelPositionInput {
   mobile: boolean
 }
 
-/**
- * The panel's preferred position: below the card (centered) on mobile;
- * vertically centered against the card's visible height, to the card's right,
- * on desktop. Clamped like a settle (desktop) or a drag (mobile).
- */
 export function resolveInitialPanelPosition({
   cardRect,
   panelSize,
@@ -158,8 +140,6 @@ export function resolveInitialPanelPosition({
     return clampOnDrag({ x, y, panelSize, viewport, origin })
   }
 
-  // correct the card height to what is actually on screen so the vertical
-  // centering tracks the visible part of the card
   const visibleHeight = Math.min(viewport.height, cardRect.bottom) - cardRect.top
   const y = cardRect.top + visibleHeight / 2 - panelSize.height / 2
   const x = cardRect.right + CARD_SPACING
@@ -170,30 +150,21 @@ export function resolveInitialPanelPosition({
 export const WIDE_CARD_ORIGIN_OFFSET: PanelPosition = { x: 2, y: 1 }
 
 export interface CardWidthTransitionInput {
-  /** Current committed panel position (window coordinates). */
   position: PanelPosition
-  /** The card origin the panel positioned against while wide ({0,0} before the first wide transition). */
+
   previousOrigin: PanelPosition
-  /** The card element's viewport rect; null when the element is missing (no transition resolves). */
+
   cardRect: { left: number; top: number } | null
   panelSize: PanelSize | null
   viewport: PanelViewport
-  /** The clamp origin (`resolveCardOrigin` of the card element). */
   origin: PanelPosition
-  /** The card width before this render. */
   from: string
-  /** The card width now. */
   to: string
 }
 
 export interface CardWidthTransition {
-  /** The re-clamped panel position to commit. */
   position: PanelPosition
-  /**
-   * The origin the panel now positions against: the card's rect (plus
-   * `WIDE_CARD_ORIGIN_OFFSET`) when entering wide, the window origin when
-   * leaving it.
-   */
+
   cardOrigin: PanelPosition
 }
 
@@ -250,11 +221,6 @@ export function resolveCardWidthTransition({
   return null
 }
 
-/**
- * Viewport-resize drift: when the viewport grows, pull the panel back towards its preferred
- * position by at most the grown amount, so a panel pushed offscreen by a small viewport
- * becomes fully visible again on resize/rotate.
- */
 export function driftTowardsInitial(
   position: PanelPosition,
   initial: PanelPosition | undefined,
@@ -281,35 +247,27 @@ export function driftTowardsInitial(
 }
 
 export interface DragSessionPorts {
-  /** Current committed panel position. */
   getPosition: () => PanelPosition
-  /** Commit a position (writes the transform, updates spacing). */
+
   setPosition: (position: PanelPosition) => void
-  /** Clamp/policy applied to every drag position. */
+
   adjustOnDrag?: (position: PanelPosition) => PanelPosition
-  /** Declared drag side effects (scroll/selection/pointer suppression) — begin. */
+
   activateEffects: () => void
-  /** Declared drag side effects — end. */
+
   deactivateEffects: () => void
 }
 
 export interface DragSession {
-  /** Pointer went down at point; records the grab offset. */
   start: (point: PanelPosition) => void
-  /** Pointer moved; crosses the threshold once, then drags. */
+
   move: (point: PanelPosition) => void
-  /** Pointer released; ends the session and its side effects. */
+
   end: () => void
   isDragging: () => boolean
-  /** Shift the grab offset (panel re-clamped mid-drag after a resize — prevents position jumps). */
   adjustOffset: (deltaX: number, deltaY: number) => void
 }
 
-/**
- * Headless drag session: start threshold → move → end, with side effects declared behind
- * ports. Port adapter over the shared press-threshold core: the core's grab origin is the
- * zero point and this adapter feeds it travel deltas measured against the live position.
- */
 export function createDragSession({
   getPosition,
   setPosition,
@@ -320,7 +278,7 @@ export function createDragSession({
   let dragging = false
   let offsetX = 0
   let offsetY = 0
-  // re-created per grab; never given an onCancel — end() always unwinds the effects
+
   let press: PressThresholdSession | null = null
 
   return {
@@ -340,7 +298,6 @@ export function createDragSession({
         },
       )
     },
-
     move(point) {
       if (!dragging && press) {
         const current = getPosition()

@@ -18,7 +18,6 @@ export interface ExportFailure {
   signal: ExportSignal
   /** Error class name only — never a message, which could carry a URL or a credential. */
   error: string
-  /** Epoch milliseconds of the latest failed export for the signal. */
   at: number
 }
 
@@ -29,7 +28,6 @@ interface HealthState {
 
 let current: HealthState | null = null
 
-/** Activate tracking for a freshly started runtime, discarding any prior state. */
 export function activateExportHealth(token: object): void {
   current = { token, failures: new Map() }
 }
@@ -57,7 +55,6 @@ export function recordExportOutcome(token: object, signal: ExportSignal, exporte
   })
 }
 
-/** The most recently recorded failure across signals, or null while every signal exports cleanly. */
 export function lastExportFailure(): ExportFailure | null {
   if (current === null) {
     return null
@@ -112,7 +109,6 @@ export function observeExporter<T extends ExporterLike>(exporter: T, token: obje
   return wrapped as T
 }
 
-/** Test-only: drop the active slot and every recorded failure. */
 export function __resetExportHealthForTests(): void {
   current = null
 }

@@ -82,7 +82,6 @@ export async function listAdminWebmentionOutbox(
   }
 }
 
-/** Public display feed — approved mentions only (DTO contract in shared/contracts). */
 export async function listPublicWebmentions(db: Database, target: EntityTarget): Promise<PublicWebmentionWire[]> {
   return asPublicWebmentionsWire(await listApprovedWebmentionsForTarget(db, target))
 }

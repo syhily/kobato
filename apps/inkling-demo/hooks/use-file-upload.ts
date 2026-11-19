@@ -119,7 +119,6 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
     async function upload(files: FileList | File[] = [], options: { formData?: Record<string, string> } = {}) {
       void options
       setFilesNumber(files.length)
-      // Demo upload: simulated progress so the bar is observable.
       setLoading(true)
 
       const validationResult = validate(files)
@@ -133,7 +132,6 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
       }
 
       let stepDelay = 200
-      // Shorten the steps in tests.
       if (isTestEnv) {
         stepDelay = 5
       }
@@ -145,7 +143,6 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
       setProgress(90)
       await delay(stepDelay)
 
-      // Simulated upload errors: any file with "fail" in its name returns an error.
       const fileErrors = Array.from(files).filter((file) => file.name.includes('fail'))
       if (fileErrors.length) {
         setErrors(fileErrors.map((file) => new FileUploadError(file.name, 'Upload failed')))
@@ -154,20 +151,13 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
         return undefined
       }
 
-      // One result per upload, carrying server-provided metadata for later card use (audio id3, image exif).
-      // `fileName` maps results back to the original file in multi-file uploads (gallery previews).
-      // TODO: can we use something more unique than filename?
       let uploadResult: Array<{ url: string; fileName: string }> = []
-
       if (isMultiplayer) {
-        // Multiplayer stores the whole file inline so it travels with the shared document; otherwise images and
-        // other media never appear in other browsers.
         try {
           for (const file of Array.from(files)) {
             const reader = new FileReader()
             const url = await new Promise<string>((resolve, reject) => {
               reader.addEventListener('load', () => {
-                // `readAsDataURL` produces a string result; anything else means the read failed.
                 if (typeof reader.result === 'string') {
                   resolve(reader.result)
                 } else {
@@ -189,14 +179,12 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
             })
           }
         } catch (error) {
-          // A rejected read must not leave `isLoading` stuck — mirror the validation-failure path above.
           setErrors([error instanceof Error ? error : new Error(String(error))])
           setLoading(false)
           setProgress(100)
           return undefined
         }
       } else {
-        // Non-multiplayer uses blob URLs: much shorter, which keeps the markdown card and state tree readable.
         uploadResult = Array.from(files).map((file) => ({
           url: URL.createObjectURL(file),
           fileName: file.name,
@@ -206,7 +194,7 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
       setProgress(100)
       setLoading(false)
 
-      setErrors([]) // components expect array of Error instances
+      setErrors([])
 
       return uploadResult
     }

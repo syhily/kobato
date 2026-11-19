@@ -1,4 +1,3 @@
-/** One telemetry event, shaped like the default adapter's calls. */
 export type TelemetryHandler = (eventName: string, props: Record<string, unknown>) => void
 
 // The telemetry channel: call sites track events through this one function and the handler
@@ -28,11 +27,6 @@ let handler: TelemetryHandler = defaultTelemetryHandler
 // registration that has not been torn down.
 const handlerStack: TelemetryHandler[] = []
 
-/**
- * Registers the host's telemetry handler (undefined registers the default plausible/posthog
- * adapter). The teardown restores whichever handler was active before; once none are left
- * the channel falls back to the default.
- */
 export function setTelemetryHandler(custom: TelemetryHandler | undefined): () => void {
   const registered = custom ?? defaultTelemetryHandler
   handlerStack.push(registered)

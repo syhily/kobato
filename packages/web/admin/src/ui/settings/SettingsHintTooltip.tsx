@@ -2,9 +2,6 @@ import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { CircleHelpIcon } from 'lucide-react'
 
-// The small "?" affordance next to a settings label: hover/focus opens the
-// richer explanation (feature + prerequisites) that does not fit the inline
-// hint under the control.
 export function SettingsHintTooltip({ content }: { content: string }) {
   const { t } = useI18n()
   return (

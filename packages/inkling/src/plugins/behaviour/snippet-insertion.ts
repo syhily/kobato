@@ -13,16 +13,11 @@ import { $getSelection, type LexicalEditor, type SerializedLexicalNode } from 'l
 // any other card insert, and a snippet whose last node is a card gets a
 // trailing paragraph so the caret has somewhere to go after it.
 
-/** The snippet insert payload — the `{ name, value }` pair the snippet menu
- * entry dispatches through the type-erased menu insert path
- * (`@kobato/inkling-internal/nodes/cards/card-menu-build`). */
 export interface SnippetDataset {
   name: string
   value: string
 }
 
-// Command payloads cross an untyped runtime boundary (menu dispatch, external
-// consumers), so narrow before parsing the snippet value.
 export function isSnippetDataset(dataset: unknown): dataset is SnippetDataset {
   return (
     typeof dataset === 'object' &&
@@ -60,15 +55,6 @@ function parseSnippetNodes(value: string): SerializedLexicalNode[] | null {
   return nodes
 }
 
-/**
- * Inserts the snippet `dataset` at the current selection. A $-function: it
- * must run inside editor.update()/editor.read() — the INSERT_SNIPPET_COMMAND
- * handler already runs in the dispatch update, and headless callers wrap the
- * call themselves. Returns false — and leaves the editor untouched — when the
- * payload is not a snippet dataset, the value does not parse to a serialized
- * node list, node generation fails (e.g. an unregistered `type`), or there is
- * no selection to insert at.
- */
 export function $insertSnippet(editor: LexicalEditor, dataset: unknown): boolean {
   if (!isSnippetDataset(dataset)) {
     return false

@@ -30,7 +30,6 @@ describe('extractApiErrorMessage', () => {
     expect(extractApiErrorMessage({ error: { code: 'INTERNAL_SERVER_ERROR', message: '旧服务器消息' } })).toBe(
       '旧服务器消息',
     )
-    // Legacy issues without a `message` field do not disturb the reader.
     expect(
       extractApiErrorMessage({
         error: { message: 'bad', issues: [{ messageKey: 'error.api.rawMessage', fallbackMessage: 'bad' }] },

@@ -45,7 +45,6 @@ export function getEditorTheme(editor: LexicalEditor): EditorThemeClasses {
 }
 
 export function getRegisteredNodeMap(editor: LexicalEditor): Map<string, { klass: Klass<LexicalNode> }> {
-  // TODO: open upstream PR to add a public method of getting nodes
   return (editor as InklingLexicalEditorInternals)._nodes
 }
 

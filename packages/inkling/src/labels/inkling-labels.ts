@@ -1,20 +1,4 @@
-/**
- * The labels table — every user-visible string the editor chrome renders, as
- * one flat, closed table of dotted keys with English defaults. A host
- * overrides a subset through `<InklingComposer labels={...}>`; missing keys
- * fall back to the English default. The interface is closed on purpose: an
- * unknown key in an override table is a compile error (the same closed-bag
- * shape as `CardConfig`). The one deliberate opening is the host menu-label
- * namespace (`menu.host.*`, see `InklingHostMenuLabelKey` below): host card
- * menu entries resolve their `host.<name>` labelKeys through it.
- *
- * Flat, not nested: no deep-merge helper, the types stay flat, and the key
- * is its own documentation. Interpolation values use `string.replace` at
- * the consumption site (`{max}`, `{cardType}`, `{name}`, `{progress}`) — no
- * i18n library.
- */
 export interface InklingLabels {
-  /* Editor + input placeholders */
   'placeholder.editor': string
   'url.paste.placeholder': string
   'link.input.placeholder': string
@@ -44,9 +28,6 @@ export interface InklingLabels {
   'file.title.placeholder': string
   'file.desc.placeholder': string
 
-  /* Slash/plus menu — resolved at menu-build time from each entry's
-   * labelKey (`menu.${labelKey}.label` / `.desc`); the declaration keeps the
-   * English text as the self-describing default */
   'menu.section.primary': string
   'menu.section.snippets': string
   'menu.image.label': string
@@ -84,7 +65,6 @@ export interface InklingLabels {
   'menu.imageLibrary.label': string
   'menu.imageLibrary.desc': string
 
-  /* Upload chrome (empty-card descriptions; {max} interpolates the gallery cap) */
   'upload.image.desc': string
   'upload.gallery.desc': string
   'upload.audio.desc': string
@@ -92,7 +72,6 @@ export interface InklingLabels {
   'upload.video.desc': string
   'upload.header.desc': string
 
-  /* Drag-over texts ({max} interpolates the gallery cap) */
   'media.dragText.single': string
   'media.dragText.multiple': string
   'media.dragText.compact': string
@@ -100,24 +79,20 @@ export interface InklingLabels {
   'media.dragText.replaceImage': string
   'media.dragText.addToGallery': string
 
-  /* GIF selector (the search placeholder is picked by provider) */
   'gif.searchPlaceholder.tenor': string
   'gif.searchPlaceholder.klipy': string
   'gif.error.common': string
   'gif.error.invalidApiKey': string
 
-  /* Image-library picker */
   'library.search.placeholder': string
   'library.upload': string
   'library.empty': string
   'library.error': string
 
-  /* Pintura image editor (feed `locale` first; cardConfig.pinturaConfig.locale merges on top) */
   'pintura.export': string
   'pintura.cropPreset.custom': string
   'pintura.cropPreset.square': string
 
-  /* Format + card action toolbars */
   'toolbar.bold': string
   'toolbar.emphasize': string
   'toolbar.heading2': string
@@ -130,7 +105,6 @@ export interface InklingLabels {
   'toolbar.saveAsSnippet': string
   'toolbar.edit': string
 
-  /* Aria labels ({cardType} interpolates the card's node type) */
   'aria.indicator': string
   'aria.close': string
   'aria.closeDialog': string
@@ -141,7 +115,6 @@ export interface InklingLabels {
   'aria.mathTexSource': string
   'aria.deleteFootnote': string
 
-  /* Buttons and links */
   'action.edit': string
   'action.delete': string
   'action.clear': string
@@ -149,28 +122,22 @@ export interface InklingLabels {
   'action.remove': string
   'action.retry': string
 
-  /* URL input error block (bookmark/link cards) */
   'url.error.message': string
   'url.error.pasteAsLink': string
 
-  /* Snippet creation ({name} interpolates the typed snippet name) */
   'snippet.create': string
   'snippet.replaceExisting': string
   'snippet.remove': string
 
-  /* Link search (urlOption = the "link to web page" section and its hint item) */
   'search.loading': string
   'search.noResults': string
   'search.urlOption.label': string
   'search.urlOption.hint': string
 
-  /* Error boundary fallback */
   'error.boundary': string
 
-  /* Math card */
   'math.previewError': string
 
-  /* Settings panels */
   'settings.contentAlignment': string
   'settings.buttonText': string
   'settings.buttonUrl': string
@@ -193,7 +160,6 @@ export interface InklingLabels {
   'settings.loop.description': string
   'settings.customThumbnail': string
 
-  /* Color swatch / option labels */
   'color.white': string
   'color.black': string
   'color.grey': string
@@ -207,14 +173,11 @@ export interface InklingLabels {
   'color.brandColor': string
   'color.image': string
 
-  /* Header background-size toggle */
   'header.backgroundSize.contain': string
   'header.backgroundSize.cover': string
 
-  /* Image-caption editor: the alt-text toggle button */
   'image.altToggle': string
 
-  /* Image alt texts ({progress} interpolates the upload percentage) */
   'alt.audioThumbnail': string
   'alt.videoThumbnail': string
   'alt.videoCustomThumbnail': string
@@ -223,10 +186,6 @@ export interface InklingLabels {
   'alt.imageUploadProgress': string
 }
 
-/**
- * The English defaults. `tests/inkling/unit/labels.test.ts` snapshots the key
- * list: renaming a key is a breaking contract change.
- */
 export const DEFAULT_LABELS: InklingLabels = {
   'placeholder.editor': 'Begin writing your post...',
   'url.paste.placeholder': 'Paste URL...',
@@ -426,35 +385,14 @@ export const DEFAULT_LABELS: InklingLabels = {
  */
 export type InklingHostMenuLabelKey = `menu.host.${string}.label` | `menu.host.${string}.desc`
 
-/**
- * The host's override table — any subset; an unknown key is a compile error.
- * The union's first member keeps a full `InklingLabels` value assignable
- * (interfaces carry no implicit index signature, so an intersection with the
- * host-namespace map would reject them); the second member admits the
- * `menu.host.*` keys on top of a partial table.
- */
 export type InklingLabelsInput =
   | Partial<InklingLabels>
   | (Partial<InklingLabels> & Partial<Record<InklingHostMenuLabelKey, string>>)
 
-/**
- * One merge: override table over the English defaults; a missing key falls
- * back to English. Host-namespace overrides ride the merged object at
- * runtime — the closed return type can't name them (see the union note on
- * `InklingLabelsInput`); `lookupLabel` reads them through its `in` guard.
- */
 export function resolveLabels(input?: InklingLabelsInput): InklingLabels {
   return { ...DEFAULT_LABELS, ...input }
 }
 
-/**
- * Runtime lookup behind the closed interface: menu entries carry their
- * `labelKey` as a plain string, so the menu-build resolver indexes by an
- * arbitrary key. The `in` check is membership (the merged table carries
- * host-namespace keys at runtime that the closed interface cannot name);
- * the value read goes through Reflect.get instead of an index assertion.
- * Unknown keys fall back to the entry's declared text.
- */
 export function lookupLabel(labels: InklingLabels, key: string, fallback: string): string {
   if (!(key in labels)) {
     return fallback
@@ -463,15 +401,7 @@ export function lookupLabel(labels: InklingLabels, key: string, fallback: string
   return typeof value === 'string' ? value : fallback
 }
 
-/** The interpolation tokens the labels table speaks (plain string.replace, never an i18n library). */
 export type InklingLabelToken = 'max' | 'cardType' | 'name' | 'progress'
-
-/**
- * The one interpolation seam: replaces the `{token}` placeholders a label
- * carries with the given values. Owns the token contract — a mistyped token is
- * a compile error at the call site, and the table stays the single owner of
- * its format.
- */
 export function interpolateLabel(text: string, vars: Partial<Record<InklingLabelToken, string>>): string {
   let result = text
   for (const [token, value] of Object.entries(vars)) {

@@ -4,7 +4,6 @@ import { collectConsoleIssues, waitForHydration } from '@tests/browser/support/j
 
 const env = browserEnv()
 
-// Production chunk (`zh-CN-<hash>.js`) and Vite-dev module (`…/zh-CN.ts`).
 const LOCALE_LABEL_REQUEST = /\/(en-US|zh-CN|zh-HK|zh-TW)(?:[.-][^/]*)?\.(?:js|ts)(?:\?|$)/
 
 test.beforeEach(async ({ settingsApi }) => {
@@ -24,13 +23,9 @@ test('the public comment composer loads only the active locale label chunk', asy
   const placeholder = page.locator('.kobato-comment-editor').first()
   await expect(placeholder).toBeVisible({ timeout: 30_000 })
 
-  // The composer is interaction-gated: nothing label-bearing may load before.
   expect(labelRequests).toEqual([])
 
   await waitForHydration(page, '.kobato-comment-editor')
-  // `focus()` is the keyboard activation path (`onFocus` -> `activate`); a
-  // pointer click can land before the streamed boundary's handlers are live.
-  // Retry until the real contenteditable mounts (labels + composer chunks).
   await expect
     .poll(
       async () => {
@@ -66,12 +61,9 @@ test('contentLanguage ar stamps lang and dir=auto on the body only', async ({ ad
   await expect(body).toHaveAttribute('lang', 'ar')
   await expect(body).toHaveAttribute('dir', 'auto')
 
-  // The document keeps the UI locale and LTR chrome; the content language
-  // never changes the UI catalog or the page direction.
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
   await expect(page.locator('html')).not.toHaveAttribute('dir', 'rtl')
 
-  // A chrome element outside the body never inherits the content language.
   const skipLink = page.getByText('跳转到主要内容', { exact: false }).first()
   await expect(skipLink).toBeVisible()
   await expect(skipLink).not.toHaveAttribute('lang', 'ar')

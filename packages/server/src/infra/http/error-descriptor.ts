@@ -19,10 +19,8 @@ import { BASE_LOCALE } from '@kobato/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 
-/** The passthrough catalog key wrapping raw text. */
 export const RAW_MESSAGE_KEY = 'error.api.rawMessage'
 
-/** Runtime membership test against the English baseline (the closed key set). */
 export function isUiMessageId(value: string): value is UiMessageId {
   return Object.hasOwn(uiMessagesEnUS, value)
 }
@@ -46,12 +44,10 @@ export function carriesErrorMessageDescriptor(value: unknown): value is { descri
   )
 }
 
-/** Wrap raw technical text so every transport still emits a descriptor. */
 export function rawMessageDescriptor(message: string): ErrorMessageDescriptor {
   return { messageKey: RAW_MESSAGE_KEY, params: { message }, fallbackMessage: message }
 }
 
-/** Descriptor for a typed message id; `params` fill the ICU placeholders. */
 export function descriptorFor(messageKey: UiMessageId, params?: ErrorMessageParams): ErrorMessageDescriptor {
   return {
     messageKey,

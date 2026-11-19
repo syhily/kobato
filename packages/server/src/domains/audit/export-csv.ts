@@ -36,7 +36,6 @@ export interface AuditLogCsvOptions {
   includeFullIp?: boolean
 }
 
-// BOM-prefixed UTF-8 output.
 export function buildAuditLogCsv(
   rows: Array<typeof auditLog.$inferSelect>,
   actorMap: Map<string, string>,

@@ -5,10 +5,6 @@ import { useGifBrowser } from '@kobato/inkling-internal/hooks/useGifBrowser'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-// Adapter tests: the fetch/navigation behaviour lives in gif-browser.test.ts.
-// This file only pins the hook's wiring — memo stability keyed on the config
-// fields (callers re-resolve the config object per render) and disposal.
-
 const CONFIG: GifProviderConfig = {
   provider: 'tenor',
   apiUrl: 'https://tenor.googleapis.com',

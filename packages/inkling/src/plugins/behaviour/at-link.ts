@@ -77,11 +77,6 @@ export interface AtLinkCommitResult {
   isBookmark: boolean
 }
 
-// Commit a chosen search result: replace the at-link node with a text link
-// carrying the '@' character's format when it sits among other content, or with
-// a bookmark card when it is the paragraph's only child. Returns the committed
-// shape so the caller can attach product analytics; null when the node is
-// detached (nothing committed).
 export function $commitAtLinkSelection(
   node: AtLinkNode,
   { label, value }: { label: string; value: string },
@@ -116,18 +111,11 @@ export function $commitAtLinkSelection(
   return { isBookmark: true }
 }
 
-// The text surrounding a collapsed text anchor: the anchor node's own text
-// sliced at the offset, folded with the previous/next sibling's text at the
-// node's edges — sibling content must join the regex match when the caret sits
-// at a node boundary. Shared by the pre-insertion and native predicates; they
-// differ only in the before-regex.
 function $textAroundAnchor(anchorNode: TextNode, anchorOffset: number) {
   let textBeforeAnchor = anchorNode.getTextContent().slice(0, anchorOffset)
   let textAfterAnchor = anchorNode.getTextContent().slice(anchorOffset)
-
   const prevSibling = anchorNode.getPreviousSibling()
   const nextSibling = anchorNode.getNextSibling()
-
   if (anchorOffset === 0 && $isTextNode(prevSibling)) {
     textBeforeAnchor = prevSibling.getTextContent()
   }
@@ -148,9 +136,6 @@ function $shouldConvertAtLink(): boolean {
   const anchor = selection.anchor
 
   if (anchor.type === 'element') {
-    // the same around-the-caret idea as $textAroundAnchor, over child indices
-    // instead of a sliced text node — the empty-paragraph shape exists only on
-    // this pre-insertion path
     const anchorNode = anchor.getNode()
     if (!$isElementNode(anchorNode)) {
       return false
@@ -160,7 +145,6 @@ function $shouldConvertAtLink(): boolean {
 
     let textBeforeAnchor = ''
     let textAfterAnchor = ''
-
     if ($isTextNode(prevChild)) {
       textBeforeAnchor = prevChild.getTextContent()
     }
@@ -230,9 +214,6 @@ function $insertAtLink(): boolean {
   return true
 }
 
-// Detection predicate for the native fallback: should a just-inserted '@'
-// become an at-link? Text anchors only — the post-insertion selection is always
-// text.
 function $shouldConvertInsertedAt(): boolean {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -243,7 +224,6 @@ function $shouldConvertInsertedAt(): boolean {
   if (anchor.type !== 'text') {
     return false
   }
-
   const anchorNode = anchor.getNode()
   if (!anchorNode.isSimpleText()) {
     return false
@@ -265,7 +245,7 @@ function registerNativeAtLinkInsertion(editor: LexicalEditor) {
   const rootElement = editor.getRootElement()
   if (!rootElement) {
     return () => {
-      /* noop — no root element, nothing was registered */
+      /* noop */
     }
   }
 
@@ -277,13 +257,11 @@ function registerNativeAtLinkInsertion(editor: LexicalEditor) {
     if (event.isComposing) {
       return
     }
-
     if (event.inputType === 'insertText' && event.data === '@') {
       const replaceAt = editor.getEditorState().read(() => $shouldConvertInsertedAt())
 
       if (replaceAt) {
         editor.update(() => {
-          // selection should now be where the '@' character was
           const selection = $getSelection()
           if (!$isRangeSelection(selection)) {
             return
@@ -307,9 +285,6 @@ function registerNativeAtLinkInsertion(editor: LexicalEditor) {
   }
 }
 
-// Convert a typed '@' into an at-link node, via Lexical's controlled
-// text-insertion command (so the conversion works regardless of whether the
-// browser fires a native 'input' event) with the native listener as fallback.
 export function registerAtLinkInsertion(editor: LexicalEditor) {
   return mergeRegister(
     editor.registerCommand(
@@ -321,7 +296,6 @@ export function registerAtLinkInsertion(editor: LexicalEditor) {
 
         const inputType = typeof eventOrText === 'string' ? 'insertText' : eventOrText.inputType
         const data = typeof eventOrText === 'string' ? eventOrText : eventOrText.data
-
         if (inputType !== 'insertText' || data !== '@') {
           return false
         }
@@ -334,7 +308,6 @@ export function registerAtLinkInsertion(editor: LexicalEditor) {
   )
 }
 
-// Command guards while an at-link-search node is focused.
 export function registerAtLinkGuards(editor: LexicalEditor) {
   function $skipFormatCommandIfNeeded() {
     const selection = $getSelection()
@@ -345,7 +318,6 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
   }
 
   return mergeRegister(
-    // revert to '@' when pressing escape with a focused at-link node
     editor.registerCommand(
       KEY_ESCAPE_COMMAND,
       () => {
@@ -369,7 +341,7 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
       },
       COMMAND_PRIORITY_HIGH,
     ),
-    // revert to '@' when backspacing or deleting chars at the beginning/end of an at-link node
+
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
       (isBackward) => {
@@ -396,7 +368,7 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
       },
       COMMAND_PRIORITY_HIGH,
     ),
-    // prevent formatting commands when an at-link-search node is focused
+
     editor.registerCommand(FORMAT_TEXT_COMMAND, $skipFormatCommandIfNeeded, COMMAND_PRIORITY_HIGH),
     editor.registerCommand(FORMAT_ELEMENT_COMMAND, $skipFormatCommandIfNeeded, COMMAND_PRIORITY_HIGH),
     // prevent paste in the search node triggering external paste handlers.
@@ -410,7 +382,6 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
         if (!$isRangeSelection(selection) || !editorOwnsFocus(editor)) {
           return false
         }
-
         if (!(clipboardEvent instanceof ClipboardEvent)) {
           return false
         }
@@ -441,7 +412,6 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
   )
 }
 
-// Transform to ensure at-link node trees are valid.
 export function registerAtLinkNodeTransform(editor: LexicalEditor) {
   return editor.registerNodeTransform(AtLinkNode, (atLinkNode) => {
     // first child must always be a ZWNJ
@@ -456,7 +426,6 @@ export function registerAtLinkNodeTransform(editor: LexicalEditor) {
       atLinkNode.append(atLinkSearchNode)
     }
 
-    // keep one search node: remove or replace non-search nodes
     atLinkNode.getChildren().forEach((child, index) => {
       if (index > 0 && !$isAtLinkSearchNode(child)) {
         const text = child.getTextContent()
@@ -470,7 +439,6 @@ export function registerAtLinkNodeTransform(editor: LexicalEditor) {
       }
     })
 
-    // consolidate the search nodes from the step above into one
     const searchNode = atLinkNode.getChildAtIndex(1)
     if (!$isAtLinkSearchNode(searchNode)) {
       return
@@ -498,8 +466,6 @@ interface RegisterAtLinkSessionOptions {
   onSessionChange: (snapshot: AtLinkSessionSnapshot) => void
 }
 
-// The at-link node containing a selection point (the point's node or its
-// parent), shared by the collapsed-focus tracking and the range-span clamp.
 function $getContainingAtLinkNode(point: PointType): AtLinkNode | null {
   const node = point.getNode()
   if ($isAtLinkNode(node)) {
@@ -509,16 +475,9 @@ function $getContainingAtLinkNode(point: PointType): AtLinkNode | null {
   return $isAtLinkNode(parent) ? parent : null
 }
 
-// The at-link search session: owns the synchronization policy between the node
-// tree and the consumer's focused-node/query state — unfocused-node removal,
-// query extraction from the at-link-search node text, ZWNJ caret normalization,
-// empty-search backspace removal, and the range-span clamp. The consumer (the
-// React adapter) receives { focusedNode, query } snapshots and holds no policy
-// of its own.
 export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }: RegisterAtLinkSessionOptions) {
   let focusedNode: AtLinkNode | null = null
   let query = ''
-
   const emitSession = (node: AtLinkNode | null, nextQuery: string) => {
     // key-based change guard: consumers render/track by key, so a
     // cloned-but-equivalent node instance is not a session change
@@ -529,12 +488,10 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
     query = nextQuery
     onSessionChange({ focusedNode: node, query: nextQuery })
   }
-
   return editor.registerUpdateListener(({ dirtyLeaves, dirtyElements }) => {
     if (editor.isComposing()) {
       return
     }
-
     // Skip the full-tree at-link scan unless an at-link is active or the update
     // touched nodes that could contain one — the focusedNode check keeps the
     // removal path working, since a selection change away from an at-link has
@@ -547,14 +504,12 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
       const atLinkNodes = $nodesOfType(AtLinkNode)
       const selection = $getSelection()
 
-      // no range selection: no cursor inside an at-link node — remove all of them
       if (!$isRangeSelection(selection)) {
         atLinkNodes.forEach((atLinkNode) => $removeAtLink(atLinkNode))
         emitSession(null, '')
         return
       }
 
-      // collapsed selection: remove unfocused at-link nodes (cursor moved out)
       if (selection.isCollapsed()) {
         const selectedAtLinkNode = $getContainingAtLinkNode(selection.anchor)
 
@@ -565,7 +520,6 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
         })
 
         if (selectedAtLinkNode) {
-          // at-link nodes always hold a ZWNJ node followed by a search node; emit its text as the query
           const searchNode = selectedAtLinkNode.getChildAtIndex(1)
           const searchNodeText = $isAtLinkSearchNode(searchNode) ? searchNode.getTextContent() : ''
           emitSession(selectedAtLinkNode, searchNodeText)
@@ -581,12 +535,10 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
             }
           }
 
-          // if the search node is already empty but active, remove the at-link node on backspace
           if (searchNodeText === '' && $isZWNJNode(selection.anchor.getNode())) {
             $removeAtLink(selectedAtLinkNode, { focus: true })
           }
         } else {
-          // search node isn't focused, reset the session
           emitSession(null, '')
         }
 

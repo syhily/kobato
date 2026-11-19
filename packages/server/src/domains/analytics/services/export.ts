@@ -18,7 +18,6 @@ export function csvCell(value: string | number | null | undefined): string {
   return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
-/** CSV text export grouped by path: views, distinct visitors, distinct referer hosts. */
 export async function queryExportCsv(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<string> {
   const rows = await queryExportRows(reader, input)
   const lines = [CSV_COLUMNS.join(',')]

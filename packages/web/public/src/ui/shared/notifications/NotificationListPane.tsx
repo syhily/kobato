@@ -23,7 +23,6 @@ interface NotificationListPaneProps {
   onOpen: (item: NotificationDto) => void
   /** Row that should regain focus after returning from the thread pane. */
   focusItemId?: string
-  /** Called once the requested focus has been placed (or fallen back). */
   onFocusHandled: () => void
 }
 
@@ -34,7 +33,6 @@ const EMPTY_COPY_IDS: Record<NotificationTab, UiMessageId> = {
   announce: 'notifications.empty.announce',
 }
 
-// Inbox pane: cursor-paginated, newest first, infinite scroll.
 export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled }: NotificationListPaneProps) {
   const { t } = useI18n()
   const query = useInfiniteQuery(

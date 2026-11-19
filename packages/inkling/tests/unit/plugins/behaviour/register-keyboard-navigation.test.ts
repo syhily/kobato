@@ -43,7 +43,6 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Minimal node set that lets the keyboard plugin's listeners run in jsdom.
 const KEYBOARD_TEST_NODES = [ImageNode, ListNode, ListItemNode, CodeBlockNode, LinkNode]
 
 function createTestEditor(nodes: LexicalNodeConfig[] = KEYBOARD_TEST_NODES) {
@@ -144,10 +143,6 @@ function createNativeSelectionMock(opts: { anchorNode: Node; rangeTop: number })
   } as unknown as Selection
 }
 
-/**
- * Place a collapsed Lexical selection at the requested offset inside a text node
- * and attach a native selection double that reports the requested visual line.
- */
 async function setSelectionAt(
   editor: LexicalEditor,
   root: HTMLElement,
@@ -421,8 +416,6 @@ describe('registerKeyboardNavigation', () => {
     mounted = mountEditor(editor)
     const cleanup = registerWithCardKey(null)
 
-    // The conversion itself is upstream rich-text's INSERT_PARAGRAPH handler;
-    // this test only pins that the key is claimed and the command dispatched.
     let dispatched = false
     const unregisterSpy = editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
@@ -582,8 +575,6 @@ describe('registerKeyboardNavigation', () => {
     cleanup()
   })
 
-  // Enter/tab trigger semantics deliberately differ from the markdown
-  // transformer trigger; these tests pin that behavior per trigger.
   describe('code fence shortcut', () => {
     async function setupFenceParagraph(text: string) {
       await updateEditor(editor, () => {
@@ -658,16 +649,12 @@ describe('registerKeyboardNavigation', () => {
     })
 
     it('still transforms a fence whose language exceeds 10 word chars on enter', async () => {
-      // The enter/tab regex /^```(\w{1,10})?/ is not end-anchored, so the
-      // 10-char cap is not enforced on this trigger: the full rest of the
-      // line becomes the language.
       await setupFenceParagraph('```abcdefghijkl')
       mounted = mountEditor(editor)
       const cleanup = registerWithCardKey(null)
 
       const result = await dispatchAndCommit(editor, KEY_ENTER_COMMAND, new KeyboardEvent('keydown', { key: 'Enter' }))
       expect(result).toBe(true)
-
       editor.getEditorState().read(() => {
         const codeBlock = $getRoot().getFirstChild()
         expect($isCodeBlockNode(codeBlock)).toBe(true)
@@ -678,15 +665,12 @@ describe('registerKeyboardNavigation', () => {
     })
 
     it('takes the full rest of the line as the language on enter (```js extra)', async () => {
-      // Enter/tab extract the language via textContent.replace(/^```/, ''),
-      // unlike the transformer trigger's match[1] capture.
       await setupFenceParagraph('```js extra')
       mounted = mountEditor(editor)
       const cleanup = registerWithCardKey(null)
 
       const result = await dispatchAndCommit(editor, KEY_ENTER_COMMAND, new KeyboardEvent('keydown', { key: 'Enter' }))
       expect(result).toBe(true)
-
       editor.getEditorState().read(() => {
         const codeBlock = $getRoot().getFirstChild()
         expect($isCodeBlockNode(codeBlock)).toBe(true)
@@ -716,8 +700,6 @@ describe('registerKeyboardNavigation', () => {
     })
   })
 
-  // The shift+arrow helper is pure Lexical selection arithmetic (no
-  // geometry), so the boundary matrix is pinned here for both directions.
   describe('shift+arrow selection extension', () => {
     async function setupBlocks(blocks: string[]) {
       const keys: { cardKeys: string[]; textNodeKeys: string[] } = { cardKeys: [], textNodeKeys: [] }
@@ -773,7 +755,6 @@ describe('registerKeyboardNavigation', () => {
     }
 
     function shiftArrowEvent(key: 'ArrowUp' | 'ArrowDown') {
-      // cancelable like a real keydown so preventDefault is observable
       return new KeyboardEvent('keydown', { key, shiftKey: true, cancelable: true })
     }
 
@@ -782,13 +763,12 @@ describe('registerKeyboardNavigation', () => {
       await selectTextRange(textNodeKeys[0], 0, 0)
       mounted = mountEditor(editor)
       const cleanup = registerWithCardKey(null)
-
       const event = shiftArrowEvent('ArrowUp')
       const result = await dispatchAndCommit(editor, KEY_ARROW_UP_COMMAND, event)
 
       expect(result).toBe(true)
       expect(event.defaultPrevented).toBe(true)
-      // the paragraph is treated as not selected: the extension covers the card only
+
       expect(readSelectionPoints()).toEqual({ anchorKey: 'root', anchorOffset: 1, focusKey: 'root', focusOffset: 0 })
 
       cleanup()

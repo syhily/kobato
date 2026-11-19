@@ -244,7 +244,6 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
       expect(result.latest.revisionNo).toBe(5)
       expect(result.expectedToken).toBe(latest.clientRevisionToken)
     }
-    // The conflicting save wrote nothing — the draft row is untouched.
     const rows = await contentRows(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.clientRevisionToken).toBe('11111111-2222-3333-4444-555555555555')
@@ -295,7 +294,6 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
 
     expect(result.status).toBe('saved')
-    // The draft was updated in place (no new revision row) and the token rotated.
     const rows = await contentRows(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.id).toBe(latest.id)
@@ -325,11 +323,9 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     expect(result.status).toBe('saved')
 
-    // Audit log emitted exactly once for the genuine overwrite.
     expect(auditInfoMock).toHaveBeenCalledTimes(1)
     const [message, context] = auditInfoMock.mock.calls[0]!
     expect(message).toBe('force_overwrite_save')
-    // In-place update: the overwritten row and the result row share one id.
     const rows = await contentRows(meta.id)
     expect(rows).toHaveLength(1)
     expect(context).toMatchObject({

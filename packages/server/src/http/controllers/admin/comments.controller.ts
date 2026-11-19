@@ -18,9 +18,6 @@ import {
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/comments.ts` (the deployed `/admin/comments/*` surface);
-// this controller only implements the procedures (admin base).
 const impl = implementAdmin(adminCommentsContract)
 
 const approve = impl.approve.handler(async ({ input, context }) => {
@@ -97,7 +94,7 @@ const searchAuthors = impl.searchAuthors.handler(async ({ input, context }) => {
       try {
         out.push(idFromString(trimmed))
       } catch {
-        // invalid id — skip
+        /* noop */
       }
     }
     return out.length > 0 ? out : undefined
@@ -108,7 +105,6 @@ const searchAuthors = impl.searchAuthors.handler(async ({ input, context }) => {
 })
 
 const approveCommentDeletion = impl.approveCommentDeletion.handler(async ({ input, context }) => {
-  // The delete-request state machine lives in the comments domain.
   await resolveCommentDeleteRequest(context.db, input.commentId, input.approve, context)
   return { success: true }
 })
@@ -117,14 +113,11 @@ const listPendingDashboard = impl.listPendingDashboard.handler(async ({ input, c
   return loadAdminPendingDashboard(context.db, input.kind, input.offset ?? 0, input.limit ?? 20)
 })
 
-// Total pending rows for the admin layout's moderation badge — one count, no pagination.
 const pendingCount = impl.pendingCount.handler(async ({ context }) => {
   const counts = await countAdminPendingDashboard(context.db)
   return { all: counts.all }
 })
 
-// Connectivity probe behind the settings avatar-mirror dropdown. Read-only,
-// targets a fixed preset list — no audit event, no input.
 const probeAvatarMirrors = impl.probeAvatarMirrors.handler(async () => {
   return { results: await probeAvatarMirrorUrls() }
 })

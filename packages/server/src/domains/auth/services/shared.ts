@@ -1,5 +1,3 @@
-// Shared contract of the sign-in services; per-flow modules own the auth session-key state machine.
-
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
@@ -13,25 +11,14 @@ import { descriptorFor, isUiMessageId, messageDescriptor } from '@kobato/server/
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
-/** A flow error whose copy the sign-in route translates for the request locale. */
 export type AuthFlowError = Extract<AuthFlowResult, { type: 'error' }>
-/** A flow success notice (same descriptor discipline as errors). */
 export type AuthFlowSuccess = Extract<AuthFlowResult, { type: 'success' }>
 
-/**
- * A flow outcome's copy: `message` is the log/technical fallback, `descriptor`
- * (when present) is the typed user-facing message translated for the request locale.
- */
 export type AuthFlowResult =
   | { type: 'redirect'; to: string; setCookie?: string }
   | { type: 'error'; message: string; descriptor?: ErrorMessageDescriptor; setCookie?: string }
   | { type: 'success'; message: string; descriptor?: ErrorMessageDescriptor; setCookie?: string }
 
-/**
- * The route-facing resolution (server translates, client displays): descriptor → the
- * locale's sentence, raw message → unchanged. Lives in the auth domain so `routes/auth`
- * stays on its import whitelist.
- */
 export function authFlowMessage(
   message: string,
   descriptor: ErrorMessageDescriptor | undefined,
@@ -43,7 +30,6 @@ export function authFlowMessage(
   return createServerTranslator(locale).format(descriptor.messageKey, descriptor.params)
 }
 
-/** Descriptor-backed error outcome; `message` keeps the English fallback for logs. */
 export function authFlowError(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowError {
   const descriptor = descriptorFor(messageKey, params)
   return { type: 'error', message: descriptor.fallbackMessage, descriptor }
@@ -63,7 +49,6 @@ export function authFlowValidationError(fallbackKey: UiMessageId, issues: readon
   return { type: 'error', message: descriptor.fallbackMessage, descriptor }
 }
 
-/** Descriptor-backed success outcome (enumeration-safe notices). */
 export function authFlowSuccess(messageKey: UiMessageId, params?: ErrorMessageParams): AuthFlowSuccess {
   const descriptor = descriptorFor(messageKey, params)
   return { type: 'success', message: descriptor.fallbackMessage, descriptor }
@@ -86,10 +71,6 @@ export function formFieldString(formData: FormData, key: string): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-/**
- * Whether mail-dependent signin steps (post-password OTP, magic-link
- * delivery) can run right now.
- */
 export function isMailLoginReady(): boolean {
   const mail = getBlogSettingsBundleSync()?.mail?.mail
   return mail !== undefined && checkMailReady(mail).ready

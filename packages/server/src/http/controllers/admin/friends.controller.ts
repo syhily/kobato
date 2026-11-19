@@ -4,9 +4,6 @@ import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@koba
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/friends.ts` over `@kobato/contracts/friends.ts`; this
-// controller only implements the procedures (admin base).
 const impl = implementAdmin(adminFriendsContract)
 
 const list = impl.list.handler(({ input, context }) =>

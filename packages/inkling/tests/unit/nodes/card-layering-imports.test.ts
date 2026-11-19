@@ -15,9 +15,6 @@ import { describe, expect, it } from 'vitest'
  * guard that silently matches nothing fails loudly.
  */
 
-// modules the registry layer must never VALUE-import, normalized onto the
-// layer root: the wrapper projections, the components/plugins layer, and the
-// per-card shim modules (by pattern)
 const WRAPPER_LAYER_TARGETS = new Set([
   'nodes/cards/card-wrappers',
   'nodes/cards/card-decorate',
@@ -44,8 +41,6 @@ function runtimeImportSpecifiers(source: string): string[] {
   const withoutTypeImports = source
     .replace(/import\s+type\s[\s\S]{0,500}?from\s+['"][^'"]+['"]/g, '')
     .replace(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s+['"][^'"]+['"]/g, (match, body: string) => {
-      // an import whose braces hold only `type X` bindings (incl. `type X as Y`)
-      // is type-only and erases; any unadorned binding is a runtime import
       const hasRuntimeBinding = body.split(',').some((binding) => !/^\s*type\s/.test(binding))
       return hasRuntimeBinding ? match : ''
     })
@@ -55,20 +50,13 @@ function runtimeImportSpecifiers(source: string): string[] {
   return [...statics, ...sideEffects, ...dynamics].map((match) => match[1])
 }
 
-/**
- * Resolves a specifier to its layer-relative target ('nodes/...',
- * 'components/...'), or null for specifiers outside the inkling layer. Alias
- * and relative forms both normalize, so `@kobato/inkling-internal/nodes/foo` and
- * `../nodes/foo` from a utils file land on the same target. Pure string math
- * (no cwd, no filesystem), so the verdict never depends on where vitest runs.
- */
 function normalizeSpecifier(fromFile: string, specifier: string): string | null {
   if (specifier.startsWith('@kobato/inkling-internal/')) {
     return specifier.slice('@kobato/inkling-internal/'.length)
   }
   if (specifier.startsWith('./') || specifier.startsWith('../')) {
     const segments = fromFile.split('/')
-    segments.pop() // drop the file name, keep the directory
+    segments.pop()
     for (const part of specifier.split('/')) {
       if (part === '.' || part === '') {
         continue
@@ -79,24 +67,18 @@ function normalizeSpecifier(fromFile: string, specifier: string): string | null 
         segments.push(part)
       }
     }
-    // Normalize onto the layer root, mirroring the internal-alias slice above —
-    // the wrapper-layer check below is rooted at the layer, not the repo.
+
     const resolved = segments.join('/')
     return resolved.startsWith('packages/inkling/src/') ? resolved.slice('packages/inkling/src/'.length) : resolved
   }
   return null
 }
 
-/** True when the normalized target lands on the wrapper layer. */
 function isWrapperLayerTarget(normalized: string): boolean {
   return (
     WRAPPER_LAYER_TARGETS.has(normalized) ||
     FORBIDDEN_LAYERS.some((layer) => normalized === layer || normalized.startsWith(`${layer}/`)) ||
-    // the shim modules: 'nodes/<Card>Node' directly under packages/inkling/src/nodes
-    // (MinimalNodes/BasicNodes/DefaultNodes are node sets, not shims)
     /^nodes\/[A-Z][A-Za-z]*Node$/.test(normalized) ||
-    // the card components and their decorate renders:
-    // 'nodes/<Card>NodeComponent', 'nodes/header/HeaderNodeComponent'
     /^nodes\/([A-Z][A-Za-z]*NodeComponent|header\/HeaderNodeComponent)$/.test(normalized)
   )
 }
@@ -138,10 +120,6 @@ describe('card pipeline layering guard', () => {
   })
 
   it('card declarations never import the command table — the direction is reversed', () => {
-    // card-commands is a DERIVED VIEW over the declarations: menu entries and
-    // insert specs name commands by string, and card-commands keys its command
-    // objects by node type. A declaration importing it — even type-only —
-    // reverses that direction.
     const declarationsDir = join('packages', 'inkling', 'src', 'nodes', 'cards')
     const offenders: string[] = []
 
@@ -154,7 +132,6 @@ describe('card pipeline layering guard', () => {
 
     expect(offenders).toEqual([])
   })
-
   it('registry-layer modules never value-import the wrapper layer', () => {
     const offenders: Record<string, string[]> = {}
 
@@ -169,9 +146,6 @@ describe('card pipeline layering guard', () => {
   })
 
   it('getEditorCardNodes stays off the wrapper node registry', () => {
-    // its own comment: importing the wrapper registry would close an import
-    // cycle (wrapper layer → decorate tree → InklingComposableEditor →
-    // DragDropPastePlugin → file-drop-routing → editor-card-nodes)
     const source = readFileSync('packages/inkling/src/nodes/cards/editor-card-nodes.ts', 'utf8')
     const normalized = runtimeImportSpecifiers(source).map((specifier) =>
       normalizeSpecifier('packages/inkling/src/nodes/cards/editor-card-nodes.ts', specifier),
@@ -188,14 +162,13 @@ describe('card pipeline layering guard', () => {
     const components = readdirSync(nodesDir).filter((name) => /^[A-Z][A-Za-z]*NodeComponent\.tsx$/.test(name))
     expect(shims.length).toBeGreaterThan(10)
     expect(components.length).toBeGreaterThan(10)
-
     const fixture = 'packages/inkling/src/nodes/cards/fixture.declaration.ts'
     const judged = (source: string) => wrapperLayerImportsOfSource(fixture, source)
     for (const name of [...shims, ...components]) {
       const specifier = `@kobato/inkling-internal/nodes/${name.replace(/\.tsx?$/, '')}`
       expect(judged(`import { X } from '${specifier}'`)).toEqual([specifier])
     }
-    // the header card's component lives one directory down
+
     expect(
       judged(`import { renderHeaderCard } from '@kobato/inkling-internal/nodes/header/HeaderNodeComponent'`),
     ).toEqual(['@kobato/inkling-internal/nodes/header/HeaderNodeComponent'])
@@ -205,7 +178,6 @@ describe('card pipeline layering guard', () => {
     const fixture = 'packages/inkling/src/nodes/cards/fixture.declaration.ts'
     const judged = (source: string) => wrapperLayerImportsOfSource(fixture, source)
 
-    // alias forms of every forbidden family
     expect(judged(`import { AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([
       '@kobato/inkling-internal/nodes/AudioNode',
     ])
@@ -230,13 +202,11 @@ describe('card pipeline layering guard', () => {
       '@kobato/inkling-internal/plugins/x',
     ])
 
-    // relative drift forms — judged exactly like their alias twins
     expect(judged(`import { AudioNode } from '../AudioNode'`)).toEqual(['../AudioNode'])
     expect(judged(`import { renderHeaderCard } from '../header/HeaderNodeComponent'`)).toEqual([
       '../header/HeaderNodeComponent',
     ])
 
-    // side-effect and dynamic forms
     expect(judged(`import '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([
       '@kobato/inkling-internal/nodes/AudioNode',
     ])
@@ -244,17 +214,12 @@ describe('card pipeline layering guard', () => {
       '@kobato/inkling-internal/nodes/AudioNode',
     ])
 
-    // type-only imports erase, including the inline-modifier form; a mixed
-    // import keeps its runtime binding and stays a violation
     expect(judged(`import type { AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([])
     expect(judged(`import { type AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([])
     expect(judged(`import { type AudioData, AudioNode } from '@kobato/inkling-internal/nodes/AudioNode'`)).toEqual([
       '@kobato/inkling-internal/nodes/AudioNode',
     ])
 
-    // compliant neighbours stay free: the base layer (the bottom of the
-    // stack), the node-set modules, sibling registry/declaration modules,
-    // and the utils layer
     expect(judged(`import { BaseAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/AudioNode'`)).toEqual(
       [],
     )

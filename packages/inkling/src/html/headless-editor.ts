@@ -33,7 +33,6 @@ export function createHeadlessHtmlEditor(spec: HeadlessEditorSpec): LexicalEdito
   if (spec.merge === 'additive') {
     return createHeadlessEditor({
       nodes: [...DEFAULT_HTML_NODES, ...(spec.nodes ?? [])],
-      // A caller's own onError wins.
       onError: spec.onError ?? defaultOnError,
     })
   }
@@ -41,18 +40,11 @@ export function createHeadlessHtmlEditor(spec: HeadlessEditorSpec): LexicalEdito
   const defaultEditorConfig = {
     nodes: [...DEFAULT_HTML_NODES],
     html: DEFAULT_CONFIG.html,
-    // Object.assign below still lets editorConfig.onError win.
     onError: defaultOnError,
   }
   return createHeadlessEditor(Object.assign({}, defaultEditorConfig, spec.editorConfig))
 }
 
-/**
- * The pre-render recipe both render legs (HTML, plain text) run: an additive
- * headless editor with the state loaded and the cleanup transforms registered
- * — in-progress at-link search nodes never render. Shared so a new cleanup
- * transform lands for both legs at once.
- */
 export function prepareHeadlessRenderEditor(
   state: SerializedEditorState | string,
   { nodes, onError }: { nodes?: LexicalNodeConfig[]; onError?: (error: Error) => void } = {},

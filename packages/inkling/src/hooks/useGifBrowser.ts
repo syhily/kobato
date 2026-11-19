@@ -9,12 +9,6 @@ import {
 } from '@kobato/inkling-internal/services/gif-browser'
 import React from 'react'
 
-// React adapter over gif-browser (the deep module — fetch tracks, column
-// balancing, and the navigation machine live there). The browser is recreated
-// when the provider config fields or the injected ports change; callers
-// re-resolve the config object per render, so the memo keys on its fields rather
-// than its identity.
-
 interface UseGifBrowserOptions {
   config: GifProviderConfig
   fetchPage?: GifFetchPage

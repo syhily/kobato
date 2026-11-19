@@ -6,7 +6,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 // toggle-field registry. The `admin.posts.upsert-meta` wire shapes are
 // zod-derived in `@kobato/contracts/posts` — import them there, never here.
 
-// Single source of truth for the editor/sidebar metadata draft shape.
 export interface PostMetaDraft {
   slug: string
   title: string
@@ -74,7 +73,6 @@ export type PostMetaToggleKey =
 export interface PostMetaToggleField {
   key: PostMetaToggleKey
   id: string
-  /** UI message ids — `ToggleOptionsCard` resolves them with the active locale. */
   labelId: UiMessageId
   descriptionId: UiMessageId
   /** When set, the toggle is only rendered if the feature flag is enabled. */

@@ -1,10 +1,8 @@
 // ANCHOR_POPUP_GAP is the single source for the 10px anchor↔popup gap; the settings panel's
 // CARD_SPACING (20px, panel-to-card distance) is a different semantic and lives in floating-panel.ts.
 
-/** Vertical gap between an anchor rect and the popup placed against it. */
 export const ANCHOR_POPUP_GAP = 10
 
-/** A rect as plain data — the seam the fitting policies are tested through. */
 export interface FitRect {
   top: number
   left: number
@@ -17,7 +15,6 @@ export interface FitSize {
   height: number
 }
 
-/** The edges the placed rect is fitted against (viewport or scroll-container edges, in the rect's coordinate space). */
 export interface FitBounds {
   top: number
   left: number
@@ -32,38 +29,22 @@ export interface FitRectEdges {
   left: number
 }
 
-/**
- * The gap a policy keeps: a number (every edge), per-edge insets ('clamp'),
- * or { below, above } anchor-side gaps (the anchor policies). below/above map
- * onto the bottom/top edges, so one normalization serves every policy.
- */
 export type FitRectGap = number | Partial<FitRectEdges> | { below?: number; above?: number }
-
 export type FitRectPolicy = 'clamp' | 'flip-below-above' | 'clamp-above'
-
 export interface FitRectWithinInput {
-  /** Bounds the placed rect is fitted against, in the rect's own coordinate space. */
   bounds: FitBounds
-  /**
-   * 'clamp': the rect at its proposed position (fitted by shifting it).
-   * The anchor policies: the anchor rect the placed rect sits against.
-   */
+
   rect: FitRect
-  /** Anchor policies: the size of the rect being placed (its position is what gets resolved). */
   size?: FitSize
-  /** Gap from the bounds ('clamp') or from the anchor (anchor policies). Defaults to 0. */
   gap?: FitRectGap
   policy: FitRectPolicy
-  /** 'flip-below-above': height reserved below the anchor when judging overflow; defaults to the placed height. */
   belowBudget?: number
-  /** 'flip-below-above': flip only when the flipped placement also fits within the bounds top. */
   requireFitAbove?: boolean
 }
 
 export interface FittedRectPosition {
   top: number
   left: number
-  /** 'flip-below-above': whether the rect was flipped above the anchor. Always false for the other policies. */
   flipped: boolean
 }
 
@@ -86,12 +67,6 @@ function resolveGapEdges(gap: FitRectGap | undefined): FitRectEdges {
   return { top: gap.top ?? 0, right: gap.right ?? 0, bottom: gap.bottom ?? 0, left: gap.left ?? 0 }
 }
 
-/**
- * Fits a rect within bounds under a named policy. 'clamp': a rect offscreen on both vertical
- * edges is left alone, and horizontally the left edge wins when both overflow.
- * 'flip-below-above': flips above the anchor when the below placement overflows the bounds
- * bottom. 'clamp-above': always above the anchor, never flips.
- */
 export function fitRectWithin({
   bounds,
   rect,
@@ -102,7 +77,6 @@ export function fitRectWithin({
   requireFitAbove,
 }: FitRectWithinInput): FittedRectPosition {
   const edges = resolveGapEdges(gap)
-
   if (policy === 'clamp') {
     const inner = {
       top: bounds.top + edges.top,
@@ -144,8 +118,6 @@ export function fitRectWithin({
     return { top: belowTop, left: rect.left, flipped: false }
   }
 
-  // clamp-above: always above the anchor, centered horizontally, clamped into the
-  // horizontal bounds (the right edge wins when both overflow)
   const top = rect.top - placed.height - edges.top
   let left = rect.left + rect.width / 2 - placed.width / 2
   if (left < bounds.left) {

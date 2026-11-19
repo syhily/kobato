@@ -12,10 +12,6 @@ export const localStorageRouter = new Hono<Env>()
 // private; new namespaces are NOT served by default.
 const PUBLIC_STORAGE_PREFIXES = ['images/', 'musics/', 'branding/']
 
-/**
- * Publicly-servable key: allowlisted prefix, no empty or hidden (dotfile)
- * segments anywhere in the path.
- */
 function isPublicStorageKey(key: string): boolean {
   if (key === '') {
     return false

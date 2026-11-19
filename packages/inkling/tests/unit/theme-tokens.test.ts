@@ -14,7 +14,6 @@ const stylesDir = path.resolve(__dirname, '../../src/styles')
 // This suite parses both and pins name/value parity per token plus a snapshot
 // of the full token list: changing a token is an explicit contract change.
 
-/** Plain variables bridged to tokens inside the scoped defaults block. */
 const BRIDGE_VARIABLES = [
   '--white',
   '--grey-50',
@@ -33,12 +32,10 @@ const BRIDGE_VARIABLES = [
   '--inkling-breakout-adjustment-with-fallback',
 ]
 
-/** Strips block comments so commented-out declarations cannot parse. */
 function stripComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, '')
 }
 
-/** Returns the contents of the first `{}` block following `anchor`. */
 function extractBlock(css: string, anchor: string): string {
   const anchorIndex = css.indexOf(anchor)
   if (anchorIndex === -1) {
@@ -59,7 +56,6 @@ function extractBlock(css: string, anchor: string): string {
   throw new Error(`unbalanced braces after anchor: ${anchor}`)
 }
 
-/** Parses `--name: value` declarations, normalizing runs of whitespace. */
 function parseCustomProperties(block: string): Map<string, string> {
   const declarations = new Map<string, string>()
   for (const match of block.matchAll(/(--[\w\\.-]+)\s*:\s*([^;]+?)\s*;/g)) {

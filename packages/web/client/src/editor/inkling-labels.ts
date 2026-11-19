@@ -40,7 +40,6 @@ interface RootI18nData {
   i18n?: ContentBootstrapI18n | null
 }
 
-/** The active locale's overlay from the root loader payload, or `undefined`. */
 export function useKobatoInklingLabels(): InklingLabelsInput | undefined {
   return useRouteLoaderData<RootI18nData>('root')?.i18n?.inklingLabels
 }
@@ -57,7 +56,6 @@ const LABEL_TABLE_LOADERS = {
   'zh-TW': () => import('@kobato/i18n/inkling-labels/zh-TW.ts').then((table) => table.kobatoInklingLabelsZhTW),
 } as const satisfies Record<AppLocale, () => Promise<InklingLabelsInput>>
 
-/** Load the active locale's table for an interaction-gated public composer. */
 export function loadInklingLabels(locale: AppLocale): Promise<InklingLabelsInput> {
   return LABEL_TABLE_LOADERS[locale]()
 }

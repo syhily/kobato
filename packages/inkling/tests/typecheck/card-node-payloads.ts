@@ -16,13 +16,9 @@ declare const file: File
 declare const captionEditor: LexicalEditor
 declare const captionEditorInitialState: EditorState
 
-// Positive cases
-
-// file-upload card: transient `initialFile` alongside serialized fields
 const fileUploadPayload = { src: 'https://example.com/a.mp3', initialFile: file } satisfies AudioNodeDataset
 editor.dispatchCommand(INSERT_AUDIO_COMMAND, fileUploadPayload)
 
-// nested-editor card: transient editor instances are part of the dataset
 const nestedEditorPayload = {
   code: 'const a = 1',
   captionEditor,
@@ -30,14 +26,10 @@ const nestedEditorPayload = {
 } satisfies CodeBlockNodeDataset
 editor.dispatchCommand(INSERT_CODE_BLOCK_COMMAND, nestedEditorPayload)
 
-// plain data card: serialized fields only
 const plainDataPayload = { html: '<p>hi</p>' } satisfies HtmlNodeDataset
 editor.dispatchCommand(INSERT_HTML_COMMAND, plainDataPayload)
 
-// payload-less command
 editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)
-
-// Negative cases
 
 // @ts-expect-error - wrong primitive field type
 const wrongPrimitive = { src: 123 } satisfies AudioNodeDataset

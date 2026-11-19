@@ -22,7 +22,6 @@ import { useState } from 'react'
 interface NotificationsDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Admins get the compose entry (direct + broadcast). */
   isAdmin: boolean
   /** Owned by the shell (one observer per shell) — the drawer never subscribes.
    *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */

@@ -19,9 +19,7 @@ import { $getNodeByKey, CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
 // runtime marker check is the discriminator (no asserting).
 
 export interface CardInteractionPorts {
-  /** The composer card selection store — read at event time. */
   store: CardSelectionStore
-  /** The card's container element (null before mount). */
   getContainer: () => HTMLElement | null
 }
 
@@ -64,11 +62,8 @@ export function registerCardInteraction(
     if (selectedKeyBeforeMousedown !== nodeKey && !isEditing()) {
       editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey })
 
-      // skip CLICK_COMMAND behaviour or the click would immediately enter edit mode
       skipClick = true
 
-      // Prevent the default caret move, except over inputs/textareas and
-      // click-through zones, where focus must land immediately.
       const target = event.target
       if (target instanceof HTMLElement) {
         const targetTagName = target.tagName
@@ -106,8 +101,7 @@ export function registerCardInteraction(
         const node = $getNodeByKey(nodeKey)
         const cardNode = node && $isInklingCard(node) ? node : null
         const clickedDifferentEditor = cardNode === null
-        // elements marked as click-through (captions, toolbars) handle their own
-        // clicks and must not trigger the card's edit mode
+
         const clickedClickthrough = target.closest('[data-inkling-allow-clickthrough]')
         const clickedSettingsPanel = target.closest('[data-inkling-settings-panel]')
 

@@ -23,7 +23,6 @@ interface BinaryRoute {
 
 export type AssetRoute = SvgRoute | BinaryRoute
 
-// Single source of truth: adding an asset means one entry here, nothing else.
 export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/favicon.svg': { kind: 'svg', slot: 'faviconSvg' },
   '/logo.svg': { kind: 'svg', slot: 'logoSvg' },
@@ -79,7 +78,6 @@ async function resolveSvg(slot: SvgSlot, original?: boolean): Promise<ResolvedAs
       if (buffer !== null) {
         return { content: buffer, contentType: ref.contentType, etag: ref.etag }
       }
-      // Fetch failed — fall through to the bundled default instead of 500'ing.
     }
   }
   return {

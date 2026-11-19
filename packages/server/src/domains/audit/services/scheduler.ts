@@ -6,10 +6,6 @@ import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
 const log = getLogger('audit.scheduler')
 
-// Daily 04:00 archive scheduler in the site's configured timezone.
-// Domain owns only next-fire policy; timer mechanics live in `scheduleJob`,
-// and the job registry owns boot start-up.
-
 registerJob({
   name: 'audit.scheduler',
   task: { key: 'audit-archive', recordHistory: true },

@@ -4,15 +4,10 @@ import { $removeLink, $selectLinkText, type HoveredLink } from '@kobato/inkling-
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 
-// Render adapter over the toolbar session's hovered-link slot: session state
-// in, JSX out. The hover feed (wired by FloatingToolbarPlugin) owns the
-// mousemove tracking and link resolution; suppression while another toolbar is
-// open is the session's own guard, so there is no disabled prop here.
 interface FloatingLinkToolbarProps {
   anchorElem: HTMLElement
-  /** The session's hovered link — the toolbar renders only while it is non-null. */
   hoveredLink: HoveredLink | null
-  /** Owned by the plugin, which feeds it to the hover feed's toolbar-element port. */
+
   toolbarRef: React.RefObject<HTMLDivElement | null>
   onEditLink: (data: { href: string }) => void
   onRemoveLink: () => void

@@ -2,32 +2,12 @@ import type { ColorSwatchData } from '@kobato/inkling-internal/components/ui/Col
 
 import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 
-/**
- * The swatch keyword grammar — the one home of the color-value vocabulary the
- * color picker speaks: the `'accent'` / `'transparent'` / `'image'` keywords
- * versus a raw hex, shared by ColorPicker (hex input color), ColorIndicator
- * (button paint + selected-swatch title), and ColorSwatch (select mapping). The
- * per-context divergence (what `'transparent'` paints as) arrives as data. The
- * accent VALUE itself stays with header-accent-color — this module owns the
- * grammar, not the palette.
- */
-
 export type ColorKeyword = 'accent' | 'transparent' | 'image'
-
 const KEYWORDS: ReadonlySet<string> = new Set<ColorKeyword>(['accent', 'transparent', 'image'])
-
 export function isColorKeyword(value: string): value is ColorKeyword {
   return KEYWORDS.has(value)
 }
 
-/**
- * The display color for a value: `'accent'` resolves through
- * getAccentColor (scoped to the caller's editor root element when given),
- * `'image'` paints transparent (the icon carries the
- * meaning), `'transparent'` paints as the caller's stand-in (`''` for the
- * picker's HexColorPicker, `'white'` for the indicator button), and a raw
- * hex passes through.
- */
 export function resolveSwatchDisplayColor(
   value: string,
   { transparentAs, rootElement }: { transparentAs: string; rootElement?: HTMLElement | null },
@@ -44,7 +24,6 @@ export function resolveSwatchDisplayColor(
   return value
 }
 
-/** The value a swatch selects: its keyword when it carries one, else its hex. */
 export function resolveSwatchValue(swatch: {
   hex?: string
   accent?: boolean
@@ -59,7 +38,6 @@ export function resolveSwatchValue(swatch: {
   return swatch.hex
 }
 
-/** The title of the swatch a value selects, if any — the keyword lookups first, then the hex match. */
 export function resolveSelectedSwatchTitle(value: string, swatches: ColorSwatchData[]): string | undefined {
   if (value === 'accent') {
     return swatches.find((swatch) => swatch.accent)?.title

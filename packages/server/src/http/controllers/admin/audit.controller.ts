@@ -27,9 +27,6 @@ function assertValidActorId(context: HandlerContext, actorId: string | undefined
 
 const EXPORT_MAX_ROWS = 10_000
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/audit.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminAuditContract)
 
 const list = impl.list.handler(async ({ input, context }) => {

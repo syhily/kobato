@@ -30,7 +30,6 @@ export interface EstablishLoginOptions {
 }
 
 export interface EstablishedLoginSession {
-  /** The newly-minted session id (decoupled from any prior cookie). */
   sid: string
   /** `Set-Cookie` header value — callers MUST attach it to the response. */
   setCookie: string

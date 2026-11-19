@@ -16,7 +16,6 @@ import { Solar } from 'lunar-typescript'
 const WIDTH = 600
 const HEIGHT = 880
 
-// Font registration lives in canvas-fonts.ts, shared with the OG renderer.
 function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | null> {
   return ensureCanvasFont('calendar', settings)
 }
@@ -31,7 +30,6 @@ function weekdayLabel(locale: AppLocale, date: Date): string {
   return calendarCopyFor(locale).weekdays[getISODay(date) - 1] ?? ''
 }
 
-/** Lunar line, or `null` for a locale that does not render it (en-US). */
 function lunarTextFor(locale: AppLocale, date: Date): string | null {
   const copy = calendarCopyFor(locale)
   if (copy.lunar === null) {

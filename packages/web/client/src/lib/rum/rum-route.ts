@@ -12,9 +12,7 @@ export interface RumRouteMatch {
 }
 
 export interface RumRouteContext {
-  /** Deepest stable React Router route ID, e.g. `routes/public/post/detail`. */
   id: string
-  /** Param-placeholder path, e.g. `/posts/:slug`. */
   template: string
 }
 

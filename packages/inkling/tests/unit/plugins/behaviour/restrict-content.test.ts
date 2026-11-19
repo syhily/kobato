@@ -15,12 +15,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The paragraphs-only restriction policy — pins for each cleaning leg
-// (decorator strip, list unwrap, non-paragraph conversion, truncation,
-// selection repair) and the two gating no-ops (clean root, non-collapsed /
-// missing selection). The plugin mount smoke test lives in
-// RestrictContentPlugin.test.ts.
-
 class TestDecoratorNode extends DecoratorNode<null> {
   static getType() {
     return 'test-decorator'
@@ -47,8 +41,6 @@ function $createTestDecoratorNode(): TestDecoratorNode {
   return new TestDecoratorNode()
 }
 
-// Builds the root children, places a collapsed caret at the document end,
-// and runs the policy — the same shape the plugin's transform sees.
 function enforce(editor: LexicalEditor, paragraphs: number, build: () => void): Promise<void> {
   return updateEditor(editor, () => {
     const root = $getRoot()
@@ -59,7 +51,6 @@ function enforce(editor: LexicalEditor, paragraphs: number, build: () => void): 
   })
 }
 
-/** Root children as `type:text` entries (`decorator` for the test decorator). */
 function readDoc(editor: LexicalEditor): string[] {
   return editor.getEditorState().read(() =>
     $getRoot()
@@ -159,8 +150,6 @@ describe('$enforceParagraphRestriction', () => {
       const selection = $getSelection()
       expect($isRangeSelection(selection) && selection.isCollapsed()).toBe(true)
       if ($isRangeSelection(selection)) {
-        // selectEnd descends to the deepest node: the caret sits at the end
-        // of the last paragraph's text
         const anchorNode = selection.anchor.getNode()
         expect(anchorNode.getTextContent()).toBe('two')
         expect(selection.anchor.offset).toBe(anchorNode.getTextContentSize())
@@ -214,8 +203,6 @@ describe('$enforceParagraphRestriction', () => {
   })
 
   it('does not trip on list paragraphs produced by earlier legs', async () => {
-    // mixed document: decorator stripped, list unwrapped, heading converted,
-    // then the budget applied to the cleaned result
     await enforce(editor, 2, () => {
       $getRoot().append(
         $createTestDecoratorNode(),

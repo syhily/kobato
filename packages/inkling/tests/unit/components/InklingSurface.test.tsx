@@ -63,11 +63,6 @@ function getText(editor: LexicalEditor) {
   return editor.getEditorState().read(() => $getRoot().getTextContent())
 }
 
-// The composition rule pinned at runtime: a custom surface composed through
-// InklingSurface gets the shipped surfaces' shared state — one undo stack
-// across top-level and nested editors, and an onChange that always serializes
-// the top-level document. The bare harness is the contrast: with no surface,
-// each composable editor falls back to a per-instance history state.
 function SurfaceHarness({
   nestedEditor,
   onChange,
@@ -117,8 +112,7 @@ describe('InklingSurface', () => {
     await waitFor(() => {
       expect(onChange).toHaveBeenCalled()
     })
-    // the payload is the top-level editor's document (which the nested edit is
-    // not part of), not the nested editor's own state
+
     const payload = onChange.mock.calls.at(-1)![0]
     expect(payload).toEqual(topEditor!.getEditorState().toJSON())
     expect(JSON.stringify(payload)).not.toContain('nested content edited')
@@ -131,7 +125,6 @@ describe('InklingSurface', () => {
 
     render(<SurfaceHarness nestedEditor={nestedEditor} onChange={() => {}} />)
 
-    // both levels consume the surface-provided value, not per-instance fallbacks
     expect(topSharedState).toBeDefined()
     expect(nestedSharedState).toBeDefined()
     expect(nestedSharedState!.historyState).toBe(topSharedState!.historyState)
@@ -139,11 +132,9 @@ describe('InklingSurface', () => {
     await setText(nestedEditor, 'first edit')
     await setText(nestedEditor, 'second edit')
 
-    // the nested edits landed on the shared (top-level) undo stack
     const undoStack = topSharedState!.historyState.undoStack as { editor: LexicalEditor }[]
     expect(undoStack.some((entry) => entry.editor === nestedEditor)).toBe(true)
 
-    // one undo stack for the whole surface: a top-level undo retracts the nested edit
     act(() => {
       topEditor!.dispatchCommand(UNDO_COMMAND, undefined)
     })
@@ -158,21 +149,15 @@ describe('InklingSurface', () => {
 
     render(<BareHarness nestedEditor={nestedEditor} />)
 
-    // each composable editor created its own fallback state, so the probes see
-    // distinct objects (the composable editors' own fallbacks are likewise
-    // per-instance — the undo behaviour below is what pins it)
     expect(nestedSharedState!.historyState).not.toBe(topSharedState!.historyState)
 
     await setText(nestedEditor, 'first edit')
     await setText(nestedEditor, 'second edit')
-
-    // an undo dispatched at the top level cannot reach the nested editor
     act(() => {
       topEditor!.dispatchCommand(UNDO_COMMAND, undefined)
     })
     expect(getText(nestedEditor)).toBe('second edit')
 
-    // the nested editor's own fallback history undoes its edit
     act(() => {
       nestedEditor.dispatchCommand(UNDO_COMMAND, undefined)
     })

@@ -53,7 +53,6 @@ async function storeChallenge(
   challenge: string,
   data: Record<string, unknown>,
 ): Promise<void> {
-  // Plain JSON payloads: `{ userId, deviceName }` / `{ email }`.
   const payload = data
   const expiresAt = new Date(Date.now() + CHALLENGE_TTL_SECONDS * 1000)
   await db
@@ -81,7 +80,6 @@ async function consumeChallenge(
       .where(and(eq(oneTimeToken.key, key), gt(oneTimeToken.expiresAt, new Date())))
       .returning({ payload: oneTimeToken.payload })
     const payload = rows[0]?.payload
-    // Payloads are plain JSON; anything but an object reads as a miss.
     return isRecord(payload) ? payload : null
   } catch (error) {
     log.error('Failed to consume passkey challenge', { key, error })

@@ -11,8 +11,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryLikeIncreaseRateLimit } from '@kobato/server/infra/rate-limit.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/likes.ts`;
-// this controller only implements the procedures.
 const impl = implementPublic(likesContract)
 
 const increaseLike = impl.increase.handler(async ({ input, context }) => {
@@ -42,8 +40,6 @@ const validateLike = impl.validate.handler(async ({ input, context }) => {
   return { key: input.key, valid: await validateLikeToken(context.db, target, input.token) }
 })
 
-// `router()` enforces the implementation against the whole contract shape —
-// a missing or extra key fails typecheck here, not at a client call site.
 export const likesRouter = impl.router({
   increase: increaseLike,
   decrease: decreaseLike,

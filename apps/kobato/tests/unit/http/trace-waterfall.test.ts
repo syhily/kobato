@@ -203,7 +203,6 @@ async function reactRouterRequest(c: Context): Promise<Response> {
     return new Response('unavailable', { status: 503 })
   }
 
-  // A loader-shaped in-process call through the same seam `createSsrCaller` uses.
   const caller = createRouterClient(testRouter, {
     context: { value: 'ssr' },
     interceptors: [createOrpcTraceInterceptor('in_process')],
@@ -304,7 +303,6 @@ describe('trace waterfall — document request', () => {
     expect(stream.attributes['ssr.outcome']).toBe('completed')
     expect(stream.status.code).toBe(SpanStatusCode.OK)
 
-    // Privacy: no raw path/query, no procedure input, no traceparent header echo.
     const serialized = JSON.stringify(harness.spans.map((span) => span.attributes))
     expect(serialized).not.toContain('/posts/hello')
     expect(serialized).not.toContain('utm=secret')
@@ -506,8 +504,6 @@ describe('trace waterfall — SSR stream lifecycle', () => {
       expect(attributes).not.toContain('secret sync render failure')
       expect(attributes).not.toContain('localhost/private')
 
-      // The entry schedules `streamTimeout + 1000`; the synchronous throw path
-      // must clear exactly that timer.
       const timerIndex = setTimeoutSpy.mock.calls.findIndex((call) => call[1] === 6000)
       expect(timerIndex).toBeGreaterThanOrEqual(0)
       const timerId = setTimeoutSpy.mock.results[timerIndex]?.value

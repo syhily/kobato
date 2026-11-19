@@ -23,25 +23,14 @@ import React from 'react'
 export type CardMenuInsert = (insertCommand: AnyLexicalCommand, params?: CardMenuInsertParams) => void
 
 export interface UseCardMenuOptions {
-  /** Typed `/card param` values, merged into the dispatch dataset under the
-   * item's `queryParams` keys. Slash-menu only — the plus menu has no typed
-   * params. */
   commandParams?: string[]
-  /** Slash-menu insert semantics: the trigger paragraph still carries the
-   * "/query" text, so it is swapped for a fresh paragraph before the insert
-   * command dispatches. The plus menu dispatches at the cached caret as-is. */
   replaceTriggerParagraph?: boolean
 }
-
 export interface UseCardMenu {
   cardMenu: BuildCardMenuResult
   insert: CardMenuInsert
 }
 
-/** The card menu as data: the registered card nodes plus the host's
- * cardConfig resolved through buildCardMenu, and the single type-erased
- * insert dispatch shared by the slash and plus menus. Trigger and
- * positioning semantics stay in CardMenuPopup. */
 export function useCardMenu(editor: LexicalEditor, query?: string, options: UseCardMenuOptions = {}): UseCardMenu {
   const { commandParams = [], replaceTriggerParagraph = false } = options
   const gifSettings = useInklingGifSettings()
@@ -49,10 +38,6 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
   const librarySettings = useInklingLibrarySettings()
   const { labels } = React.useContext(InklingUiPrefsContext)
 
-  // the menu is a cross-feature surface: buildCardMenu gates card entries on
-  // the gif/library configs and lists the host's snippets, so the flat
-  // `MenuBuildConfig` it consumes is composed from exactly those three
-  // channels — an upload/math/linking slice changing never rebuilds the menu
   const menuConfig = React.useMemo<MenuBuildConfig>(
     () => ({
       tenor: gifSettings.tenor,
@@ -70,22 +55,15 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
     ],
   )
 
-  // rebuild the menu when the registered nodes, query, host config, or labels
-  // change — buildCardMenu is pure, so the menu is computed during render (no
-  // empty first-render frame). The label resolver is the single injection point
-  // for labels; declaration labelKeys resolve through the table.
   const cardMenu = React.useMemo<BuildCardMenuResult>(() => {
     const cardNodes = getEditorCardNodes(editor)
-    // the table entry is a pseudo CardMenuSource (snippet precedent) — the
-    // table family is not a card, so it joins the menu here instead of
-    // through the declarations, and only when the editor registers TableNode
+
     const nodes: Iterable<[string, CardMenuSource]> = editor.hasNode(TableNode)
       ? [...cardNodes, TABLE_MENU_SOURCE]
       : cardNodes
     const resolveLabel = (key: string, fallback: string) => lookupLabel(labels, key, fallback)
     return buildCardMenu(nodes, { query, config: menuConfig, resolveLabel })
   }, [editor, query, menuConfig, labels])
-
   const insert = React.useCallback<CardMenuInsert>(
     (insertCommand, { insertParams = {}, queryParams = [] } = {}) => {
       const dataset = { ...insertParams }
@@ -111,7 +89,6 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
         return
       }
 
-      // the trigger-paragraph swap is headless in card-menu-trigger
       editor.update(() => {
         $swapTriggerParagraph(dispatch)
       })

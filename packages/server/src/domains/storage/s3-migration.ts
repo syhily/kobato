@@ -49,15 +49,10 @@ const log = getLogger('storage.migration.task')
 
 const SINGLETON_ID = 1
 
-/** Objects copied per listing batch; the cursor advances once per fully-copied batch. */
 const LIST_BATCH_SIZE = 200
-/** Parallel object copies inside a batch. */
 const COPY_CONCURRENCY = 4
-/** Per-object copy attempts before the run fails. */
 const COPY_ATTEMPTS = 3
-/** Mid-batch counter persistence interval (ms); batch boundaries always persist. */
 const PROGRESS_FLUSH_MS = 2_000
-/** Post-switch catch-up rounds; a round with zero new copies converges early. */
 const CATCH_UP_ROUNDS = 3
 
 export type S3TargetConfig = AssetsSettings['storage']
@@ -85,17 +80,14 @@ class MigrationCancelled extends Error {
   }
 }
 
-/** The running task's in-memory handle: cancel flag + completion promise + job_run row id. */
 interface RunningHandle {
   cancelRequested: boolean
   promise: Promise<void>
-  /** This attempt's `job_run` row, opened by `launch` (undefined when the recorder is unwired/failed). */
   runId?: number | null
 }
 
 let running: RunningHandle | null = null
 
-/** Target S3 backend factory — the test seam substitutes a fake backend. */
 let targetS3BackendFactory: (storage: S3TargetConfig) => StorageBackend = createS3BackendFromConfig
 
 /**
@@ -105,10 +97,8 @@ let targetS3BackendFactory: (storage: S3TargetConfig) => StorageBackend = create
  */
 let sourceS3BackendFactory: (storage: S3TargetConfig) => StorageBackend = createS3BackendFromConfig
 
-/** Target connectivity probe — the test seam stubs it (real probing hits the network). */
 let targetValidator: (storage: S3TargetConfig) => Promise<S3ValidationResult> = validateS3Config
 
-/** Test seam: substitute the target S3 backend factory and/or validator. Pair with `__resetS3MigrationForTests`. */
 export function __setS3MigrationTargetFactoryForTests(
   factory: (storage: S3TargetConfig) => StorageBackend,
   validator?: (storage: S3TargetConfig) => Promise<S3ValidationResult>,
@@ -117,12 +107,10 @@ export function __setS3MigrationTargetFactoryForTests(
   targetValidator = validator ?? (() => Promise.resolve({ ok: true }))
 }
 
-/** Test seam: substitute the source S3 backend factory (receives the pre-flip config snapshot). */
 export function __setS3MigrationSourceFactoryForTests(factory: (storage: S3TargetConfig) => StorageBackend): void {
   sourceS3BackendFactory = factory
 }
 
-/** Test seam: drop the in-memory handle and restore the real factories. */
 export function __resetS3MigrationForTests(): void {
   running = null
   targetS3BackendFactory = createS3BackendFromConfig
@@ -131,7 +119,6 @@ export function __resetS3MigrationForTests(): void {
   hooks = null
 }
 
-/** Test seam: await the running task's completion (fire-and-forget otherwise). */
 export async function __awaitStorageMigrationForTests(): Promise<void> {
   await running?.promise
 }
@@ -148,7 +135,6 @@ export interface S3MigrationHooks {
    * implementation carries over the section's non-storage fields.
    */
   readonly persistFlippedStorage: (db: Database, storage: AssetsSettings['storage']) => Promise<void>
-  /** Re-point the assets settings row's branding-slot refs after a driver flip. */
   readonly flipBrandingDrivers: (db: Database, from: StorageDriver, to: StorageDriver) => Promise<void>
   /**
    * Completed-run content rewrite (asset-url backfill). ALWAYS runs on
@@ -160,7 +146,6 @@ export interface S3MigrationHooks {
 
 let hooks: S3MigrationHooks | null = null
 
-/** Composition-root seam: wire the cross-domain collaborators before the first run. */
 export function wireS3Migration(wired: S3MigrationHooks): void {
   hooks = wired
 }
@@ -248,7 +233,6 @@ export async function getStorageMigrationStatus(db: Database): Promise<StorageMi
   return rowToStatus(await readRow(db))
 }
 
-/** Persisted config JSON → live config (decrypts the secret; corrupt JSON → null). */
 function readRowConfig(json: string | null): S3TargetConfig | null {
   const parsed = parseStorageConfig(json)
   if (parsed !== null && typeof parsed.secretAccessKey === 'string' && parsed.secretAccessKey !== '') {
@@ -265,7 +249,6 @@ function readSourceConfig(row: MigrationRow): S3TargetConfig | null {
   return readRowConfig(row.sourceStorage)
 }
 
-/** Live config → persisted JSON (encrypts the secret at rest). */
 function serializeStorageConfig(config: S3TargetConfig): string {
   return JSON.stringify({ ...config, secretAccessKey: encryptIfNeeded(config.secretAccessKey ?? '') })
 }
@@ -296,7 +279,6 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
 
     const currentStorage = requireBlogSettingsSection('assets').storage
     const s3Active = currentStorage.enabled
-    // Pre-flip source snapshot.
     sourceConfig = s3Active ? { ...currentStorage } : null
 
     if (input.target === 'local') {
@@ -352,7 +334,6 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
   return rowToStatus(await readRow(db))
 }
 
-/** Cooperative cancel: the copy loop checks the flag between objects. */
 export async function cancelStorageMigration(db: Database): Promise<StorageMigrationStatus> {
   const row = await readRow(db)
   if (row === null || !isStorageMigrationInFlightPhase(row.phase)) {
@@ -361,7 +342,6 @@ export async function cancelStorageMigration(db: Database): Promise<StorageMigra
   if (running !== null) {
     running.cancelRequested = true
   } else {
-    // Interrupted run (process died) — cancel the stale row directly.
     await db
       .update(storageMigration)
       .set({ phase: 'cancelled', error: null, updatedAt: new Date(), finishedAt: new Date() })
@@ -449,10 +429,6 @@ function launch(
     })
 }
 
-/**
- * Backends resolved once per run; the direction enum carries non-nullness, so no
- * assertions are needed (local-to-s3 has no S3 source, s3-to-local no target).
- */
 type ResolvedEndpoints =
   | {
       readonly direction: 'local-to-s3'
@@ -730,7 +706,6 @@ async function copyOne(
   )
 }
 
-/** Post-switch catch-up: copy whatever landed on the source during the flip. */
 async function catchUp(
   db: Database,
   source: StorageBackend,

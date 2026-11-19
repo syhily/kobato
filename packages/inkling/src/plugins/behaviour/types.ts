@@ -1,18 +1,10 @@
 import type { LexicalNode } from 'lexical'
 
-/**
- * INSERT_CARD_COMMAND payload: the constructed node plus the insert-time
- * intent flags the insert choreography (`registerCardCommands`) honors —
- * `openInEditMode` enters edit mode on the fresh card, `openPicker` opens the
- * card's registered picker on it (set by the insert registrar for
- * `picker.autoOpenOnInsert` host cards, or by a host's own intent command).
- */
 export interface InsertCardPayload {
   cardNode: LexicalNode
   openInEditMode?: boolean
   openPicker?: boolean
 }
-
 export interface SelectCardPayload {
   cardKey: string
 }
@@ -23,7 +15,5 @@ export interface DeleteCardPayload {
 }
 
 export interface LinkMatchPayload {
-  // the pasted URL as a [full-match, group] pair (both are the pasted text);
-  // registerLinkMatching reads [1]
   linkMatch: readonly [string, string]
 }

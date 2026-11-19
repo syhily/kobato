@@ -212,7 +212,6 @@ describe('storage/s3-migration — local-to-s3', () => {
     await seedSettingsRows(bundle)
     seedObject(localMem, 'images/a.jpg')
 
-    // Legacy content baked against the CDN base (https://assets.example.com).
     const [postRow] = await db
       .insert(postTable)
       .values({
@@ -286,7 +285,6 @@ describe('storage/s3-migration — s3-to-s3', () => {
     expect(status.phase).toBe('completed')
     expect(status.direction).toBe('s3-to-s3')
     expect(targetMem.store.has('images/c.jpg')).toBe(true)
-    // Same keys — DB rows keep their s3 driver untouched.
     expect(await readDriver('images/c.jpg')).toBe('s3')
     expect(getBlogSettingsBundleSync()!.assets!.storage.bucket).toBe('kobato-new')
   })
@@ -336,14 +334,12 @@ describe('storage/s3-migration — s3-to-s3', () => {
     await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
     await __awaitStorageMigrationForTests()
 
-    // The source backend was built from the pre-flip snapshot, not the live config.
     expect(sourceBucket).toBe('kobato-test')
     expect(lateWriteInjected).toBe(true)
     expect(targetMem.store.has('images/late.jpg')).toBe(true)
 
     const status = await getStorageMigrationStatus(db)
     expect(status.phase).toBe('completed')
-    // Verification compared the real old source (2 objects), not target-vs-target.
     expect(status.verification).toMatchObject({ sourceCount: 2, targetCount: 2, matches: true })
   })
 
@@ -589,7 +585,6 @@ describe('settings core — assets storage lock', () => {
     await expect(
       updateBlogSettingsSection(db, 'assets', { storage: { endpoint: 'https://evil.example.com' } }, null),
     ).rejects.toMatchObject({ name: 'DomainError', code: 'BAD_REQUEST' })
-    // Rejected before any connectivity probe.
     expect(s3Probe.send).not.toHaveBeenCalled()
   })
 
@@ -621,7 +616,6 @@ describe('settings core — assets storage lock', () => {
 
     expect(result.bundle?.assets?.storage.accessKeyId).toBe('AKIA-ROTATED')
     expect(result.bundle?.assets?.storage.secretAccessKey).toBe('secret-rotated')
-    // The merged config was connectivity-probed before persisting.
     expect(s3Probe.send).toHaveBeenCalled()
   })
 
@@ -637,7 +631,6 @@ describe('settings core — assets storage lock', () => {
         null,
       ),
     ).rejects.toMatchObject({ name: 'DomainError', code: 'BAD_REQUEST' })
-    // HeadBucket + ListObjectsV2 fallback both probed.
     expect(s3Probe.send).toHaveBeenCalledTimes(2)
   })
 
@@ -821,7 +814,6 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
     const status = await getStorageMigrationStatus(db)
     expect(status.phase).toBe('completed')
     expect(status.error).toBeNull()
-    // The config flip still happened — only the content rewrite was skipped.
     expect(getBlogSettingsBundleSync()!.assets!.storage.enabled).toBe(true)
   })
 
@@ -841,7 +833,6 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
     const status = await getStorageMigrationStatus(db)
     expect(status.phase).toBe('completed')
     expect(status.copiedObjects).toBe(1)
-    // Extension-derived type + visibility-derived cache header on the target.
     expect(targetMem.store.get('images/a.jpg')).toMatchObject({
       contentType: 'image/jpeg',
       cacheControl: DEFAULT_PUBLIC_CACHE_CONTROL,

@@ -143,7 +143,6 @@ describe('horizontal-rule behaviour', () => {
         $getRoot().append(paragraph)
       })
       selectInFirstParagraph(3)
-      // let the paragraph render so the native caret can be set on its text
       await tick()
 
       // the guard reads the native caret — set it directly (jsdom's selection

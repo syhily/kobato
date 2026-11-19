@@ -28,7 +28,6 @@ import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
 import { asc, eq, inArray } from 'drizzle-orm'
 
-// Wire-format DTO; `postCount` is projected by the caller (like categories).
 export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
   return {
     id: String(row.id),
@@ -131,7 +130,6 @@ export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerI
   return deleted
 }
 
-// Public routes resolve strictly by slug.
 export async function findTagBySlug(db: Database, slug: string): Promise<TagRow | null> {
   const rows = await db.select().from(tagTable).where(eq(tagTable.slug, slug)).limit(1)
   return rows[0] ?? null

@@ -12,7 +12,6 @@ const MAX_DISCOVERY_BYTES = 1024 * 1024 // mirrors fetchSourceHtml
 
 // `<url>; rel="webmention"`, several per header line; rel may carry multiple tokens.
 const LINK_HEADER_ENTRY_RE = /<([^>]*)>\s*;[^,]*?rel\s*=\s*"([^"]*)"/gi
-// One `<link …>` or `<a …>` tag, then its rel / href attributes inside.
 const LINK_OR_ANCHOR_TAG_RE = /<(?:link|a)\b[^>]*>/gi
 const REL_ATTR_RE = /\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
 const HREF_ATTR_RE = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
@@ -72,14 +71,11 @@ export type DiscoveryResult =
   /** The fetch itself failed (network, timeout, HTTP error, too large) — retryable. */
   | { kind: 'retry'; error: string }
 
-/** Sender-side rendering of a safe-fetch failure (reason + HTTP status). */
 export function formatFetchFailure(result: SafeFetchFailure): string {
   const status = result.status === null ? '' : ` (HTTP ${result.status})`
   return `${result.reason}${status}`
 }
 
-/** Fetch the target and discover its endpoint (SSRF-guarded per hop); the
- *  UA comes from the caller. */
 export async function discoverEndpoint(targetUrl: string, ua: string): Promise<DiscoveryResult> {
   const result = await safeFetch(targetUrl, {
     maxBytes: MAX_DISCOVERY_BYTES,

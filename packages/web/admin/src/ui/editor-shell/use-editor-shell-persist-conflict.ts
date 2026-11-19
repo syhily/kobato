@@ -17,7 +17,6 @@ export interface EditorShellLocalConflict {
 
 export function useEditorShellPersistConflict(args: {
   localDraftConfig: LocalDraftConfig<LexicalEditorState>
-  /** Edit-mode entity id; null in create mode (the session is disabled there). */
   entityId: string | null
   /** The owned revision token — part of the draft key. */
   clientRevisionToken: string | null

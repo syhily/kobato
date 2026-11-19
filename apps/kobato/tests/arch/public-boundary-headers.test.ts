@@ -81,11 +81,9 @@ function statementName(declaration: unknown): string | null {
 
 interface ModuleExports {
   names: Set<string>
-  /** Source text of every exported `headers` binding (initializer or body). */
   headerBindings: string[]
 }
 
-/** Top-level local declarations, so `export { local as headers }` resolves to its body. */
 function topLevelBindings(program: AstNode, source: string): Map<string, string> {
   const bindings = new Map<string, string>()
   for (const statement of program.body as AstNode[]) {

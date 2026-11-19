@@ -29,7 +29,6 @@ describe('admin posts (HTTP e2e)', () => {
     expect(detail.status).toBe(200)
     expect(await detail.text()).toContain('E2E Hello')
 
-    // The public page must disappear with the post.
     const removed = await callE2eRpc(client, '/admin/posts/delete', { id: String(created.json.post.id) }, csrfToken)
     expect(removed.status).toBe(200)
 

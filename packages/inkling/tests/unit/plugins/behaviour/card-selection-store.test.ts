@@ -4,11 +4,6 @@ import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/car
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-// Thin per-instance suite: the generic handle semantics (partial setState,
-// change guard, subscribe/unsubscribe, fallback) live in
-// composer-handle.test.ts. What remains here is the card selection channel's
-// own state shape and its per-composer provider behaviour.
-
 describe('createCardSelectionStore', () => {
   it('starts with no selection and no editing card', () => {
     const store = createCardSelectionStore()

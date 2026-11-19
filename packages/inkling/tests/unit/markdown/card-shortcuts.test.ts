@@ -16,10 +16,6 @@ import {
 } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// Direct pins for the enter/tab fence trigger body (the card-shortcut seam).
-// The full keyboard dispatch paths — enter, tab, and the isNested guard — are
-// pinned in tests/inkling/unit/plugins/behaviour/registerKeyboardNavigation.test.ts.
-
 async function setupParagraph(editor: LexicalEditor, text: string) {
   await updateEditor(editor, () => {
     const paragraph = $createParagraphNode()

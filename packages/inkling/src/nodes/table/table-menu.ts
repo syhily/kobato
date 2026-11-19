@@ -3,13 +3,6 @@ import type { CardMenuSource } from '@kobato/inkling-internal/nodes/cards/card-m
 import TableCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-table.svg?react'
 import { INSERT_TABLE_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/table'
 
-/**
- * The table slash/plus menu entry as a pseudo `CardMenuSource` (the snippet
- * precedent in `@kobato/inkling-internal/nodes/cards/card-menu-build`): the table family is not a card, so
- * the entry never joins CARD_DECLARATIONS — `useCardMenu` merges it into
- * buildCardMenu's nodes parameter on editors that register TableNode. The
- * key is the family's node type, same as the card entries.
- */
 export const TABLE_MENU_SOURCE: [string, CardMenuSource] = [
   'table',
   {

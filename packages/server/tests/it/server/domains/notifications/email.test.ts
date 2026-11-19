@@ -329,7 +329,6 @@ describe('notifications email — site locale at send time', () => {
     expect(html).toContain('Content:')
     expect(html).toContain('Visit the site')
     expect(html).toContain('This email was triggered by a system notification. You can turn notification emails off')
-    // User-authored notification title/body remain raw.
     expect(html).toContain('DM title')
     expect(html).toContain('hello there')
   })
@@ -391,7 +390,6 @@ describe('notifications email — descriptor resolution', () => {
     })!
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
-    // The row persists the English fallback; the email resolves the keys.
     expect(row.title).toBe(STORED_FALLBACK_TITLE)
     const body = sentMessage(0)
     expect(body.get('subject')).toBe(

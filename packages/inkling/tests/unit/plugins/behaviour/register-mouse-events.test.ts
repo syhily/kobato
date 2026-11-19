@@ -35,8 +35,6 @@ async function addNodeSelectedCard(editor: LexicalEditor): Promise<string> {
   return cardKey
 }
 
-// Higher-priority observer returning false so the dispatch is recorded without
-// being swallowed.
 function observeDeselects(editor: LexicalEditor) {
   const deselected: string[] = []
   const unregister = editor.registerCommand(
@@ -135,8 +133,6 @@ describe('registerMouseEvents', () => {
     const { deselected, unregister } = observeDeselects(editor)
     const cleanup = registerMouseEvents(editor, { containerElem })
 
-    // A capture-phase listener (e.g. a dropdown closing) can detach the target
-    // before the event bubbles to the window listener.
     const removeTargetOnCapture = (event: Event) => {
       ;(event.target as HTMLElement).remove()
     }

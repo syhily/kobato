@@ -9,8 +9,6 @@ import {
 } from '@kobato/server/domains/notifications/service.ts'
 import { implementAuthed, notificationReplyRateLimit, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/notifications.ts`;
-// this controller only implements the procedures.
 const impl = implementAuthed(notificationsContract)
 
 const list = impl.list.handler(({ input, context }) =>

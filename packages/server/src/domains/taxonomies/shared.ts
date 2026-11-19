@@ -20,7 +20,6 @@ const SLUG_TAKEN_ISSUE = {
   fallbackMessage: 'Slug is already taken',
 } as const satisfies ErrorMessageDescriptor
 
-/** First five titles, with an ellipsis when more — the blocked-delete 409 preview. */
 export function previewTitles(titles: readonly string[]): string {
   const preview = titles.slice(0, 5).join(', ')
   return titles.length > 5 ? `${preview}…` : preview
@@ -38,7 +37,6 @@ function duplicateSlug(slug: string): DomainError {
   ])
 }
 
-/** The shared NOT_FOUND for a missing taxonomy row (admin mutations + controllers). */
 export function taxonomyNotFound(entity: TaxonomyEntityKind): DomainError {
   return new DomainError('NOT_FOUND', descriptorFor('taxonomy.error.notFound', { entity }))
 }

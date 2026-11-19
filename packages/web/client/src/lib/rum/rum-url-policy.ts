@@ -116,7 +116,6 @@ function parseSameOriginRumUrl(rawUrl: string, origin: string): URL | null {
   return url
 }
 
-/** The single telemetry exclusion predicate for tracing and activity URLs. */
 export function isTelemetryExcludedRumUrl(rawUrl: string, origin: string): boolean {
   const url = parseSameOriginRumUrl(rawUrl, origin)
   if (url === null) {
@@ -128,7 +127,6 @@ export function isTelemetryExcludedRumUrl(rawUrl: string, origin: string): boole
   )
 }
 
-/** `allowedTracingUrls`: same-origin, non-telemetry requests only. */
 export function isTraceableRumUrl(rawUrl: string, origin: string): boolean {
   return parseSameOriginRumUrl(rawUrl, origin) !== null && !isTelemetryExcludedRumUrl(rawUrl, origin)
 }
@@ -217,7 +215,6 @@ function classifyRpcPath(pathname: string): string | null {
   return `/rpc/${segments.join('.')}`
 }
 
-/** Vite DEV module sources: keep the safe app-authored/generated path as-is. */
 function classifyDevModulePath(pathname: string): string | null {
   if (DEV_VITE_ENTRY_PATHS.has(pathname)) {
     return pathname

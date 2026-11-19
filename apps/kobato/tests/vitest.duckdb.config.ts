@@ -7,9 +7,6 @@ import { defineConfig } from 'vitest/config'
 
 const require = createRequire(import.meta.url)
 
-// The DuckDB native-engine suite: files that open a real sidecar (list owned by
-// `@kobato/test/duckdb-files`). Files run sequentially, each in its own fresh fork, so a DuckDB
-// segfault kills only that file's worker and the failure is scoped to this project.
 export default defineConfig({
   plugins: [routeWarmupScriptStubPlugin()],
   resolve: { tsconfigPaths: true },
@@ -25,10 +22,8 @@ export default defineConfig({
     globals: false,
     silent: 'passed-only',
     environment: 'node',
-    // DUCKDB_TEST_FILES is repository-root relative.
+
     include: [...DUCKDB_TEST_FILES],
-    // Both trees are required: unit/setup (stubs + DOM cleanup) and it/setup
-    // (in-memory SQLite env).
     setupFiles: [require.resolve('@kobato/test/setup/unit.ts'), require.resolve('@kobato/test/setup/it.ts')],
     testTimeout: 30_000,
     hookTimeout: 120_000,

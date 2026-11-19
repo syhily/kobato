@@ -72,7 +72,6 @@ describe('auth/services/sessions — listAllSessions', () => {
 
     expect(list).toHaveLength(2)
     expect(list.map((s) => s.sid).sort()).toEqual(['sid-a1', 'sid-a2'])
-    // Both entries joined against the same single user row.
     for (const entry of list) {
       expect(entry.userEmail).toBe('alice@example.com')
       expect(entry.userRole).toBe('admin')

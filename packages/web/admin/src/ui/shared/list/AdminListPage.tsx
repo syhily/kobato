@@ -9,7 +9,6 @@ function AdminListPageRoot({ children }: { children: ReactNode }) {
 interface HeaderProps {
   title: ReactNode
   description?: string
-  /** Trailing slot (desktop right, stacked on narrow viewports). */
   children?: ReactNode
 }
 
@@ -26,7 +25,6 @@ function AdminListPageHeader({ title, description, children }: HeaderProps) {
 }
 
 interface ToolbarProps {
-  /** Filter controls, tabs, bulk-action affordances. */
   children: ReactNode
 }
 

@@ -1,5 +1,3 @@
-// Identify step of the identifier-first signin: resolves which signin method an account uses.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
 import { findUserByEmail } from '@kobato/db/operations/user.ts'

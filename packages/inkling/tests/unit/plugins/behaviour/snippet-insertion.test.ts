@@ -14,8 +14,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// One card type is enough to exercise the card fast-path and the
-// trailing-paragraph rule in jsdom.
 const SNIPPET_TEST_NODES = [ImageNode]
 
 function createTestEditor(): LexicalEditor {
@@ -34,8 +32,6 @@ function seedParagraph(editor: LexicalEditor, text = ''): Promise<void> {
 }
 
 function insertSnippet(editor: LexicalEditor, dataset: unknown): Promise<boolean> {
-  // $insertSnippet owns its update; wrap it so the promise resolves once the
-  // commit lands and the following read sees the new state
   return new Promise((resolve) => {
     let inserted = false
     editor.update(
@@ -130,10 +126,6 @@ describe('$insertSnippet', () => {
 
     expect(inserted).toBe(true)
     editor.getEditorState().read(() => {
-      // exact top-level structure: the intro paragraph, the card, and the
-      // appended trailing paragraph — a leftover seed paragraph anywhere
-      // would make this four children, so the paragraph after the card can
-      // only have come from the trailing-paragraph rule
       const children = $getRoot().getChildren()
       expect(children).toHaveLength(3)
       expect($isParagraphNode(children[0])).toBe(true)
@@ -155,12 +147,11 @@ describe('$insertSnippet', () => {
     expect(onInsertCard).toHaveBeenCalledTimes(1)
     const payload = onInsertCard.mock.calls[0][0]
     expect(payload.cardNode).toBeInstanceOf(ImageNode)
-    // delegated, not generically inserted: the editor itself holds no card
+
     editor.getEditorState().read(() => {
       expect($nodesOfType(ImageNode)).toHaveLength(0)
     })
   })
-
   it('no-ops on a malformed snippet value', async () => {
     await seedParagraph(editor, 'keep')
 
@@ -196,9 +187,6 @@ describe('$insertSnippet', () => {
   })
 
   it('no-ops when a node entry carries an unregistered type', async () => {
-    // a string type passes the shape guard but fails generation when the
-    // editor has no class registered for it (dev warns, then throws on the
-    // missing registeredNode) — host data must no-op, not surface an error
     const errors: Error[] = []
     const strictEditor = createEditor({
       namespace: 'test',

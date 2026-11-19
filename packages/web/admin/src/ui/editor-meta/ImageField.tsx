@@ -203,13 +203,10 @@ export function ImageField({
 }
 
 export interface GeneratedOgPreviewProps {
-  /** Persisted slug (the URL slot of `/images/og/:slug.png`). */
   slug: string
   /** Editor-side cover URL — folded into the cache-buster so the preview refreshes when the operator swaps covers. */
   cover: string
-  /** Editor-side title — folded into the cache-buster for the same reason as `cover`. */
   title: string
-  /** Editor-side summary — same reason. */
   summary: string
 }
 

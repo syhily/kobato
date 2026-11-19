@@ -10,7 +10,6 @@ import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput
 type SettingsInputProps = ComponentProps<typeof SettingsInput>
 
 interface SettingsSecretInputProps extends Omit<SettingsInputProps, 'type' | 'autoComplete' | 'placeholder'> {
-  /** From `secretFieldStrings(...).placeholder` — the keep-current-value label when configured. */
   placeholder: string
 }
 
@@ -30,19 +29,13 @@ export function secretFieldPatch<K extends string>(value: string, fieldName: K):
 }
 
 interface SecretFieldStringsOptions {
-  /** The active translator — the configured hint is a catalog message. */
   t: I18nValue['t']
-  /** Server-confirmed mask (`display.<x>Mask`); null when nothing is stored. */
   mask: string | null
-  /** The keep-current-value label — reused as the configured placeholder and inside the hint. */
   keepLabel: string
-  /** Hint shown while nothing is configured (site-specific guidance). */
   emptyHint: string
-  /** Placeholder shown while nothing is configured. */
   emptyPlaceholder: string
 }
 
-// Hint + placeholder for a secret field's `SettingsRow`; the card supplies only the mask and empty-state strings.
 export function secretFieldStrings({ t, mask, keepLabel, emptyHint, emptyPlaceholder }: SecretFieldStringsOptions): {
   hint: string
   placeholder: string

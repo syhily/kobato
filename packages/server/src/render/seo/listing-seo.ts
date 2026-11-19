@@ -12,12 +12,9 @@ export interface ListingSeoProps {
   pageNum: number
   totalPage: number
   rootPath: string
-  /** Request UI locale — pagination copy is system text, never content. */
   locale: AppLocale
   forceNoindex?: boolean
-  /** Scoped RSS/Atom `<link rel="alternate">` entries for category/tag listings. */
   feedLinks?: FeedLinkOptions
-  /** Custom OG image URL; when omitted falls back to the site-wide default. */
   ogImageUrl?: string
 }
 

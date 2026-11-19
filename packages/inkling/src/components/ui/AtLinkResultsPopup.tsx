@@ -27,8 +27,6 @@ export function AtLinkResultsPopup({ atLinkNode, isSearching, listOptions, query
 
   const testId = 'at-link-results'
 
-  // Position the results popup below the at-link node, flipping above it at the
-  // bottom of the document; the deep module owns rect resolution and the flip.
   const anchor = React.useMemo(() => createNodeElementAnchor(editor, atLinkNode.getKey()), [editor, atLinkNode])
   const containerRect = React.useCallback(() => editor.getRootElement()?.getBoundingClientRect() ?? null, [editor])
   useSelectionAnchoredPopup({ editor, popupRef, anchor, containerRect })

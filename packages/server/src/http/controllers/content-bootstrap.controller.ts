@@ -9,9 +9,6 @@ import { redactSecretsFromBundle } from '@kobato/server/domains/settings/service
 import { implementPublic } from '@kobato/server/http/orpc-base.ts'
 import { parseThemeCookie } from '@kobato/utils/theme-cookie.ts'
 
-// Contract-first: method/path/output live in `@kobato/api/content.ts`;
-// this controller only implements the procedure.
-
 /**
  * The document-scope settings projection: redacted secrets, and the
  * admin-only `observability` section dropped. A public document has no reason
@@ -23,11 +20,6 @@ function projectSettingsForDocument(bundle: BlogSettingsBundle): BlogSettingsBun
   return { ...redactSecretsFromBundle(bundle), observability: null }
 }
 
-// The root loader's data segment (public AND admin): redacted settings
-// bundle, fonts, theme, CSRF token, and the CURRENT locale's UI messages for
-// the document's scope (`/admin` + `/editor` get the full catalog and the
-// Inkling label table; public documents get neither). No input — the theme is
-// parsed from the cookie and the scope from the request pathname.
 export const contentBootstrap = implementPublic(contentBootstrapContract).bootstrap.handler(async ({ context }) => {
   const role = context.viewer?.role ?? null
   const csrfToken = context.session.get('csrfToken')

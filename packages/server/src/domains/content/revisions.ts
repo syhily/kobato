@@ -18,10 +18,6 @@ export async function findContentsByIds(db: Database, ids: number[]): Promise<Co
   return db.select().from(contentTable).where(inArray(contentTable.id, ids))
 }
 
-/**
- * Batch-join the published revision for a list of metas; keyed by revision id,
- * so callers resolve `publishedRevisionId` in O(1).
- */
 export async function hydratePublishedRevisions(
   db: Database,
   rows: readonly { publishedRevisionId: number | null }[],

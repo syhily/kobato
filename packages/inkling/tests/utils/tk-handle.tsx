@@ -2,9 +2,6 @@ import { TKHandleContext } from '@kobato/inkling-internal/context/TKHandleContex
 import { createTKHandle, type TKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
 import React from 'react'
 
-// Test stand-in for the per-composer provider InklingComposer mounts: wraps
-// children in a TKHandleContext.Provider backed by a real handle. Returns the
-// handle alongside the wrapper so tests can seed or inspect state.
 export function createTKHandleWrapper(handle: TKHandle = createTKHandle()) {
   function TKHandleWrapper({ children }: { children: React.ReactNode }) {
     return <TKHandleContext.Provider value={handle}>{children}</TKHandleContext.Provider>

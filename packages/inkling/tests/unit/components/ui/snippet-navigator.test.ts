@@ -13,14 +13,12 @@ describe('snippet navigator', () => {
   })
 
   it('walks down through the items and wraps to the create button', () => {
-    // ring for 2 items: 1 → 2 → 0 → 1
     expect(nextSlot(1, 2)).toBe(2)
     expect(nextSlot(2, 2)).toBe(0)
     expect(nextSlot(0, 2)).toBe(1)
   })
 
   it('walks up through the create button and wraps to the last item', () => {
-    // ring for 2 items: 1 → 0 → 2 → 1
     expect(previousSlot(1, 2)).toBe(0)
     expect(previousSlot(0, 2)).toBe(2)
     expect(previousSlot(2, 2)).toBe(1)

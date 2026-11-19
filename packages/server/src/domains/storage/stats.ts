@@ -14,7 +14,6 @@ export interface MigrationStats {
   backups: number
 }
 
-/** Count local-driver assets of each type — drives the migration wizard's summary. */
 export async function getLocalStorageMigrationStats(db: Database): Promise<MigrationStats> {
   const localImages = await db
     .select({ path: image.storagePath })

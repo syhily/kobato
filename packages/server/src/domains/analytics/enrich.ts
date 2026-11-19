@@ -44,7 +44,6 @@ function minimizeReferer(referer: string | null): string | null {
   }
 }
 
-// The dashboard only cares about the primary preference; empty/malformed input degrades to `null`.
 function parsePrimaryLanguage(header: string | null): string | null {
   if (!header) {
     return null
@@ -69,8 +68,7 @@ function parseMobileHint(mobile: string | null | undefined): boolean | null {
 }
 
 /**
- * The `device_env_server` half of an access event: UA-CH high-entropy values
- * and the full Accept-Language list. A session's first hits arrive without
+ * A session's first hits arrive without
  * hints, so strings degrade to '' and `mobile` to NULL rather than being
  * inferred from the UA.
  */
@@ -126,8 +124,6 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     language,
     ua: ua || null,
     ...parsed,
-    // Hand-rolled matcher is the primary bot gate; the parser's
-    // crawler/fetcher classification is the secondary signal.
     isBot: isBot(ua) || ['crawler', 'fetcher'].includes(parsed.browserType ?? ''),
   }
 }

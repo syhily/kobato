@@ -8,12 +8,10 @@ function formatLocalInputValue(d: Date): string {
   return format(d, "yyyy-MM-dd'T'HH:mm")
 }
 
-/** Format a `Date` as a datetime-local input value. */
 export function dateToLocalInputValue(date: Date): string {
   return formatLocalInputValue(date)
 }
 
-/** Parse a datetime-local value into a local-zone `Date`; `null` for empty / unparseable. */
 export function parseLocalDateTimeInput(value: string): Date | null {
   if (value.trim() === '') {
     return null
@@ -25,7 +23,6 @@ export function parseLocalDateTimeInput(value: string): Date | null {
   return new Date(ms)
 }
 
-/** Parse a picker value into ISO; `null` is the no-value sentinel (empty AND unparseable). */
 export function localInputValueToIso(localValue: string): string | null {
   if (localValue === '') {
     return null

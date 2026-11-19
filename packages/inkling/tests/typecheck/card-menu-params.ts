@@ -34,20 +34,15 @@ import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 
 type ImageDataset = CardMenuDataset<typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>
 
-// Derived vocabulary: the constructor's dataset, nothing more
-
 type _ImageTransientValue = Expect<Equal<ImageDataset['triggerFileDialog'], boolean | undefined>>
 type _ImageDatasetValue = Expect<Equal<ImageDataset['src'], string | undefined>>
-// nested-editor keys are construction-dataset keys too
 type _ImageNestedEditorValue = Expect<Equal<ImageDataset['captionEditor'], import('lexical').LexicalEditor | undefined>>
-// the actual query-key alias: string-valued dataset keys, nothing else
 type _ImageQueryKeys = Expect<
   Equal<CardMenuQueryParamKey<ImageDataset>, 'src' | 'caption' | 'title' | 'alt' | 'cardWidth' | 'href' | 'previewSrc'>
 >
 type _ImageQueryExcludes = Expect<
   Equal<Extract<CardMenuQueryParamKey<ImageDataset>, 'width' | 'triggerFileDialog' | 'captionEditor'>, never>
 >
-// the sentinel for an un-parameterized declaration: no query key is ever valid
 type _NeverQueryKeys = Expect<Equal<CardMenuQueryParamKey<never>, never>>
 
 type AudioDataset = CardMenuDataset<typeof BaseAudioNode, typeof audioTransientProps, readonly []>
@@ -127,8 +122,6 @@ const queryOnlyFallbackProbe = {
 } satisfies CardDeclaration<'queryOnlyFallbackProbe'>
 void queryOnlyFallbackProbe
 
-// CardMenuEntryCheck used directly (independent of defineCard)
-
 type CheckedEntryMenu = CardMenuEntryCheck<
   [{ label: string; insertParams: { src: string }; queryParams: ['src'] }],
   { src: string }
@@ -201,8 +194,6 @@ type SyntheticBadQueryDeclaration = {
 // @ts-expect-error - the query predicate rejects the unknown key
 type _SyntheticQueryCaught = Expect<Equal<BadQueryKeys<SyntheticBadQueryDeclaration>, never>>
 
-// literal markdown unions survive the generic conversion (the fence payload
-// table extracts them by `{ markdown: { kind: 'fence' } }`)
 type FenceCardNodeType = Extract<(typeof CARD_DECLARATIONS)[number], { markdown: { kind: 'fence' } }>['nodeType']
 type _FenceUnion = Expect<
   Equal<
@@ -210,8 +201,6 @@ type _FenceUnion = Expect<
     'audio' | 'bookmark' | 'button' | 'callout' | 'file' | 'gallery' | 'html' | 'toggle' | 'video'
   >
 >
-
-// Positive: a valid image menu entry compiles
 
 const validImageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
@@ -231,8 +220,6 @@ const validImageDeclaration = checkedCardDeclaration({
   ],
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)
 void validImageDeclaration
-
-// Negative: declaration-site rejection of a bad key, value and query key
 
 const invalidImageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
@@ -274,8 +261,6 @@ const invalidImageDeclaration = checkedCardDeclaration({
   ],
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)
 void invalidImageDeclaration
-
-// Function-valued insertParams: the built-in Header path
 
 const validHeaderDeclaration = checkedCardDeclaration({
   nodeType: 'header',
@@ -335,8 +320,6 @@ const invalidHeaderFnValueDeclaration = checkedCardDeclaration({
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)
 void invalidHeaderFnValueDeclaration
 
-// Host cards: the same checking from B and the spec's own arrays
-
 const HostIcon: ComponentType<SVGProps<SVGSVGElement>> = () => null
 
 const hostMenuProbeTransientProps = [
@@ -370,8 +353,6 @@ function hostProbeSpec(nodeType: string) {
   }
 }
 
-// positives: object and function forms, plus a typed query param — no
-// directives, these must compile
 const hostMenuProbe = defineCard({
   ...hostProbeSpec('hostMenuProbe'),
   menu: [
@@ -394,7 +375,6 @@ const hostMenuProbe = defineCard({
 })
 void hostMenuProbe
 
-// bare call: no arrays, no menu, no type arguments
 const bareHost = defineCard({
   nodeType: 'bareHostProbe',
   baseNode: generateDecoratorNode({ nodeType: 'bareHostProbe' }),
@@ -402,8 +382,6 @@ const bareHost = defineCard({
   render: () => null,
 })
 void bareHost
-
-// Host negatives (one call each: the error stays attributable)
 
 const hostUnknownKey = defineCard({
   ...hostProbeSpec('hostUnknownKeyProbe'),
@@ -527,8 +505,6 @@ const hostFnWrongValue = defineCard({
 })
 void hostFnWrongValue
 
-// `satisfies HostCardSpec` keeps the literal: defineCard still checks
-
 const satisfiedHostSpec = {
   nodeType: 'satisfiedHostProbe',
   baseNode: hostMenuProbeBaseNode,
@@ -546,7 +522,6 @@ const satisfiedHostSpec = {
   render: () => null,
 } satisfies HostCardSpec<'satisfiedHostProbe'>
 
-// a valid `satisfies` spec is still accepted
 const satisfiedValidHostSpec = {
   nodeType: 'satisfiedValidHostProbe',
   baseNode: hostMenuProbeBaseNode,
@@ -607,7 +582,7 @@ const wideHostSpec: HostCardSpec<'wideHostProbe'> = {
       labelKey: 'host.probe.wide',
       icon: 'audio',
       command: 'insert',
-      // both insert keys and query keys are erased by the wide annotation
+
       insertParams: { srcTypo: '' },
       queryParams: ['srcTypo'],
     },
@@ -624,8 +599,7 @@ void wideHostCard
 type _DeadMenuFieldsStayOut = Expect<
   Equal<Extract<keyof ResolvedMenuItem, 'name' | 'icon' | 'customContent' | 'hidden' | 'disabled'>, never>
 >
-// the fields that ARE consumed stay available: dataTestId reaches the DOM,
-// Icon is rendered, label drives the item text
+
 type _LiveMenuFieldsStay = Expect<
   Extends<'dataTestId' | 'Icon' | 'label' | 'onRemove' | 'shortcut' | 'queryParams', keyof ResolvedMenuItem>
 >

@@ -6,11 +6,8 @@
 export const MEDIA_LOAD_TIMEOUT_MS = 15_000
 
 export interface AwaitMediaEventsOptions {
-  /** Element events the wait collects; resolves once all of them have fired. */
   events: string[]
-  /** Message of the Error rejected on the element's `error` event. */
   errorMessage: string
-  /** Starts the load after the listeners attach — assign `src`, call `.load()` here. */
   start?: () => void
   timeoutMs?: number
 }

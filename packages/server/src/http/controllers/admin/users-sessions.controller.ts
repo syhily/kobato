@@ -11,8 +11,6 @@ import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-bas
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/admin/users.ts`;
-// this controller group implements the session/comment-moderation slice.
 const impl = implementAdmin(adminUsersSessionsContract)
 
 // Every live session, joined against the user — the security page sorts and

@@ -5,8 +5,7 @@ import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-bas
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/avatar.ts`;
-// this controller only implements the procedures. The limiter rides the
+// The limiter rides the
 // implementer so it runs BEFORE the contract's input validation.
 const impl = implementPublic(avatarContract).use(resourceRateLimit)
 

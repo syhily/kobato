@@ -17,8 +17,6 @@ function shouldRender({ input, output, options = {} }: ShouldRenderParams) {
     }
 
     const { nodes, onError, ...renderOptions } = options
-    // through the public seam: the stateless headless HTML function with the
-    // injected jsdom
     const renderedInput = await lexicalStateToHtml(input, {
       dom,
       nodes,

@@ -23,7 +23,6 @@ export interface InstallSeedInput {
   locale?: AppLocale
 }
 
-/** One validated section row ready to persist: schema-parsed payload. */
 export interface InstallSectionRow {
   scope: string
   payload: Record<string, unknown>
@@ -33,10 +32,6 @@ export type InstallSectionRowsResult =
   | { ok: true; rows: InstallSectionRow[] }
   | { ok: false; descriptor: ErrorMessageDescriptor }
 
-/**
- * Build and validate all 19 section rows for a fresh install. The first validation
- * failure returns as a user-facing message; registry-default drift keeps its thrown DomainError.
- */
 export function buildInstallSectionRows(input: InstallSeedInput): InstallSectionRowsResult {
   const { title, name, email, hostname, locale = DEFAULT_LOCALE } = input
   const siteIdentity: SiteIdentitySettings = {
@@ -48,7 +43,6 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     author: { name, email, url: `https://${hostname}` },
     locale,
     timeZone: 'Asia/Shanghai',
-    // Follow the locale's Intl default; admins may pin a custom token pattern later.
     timeFormat: null,
     initialYear: new Date().getFullYear(),
     icpNo: '',
@@ -66,7 +60,6 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     ...buildDefaultSectionPayloads(),
   ]
 
-  // Validate every section against its schema before writing any.
   const rows: InstallSectionRow[] = []
   for (const { section, payload } of sections) {
     const meta = SECTION_REGISTRY[section]

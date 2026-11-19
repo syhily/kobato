@@ -31,9 +31,6 @@ function firstElement(document: Document, selector: string) {
   return element as HTMLElement
 }
 
-// Node construction requires an active editor that has the constructed class
-// registered, so each constructing test runs inside an editor created with
-// the classes under test
 function withEditor(nodes: LexicalNodeConfig[], testFn: () => void) {
   return new Promise<void>((resolve, reject) => {
     const testEditor = createHeadlessEditor({ nodes })
@@ -141,9 +138,7 @@ describe('import spec derivation', function () {
             tag: 'div',
             priority: 1,
             reads: [
-              // empty text -> dropped before parse
               { name: 'text', kind: 'text', selector: '.empty', omit: 'falsy' },
-              // parse returns undefined -> key omitted
               {
                 name: 'count',
                 kind: 'text',
@@ -153,7 +148,7 @@ describe('import spec derivation', function () {
                   return Number.isInteger(parsed) ? parsed : undefined
                 },
               },
-              // falsy parse result -> dropped after parse
+
               {
                 name: 'url',
                 kind: 'text',

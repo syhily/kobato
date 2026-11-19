@@ -19,8 +19,6 @@ export const RestrictContentPlugin = ({ paragraphs, allowBr }: { paragraphs: num
 
   React.useEffect(() => {
     return mergeRegister(
-      // the transform registration and its per-editor update guard live in
-      // the behaviour layer, mirroring registerTableCellGuard
       registerParagraphRestriction(editor, paragraphs),
       editor.registerCommand(
         PASTE_COMMAND,

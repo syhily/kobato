@@ -39,8 +39,6 @@ export interface EmojiSearchResult {
   skins: readonly [EmojiSkin, ...EmojiSkin[]]
 }
 
-/** What an insertion surgery committed, so the caller can attach product
- * analytics; the surgeries return null when nothing was inserted. */
 export interface EmojiCommitResult {
   id: string
   native: string
@@ -55,7 +53,6 @@ export interface EmojiSearchIndexChunk {
   searchEmojiMartIndex: (query: string) => Promise<unknown>
 }
 
-/** The dynamic import — tests inject a scripted one. */
 export type LoadEmojiSearchIndex = () => Promise<EmojiSearchIndexChunk>
 
 let indexChunkPromise: Promise<EmojiSearchIndexChunk> | null = null
@@ -67,13 +64,10 @@ function loadEmojiSearchIndex(
   return indexChunkPromise
 }
 
-/** Kick the index chunk load without searching (test seam / pre-warm). */
 export function ensureEmojiSearchReady(): Promise<void> {
   return loadEmojiSearchIndex().then(() => undefined)
 }
 
-// Emoticon aliases: typing an emoticon after the ':' trigger searches its
-// emoji equivalent
 const EMOTICON_SEARCH_ALIASES: Record<string, string> = {
   ')': 'smile',
   '-)': 'smile',
@@ -81,10 +75,6 @@ const EMOTICON_SEARCH_ALIASES: Record<string, string> = {
   '-(': 'frown',
 }
 
-// emoji-mart's SearchIndex.search returns any — one runtime validation at
-// the boundary; every call site goes through this. Entries missing the shape
-// consumers rely on are dropped rather than breaking at insertion time —
-// including an empty `skins` list, since insertion reads `skins[0].native`.
 function isEmojiSearchResult(value: unknown): value is EmojiSearchResult {
   return (
     typeof value === 'object' &&
@@ -133,22 +123,18 @@ export function $insertEmojiCompletion(emoji: EmojiSearchResult): EmojiCommitRes
   }
 
   const native = emoji.skins[0].native
-  const shortcodeLength = emoji.id.length + 1 // +1 for the shortcode's leading colon
+  const shortcodeLength = emoji.id.length + 1
   const textNode = currentNode.spliceText(selection.anchor.offset - shortcodeLength, shortcodeLength, native, true)
   textNode.setFormat(selection.format)
 
   return { id: emoji.id, native }
 }
 
-// Menu-select surgery: drop the query text node the typeahead split out (when
-// it did) and insert the emoji's native character at the caret, keeping the
-// caret's text format.
 export function $insertSelectedEmoji(
   emoji: EmojiSearchResult,
   nodeToRemove: TextNode | null,
 ): EmojiCommitResult | null {
   const selection = $getSelection()
-
   if (!$isRangeSelection(selection)) {
     return null
   }
@@ -182,8 +168,6 @@ export function $insertSelectedEmoji(
   return { id: emoji.id, native }
 }
 
-// The inline-code guard: an active query inside code-formatted text must not
-// complete — `:shortcode:` stays literal there.
 function $caretHasCodeFormat(): boolean {
   const selection = $getSelection()
   if (!$isRangeSelection(selection)) {
@@ -228,7 +212,6 @@ export function registerEmojiExactMatchCompletion(
         return false
       }
       void (async () => {
-        // literal query, not searchEmojis — see the module header
         const emojis = await searchEmojiIndex(query)
         if (emojis.length === 0) {
           return

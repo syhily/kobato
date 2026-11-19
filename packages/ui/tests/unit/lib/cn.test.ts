@@ -1,7 +1,6 @@
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pins `cn()` merge semantics against the `cn` package's engine.
 describe('cn() — Tailwind utility merging', () => {
   it('drops falsy entries without leaving stray spaces', () => {
     const liked: boolean = false

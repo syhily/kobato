@@ -9,14 +9,8 @@ import { isBot } from '@kobato/server/infra/http/is-bot.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
-// Single owner of "what counts as a view": one call fans out to the per-entity
-// counter and the time-series access log. Every gate is synchronous; only the
-// enrich → push tail is async, so the caller gets the event id (the client
-// beacon's join key) back immediately.
-
 const log = getLogger('analytics.track')
 
-/** In-flight enrich → push chains, so tests can settle them deterministically. */
 const inflightTracks = new Set<Promise<void>>()
 
 function isPrefetch(facts: RequestFacts): boolean {
@@ -47,21 +41,16 @@ export async function flushTrackedEvents(): Promise<void> {
 }
 
 export interface TrackPageViewOptions {
-  /** Tests only: override the request's minted event id. */
   eventId?: string
   now?: Date
-  /** Skip the bot check (tests only). */
   skipBotFilter?: boolean
-  /** Admin visits are skipped unless `trackAdmin` is on. */
   isAdmin?: boolean
   clientAddress?: string
 }
 
 /**
- * Record a page view. Returns the event id the server-side row will carry
- * (and the client beacon must echo), or `null` when a gate dropped the
- * visit — a bot filtered by the bot gate also gets `null` even though the
- * counter may already have bumped.
+ * A bot filtered by the bot gate gets `null` even though the counter may
+ * already have bumped.
  */
 export function trackPageView(
   facts: RequestFacts,

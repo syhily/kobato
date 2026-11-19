@@ -96,7 +96,6 @@ function PopulatedVideoCard({
         >
           <MediaPlayer duration={totalDuration} theme="light" />
         </div>
-        {/* This prevents interacting with the buttons that don't do anything, causing focus loss */}
         <ReadOnlyOverlay />
       </div>
       {videoUploader?.isLoading && (

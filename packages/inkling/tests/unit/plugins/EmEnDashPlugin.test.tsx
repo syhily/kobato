@@ -28,10 +28,6 @@ function getEditorText(editor: ReturnType<typeof createTestEditor>): string {
   return editor.getEditorState().read(() => $getRoot().getTextContent())
 }
 
-// Types each character as its own keystroke. The dash grammar is pinned in
-// behaviour/em-en-dash.test.ts; these tests pin the plugin wiring (the
-// registered scan and the 'history-push' tag that keeps the replacement a
-// separate undo entry, so one undo restores the raw dashes).
 async function typeText(editor: ReturnType<typeof createTestEditor>, text: string): Promise<void> {
   for (const char of text) {
     await act(async () => {

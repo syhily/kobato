@@ -7,10 +7,6 @@ import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
 import { buildPublicPostsWhere } from '@kobato/server/domains/posts/repos/shared.ts'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
-/**
- * Title-only lookup for the taxonomy delete guard: full-inclusion gate
- * (every live-ish reference blocks deletion), no hydration.
- */
 export async function listPostTitlesByTaxonomy(db: Database, name: string): Promise<string[]> {
   const where = buildPublicPostsWhere({ tag: name, includeHidden: true, includeScheduled: true })
   const rows = await db
@@ -21,9 +17,6 @@ export async function listPostTitlesByTaxonomy(db: Database, name: string): Prom
   return rows.map((row) => row.title)
 }
 
-/**
- * Category counterpart of {@link listPostTitlesByTaxonomy}, keyed by row id.
- */
 export async function listPostTitlesByCategoryId(db: Database, id: number): Promise<string[]> {
   const where = buildPublicPostsWhere({ categoryId: id, includeHidden: true, includeScheduled: true })
   const rows = await db
@@ -38,16 +31,10 @@ export interface CountPostsByTaxonomyOptions {
   kind: 'category' | 'tag'
   /** `admin` counts live posts incl. scheduled; `public` counts live AND `visible`. */
   gate: 'admin' | 'public'
-  /** Narrow the count to a single taxonomy term (e.g. the just-upserted row). */
   name?: string
-  /** Narrow the count to a set of terms (e.g. the tag names a page renders). */
   names?: readonly string[]
 }
 
-/**
- * Single implementation behind every per-term post count; both gates
- * delegate to `livePostWhere`. Terms with no posts are absent (callers default 0).
- */
 export async function countPostsByTaxonomy(
   db: Database,
   options: CountPostsByTaxonomyOptions,

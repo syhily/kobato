@@ -30,7 +30,6 @@ const TAR_BLOCK_SIZE = 512
 
 export interface RunSelfUpdateOptions {
   tagName: string
-  /** Defaults to `process.execPath`; tests pass a tmpdir binary. */
   execPath?: string
   onState?: (state: UpdateJobState) => void
 }
@@ -39,7 +38,6 @@ function assetName(): string {
   return `kobato-linux-${process.arch}.tar.gz`
 }
 
-/** Sidecar hashing the raw binary inside the archive (`kobato-linux-<arch>.sha256`). */
 function binaryHashAssetName(): string {
   return assetName().replace(/\.tar\.gz$/, '.sha256')
 }

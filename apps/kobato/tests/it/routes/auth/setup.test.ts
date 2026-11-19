@@ -23,8 +23,6 @@ vi.mock('@kobato/server/domains/auth/services/setup.ts', async () => {
   }
 })
 
-// Install gate, setup token and CSRF run real: gate from `user`
-// (cleared = noAdmin), token in `one_time_token`, real CSRF check.
 const CSRF_TOKEN = 'setup-route-csrf-token'
 
 const db = getTestDb()
@@ -62,7 +60,6 @@ async function catchResponse(promise: Promise<unknown>): Promise<Response> {
   throw new Error('Expected route to throw a Response')
 }
 
-/** A session carrying the CSRF token the real validateCsrfForAction checks. */
 function csrfSession(extra: Record<string, unknown> = {}) {
   return makeSession({ csrfToken: CSRF_TOKEN, ...extra })
 }
@@ -117,7 +114,6 @@ describe('routes/setup', () => {
     })
 
     it('redirects to /admin/signin when installed', async () => {
-      // The real gate: an admin row flips the install state to installed.
       await seedAdminRow()
 
       const response = await catchResponse(
@@ -280,7 +276,6 @@ describe('routes/setup', () => {
     })
 
     it('returns error when setup token has expired', async () => {
-      // A real but expired token row: isSetupTokenActive reads it as a miss.
       await db.insert(oneTimeToken).values({
         key: 'setup_token',
         payload: 'expired-token',
@@ -338,7 +333,7 @@ describe('routes/setup', () => {
       formData.set('title', 'Blog')
       formData.set('name', 'A')
       formData.set('email', 'a@b.com')
-      // Long enough, but no uppercase letter → the complexity rule fires.
+
       formData.set('password', 'password1234')
 
       const result = await action({
@@ -366,7 +361,7 @@ describe('routes/setup', () => {
       formData.set('title', 'Blog')
       formData.set('name', 'A')
       formData.set('email', 'a@b.com')
-      // 73 bytes of ASCII within the 128-char DoS cap → the bcrypt byte rule fires.
+
       formData.set('password', 'Aa1' + 'a'.repeat(70))
 
       const result = await action({

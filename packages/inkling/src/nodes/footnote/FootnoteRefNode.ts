@@ -130,9 +130,6 @@ export class FootnoteRefNode extends TextNode {
     return true
   }
 
-  // The string layer splices this node's exportDOM markup (`<sup><a…>`)
-  // into the text flow instead of adding it to the pending text run — the
-  // inline-markup-entity protocol (`@kobato/inkling-internal/nodes/base/export-dom`).
   isInlineMarkupEntity() {
     return true
   }
@@ -145,8 +142,6 @@ function parseFootnoteRefSup(node: HTMLElement): { slug: string; label: string }
     return { slug: href.slice(1), label: ownAnchor.textContent ?? '' }
   }
 
-  // markdown-it-footnote lane: <sup class="footnote-ref"><a href="#fnN"
-  // id="fnrefN">[N]</a></sup>
   if (!node.classList.contains('footnote-ref')) {
     return null
   }

@@ -58,8 +58,6 @@ describe('getEditorAcceptableMimeTypes', () => {
 
     const acceptable = getEditorAcceptableMimeTypes(editor, { image: { mimeTypes: ['image/png'] } })
 
-    // video is registered and declares an uploadType, but the host configures
-    // no video fileTypes — it claims nothing
     expect(acceptable).toEqual({ image: ['image/png'], video: [] })
   })
 
@@ -128,8 +126,6 @@ describe('file-drop routing (the plugin’s composition)', () => {
       acceptable,
     )
 
-    // video/mp4 falls through: registered but unconfigured claims nothing;
-    // application/pdf is an unknown mime
     expect(claimed).toEqual([{ type: 'image', file: png }])
   })
 

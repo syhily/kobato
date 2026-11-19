@@ -4,8 +4,7 @@ import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/
 import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/newsletter.ts`;
-// this controller only implements the procedures. The limiter rides the
+// The limiter rides the
 // implementer so it runs BEFORE the contract's input validation.
 const impl = implementPublic(newsletterContract).use(resourceRateLimit)
 

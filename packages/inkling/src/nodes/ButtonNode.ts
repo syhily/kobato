@@ -7,13 +7,8 @@ export type { SerializedButtonNode } from '@kobato/inkling-internal/nodes/base/n
 export { INSERT_BUTTON_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 export type { ButtonNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-/**
- * The registered class, assembled once from the card declaration by
- * `assembleCardNodeOnce`; `$isButtonNode` is canonical on the base node.
- */
 export const ButtonNode = assembleCardNodeOnce(buttonDeclaration)
 export type ButtonNode = InstanceType<typeof ButtonNode>
-
 export const $createButtonNode = (dataset?: ButtonNodeDataset): ButtonNode => {
   return new ButtonNode(dataset)
 }

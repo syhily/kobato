@@ -399,7 +399,6 @@ describe('BaseHeaderNode', function () {
             const { element } = headerNode.exportDOM(editor, exportOptions)
             const el = element as HTMLElement
 
-            // Assuming outerHTML gets the full HTML string of the element
             const renderedHtml = el.outerHTML.replace(/\s/g, '')
             const expectedHtml = `
                 <div class="inkling-card inkling-header-card inkling-v2 inkling-width-full inkling-content-wide " data-background-color="#F0F0F0">

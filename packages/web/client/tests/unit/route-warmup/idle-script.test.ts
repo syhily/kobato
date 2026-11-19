@@ -67,7 +67,7 @@ describe('startRouteWarmup', () => {
   it('preloads in batches of 5 when visible, then removes the link nodes', () => {
     const { doc, links } = setupDocument()
     vi.stubGlobal('document', doc)
-    vi.stubGlobal('navigator', {}) // no connection -> not skipped
+    vi.stubGlobal('navigator', {})
 
     const chunks = Array.from({ length: 7 }, (_, i) => `/assets/c${i}.js`)
     startRouteWarmup(chunks)
@@ -110,7 +110,7 @@ describe('startRouteWarmup', () => {
 
     startRouteWarmup(['/assets/a.js'])
 
-    vi.advanceTimersByTime(10_000) // still hidden -> nothing
+    vi.advanceTimersByTime(10_000)
     expect(doc.createElement).not.toHaveBeenCalled()
 
     doc.visibilityState = 'visible'

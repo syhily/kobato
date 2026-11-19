@@ -120,7 +120,6 @@ describe('client/api/client — error handling', () => {
     })
 
     await expect(rejectThroughLink(err)).rejects.toBe(err)
-    // No client-side folding: the server message is the fallback.
     expect(err.message).toBe('设置数据无效')
   })
 

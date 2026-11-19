@@ -9,8 +9,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const db = getTestDb()
 const session = makeSession({ csrfToken: 'test-csrf-token' })
 
-// Real settings snapshot: the empty table hydrates to null (the pre-install state).
-
 vi.mock('@kobato/web-client/api/query-client.ts', () => ({
   makeQueryClient: vi.fn(() => ({})),
 }))
@@ -34,7 +32,6 @@ const { loader } = await import('@/root.tsx')
 describe('root loader', () => {
   beforeEach(async () => {
     await clearAllTables(db)
-    // Restore the pre-install state: hydrate must re-read the empty table, not the seeded bundle.
     resetBlogSettingsForTests()
     traceConfig.current = { rum: null }
   })
@@ -57,7 +54,6 @@ describe('root loader', () => {
 
     expect(result).toMatchObject({
       cspNonce: 'test-nonce-abc123',
-      // Pre-install: pass null through, don't fabricate a bundle.
       blogSettings: null,
     })
   })

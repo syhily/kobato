@@ -40,7 +40,6 @@ test('aligns the sidebar brand, search trigger, and active menu edges', async ({
     undefined,
     { timeout: 10_000 },
   )
-  // waitForFunction resolves only on a truthy value, so the null poll is gone here.
   const { logoBox, searchBox, activeMenuBox } = (await boxesHandle.jsonValue()) as NonNullable<
     Awaited<ReturnType<typeof boxesHandle.jsonValue>>
   >

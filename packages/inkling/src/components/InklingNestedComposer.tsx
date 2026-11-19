@@ -14,8 +14,6 @@ import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { LexicalNestedComposer, type LexicalNestedComposerProps } from '@lexical/react/LexicalNestedComposer'
 import React from 'react'
 
-// mirrors LexicalNestedComposer; initialEditorState is only used to bootstrap
-// the collaboration plugin when collab is active
 export interface InklingNestedComposerProps extends Pick<
   LexicalNestedComposerProps,
   'initialEditor' | 'initialNodes' | 'initialTheme' | 'skipCollabChecks' | 'skipEditableListener' | 'children'
@@ -35,8 +33,7 @@ const InklingNestedComposer = ({
 }: InklingNestedComposerProps) => {
   const { isCollabActive } = useCollaborationContext()
   const { createWebsocketProvider } = React.useContext(InklingCollaborationContext)
-  // reactive: re-renders when the top-level plugin publishes its callback, so
-  // a nested composer rendered first still mounts its own WordCountPlugin
+
   const wordCountOnChange = useWordCountCallback()
   const wordCountOnSelectionChange = useWordCountSelectionCallback()
   const wordCountLanguage = useWordCountLanguage()

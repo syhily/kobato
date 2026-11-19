@@ -10,23 +10,17 @@ import { $isGalleryNode, $isVideoNode, $updateCardNode } from '@kobato/inkling-i
 
 declare const nodeKey: NodeKey
 
-// Positive cases
-
-// dataset fields take their declared value types
 $updateCardNode(nodeKey, $isVideoNode, (node) => {
   node.src = 'https://example.com/a.mp4'
   node.width = 3
 })
 
-// declared accessors and methods are reachable through the seam
 $updateCardNode(nodeKey, $isVideoNode, (node) => {
   node.triggerFileDialog = false
 })
 $updateCardNode(nodeKey, $isGalleryNode, (node) => {
   node.setImages([])
 })
-
-// Negative cases
 
 $updateCardNode(nodeKey, $isVideoNode, (node) => {
   // @ts-expect-error - wrong value type for a known dataset field

@@ -22,7 +22,6 @@
 
 import { $getNodeByKey, $getSelection, $isRangeSelection, $isTextNode } from 'lexical'
 
-// tiptap's open-quote context class: (?:^|[\s{[(<'"\u2018\u201C])
 const OPEN_QUOTE_PRECEDER = /[\s{[(<'"‘“]/
 
 const FRACTIONS: Readonly<Record<string, string>> = {
@@ -50,28 +49,21 @@ interface PatternRule {
 // digit the second match needs; per-keystroke typing never hits this because
 // the scan re-runs after every commit).
 const PATTERN_RULES: readonly PatternRule[] = [
-  // ellipsis: '...' → '…' (a 4+ dot run sheds one leading group of three per
-  // pass, matching per-keystroke semantics: '....' → '….')
   { pattern: /(^|[^.])\.{3}/g, replace: (m) => m[1] + '…' },
-  // leftArrow / rightArrow
+
   { pattern: /<-/g, replace: () => '←' },
   { pattern: /->/g, replace: () => '→' },
-  // copyright / trademark / servicemark / registeredTrademark — lowercase
-  // only, tiptap parity ('(C)' stays literal)
+
   { pattern: /\((?:c|tm|sm|r)\)/g, replace: (m) => MARKS[m[0]] },
-  // oneHalf / oneQuarter / threeQuarters — tiptap requires a start/whitespace
-  // boundary before and trailing whitespace after
   { pattern: /(^|\s)(1\/2|1\/4|3\/4)(?=\s)/g, replace: (m) => m[1] + FRACTIONS[m[2]] },
-  // plusMinus
   { pattern: /\+\/-/g, replace: () => '±' },
-  // notEqual
+
   { pattern: /!=/g, replace: () => '≠' },
-  // laquo / raquo
+
   { pattern: /<</g, replace: () => '«' },
   { pattern: />>/g, replace: () => '»' },
-  // multiplication — replaces only the '*'/'x' between digits
   { pattern: /(\d\s?)[*x](?=\s?\d)/g, replace: (m) => m[1] + '×' },
-  // superscriptTwo / superscriptThree
+
   { pattern: /\^2/g, replace: () => '²' },
   { pattern: /\^3/g, replace: () => '³' },
 ]
@@ -117,9 +109,6 @@ function applyPatternRule(
   return { text, caretAdjustment }
 }
 
-// Smart quotes are 1:1 replacements, so they never move the caret. Direction
-// reads the already-replaced prefix, reproducing tiptap's open/close context
-// class keystroke by keystroke.
 function replaceSmartQuotes(text: string): string {
   let result = ''
   for (const char of text) {

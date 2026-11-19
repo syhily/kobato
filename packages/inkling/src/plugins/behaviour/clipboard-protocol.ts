@@ -2,9 +2,6 @@ import type { LexicalCommand, LexicalEditor } from 'lexical'
 
 import { createCommand } from 'lexical'
 
-// The clipboard protocol's shared vocabulary. Kept headless so the React-free
-// behaviour layer never imports a React file to learn the protocol's nouns.
-
 export const MIME_TEXT_PLAIN = 'text/plain'
 export const MIME_TEXT_HTML = 'text/html'
 

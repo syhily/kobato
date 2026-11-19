@@ -17,11 +17,6 @@ import {
 } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// Enter-in-blockquote behaviour: a plain Enter opens a new paragraph inside
-// the SAME quote (a double line break — block children are illegal inside
-// element nodes here, see the denest transform), and only Enter on an empty
-// quote paragraph leaves the blockquote.
-
 function editorWithQuoteEnter(): LexicalEditor {
   const editor = createTestEditor({ nodes: [QuoteNode] })
   registerQuoteEnterCommand(editor)
@@ -80,7 +75,7 @@ describe('registerQuoteEnterCommand', () => {
     expect(handled).toBe(true)
     editor.read(() => {
       expect(rootChildSummary()).toEqual(['quote(text:hello|br|br|text: world)'])
-      // the caret lands after the break pair, still inside the quote
+
       const selection = $getSelection()
       if (!$isRangeSelection(selection)) {
         throw new Error('expected a range selection after the quote enter')
@@ -131,7 +126,7 @@ describe('registerQuoteEnterCommand', () => {
 
   it('leaves a trailing empty quote paragraph cleanly even mid-quote content', async () => {
     const editor = editorWithQuoteEnter()
-    // imported-shape quote: text, a paragraph break, more text — caret at end
+
     await updateEditor(editor, () => {
       const quote = $createQuoteNode()
       quote.append($createTextNode('first'), $createLineBreakNode(), $createLineBreakNode(), $createTextNode('second'))

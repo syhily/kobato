@@ -41,7 +41,6 @@ export type NotificationParamValue =
 
 export type NotificationParams = Record<string, NotificationParamValue>
 
-/** Producer-facing shape: typed keys + params, no prose. */
 export interface NotificationDescriptor {
   titleKey: ServerMessageId
   titleParams?: NotificationParams
@@ -54,7 +53,6 @@ export interface SystemNotificationMessage extends NotificationDescriptor {
   actionUrl?: string | null
 }
 
-/** The persisted half of a system notification (English fallback + encoded params). */
 export interface EncodedNotificationDescriptor {
   title: string
   body: string
@@ -64,11 +62,6 @@ export interface EncodedNotificationDescriptor {
   bodyParams: string | null
 }
 
-/**
- * ICU only consumes scalar arguments; nested stored params are inert at
- * format time. Narrowing here (instead of casting) keeps the formatter's
- * contract honest.
- */
 function toMessageParams(params: Record<string, unknown> | undefined): MessageParams | undefined {
   if (params === undefined) {
     return undefined
@@ -126,7 +119,6 @@ function assertParamValue(value: unknown, path: string, seen: WeakSet<object>): 
   seen.delete(value)
 }
 
-/** Throw on an unregistered/wrong-namespace key or invalid params (producer bugs, never user input). */
 function assertNotificationKey(key: string, field: string): asserts key is ServerMessageId {
   if (!isServerMessageId(key)) {
     throw new Error(`Notification ${field} key is not registered in the server catalog: ${key}`)
@@ -182,7 +174,6 @@ function warnOnce(key: string, reason: string): void {
   log.warn('notification descriptor could not be translated; using the stored fallback', { key, reason })
 }
 
-/** Test seam: the warning cache is process-wide. */
 export function __resetNotificationMessageWarningsForTests(): void {
   warnedKeys.clear()
 }

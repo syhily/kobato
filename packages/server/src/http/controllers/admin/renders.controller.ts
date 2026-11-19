@@ -10,7 +10,6 @@ import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
 import katex from 'katex'
 
 interface RenderMathOutput {
-  /** KaTeX-rendered MathML, or an empty string when KaTeX threw. */
   mathml: string
   /**
    * Failure descriptor: `admin.editor.math.renderFailed` for the non-Error
@@ -20,9 +19,6 @@ interface RenderMathOutput {
   error: ErrorMessageDescriptor | null
 }
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/renders.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminRendersContract)
 
 const math = impl.math.handler(async ({ input }): Promise<RenderMathOutput> => {

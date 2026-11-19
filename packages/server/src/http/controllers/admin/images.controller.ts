@@ -12,9 +12,6 @@ import { implementAuthor, localizedOrpcError, localizedOrpcErrorDescriptor } fro
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/images.ts`; this controller only implements the
-// procedures (author base).
 const impl = implementAuthor(adminImagesContract)
 
 const list = impl.list.handler(({ input, context }) =>
@@ -54,8 +51,6 @@ const recalculateThumbhash = impl.recalculateThumbhash.handler(async ({ input, c
 // upload dialog's `File` passes straight through.
 const upload = impl.upload.handler(async ({ input, context }) => {
   const settings = requireBlogSettingsSection('assets')
-  // Declared MIME/size validation lives in the images domain (next to
-  // the magic-byte sniffing); the kind dispatch below is pure routing.
   const rejection = checkImageUpload(input.file, settings.upload.maxBytes)
   if (rejection !== null) {
     throw localizedOrpcErrorDescriptor(context, rejection.code, rejection.descriptor)

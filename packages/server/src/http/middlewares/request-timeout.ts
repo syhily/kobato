@@ -4,12 +4,9 @@ import type { MiddlewareHandler } from 'hono'
 import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// Per-request deadline: an `AbortController` merged with the client
-// disconnect signal; a firing timeout surfaces as a clean 503.
 const DEFAULT_TIMEOUT_MS = 30_000
 
 export interface TimeoutOverride {
-  /** Exact path prefix the override applies to (e.g. an upload endpoint). */
   readonly prefix: string
   readonly timeoutMs: number
 }
@@ -25,7 +22,6 @@ export function requestTimeout(
     const timer = setTimeout(() => controller.abort(), effectiveTimeoutMs)
     timer.unref()
 
-    // Merge the timeout with the client disconnect signal — either cancels in-flight reads.
     const clientSignal = c.req.raw.signal
     const combined = AbortSignal.any([clientSignal, controller.signal])
 
@@ -35,7 +31,6 @@ export function requestTimeout(
       // unsafeCast: Hono types `c.req.raw` as readonly.
       unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Request(c.req.raw, { signal: combined })
     } catch {
-      // Vite dev fallback: proxy forwards everything except `signal`.
       unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Proxy(c.req.raw, {
         get(target, prop, receiver) {
           if (prop === 'signal') {

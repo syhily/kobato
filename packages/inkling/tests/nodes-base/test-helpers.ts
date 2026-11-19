@@ -26,7 +26,6 @@ export function createDocument(htmlString: string) {
   return parser.parseFromString(htmlString, 'text/html')
 }
 
-// Minifies and prettifies both sides, then asserts string equality.
 export async function expectPrettifiedHtml(actual: string, expected: string): Promise<void> {
   const expectedFormatted = Prettier.format(await minify(expected, minifyOpts), { parser: 'html' })
 

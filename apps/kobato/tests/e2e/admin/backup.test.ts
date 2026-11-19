@@ -60,10 +60,8 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(download.headers.get('content-disposition')).toContain(backup.json.fileName)
     const archive = new Uint8Array(await download.arrayBuffer())
     expect(archive.length).toBeGreaterThan(0)
-    // gzip magic.
     expect([archive[0], archive[1]]).toEqual([0x1f, 0x8b])
 
-    // Content written AFTER the snapshot must not survive the restore.
     const dropped = await callE2eRpc<{ post: { id: string | number } }>(
       admin,
       '/admin/posts/upsertMeta',
@@ -73,7 +71,6 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(dropped.status).toBe(200)
     expect((await admin.get('/posts/e2e-dropped')).status).toBe(200)
 
-    // Restore — accepted, then the instance drains and restarts.
     const restore = await callE2eRpc<{ accepted: boolean }>(
       admin,
       '/admin/backup/restore',
@@ -83,7 +80,6 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(restore.status).toBe(200)
     expect(restore.json.accepted).toBe(true)
 
-    // The restore drains and restarts the instance; /ready gates the wait.
     await waitForInstanceBack()
 
     const after = new E2eClient(env.baseUrl)
@@ -95,7 +91,6 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(await keptPage.text()).toContain('E2E Kept Post')
     expect((await after.get('/posts/e2e-dropped')).status).not.toBe(200)
 
-    // Leave the instance tidy for later journeys.
     const csrfAfter = await getAdminCsrfToken(after)
     await callE2eRpc(after, '/admin/posts/delete', { id: String(kept.json.post.id) }, csrfAfter)
   })

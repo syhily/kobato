@@ -142,7 +142,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     setBlogSettingsBundleForTests(withResetBucket(1))
     const userId = await seedUser({ email: 'a@example.com' })
 
-    // First reach consumes the single-slot budget.
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
     mocks.sendPasswordReset.mockClear()
 
@@ -163,7 +162,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
     mocks.sendPasswordReset.mockClear()
 
-    // A second request for the same mailbox — even another IP — trips the bucket.
     const result = await requestPasswordReset(
       db,
       '198.51.100.9',
@@ -195,7 +193,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     const row = await resetTokenRow(userId)
     expect(row).toBeDefined()
 
-    // Link carries the raw token over the configured origin; the token resolves.
     expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
     const [sentUser, link] = mocks.sendPasswordReset.mock.calls[0]! as [{ email: string }, string]
     expect(sentUser.email).toBe('vis@example.com')
@@ -306,7 +303,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
         params: { min: 10 },
       })
     }
-    // The token is still live — validation ran before the consume.
     expect(await peekToken(db, token, 'password-reset')).toEqual({ userId })
   })
 
@@ -370,7 +366,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     )
 
     expect(wrongPurpose).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.signin.error.invalidToken' } })
-    // Single-shot consume: the mismatched attempt already burned the row.
     const retry = await resetPasswordWithToken(
       flowCtx(makeSession({})),
       request(),
@@ -420,7 +415,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
     expect(row.loginMethod).toBe('password')
 
-    // Passkey cleanup ran through the real service.
     expect(mocks.deleteAllCredentials).toHaveBeenCalledWith(db, userId)
     expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))).toHaveLength(0)
 
@@ -431,7 +425,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
     expect(await resetTokenRow(userId)).toBeUndefined()
 
-    // Both the completion audit and the session-establish login audit.
     const completes = await auditRowsFor('password_reset_complete')
     expect(completes).toHaveLength(1)
     expect(completes[0]).toMatchObject({

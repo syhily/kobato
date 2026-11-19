@@ -35,7 +35,6 @@ export function startRouteWarmup(chunks: string[]): void {
     if (cursor < chunks.length) {
       scheduleNext()
     } else {
-      // Drop the now-redundant link nodes once the modules are cached.
       setTimeout(() => {
         for (const link of links) {
           link.remove()

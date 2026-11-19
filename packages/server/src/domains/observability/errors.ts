@@ -49,7 +49,6 @@ export function o2Failure(error: O2ClientError, organization: string): O2Failure
   }
 }
 
-/** Throw a localized-at-the-boundary `DomainError` for an O2 failure; pass any other error through. */
 export function throwO2Failure(error: unknown, organization: string): never {
   if (error instanceof DomainError) {
     throw error

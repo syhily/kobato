@@ -16,7 +16,6 @@ describe('$swapTriggerParagraph', () => {
 
   beforeEach(() => {
     editor = createTestEditor({ headless: false })
-    // a root element keeps the selection alive across separate updates
     editor.setRootElement(document.createElement('div'))
   })
 
@@ -29,7 +28,6 @@ describe('$swapTriggerParagraph', () => {
       const text = $createTextNode('/im')
       trigger.append(text)
       $getRoot().append(trigger)
-      // caret inside the trigger paragraph
       text.select(1, 1)
     })
 
@@ -40,7 +38,6 @@ describe('$swapTriggerParagraph', () => {
 
     editor.read(() => {
       const root = $getRoot()
-      // the trigger paragraph is gone; a fresh empty paragraph took the slot
       expect(root.getChildrenSize()).toBe(1)
       const fresh = root.getFirstChild()!
       expect(fresh.getKey()).not.toBe(triggerKey)

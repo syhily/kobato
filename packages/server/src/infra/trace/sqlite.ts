@@ -22,7 +22,6 @@ const SQLITE_QUERY_CHANNEL = 'sqlite.db.query'
 /** Expanded SQL is never exported; only this bounded redacted form is. */
 const MAX_STATEMENT_LENGTH = 512
 
-/** Closed operation vocabulary derived from the statement's first keyword. */
 const SQL_OPERATIONS: ReadonlySet<string> = new Set([
   'select',
   'insert',
@@ -53,7 +52,6 @@ interface SubscriptionState {
 }
 
 export interface SqliteTraceOptions {
-  /** Add the bounded, redacted statement text to the span. */
   includeRedactedSql?: boolean
   /** Vitest never subscribes implicitly; a test must opt in. */
   enabledInTests?: boolean
@@ -131,7 +129,6 @@ export function stopSqliteQueryTrace(): void {
   state = null
 }
 
-/** Test seam: report whether the trace subscriber (not the debug one) is live. */
 export function isSqliteQueryTraceSubscribed(): boolean {
   return subscribed
 }

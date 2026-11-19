@@ -10,10 +10,6 @@ const backends: Record<StorageDriver, StorageBackend> = {
   local: localBackend,
 }
 
-/**
- * Backend an existing asset lives in (reads, deletes, migration), resolved from the
- * asset's `storage_driver` / `BrandingObjectRef.driver` value.
- */
 export function backendFor(driver: StorageDriver): StorageBackend {
   return backends[driver]
 }
@@ -42,17 +38,14 @@ export function allBackends(): { driver: StorageDriver; backend: StorageBackend 
   }))
 }
 
-/** True when S3 is configured as the primary backend for new uploads. */
 export function isS3Primary(): boolean {
   return activeBackend().driver === 's3'
 }
 
-/** Test seam: substitute a driver's backend. Pair with `__resetStorageBackendsForTests` in afterEach. */
 export function __setStorageBackendForTests(driver: StorageDriver, backend: StorageBackend): void {
   backends[driver] = backend
 }
 
-/** Test seam: restore the real backends registered at module load. */
 export function __resetStorageBackendsForTests(): void {
   backends.s3 = s3Backend
   backends.local = localBackend

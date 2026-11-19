@@ -12,10 +12,6 @@ import { getLocalStorageMigrationStats, type MigrationStats } from '@kobato/serv
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { isS3Primary } from '@kobato/server/infra/storage/registry.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/storage.ts` (the S3 target config's URL guards moved
-// with it into `@kobato/contracts/storage.ts`); this controller only
-// implements the procedures (admin base).
 const impl = implementAdmin(adminStorageContract)
 
 const stats = impl.stats.handler(async ({ context }): Promise<{ s3Primary: boolean } & MigrationStats> => {

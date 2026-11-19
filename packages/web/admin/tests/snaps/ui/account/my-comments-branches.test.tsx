@@ -102,7 +102,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     const html = renderMy()
     expect(html).toContain('我的评论')
     expect(html).toContain('animate-pulse')
-    // Total reads pages[0].total; no pages → 0.
     expect(html).toMatch(/共\s*<span[^>]*>\s*0\s*<\/span>\s*条评论/u)
   })
 
@@ -137,10 +136,8 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).toContain('Second Post')
     expect(html).toContain('Body ')
     expect(html).toContain('href="/posts/first"')
-    // Non-deleted, non-pending row → request-delete action.
     expect(html).toContain('aria-label="申请删除"')
     expect(html).toContain('aria-label="修改评论"')
-    // End-of-list sentinel fires (items > 0 && !hasNextPage).
     expect(html).toContain('已加载全部评论')
     expect(html).toMatch(/共\s*<span[^>]*>\s*2\s*<\/span>\s*条评论/u)
   })
@@ -157,7 +154,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('待审核')
-    // Pending items can still be edited / deleted.
     expect(html).toContain('aria-label="修改评论"')
     expect(html).toContain('aria-label="申请删除"')
   })
@@ -179,7 +175,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('已申请删除')
-    // Pending-delete row exposes cancel-delete, not request-delete.
     expect(html).toContain('aria-label="撤回删除"')
     expect(html).not.toContain('aria-label="申请删除"')
   })
@@ -224,7 +219,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     const html = renderMy()
     expect(html).toContain('回复')
     expect(html).toContain('Carol')
-    // Live parent → the excerpt is quoted inline.
     expect(html).toContain('Nice post!')
   })
 
@@ -293,9 +287,7 @@ describe('snapshot: MyCommentsView render branches', () => {
       entity: 'post:1',
       entityOptions: [{ value: 'post:1', label: 'Pinned Post' }],
     })
-    // The status filter label resolves through MY_STATUS_OPTIONS.
     expect(html).toContain('待审')
-    // Clear-filters affordance only appears with active filters.
     expect(html).toContain('清除')
     expect(html).toContain('data-slot="my-comment-row"')
   })
@@ -325,7 +317,6 @@ describe('snapshot: MyCommentsView render branches', () => {
       entity: 'post:missing',
       entityOptions: [{ value: 'post:1', label: 'Known Post' }],
     })
-    // Page filter pill renders (the entity field).
     expect(html).toContain('文章')
     expect(html).toContain('data-slot="my-comment-row"')
   })
@@ -334,7 +325,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     queryMocks.infinite.error = new Error('boom')
     queryMocks.infinite.data = { pages: [] }
     const html = renderMy()
-    // Error surfaces via a toast effect; the render path falls through to the empty branch.
     expect(html).toContain('我的评论')
     expect(html).toContain('暂无评论')
   })

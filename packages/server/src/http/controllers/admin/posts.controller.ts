@@ -31,14 +31,11 @@ import { idFromString } from '@kobato/utils/id.ts'
 const RECENT_DRAFTS_LIMIT = 5
 const RECENT_PUBLISHED_LIMIT = 5
 
-// Contract-first: method/path/input/output live in `@kobato/api/admin/posts.ts`;
-// this controller only implements the procedures (author base: author+admin).
 const impl = implementAuthor(adminPostsContract)
 
 const list = impl.list.handler(({ input, context }) => listPostsForAdmin(context.db, input, context.viewer))
 
 const get = impl.get.handler(({ input, context }) =>
-  // NOT_FOUND comes from the service — no null branch here.
   getPostDetailForAdmin(context.db, idFromString(input.id), context.viewer),
 )
 
@@ -135,8 +132,6 @@ const listRevisions = impl.listRevisions.handler(async ({ input, context }) => {
   return { revisions }
 })
 
-// Dashboard card data (counts + recent-5), scoped to the author — consumed
-// verbatim by `routes/admin/dashboard.tsx`.
 const mySummary = impl.mySummary.handler(async ({ context }) => {
   const authorId = idFromString(context.viewer.id)
   const [draftCount, publishedCount, recentDraftRows, recentPublishedRows] = await Promise.all([
@@ -175,8 +170,6 @@ const mySummary = impl.mySummary.handler(async ({ context }) => {
   }
 })
 
-// Per-post analytics behind both admin/editor analytics routes; `search` is
-// parsed server-side.
 const analytics = impl.analytics.handler(async ({ input, context }) => {
   const meta = findPostMetaById(context.db, input.postId)
   // Authors reach only their own posts' analytics; admins are unrestricted.
@@ -191,8 +184,6 @@ const analytics = impl.analytics.handler(async ({ input, context }) => {
   return { post, ...overview }
 })
 
-// `router()` enforces the implementation against the whole contract shape —
-// a missing or extra key fails typecheck here, not at a client call site.
 export const adminPostsRouter = impl.router({
   list,
   get,

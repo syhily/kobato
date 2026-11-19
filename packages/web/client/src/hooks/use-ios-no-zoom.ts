@@ -81,7 +81,6 @@ export function useIosNoZoomOnFocus(): void {
       const tag = target.tagName
       return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
     }
-    // True for the contenteditable itself and for any node tapped inside it.
     const isEditableCanvas = (target: EventTarget | null): boolean =>
       target instanceof HTMLElement && target.isContentEditable
     const isZoomSensitive = (target: EventTarget | null): boolean => isFormControl(target) || isEditableCanvas(target)
@@ -133,7 +132,6 @@ export function useIosNoZoomOnFocus(): void {
       document.removeEventListener('pointerdown', onPointerDown, { capture: true })
       document.removeEventListener('focusin', onFocusIn)
       document.removeEventListener('focusout', onFocusOut)
-      // Release the lock if a control is still focused at unmount.
       release()
     }
   }, [])

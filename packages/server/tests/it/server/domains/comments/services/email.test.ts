@@ -229,13 +229,10 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     const html = body.get('html') as string
     expect(html).toContain('新留言')
     expect(html).toContain('留言文章：')
-    // Resolved from the seeded post row: slug `hi`, title `Hi`.
     expect(html).toContain('>Hi</a>')
     expect(html).toContain('href="https://example.com/posts/hi/"')
-    // The saved `content` projection lands inline, sanitized.
     expect(html).toContain('<p>hello</p>')
     expect(html).toContain('href="https://example.com/posts/hi/#user-comment-7"')
-    // Not pending → no approval note.
     expect(html).not.toContain('该留言需要审核')
   })
 

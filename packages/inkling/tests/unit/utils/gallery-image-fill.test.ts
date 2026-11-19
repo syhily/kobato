@@ -21,7 +21,6 @@ describe('datasetToGalleryImage', () => {
   it('falls back to the probe natural size only when the dataset lacks dimensions', () => {
     const naturalSize = { width: 800, height: 600 }
     expect(datasetToGalleryImage({ src: '/a.png' }, { naturalSize })).toMatchObject({ width: 800, height: 600 })
-    // image card datasets allow null dimensions — null falls back too
     expect(datasetToGalleryImage({ src: '/a.png', width: null }, { naturalSize })).toMatchObject({
       width: 800,
       height: 600,

@@ -14,7 +14,6 @@ export interface RumBudgetSnapshot {
   errors: number
 }
 
-/** Optional session-scoped persistence for the event caps (browser storage). */
 export interface RumBudgetStore {
   load: () => RumBudgetSnapshot | null
   save: (snapshot: RumBudgetSnapshot) => void
@@ -27,9 +26,7 @@ export interface RumSessionBudgetOptions {
 }
 
 export interface RumSessionBudget {
-  /** Reset/restore the session if needed, then report whether the type may proceed. */
   canAccept: (sessionId: string, type: string | null) => boolean
-  /** Count an accepted event and persist the new totals. */
   commit: (sessionId: string, type: string | null) => void
   reset: () => void
 }

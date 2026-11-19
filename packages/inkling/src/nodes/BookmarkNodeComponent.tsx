@@ -95,8 +95,6 @@ export function BookmarkNodeComponent({
     })
   }, [editor, nodeKey])
 
-  // A node created with a url fetches the metadata; on failure it falls back
-  // to a plain link.
   React.useEffect(() => {
     // only run this once (the input state already initialises from `url`, so
     // the effect only kicks off the initial fetch)
@@ -105,7 +103,6 @@ export function BookmarkNodeComponent({
         handlePasteAsLink()
       })
     }
-    // init only
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -145,10 +142,6 @@ export function BookmarkNodeComponent({
   )
 }
 
-/**
- * Bookmark's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderBookmarkCard(node: BookmarkNode) {
   return (
     <BookmarkNodeComponent

@@ -231,11 +231,9 @@ describe('notifications / inbox', () => {
     markRead(db, bId, [row.id])
     expect(unreadCount(db, aId)).toBe(0)
 
-    // Back to unread — idempotent on a double click…
     expect(markUnread(db, aId, [row.id])).toBe(1)
     expect(markUnread(db, aId, [row.id])).toBe(0)
     expect(unreadCount(db, aId)).toBe(1)
-    // …and scoped to the caller: b's row stays read.
     expect(unreadCount(db, bId)).toBe(0)
   })
 

@@ -3,11 +3,8 @@ import type { RestoreProgressDto } from '@kobato/contracts/backup.ts'
 import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
 
 /**
- * Pre-claim staging progress (decrypt / extract), merged with the restore
- * machine's post-claim phases by the restore-progress endpoint. Staging runs
- * BEFORE the slot is claimed, so the machine cannot report it. A single active
- * slot: a concurrent staging goes unreported (`beginStagingProgress` = false)
- * rather than interleaving meaningless percentages.
+ * Staging runs BEFORE the slot is claimed, so the machine cannot report it; a
+ * concurrent staging goes unreported rather than interleaving percentages.
  */
 
 interface StagingProgress {
@@ -19,7 +16,6 @@ interface StagingProgress {
 let claimed = false
 let staging: StagingProgress | null = null
 
-/** Claim the staging slot; false when another staging owns it. */
 export function beginStagingProgress(): boolean {
   if (claimed) {
     return false
@@ -29,7 +25,6 @@ export function beginStagingProgress(): boolean {
   return true
 }
 
-/** Report a byte total for the current leg. */
 export function reportStagingProgress(
   stage: 'decrypting' | 'extracting',
   doneBytes: number,
@@ -46,7 +41,6 @@ export function endStagingProgress(): void {
   staging = null
 }
 
-/** Test seam: drop in-flight staging state between cases. */
 export function resetStagingProgress(): void {
   endStagingProgress()
 }

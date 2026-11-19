@@ -374,7 +374,6 @@ describe('BaseGalleryNode', function () {
       editorTest(
         () => editor,
         async function () {
-          // Medium Export HTML <div data-paragraph-count="2"><figure class="graf graf--figure graf--layoutOutsetRow is-partialWidth graf-after--p" style="width: 50%;"><div class="aspectRatioPlaceholder is-locked"><img class="graf-image" data-image-id="jklm4567.jpeg" data-width="1200" data-height="800" src="https://cdn-images-1.medium.com/max/600/jklm4567.jpeg"></div></figure><figure class="graf graf--figure graf--layoutOutsetRowContinue is-partialWidth graf-after--figure" style="width: 50%;"><div class="aspectRatioPlaceholder is-locked"><img class="graf-image" data-image-id="qurt6789.jpeg" data-width="1200" data-height="800" src="https://cdn-images-1.medium.com/max/600/qurt6789.jpeg"></div></figure></div><div data-paragraph-count="2"><figure class="graf graf--figure graf--layoutOutsetRow is-partialWidth graf-after--figure" style="width: 69.22%;"><div class="aspectRatioPlaceholder is-locked"><img class="graf-image" data-image-id="zyxw3456.jpeg" data-width="1200" data-height="800" src="https://cdn-images-1.medium.com/max/800/zyxw3456.jpeg"></div></figure><figure class="graf graf--figure graf--layoutOutsetRowContinue is-partialWidth graf-after--figure" style="width: 30.78%;"><div class="aspectRatioPlaceholder is-locked"><img class="graf-image" data-image-id="1234abcd.jpeg" data-width="800" data-height="1200" src="https://cdn-images-1.medium.com/max/400/1234abcd.jpeg"></div></figure></div>
           const document = createDocument(`
                 <div data-paragraph-count="2">
                     <figure class="graf graf--figure graf--layoutOutsetRow is-partialWidth graf-after--p" style="width: 50%;">
@@ -484,11 +483,6 @@ describe('BaseGalleryNode', function () {
     )
 
     describe('Squarespace galleries', function () {
-      // Three different variations of galleries:
-      // stacked, grid, and slideshow
-      // stacked: <div class="sqs-gallery-container sqs-gallery-block-stacked"><div class="sqs-gallery"><div class="image-wrapper" id="1234567890" data-type="image" data-animation-role="image"><noscript><img src="https://example.com/test.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test.jpg" data-image-dimensions="2500x1663" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567890" data-type="image" /></div><div class="meta" id="8793002jf84od" data-type="image"><div class="meta-inside"><h3 class="meta-title">Image caption 1</h3></div></div><div class="image-wrapper" id="1234567891" data-type="image" data-animation-role="image"><noscript><img src="https://example.com/test-1.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test-1.jpg" data-image-dimensions="800x600" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567891" data-type="image" /></div><div class="image-wrapper" id="1234567892" data-type="image" data-animation-role="image"><noscript><img src="https://example.com/test-2.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test-2.jpg" data-image-dimensions="600x800" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567892" data-type="image" /></div><div class="meta" id="8793002jf84od" data-type="image"><div class="meta-inside"><h3 class="meta-title">Image caption 2</h3></div></div></div></div>
-      // slideshow: <div class="sqs-gallery-container sqs-gallery-block-slideshow sqs-gallery-block-show-meta sqs-gallery-block-meta-position-bottom"><div class="sqs-gallery"><div class="slide content-fill" data-type="image" data-click-through-url><noscript><img src="https://example.com/test.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test.jpg" data-image-dimensions="2500x1663" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567890" data-type="image" /></div><div class="slide content-fill" data-type="image" data-click-through-url><noscript><img src="https://example.com/test-1.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test-1.jpg" data-image-dimensions="800x600" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567891" data-type="image" /></div><div class="slide content-fill" data-type="image" data-click-through-url><noscript><img src="https://example.com/test-2.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test-2.jpg" data-image-dimensions="600x800" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567892" data-type="image" /></div><div class="slide content-fill" data-type="image" data-click-through-url><noscript><img src="https://example.com/test-3.jpg" alt="image alt text"></noscript><img class="thumb-image" data-src="https://example.com/test-3.jpg" data-image-dimensions="800x800" data-image-focal-point="0.5,0.5" alt="image alt text" data-load="false" data-image-id="1234567893" data-type="image" /></div></div></div>
-
       it(
         'parses a stacked gallery into gallery card',
         editorTest(
@@ -1400,14 +1394,10 @@ describe('BaseGalleryNode', function () {
                 width: 3200,
                 height: 1600,
               },
-              // the junk entries above stay `as unknown`: the array is asserted
-              // once here so the test can feed deliberately-invalid images
-              // (the untrusted-payload path isValidImage filters at runtime)
             ] as GalleryImage[],
             caption: 'Test caption',
           })
           const { element } = galleryNode.exportDOM(editor, { ...exportOptions, canTransformImage: () => false })
-
           await expectPrettifiedHtml(
             (element as HTMLElement).outerHTML,
             html`
@@ -1470,13 +1460,11 @@ describe('BaseGalleryNode', function () {
 
           const output = (element as HTMLElement).outerHTML
 
-          // local is resized
           expect(output).toMatch(/width="2000"/)
           expect(output).toMatch(/height="1000"/)
           expect(output).not.toMatch(/width="3200"/)
           expect(output).not.toMatch(/height="1600"/)
 
-          // external is not
           expect(output).toMatch(/width="2500"/)
           expect(output).toMatch(/height="1800"/)
         },
@@ -1557,7 +1545,6 @@ describe('BaseGalleryNode', function () {
             caption: '',
           })
 
-          // skip srcset
           delete (exportOptions.imageOptimization as Record<string, unknown>).contentImageSizes
           const { element } = galleryNode.exportDOM(editor, exportOptions)
 
@@ -2008,7 +1995,6 @@ describe('BaseGalleryNode', function () {
           const { element } = galleryNode.exportDOM(editor, { ...exportOptions, imageBaseUrl: cdnUrl })
           const img = (element as HTMLElement).querySelector('img')!
 
-          // defaultMaxWidth is 2000 in exportOptions; width 3200 resizes to 2000x1000
           expect(img.getAttribute('width')).toBe('2000')
           expect(img.getAttribute('height')).toBe('1000')
         },

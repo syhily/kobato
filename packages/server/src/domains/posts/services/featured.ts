@@ -73,7 +73,6 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
   const recentIds = new Set(recentMetas.map((r) => r.id))
   const pinnedSlugs = new Set(pinnedMetas.map((m) => m.slug))
   const candidateMetas = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
-  // One name batch for the union of pinned + candidate rows.
   const [pinnedTagMap, candidateTagMap, categoryMap] = await Promise.all([
     findTagNamesByPostIds(
       db,

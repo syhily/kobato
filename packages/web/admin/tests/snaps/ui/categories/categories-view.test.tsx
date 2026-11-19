@@ -64,7 +64,6 @@ describe('snapshot: CategoriesView', () => {
     const html = stableHtml(renderInRouter(<CategoriesView />, '/admin/taxonomy/categories'))
     expect(html).toContain('分类管理')
     expect(html).toContain('新增分类')
-    // Skeleton uses the shared pulse class substring.
     expect(html).toContain('skeleton')
   })
 

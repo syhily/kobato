@@ -42,7 +42,6 @@ export interface NotificationTimeOptions {
   now: number | Date
 }
 
-/** Relative "3 minutes ago"-style label through the shared relative-time facade; one `now` per render pass. */
 export function formatNotificationTime(iso: string, options: NotificationTimeOptions): string {
   const { locale, timeZone, now } = options
   return formatRelativeTime(iso, { locale, timeZone, now: new Date(now) })

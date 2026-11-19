@@ -16,13 +16,6 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Unit pins for the update-scan registration policy that EmEnDashPlugin and
-// HorizontalRulePlugin delegate to: the
-// history-tag skip (the undo-resurrection guard), the empty-dirty skip in
-// both dirty modes, the composing skip, and the tagged-vs-untagged nested
-// scan commit. The plugins' own tests keep pinning the per-plugin scan
-// bodies; only the shared gate is pinned here.
-
 function createTestEditor(): LexicalEditor {
   return createEditor({
     namespace: 'test',
@@ -110,7 +103,6 @@ describe('registerUpdateScan', () => {
   it('skips element-only commits in leaves mode', async () => {
     const { scan } = registerScan({ dirty: 'leaves' })
 
-    // appending an empty paragraph dirties root (element) and no leaf
     await drainEnqueuedUpdates(editor, () => {
       $getRoot().append($createParagraphNode())
     })
@@ -158,18 +150,13 @@ describe('registerUpdateScan', () => {
       dirtyLeaves.forEach((key) => {
         const node = $getNodeByKey(key)
         if ($isTextNode(node)) {
-          // a real mutation (setTextContent short-circuits on identical
-          // text): the tagged scan commit dirties the node and fires a
-          // listener pass of its own
           node.setTextContent(node.getTextContent() + '!')
         }
       })
     })
-
     await drainEnqueuedUpdates(editor, () => dirtyTheText('changed'))
-
     expect(scan).toHaveBeenCalledTimes(1)
-    // the trigger commit is untagged; the scan’s own commit carries the tag
+
     expect(passes.some((tags) => tags.includes(HISTORY_PUSH_TAG))).toBe(true)
     expect(passes[0]).not.toContain(HISTORY_PUSH_TAG)
   })

@@ -48,7 +48,6 @@ function createEditorWithNode(nodeClass: WrapperClass): { editor: LexicalEditor;
   return { editor, node }
 }
 
-/** Runs the transformer's export against a proxied node and returns the node fields it read. */
 function recordExportReads(node: LexicalNode, transformer: ElementTransformer): string[] {
   const reads: string[] = []
   const proxy = new Proxy(node, {
@@ -74,7 +73,6 @@ function collectStrings(value: unknown, into: string[] = []): string[] {
   return into
 }
 
-/** Extracts the parsed JSON body of an exported ` ```inkling:<card>``` ` fence. */
 function parseFenceBody(exported: string): Record<string, unknown> {
   const body = exported.split('\n').slice(1, -1).join('\n')
   return JSON.parse(body) as Record<string, unknown>
@@ -85,7 +83,6 @@ const cardsWithTransformers = CARD_MARKDOWN_DECLARATIONS.filter((card) => card.m
 describe('card markdown transformer field vocabulary', function () {
   it('every markdown-eligible card has a transformer or a named exemption', function () {
     CARD_MARKDOWN_DECLARATIONS.forEach((card) => {
-      // `in` narrows the union to the declarations carrying the optional markdown entry
       const markdown = 'markdown' in card ? card.markdown : undefined
       if (markdown === undefined) {
         return
@@ -114,8 +111,6 @@ describe('card markdown transformer field vocabulary', function () {
         })
       })
 
-      // only fence transformers carry a JSON field list; the image card uses
-      // standard markdown image syntax, so there is no payload to drift
       if (!('regExpStart' in transformer)) {
         return
       }
@@ -172,8 +167,7 @@ describe('card markdown transformer field vocabulary', function () {
 
         const created = editor.read(() => $getRoot().getLastChild())
         expect(created, `${card.nodeType} fence import did not append a node`).not.toBeNull()
-        // the class's adopted nestedEditors spec names every __<name> editor
-        // field; a fence-created node must hold none of them live
+
         const specs =
           ((created as LexicalNode).constructor as { nestedEditors?: readonly { name: string }[] }).nestedEditors ?? []
         specs.forEach((spec) => {

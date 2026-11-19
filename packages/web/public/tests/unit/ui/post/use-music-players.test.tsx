@@ -97,7 +97,6 @@ describe('useMusicPlayers', () => {
       await Promise.resolve()
     })
     expect(container.querySelector('[data-stub-player]')).toBeNull()
-    // The sanitized static fallback stays in place instead of a live player.
     expect(container.querySelector('[data-music-player-fallback]')).not.toBeNull()
   })
 
@@ -152,8 +151,6 @@ describe('useMusicPlayers', () => {
     const player = container.querySelector('[data-stub-player]')
     expect(player?.getAttribute('data-url')).toBe('https://cdn/new.mp3')
     expect(player?.textContent).toBe('New')
-    // Exactly one live player: the old root was unmounted, not left playing
-    // on its detached node.
     expect(container.querySelectorAll('[data-stub-player]')).toHaveLength(1)
   })
 })

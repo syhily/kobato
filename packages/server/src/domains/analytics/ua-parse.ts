@@ -1,10 +1,6 @@
 import DeviceDetector from 'node-device-detector'
 import ClientHints from 'node-device-detector/client-hints'
 
-// Pure UA → analytics-fields mapping (node-device-detector port) with ZERO
-// kobato-internal imports, so offline history-repair tooling can import it by
-// relative path and re-parse stored UAs with the exact production logic.
-//
 // Field vocabularies must stay comparable with historical rows: os/browser
 // names normalized to the historical spellings (macOS, Edge, Mobile Chrome, …),
 // deviceType from mobile/tablet/desktop/wearable/smarttv/console/embedded,
@@ -13,23 +9,14 @@ import ClientHints from 'node-device-detector/client-hints'
 // model number.
 
 export interface UaClientHints {
-  /** `Sec-CH-UA-Model` — high-entropy, sent only after an `Accept-CH` opt-in. */
   model?: string | null
-  /** `Sec-CH-UA-Platform`. */
   platform?: string | null
-  /** `Sec-CH-UA-Platform-Version`. */
   platformVersion?: string | null
-  /** `Sec-CH-UA-Mobile` (`?1` / `?0`). */
   mobile?: string | null
-  /** `Sec-CH-UA-Full-Version-List` (preferred) or `Sec-CH-UA`. */
   brands?: string | null
-  /** `Sec-CH-UA-Full-Version`. */
   fullVersion?: string | null
-  /** `Sec-CH-UA-Arch`. */
   arch?: string | null
-  /** `Sec-CH-UA-Bitness`. */
   bitness?: string | null
-  /** `Sec-CH-UA-Form-Factors` (raw header value). */
   formFactors?: string | null
 }
 
@@ -90,7 +77,6 @@ function browserTypeOf(clientType: string | null): string | null {
   }
 }
 
-/** Brand-prefixed marketing model, e.g. "Samsung Galaxy S20 5G". */
 function deviceLabel(brand: string, model: string): string {
   if (!brand || brand === 'Apple' || model.startsWith(brand)) {
     return model
@@ -109,7 +95,6 @@ function normalizePlatformHint(hint: string | null | undefined): string | null {
   return unquoted === '' ? null : unquoted
 }
 
-/** English technical fallback; callers with a request locale pass the catalog's label. */
 export const UNKNOWN_UA_LABEL = 'Unknown device'
 
 /**
@@ -242,7 +227,6 @@ export function parseUaFields(ua: string, hints?: UaClientHints): ParsedUaFields
   }
 
   if (cache.size >= CACHE_CAP) {
-    // Map iterates in insertion order — the first key is the oldest.
     const oldest = cache.keys().next().value
     if (oldest !== undefined) {
       cache.delete(oldest)

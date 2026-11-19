@@ -80,7 +80,6 @@ describe('selectFeedPosts — feed-channel visibility policy', () => {
     expect(slugs).toContain('visible-post')
     expect(slugs).toContain('hidden-post')
     expect(slugs).not.toContain('scheduled-post')
-    // Feed items carry the saved feed-variant projection of the published revision.
     const visible = posts.find((p) => p.slug === 'visible-post')
     expect(visible?.bodyHtmlFeed).toContain('body of visible-post')
   })

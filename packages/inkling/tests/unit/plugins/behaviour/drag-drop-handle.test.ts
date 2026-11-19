@@ -3,11 +3,6 @@ import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-// Thin per-instance suite: the generic handle semantics (partial setState,
-// change guard, subscribe/unsubscribe, fallback) live in
-// composer-handle.test.ts. What remains here is the drag-drop channel's own
-// state shape and its context wiring.
-
 describe('createDragDropHandle', () => {
   it('starts with no container element, no handler, and not dragging', () => {
     const handle = createDragDropHandle()

@@ -105,7 +105,6 @@ describe('integration / newsletter', () => {
     expect(second!.id).toBe(first!.id)
     expect(second!.status).toBe('pending')
     expect(second!.confirmTokenHash).not.toBe(first!.confirmTokenHash)
-    // Both subscribes sent a confirm email.
     expect(mockFetch.calls).toHaveLength(2)
   })
 
@@ -117,7 +116,6 @@ describe('integration / newsletter', () => {
 
     const again = await callRpc('/newsletter/subscribe', { email: 'stay@example.com' }, ctx)
     expect(again.status).toBe(200)
-    // Still exactly one confirm email — a confirmed row is a silent no-op.
     expect(mockFetch.calls).toHaveLength(1)
     expect((await findRow('stay@example.com'))!.status).toBe('confirmed')
   })
@@ -155,7 +153,6 @@ describe('integration / newsletter', () => {
     expect(unsubscribed!.status).toBe('unsubscribed')
     expect(unsubscribed!.unsubscribedAt).not.toBeNull()
 
-    // Re-click — never 404.
     const second = await callRpc('/newsletter/unsubscribe', { id, sig }, ctx)
     expect(second.status).toBe(200)
 
@@ -193,7 +190,6 @@ describe('integration / newsletter', () => {
     // A case-variant of the same address hits the same counter (hashes normalize).
     const fourth = await callRpc('/newsletter/subscribe', { email: 'Victim@Example.com' }, ctx)
     expect(fourth.status).toBe(429)
-    // The rejected attempt never reached the mail transport.
     expect(mockFetch.calls).toHaveLength(3)
   })
 })

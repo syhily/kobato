@@ -38,7 +38,6 @@ interface SlotMeta {
   maxBytes: number
   purposeId: UiMessageId
   specId: UiMessageId
-  /** Render the preview thumbnail on a dark background — for dark-theme assets. */
   darkPreview?: boolean
 }
 

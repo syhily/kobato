@@ -20,7 +20,6 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-/** The production source trees (every package except test tooling). */
 const SOURCE_DIRS = [
   'apps/kobato/src',
   'packages/inkling/src',
@@ -45,7 +44,6 @@ const SOURCE_DIRS = [
   'packages/web/public/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 
-/** The only modules allowed to import a real SDK. */
 export const APPROVED_SDK_ENTRIES = [
   'packages/server/src/infra/trace/runtime.ts',
   'packages/server/src/infra/trace/logs-runtime.ts',
@@ -55,8 +53,6 @@ export const APPROVED_SDK_ENTRIES = [
 const TELEMETRY_PACKAGE_PATTERN = /^@(?:opentelemetry|openobserve)\//
 
 function walk(dir: string, callback: (filePath: string) => void): void {
-  // Split-package roots are registered ahead of their sources landing; a
-  // missing directory simply has nothing to scan.
   if (!existsSync(dir)) {
     return
   }
@@ -75,10 +71,6 @@ function relativePath(absolutePath: string): string {
   return relative(PROJECT_ROOT, absolutePath).replace(/\\/g, '/')
 }
 
-/**
- * Every value specifier the bundler would resolve: static imports, side-effect
- * imports, and dynamic imports. `import type` is erased and therefore ignored.
- */
 function getValueSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   let match: RegExpExecArray | null
@@ -216,7 +208,6 @@ describe('trace SDK source boundary', () => {
   })
 
   it('depends on the slim RUM package only — never the full RUM, browser-logs, or Replay recorder', () => {
-    // The browser SDK is the web-client package's dependency (the client bundle owner).
     const packageJson = JSON.parse(readFileSync(join(PROJECT_ROOT, 'packages/web/client/package.json'), 'utf-8')) as {
       dependencies?: Record<string, string>
       devDependencies?: Record<string, string>
@@ -257,32 +248,25 @@ describe('trace SDK source boundary', () => {
     expect(runtimeSource).toMatch(/await import\('@openobserve\/browser-rum-slim'\)/)
 
     const hookSource = readFileSync(join(PROJECT_ROOT, 'packages/web/client/src/hooks/use-rum.ts'), 'utf-8')
-    // No static import edge to the RUM module — the only edge is the guarded
-    // dynamic import below (type-only `typeof import(...)` carries no `from`).
+
     expect(hookSource).not.toMatch(/from ['"][^'"]*openobserve-rum(\.ts)?['"]/)
     const loadCall = hookSource.indexOf('void loadRumModule()')
     const policyGuard = hookSource.indexOf('isRumDenied()')
     const schemaGuard = hookSource.indexOf('frontendRumBootstrapSchema.safeParse')
-    // `import.meta.env.SSR` is a build-time constant: the early return is what
-    // keeps the RUM chunk out of the server/SEA bundle. It precedes the only
-    // dynamic import edge.
     const ssrGuard = hookSource.indexOf('if (import.meta.env.SSR)')
     expect(ssrGuard).toBeGreaterThan(-1)
     expect(loadCall).toBeGreaterThan(-1)
     expect(policyGuard).toBeGreaterThan(-1)
     expect(schemaGuard).toBeGreaterThan(-1)
-    // DNT/GPC, the bootstrap schema gate, and the SSR build guard all run
-    // before the import request is issued.
     expect(policyGuard).toBeLessThan(loadCall)
     expect(ssrGuard).toBeLessThan(loadCall)
     expect(schemaGuard).toBeLessThan(loadCall)
-    // No build-time DEV gate: production browsers load RUM.
+
     expect(hookSource).not.toContain('import.meta.env.DEV')
   })
-
   it('constructs the log pipeline only from the trace runtime, never directly', () => {
     const offenders: string[] = []
-    // Matches both the cross-package specifier and the intra-package relative form.
+
     const logsRuntimeSpecifier = /(?:^|\/)logs-runtime(?:\.ts)?$/
     for (const file of collectSourceFiles()) {
       const rel = relativePath(file)
@@ -292,7 +276,7 @@ describe('trace SDK source boundary', () => {
           offenders.push(`${rel} imports ${specifier}`)
         }
       }
-      // Logs are a sibling pipeline built during start, not a second entry point.
+
       for (const match of source.matchAll(/import\s*\(\s*['"]([^'"]*(?:^|\/)logs-runtime(?:\.ts)?)['"]\s*\)/g)) {
         offenders.push(`${rel} dynamically imports ${match[1]}`)
       }
@@ -305,8 +289,6 @@ describe('trace SDK source boundary', () => {
       getValueSpecifiers(runtimeSource).filter((specifier) => /(?:^|\/)logs-runtime(?:\.ts)?$/.test(specifier)),
     ).toHaveLength(1)
 
-    // The log pipeline must not import the stdout logger's value surface: a
-    // per-record diagnostic would loop back into its own sink.
     const logsRuntimeSource = readFileSync(
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/logs-runtime.ts'),
       'utf-8',

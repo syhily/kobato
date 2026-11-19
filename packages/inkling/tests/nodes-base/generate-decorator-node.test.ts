@@ -148,7 +148,6 @@ describe('Utils: generateDecoratorNode', function () {
     // `assembleCardNode` produces for the real cards.
     const specNestedEditors: readonly NestedEditorSpec[] = [
       { name: 'captionEditor', serializedKey: 'caption', nodes: MINIMAL_NODES },
-      // Header's idiom: the dataset exposes the editor but not its initial state
       { name: 'bodyEditor', serializedKey: 'body', nodes: MINIMAL_NODES, exposeInitialStateInDataset: false },
     ]
     const specTransientProps: readonly TransientPropSpec[] = [
@@ -157,7 +156,6 @@ describe('Utils: generateDecoratorNode', function () {
         initial: (dataset) => (!dataset.src && dataset.flag) || false,
         datasetKey: '__flag',
       },
-      // no datasetKey: initialized on the node but never re-exposed
       { name: 'seed' },
     ]
 
@@ -249,8 +247,6 @@ describe('Utils: generateDecoratorNode', function () {
       editorTest(
         () => editor,
         function () {
-          // importJSON's static return type is the generated base instance; the
-          // spec-adopting subclass declares the nested-editor fields
           const node = SpecAdoptingNode.importJSON({
             type: 'spec-contract-test',
             version: 1,
@@ -274,7 +270,7 @@ describe('Utils: generateDecoratorNode', function () {
 
           expect(dataset.captionEditor).toBe(node.__captionEditor)
           expect(dataset.captionEditorInitialState).toBe(node.__captionEditorInitialState)
-          // exposeInitialStateInDataset: false — the editor is exposed, its initial state is not
+
           expect(dataset.bodyEditor).toBe(node.__bodyEditor)
           expect(dataset).not.toHaveProperty('bodyEditorInitialState')
         },
@@ -287,9 +283,8 @@ describe('Utils: generateDecoratorNode', function () {
         () => editor,
         function () {
           const node = new SpecAdoptingNode({ flag: true, seed: 'abc' })
-          expect(node.__flag).toBe(true) // the spec's `initial` computes from the dataset
-          expect(node.__seed).toBe('abc') // no `initial`: defaults to dataset[name]
-
+          expect(node.__flag).toBe(true)
+          expect(node.__seed).toBe('abc')
           const dataset = node.getDataset()
           expect(dataset.__flag).toBe(true)
           expect(dataset).not.toHaveProperty('__seed')

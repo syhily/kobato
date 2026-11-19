@@ -9,9 +9,6 @@ import { listCategoriesForAdmin } from '@kobato/server/domains/taxonomies/catego
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/categories.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminCategoriesContract)
 
 const list = impl.list.handler(({ input, context }) => listCategoriesForAdmin(context.db, { q: input.q }))

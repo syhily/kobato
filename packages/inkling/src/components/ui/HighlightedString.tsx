@@ -14,8 +14,6 @@ export function HighlightedString({
   }
 
   const parts = string.split(new RegExp(`(${escapeRegExp(highlightString)})`, 'gi'))
-  // precompute the running offset for stable keys in render scope — the map
-  // callback below must not mutate a counter while rendering
   const keyedParts: Array<{ part: string; key: string }> = []
   let charOffset = 0
   for (const part of parts) {

@@ -85,10 +85,8 @@ describe('snapshot: TagsView branches', () => {
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('react')
     expect(html).toContain('vite')
-    // TagRow renders the post-count suffix + posts-list deep-link.
     expect(html).toContain('5 篇')
     expect(html).toContain('2 篇')
-    // Edit / delete affordances carry the tag name in their aria-labels.
     expect(html).toContain('编辑标签 react')
     expect(html).toContain('删除标签 vite')
     expect(html).toContain('已加载全部标签')
@@ -109,7 +107,6 @@ describe('snapshot: TagsView branches', () => {
     }
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('标签管理')
-    // No rows + not loading → empty state (toast mocked).
     expect(html).toContain('未找到标签')
   })
 
@@ -117,7 +114,6 @@ describe('snapshot: TagsView branches', () => {
     debouncedSearch.value = '关键'
     setList([])
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
-    // The search input mirrors the debounced value as its `value` attr.
     expect(html).toContain('value="关键"')
     expect(html).toContain('搜索标签')
   })

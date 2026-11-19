@@ -23,7 +23,6 @@ import {
 
 const log = getLogger('observability.provision')
 
-/** The subset of the observability section the provisioning path owns. */
 export interface ObservabilitySettingsPatch {
   rumClientToken?: string
   provisionedFingerprint?: string
@@ -162,7 +161,6 @@ async function provisionInternal(deps: ProvisionDeps): Promise<ProvisionResult> 
 
 let queue: Promise<unknown> = Promise.resolve()
 
-/** Serialized provisioning entry point. Rejections propagate to the caller (the procedure maps them). */
 export function runObservabilityProvisioning(deps: ProvisionDeps): Promise<ProvisionResult> {
   const task = queue.then(() => provisionInternal(deps))
   queue = task.catch(() => undefined)

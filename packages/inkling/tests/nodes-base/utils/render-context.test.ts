@@ -170,7 +170,6 @@ describe('createRenderContext', () => {
 
       expect(context.resolveExportPolicy('inkling-version')).toBe('3.9')
       expect(context.resolveExportPolicy('footnotes-section-title')).toBe('References')
-      // the deprecated context field is the same resolved value
       expect(context.inklingVersion).toBe('3.9')
     })
 
@@ -211,8 +210,6 @@ describe('createRenderContext', () => {
 
   describe('isLocalContentImage', () => {
     it("forwards the context's own siteUrl and imageBaseUrl", () => {
-      // Seam property: renderers cannot forget to forward the site config —
-      // the context carries it.
       const context = createRenderContext({
         dom,
         siteUrl: 'https://example.com',

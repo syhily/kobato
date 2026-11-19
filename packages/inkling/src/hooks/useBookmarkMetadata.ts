@@ -15,17 +15,11 @@ export interface UseBookmarkMetadataResult {
   loading: boolean
   urlError: boolean
   clearUrlError: () => void
-  // the submit path: focuses the editor before the input dismounts, applies
-  // the submitted href, and folds fetch failures into the urlError state
   submitUrl: (href: string) => Promise<void>
-  // the init path (a card constructed with a bare url): applies the
-  // response's canonical url and rejects on fetch failure so the caller can
-  // paste-as-link
+
   fetchInitialMetadata: (href: string) => Promise<void>
 }
 
-// the fetch choreography, the loading/urlError machine, and the isEmbedResponse
-// classifier live in bookmark-embed-flow; this hook is the subscription adapter
 export function useBookmarkMetadata({
   editor,
   nodeKey,

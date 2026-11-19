@@ -15,15 +15,10 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The card menu keyboard policy, driven through a real headless editor: the
-// handlers read their inputs at event time through ports, so a dispatched key
-// must hit the port exactly when the policy says the menu is open.
-
 const ITEM: ResolvedMenuItem = {
   label: 'Image',
-  insertCommand: undefined as never, // replaced per-test when needed
+  insertCommand: undefined as never,
 }
-
 function basePorts() {
   return {
     isOpen: vi.fn<() => boolean>(() => true),

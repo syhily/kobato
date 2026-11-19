@@ -1,11 +1,6 @@
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { createHash } from 'node:crypto'
 
-// Fallback site assets bundled via Vite's glob import: SVGs inlined as raw text,
-// binaries as ArrayBuffers wrapped in Node Buffers at module init. Lives under
-// packages/server/src/assets/ so a stray client-side import of the 430 KB bundle
-// is caught by the path.
-
 export const SVG_SLOTS = ['faviconSvg', 'logoSvg', 'logoDarkSvg', 'logoLargeSvg', 'logoLargeDarkSvg'] as const
 export type SvgSlot = (typeof SVG_SLOTS)[number]
 const SVG_SLOT_SET = new Set<string>(SVG_SLOTS)
@@ -40,7 +35,6 @@ const binaryModules = unsafeCast<Record<string, string>>(
   }),
 )
 
-// `favicon.svg` -> `faviconSvg`; `apple-touch-icon.png` -> `appleTouchIcon`; `favicon.ico` -> `faviconIco`.
 function keyForFile(path: string): string {
   const filename = path.slice(path.lastIndexOf('/') + 1)
   const match = /^(.+?)\.(svg|ico|png)$/.exec(filename)
@@ -91,7 +85,6 @@ export const DEFAULT_BINARY: Readonly<Record<BinarySlot, Buffer>> = indexBySlot(
   dataUriToBuffer,
 )
 
-// Pre-computed sha256 per bundled default — serves as the fallback response's ETag.
 function hashRecord<K extends string>(record: Record<K, Buffer | string>): Record<K, string> {
   const out: Partial<Record<K, string>> = {}
   for (const [k, v] of unsafeCast<[K, Buffer | string][]>(Object.entries(record))) {

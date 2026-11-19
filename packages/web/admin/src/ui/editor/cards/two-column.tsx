@@ -93,8 +93,6 @@ function TwoColumnPane({
   )
 }
 
-/** The card chrome: the responsive grid section. The pane slot holds the nested
- *  editors on the canvas and the pane HTML in the export. */
 export function TwoColumnCardView({ left, right }: { left?: ReactNode; right?: ReactNode }) {
   return (
     <section className={TWO_COLUMN_CARD_CLASSES.root} data-pt-two-column="">

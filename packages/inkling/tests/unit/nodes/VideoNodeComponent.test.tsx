@@ -27,7 +27,6 @@ function createTestEditor(): LexicalEditor {
   return editor
 }
 
-// the card is selected and editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'video-1',
   { selected = true, editing = true }: { selected?: boolean; editing?: boolean } = {},
@@ -247,7 +246,6 @@ describe('VideoNodeComponent', () => {
       expect(readVideoFields(editor, nodeKey)?.src).toBe('https://cdn.example.com/clip.mp4')
     })
 
-    // full patch, with thumbnail dimensions backfilled because no custom thumbnail is set
     expect(readVideoFields(editor, nodeKey)).toMatchObject({
       src: 'https://cdn.example.com/clip.mp4',
       duration: 61,
@@ -260,7 +258,6 @@ describe('VideoNodeComponent', () => {
       thumbnailSrc: 'https://cdn.example.com/clip.mp4.jpg',
     })
 
-    // thumbnail sub-flow: a synthesized jpg File through the mediaThumbnail uploader
     expect(thumbnailUpload.upload).toHaveBeenCalledTimes(1)
     const [thumbnailFiles, thumbnailOptions] = thumbnailUpload.upload.mock.calls[0]
     expect(thumbnailFiles).toHaveLength(1)
@@ -269,7 +266,6 @@ describe('VideoNodeComponent', () => {
     expect(thumbnailFiles[0].type).toBe('image/jpeg')
     expect(thumbnailOptions).toEqual({ formData: { url: 'https://cdn.example.com/clip.mp4' } })
 
-    // the preview thumbnail is leased for the extracted blob, then released when the flow completes
     expect(createObjectURLSpy).toHaveBeenCalledExactlyOnceWith(thumbnailBlob)
     expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:video-thumb-preview')
   })
@@ -306,8 +302,6 @@ describe('VideoNodeComponent', () => {
       expect(readVideoFields(editor, nodeKey)?.src).toBe('https://cdn.example.com/clip.mp4')
     })
 
-    // thumbnail dimensions are left to the custom thumbnail; the uploaded
-    // thumbnail still lands on thumbnailSrc
     expect(readVideoFields(editor, nodeKey)).toMatchObject({
       thumbnailWidth: 111,
       thumbnailHeight: 55,
@@ -354,7 +348,6 @@ describe('VideoNodeComponent', () => {
       expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
-    // the flag is cleared on the node so a re-render does not trigger it again
     await waitFor(() => {
       expect(readVideoFields(editor, nodeKey)?.triggerFileDialog).toBe(false)
     })
@@ -379,7 +372,6 @@ describe('VideoNodeComponent', () => {
 
     renderComponent(nodeKey, false, { initialFile: file, uploads: { video: videoUpload } })
 
-    // the mount effect runs synchronously; give any async work a chance to fire
     await tick()
     expect(videoUpload.upload).not.toHaveBeenCalled()
     expect(extractVideoMetadata).not.toHaveBeenCalled()

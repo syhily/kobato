@@ -9,9 +9,7 @@ import { useCallback } from 'react'
 
 interface ObservabilityFormProps {
   observability: ObservabilitySettings
-  /** Last-4 mask of the stored password (`masks.observabilityPasswordMask`). */
   passwordMask: string | null
-  /** Last-4 mask of the stored RUM token (`masks.observabilityRumClientTokenMask`). */
   rumClientTokenMask: string | null
 }
 

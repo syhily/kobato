@@ -6,8 +6,6 @@ import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-
 
 import type { Route } from './+types/overview'
 
-// Server-rendered first paint; client-side fetchers take over once the URL state changes. The `search` string
-// carries the raw query string, parsed server-side.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   requireRole(viewer ?? undefined, 'admin')

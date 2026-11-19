@@ -53,8 +53,6 @@ export function VideoNodeComponent({
   const isSelected = useCardIsSelected(nodeKey)
   const isEditing = useCardIsEditing(nodeKey)
   const [previewThumbnail, setThumbnailPreview] = usePreviewLease()
-  // the synthesized-thumbnail sub-flow's bare upload channel (no
-  // input/drag/dialog wiring — the composition kicks it off itself)
   const thumbnailUploader = useMediaUploader('mediaThumbnail')
   const [metadataExtractionErrors, setMetadataExtractionErrors] = useState<VideoNodeMetadataError[]>([])
 
@@ -83,8 +81,6 @@ export function VideoNodeComponent({
       setThumbnailPreview(metadata.thumbnailBlob)
     }
 
-    // the main → thumbnail composition lives in upload-intent; the
-    // component keeps the metadata catch and the preview lease
     await videoFlowUploadIntent({
       editor,
       nodeKey,
@@ -181,13 +177,8 @@ export function VideoNodeComponent({
   )
 }
 
-/**
- * Video's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderVideoCard(node: VideoNode) {
   const cardWidth = normalizeCardWidth(node.cardWidth) ?? 'regular'
-
   return (
     <VideoNodeComponent
       captionEditor={node.__captionEditor}

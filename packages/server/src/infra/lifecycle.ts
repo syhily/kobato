@@ -42,8 +42,6 @@ const container: LifecycleContainer = {
   getDbFn: null,
 }
 
-// Test-only surface so contract tests can inspect the container
-// without reaching into closure state.
 export function __getLifecycleContainer(): LifecycleContainer {
   return container
 }

@@ -52,7 +52,6 @@ describe('content/services/reproject-body-html', () => {
     expect(stale.bodyHtml).toBe(projections.bodyHtml)
     expect(stale.bodyText).toBe(projections.bodyText)
     expect(stale.bodyHtmlFeed).toBe(projections.bodyHtmlFeed)
-    // The no-drift row is not written at all — edit columns survive.
     const current = contentRow(currentId)
     expect(current.updatedAt.getTime()).toBe(before.updatedAt.getTime())
     expect(current.clientRevisionToken).toBe(before.clientRevisionToken)

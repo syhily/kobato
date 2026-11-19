@@ -15,13 +15,6 @@ export interface FootnoteDefinitionNodeComponentProps {
   contentEditorInitialState?: EditorState | undefined
 }
 
-/**
- * The definition card's chrome: one "footnotes section" row — the citation
- * number badge (from the footnote handle, matching the exported `<li>`
- * anchor), the content nested editor, and the delete button. Deleting goes
- * through `$removeFootnote` so the citing refs go with the definition; the
- * card's own action toolbar is suppressed — this row IS the whole UI.
- */
 export function FootnoteDefinitionNodeComponent({
   targetKey,
   contentEditor,
@@ -44,13 +37,12 @@ export function FootnoteDefinitionNodeComponent({
     }
     contentEditor.focus(
       () => {
-        /* noop — the placement happens through defaultSelection below */
+        /* noop */
       },
       { defaultSelection: 'rootEnd' },
     )
     footnoteHandle.setState({ focusRequest: null })
   }, [focusRequest, targetKey, contentEditor, footnoteHandle])
-
   const handleDelete = React.useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault()
@@ -92,11 +84,6 @@ export function FootnoteDefinitionNodeComponent({
   )
 }
 
-/**
- * The footnote definition's decorate render — the React-bearing half of its
- * decorate-target, paired with the declaration by
- * `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderFootnoteDefinitionCard(node: FootnoteDefinitionNode) {
   // Same headless-round-trip invariant as toggle's nested editors: null only
   // inside an editor that never reconciles decorators — guard so the field
@@ -104,7 +91,6 @@ export function renderFootnoteDefinitionCard(node: FootnoteDefinitionNode) {
   if (!node.__contentEditor) {
     return null
   }
-
   return (
     <FootnoteDefinitionNodeComponent
       contentEditor={node.__contentEditor}

@@ -35,7 +35,6 @@ describe('snapshot: WebmentionList (public)', () => {
     expect(html).toContain('href="https://sender.example/mentioning-post"')
     expect(html).toContain('target="_blank"')
     expect(html).toContain('rel="noreferrer"')
-    // The authorless/titleless card falls back to the hostname and the raw URL.
     expect(html).toContain('sender.example')
   })
 
@@ -47,13 +46,10 @@ describe('snapshot: WebmentionList (public)', () => {
     ]
     const html = stableHtml(renderToHtml(<WebmentionList mentions={mentions} />))
     expect(html).toMatch(/\(.*?3.*?\)/)
-    // The reply keeps the full card treatment.
     expect(html).toContain('提及了你的文章')
-    // Likes / reposts render under their own compact group labels…
     expect(html).toContain('喜欢')
     expect(html).toContain('转发')
     expect(html).toContain('Liker Ann')
-    // …with the authorless repost falling back to the source hostname.
     expect(html).toContain('sender.example')
   })
 })

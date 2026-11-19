@@ -77,7 +77,6 @@ interface PopupProps {
   onSelect: (item?: ListOptionItem) => void
 }
 
-// The AtLinkResultsPopup props carried by the hook's Portal element, or null when nothing renders.
 function popupProps(result: { current: unknown }): PopupProps | null {
   const portal = result.current as React.ReactElement | null
   const popup = (portal?.props as { children?: React.ReactElement } | undefined)?.children
@@ -211,7 +210,6 @@ describe('AtLinkPlugin', () => {
     )
 
     await buildFocusedAtLink('Emo')
-    // wait out the search coordinator's debounce
     await act(async () => {
       await new Promise<void>((resolve) => {
         setTimeout(resolve, 200)
@@ -260,8 +258,6 @@ describe('AtLinkPlugin', () => {
 
     expect(popupProps(result)?.listOptions).toEqual([{ label: 'No results found', items: [] }])
 
-    // the no-results option carries a null value: selecting without an item
-    // reverts the at-link
     await act(async () => {
       popupProps(result)?.onSelect(undefined)
     })
@@ -269,7 +265,7 @@ describe('AtLinkPlugin', () => {
 
     editor.getEditorState().read(() => {
       const paragraph = $getRoot().getFirstChild()
-      // the reverted text merges with the preceding same-format text node
+
       expect($isElementNode(paragraph) ? paragraph.getTextContent() : null).toBe('hello @zz-no-results')
     })
     expect(result.current).toBeNull()

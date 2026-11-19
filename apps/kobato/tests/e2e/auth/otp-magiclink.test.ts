@@ -6,10 +6,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
 
-// OTP / magic-link journeys over real mail (in-process SMTP capture;
-// nothing leaves the machine). The magic-link `login_method` flip uses
-// the sanctioned KOBATO_E2E_DATABASE seam and always restores.
-
 function e2eDatabasePath(): string {
   const path = process.env.KOBATO_E2E_DATABASE
   if (!path) {
@@ -40,7 +36,6 @@ async function rememberAdminSession(client: E2eClient): Promise<void> {
 beforeAll(async () => {
   const port = await capture.start()
 
-  // Point the instance's mail transport at the capture server.
   const admin = new E2eClient(env.baseUrl)
   const { res } = await loginAdmin(admin, env)
   expect(res.status).toBe(302)
@@ -71,7 +66,6 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  // Mail goes back off so no later journey trips over the dead transport.
   try {
     if (adminSession !== null) {
       await callE2eRpc(
@@ -91,7 +85,6 @@ describe('OTP signin (HTTP e2e)', () => {
     const client = new E2eClient(env.baseUrl)
     const { res, csrfToken } = await loginAdmin(client, env)
 
-    // With mail ready, the credential step stages the OTP instead of logging in.
     expect(res.status).toBe(302)
     const verifyUrl = new URL(res.headers.get('location')!, env.baseUrl)
     expect(verifyUrl.searchParams.get('action')).toBe('verifyotp')
@@ -120,7 +113,7 @@ describe('magic-link signin (HTTP e2e)', () => {
     setLoginMethod('magic-link')
     try {
       const client = new E2eClient(env.baseUrl)
-      // GET the signin page first: session cookie + CSRF token.
+
       const page = await client.get('/admin/signin')
       const html = await page.text()
       const csrfToken = /name="csrf_token" value="([^"]+)"/.exec(html)?.[1]
@@ -128,7 +121,6 @@ describe('magic-link signin (HTTP e2e)', () => {
         throw new Error('no csrf_token hidden input on /admin/signin')
       }
 
-      // Identify: the answer is deliberately generic — the link proves the account.
       const identified = await client.postForm('/admin/signin?action=identify&redirect_to=%2Fadmin', {
         csrf_token: csrfToken,
         email: env.adminEmail,
@@ -142,7 +134,6 @@ describe('magic-link signin (HTTP e2e)', () => {
       const token = new URLSearchParams(linkPath.slice(linkPath.indexOf('?'))).get('token')
       expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/)
 
-      // The loader peeks (never consumes) the token — a prefetch must not burn it.
       const confirm = await client.get(linkPath)
       expect(confirm.status).toBe(200)
       expect(await confirm.text()).toContain('name="magic_token"')
@@ -159,7 +150,6 @@ describe('magic-link signin (HTTP e2e)', () => {
 
       await rememberAdminSession(client)
 
-      // Single-use: replaying the token fails with the generic error, not a redirect.
       const anonymous = new E2eClient(env.baseUrl)
       const anonPage = await anonymous.get('/admin/signin')
       const anonCsrf = /name="csrf_token" value="([^"]+)"/.exec(await anonPage.text())?.[1]

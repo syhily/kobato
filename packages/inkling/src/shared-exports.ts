@@ -4,8 +4,6 @@
  * card-chrome exports below name only registry facts, contexts, and chrome
  * components. */
 
-/* Types re-exported from bundled runtimes so consumers can name shapes that
- * appear in public prop/command signatures. */
 export type { Transformer } from '@lexical/markdown'
 export type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 
@@ -14,8 +12,6 @@ export type { InklingInitialEditorState } from '@kobato/inkling-internal/compone
 export type { InklingSurfaceProps } from '@kobato/inkling-internal/components/InklingSurface'
 export type { ExternalControlAPI } from '@kobato/inkling-internal/plugins/ExternalControlPlugin'
 
-/* Host-facing config types: the shapes a host names when wiring
- * <InklingComposer cardConfig={...} fileUploader={...}> and its callbacks. */
 export type {
   BookmarkEmbedOptions,
   BookmarkEmbedResponse,
@@ -34,9 +30,6 @@ export type {
 } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 export type { ListOptionItem, SearchResult } from '@kobato/inkling-internal/hooks/useSearchLinks'
 
-/* Labels: the closed labels table a host overrides through
- * <InklingComposer labels={...}>, a prop on both entries. Host card menus ride
- * the `menu.host.*` namespace, opened on the input side only. */
 export { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
 export type {
   InklingHostMenuLabelKey,
@@ -44,8 +37,6 @@ export type {
   InklingLabelsInput,
 } from '@kobato/inkling-internal/labels/inkling-labels'
 
-/* Media library: the picker's headless state machine rides both entries, so a
- * host building its own library-backed card (e.g. music) reuses it. */
 export { createLibraryBrowser } from '@kobato/inkling-internal/services/library-browser'
 export type {
   LibraryBrowser,
@@ -54,21 +45,12 @@ export type {
   LibraryScheduler,
 } from '@kobato/inkling-internal/services/library-browser'
 
-/* Card-free composition pieces shared by both entries. */
 export { default as InklingComposableEditor } from '@kobato/inkling-internal/components/InklingComposableEditor'
 export { default as InklingSurface } from '@kobato/inkling-internal/components/InklingSurface'
 export { CORE_PLUGINS, default as CorePlugins } from '@kobato/inkling-internal/plugins/CorePlugins'
 export type { CorePluginEntry, CorePluginScope } from '@kobato/inkling-internal/plugins/CorePlugins'
 export { default as RestrictContentPlugin } from '@kobato/inkling-internal/plugins/RestrictContentPlugin'
 
-/* The pick seam: a host card declares its picker on the defineCard spec; the
- * card component opens it through `useCardPicker` and the picker host core
- * plugin renders it. A same-type VARIANT of a built-in card (no defineCard
- * spec — the nodeType collides) registers through `registerCardPicker`
- * instead; both channels share one dispatch. `useCardChrome` is the card chrome
- * prologue a host card's picker and editing chrome write through, and
- * `CardActionToolbar` is the selection-driven chrome host cards mount their
- * affordances on. */
 export { useCardPicker } from '@kobato/inkling-internal/hooks/useCardPicker'
 export type { CardPickerHandle } from '@kobato/inkling-internal/hooks/useCardPicker'
 export { registerCardPicker } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
@@ -78,9 +60,6 @@ export type { CardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
 export type { CardWriteOptions } from '@kobato/inkling-internal/hooks/useCardWriter'
 export { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
 export type { CardActionToolbarProps, CardToolbarItem } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
-
-/* Lexical's command-priority constants — a host intercepting a stock command
- * names the level instead of hardcoding the number. */
 export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -88,8 +67,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
 } from 'lexical'
-/* Writing-focus mode: the plugin the `focusMode` surface prop mounts, plus the
- * class/attribute contract host CSS keys on. */
+
 export { default as FocusModePlugin } from '@kobato/inkling-internal/plugins/FocusModePlugin'
 export { FOCUS_ACTIVE_ATTRIBUTE, FOCUS_MODE_CLASS } from '@kobato/inkling-internal/plugins/behaviour/focus-mode'
 export { default as BASIC_NODES } from '@kobato/inkling-internal/nodes/BasicNodes'

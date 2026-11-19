@@ -185,7 +185,6 @@ describe('structure conventions', () => {
       .map((entry) => entry.name)
       .sort()
 
-    // `editor*`/`shell`/`shared` are composition tiers, not domains.
     const expected = [
       'account',
       'analytics',
@@ -239,7 +238,6 @@ describe('structure conventions', () => {
       .map((entry) => entry.name)
       .filter((name) => name !== 'contract.ts')
 
-    // Documented aliases: these wire groups reuse the contract family they serve.
     const ALIASES: Record<string, string> = {
       'account.ts': 'users.ts',
       'avatar.ts': 'comments.ts',

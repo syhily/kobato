@@ -57,13 +57,11 @@ function registerVerticalArrowCommand(
         return false
       }
 
-      // A caption arrow in a nested editor moves selection back to the parent editor.
       const { selectedCardKey } = store.getState()
       if ($selectCardFromCaptionArrow(editor, selectedCardKey, event)) {
         return true
       }
 
-      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -105,7 +103,6 @@ function registerVerticalArrowCommand(
 
       if ($isRangeSelection(selection)) {
         if (selection.isCollapsed()) {
-          // `cursorDidExitAtTop` is up-only; document start clears the cursor.
           if (isUp && cursorDidExitAtTop && $isAtStartOfDocument(selection)) {
             cursorDidExitAtTop()
             return true
@@ -147,7 +144,6 @@ export function registerArrowLeftCommand(editor: LexicalEditor, deps: KeyboardNa
   return editor.registerCommand(
     KEY_ARROW_LEFT_COMMAND,
     (event) => {
-      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -183,7 +179,6 @@ export function registerArrowLeftCommand(editor: LexicalEditor, deps: KeyboardNa
       if (!firstNode) {
         return false
       }
-      // Cards resolve themselves; other nodes resolve their top-level element.
       const referenceNode = $isInklingCard(firstNode) ? firstNode : firstNode.getTopLevelElement()
       const previousCard = referenceNode ? $getLogicallyAdjacentCard('previous', referenceNode) : null
 
@@ -203,7 +198,6 @@ export function registerArrowRightCommand(editor: LexicalEditor, _deps: Keyboard
   return editor.registerCommand(
     KEY_ARROW_RIGHT_COMMAND,
     (event) => {
-      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -220,7 +214,6 @@ export function registerArrowRightCommand(editor: LexicalEditor, _deps: Keyboard
         return false
       }
 
-      // Cards resolve themselves; other nodes resolve their top-level element.
       const referenceNode = $isInklingCard(lastNode) ? lastNode : lastNode.getTopLevelElement()
       const nextCard = referenceNode ? $getLogicallyAdjacentCard('next', referenceNode) : null
 

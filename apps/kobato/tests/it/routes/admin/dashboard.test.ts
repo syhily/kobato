@@ -18,10 +18,6 @@ import { adminSession, authorSession } from '@kobato/test/session.ts'
 import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// The dashboard loader against the real engine: real rows + the ADOPTED
-// DuckDB sidecar; admin-only branches are pinned by their real results
-// (null for authors), not behavioural assertions. No mocks.
-
 const db = getTestDb()
 
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
@@ -55,7 +51,7 @@ async function seedPost(
       slug: `post-${Math.random().toString(36).slice(2)}`,
       title: overrides.title,
       authorId,
-      // Promoted = published flag + a published revision; drafts miss one of the two.
+
       published: !draft,
       publishedRevisionId: draft ? null : 1,
       updatedAt: overrides.updatedAt,
@@ -76,7 +72,6 @@ async function seedComment(userId: number, overrides: Record<string, unknown> = 
   })
 }
 
-/** Three views from two visitors (one referer) inside the loader's 24h window. */
 async function seedVisits(): Promise<void> {
   const ts = new Date(Date.now() - 10_000)
   await seedAccessEvents(analyticsHandle, [
@@ -107,21 +102,21 @@ describe('admin dashboard loader (real db + real analytics)', () => {
 
     expect(data.name).toBe('admin')
     expect(data.role).toBe('admin')
-    // Real moderation queue: nothing pending.
+
     expect(data.pendingModeration).toEqual({
       items: [],
       total: 0,
       hasMore: false,
       counts: { all: 0, approval: 0, deletion: 0 },
     })
-    // Real counters over the seeded sidecar rows.
+
     expect(data.visitSummary).toEqual({ visits: 3, visitors: 2, referers: 1 })
     expect(data.weeklyTrend).not.toBeNull()
     expect(data.weeklyTrend!.points.length).toBeGreaterThan(0)
     expect(data.weeklyTrend!.points.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
     expect(EMPTY_STATE_LINE_IDS).toContain(data.emptyStateLineId)
     expect(data.stats).toEqual({ draftCount: 2, publishedCount: 1, myCommentsTotal: 2, myCommentsPending: 0 })
-    // Draft cards sort by updatedAt desc; published cards prefer publishedAt.
+
     expect(data.recentDrafts).toEqual([
       { id: String(draftId), title: 'Draft A', updatedAtIso: '2024-02-01T00:00:00.000Z' },
       { id: expect.any(String), title: 'Draft B', updatedAtIso: '2024-01-15T00:00:00.000Z' },
@@ -139,7 +134,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     })
     await seedPost(3, { title: 'Author Published', updatedAt: new Date('2024-02-02T00:00:00.000Z') })
     await seedComment(3)
-    // Another user's rows must not leak into the author's numbers.
+
     await seedPost(1, { title: 'Admin Draft', draft: true, updatedAt: new Date('2024-02-04T00:00:00.000Z') })
     await seedComment(1)
     await seedVisits()
@@ -147,7 +142,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     const data = await loader(makeLoaderArgs({ session: authorSession(), db }))
 
     expect(data.role).toBe('author')
-    // Admin-only branches are null for authors; the UI hides those cards.
+
     expect(data.pendingModeration).toBeNull()
     expect(data.visitSummary).toBeNull()
     expect(data.weeklyTrend).toBeNull()

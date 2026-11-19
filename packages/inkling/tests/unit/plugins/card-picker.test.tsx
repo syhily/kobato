@@ -42,8 +42,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// Fixture cards, registered at module top level mirroring the host idiom
-// (defineCard before any composer mounts).
 const pickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="picker-dialog" />)
 
 const pickerWidget = defineCard({
@@ -103,7 +101,7 @@ describe('the pick seam registration', () => {
     expect(registrations.find((registration) => registration.nodeType === 'manualPickerWidget')?.pickerAutoOpen).toBe(
       false,
     )
-    // built-in cards never carry the flag — pickers are host-only
+
     expect(registrations.filter((registration) => registration.pickerAutoOpen).map((r) => r.nodeType)).toEqual([
       'pickerWidget',
     ])
@@ -235,11 +233,8 @@ describe('CardPickerHostPlugin', () => {
 
 describe('autoOpenOnInsert', () => {
   let editor: LexicalEditor
-  // One picker store shared by registerCardCommands (writes the openPicker
-  // flag) and the registrar's context wrapper — both halves of the seam must
-  // observe the same store.
-  let pickerStore: ReturnType<typeof createCardPickerStore>
 
+  let pickerStore: ReturnType<typeof createCardPickerStore>
   beforeEach(() => {
     vi.clearAllMocks()
     editor = createTestEditor({ nodes: FIXTURE_NODES })
@@ -273,9 +268,9 @@ describe('autoOpenOnInsert', () => {
 
     const request = store.getState().request
     expect(request?.nodeType).toBe('pickerWidget')
-    // Lexical commits the insert on a microtask — drain before reading
+
     await tick()
-    // the node landed under the request's key — the pick write resolves it
+
     editor.getEditorState().read(() => {
       expect($getNodeByKey(request?.nodeKey ?? '')?.getType()).toBe('pickerWidget')
     })
@@ -306,7 +301,7 @@ describe('autoOpenOnInsert', () => {
     await tick()
 
     expect(store.getState().request).toBeNull()
-    // the loaded card answers a manual open (the placeholder re-entry path)
+
     editor.getEditorState().read(() => {
       expect($getRoot().getFirstChild()?.getType()).toBe('pickerWidget')
     })
@@ -314,15 +309,11 @@ describe('autoOpenOnInsert', () => {
 })
 
 describe('the variant picker channel (registerCardPicker)', () => {
-  // The picker-override channel: a picker for a card type without a host
-  // spec — a same-type variant of a built-in card. 'audio' stands in as the
-  // built-in type; registered at module scope, mirroring the defineCard idiom.
   const audioPickerRender = vi.fn((_props: CardPickerRenderProps) => <div data-testid="audio-picker" />)
   registerCardPicker('audio', { render: audioPickerRender })
-
   it('resolves the override for a picker-less built-in type, host spec first', () => {
     expect(resolveCardPicker('audio')?.render).toBe(audioPickerRender)
-    // the host spec's own picker wins its channel; a picker-less card resolves nothing
+
     expect(resolveCardPicker('pickerWidget')?.render).toBe(pickerRender)
     expect(resolveCardPicker('pickerlessWidget')).toBeUndefined()
   })
@@ -330,17 +321,14 @@ describe('the variant picker channel (registerCardPicker)', () => {
   it('enforces one picker per node type across both channels', () => {
     expect(() => registerCardPicker('audio', { render: () => null })).toThrow(/already registered/)
     expect(() => registerCardPicker('pickerWidget', { render: () => null })).toThrow(/already registered/)
-    expect(
-      () =>
-        defineCard({
-          nodeType: 'audio',
-          baseNode: generateDecoratorNode({ nodeType: 'audioClone' }),
-          toolbarLabel: 'audio-clone',
-          picker: { render: () => null },
-          render: () => null,
-        }),
-      // 'audio' collides with the built-in declaration before the picker
-      // check runs — the defineCard collision guard stays the first door
+    expect(() =>
+      defineCard({
+        nodeType: 'audio',
+        baseNode: generateDecoratorNode({ nodeType: 'audioClone' }),
+        toolbarLabel: 'audio-clone',
+        picker: { render: () => null },
+        render: () => null,
+      }),
     ).toThrow(/already declared/)
     expect(() =>
       defineCard({
@@ -351,7 +339,7 @@ describe('the variant picker channel (registerCardPicker)', () => {
         render: () => null,
       }),
     ).not.toThrow()
-    // …but a host card WITH a picker now blocks the override channel for its type
+
     expect(() => registerCardPicker('audioVariantWithPicker', { render: () => null })).toThrow(/already registered/)
   })
 
@@ -391,15 +379,12 @@ describe('the variant picker channel (registerCardPicker)', () => {
   })
 
   it('rejects autoOpenOnInsert on the variant channel — dispatch the insert with openPicker instead', () => {
-    // Variant inserts ride the built-in insert registration, which never
-    // projects the flag — it would compile, register, and never fire.
     expect(() => registerCardPicker('audioAutoOpenVariant', { render: () => null, autoOpenOnInsert: true })).toThrow(
       /autoOpenOnInsert/,
     )
-    // the throw precedes registration — the type stays unregistered
+
     expect(resolveCardPicker('audioAutoOpenVariant')).toBeUndefined()
   })
-
   it('writes the pick request when INSERT_CARD_COMMAND carries openPicker: true', async () => {
     const editor = createTestEditor({ nodes: FIXTURE_NODES })
     mockComposerContext(editor)
@@ -411,13 +396,10 @@ describe('the variant picker channel (registerCardPicker)', () => {
       paragraph.select()
     })
 
-    // The variant trigger path: a host's intent command inserts an empty card
-    // and flags the payload. The node constructs inside the update — Lexical
-    // keys need an active editor.
     await updateEditor(editor, () => {
       editor.dispatchCommand(INSERT_CARD_COMMAND, { cardNode: new pickerWidget.node({}), openPicker: true })
     })
-    // the insert-channel marker: the pick write merges into the insert entry
+
     expect(pickerStore.getState().request).toMatchObject({ nodeType: 'pickerWidget', fromInsert: true })
 
     pickerStore.setState({ request: null })
@@ -443,8 +425,6 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
   let editor: LexicalEditor
   let pickerStore: ReturnType<typeof createCardPickerStore>
 
-  // The assembled class type doesn't thread the dataset properties (the host
-  // registry stores LexicalNode), so the guard declares the field slice.
   type PickerWidgetNode = LexicalNode & { src: string }
   const isPickerWidgetNode = (node: unknown): node is PickerWidgetNode => node instanceof pickerWidget.node
 
@@ -489,7 +469,7 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     })
     await act(async () => {
       editor.dispatchCommand(resolveCardInsertCommand('pickerWidget'), {})
-      // Lexical commits the insert on a microtask — drain before reading
+
       await tick()
     })
     const request = pickerStore.getState().request
@@ -541,7 +521,6 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     expect(readCardSrc(nodeKey)).toBe('picked')
     expect(seenTags.some((tags) => tags.includes(HISTORY_MERGE_TAG))).toBe(true)
 
-    // one undo retracts insert AND pick — no stranded empty placeholder
     await undo()
     expect(cardExists(nodeKey)).toBe(false)
   })
@@ -559,11 +538,10 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     })
     expect(readCardSrc(nodeKey)).toBe('picked')
 
-    // first undo reverts only the pick write — the empty card stays
     await undo()
     expect(cardExists(nodeKey)).toBe(true)
     expect(readCardSrc(nodeKey)).toBe('')
-    // second undo retracts the insert
+
     await undo()
     expect(cardExists(nodeKey)).toBe(false)
   })
@@ -571,11 +549,6 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
 
 describe('headless purity', () => {
   it('the headless surface never references the pick seam', () => {
-    // `@kobato/inkling-internal/headless` is the react-free server surface (pinned by
-    // tests/unit/shared/contracts/boundaries.test.ts); the seam's React
-    // halves (hook, host plugin, context) must never leak into it. The
-    // registry's picker fact is type-only — the card-layering-imports guard
-    // pins host-card-registry's runtime imports React-free.
     const headless = readFileSync('packages/inkling/src/headless.ts', 'utf8')
     expect(headless).not.toMatch(/useCardPicker|CardPickerHostPlugin|cardPickerStore|CardPickerStoreContext/)
   })

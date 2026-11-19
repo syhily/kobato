@@ -31,8 +31,8 @@ describe('client/lib/chunk-error — isChunkLoadError', () => {
 
   it('does not match an unrelated message', () => {
     expect(isChunkLoadError('something else went wrong')).toBe(false)
-    expect(isChunkLoadError('loading chunk 5')).toBe(false) // missing "failed"
-    expect(isChunkLoadError('failed to load')).toBe(false) // missing chunk needle
+    expect(isChunkLoadError('loading chunk 5')).toBe(false)
+    expect(isChunkLoadError('failed to load')).toBe(false)
   })
 
   it('matches an Error object with name === ChunkLoadError', () => {
@@ -47,8 +47,8 @@ describe('client/lib/chunk-error — isChunkLoadError', () => {
 
   it('returns false for an object without name or message', () => {
     expect(isChunkLoadError({})).toBe(false)
-    expect(isChunkLoadError({ name: 123 })).toBe(false) // non-string name
-    expect(isChunkLoadError({ message: 123 })).toBe(false) // non-string message
+    expect(isChunkLoadError({ name: 123 })).toBe(false)
+    expect(isChunkLoadError({ message: 123 })).toBe(false)
   })
 })
 

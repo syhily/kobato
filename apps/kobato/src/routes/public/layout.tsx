@@ -45,7 +45,6 @@ function useResolvedChromeProps(): {
 export default function PublicLayoutRoute() {
   const { currentUser, footer } = useResolvedChromeProps()
   const { pathname, search } = useLocation()
-  // One device-environment beacon per page view; DNT silences it.
   useDeviceEnvBeacon()
 
   return (

@@ -37,8 +37,6 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
   return editor.registerCommand(
     PASTE_COMMAND,
     (clipboardEvent) => {
-      // avoid Inkling behaviours when an inner element (e.g. a card input) has focus
-      // and event wasn't triggered from nested editor
       if (!editorOwnsFocus(editor) && !isNested) {
         // Swallow paste inside inner inputs/contenteditables — without this,
         // a paste inside e.g. CodeMirror would replace the card.

@@ -19,13 +19,11 @@ import {
 
 export interface ConnectionProbeResult {
   organization: 'created' | 'exists'
-  /** OpenObserve release version from the authenticated config endpoint. */
   version: string | null
 }
 
 let lastProbedVersion: string | null = null
 
-/** Last version observed by a successful connection test in this process (null before any test). */
 export function getLastProbedVersion(): string | null {
   return lastProbedVersion
 }
@@ -63,7 +61,6 @@ export function assertObservabilityConnectionConfig(site: ObservabilitySettingsS
   }
 }
 
-/** True when the saved configuration is complete AND its connection fingerprint matches the last successful test. */
 export function isObservabilityConnectionVerified(site: ObservabilitySettingsSlice | null): boolean {
   if (site === null) {
     return false
@@ -76,7 +73,6 @@ export function isObservabilityConnectionVerified(site: ObservabilitySettingsSli
   return site.verifiedFingerprint !== '' && site.verifiedFingerprint === observabilityConnectionFingerprint(site)
 }
 
-/** Provisioning prerequisite: a complete, verified connection. */
 export function assertObservabilityProvisionable(site: ObservabilitySettingsSlice): void {
   assertObservabilityConnectionConfig(site)
   if (site.verifiedFingerprint === '' || site.verifiedFingerprint !== observabilityConnectionFingerprint(site)) {
@@ -84,10 +80,6 @@ export function assertObservabilityProvisionable(site: ObservabilitySettingsSlic
   }
 }
 
-/**
- * healthz → authenticated org listing (proves the credentials) → ensure the
- * organization exists → version. `createClient` is injectable for unit tests.
- */
 export async function testObservabilityConnection(
   site: ObservabilitySettingsSlice,
   createClient: typeof createO2Client = createO2Client,
@@ -120,7 +112,6 @@ export async function testObservabilityConnection(
   }
 }
 
-/** Test seam: forget the process-local last probed version. */
 export function __resetObservabilityConnectionForTests(): void {
   lastProbedVersion = null
 }

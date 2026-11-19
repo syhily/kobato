@@ -5,9 +5,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryPasskeyAuthBeginRateLimit } from '@kobato/server/infra/rate-limit.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/passkey.ts`;
-// this controller only implements the procedures.
-
 /**
  * Public passkey endpoints. `authBegin` is CSRF-less: it only returns a
  * single-use 5-minute challenge — no data is read or mutated.

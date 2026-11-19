@@ -124,8 +124,6 @@ describe('footnote HTML export (live path)', () => {
   })
 
   it('suppresses the trailing empty paragraph sitting before the definition run', () => {
-    // With a doc-end definition run present, the kept blank paragraph is not
-    // the last child — the suppression must look past the run
     const html = renderLive(
       footnoteDoc([paragraph([text('see'), ref('1', 'keyA')]), paragraph([]), definition('keyA', '<p>First note</p>')]),
     )

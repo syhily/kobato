@@ -17,8 +17,6 @@ const GifPlugin = ({ nodeKey }: GifPluginProps) => {
   const gifSettings = useInklingGifSettings()
   const providerConfig = getGifProviderConfig(gifSettings)
 
-  // a host can enable the GIF menu item with a config object whose keys are
-  // all missing (e.g. `{ tenor: {} }`), which resolves to no provider
   if (!providerConfig) {
     return null
   }

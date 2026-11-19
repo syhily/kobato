@@ -10,7 +10,6 @@ import {
   type LexicalNodeReplacement,
 } from 'lexical'
 
-// nested editors bootstrap from the legacy payload dialect (@kobato/inkling-internal/utils/initial-document)
 const BLANK_EDITOR_STATE = JSON.stringify(MINIMAL_DOCUMENT_LEGACY_PAYLOAD)
 
 export interface SetupNestedEditorOptions {
@@ -45,6 +44,6 @@ export function populateNestedEditor(nestedEditor: LexicalEditor, html: string):
     initialHtml: html,
   })
 
-  nestedEditor.setEditorState(editorState, { tag: 'history-merge' }) // use history merge to prevent undo clearing the initial state
+  nestedEditor.setEditorState(editorState, { tag: 'history-merge' })
   return editorState
 }

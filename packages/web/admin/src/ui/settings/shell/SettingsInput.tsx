@@ -10,9 +10,7 @@ import { Textarea } from '@kobato/ui/components/textarea.tsx'
 type InputProps = ComponentProps<typeof Input>
 
 interface SettingsInputProps extends Omit<InputProps, 'onBlur'> {
-  /** From `useSettingsCard().flushOnBlur`. */
   flushOnBlur: () => void
-  /** Optional upstream onBlur (e.g. from `form.register()`); merged with flushOnBlur. */
   onBlur?: FocusEventHandler<HTMLInputElement>
 }
 
@@ -30,9 +28,7 @@ export function SettingsInput({ flushOnBlur, onBlur, ...props }: SettingsInputPr
 type TextareaProps = ComponentProps<typeof Textarea>
 
 interface SettingsTextareaProps extends Omit<TextareaProps, 'onBlur'> {
-  /** From `useSettingsCard().flushOnBlur`. */
   flushOnBlur: () => void
-  /** Optional upstream onBlur; merged with flushOnBlur. */
   onBlur?: FocusEventHandler<HTMLTextAreaElement>
 }
 

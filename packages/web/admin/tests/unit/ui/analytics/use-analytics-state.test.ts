@@ -69,7 +69,6 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
   it('marks an explicit startAt/endAt pair as a custom range (null preset)', () => {
     withParams({ startAt: '1000', endAt: '2000' })
     expect(renderHook(() => useAnalyticsState()).preset).toBeNull()
-    // An invalid pair is not a custom range — the default preset shows.
     withParams({ startAt: '2000', endAt: '1000' })
     expect(renderHook(() => useAnalyticsState()).preset).toBe('last-7d')
   })
@@ -172,7 +171,6 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
     const next = applyUpdater(0, new URLSearchParams({ country: 'CN', filters: '{"os":"iOS"}', preset: 'today' }))
     expect(next.get('country')).toBeNull()
     expect(next.get('filters')).toBeNull()
-    // Unrelated params survive.
     expect(next.get('preset')).toBe('today')
   })
 
@@ -218,7 +216,6 @@ describe('ui/admin/analytics/buildAnalyticsInput', () => {
     expect(input.startAt).toBe(1000)
     expect(input.endAt).toBe(2000)
     expect(input.preset).toBeUndefined()
-    // The client timezone is always attached.
     expect(typeof input.clientTimezone).toBe('string')
     expect(input.clientTimezone!.length).toBeGreaterThan(0)
   })

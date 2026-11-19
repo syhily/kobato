@@ -75,7 +75,6 @@ describe('useCardMenuSession', () => {
     expect(fake.selection.removeAllRanges).toHaveBeenCalledTimes(1)
     expect(fake.ranges).toHaveLength(1)
 
-    // the anchor is the lease: a resetCursor close restores it again
     click('close-reset')
     expect(fake.selection.removeAllRanges).toHaveBeenCalledTimes(2)
     expect(fake.ranges).toHaveLength(1)

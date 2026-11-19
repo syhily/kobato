@@ -30,13 +30,11 @@ import { getLogger, type Logger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('content.lifecycle')
 
-/** Entity-agnostic draft→publish lifecycle for content revisions; entity behavior attaches through this adapter. */
 export interface ContentEntityAdapter<TMeta, TPreview> {
   entityType: ContentType
   findMetaById(db: Database, id: number): TMeta | null
   findPublicMetaBySlug(db: Database, slug: string): TMeta | null
   assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
-  /** Draft-preview gate, owned by the entity descriptor; callers fall through to the published page when it refuses. */
   canPreviewDraft(viewer: ViewerIdentity | undefined, meta: TMeta): boolean
   getId(meta: TMeta): number
   getPublishedRevisionId(meta: TMeta): number | null
@@ -49,13 +47,11 @@ export interface ForceOverwriteEntry<TMeta> {
   mode: 'draft' | 'publish'
   authorId: number | null
   meta: TMeta
-  /** The latest revision the force save overwrote. */
   overwritten: ContentRow
   expectedClientRevisionToken?: string | null
   resultRow: ContentRow
 }
 
-/** Shared `force_overwrite_save` audit payload; the logger scope and meta id key stay with the caller. */
 export function recordForceOverwriteAudit<TMeta extends { id: number }>(
   auditLog: Logger,
   metaIdKey: 'postMetaId' | 'pageMetaId',
@@ -91,18 +87,15 @@ export type SaveBodyResult =
   | {
       status: 'conflict'
       latest: AdminRevisionDto
-      /** Token the editor must echo on the next attempt. */
       expectedToken: string
       warning?: string
     }
 
 export interface DraftPreviewResult<TPreview> {
   preview: TPreview
-  /** True when a draft revision is newer than `publishedRevisionId`; `preview` holds the draft then. */
   hasNewerDraft: boolean
 }
 
-/** Save outcome plus its non-fatal side-effect notices; the oRPC boundary localizes them into the wire `warning`. */
 export type SaveBodyOutcome = SaveBodyResult & { warningDescriptors: ErrorMessageDescriptor[] }
 
 export async function saveBody<TMeta, TPreview>(
@@ -208,10 +201,6 @@ export async function saveBody<TMeta, TPreview>(
   return { ...projectSaveResult(result), warningDescriptors: warnings }
 }
 
-/**
- * Draft preview by slug: latest draft, else the published revision; soft-deleted
- * rows and viewers refused by `canPreviewDraft` return `null`.
- */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   db: Database,
   adapter: ContentEntityAdapter<TMeta, TPreview>,

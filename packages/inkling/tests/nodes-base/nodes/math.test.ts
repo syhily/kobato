@@ -247,9 +247,6 @@ describe('BaseMathNode', function () {
   })
 
   describe('exportDOM', function () {
-    // Render priority: svg verbatim > mathml verbatim >
-    // escaped <pre><code>tex</code></pre>.
-
     it(
       'renders the svg artifact verbatim when provided',
       editorTest(

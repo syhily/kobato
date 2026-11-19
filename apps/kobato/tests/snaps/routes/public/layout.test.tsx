@@ -62,8 +62,6 @@ describe('snapshot: routes/public/layout', () => {
       ],
       '/',
     )
-    // The ErrorView 404 branch renders its hero and description inside the
-    // site chrome.
     expect(html).toContain('404')
     expect(html).toContain('抱歉，没有你要找的内容')
     expect(html).toContain('且听书吟')

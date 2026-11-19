@@ -28,17 +28,14 @@ export function deactivateFrontendGate(token: object): void {
   }
 }
 
-/** The verified bootstrap, or null while unverified/offline/stopped. */
 export function verifiedFrontendBootstrap(): FrontendRumBootstrap | null {
   return current?.bootstrap ?? null
 }
 
-/** The verified server-only relay target, or null while the gate is closed. */
 export function verifiedFrontendRelay(): FrontendRumRelay | null {
   return current?.relay ?? null
 }
 
-/** Test-only reset; runtime cleanup must use the token guard instead. */
 export function __resetFrontendGateForTests(): void {
   current = null
 }

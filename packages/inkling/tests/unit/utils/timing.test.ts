@@ -54,7 +54,6 @@ describe('debounce', () => {
     const fn = vi.fn()
     const debounced = debounce(fn, 100, { leading: true, trailing: true })
 
-    // leading edge: single call invokes immediately, exactly once
     debounced('a')
     expect(fn).toHaveBeenCalledTimes(1)
     expect(fn).toHaveBeenCalledWith('a')
@@ -62,7 +61,6 @@ describe('debounce', () => {
     vi.advanceTimersByTime(100)
     expect(fn).toHaveBeenCalledTimes(1)
 
-    // a call inside the window schedules a trailing invoke with the last args
     debounced('b')
     expect(fn).toHaveBeenCalledTimes(2)
     debounced('c')
@@ -140,8 +138,6 @@ describe('throttle', () => {
     expect(fn).toHaveBeenCalledTimes(2)
     expect(vi.getTimerCount()).toBe(1)
 
-    // cancel() only clears the current timerId, so a stale timer left over
-    // from the maxing branch would survive it
     throttled.cancel()
     expect(vi.getTimerCount()).toBe(0)
 

@@ -9,10 +9,6 @@ import { adminSession, regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Draft-preview contract for page.detail: three `draftMarker` states, only reachable by admin
-// sessions (anonymous `?draft=true` is ignored). Bodies are Lexical states plus the saved
-// `body_html` projection.
-
 const db = getTestDb()
 
 const publishedBody = lexicalBodyWith([lexicalParagraph('Published body.')])
@@ -165,7 +161,7 @@ describe('routes/page.detail draft preview', () => {
     const result = unwrapLoaderData<LoaderResult>(await loadPage('about', adminSession(), true))
 
     expect(result.draftMarker).toBe('unpublished-draft')
-    // The real headless projection renders the seeded draft paragraph.
+
     expect(result.bodyHtml).toContain('Draft body.')
   })
 

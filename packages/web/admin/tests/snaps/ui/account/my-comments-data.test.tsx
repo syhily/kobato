@@ -126,12 +126,10 @@ describe('snapshot: MyCommentsView data-loaded', () => {
     expect(html).toContain('First thought')
     expect(html).toContain('Second thought')
     expect(html).toContain('Alice')
-    // Entity link affordance (renders when item.entity is non-null).
     expect(html).toContain('Hello World')
     expect(html).toContain('/posts/hello')
     expect(html).toContain('Draft Post')
     expect(html).toContain('待审核')
-    // End-of-list sentinel (no hasMore + items.length > 0).
     expect(html).toContain('已加载全部评论')
     expect(html).toContain('aria-label="修改评论"')
     expect(html).toContain('aria-label="申请删除"')
@@ -145,7 +143,6 @@ describe('snapshot: MyCommentsView data-loaded', () => {
     const html = stableHtml(renderInRouter(<MyCommentsView {...defaultProps} />, '/admin/me/comments'))
     expect(html).toContain('我的评论')
     expect(html).toContain('暂无评论')
-    // Total still renders (0).
     expect(html).toContain('0')
     expect(html).not.toContain('data-slot="my-comment-row"')
     expect(html).not.toContain('已加载全部评论')
@@ -172,10 +169,8 @@ describe('snapshot: MyCommentsView data-loaded', () => {
     }
     const html = stableHtml(renderInRouter(<MyCommentsView {...defaultProps} />, '/admin/me/comments'))
     expect(html).toContain('已申请删除')
-    // Pending delete swaps "申请删除" for "撤回删除".
     expect(html).toContain('aria-label="撤回删除"')
     expect(html).toContain('撤回删除')
-    // Edit hidden while a delete is pending (canEdit === false).
     expect(html).not.toContain('aria-label="修改评论"')
   })
 

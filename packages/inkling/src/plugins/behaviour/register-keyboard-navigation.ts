@@ -35,7 +35,6 @@ const KEYBOARD_HANDLERS = [
   registerArrowLeftCommand,
   registerArrowRightCommand,
   registerModifierCommand,
-  // backspace when card isn't selected
   registerBackspaceCommand,
   registerDeleteCommand,
   registerDeleteLineCommand,

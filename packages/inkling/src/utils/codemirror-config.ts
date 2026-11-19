@@ -9,7 +9,6 @@ const disableHistoryGroupingForTests = Boolean(import.meta.env.VITE_TEST)
 // Static theme and highlight objects at module scope: CodeMirror tracks extensions by
 // reference identity, so recreating them per render forces expensive reconfiguration.
 
-/** The light/dark editor themes only ever differ by these three colors. */
 const createEditorTheme = ({
   gutterColor,
   lineColor,

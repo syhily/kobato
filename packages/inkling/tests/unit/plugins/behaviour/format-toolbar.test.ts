@@ -45,7 +45,6 @@ describe('registerFormatToolbarState', () => {
 
   beforeEach(() => {
     editor = createTestEditor()
-    // the classifier's block-type leg requires a reconciled DOM element
     editor.setRootElement(document.createElement('div'))
     published = []
   })

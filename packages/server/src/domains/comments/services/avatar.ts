@@ -16,9 +16,6 @@ import { joinUrl } from '@kobato/utils/urls.ts'
 import { Buffer } from 'node:buffer'
 import { z } from 'zod'
 
-// Avatar-fetch domain service: the admin-ordered upstream chain
-// (qq/github/gravatar), the no-avatar fallback, and id ↔ email-hash translation.
-
 const MAX_REDIRECT_HOPS = 5
 const FETCH_TIMEOUT_MS = 30_000
 
@@ -39,10 +36,8 @@ function bucketAvatarSize(size: number): number {
   return AVATAR_SIZE_BUCKETS[AVATAR_SIZE_BUCKETS.length - 1]
 }
 
-/** Bucket the site-wide default lands in — the avatar-chain pre-warm writes this size. */
 export const DEFAULT_AVATAR_SIZE_BUCKET = bucketAvatarSize(DEFAULT_AVATAR_SIZE)
 
-/** Resolve `?s=`: clamp to [16, 512], round up to a cache bucket; absent/blank/non-finite → default bucket. */
 export function resolveAvatarSize(raw: string | undefined): number {
   if (raw === undefined || raw.trim() === '') {
     return DEFAULT_AVATAR_SIZE_BUCKET
@@ -75,7 +70,6 @@ interface SafeFetchOptions {
 // unbounded body from a hostile/compromised mirror, buffered on the main thread.
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024
 
-/** Bounded redirects/timeout via safe-fetch; returns `null` on any failure. */
 async function safeFetchAvatar(
   label: 'avatar' | 'avatar.qq' | 'avatar.github',
   initialLink: string,
@@ -160,7 +154,6 @@ async function probeAvatarMirror(url: string): Promise<AvatarMirrorProbe> {
   return { url, reachable: result.ok || result.reason === 'http-error', latencyMs }
 }
 
-/** Probe every preset mirror concurrently; the result keeps preset order. */
 export async function probeAvatarMirrors(): Promise<AvatarMirrorProbe[]> {
   return Promise.all(GRAVATAR_MIRROR_URLS.map((url) => probeAvatarMirror(url)))
 }
@@ -181,8 +174,6 @@ export function getQQAvatarUrl(email: string, size: number): string | null {
   return `https://q.qlogo.cn/headimg_dl?dst_uin=${match[1]}&spec=${spec}`
 }
 
-/** Fetch the QQ avatar PNG at the requested size; `null` on failure.
- *  Compressed before caching so the cache layer stores the smaller payload. */
 export async function fetchQQAvatarImage(email: string, size: number): Promise<Buffer | null> {
   const url = getQQAvatarUrl(email, size)
   if (url === null) {
@@ -207,7 +198,6 @@ const GITHUB_SEARCH_URL = 'https://api.github.com/search/users'
 const GITHUB_AVATAR_BASE_URL = 'https://avatars.githubusercontent.com/u'
 const GITHUB_SEARCH_MAX_BYTES = 64 * 1024
 
-/** First item's numeric id from a search/users payload; `null` on any shape deviation. */
 const githubSearchSchema = z.object({
   items: z.array(z.object({ id: z.number().int().positive() })).min(1),
 })
@@ -317,8 +307,6 @@ export async function resolveAvatarForEmail(email: string): Promise<string> {
   return hash
 }
 
-/** Numeric ids resolve via the user table to their email; anything else is
- *  the pre-encoded hash. Missing users → null (no mirror hit). */
 export async function resolveAvatarInfo(
   db: Database,
   rawHash: string,
@@ -333,8 +321,6 @@ export async function resolveAvatarInfo(
   return { email: null, hash: rawHash }
 }
 
-/** Outcome of one `/images/avatar/:filename.png` request: PNG bytes, or
- *  `redirect` — the caller sends the requester to `defaultAvatarUrl()`. */
 export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' }
 
 // Only md5 (32) / sha256 (64) hex digests can resolve on gravatar mirrors.

@@ -2,11 +2,6 @@ import type { FragmentInstance, RefCallback, RefObject } from 'react'
 
 import { useCallback, useEffect, useState } from 'react'
 
-// Shared IntersectionObserver driver for infinite-scroll lists: consumers
-// wrap the list's LAST item in `<Fragment ref={sentinelRef}>` and the
-// observer watches that fragment's first-level DOM children; intersection
-// fires `fetchNextPage`. The observer only arms while a next page exists
-// and no fetch is in flight, so a single intersection can't double-fire.
 // Arming follows the fragment's ACTUAL mount through a callback ref (not
 // just the effect deps): a tail that mounts a commit after the gating deps
 // settle — the justified image grid renders a skeleton until its container
@@ -28,7 +23,6 @@ export function useInfiniteScrollSentinel({
   /** Intersection root (defaults to the viewport); read at arm time so late-mounting scroll containers work. */
   root?: RefObject<Element | null>
   rootMargin?: string
-  /** Identity of the currently observed tail item — changing it re-arms the observer against the new tail (e.g. last item id or items.length). */
   tailKey: unknown
 }): RefCallback<FragmentInstance> {
   const [instance, setInstance] = useState<FragmentInstance | null>(null)

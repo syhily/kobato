@@ -224,7 +224,7 @@ describe('BaseFileNode', function () {
           expect(nodes[0].fileTitle).toBe('Cool image to download')
           expect(nodes[0].fileCaption).toBe('This is a description')
           expect(nodes[0].fileName).toBe('IMG_0196.jpeg')
-          expect(nodes[0].fileSize).toBe(123904) // ~121 KB
+          expect(nodes[0].fileSize).toBe(123904)
         },
       ),
     )
@@ -260,7 +260,7 @@ describe('BaseFileNode', function () {
             expect(fileNode.fileCaption).toBe('This is a description')
             expect(fileNode.fileName).toBe('IMG_0196.jpeg')
             expect(fileNode.fileSize).toBe(123456)
-            expect(fileNode.formattedFileSize).toBe('121 KB') // ~121 KB
+            expect(fileNode.formattedFileSize).toBe('121 KB')
             resolve()
           } catch (e) {
             reject(e)

@@ -6,7 +6,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 // toggle-field registry. The `admin.pages.upsert-meta` wire shapes are
 // zod-derived in `@kobato/contracts/pages` — import them there, never here.
 
-// Single source of truth for the editor/sidebar metadata draft shape.
 export interface PageMetaDraft {
   slug: string
   title: string
@@ -54,7 +53,6 @@ export type PageMetaToggleKey = 'commentsEnabled' | 'webmentionsEnabled' | 'show
 export interface PageMetaToggleField {
   key: PageMetaToggleKey
   id: string
-  /** UI message ids — `ToggleOptionsCard` resolves them with the active locale. */
   labelId: UiMessageId
   descriptionId: UiMessageId
 }

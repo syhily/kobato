@@ -8,11 +8,8 @@ import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
 type CheckboxProps = ComponentProps<typeof Checkbox>
 
 interface SettingsCheckboxProps extends Omit<CheckboxProps, 'onCheckedChange' | 'name'> {
-  /** From `useSettingsCard().save` — fires immediately after the change. */
   save: (field?: string) => unknown
-  /** RHF field name — the commit is scoped to this field's change only. */
   name: string
-  /** Optional upstream onCheckedChange (typically RHF `field.onChange`); merged with save. */
   onCheckedChange?: CheckboxProps['onCheckedChange']
 }
 

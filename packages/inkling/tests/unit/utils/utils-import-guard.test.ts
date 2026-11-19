@@ -36,8 +36,6 @@ function runtimeImportSpecifiers(source: string): string[] {
   const withoutTypeImports = source
     .replace(/import\s+type\s[\s\S]{0,500}?from\s+['"][^'"]+['"]/g, '')
     .replace(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s+['"][^'"]+['"]/g, (match, body: string) => {
-      // an import whose braces hold only `type X` bindings (incl. `type X as Y`)
-      // is type-only and erases; any unadorned binding is a runtime import
       const hasRuntimeBinding = body.split(',').some((binding) => !/^\s*type\s/.test(binding))
       return hasRuntimeBinding ? match : ''
     })
@@ -47,20 +45,13 @@ function runtimeImportSpecifiers(source: string): string[] {
   return [...statics, ...sideEffects, ...dynamics].map((match) => match[1])
 }
 
-/**
- * Resolves a specifier to its src-relative target ('nodes/...',
- * 'components/...'), or null for specifiers outside src. Alias and relative
- * forms both normalize, so `@kobato/inkling-internal/nodes/foo` and `../../nodes/foo` from a
- * utils file land on the same target. Pure string math (no cwd, no filesystem),
- * so the verdict never depends on where vitest runs.
- */
 function normalizeSpecifier(fromFile: string, specifier: string): string | null {
   if (specifier.startsWith('@kobato/inkling-internal/')) {
     return specifier.slice('@kobato/inkling-internal/'.length)
   }
   if (specifier.startsWith('./') || specifier.startsWith('../')) {
     const segments = fromFile.split('/')
-    segments.pop() // drop the file name, keep the directory
+    segments.pop()
     for (const part of specifier.split('/')) {
       if (part === '.' || part === '') {
         continue
@@ -71,23 +62,19 @@ function normalizeSpecifier(fromFile: string, specifier: string): string | null 
         segments.push(part)
       }
     }
-    // Normalize onto the layer root, mirroring the internal-alias slice above —
-    // the forbidden-layer check below is rooted at the layer, not the repo.
+
     const resolved = segments.join('/')
     return resolved.startsWith('packages/inkling/src/') ? resolved.slice('packages/inkling/src/'.length) : resolved
   }
   return null
 }
 
-/** True when the normalized target lands in a forbidden layer (with the base-utils carve-out). */
 function isForbiddenLayerTarget(normalized: string): boolean {
   if (normalized === 'nodes' || normalized.startsWith('nodes/')) {
-    // the carve-out is the whole base-utils subtree, bare directory included
     return !normalized.startsWith('nodes/base/utils')
   }
   return FORBIDDEN_LAYERS.some((layer) => normalized === layer || normalized.startsWith(`${layer}/`))
 }
-
 function boundaryViolationsOf(file: string, source: string): string[] {
   return runtimeImportSpecifiers(source)
     .map((specifier) => ({ specifier, normalized: normalizeSpecifier(file, specifier) }))
@@ -111,11 +98,8 @@ describe('packages/inkling/src/utils import guard', () => {
   })
 
   it('catches bare-directory, relative and mixed-type import forms (regression: slash-only prefixes)', () => {
-    // a packages/inkling/src/utils file resolving relative imports into the forbidden layers
     const fixtureFile = 'packages/inkling/src/utils/fixture.ts'
 
-    // bare-directory alias imports — no trailing slash, so '/'-terminated
-    // prefixes alone would miss them
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '@kobato/inkling-internal/nodes'`)).toEqual([
       '@kobato/inkling-internal/nodes',
     ])
@@ -128,13 +112,11 @@ describe('packages/inkling/src/utils import guard', () => {
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '@kobato/inkling-internal/plugins'`)).toEqual([
       '@kobato/inkling-internal/plugins',
     ])
-    // carve-out still applies to the bare base-utils directory
+
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '@kobato/inkling-internal/nodes/base/utils'`)).toEqual(
       [],
     )
 
-    // relative specifiers into other layers — the fixture lives at
-    // packages/inkling/src/utils, so one '..' reaches the layer root
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '../nodes/base/toggle/ToggleNode'`)).toEqual([
       '../nodes/base/toggle/ToggleNode',
     ])
@@ -143,9 +125,6 @@ describe('packages/inkling/src/utils import guard', () => {
     ])
     expect(boundaryViolationsOf(fixtureFile, `import { x } from './services/snapshot-store'`)).toEqual([])
     expect(boundaryViolationsOf(fixtureFile, `import { x } from '../nodes/base/utils/card-widths'`)).toEqual([])
-
-    // type-only imports erase, including the inline-modifier form; a mixed
-    // import keeps its runtime binding and stays a violation
     expect(boundaryViolationsOf(fixtureFile, `import type { Foo } from '@kobato/inkling-internal/nodes'`)).toEqual([])
     expect(boundaryViolationsOf(fixtureFile, `import { type Foo } from '@kobato/inkling-internal/nodes'`)).toEqual([])
     expect(boundaryViolationsOf(fixtureFile, `import { type Foo, x } from '@kobato/inkling-internal/nodes'`)).toEqual([

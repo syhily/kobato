@@ -17,7 +17,6 @@ describe('createPressThresholdSession', () => {
   it('ignores pointer travel within the threshold', () => {
     const { session, onBegin } = setup()
 
-    // exactly at the threshold is not a crossing
     session.move({ x: 10 + THRESHOLD, y: 10 })
     expect(onBegin).not.toHaveBeenCalled()
     expect(session.isPending()).toBe(true)
@@ -71,7 +70,6 @@ describe('createPressThresholdSession', () => {
     expect(onBegin).not.toHaveBeenCalled()
     expect(session.isPending()).toBe(false)
 
-    // the session is finished — a later move is inert
     session.move({ x: 100, y: 100 })
     expect(onBegin).not.toHaveBeenCalled()
   })

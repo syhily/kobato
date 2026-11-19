@@ -150,7 +150,6 @@ describe('SharedEditorStateContext', () => {
     for (const value of captured) {
       expect(value.historyState).toBe(first.historyState)
     }
-    // the fresh onChange still flows through — only the undo stack is pinned
     expect(captured[captured.length - 1].onChange).not.toBe(first.onChange)
   })
 })

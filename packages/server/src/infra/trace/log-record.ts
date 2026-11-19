@@ -15,7 +15,6 @@ export const LOG_BODY_MAX_LENGTH = 200
 
 export type LogSeverityText = 'INFO' | 'WARN' | 'ERROR' | 'FATAL'
 
-/** The closed attribute set of a projected log record. */
 export interface ProjectedLogAttributes {
   'log.scope'?: string
   'http.request.method'?: string

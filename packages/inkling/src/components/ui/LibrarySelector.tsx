@@ -11,26 +11,18 @@ export interface LibrarySelectorProps {
   browser: LibraryBrowser<LibraryImageItem>
   onPick: (item: LibraryImageItem) => void
   onClickOutside: () => void
-  /** present only when the host configured an upload callback */
   onUpload?: () => void
 }
 
-// Render adapter over the headless library browser: snapshot in, JSX out.
-// Deliberately plainer than GifSelector — square tiles are plain buttons
-// (Tab order = DOM order), with no column balancing, keyboard-navigation
-// machine, or infinite scroll. Click-outside listening is built in (the
-// GifSelector precedent); Escape handling lives in LibraryPlugin.
 const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibrarySelectorProps) => {
   const labels = useInklingLabels()
   const selectorRef = useRef<HTMLDivElement | null>(null)
   const snapshot = React.useSyncExternalStore(browser.subscribe, browser.getSnapshot)
   const { items, isLoading, error } = snapshot
 
-  // the default (unfiltered) listing fires immediately on open
   useEffect(() => {
     browser.dispatch({ type: 'search', term: '' })
   }, [browser])
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target
@@ -53,7 +45,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
       ref={selectorRef}
       className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[54rem] flex-col rounded border dark:border-none"
       data-testid="library-selector"
-      // stop clicks from reaching the editor while the selector is open
+
       onClick={(e) => e.stopPropagation()}
     >
       <header className="flex items-center gap-3 p-6">

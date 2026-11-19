@@ -16,9 +16,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@kobato/server/infra/scheduler-utils.ts'
 import { copyFile } from 'node:fs/promises'
 
-/** Boot-time owner of the DuckDB sidecar and the daily 180-day retention job (the 04:30
- *  slot shared with the SQLite half). The engine's priority-0 shutdown hook runs after
- *  the priority-100 batcher flushes. */
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
     open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ANALYTICS_DDL, getLogger('analytics.duckdb')),
@@ -51,7 +48,6 @@ async function withAnalyticsMutationLock<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-/** The maintenance job body (shared by scheduler and tests); runs under the same mutation lock as backup snapshots. */
 export async function runAnalyticsMaintenance(): Promise<void> {
   const handle = engine.peek()
   if (handle === null) {
@@ -71,7 +67,6 @@ export function scheduleNextAnalyticsMaintenance(): void {
 }
 
 export async function initAnalyticsDatabase(db: Database): Promise<void> {
-  // Dashboard queries executed inside @kobato/db carry the db.duckdb.query boundary.
   // Wired here (before engine.init) rather than at import time: importing this
   // module must stay side-effect-free.
   wireAnalyticsQueryTelemetry()
@@ -88,23 +83,18 @@ export function getAnalyticsHandle(): AnalyticsHandle {
   return engine.get()
 }
 
-/** Test seam: adopt a test-owned temp-file handle; reset between cases. */
 export function __adoptAnalyticsHandleForTests(handle: AnalyticsHandle): void {
   engine.adopt(handle)
 }
 
-/** Test seam: forget the adopted handle (does not close it). */
 export function __resetAnalyticsEngineForTests(): void {
   engine.reset()
 }
 
-/** The MVCC-safe read connection; query call sites never touch the handle. */
 export function getAnalyticsReader(): AnalyticsReader {
   return getAnalyticsHandle().reader
 }
 
-/** Checkpoint + copy the sidecar to `stagingPath` for a backup archive; false when the
- *  handle is in-memory. Every sidecar-writing batcher stays paused across the window. */
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
   const handle = getAnalyticsHandle()
   if (handle.inMemory) {
@@ -127,7 +117,6 @@ export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean>
   })
 }
 
-/** Close the sidecar for the restore file swap; the maintenance job is stopped first. */
 export async function closeAnalyticsForRestore(): Promise<void> {
   if (maintenanceJob !== null) {
     maintenanceJob.stop()

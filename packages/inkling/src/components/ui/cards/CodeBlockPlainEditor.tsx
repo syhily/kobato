@@ -2,9 +2,6 @@ import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPre
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
 
-// The code box's display/edit shared styling — one source so the display-mode
-// <pre> (CodeBlock in ./CodeBlockCard) and the plain editor's textarea stay
-// visually continuous.
 export function codeBlockPreClass(darkMode?: boolean): string {
   return darkMode
     ? `rounded-md border border-grey-950 bg-grey-950 px-2 py-[0.6rem] font-mono text-[1.6rem] leading-9 text-grey-400 whitespace-pre-wrap`
@@ -31,13 +28,10 @@ export function CodeBlockPlainEditor({ code, language, updateCode, onEscape }: C
   const labels = useInklingLabels()
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null)
 
-  // CodeMirror's autoFocus parity: a card entering edit mode takes focus.
   React.useEffect(() => {
     textareaRef.current?.focus()
   }, [])
 
-  // auto-size to the content: shrink-wrap, then grow to the scroll height
-  // (every render — the controlled value only changes through typing)
   React.useLayoutEffect(() => {
     const textarea = textareaRef.current
     if (textarea) {

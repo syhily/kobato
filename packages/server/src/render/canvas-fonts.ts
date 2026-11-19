@@ -33,7 +33,7 @@ async function resolveFontPath(slot: 'og' | 'calendar'): Promise<string | null> 
     await access(ttf)
     return ttf
   } catch {
-    // No .ttf for this slot — fall through to the .otf probe.
+    /* noop */
   }
   try {
     await access(otf)
@@ -126,7 +126,6 @@ export function ensureCanvasFont(
     if (cached.family !== family) {
       resetCanvasFont(slot)
     } else if (GlobalFonts.has(cached.family)) {
-      // Fast path: font already registered.
       return Promise.resolve(cached)
     }
   }

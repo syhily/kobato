@@ -31,7 +31,6 @@ const STREAM_TYPES: readonly O2StreamType[] = ['logs', 'traces', 'metrics']
 /** OTLP traces land in the organization-wide default traces stream (tools/trace's TRACE_STREAM). */
 const TRACES_STREAM = 'default'
 
-/** Streams Kobato owns: RUM, traces, server logs, and the closed metric set. */
 export function isKobatoOwnedStream(name: string): boolean {
   return (
     name === RUM_STREAM_NAME || name === TRACES_STREAM || name === TRACE_LOG_STREAM || isTraceMetricStreamName(name)
@@ -97,7 +96,6 @@ export function syncObservabilityRetention(): Promise<void> {
   return task
 }
 
-/** Test seam: drop the serialization queue between cases. */
 export function __resetObservabilityRetentionForTests(): void {
   queue = Promise.resolve()
 }

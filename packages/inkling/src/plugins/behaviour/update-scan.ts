@@ -28,7 +28,6 @@ export type UpdateScanDirtyMode = 'leaves' | 'leaves-or-elements'
 
 export interface UpdateScanOptions {
   dirty: UpdateScanDirtyMode
-  // Update tag for the nested scan commit; omit to merge with the typing commit.
   tag?: string
   scan: (
     dirtyLeaves: UpdateListenerPayload['dirtyLeaves'],
@@ -36,8 +35,6 @@ export interface UpdateScanOptions {
   ) => void
 }
 
-// Register `scan` to run on each non-history, non-composing update that dirtied
-// the sets named by `dirty`. Returns the unregister callback.
 export function registerUpdateScan(editor: LexicalEditor, { dirty, tag, scan }: UpdateScanOptions): () => void {
   return editor.registerUpdateListener(({ dirtyLeaves, dirtyElements, tags }) => {
     if (tags.has(HISTORIC_TAG) || tags.has(HISTORY_PUSH_TAG) || tags.has(HISTORY_MERGE_TAG)) {

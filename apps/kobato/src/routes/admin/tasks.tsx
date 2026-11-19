@@ -3,7 +3,6 @@ import { TasksView } from '@kobato/web-admin/ui/jobs/TasksView.tsx'
 
 import { titleMeta } from '@/seo/title-meta.ts'
 
-// Data flows through the client-side `admin.jobs.*` oRPC queries; the loader is only the role gate.
 export const loader = guardOnlyLoader('admin')
 
 export const meta = titleMeta('meta.title.admin.tasks')

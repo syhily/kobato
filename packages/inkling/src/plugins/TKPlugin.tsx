@@ -28,13 +28,11 @@ function TKIndicator({
   nodeKeys: string[]
 }) {
   const theme = getEditorTheme(editor)
-  // the custom keys are typed at the boundary in @kobato/inkling-internal/themes/inkling-theme-classes
   const tkClasses = themeClassList(theme, 'tk')
   const tkHighlightClasses = themeClassList(theme, 'tkHighlighted')
 
   const containingElement = editor.getElementByKey(parentKey)
 
-  // position element relative to the TK Node containing element
   const calculatePosition = useCallback(() => {
     if (!containingElement) {
       return resolveTkIndicatorPosition(null, null)
@@ -47,8 +45,6 @@ function TKIndicator({
 
   const [position, setPosition] = useState(calculatePosition())
 
-  // set up an observer to reposition the indicator when the TK node containing
-  // element moves relative to the root element
   useEffect(() => {
     if (!containingElement) {
       return
@@ -67,9 +63,6 @@ function TKIndicator({
     return null
   }
 
-  // select the TK node when the indicator is clicked,
-  // cycle selection through associated TK nodes when clicked multiple times
-  // (the surgery is headless in tk-tracking; the component keeps the DOM event)
   const onClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -121,8 +114,6 @@ export default function TKPlugin() {
       throw new Error('TKPlugin: TKNode not registered on editor')
     }
 
-    // clean up editor when it is destroyed - ensures counts are up to date
-    // when a nested-editor-containing card is deleted
     return () => {
       tkHandle.removeEditor(editor.getKey())
     }
@@ -140,11 +131,9 @@ export default function TKPlugin() {
 
   useInklingTextEntity(getTKMatch, TKNode, createTKNode, nodeType)
 
-  // only the top-level editor renders TK indicators
   if (parentEditorNodeKey) {
     return null
   }
-
   const editorRoot = editor.getRootElement()
   const editorRootParent = editorRoot?.parentElement
 

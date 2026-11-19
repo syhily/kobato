@@ -86,7 +86,6 @@ describe('services/comments/likes — increaseLikes / decreaseLikes', () => {
     expect(await queryLikes(db, POST_A)).toBe(0)
     expect(await validateLikeToken(db, POST_A, token)).toBe(false)
 
-    // A second undo with the same token reports the no-op honestly.
     await expect(decreaseLikes(db, POST_A, token)).resolves.toBe(false)
     expect(await queryLikes(db, POST_A)).toBe(0)
   })
@@ -120,7 +119,6 @@ describe('services/comments/likes — queryMetadata', () => {
     await seedComment(POST_A.ownerId)
     await seedComment(POST_A.ownerId)
     await seedComment(POST_A.ownerId)
-    // Pending and soft-target rows must not count.
     await seedComment(POST_A.ownerId, { isPending: true })
 
     const result = await queryMetadata(db, [POST_A, POST_B], { likes: true, views: true, comments: true })
@@ -152,7 +150,6 @@ describe('services/comments/likes — queryMetadata', () => {
     // POST_B has no metric row at all — the pending delta still surfaces.
     expect(merged.get('post:2')?.views).toBe(1)
 
-    // After the flush, the stored count carries the delta; the merge adds nothing.
     await flushPageViews()
     const flushed = await queryMetadata(db, [POST_A], { likes: true, views: true, comments: false })
     expect(flushed.get('post:1')?.views).toBe(102)

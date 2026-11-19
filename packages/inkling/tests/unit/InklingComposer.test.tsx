@@ -78,7 +78,6 @@ describe('InklingComposer', function () {
     trackEvent('test-event', { foo: 'bar' })
     expect(telemetry).toHaveBeenCalledWith('test-event', { foo: 'bar' })
 
-    // unmounting restores the default adapter
     telemetry.mockClear()
     unmount()
     trackEvent('test-event')
@@ -190,8 +189,6 @@ describe('InklingComposer', function () {
       </InklingComposer>,
     )
 
-    // the real factory replaces the inert default once the lazy collaboration
-    // chunk resolves
     await waitFor(() => {
       expect(factory).toBeDefined()
       expect(factory).not.toBe(noopWebsocketProviderFactory)

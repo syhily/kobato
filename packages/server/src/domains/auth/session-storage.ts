@@ -89,7 +89,6 @@ const storage = createSessionStorage<BlogSessionData>({
     return id
   },
   async readData(id) {
-    // Expired rows read as misses; the hourly sweep deletes them lazily.
     const rows = await requireDb()
       .select({ data: sessionTable.data })
       .from(sessionTable)
@@ -100,7 +99,6 @@ const storage = createSessionStorage<BlogSessionData>({
       return null
     }
     try {
-      // `data` is plain JSON (all strings/numbers/booleans); non-object reads as a miss.
       if (!isRecord(row.data)) {
         return null
       }
@@ -123,8 +121,6 @@ async function writeSession(id: string, data: BlogSessionData, expires: Date | u
   // The json-mode column serializes the (JSON-native) payload itself.
   const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
-  // `user_id` derives from the payload on every write: OTP-pending sessions carry
-  // only `pendingOtpUser` and therefore write NULL.
   const userId = data.user ? idFromString(data.user.id) : null
   await db
     .insert(sessionTable)

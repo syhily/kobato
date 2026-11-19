@@ -16,11 +16,8 @@ import { count, desc, eq, inArray, lt, sql } from 'drizzle-orm'
 
 const log = getLogger('job-run-recorder')
 
-/** Error messages are persisted truncated to this length. */
 const ERROR_MAX_CHARS = 500
-/** Retention: rows older than this are pruned by the daily maintenance. */
 export const JOB_RUN_RETENTION_DAYS = 30
-/** Retention: at most this many newest rows per task are kept. */
 export const JOB_RUN_KEEP_PER_TASK = 200
 /** Failure notifications for the same task key are deduped inside this window. */
 export const JOB_FAILURE_NOTIFY_DEDUPE_MS = 24 * 60 * 60 * 1000
@@ -35,12 +32,10 @@ export interface JobFailureNotice {
 let notifyFailure: ((info: JobFailureNotice) => void) | null = null
 const lastFailureNoticeAt = new Map<string, number>()
 
-/** Wire the failure notifier (composition root). Pure setter, like {@link wireJobRunRecorder}. */
 export function wireJobFailureNotifier(cb: (info: JobFailureNotice) => void): void {
   notifyFailure = cb
 }
 
-/** Test seam: drop the injected notifier and clear the dedupe window. */
 export function resetJobFailureNotifier(): void {
   notifyFailure = null
   lastFailureNoticeAt.clear()
@@ -100,7 +95,6 @@ export function sweepOrphanedJobRuns(db: Database): void {
   }
 }
 
-/** Open a `running` row; returns its id, or null when unwired/failed. */
 export function startJobRun(taskKey: string, trigger: JobRunTrigger): number | null {
   if (resolveDb === null) {
     return null
@@ -117,7 +111,6 @@ export function startJobRun(taskKey: string, trigger: JobRunTrigger): number | n
   }
 }
 
-/** Close a run row with a terminal status; null id / unwired → no-op. */
 export function finishJobRun(runId: number | null, status: 'success' | 'failed' | 'cancelled', error?: string): void {
   if (resolveDb === null || runId === null) {
     return
@@ -147,7 +140,6 @@ export function finishJobRun(runId: number | null, status: 'success' | 'failed' 
   }
 }
 
-/** Newest-first history page for one task. */
 export function listJobRuns(filter: { taskKey: string; offset: number; limit: number }): {
   items: JobRunRow[]
   total: number
@@ -168,7 +160,6 @@ export function listJobRuns(filter: { taskKey: string; offset: number; limit: nu
   return { items, total }
 }
 
-/** The newest row per task key (for the list aggregation). */
 export function latestJobRunsByTask(): Map<string, JobRunRow> {
   const latest = new Map<string, JobRunRow>()
   if (resolveDb === null) {

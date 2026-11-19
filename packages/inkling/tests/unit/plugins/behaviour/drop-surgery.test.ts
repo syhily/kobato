@@ -30,8 +30,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// One card type is enough to exercise the surgeries in jsdom (the same
-// approach as the card-adjacency and snippet-insertion tests).
 const TEST_NODES = [ImageNode]
 
 function createTestEditor(): LexicalEditor {
@@ -54,7 +52,6 @@ interface DocumentKeys {
   imageBKey: NodeKey
 }
 
-/** [paragraph("intro")] [imageA] [paragraph("outro")] [imageB], with the caret inside "intro". */
 async function buildDocument(editor: LexicalEditor): Promise<DocumentKeys> {
   const keys = {} as DocumentKeys
   await updateEditor(editor, () => {
@@ -77,7 +74,6 @@ async function buildDocument(editor: LexicalEditor): Promise<DocumentKeys> {
   return keys
 }
 
-/** Droppable elements in document order — what the reorder geometry's live scan would return. */
 function getDroppables(editor: LexicalEditor, keys: NodeKey[]): HTMLElement[] {
   return keys.map((key) => {
     const element = editor.getElementByKey(key)
@@ -166,7 +162,7 @@ describe('$relocateCard', () => {
 
     expect(relocated).toBe(false)
     expect(readTopLevelKeys(editor)).toEqual(before)
-    // buildDocument left the caret inside "intro" — a failed drop must not clear it
+
     editor.getEditorState().read(() => {
       expect($getSelection()).not.toBeNull()
     })
@@ -174,8 +170,7 @@ describe('$relocateCard', () => {
 
   it('still reports handled and clears the selection when the target droppable does not resolve to a node', async () => {
     const keys = await buildDocument(editor)
-    // an element the reconciler never produced maps to no node — the
-    // relocation is a no-op but the drop still counts as handled
+
     const droppables = [document.createElement('div')]
     const before = readTopLevelKeys(editor)
 
@@ -246,11 +241,8 @@ describe('$insertDraggedImage', () => {
 
 describe('shouldRemoveDropSource', () => {
   it('removes the source only after a successful drop handled elsewhere', () => {
-    // cross-card drop: the target container handled the drop, the source remains
     expect(shouldRemoveDropSource(true, false)).toBe(true)
-    // same-container reorder reports sourceHandled — the card stays
     expect(shouldRemoveDropSource(true, true)).toBe(false)
-    // a failed drop removes nothing
     expect(shouldRemoveDropSource(false, false)).toBe(false)
   })
 })
@@ -296,15 +288,11 @@ describe('$removeDropSource', () => {
 })
 
 describe('$mergeImagesIntoGallery', () => {
-  // the merge builds the gallery through the registered-node map, so the
-  // gallery card must be registered alongside the image card
   const MERGE_NODES = [ImageNode, GalleryNode]
-
   function createMergeEditor(): LexicalEditor {
     return createEditor({ namespace: 'test', nodes: MERGE_NODES, onError: () => {} })
   }
 
-  /** [imageA(target)] [imageB(dragged)] — absolute srcs so fileName derivation (new URL) works. */
   async function buildImagePair(editor: LexicalEditor): Promise<{ targetKey: NodeKey; draggedKey: NodeKey }> {
     const keys = {} as { targetKey: NodeKey; draggedKey: NodeKey }
     await updateEditor(editor, () => {
@@ -333,10 +321,9 @@ describe('$mergeImagesIntoGallery', () => {
       width: 640,
       height: 480,
       alt: 'dragged alt',
-      // drag payloads carry card-only keys; addImages persists ALLOWED_IMAGE_PROPS only
+
       cardWidth: 'wide',
     }
-
     let merged = false
     await updateEditor(editor, () => {
       merged = $mergeImagesIntoGallery(keys.targetKey, keys.draggedKey, draggedDataset)
@@ -356,8 +343,7 @@ describe('$mergeImagesIntoGallery', () => {
         'https://cdn.example.com/target.png',
         'https://cdn.example.com/dragged.png',
       ])
-      // the target image's dataset comes from the node, the dragged one's
-      // from the payload; both carry only gallery-allowed props
+
       expect(images[0]).toMatchObject({
         fileName: 'target.png',
         width: 800,
@@ -371,11 +357,10 @@ describe('$mergeImagesIntoGallery', () => {
         alt: 'dragged alt',
       })
       expect(images[1]).not.toHaveProperty('cardWidth')
-      // the dragged source node is gone
+
       expect($getNodeByKey(keys.draggedKey)).toBeNull()
     })
   })
-
   it('derives a missing fileName from the src without mutating the dragged dataset', async () => {
     const editor = createMergeEditor()
     const keys = await buildImagePair(editor)
@@ -385,8 +370,6 @@ describe('$mergeImagesIntoGallery', () => {
       $mergeImagesIntoGallery(keys.targetKey, keys.draggedKey, draggedDataset)
     })
 
-    // the caller's payload is not the surgery's to mutate — the derived
-    // fileName lives on the copy handed to the fill policy
     expect(draggedDataset).toEqual({ src: 'https://cdn.example.com/payload-shot.jpg' })
     editor.getEditorState().read(() => {
       const gallery = $getRoot().getFirstChild()
@@ -396,12 +379,11 @@ describe('$mergeImagesIntoGallery', () => {
       const images = gallery.getLatest().images
       expect(images[0].fileName).toBe('target.png')
       expect(images[1].fileName).toBe('payload-shot.jpg')
-      // null node dimensions stay absent on the gallery image
+
       expect(images[1].width).toBeUndefined()
       expect(images[1].height).toBeUndefined()
     })
   })
-
   it('keeps an existing fileName instead of deriving it from the src', async () => {
     const editor = createMergeEditor()
     const keys = await buildImagePair(editor)
@@ -461,14 +443,10 @@ describe('$mergeImagesIntoGallery', () => {
   })
 
   it('returns false instead of crashing when a host replaced the gallery class with a non-gallery node', async () => {
-    // the class comes from the registered-node map, so a host can register
-    // any class under the 'gallery' type — the constructed node must be
-    // checked ($isGalleryNode) rather than asserted
     class HostReplacementNode extends ParagraphNode {
       static getType(): string {
         return 'gallery'
       }
-
       static clone(node: HostReplacementNode): HostReplacementNode {
         return new HostReplacementNode(node.__key)
       }
@@ -488,10 +466,6 @@ describe('$mergeImagesIntoGallery', () => {
 })
 
 describe('$insertDraggedImage without the image card registered', () => {
-  // The class comes from the editor's registered-node map, so a card-free
-  // composition (the ./core entry has no gallery card, so this path is
-  // unreachable there in practice) resolves to null instead of importing
-  // the shim.
   it('returns null and leaves the tree untouched', async () => {
     const editor = createEditor({ namespace: 'test', nodes: [], onError: () => {} })
 
@@ -499,7 +473,6 @@ describe('$insertDraggedImage without the image card registered', () => {
     await updateEditor(editor, () => {
       result = $insertDraggedImage({ src: '/a.png' }, [], 0)
     })
-
     expect(result).toBeNull()
     editor.getEditorState().read(() => {
       expect($getRoot().getChildrenSize()).toBe(0)
@@ -595,8 +568,7 @@ describe('resolveDragMarkerRefresh', () => {
       if (!$isParagraphNode(paragraph)) {
         throw new Error('expected paragraph')
       }
-      // an in-place text mutation dirties the text node; its ancestors are
-      // marked as dirty parents (flag false) — the per-keystroke shape
+
       const text = paragraph.getFirstChild()
       if (!$isTextNode(text)) {
         throw new Error('expected text node')

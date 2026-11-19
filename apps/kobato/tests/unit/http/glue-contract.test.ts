@@ -5,9 +5,6 @@ import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { Hono } from 'hono'
 import { describe, expect, it, vi } from 'vitest'
 
-// Contract test for the four hand-written glue seams between Hono, oRPC, and React Router:
-// touch the glue, break a test. Bridge header-merge behavior is pinned in app.test.ts.
-
 const handlerHandleMock = vi.fn<(_req: Request, opts: { context: any }) => Promise<{ matched: boolean }>>()
 
 vi.mock('@orpc/server/fetch', () => ({
@@ -105,7 +102,7 @@ describe('glue contract / oRPC bridge projection', () => {
       'settings',
       'viewer',
     ])
-    // The dirty-marking channel must never leak into the oRPC surface.
+
     expect('markSessionDirty' in captured!).toBe(false)
     expect(captured!.responseHeaders).toBeInstanceOf(Headers)
   })
@@ -144,7 +141,7 @@ describe('glue contract / entry.server export surface', () => {
 
     expect(typeof entry.default).toBe('function')
     expect(entry.streamTimeout).toBe(5_000)
-    // Replaces React Router's default console.error handler.
+
     expect(typeof entry.handleError).toBe('function')
   })
 })

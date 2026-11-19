@@ -3,8 +3,6 @@ import type { ReactNode } from 'react'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
-// SSR-render every admin route Component export with fixture loaderData and assert real
-// rendered content, so a route that degrades into the error boundary fails loudly.
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
@@ -36,8 +34,6 @@ import CategoriesRouteRaw from '@/routes/admin/taxonomy/categories.tsx'
 import FriendsRouteRaw from '@/routes/admin/taxonomy/friends.tsx'
 import TagsRouteRaw from '@/routes/admin/taxonomy/tags.tsx'
 
-// `asRoute` widens the strict `Route.ComponentProps` so tests pass only the fields each
-// branch reads; the settings layout's loader pulls in the DB bootstrap, irrelevant here.
 const AnalyticsLayoutRoute = asRoute(AnalyticsLayoutRouteRaw)
 const AnalyticsOverviewRoute = asRoute(AnalyticsOverviewRouteRaw)
 const AnalyticsRealtimeRoute = asRoute(AnalyticsRealtimeRouteRaw)
@@ -59,7 +55,6 @@ const CategoriesRoute = asRoute(CategoriesRouteRaw)
 const FriendsRoute = asRoute(FriendsRouteRaw)
 const TagsRoute = asRoute(TagsRouteRaw)
 
-// Minimal SecretMasks shape expected by settings forms.
 const MASKS = {
   assetsSecretAccessKeyMask: '',
   mailSmtpPassMask: '',
@@ -75,12 +70,10 @@ const testQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
 })
 
-/** Two-level memory router: parent renders `<Outlet context={context} />` so the node's `useOutletContext()` resolves to the fixture. */
 function renderInRouterWithOutlet(node: ReactNode, initialPath: string, context: Record<string, unknown>): string {
   return renderNested(initialPath, { parent: context, middle: <>{node}</> })
 }
 
-/** Three-level router: root provides `parent` context, optional `middle` re-emits it, leaf is `child`. */
 function renderNested(
   initialPath: string,
   layers: {
@@ -115,7 +108,6 @@ function OutletContextProvider({ context }: { context: Record<string, unknown> }
   return <Outlet context={context} />
 }
 
-/** Consumes the SettingsOutletContext the layout forwards and renders the bundle's site title. */
 function SettingsContextProbe() {
   const ctx = useOutletContext<{ bundle?: { siteIdentity?: { title?: string } } }>()
   const title = ctx?.bundle?.siteIdentity?.title ?? ''
@@ -160,7 +152,7 @@ describe('admin routes — Component SSR renders', () => {
   describe('posts', () => {
     it('posts/index renders the PostsView shell', () => {
       const html = stableHtml(renderInRouter(<PostsRoute loaderData={emptyLoaderData} />, '/admin/posts'))
-      // Under SSR the list query reports loading — assert the always-rendered header chrome.
+
       expect(html).toContain('文章管理')
       expect(html).toContain('新建文章')
     })
@@ -250,7 +242,7 @@ describe('admin routes — Component SSR renders', () => {
           updatedAt: '2024-02-01T00:00:00.000Z',
         },
       })
-      // Outlet wrapper keeps the seeded QueryClient in the tree; empty context suffices.
+
       const html = stableHtml(
         renderInRouterWithOutlet(
           <MusicDetailRoute loaderData={emptyLoaderData} params={{ id: 'abc' }} />,
@@ -300,8 +292,6 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('security/users/detail renders the UserDetailView with the seeded user', () => {
-      // Seed the shared query cache (same queryOptions the view uses) so
-      // SSR renders real detail chrome instead of the skeleton.
       testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: '42' } }).queryKey, {
         user: {
           id: '42',
@@ -361,8 +351,6 @@ describe('admin routes — Component SSR renders', () => {
 
   describe('settings (the big one — many inline sections)', () => {
     it('settings/layout forwards bundle/timezones/masks to its outlet', () => {
-      // Layout consumes parent context and re-emits SettingsOutletContext;
-      // the probe child proves the forwarding runs end-to-end.
       const html = stableHtml(
         renderNested('/admin/settings', {
           parent: { currentUser: CURRENT_USER },
@@ -382,7 +370,6 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('settings/index renders every settings section chrome (general, content, service, system groups)', () => {
-      // Full bundle so every SECTION_CONFIGS render() runs.
       const html = stableHtml(
         renderInRouterWithOutlet(<SettingsIndexRoute loaderData={emptyLoaderData} />, '/admin/settings', {
           currentUser: CURRENT_USER,
@@ -392,7 +379,6 @@ describe('admin routes — Component SSR renders', () => {
         }),
       )
 
-      // Assert a stable nav group label plus the first section's heading.
       expect(html).toContain('通用')
       expect(html).toContain('基本信息')
     })

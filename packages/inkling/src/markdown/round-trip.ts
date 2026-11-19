@@ -43,26 +43,7 @@ import {
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { $createParagraphNode } from 'lexical'
 
-/**
- * The card-aware round-trip dialect — one of Inkling's two markdown dialects
- * (the paste dialect is `@kobato/inkling-internal/markdown/paste-dialect`) and the public markdown
- * import/export API (`markdownToLexicalState` / `lexicalStateToMarkdown`).
- *
- * It speaks ```inkling:<card>``` fences, standard `![alt](src)` image syntax,
- * and the shared grammar table's inline delimiters
- * (`@kobato/inkling-internal/markdown/grammar`) — but not footnotes. Conversion runs through
- * `@lexical/markdown`'s `$convertFromMarkdownString` /
- * `$convertToMarkdownString` on a temporary headless editor with the
- * constrained node set below.
- */
-
-// The markdown-eligible cards in declaration order — the same order the node
-// sets compose (the declaration's `markdown` eligibility spec is the filter).
-// Transformer order among cards is unobservable (each card transformer exports
-// only its own node type; the import regexes are per-card distinct), pinned by
-// tests/inkling/unit/nodes/derived-node-sets.test.ts.
 const MARKDOWN_CARDS = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown !== undefined)
-
 // Exported for the node-set diff test, not part of the public `@kobato/inkling-internal/markdown` barrel.
 export const MARKDOWN_NODES = [
   HeadingNode,
@@ -77,9 +58,6 @@ export const MARKDOWN_NODES = [
   MarkdownNode,
 ]
 
-// MarkdownNode is a base-only node, not a card, so its `inkling:markdown`
-// fence transformer stays hand-written here beside the dialect rather than
-// in the card transformer table.
 const MARKDOWN_CARD_TRANSFORMER: MultilineElementTransformer = {
   dependencies: [MarkdownNode],
   export: (node) => {
@@ -95,7 +73,6 @@ const MARKDOWN_CARD_TRANSFORMER: MultilineElementTransformer = {
   },
   type: 'multiline-element',
 }
-
 export const CARD_TRANSFORMERS: Transformer[] = [
   ...MARKDOWN_CARDS.flatMap((card) => (card.markdownTransformer ? [card.markdownTransformer] : [])),
   MARKDOWN_CARD_TRANSFORMER,
@@ -138,7 +115,7 @@ function splitTableRow(line: string): string[] {
   if (!match) {
     return []
   }
-  // split on unescaped pipes only, then unescape `\|`
+
   return match[1].split(/(?<!\\)\|/).map((cell) => cell.trim().replace(/\\\|/g, '|'))
 }
 
@@ -188,7 +165,6 @@ const GFM_TABLE: MultilineElementTransformer = {
       return null
     }
 
-    // the pipe-table shape is declared in @kobato/inkling-internal/nodes/table/table-facts
     return resolveGfmPipeTableLines(rows, (cell) =>
       exportChildren(cell).replace(/\n/g, ' ').replace(/\|/g, '\\|').trim(),
     ).join('\n')
@@ -207,25 +183,11 @@ function buildTransformers(hostTransformers: Transformer[] = []): Transformer[] 
 
 const TRANSFORMERS: Transformer[] = buildTransformers()
 
-/**
- * One host card's round-trip wiring: the assembled node class plus its fence
- * transformer when the spec declares `markdownFence`.
- */
 interface HostRoundTripCard {
   node: Klass<LexicalNode>
   transformer?: MultilineElementTransformer
 }
 
-/**
- * The host cards the round-trip composes: every `defineCard`-registered card
- * joins by default (its assembled class registers on the conversion editor;
- * `markdownFence` derives its transformer from the stored spec through
- * `createCardTransformer`). The `cards` option AUGMENTS that default — it
- * exists for handles built WITHOUT `defineCard` — and on a nodeType collision
- * it replaces the registry-derived wiring for that type. There is deliberately
- * no opt-out flag: a registered card leaves the round-trip by not declaring
- * `markdownFence`.
- */
 function resolveRoundTripHostCards(cards: readonly HostCard[]): HostRoundTripCard[] {
   const byType = new Map<string, HostRoundTripCard>()
   for (const record of getHostCards()) {
@@ -243,15 +205,9 @@ function resolveRoundTripHostCards(cards: readonly HostCard[]): HostRoundTripCar
   return [...byType.values()]
 }
 
-/**
- * `cards` AUGMENTS the registry-default host wiring (see
- * `resolveRoundTripHostCards`): compose a HostCard handle built without
- * `defineCard`, or override a registered type's wiring.
- */
 export interface MarkdownRoundTripOptions {
   cards?: readonly HostCard[]
 }
-
 function createMarkdownEditor(hostCards: readonly HostRoundTripCard[]) {
   return createHeadlessEditor({
     nodes: [...MARKDOWN_NODES, ...hostCards.map((card) => card.node)],
@@ -261,7 +217,6 @@ function createMarkdownEditor(hostCards: readonly HostRoundTripCard[]) {
   })
 }
 
-// Host card fences join the card run — ahead of CODE_FENCE.
 function resolveTransformers(hostCards: readonly HostRoundTripCard[]): Transformer[] {
   const hostTransformers = hostCards.flatMap((card) => (card.transformer ? [card.transformer] : []))
   if (hostTransformers.length === 0) {
@@ -270,17 +225,12 @@ function resolveTransformers(hostCards: readonly HostRoundTripCard[]): Transform
   return buildTransformers(hostTransformers)
 }
 
-/**
- * Convert a markdown string to a serialized Lexical editor state, through
- * `@lexical/markdown`'s `$convertFromMarkdownString`.
- */
 export function markdownToLexicalState(
   markdown: string,
   options: MarkdownRoundTripOptions = {},
 ): SerializedEditorState {
   const hostCards = resolveRoundTripHostCards(options.cards ?? [])
   const editor = createMarkdownEditor(hostCards)
-
   editor.update(
     () => {
       $convertFromMarkdownString(markdown, resolveTransformers(hostCards))
@@ -291,16 +241,11 @@ export function markdownToLexicalState(
   return editor.getEditorState().toJSON()
 }
 
-/**
- * Convert a serialized Lexical editor state back to a markdown string, using
- * the same transformer set as `markdownToLexicalState`.
- */
 export function lexicalStateToMarkdown(state: SerializedEditorState, options: MarkdownRoundTripOptions = {}): string {
   const hostCards = resolveRoundTripHostCards(options.cards ?? [])
   const editor = createMarkdownEditor(hostCards)
 
   editor.setEditorState(editor.parseEditorState(state))
-
   return editor.getEditorState().read(() => {
     return $convertToMarkdownString(resolveTransformers(hostCards))
   })

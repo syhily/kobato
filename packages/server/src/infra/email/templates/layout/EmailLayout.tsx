@@ -8,7 +8,6 @@ import { getYear } from 'date-fns'
 import { useState } from 'react'
 
 interface Props {
-  /** Explicit site-locale translator (see `emailTranslator`). */
   t: ServerTranslator
   receiver: string
   preview?: string
@@ -39,7 +38,6 @@ function FooterSiteLink({ href, children }: FooterSiteLinkProps) {
   )
 }
 
-/** Bind the site URL into the ICU `<siteLink>` tag renderer. */
 function siteLinkRenderer(href: string): RichTextTag {
   return (chunks) => <FooterSiteLink href={href}>{chunks}</FooterSiteLink>
 }

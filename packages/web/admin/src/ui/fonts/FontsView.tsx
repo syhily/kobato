@@ -324,7 +324,6 @@ function SlotColumn({
                   ))}
                 </ol>
               </SortableContext>
-              {/* Trailing drop region for "append at the end". */}
               <div
                 className={
                   'min-h-10 rounded px-2 py-1.5 text-center text-xs transition-colors' +

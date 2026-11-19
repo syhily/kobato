@@ -1,11 +1,4 @@
-// The em/en dash replacement grammar — the scan body EmEnDashPlugin wires
-// into the update-scan seam (@kobato/inkling-internal/plugins/behaviour/update-scan). Pure
-// text policy over dirty leaves, with zero DOM: right-to-left scan, boundary
-// guards, the HR-shortcut exemption, and caret offset adjustment. Kept
-// headless so the grammar is a synchronous unit-test table.
-
 import { $getNodeByKey, $getSelection, $isRangeSelection, $isTextNode } from 'lexical'
-
 const DASH = '-'
 const EM_DASH = '—'
 const EN_DASH = '–'
@@ -37,7 +30,6 @@ export function $replaceDashes(dirtyLeaves: Set<string>, supportsHrShortcut: boo
     let i = text.length
 
     while (i >= 3) {
-      // em dash: three consecutive dashes, not preceded or followed by a dash
       if (
         text.slice(i - 3, i) === '---' &&
         (i - 4 < 0 || text[i - 4] !== DASH) &&
@@ -54,7 +46,6 @@ export function $replaceDashes(dirtyLeaves: Set<string>, supportsHrShortcut: boo
         continue
       }
 
-      // en dash: non-dash char + '--' + whitespace ending at i
       if (
         i >= 3 &&
         text.slice(i - 3, i - 1) === '--' &&

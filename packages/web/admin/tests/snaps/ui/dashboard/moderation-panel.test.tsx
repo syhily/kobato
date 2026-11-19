@@ -149,7 +149,6 @@ describe('snapshot: VisitSummaryCard', () => {
     expect(html).toContain('role="status"')
     expect(html).toContain('加载中')
     expect(html).not.toContain('最近 7 天趋势')
-    // No sparkline markup (its gradient id) — only the skeleton paints.
     expect(html).not.toContain('trendGradient')
   })
 

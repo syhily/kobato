@@ -15,9 +15,7 @@ export interface SeaManifestFile {
   path: string
   /** sha256 of the RAW (uncompressed) bytes — verification is codec-agnostic. */
   sha256: string
-  /** Blob payload codec; absent means uncompressed (`'none'`). */
   codec?: SeaAssetCodec
-  /** Raw byte length; informational only, verification goes through sha256. */
   size?: number
 }
 
@@ -28,24 +26,16 @@ export interface SeaManifest {
 }
 
 export interface ExtractNativesOptions {
-  /** Raw bytes of the embedded `manifest.json` asset. */
   manifestRaw: Buffer
-  /** Base cache directory (see `resolveCacheDir`). */
   cacheDir: string
-  /** Asset reader — `getEmbeddedAsset` in SEA mode, a stub in tests. */
   getAsset: (key: string) => Buffer | null
-  /** Log sink — the project logger in production, a stub in tests. */
   logger?: Pick<Logger, 'info' | 'debug'>
 }
 
 export interface ExtractNativesResult {
-  /** `<cacheDir>/natives-<hash>` — the flat dir the libraries extract into. */
   dir: string
-  /** Same as `dir` (the layout is flat) — the value exported as `KOBATO_NATIVES_DIR`. */
   nativesDir: string
-  /** Files written (or repaired) during this run. */
   extracted: number
-  /** Files already on disk with a matching sha256. */
   reused: number
 }
 
@@ -164,7 +154,6 @@ function nativesDirName(manifestRaw: Buffer): string {
   return `natives-${sha256(manifestRaw).slice(0, 16)}`
 }
 
-/** Extract embedded native libraries into the flat cache dir (idempotent). */
 export function extractNatives(options: ExtractNativesOptions): ExtractNativesResult {
   const logger = options.logger ?? log
   const manifest = parseManifest(options.manifestRaw)

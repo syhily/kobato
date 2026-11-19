@@ -3,8 +3,6 @@ import type { BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/h
 import { headerFieldWriter, type HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
 import { describe, expect, it } from 'vitest'
 
-// capture each mutator's effect on a fresh node-shaped record, so the
-// write-through mapping stays a synchronous table
 function createWriteCapture() {
   const applied: Array<Partial<BaseHeaderNode>> = []
   const write: HeaderNodeWriter = (update) => {

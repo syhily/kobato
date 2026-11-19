@@ -16,10 +16,8 @@ import { z } from 'zod'
 export const CONFIG_FILE_NAME = 'kobato.config.json'
 
 export interface ConfigEntry {
-  /** Nested path inside the config file, e.g. ['database', 'url']. */
   path: readonly string[]
   schema: z.ZodType
-  /** Value written into a freshly created config file. */
   fileDefault: unknown
 }
 
@@ -108,7 +106,6 @@ export const CONFIG_TABLE = [
   },
 ] as const satisfies readonly ConfigEntry[]
 
-/** Process env var name for a table entry — `__` separator convention. */
 export function configEnvName(path: readonly string[]): string {
   return path.join('__')
 }
@@ -292,7 +289,6 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
   // A target slot holding '' (unset) must not block a real legacy value.
   const taken = (value: unknown): boolean => value !== undefined && value !== ''
 
-  /** Move source[sourceKey] into target[targetKey]; never overwrite. */
   const moveKey = (
     source: Record<string, unknown>,
     sourceKey: string,
@@ -309,7 +305,6 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
     delete source[sourceKey]
   }
 
-  // auth.sessionSecret → security.sessionSecret (the auth section is gone).
   const auth = data.auth
   if (isRecord(auth)) {
     const hadSecret = typeof auth.sessionSecret === 'string'
@@ -327,7 +322,6 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
     }
   }
 
-  // paths.* → storage.* (per-key move; the paths section is gone).
   const paths = data.paths
   if (isRecord(paths)) {
     if (Object.keys(paths).length > 0) {
@@ -342,7 +336,6 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
     delete data.paths
   }
 
-  // logging.level → server.loggingLevel (the logging section is gone).
   const logging = data.logging
   if (isRecord(logging)) {
     const hadLevel = typeof logging.level === 'string'
@@ -393,7 +386,6 @@ export class ConfigFileError extends Error {
 export interface ParsedConfigFile {
   /** The raw stripped JSON `loadConfig` keeps in memory — never the transformed output. */
   data: Record<string, unknown>
-  /** Legacy keys were moved in place; a file-backed caller may persist that. */
   migrated: boolean
   notes: string[]
 }
@@ -468,7 +460,6 @@ export function parseRestorableConfigJson(raw: string): ParsedConfigFile {
 export function resolveConfigFilePath(): string | null {
   const explicit = argvConfigPath(process.argv.slice(2))
   const envConfig = process.env.KOBATO_CONFIG_FILE
-  // Vitest without --config/KOBATO_CONFIG_FILE: env-only, zero filesystem access.
   if (process.env.VITEST === 'true' && explicit === null && envConfig === undefined) {
     return null
   }
@@ -490,7 +481,6 @@ export function resolveConfigFilePath(): string | null {
  */
 export function loadConfig(): Record<string, unknown> {
   const filePath = resolveConfigFilePath()
-  // Vitest without --config: env-only, zero filesystem access (no config dropped into the repo, no secrets persisted).
   if (filePath === null) {
     return Object.fromEntries(
       CONFIG_TABLE.map((entry) => [entry.path.join('.'), process.env[configEnvName(entry.path)]]),
@@ -571,12 +561,10 @@ export interface ServerConfig {
     /** Cookie-signing secrets for the session storage (rotatable, comma-separated in the file). */
     sessionSecret: string[]
     encryptionKey: string
-    /** Direct peers allowed to vouch for proxy headers: exact IPs or IPv4 CIDRs (e.g. the overlay subnet). */
     trustedProxies: string[]
   }
   storage: {
     data: string
-    /** SQLite database file path. Empty → `<storage.data>/kobato.db`. */
     database: string
     /** DuckDB analytics file path. Empty → `<storage.data>/analytics.duckdb`. */
     analyticsDatabase: string
@@ -629,7 +617,6 @@ export function loadServerConfig(): ServerConfig {
   return unsafeCast<ServerConfig>(config)
 }
 
-/** The validated runtime configuration, evaluated once at module load. */
 export const serverConfig: ServerConfig = loadServerConfig()
 
 // NODE_ENV stays process-env-only: it selects the process mode, not a

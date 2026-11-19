@@ -33,7 +33,6 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Minimal node set: one card type is enough to exercise adjacency in jsdom.
 const CARD_ADJACENCY_TEST_NODES = [ImageNode]
 
 function createTestEditor(nodes: LexicalNodeConfig[] = CARD_ADJACENCY_TEST_NODES) {
@@ -88,7 +87,6 @@ describe('card-adjacency', () => {
     vi.restoreAllMocks()
   })
 
-  /** [image] [paragraph("Some content")] with the caret in the text at `offset`. */
   async function buildCardThenParagraph(offset: number) {
     let cardKey = ''
     await updateEditor(editor, () => {
@@ -105,7 +103,6 @@ describe('card-adjacency', () => {
     return { cardKey }
   }
 
-  /** [paragraph("Some content")] [image] with the caret in the text at `offset`. */
   async function buildParagraphThenCard(offset: number) {
     let cardKey = ''
     await updateEditor(editor, () => {
@@ -122,7 +119,6 @@ describe('card-adjacency', () => {
     return { cardKey }
   }
 
-  /** [image] [empty paragraph] [image] with the caret in the paragraph. */
   async function buildEmptyParagraphBetweenCards() {
     let previousCardKey = ''
     let nextCardKey = ''
@@ -520,12 +516,10 @@ describe('card-adjacency', () => {
         root.append(paragraph)
         cardKey = image.getKey()
         paragraphNode = paragraph
-        // caret mid-text: the selection-anchored mode stays gated...
         textNode.select(5, 5)
       })
 
       expect(read(() => $getLogicallyAdjacentCard('previous'))).toBeNull()
-      // ...while the same block passed explicitly is an ungated sibling lookup
       const card = read(() => $getLogicallyAdjacentCard('previous', paragraphNode!))
       expect(card?.getKey()).toBe(cardKey)
     })
@@ -548,7 +542,6 @@ describe('card-adjacency', () => {
 
       const card = read(() => $getLogicallyAdjacentCard('next', paragraphNode!))
       expect(card?.getKey()).toBe(cardKey)
-      // the image's next sibling does not exist and its previous sibling is a paragraph
       expect(read(() => $getLogicallyAdjacentCard('next', imageNode!))).toBeNull()
       expect(read(() => $getLogicallyAdjacentCard('previous', imageNode!))).toBeNull()
     })
@@ -640,7 +633,6 @@ describe('card-adjacency', () => {
         }
         expect($getNodeByKey(cardKey)).toBeNull()
       })
-      // decorator-next focus repair, never scrolling the viewport
       expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
     })
 
@@ -695,7 +687,6 @@ describe('card-adjacency', () => {
         $removeOrReplaceNodeWithParagraph(editor, $getRoot().getFirstChild() as CardNode, { focus: 'root-first' })
       })
 
-      // exactly one focus call: the root-first one, with preventScroll
       expect(focusSpy).toHaveBeenCalledTimes(1)
       expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
       read(() => {

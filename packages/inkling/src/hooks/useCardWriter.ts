@@ -15,11 +15,6 @@ export interface CardWriteOptions {
   mergeHistory?: boolean
 }
 
-/**
- * The React binding of the card write seam: one `write(node => { ... })` per card
- * component. The guard does the narrowing, so every field the mutator writes is
- * checked against the card's own node type.
- */
 export function useCardWriter<T extends LexicalNode>(
   nodeKey: NodeKey,
   guard: (node: unknown) => node is T,

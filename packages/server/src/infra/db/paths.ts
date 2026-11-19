@@ -1,7 +1,6 @@
 import { resolveStoragePath } from '@kobato/db/database.ts'
 import { serverConfig } from '@kobato/server/infra/config.ts'
 
-/** Shared storage-path resolution for both embedded engines. */
 export function resolveEnginePath(configured: string, fallbackName: string): string {
   return resolveStoragePath(configured, fallbackName, serverConfig.storage.data)
 }
@@ -11,7 +10,6 @@ export function resolveDatabasePath(): string {
   return resolveEnginePath(serverConfig.storage.database, 'kobato.db')
 }
 
-/** The DuckDB analytics sidecar path (also a `:memory:` pass-through). */
 export function resolveAnalyticsPath(): string {
   return resolveEnginePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
 }

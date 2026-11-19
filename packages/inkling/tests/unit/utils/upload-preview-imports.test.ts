@@ -13,10 +13,8 @@ import { describe, expect, it } from 'vitest'
 const SCANNED_DIRS = [join('packages', 'inkling', 'src', 'nodes'), join('packages', 'inkling', 'src', 'plugins')]
 const OBJECT_URL_CALL = /URL\.(?:createObjectURL|revokeObjectURL)\(/g
 
-// No exceptions: every card/plugin preview flows through the seam.
 const ALLOWED_DIRECT_CALLERS: string[] = []
 
-// The sanctioned object-URL caller across all of src: the lease owner.
 const ALLOWED_OBJECT_URL_FILES = ['packages/inkling/src/utils/preview-lease.ts']
 
 function listSourceFiles(dir: string): string[] {
@@ -25,7 +23,6 @@ function listSourceFiles(dir: string): string[] {
     .filter((name) => /\.tsx?$/.test(name))
 }
 
-/** True when a source file calls URL.createObjectURL / URL.revokeObjectURL. */
 function callsObjectUrl(file: string): boolean {
   return readFileSync(file, 'utf8').match(OBJECT_URL_CALL) !== null
 }

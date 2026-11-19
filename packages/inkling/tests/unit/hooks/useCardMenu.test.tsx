@@ -29,8 +29,6 @@ function createTestEditor(): LexicalEditor {
   })
 }
 
-// the labels seam: prefs context carries the
-// composer's merged table; useCardMenu is the single menu-build injection point
 function createLabelsWrapper(labels: InklingLabelsInput) {
   const hostValue = createHostIntegrationValue({ cardConfig: {} })
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -56,7 +54,7 @@ describe('useCardMenu', () => {
     expect(result.current.cardMenu.items.length).toBeGreaterThan(0)
     expect(result.current.cardMenu.maxItemIndex).toBe(result.current.cardMenu.items.length - 1)
     expect(result.current.cardMenu.items.map((item) => item.label)).toContain('HTML')
-    // the flat list is derived from the sections, sharing item identity
+
     expect(result.current.cardMenu.items).toEqual(result.current.cardMenu.sections.flatMap((section) => section.items))
   })
 
@@ -107,8 +105,7 @@ describe('useCardMenu', () => {
 
   it('keeps the declared aliases for query matching under a labels override', () => {
     const editor = createTestEditor()
-    // the override localized the label, but the declared English matches
-    // array still drives slash-query matching
+
     const { result } = renderHook(() => useCardMenu(editor, 'html'), {
       wrapper: createLabelsWrapper({ 'menu.html.label': '网页' }),
     })
@@ -153,11 +150,8 @@ describe('useCardMenu', () => {
       result.current.insert(INSERT_TEST_COMMAND, { queryParams: ['tag'] })
     })
 
-    // a typed-but-empty param is a legal value; only `undefined` (no param
-    // typed at all) may be skipped
     expect(dispatchCommandSpy).toHaveBeenCalledWith(INSERT_TEST_COMMAND, { tag: '' })
   })
-
   it('replaces the trigger paragraph before dispatching when replaceTriggerParagraph is set', async () => {
     const editor = createTestEditor()
     const dispatchCommandSpy = vi.spyOn(editor, 'dispatchCommand')
@@ -179,15 +173,14 @@ describe('useCardMenu', () => {
 
     await act(async () => {
       result.current.insert(INSERT_TEST_COMMAND, { insertParams: { html: '<p>x</p>' } })
-      // the insert's own update is not discrete; let its commit land
+
       await tick()
     })
-
     expect(dispatchCommandSpy).toHaveBeenCalledWith(INSERT_TEST_COMMAND, { html: '<p>x</p>' })
 
     editor.getEditorState().read(() => {
       const paragraph = $getRoot().getFirstChild()
-      // the "/html" trigger text is gone; a fresh empty paragraph holds the caret
+
       expect(paragraph?.getTextContent()).toBe('')
     })
   })

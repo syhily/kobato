@@ -48,7 +48,6 @@ interface CheckMailReadyOptions {
 }
 
 interface BuildTransportOptions {
-  /** Test sends bypass the master switch so editors can verify connectivity first. */
   forceEnabled?: boolean
 }
 
@@ -56,7 +55,6 @@ interface BuildTransportOptions {
 // Adding a transport = one entry here + its `MailTransport` class.
 interface TransportRegistryEntry {
   isReady(mail: MailConfig): boolean
-  /** Catalog key for the "missing fields" readiness message (site locale). */
   unconfiguredKey: ServerMessageId
   build(mail: MailConfig, opts?: BuildTransportOptions): MailTransport
 }

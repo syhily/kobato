@@ -8,9 +8,6 @@ import { updateMusicMetadata } from '@kobato/server/domains/music/services/write
 import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/music.ts`; this controller only implements the
-// procedures (author base).
 const impl = implementAuthor(adminMusicContract)
 
 const list = impl.list.handler(({ input, context }) =>

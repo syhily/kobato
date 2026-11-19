@@ -15,7 +15,6 @@ export interface CardPickerHandle {
    * a variant override) — a pickerless card keeps its placeholder static.
    */
   open: (nodeKey: NodeKey) => void
-  /** Dismiss the active pick request without picking. */
   close: () => void
 }
 

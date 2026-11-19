@@ -32,19 +32,12 @@ export type CardToolbarItem =
 
 export interface CardActionToolbarProps {
   nodeKey: NodeKey
-  // extra per-card gate on the menu toolbar (populated checks, drag states);
-  // defaults to true
   visibleWhen?: boolean
-  // when false the menu toolbar stays up while the card is editing
-  // (bookmark, gallery, image); defaults to true
+
   hideWhileEditing?: boolean
-  // defaults to [edit, separator, snippet]
   items?: CardToolbarItem[]
-  // testid for the default items' edit entry — passing it keeps the default
-  // item list while stamping the card's own `edit-X` testid
   editDataTestId?: string
 }
-
 const DEFAULT_ITEMS: CardToolbarItem[] = [{ kind: 'edit' }, { kind: 'separator' }, { kind: 'snippet' }]
 
 // the card's toolbar name — both blocks render

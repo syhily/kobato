@@ -80,7 +80,6 @@ const NODE_BUILTINS = [
 interface NodeOnlyPackage {
   name: string
   reason: string
-  /** Repo-relative paths allowed to import this package (documented exceptions). */
   allowedIn?: readonly string[]
 }
 
@@ -102,14 +101,11 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   { name: '@napi-rs/canvas', reason: 'native binary, ssr-external' },
   { name: '@duckdb/node-api', reason: 'native binary, ssr-external' },
   { name: 'feed', reason: 'feed generation, server-only' },
-  // Not currently installed; pre-armed for the WordPress/feeds server chain.
   { name: 'fast-xml-parser', reason: 'XML parsing, server-only' },
   { name: 'lunar-typescript', reason: 'server-side calendar computation' },
 ]
 
 function walk(dir: string, callback: (filePath: string) => void) {
-  // Split-package roots are registered ahead of their sources landing; a
-  // missing directory simply has nothing to scan.
   if (!existsSync(dir)) {
     return
   }
@@ -128,15 +124,9 @@ function relativePath(absolutePath: string): string {
   return relative(PROJECT_ROOT, absolutePath).replace(/\\/g, '/')
 }
 
-/**
- * Collect every specifier that would be emitted into the bundle: static
- * value imports, side-effect imports and dynamic imports. `import type …`
- * statements are erased by the compiler and skipped.
- */
 function getValueSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   let match: RegExpExecArray | null
-  // import [type] … from '…' (default / named / namespace, possibly multiline)
   const fromRegex =
     /import\s+(type\s+)?(?:[\w$]+\s*,\s*)?(?:\{[^}]*\}|\*\s+as\s+[\w$]+)?(?:[\w$]+)?\s+from\s+['"]([^'"]+)['"]/g
   while ((match = fromRegex.exec(source)) !== null) {
@@ -144,12 +134,11 @@ function getValueSpecifiers(source: string): string[] {
       specifiers.push(match[2])
     }
   }
-  // side-effect: import '…'
+
   const sideEffectRegex = /import\s+['"]([^'"]+)['"]/g
   while ((match = sideEffectRegex.exec(source)) !== null) {
     specifiers.push(match[1])
   }
-  // dynamic: import('…')
   const dynamicRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   while ((match = dynamicRegex.exec(source)) !== null) {
     specifiers.push(match[1])
@@ -238,18 +227,11 @@ describe('client bundle guard', () => {
   })
 })
 
-/**
- * One server-only module family: client layers must not value-import anything
- * matching `patterns`, and the listed `owners` are the modules whose JOB is to
- * aggregate that family (they are the only files allowed to import it).
- */
 interface ServerOnlyImportRule {
-  /** Sentence fragment used in the violation line. */
   label: string
   patterns: readonly RegExp[]
   owners: readonly string[]
 }
-
 function collectServerOnlyImportViolations(filePaths: readonly string[], rule: ServerOnlyImportRule): string[] {
   const violations: string[] = []
   for (const filePath of filePaths) {
@@ -283,7 +265,7 @@ const I18N_SCANNED_ROOTS = [
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',
 ]
-/** Root route module: part of the client bundle, so it must not pin the catalogs. */
+
 const I18N_SCANNED_ROOT_FILES = ['apps/kobato/src/root.tsx']
 
 function collectScannedFiles(): string[] {
@@ -297,20 +279,15 @@ function collectScannedFiles(): string[] {
   return files
 }
 
-// `@kobato/i18n/messages/**` are the four catalogs (they also TYPE the
-// message ids, so `import type` is fine); `catalog` aggregates them;
-// `server/infra/i18n` is the server translator. All three must stay out of the
-// client static graph.
 const I18N_CATALOG_RULE: ServerOnlyImportRule = {
   label: 'server-only i18n module',
-  // Cross-package (`@kobato/...`) and intra-package relative forms alike.
+
   patterns: [
     /(^|\/)i18n\/catalog(\.ts)?$/,
     /(^|\/)i18n\/messages\//,
     /^\.\/messages\//,
     /(^|\/)server\/infra\/i18n(\.ts)?$/,
   ],
-  /** The aggregator itself may import the per-locale catalogs — that is its job. */
   owners: ['packages/shared/i18n/src/catalog.ts'],
 }
 
@@ -322,7 +299,6 @@ describe('i18n bundle boundary', () => {
   it('client layers and the root route never value-import the catalogs or the server translator', () => {
     expect(collectI18nViolations(collectScannedFiles())).toEqual([])
   })
-
   it('tripwire: reports catalog/translator value imports and ignores type-only ones', () => {
     const fixtureRoot = mkdtempSync(join(tmpdir(), 'client-bundle-i18n-'))
     try {
@@ -372,23 +348,21 @@ describe('i18n bundle boundary', () => {
 // all four locales into a chunk.
 const INKLING_LABEL_RULE: ServerOnlyImportRule = {
   label: 'server-only Inkling label module',
-  // Cross-package (`@kobato/...`) and intra-package relative forms alike.
+
   patterns: [
     /(^|\/)i18n\/inkling-labels(\.ts)?$/,
-    // Banned: importing a table directly pulls all four locales into a chunk.
+
     /(^|\/)i18n\/inkling-labels\//,
     /^\.\/inkling-labels\//,
   ],
   owners: [
     'packages/shared/i18n/src/inkling-labels.ts',
-    // The client seam owns the ONE sanctioned dynamic per-locale load for
-    // public documents (each locale is its own chunk).
+
     'packages/web/client/src/editor/inkling-labels.ts',
   ],
 }
 
 const INKLING_LABEL_RESOLVER = 'packages/web/client/src/editor/inkling-labels.ts'
-
 describe('inkling label bundle boundary', () => {
   it('client layers and the root route never value-import an Inkling label table', () => {
     expect(collectServerOnlyImportViolations(collectScannedFiles(), INKLING_LABEL_RULE)).toEqual([])
@@ -398,8 +372,7 @@ describe('inkling label bundle boundary', () => {
     const source = readFileSync(join(PROJECT_ROOT, INKLING_LABEL_RESOLVER), 'utf-8')
     expect(source).toContain("from 'react-router'")
     expect(source).toContain('useRouteLoaderData')
-    // No STATIC table import — the public fallback is one dynamic import per
-    // locale (four chunks; a visitor downloads only the active one).
+
     expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
     for (const locale of ['en-US', 'zh-CN', 'zh-HK', 'zh-TW']) {
       expect(source).toContain(`import('@kobato/i18n/inkling-labels/${locale}.ts')`)

@@ -42,8 +42,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function createTestEditor(): LexicalEditor {
   const editor = createEditor({ namespace: 'test', nodes: [LinkNode], onError: () => {} })
-  // the production TOGGLE_LINK_COMMAND handler lives in LinkPlugin; the
-  // headless editor registers the same $toggleLink behaviour directly
   editor.registerCommand(
     TOGGLE_LINK_COMMAND,
     (payload) => {
@@ -55,8 +53,6 @@ function createTestEditor(): LexicalEditor {
   return editor
 }
 
-// updateEditor (the shared harness) awaits the commit of a non-discrete
-// update so the following read sees the new state.
 function selectText(editor: LexicalEditor, text: string): Promise<void> {
   return updateEditor(editor, () => {
     const root = $getRoot()
@@ -117,7 +113,6 @@ describe('$applyLinkToSelection', () => {
     await selectText(editor, 'hello')
     await linkSelection(editor, 'https://example.com')
 
-    // re-select the linked text and apply an empty url
     await updateEditor(editor, () => {
       const link = $nodesOfType(LinkNode)[0]
       const text = link.getFirstChild()
@@ -280,7 +275,6 @@ describe('$removeLink', () => {
 
 describe('createToolbarSession hovered link', () => {
   function createHoveredLink(href = 'https://example.com'): HoveredLink {
-    // the session only ever compares linkNode identity, so a stub suffices
     return { linkNode: {} as LinkNode, href, targetElem: document.createElement('a') }
   }
 
@@ -370,7 +364,6 @@ describe('createToolbarSession hovered link', () => {
   })
 })
 
-/** An editor with a reconciled root element, so $getNearestNodeFromDOMNode / getElementByKey work in jsdom. */
 function createDomLinkedEditor(): { editor: LexicalEditor; rootElement: HTMLDivElement } {
   const editor = createTestEditor()
   const rootElement = document.createElement('div')
@@ -512,7 +505,6 @@ describe('createToolbarRevealFeed', () => {
     feed.move({ x: 10, y: 0 }, 0)
     expect(reveal).toHaveBeenCalledTimes(1)
 
-    // the threshold restarted: small travel from the new position does not reveal
     feed.move({ x: 12, y: 0 }, 0)
     feed.move({ x: 14, y: 0 }, 0)
     expect(reveal).toHaveBeenCalledTimes(1)
@@ -531,7 +523,6 @@ describe('createToolbarRevealFeed', () => {
     feed.move({ x: 10, y: 0 }, 1)
     expect(reveal).not.toHaveBeenCalled()
 
-    // the drag did not consume the initial position either
     feed.move({ x: 11, y: 0 }, 0)
     expect(reveal).toHaveBeenCalledTimes(1)
   })
@@ -632,7 +623,6 @@ describe('createToolbarRevealFeed', () => {
   })
 })
 
-/** An editor with the at-link family registered and a reconciled root element, for the selection classifier. */
 function createClassifierEditor(): { editor: LexicalEditor; rootElement: HTMLDivElement } {
   const editor = createEditor({
     namespace: 'test',
@@ -645,8 +635,6 @@ function createClassifierEditor(): { editor: LexicalEditor; rootElement: HTMLDiv
   return { editor, rootElement }
 }
 
-// Places the native selection and dispatches the document selectionchange the
-// classifier listens to — mimics the browser driving the listener.
 function dispatchNativeSelection(anchorNode: Node, anchorOffset: number, focusNode: Node, focusOffset: number) {
   const nativeSelection = window.getSelection()
   if (!nativeSelection) {
@@ -673,8 +661,6 @@ describe('registerToolbarSelectionSync', () => {
     }
   })
 
-  // The rendered DOM text of the editor's only plain-text node — the native
-  // selection anchor for an in-editor selection.
   function getPlainTextDom(): Node {
     const spans = rootElement.querySelectorAll('span')
     const text = spans[spans.length - 1]?.firstChild
@@ -712,8 +698,6 @@ describe('registerToolbarSelectionSync', () => {
     })
     dispatchNativeSelection(text, 0, text, 0)
 
-    // a collapsed caret carries no text: textSelected is false and the
-    // session hides, keeping the href
     expect(session.handle.getState()).toEqual({ type: 'hidden', href: '', hoveredLink: null })
   })
 
@@ -732,7 +716,6 @@ describe('registerToolbarSelectionSync', () => {
       searchNodeKey = searchNode.getKey()
     })
 
-    // liveness: a plain-text selection opens the toolbar through the same listener
     await updateEditor(editor, () => {
       const paragraph = $getRoot().getFirstChild()
       if (!$isElementNode(paragraph)) {
@@ -748,7 +731,6 @@ describe('registerToolbarSelectionSync', () => {
     dispatchNativeSelection(plainText, 0, plainText, 5)
     expect(session.handle.getState().type).toBe('text')
 
-    // the same selected-text shape inside the at-link search node is suppressed
     await updateEditor(editor, () => {
       const paragraph = $getRoot().getFirstChild()
       if (!$isElementNode(paragraph)) {
@@ -856,8 +838,6 @@ describe('registerToolbarCommands', () => {
     const session = createToolbarSession()
     const cleanup = registerToolbarCommands(editor, session)
 
-    // the command chain's boolean is shared with Lexical's built-in
-    // handlers — the session is the reliable verdict
     await dispatchAndCommit(editor, KEY_DOWN_COMMAND, new KeyboardEvent('keydown', { code: 'KeyK', ctrlKey: true }))
     await dispatchAndCommit(
       editor,

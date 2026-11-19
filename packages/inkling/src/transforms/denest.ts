@@ -17,7 +17,6 @@ export type CreateNodeFn<T extends LexicalNode> = (originalNode: T) => T
 // inserting them after the node's top-level parent. Nodes are moved, never
 // removed, so no pasted or imported content is lost.
 
-// lists can only be top-level or nested inside list items
 function $isInvalidListNode(node: LexicalNode) {
   if (!$isListNode(node)) {
     return false
@@ -27,7 +26,6 @@ function $isInvalidListNode(node: LexicalNode) {
   return !($isRootNode(parent) || $isListItemNode(parent))
 }
 
-// list items can only exist within a list node
 function $isInvalidListItemNode(node: LexicalNode) {
   if (!$isListItemNode(node)) {
     return false
@@ -49,8 +47,6 @@ function $unwrapListItemForRootInsertion(child: ListItemNode, parent: ElementNod
   parent.insertAfter(paragraphNode)
 }
 
-// non-inline nodes can only exist at top-level inside a root node
-// ignore list and list item nodes because they aren't inline but can be nested inside each other
 function $isInvalidChildNode(node: LexicalNode) {
   if ($isLineBreakNode(node) || $isTextNode(node)) {
     return false
@@ -75,11 +71,7 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
   // move re-triggers the transform, looping forever
   const tempParagraph = $createParagraphNode()
 
-  // a fresh node of the current type collects inline children so their order
-  // survives the move; it is appended to the temp paragraph and replaced each
-  // time a non-inline child is found
   let currentElementNode = createNode(node)
-
   children.forEach((child: LexicalNode) => {
     if ($isInvalidChildNode(child)) {
       if (currentElementNode.getChildrenSize() > 0) {
@@ -96,8 +88,6 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     tempParagraph.append(currentElementNode)
   }
 
-  // find the top-level parent to insert nodes after in case of deeper nesting,
-  // e.g. images inside lists
   let parent: ElementNode = node
   while (parent.getParent() && parent.getParent() !== $getRoot()) {
     parent = parent.getParentOrThrow()
@@ -108,7 +98,7 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
   const movedChildren = tempParagraph.getChildren()
   for (let index = movedChildren.length - 1; index >= 0; index -= 1) {
     const child = movedChildren[index]
-    // list items must not land directly in the root node
+
     if ($isRootNode(parent.getParent()) && $isListItemNode(child)) {
       $unwrapListItemForRootInsertion(child, parent)
       continue

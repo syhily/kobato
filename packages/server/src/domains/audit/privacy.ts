@@ -35,7 +35,6 @@ function tagValue(key: string, value: unknown): unknown {
   return tagL3(value)
 }
 
-/** Wrap string values whose key matches the L3 set; array elements keep the parent key. */
 export function tagL3InDetails(details: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (details === undefined || details === null) {
     return details
@@ -145,7 +144,6 @@ export function maskUserAgent(ua: string | null | undefined): string {
   if (browserMatch && osMatch) {
     const browser = browserMatch[1]
     const osRaw = osMatch[1]
-    // osRaw often looks like "Windows NT 10.0; Win64; x64" or "Macintosh; Intel Mac OS X 10_15_7"
     const osFamily = osRaw.split(';')[0]?.trim() ?? osRaw
     return `${browser} / ${osFamily}`
   }

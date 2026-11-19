@@ -50,7 +50,6 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
   return editor.registerCommand(
     KEY_BACKSPACE_COMMAND,
     (event) => {
-      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -109,7 +108,6 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
             return true
           }
 
-          // Selection-mode 'previous' is gated on exactly atStartOfElement inside the surgery.
           if ($removeLogicallyAdjacentCard('previous')) {
             event.preventDefault()
             return true
@@ -119,7 +117,6 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
           const atEndOfElement =
             selection.anchor.offset === anchorNodeLength && selection.focus.offset === anchorNodeLength
 
-          // Undo markdown special formats when deleting at the end of a formatted text node.
           if (atEndOfElement && $isTextNode(anchorNode) && $unwrapSpecialMarkupFormat(anchorNode, selection)) {
             event.preventDefault()
             return true

@@ -9,15 +9,10 @@ import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
 export interface DraftConflictDialogProps {
   open: boolean
-  /** Body that was just loaded from the IndexedDB local draft. */
   localBody: LexicalEditorState
-  /** Body of the server's latest revision. */
   serverBody: LexicalEditorState
-  /** ms-since-epoch when the local copy was last saved. */
   localSavedAt: number | null
-  /** ms-since-epoch when the server copy was last updated. */
   serverUpdatedAt: number | null
-  /** Adopt the local copy and overwrite the server on next save. */
   onChooseLocal: () => void
   /** Adopt the server copy and discard the local draft. */
   onChooseServer: () => void

@@ -5,8 +5,6 @@ import { user } from '@kobato/db/schema/user.ts'
 import { commentWithUser } from '@kobato/server/domains/comments/repos/shared.ts'
 import { and, count, eq, inArray, isNull } from 'drizzle-orm'
 
-/** By-id comment lookups — the domain's sanctioned single-comment read
- *  surface for controllers (moderation, ownership, token flows). */
 export async function findCommentWithUserById(db: Database, id: number) {
   const rows = await db
     .select(commentWithUser)
@@ -28,7 +26,6 @@ export async function findCommentsByIds(db: Database, ids: number[]) {
     .where(inArray(comment.id, ids))
 }
 
-/** Approved direct replies of one comment — the "has replies → no edit" guard. */
 export async function countApprovedRepliesOfComment(db: Database, commentId: number): Promise<number> {
   const rows = await db
     .select({ count: count() })

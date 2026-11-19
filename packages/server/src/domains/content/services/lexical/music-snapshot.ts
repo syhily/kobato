@@ -19,7 +19,6 @@ const log = getLogger('lexical.music-snapshot')
 // another origin points media at the old one. The feed variant re-absolutizes
 // against the CURRENT site origin (`absolutizeAssetSrcForFeed`).
 
-/** Site-owned asset URL (absolute or already relative) → origin-relative form; anything else passes through. */
 function toOriginRelativeAssetUrl(url: string): string {
   if (url === '') {
     return url

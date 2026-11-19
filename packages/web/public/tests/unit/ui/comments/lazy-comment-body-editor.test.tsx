@@ -79,7 +79,6 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
   it('mounts the placeholder first and loads only the active locale after activation', async () => {
     render(<RouterProvider router={makeRouter()} />)
 
-    // Interaction-gated: nothing but the placeholder until the user engages.
     expect(screen.queryByTestId('composer')).toBeNull()
     expect(screen.getByRole('textbox')).toBeTruthy()
     expect(loader.load).not.toHaveBeenCalled()
@@ -98,7 +97,6 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
 
     fireEvent.pointerEnter(screen.getByRole('textbox'))
 
-    // Both chunks warm on the same intent; the placeholder stays mounted.
     expect(loader.load).toHaveBeenCalledWith('zh-CN')
     expect(screen.queryByTestId('composer')).toBeNull()
   })

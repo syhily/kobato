@@ -5,48 +5,21 @@ import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useContext, useEffect, useState } from 'react'
 
 export interface UseHeaderBackgroundImageOptions {
-  /** The node's current layout — the layout-change transition keys off it. */
   layout: string
-  /** The node's current background image src. */
   backgroundImageSrc: string
-  /** The card write seam binding for this node. */
   write: HeaderNodeWriter
-  /** Opens the card's file dialog (the component owns the input ref). */
   openFileDialog: () => void
 }
 
 export interface UseHeaderBackgroundImageResult {
   showBackgroundImage: boolean
-  /**
-   * Show the image: restore the remembered src when there is one and the
-   * user did not deliberately remove it; otherwise open the file dialog.
-   */
   showImage: () => void
-  /** Hide the image: clear the node src but keep the remembered src, so a later show restores it. */
   hideImage: () => void
-  /**
-   * Remove the image deliberately: clear the node src and mark the removal,
-   * so the next show opens the file dialog instead of restoring.
-   */
+
   clearImage: () => void
-  /** Upload completion: remember the applied src and clear the deliberate-removal flag. */
+
   imageApplied: (src: string) => void
 }
-
-/**
- * The header card's background-image show/hide/remove policy:
- *
- * - mount/layout transition: a non-split layout re-derives visibility from the
- *   node src; switching TO `split` with no src but a remembered image re-runs the
- *   show transition (which may open the file dialog).
- * - show: restore the remembered src through the write seam, or open the file
- *   dialog when there is nothing (restorable) to restore.
- * - hide vs clear: hide keeps the remembered src; clear marks the removal
- *   deliberate, cutting the restore path.
- *
- * Also owns the mount-time accent-color backfill, so the component carries no
- * node-write effects.
- */
 export function useHeaderBackgroundImage({
   layout,
   backgroundImageSrc,
@@ -58,14 +31,11 @@ export function useHeaderBackgroundImage({
   // this editor's root so a second editor on the page can't supply the accent
   const composerContext = useContext(LexicalComposerContext)
   const editor = composerContext?.[0] ?? null
-
   const [showBackgroundImage, setShowBackgroundImage] = useState<boolean>(Boolean(backgroundImageSrc))
   const [lastBackgroundImage, setLastBackgroundImage] = useState<string>(backgroundImageSrc)
   const [imageRemoved, setImageRemoved] = useState<boolean>(false)
-
   const showImage = (): void => {
     setShowBackgroundImage(true)
-
     if (lastBackgroundImage && !imageRemoved) {
       write((node) => {
         node.backgroundImageSrc = lastBackgroundImage
@@ -120,7 +90,6 @@ export function useHeaderBackgroundImage({
         openFileDialog()
       }
     }
-    // Deps stay [layout]: visibility resets on layout change, not on image changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [layout])
 

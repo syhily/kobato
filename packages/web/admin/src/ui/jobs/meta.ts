@@ -6,8 +6,6 @@ import type { BadgeProps } from '@kobato/ui/components/badge.tsx'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 
-// Shared presentation meta for the admin task center (TasksView + TaskCard + RunHistorySheet).
-
 /** Catalog task key — a summary key is always a catalog key (jobs contract). */
 export type TaskKey = JobSummaryDto['taskKey']
 
@@ -40,7 +38,6 @@ export type TaskStatus =
   | 'idle'
   | 'ok'
 
-// Status → badge lookup tables; labels are UI message ids the task views resolve through `useI18n()`.
 export const STATUS_META: Record<TaskStatus, StatusMeta> = {
   ...SHARED_STATUS_META,
   attention: { labelId: 'admin.tasks.status.attention', variant: 'destructive' },
@@ -72,7 +69,6 @@ export function jobRunErrorLabelId(error: string | null): UiMessageId | null {
   return error !== null && isJobRunErrorCode(error) ? JOB_RUN_ERROR_LABEL_IDS[error] : null
 }
 
-// Migration phase → badge status + progress copy, single lookup table.
 export const MIGRATION_PHASE_META: Record<
   StorageMigrationStatus['phase'],
   { labelId: UiMessageId; status: TaskStatus }
@@ -108,9 +104,7 @@ export const GROUP_ORDER: readonly TaskGroup[] = ['system', 'content', 'maintena
 // and whether its status + progress derive from the storage-migration DTO.
 // Adding a catalog task = one catalog row + one row here (compile-enforced).
 export interface TaskCapabilities {
-  /** Footer action slot rendered by TaskCard. */
   action?: 'backup' | 'migration'
-  /** Footer cross-link button. */
   link?: { to: string; labelId: UiMessageId }
   /** Status badge + progress lines come from the migration DTO, not job runs. */
   usesMigrationStatus?: boolean

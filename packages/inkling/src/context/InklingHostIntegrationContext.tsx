@@ -7,9 +7,6 @@ import React from 'react'
 export interface FileUploader {
   useFileUpload: (type: 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail') => {
     isLoading?: boolean
-    // `fileName` lets multi-file uploads (gallery) map results back to the
-    // original file; the reference host returns it and GalleryNodeComponent
-    // reads it
     upload: (
       files: FileList | File[],
       options?: { formData?: Record<string, string> },
@@ -24,10 +21,7 @@ export interface FileUploader {
   }
 }
 
-// Accepted by <InklingComposer>: a full uploader, one missing `useFileUpload`
-// (a fallback is installed), or any legacy object
 export type FileUploaderInput = Partial<FileUploader> | Record<string, unknown>
-
 export interface GifSettings {
   klipy?: { apiKey?: string; contentFilter?: string }
   tenor?: { googleApiKey?: string; contentFilter?: string }
@@ -73,9 +67,8 @@ export interface UploadSettings {
 }
 
 export interface LibraryImageItem {
-  /** Card `src`. kobato: AdminImageDto.publicUrl */
   src: string
-  /** Card `alt`. kobato: AdminImageDto.note ?? '' */
+
   alt?: string
   width?: number | null
   height?: number | null
@@ -95,20 +88,10 @@ export interface ImageLibrarySettings {
    * convention as LinkingSettings.searchLinks).
    */
   search: (query: string) => Promise<LibraryImageItem[] | undefined>
-  /**
-   * Optional in-picker upload entry; the host owns the whole upload UX and
-   * resolves with the uploaded item (treated as the selection) or `undefined`
-   * when cancelled. Absent = no upload button.
-   */
+
   upload?: () => Promise<LibraryImageItem | undefined>
 }
-
 export interface LibrarySettings {
-  /**
-   * The host's image media library. Present = the image card's menu gains an
-   * "Image library" entry opening the picker; the host-schema keys ride the
-   * insert dataset (see LibraryImageItem).
-   */
   imageLibrary?: ImageLibrarySettings
 }
 
@@ -123,11 +106,6 @@ export interface MathSettings {
 }
 
 export interface TelemetrySettings {
-  /**
-   * The host's telemetry handler. Editor `trackEvent` events route here instead
-   * of the default plausible/posthog fan-out. Page-global by nature, so the
-   * last registered handler wins page-wide.
-   */
   telemetry?: TelemetryHandler
 }
 
@@ -144,22 +122,11 @@ export interface CardConfig
     LibrarySettings,
     TelemetrySettings {}
 
-// Host-integration lifecycle: the values the host application hands the editor
-// — uploads, card behaviour flags, and the error sink. This is the WHOLE-value
-// transport shape: the composer props and the provider facade speak it, but no
-// component subscribes to it — consumers subscribe to the per-lifecycle
-// channels below, so one feature config's identity change re-renders only that
-// feature's consumers.
 export interface InklingHostIntegrationContextValue {
   fileUploader: FileUploader
   cardConfig: CardConfig
   onError: (error: unknown, info: React.ErrorInfo) => void
-  /**
-   * The host's drag auto-scroll container selector (the composer's
-   * `dragScrollContainerSelector` prop): when a drag's only scrollable
-   * ancestor is the document, the drag-scroll prefers the element matching
-   * this selector. Absent, the document scrolling element is used as found.
-   */
+
   dragScrollContainerSelector?: string
 }
 
@@ -171,17 +138,14 @@ export interface InklingHostEssentials {
   fileUploader: FileUploader
   onError: (error: unknown, info: React.ErrorInfo) => void
 }
-
 const InklingHostEssentialsContext = React.createContext<InklingHostEssentials>({
   fileUploader: {
     useFileUpload: () => ({ upload: () => Promise.resolve(undefined) }),
   },
   onError: () => {
-    /* noop default outside a composer */
+    /* noop */
   },
 })
-
-/** The editor-level channel: the host's file uploader and error sink. */
 export function useInklingHostEssentials(): InklingHostEssentials {
   return React.useContext(InklingHostEssentialsContext)
 }
@@ -197,53 +161,36 @@ const InklingUploadSettingsContext = React.createContext<UploadSettings>({})
 const InklingMathSettingsContext = React.createContext<MathSettings>({})
 const InklingLibrarySettingsContext = React.createContext<LibrarySettings>({})
 
-/** The GIF feature channel (`klipy`/`tenor` provider config). */
 export function useInklingGifSettings(): GifSettings {
   return React.useContext(InklingGifSettingsContext)
 }
 
-/** The linking feature channel (link search/autocomplete, site URL, bookmark embed). */
 export function useInklingLinkingSettings(): LinkingSettings {
   return React.useContext(InklingLinkingSettingsContext)
 }
 
-/** The snippet feature channel (snippet list and create/delete callbacks). */
 export function useInklingSnippetSettings(): SnippetSettings {
   return React.useContext(InklingSnippetSettingsContext)
 }
 
-/** The upload feature channel (image widths, the Pintura editor config). */
 export function useInklingUploadSettings(): UploadSettings {
   return React.useContext(InklingUploadSettingsContext)
 }
 
-/** The math feature channel (the host's server-side render callback). */
 export function useInklingMathSettings(): MathSettings {
   return React.useContext(InklingMathSettingsContext)
 }
 
-/** The media-library feature channel (the host's image library). */
 export function useInklingLibrarySettings(): LibrarySettings {
   return React.useContext(InklingLibrarySettingsContext)
 }
 
-/* The drag-scroll narrow channel: a single consumer (DragDropReorderPlugin), so
- * it rides its own context instead of re-rendering the editor-level channel's
- * consumers on identity changes. */
 const InklingDragScrollContext = React.createContext<string | undefined>(undefined)
 
-/** The host's drag auto-scroll container selector (undefined = the document default). */
 export function useInklingDragScrollContainerSelector(): string | undefined {
   return React.useContext(InklingDragScrollContext)
 }
 
-/**
- * The whole-value facade over the per-lifecycle channels: the composer mounts
- * this once. Every slice is memoized on its own leaf references, so a host
- * rebuilding `cardConfig` every render invalidates only the channels whose
- * leaves actually changed. `cardConfig.telemetry` is deliberately dropped —
- * telemetry is page-global and stays a composer-prop concern.
- */
 export function InklingHostIntegrationProvider({
   value,
   children,

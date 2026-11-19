@@ -10,29 +10,19 @@ import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-inter
 import { runTrackedRequest, type ServiceMachine } from '@kobato/inkling-internal/services/service-machine'
 import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 
-// Gif browser — the headless module behind the GIF selector: fetch/pagination behind an
-// injected port, column balancing, and the keyboard-navigation machine as pure transitions
-// over plain data. The elementFromPoint probing used by horizontal moves is inherently DOM:
-// it sits behind the GifGeometry port so the transitions stay table-testable. The React
-// adapter is GifSelector: snapshot in, JSX out, DOM events translated to intents, and the
-// returned effects executed against the DOM.
-
 const API_VERSION = 'v2'
 export const GIF_SEARCH_DEBOUNCE_MS = 600
 const DEFAULT_COLUMN_COUNT = 4
-
 // Horizontal probing policy: the probe can hit spacing between gifs, so it
 // starts one third down the highlighted tile and keeps moving up 5px at a
 // time, giving up after ten retries to avoid an infinite loop.
 const HORIZONTAL_PROBE_STEP_PX = 5
 const HORIZONTAL_PROBE_RETRIES = 10
 
-/** Fetch port for a single GIF provider page — tests inject a scripted one. */
 export type GifFetchOutcome = { ok: true; results: GifData[]; next: string | null } | { ok: false; message: string }
 
 export type GifFetchPage = (url: string) => Promise<GifFetchOutcome>
 
-/** Scheduler port for the debounced search track — an alias of the request track's `RequestScheduler`. */
 export type GifScheduler = RequestScheduler
 
 export interface GifTileRect {
@@ -43,17 +33,10 @@ export interface GifTileRect {
   height: number
 }
 
-/**
- * Geometry port for horizontal moves: the only DOM the navigation machine
- * needs. `tileRect` returns the rendered rect of the tile for a gif index
- * (null when not rendered); `gifIndexAtPoint` returns the gif index of the
- * selector-contained tile at a viewport point (null when nothing was hit).
- */
 export interface GifGeometry {
   tileRect: (index: number) => GifTileRect | null
   gifIndexAtPoint: (x: number, y: number) => number | null
 }
-
 export interface GifBrowserSnapshot {
   gifs: GifData[]
   columns: GifData[][]
@@ -79,22 +62,16 @@ export type GifBrowserIntent =
   | { type: 'select'; id: string }
   | { type: 'key'; key: string; shiftKey: boolean; target: GifKeyTarget }
 
-/**
- * One-shot outcomes the adapter executes against the DOM: swallow the key
- * event, move focus back to the search input, or insert the selected gif.
- */
 export type GifBrowserEffect =
   | { type: 'prevent-default' }
   | { type: 'focus-search' }
   | { type: 'insert'; image: { src: string; width: number; height: number } }
 
-/** The plain-data view the navigation transitions reduce over. */
 export interface GifNavState {
   gifs: GifData[]
   columns: GifData[][]
   highlightedId: string | null
 }
-
 export interface GifKeyTransition {
   state: GifNavState
   effects: GifBrowserEffect[]
@@ -131,7 +108,6 @@ function findPrevValidGif(gifs: GifData[], startIndex: number): GifData | undefi
   return undefined
 }
 
-/** Insert uses the full gif format only — never the tinygif fallback. */
 function insertImageFor(gif: GifData): { src: string; width: number; height: number } | null {
   const format = gif.media_formats.gif
   if (!format?.url || !format.dims) {
@@ -189,8 +165,6 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
     effects,
   })
 
-  // Tab / ArrowDown / Enter on the search input all land on the first valid
-  // gif — or clear the highlight when the list has none.
   const highlightFirst = (): GifKeyTransition => highlight(findNextValidGif(gifs, 0), [PREVENT_DEFAULT])
 
   const highlightNext = (): GifKeyTransition => {
@@ -247,7 +221,6 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
       return stay([PREVENT_DEFAULT])
     }
     if (highlighted.columnIndex >= columns.length - 1) {
-      // no wrap on the last column
       return stay([PREVENT_DEFAULT])
     }
     const next = probeHorizontalGif(gifs, highlighted, 'right', geometry)
@@ -259,11 +232,9 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
       return stay([PREVENT_DEFAULT])
     }
     if (highlighted.index === 0) {
-      // on the first Gif, focus the search bar
       return stay([PREVENT_DEFAULT, FOCUS_SEARCH])
     }
     if (highlighted.columnIndex === 0) {
-      // no wrap on the first column
       return stay([PREVENT_DEFAULT])
     }
     const next = probeHorizontalGif(gifs, highlighted, 'left', geometry)
@@ -300,7 +271,6 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
       return highlighted ? moveDown() : stay()
     case 'Enter':
       if (event.target === 'button') {
-        // let the native button activation (Enter/Space -> click) insert the GIF
         return stay()
       }
       if (event.target === 'input') {
@@ -411,8 +381,6 @@ export function createGifBrowser({
       gif.ratio = 1
     }
 
-    // the index is the global list position across pages, so keyboard
-    // navigation and data-gif-index stay coherent after pagination appends
     gif.index = gifs.length
     gifs.push(gif)
     addGifToColumns(gif)
@@ -426,7 +394,6 @@ export function createGifBrowser({
     search.set('key', config.apiKey)
     search.set('client_key', 'inkling-editor')
     search.set('contentfilter', config.contentFilter || 'off')
-
     url.search = search.toString()
     return url.toString()
   }
@@ -445,15 +412,12 @@ export function createGifBrowser({
     if (outcome.ok) {
       const fetchOutcome = outcome.value
       if (fetchOutcome.ok) {
-        // a malformed item must not wedge the loading flags or escape as an
-        // unhandled rejection — surface the failure as the common error state
         try {
           nextPos = fetchOutcome.next
           for (const gif of fetchOutcome.results) {
             addGif(gif)
           }
-          // keep the highlight by stable id across list swaps, clearing it
-          // when the gif is gone
+
           if (highlightedId && !gifs.some((gif) => gif.id === highlightedId)) {
             highlightedId = null
           }
@@ -527,8 +491,6 @@ export function createGifBrowser({
   }
 
   const setColumnCount = (count: number): void => {
-    // zero or negative counts leave no column for addGifToColumns to push
-    // into (Math.min over an empty height list indexes column -1)
     const nextCount = Math.max(1, count)
     if (nextCount === columnCount) {
       return
@@ -583,7 +545,6 @@ export function createGifBrowser({
 
     dispatch,
 
-    /** Cancel the pending search, invalidate every in-flight request, and drop the store's listeners. */
     dispose: () => {
       track.dispose()
       store.dispose()

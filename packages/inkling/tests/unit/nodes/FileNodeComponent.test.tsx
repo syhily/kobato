@@ -18,7 +18,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'file-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -111,7 +110,6 @@ describe('FileNodeComponent', () => {
       expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
-    // the flag is cleared on the node so a re-render does not trigger it again
     await waitFor(() => {
       expect(readTriggerFileDialog(editor, nodeKey)).toBe(false)
     })
@@ -136,7 +134,6 @@ describe('FileNodeComponent', () => {
 
     renderComponent(nodeKey, { fileSrc: '/existing.pdf', initialFile: file, upload })
 
-    // the mount effect runs synchronously; give any async work a chance to fire
     await tick()
     expect(upload).not.toHaveBeenCalled()
   })

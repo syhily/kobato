@@ -4,11 +4,8 @@ import { Outlet } from 'react-router'
 
 import type { RouteHandle } from '@/root.tsx'
 
-// Login / install share the admin Tailwind entry (`admin.css`), keeping the public site's `public.css` out of
-// this route's chunk.
 import '@/styles/admin.css'
 
-// Skips `<BaseLayout>` for this tree so the admin/login stack owns its own chrome.
 export const handle: RouteHandle = { layout: 'admin' }
 
 export { AdminErrorFallback as ErrorBoundary }

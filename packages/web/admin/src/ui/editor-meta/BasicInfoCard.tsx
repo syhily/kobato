@@ -12,7 +12,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { PublishStatusRow } from '@kobato/web-admin/ui/editor-meta/PublishStatusRow.tsx'
 
 export interface BasicInfoCardProps {
-  /** `<Textarea>` id + label htmlFor (`post-summary` / `page-summary`). */
   summaryId: string
   summary: string
   onSummaryChange: (value: string) => void
@@ -22,7 +21,6 @@ export interface BasicInfoCardProps {
   publishedAt: string
   onChangePublishedAt: (value: string) => void
   disabled?: boolean
-  /** Entity-specific fields rendered below the summary (post: category / tags / alias). */
   children?: ReactNode
 }
 

@@ -1,15 +1,4 @@
 // @vitest-environment happy-dom
-/**
- * `localizeMessage` is the seam that turns a possibly-catalog-valued string
- * (Zod issue messages, domain descriptors) into display copy. It must use the
- * one ICU engine (react-intl) and never leak a diagnostic: no token names, no
- * raw ICU template, no message id.
- *
- * A missing param or an unformattable message logs and degrades to a generic
- * localized validation sentence. Custom issue params (`ctx.addIssue({ params })`)
- * are the real fix for `{label}`-style messages — they arrive through
- * `zodIssueParams` in `useSettingsCard`.
- */
 
 import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
 
@@ -57,7 +46,6 @@ function localize(
   return result
 }
 
-/** No raw ICU template and no raw message id may survive. */
 function expectNoTemplate(text: string, id: string) {
   expect(text).not.toContain('{')
   expect(text).not.toContain('}')

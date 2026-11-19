@@ -86,9 +86,7 @@ describe('PlusCardMenuPlugin', () => {
     const selectionSpy = mockSelectionWithParagraph(paragraphElement)
 
     await act(async () => {
-      await updateEditor(editor, () => {
-        // no-op update to trigger the listener
-      })
+      await updateEditor(editor, () => {})
     })
 
     await waitFor(() => {
@@ -103,9 +101,7 @@ describe('PlusCardMenuPlugin', () => {
     const selectionSpy = mockSelectionWithParagraph(paragraphElement)
 
     await act(async () => {
-      await updateEditor(editor, () => {
-        // no-op update to trigger the listener
-      })
+      await updateEditor(editor, () => {})
     })
 
     await waitFor(() => {
@@ -130,9 +126,7 @@ describe('PlusCardMenuPlugin', () => {
     const selectionSpy = mockSelectionWithParagraph(paragraphElement)
 
     await act(async () => {
-      await updateEditor(editor, () => {
-        // no-op update to trigger the listener
-      })
+      await updateEditor(editor, () => {})
     })
 
     await waitFor(() => {

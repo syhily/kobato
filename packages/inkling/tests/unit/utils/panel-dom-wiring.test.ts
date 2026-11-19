@@ -9,14 +9,7 @@ import {
 import { createPanelSuppression } from '@kobato/inkling-internal/utils/panel-suppression'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The DOM assembly (createPanelDomWiring) over stubbed ResizeObserver:
-// drag grab/release through the body-level press listeners, the committed
-// position on drag, the observer registration, and the wide-card transition
-// slot bookkeeping. The pure resolutions (reclamp/viewport-shift/transition
-// math) are pinned by the module's own tests; here the assembly is the unit.
-
 type ResizeObserverCallback = (entries: unknown[], observer: unknown) => void
-
 const observed = new Map<Element, ResizeObserverCallback>()
 
 class ResizeObserverStub {
@@ -128,12 +121,9 @@ describe('createPanelDomWiring', () => {
     composedPathStub = () => [harness.panel]
     harness.wiring.start()
 
-    // grab on the panel — the composed-path stub reports the panel, so the
-    // grab verdict lands on it and the drag-lifetime listeners attach
     const down = new MouseEvent('mousedown', { bubbles: true, clientX: 10, clientY: 10 })
     harness.panel.dispatchEvent(down)
 
-    // travel past the 3px threshold, then release
     window.dispatchEvent(new MouseEvent('mousemove', { clientX: 60, clientY: 10 }))
     window.dispatchEvent(new MouseEvent('mousemove', { clientX: 60, clientY: 40 }))
     window.dispatchEvent(new MouseEvent('mouseup'))
@@ -160,7 +150,6 @@ describe('createPanelDomWiring', () => {
     const harness = makeHarness()
     harness.wiring.start()
 
-    // two observers: the panel itself and the scroll container (body here)
     expect(ResizeObserverStub.instances.length).toBeGreaterThanOrEqual(2)
     expect(ResizeObserverStub.instances[0].observe).toHaveBeenCalledWith(harness.panel)
 
@@ -183,9 +172,6 @@ describe('createPanelDomWiring', () => {
 
     fireResize(harness.panel)
 
-    // the settle clamp is a no-op for this position (fully inside the
-    // viewport), so the committed position stays put — but the resolution
-    // ran and committed the same value through setPosition
     expect(harness.setPosition).toHaveBeenLastCalledWith({ x: 100, y: 100 })
     harness.wiring.destroy()
   })

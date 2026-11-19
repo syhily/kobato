@@ -57,7 +57,6 @@ function respond(
   )
 }
 
-/** `HTTPException` carries arbitrary causes; only `[{ message, path? }]` shapes are issues. */
 function causeIssues(cause: unknown): DomainErrorIssue[] | undefined {
   if (!Array.isArray(cause)) {
     return undefined
@@ -75,7 +74,6 @@ function causeIssues(cause: unknown): DomainErrorIssue[] | undefined {
   return issues.length === 0 ? undefined : issues
 }
 
-/** Responder-style JSON error body (onError hooks, install gate): same shape and localization as the thrown path. */
 export function errorJsonResponse(
   c: Context<Env>,
   status: number,
@@ -97,7 +95,6 @@ export function errorJsonResponse(
   )
 }
 
-/** JSON body for a caught failure in a resource route choosing its own status (410 vs 400). */
 export function failureJsonResponse(c: Context<Env>, error: ActionFailure | DomainError, status?: number): Response {
   const translator = requestTranslator(c)
   const translated = translateDomainError(error, translator)

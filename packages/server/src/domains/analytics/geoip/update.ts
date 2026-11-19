@@ -46,7 +46,6 @@ export function withGeoipWriteLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export interface GeoipDbMeta {
-  /** npm package version; `null` for manual uploads (unknown provenance). */
   version: string | null
   source: 'upload' | 'remote'
   updatedAt: string
@@ -72,9 +71,6 @@ export async function writeGeoipMeta(meta: GeoipDbMeta): Promise<void> {
   await writeFile(MAXMIND_META_PATH, JSON.stringify(meta))
 }
 
-/**
- * For callers that have already swapped the database; the sidecar only feeds status and the provenance guard.
- */
 export async function writeGeoipMetaBestEffort(meta: GeoipDbMeta): Promise<void> {
   try {
     await writeGeoipMeta(meta)
@@ -182,7 +178,6 @@ async function installRemoteDb(version: string): Promise<void> {
     throw err
   }
 
-  // The swap is done — refresh the reader even if the sidecar write fails.
   resetGeoReader()
   await writeGeoipMetaBestEffort({ version, source: 'remote', updatedAt: new Date().toISOString() })
 }
@@ -212,8 +207,6 @@ async function checkAndInstallRemote(): Promise<GeoipUpdateResult> {
   return { status: 'updated', version: latest, previousVersion }
 }
 
-// Concurrent manual checks coalesce on one module-level flight; the
-// write lock serializes everything else.
 let inflight: Promise<GeoipUpdateResult> | null = null
 
 export function runRemoteGeoipUpdate(): Promise<GeoipUpdateResult> {

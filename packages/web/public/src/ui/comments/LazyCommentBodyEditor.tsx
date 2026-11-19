@@ -145,7 +145,6 @@ export function LazyCommentBodyEditor({
         }
       },
       () => {
-        // English defaults; `labelsReady` follows from `labels !== undefined`.
         if (!cancelled) {
           setLabels({})
         }

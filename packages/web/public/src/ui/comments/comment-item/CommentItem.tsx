@@ -8,7 +8,6 @@ import { memo } from 'react'
 export interface CommentItemProps {
   depth: number
   comment: CommentItemType
-  /** Renders the "pending review" hint over the body. Falls back to `comment.isPending`. */
   pending?: boolean
 }
 

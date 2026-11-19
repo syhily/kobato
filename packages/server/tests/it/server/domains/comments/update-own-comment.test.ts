@@ -114,7 +114,6 @@ describe('updateOwnComment — decision wiring', () => {
     expect(stored?.body).toEqual(expected.body)
     expect(stored?.isPending).toBe(true)
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
-    // The notification carries the refetched row + its (type, ownerId) target.
     const [, commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]!
     expect(commentArg.isPending).toBe(true)
     expect(targetArg).toEqual({ type: 'post', ownerId: pid })

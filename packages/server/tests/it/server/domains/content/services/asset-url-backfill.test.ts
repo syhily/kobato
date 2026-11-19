@@ -149,7 +149,6 @@ describe('content/services/asset-url-backfill — Lexical bodies', () => {
     expect(row.bodyHtmlFeed).toContain('/storage/images/baked.jpg')
     expect(row.bodyHtmlFeed).toContain('/storage/images/nested.jpg')
     expect(row.bodyHtmlFeed).not.toContain(CDN)
-    // The image node's alt text feeds the plain-text projection.
     expect(row.bodyText).toContain('cover')
   })
 

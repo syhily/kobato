@@ -55,14 +55,11 @@ describe('snapshot: DetailBodyChrome content language', () => {
       permalink: '/posts/zh-content',
     })
 
-    // The body container is the only element carrying the author's tag.
     expect(html).toMatch(/<div[^>]*class="[^"]*post-content[^"]*"[^>]*lang="zh-CN"/)
-    // Content is never translated; the chrome is English.
     expect(html).toContain('中文标题：内容语言的边界')
     expect(html).toContain('这是一段中文正文。')
     expect(html).toContain('Updated')
     expect(html).not.toContain('修改于')
-    // Exactly one `lang` attribute in the fragment — no locale leaks.
     expect(html.match(/lang="/g)).toHaveLength(1)
   })
 
@@ -80,14 +77,10 @@ describe('snapshot: DetailBodyChrome content language', () => {
       expect(html).toMatch(
         new RegExp(`<div[^>]*class="[^"]*post-content[^"]*"[^>]*lang="${contentLanguage}"[^>]*dir="auto"`),
       )
-      // RTL content and title render verbatim.
       expect(html).toContain(title)
       expect(html).toContain(body)
-      // Chrome direction is untouched: no forced `dir="rtl"` and exactly one
-      // `dir` attribute in the whole fragment (the body container's).
       expect(html).not.toContain('dir="rtl"')
       expect(html.match(/dir="/g)).toHaveLength(1)
-      // The UI locale still renders the chrome copy in English.
       expect(html).toContain('Updated')
     },
   )

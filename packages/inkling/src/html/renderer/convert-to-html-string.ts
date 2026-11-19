@@ -14,25 +14,13 @@ import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-
 import { $isLinkNode } from '@lexical/link'
 import { $getRoot, $isDecoratorNode, $isElementNode, $isLineBreakNode, $isParagraphNode, $isTextNode } from 'lexical'
 
-/**
- * The capability probe half of the guard below: the opt-in method existing
- * as a function is the runtime narrowing (a plain entity like TKNode carries
- * no such method).
- */
 function hasInlineMarkupProbe(node: LexicalNode): node is LexicalNode & InlineMarkupTextEntity {
   return 'isInlineMarkupEntity' in node && typeof node.isInlineMarkupEntity === 'function'
 }
 
-/**
- * The inline-markup-entity protocol guard (`@kobato/inkling-internal/nodes/base/export-dom`): a
- * TextNode entity that opts in exports element markup spliced into the text
- * flow instead of joining the pending text run. TKNode does not opt in and
- * keeps flowing through TextContent.
- */
 function $isInlineMarkupTextEntity(node: LexicalNode): node is TextNode & InlineMarkupTextEntity {
   return $isTextNode(node) && hasInlineMarkupProbe(node) && node.isInlineMarkupEntity() === true
 }
-
 export default function $convertToHtmlString(editor: LexicalEditor, options: ExportDOMOptions = {}): string {
   // One read-only render context per string render — the only export-time view
   // the element transformers and TextContent receive. Card exportDOM builds its
@@ -68,13 +56,6 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     return getElementOuterHTML(output.element)
   }
 
-  // Inline markup (text entities and inline decorators) exports through the
-  // same per-node exportDOM dispatch the cards get, with the options bag
-  // flowing so headless renders resolve their DOM. The base-class exportDOM
-  // signature takes no options parameter; inkling's inline exporters declare
-  // the two-parameter form and the protocol interface
-  // (`@kobato/inkling-internal/nodes/base/export-dom`) carries it, so both call sites below
-  // reach the exporter through plain narrowing.
   function exportInlineMarkup(node: LexicalNode & InlineMarkupExporter): string {
     return renderExportOutput(node.exportDOM(editor, options))
   }
@@ -83,11 +64,9 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     if ($isInklingCard(node)) {
       return renderExportOutput(node.exportDOM(editor, options))
     }
-
     if ($isElementNode(node)) {
       for (const transformer of elementTransformers) {
         const result = transformer.export(node, exportChildren, context)
-
         if (result !== null) {
           return result
         }
@@ -105,9 +84,6 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     const textContent = new TextContent(exportChildren, context)
 
     for (const child of node.getChildren()) {
-      // element/decorator children flush the pending text run — inline
-      // markup entities are TextNodes and flush in their own branch below
-      // instead
       if (
         !textContent.isEmpty() &&
         !$isInlineMarkupTextEntity(child) &&
@@ -132,8 +108,6 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
       } else if ($isLineBreakNode(child) || $isTextNode(child) || $isLinkNode(child)) {
         textContent.addNode(child)
       } else if ($isDecoratorNode(child) && child.isInline()) {
-        // Inline decorators splice into the text flow through the same
-        // exportDOM dispatch.
         output.push(exportInlineMarkup(child))
       } else if ($isElementNode(child)) {
         output.push(exportChildren(child))
@@ -180,8 +154,7 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     // so its mapped index is the entry to remove
     const removedIndex = outputIndexByChild[lastProseIndex]
     output.splice(removedIndex, 1)
-    // keep the map aligned with the post-splice array so the post-processors
-    // below resolve positions against the `output` they actually receive
+
     outputIndexByChild[lastProseIndex] = -1
     for (let i = lastProseIndex + 1; i < outputIndexByChild.length; i += 1) {
       if (outputIndexByChild[i] > removedIndex) {
@@ -190,9 +163,6 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     }
   }
 
-  // Each subsystem's registered post-processor gets one pass over the
-  // assembled outputs (the footnotes `<section>` wrap lives in
-  // `@kobato/inkling-internal/nodes/footnote/footnote-html-export`).
   for (const processor of HTML_POST_PROCESSORS) {
     processor.process({ children, output, outputIndexByChild, context })
   }
@@ -212,6 +182,5 @@ function getElementOuterHTML(element: HTMLElement | DocumentFragment | Text | nu
   if (element && 'outerHTML' in element) {
     return element.outerHTML
   }
-
   return ''
 }

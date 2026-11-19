@@ -13,17 +13,14 @@ import type { ReactNode } from 'react'
  * cards without the barrel's wiring.
  */
 
-/** The shared decorate adapter's signature — see `@kobato/inkling-internal/nodes/decorate-card`. */
 export type CardDecorateImpl = (node: LexicalNode) => ReactNode
 
 let cardDecorateImpl: CardDecorateImpl | undefined
 
-/** Called once by the wrapper layer's `registerCardDecorateAdapter()` (`@kobato/inkling-internal/nodes/decorate-card`). */
 export function registerCardDecorate(impl: CardDecorateImpl): void {
   cardDecorateImpl = impl
 }
 
-/** The assembled classes' decorate() body — delegates to the registered adapter. */
 export function decorateCardNode(node: LexicalNode): ReactNode {
   if (!cardDecorateImpl) {
     throw new Error(

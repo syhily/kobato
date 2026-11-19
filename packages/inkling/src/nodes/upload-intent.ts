@@ -34,11 +34,6 @@ export interface UploadResultItem {
   fileName?: string
 }
 
-/**
- * The single home of the uploader signature — plain and `formData`-carrying
- * calls (thumbnail/video sub-flows) share it. Matches the host-provided
- * `FileUploader['useFileUpload']` upload.
- */
 export type UploadFn = (
   files: FileList | File[],
   options?: { formData?: Record<string, string> },
@@ -50,9 +45,9 @@ export interface UploadOptions {
 
 export interface ExtractMetadataContext {
   file: File
-  /** The leased preview URL when a `preview` policy is set, else null. */
+
   previewUrl: string | null
-  /** The first upload result URL; only set for `afterUpload` extraction. */
+
   resultUrl: string | undefined
 }
 
@@ -94,7 +89,6 @@ export type UploadMetadataPolicy<TMeta> =
       extract: (context: ExtractMetadataContext) => Promise<TMeta>
     }
 
-/** What counts as an empty upload result. Default: no first result url. */
 export type UploadEmptyResultPredicate = (result: UploadResultItem[] | undefined) => boolean
 
 /**
@@ -108,24 +102,17 @@ export type UploadEmptyResultPolicy =
   | { kind: 'patch' }
   | { kind: 'bail'; isEmptyResult?: UploadEmptyResultPredicate; onBail?: () => void }
 
-/** Default emptiness predicate for the bail policy: no first result url. */
 const defaultIsEmptyResult: UploadEmptyResultPredicate = (result) => !result?.[0]?.url
 
-/**
- * The policy-free half of an intent — the editor seam and upload plumbing every
- * card shares. Split out so `RunUploadIntentOptions` reads as the three
- * policies plus `patch`.
- */
 interface UploadIntentBaseOptions<TNode extends LexicalNode> {
   editor: LexicalEditor
   nodeKey: NodeKey
-  /** The card-node type guard the typed seam narrows with (e.g. `$isImageNode`). */
   guard: (node: unknown) => node is TNode
   files: FileList | File[] | null
   upload: UploadFn
   /** Extra upload options, or a resolver computing them off the current node — called inside an editor read (audio thumbnail's `formData` url). */
   uploadOptions?: UploadOptions | ((node: TNode | null) => UploadOptions)
-  /** Pre-upload node patch applied through the seam (the `onFileChange` src reset). */
+
   prePatch?: (node: TNode) => void
 }
 
@@ -133,13 +120,12 @@ export interface RunUploadIntentOptions<
   TNode extends LexicalNode,
   TMeta = undefined,
 > extends UploadIntentBaseOptions<TNode> {
-  /** Lease a preview for `files[0]`, optionally published on the node. Absent = no lease. */
   preview?: UploadPreviewPolicy<TNode>
-  /** Carry pre-extracted metadata or extract it (before or after the upload). Absent = no metadata. */
+
   metadata?: UploadMetadataPolicy<TMeta>
-  /** Required: every card declares what an empty result means. */
+
   emptyResult: UploadEmptyResultPolicy
-  /** The result patch, applied through the write seam. */
+
   patch: (node: TNode, context: PatchContext<TMeta>) => void
 }
 
@@ -248,23 +234,12 @@ function requireUploadValue<T>(value: T | null | undefined, description: string)
   return value
 }
 
-// Per-card intent configurations: each factory binds one card's preview /
-// metadata / empty-result policies (plus the pre-upload src reset where the
-// card has one) to the runner. Card variance stays data here; the write order
-// and the preview-lease lifecycle stay in the runner above.
-
 export interface CardUploadIntentDeps {
   editor: LexicalEditor
   nodeKey: NodeKey
   upload: UploadFn
   files: FileList | File[] | null
 }
-
-/**
- * Image: preview published as `previewSrc`, dimensions extracted from the preview
- * before the upload; the patch ALWAYS lands — an empty result still writes `src: ''`
- * and clears the preview.
- */
 export function imageUploadIntent({
   editor,
   nodeKey,
@@ -300,10 +275,6 @@ export function imageUploadIntent({
   })
 }
 
-/**
- * Audio: object URL leased for metadata only (never published on the node), upload
- * FIRST, bail with the node untouched when no url comes back, then extract and patch.
- */
 export function audioUploadIntent({
   editor,
   nodeKey,
@@ -316,7 +287,7 @@ export function audioUploadIntent({
     guard: $isAudioNode,
     files,
     upload,
-    // a metadata-only lease — no publish
+
     preview: {},
     metadata: {
       kind: 'extract',
@@ -347,11 +318,6 @@ const stripFileExtension = (fileName: string): string => {
   return fileNameWithoutExtension
 }
 
-/**
- * File: no object URL. Bails (node untouched beyond `prePatch`) when the result is
- * missing or has no first item, but a first item without a url still patches with
- * `src: ''`.
- */
 export function fileUploadIntent({
   editor,
   nodeKey,
@@ -380,10 +346,6 @@ export function fileUploadIntent({
   })
 }
 
-/**
- * Audio thumbnail: reads the current `node.src` and passes it as
- * `formData: { url }`; writes `thumbnailSrc` only when a url comes back.
- */
 export function audioThumbnailUploadIntent({
   editor,
   nodeKey,
@@ -411,12 +373,6 @@ export interface VideoUploadMetadata {
   mimeType: string
 }
 
-/**
- * Video main flow: metadata arrives pre-extracted (`extractVideoMetadata` runs in
- * the component, where its failure is caught and surfaced). An empty result bails
- * and clears the component-owned preview via `onEmptyPreview`; the patch backfills
- * thumbnail dimensions only when no custom thumbnail is set.
- */
 export function videoUploadIntent({
   editor,
   nodeKey,
@@ -451,11 +407,6 @@ export function videoUploadIntent({
   })
 }
 
-/**
- * Video thumbnail sub-flow: uploads the synthesized `${file.name}.jpg` via
- * the `mediaThumbnail` uploader with `formData: { url: videoUrl }`; writes
- * `thumbnailSrc` only when a url comes back.
- */
 export function videoThumbnailUploadIntent({
   editor,
   nodeKey,
@@ -477,18 +428,10 @@ export function videoThumbnailUploadIntent({
   })
 }
 
-/**
- * The video flow's metadata: the main flow's fields plus the thumbnail
- * blob the sub-flow synthesizes into `${file.name}.jpg`.
- */
 export interface VideoFlowMetadata extends VideoUploadMetadata {
   thumbnailBlob?: Blob | null
 }
 
-/**
- * The deps for the video flow intent — two uploaders (main video + synthesized
- * thumbnail), non-null files, and the pre-extracted flow metadata.
- */
 export interface VideoFlowUploadIntentDeps {
   editor: LexicalEditor
   nodeKey: NodeKey
@@ -499,12 +442,6 @@ export interface VideoFlowUploadIntentDeps {
   onEmptyPreview: () => void
 }
 
-/**
- * The one video upload flow: main upload first, then — only when the main
- * upload produced a url AND the metadata carries a thumbnail blob — the
- * thumbnail sub-flow. An empty main result bails both flows and clears the
- * component-owned preview via `onEmptyPreview`. Returns the uploaded video url.
- */
 export async function videoFlowUploadIntent({
   editor,
   nodeKey,
@@ -531,7 +468,6 @@ export async function videoFlowUploadIntent({
   if (!videoUrl || !meta.thumbnailBlob) {
     return videoUrl
   }
-
   const thumbnailFile = new File([meta.thumbnailBlob], `${file.name}.jpg`, { type: 'image/jpeg' })
   await videoThumbnailUploadIntent({
     editor,
@@ -544,10 +480,6 @@ export async function videoFlowUploadIntent({
   return videoUrl
 }
 
-/**
- * Video custom thumbnail: no preview lease; dimensions come from the RESULT url
- * after a non-empty upload.
- */
 export function customThumbnailUploadIntent({
   editor,
   nodeKey,
@@ -575,11 +507,6 @@ export function customThumbnailUploadIntent({
   })
 }
 
-/**
- * Header background image: the pre-upload src reset clears the node's
- * `backgroundImageSrc`; dimensions come from the RESULT url; the patch ALWAYS
- * lands — an empty result still writes `src: ''` with zeroed dimensions.
- */
 export function headerBackgroundUploadIntent({
   editor,
   nodeKey,
@@ -592,15 +519,13 @@ export function headerBackgroundUploadIntent({
     guard: $isHeaderNode,
     files,
     upload,
-    // reset original src so it can be replaced by the upload result
+
     prePatch: (node) => {
       node.backgroundImageSrc = ''
     },
     metadata: {
       kind: 'extract',
       timing: 'afterUpload',
-      // the patch-always policy means extraction also sees the empty result —
-      // dimensions are only read from a real url
       extract: ({ resultUrl }) => (resultUrl ? getImageDimensions(resultUrl) : Promise.resolve(undefined)),
     },
     emptyResult: { kind: 'patch' },
@@ -623,13 +548,12 @@ export function headerBackgroundUploadIntent({
 export interface GalleryUploadIntentDeps {
   upload: UploadFn
   files: FileList | File[]
-  /** The card's current rendered images (the gallery images mirror's snapshot). */
+
   images: GalleryImage[]
-  /** The component's preview pool — per-file previews lease from the one owner. */
+
   previews: PreviewLeasePool
-  /** Preview publication lands here FIRST — the mirror's local overlay, never the node. */
+
   setPreviewImages: (images: GalleryImage[]) => void
-  /** The result merge lands here — the mirror's local-and-node setter. */
   setImages: (images: GalleryImage[]) => void
   setErrorMessage: (message: string) => void
 }
@@ -662,11 +586,6 @@ export async function galleryUploadIntent({
 
   const newImages: GalleryImage[] = [...images]
 
-  // create preview images and capture dimensions — the per-file decodes are
-  // independent, so they run in parallel (map preserves the push order). A
-  // rejection mid-batch must release exactly the leases this batch took
-  // before propagating, or those previews stay leased-but-unrendered until
-  // unmount
   const leasedPreviews: string[] = []
   try {
     const captured = await Promise.all(

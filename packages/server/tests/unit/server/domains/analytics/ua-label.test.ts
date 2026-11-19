@@ -14,7 +14,6 @@ describe('ua-parse — formatUaLabel', () => {
   it("accepts the request locale's unknown-device label at the call site", () => {
     expect(formatUaLabel(null, null, '未知设备')).toBe('未知设备')
     expect(formatUaLabel('', '', '未知裝置')).toBe('未知裝置')
-    // A platform hint still wins over the placeholder.
     expect(formatUaLabel(null, 'iOS', '未知设备')).toBe('iOS')
   })
 

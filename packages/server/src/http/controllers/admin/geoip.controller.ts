@@ -3,9 +3,6 @@ import { getGeoipDbStatus, runRemoteGeoipUpdate } from '@kobato/server/domains/a
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/geoip.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminGeoipContract)
 
 const status = impl.status.handler(() => getGeoipDbStatus())

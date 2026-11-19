@@ -47,9 +47,6 @@ declare const handleApi: (api: ExternalControlAPI | null) => void
 
 const customTransformers: readonly Transformer[] = [ORDERED_LIST, ...BASIC_TRANSFORMERS]
 
-// Positive cases
-
-// every InklingInitialEditorState shape is accepted
 const stateFromString: InklingInitialEditorState =
   '{"root":{"children":[],"direction":null,"format":"","indent":0,"type":"root","version":1}}'
 const stateFromObject: InklingInitialEditorState = serializedState
@@ -62,7 +59,6 @@ void stateFromInitializer
 
 const composerProps: InklingComposerProps = {
   darkMode: true,
-  // a partial uploader (missing useFileUpload) is accepted for compatibility
   fileUploader: { fileTypes: { image: { mimeTypes: ['image/png'] } } },
   initialEditorState: serializedState,
 }
@@ -115,8 +111,6 @@ void nestedComposer
 const surfaceProps: InklingSurfaceProps = { onChange: handleChange, readOnly: true }
 void surfaceProps
 
-// a host-composed custom surface through InklingSurface: shared-state wiring
-// (one undo stack, top-level onChange routing) comes from the surface itself
 const customSurface = (
   <InklingComposer initialEditorState={serializedState} nodes={BASIC_NODES} onError={(error) => void error}>
     <InklingSurface onChange={handleChange} placeholderText="Start writing">
@@ -125,8 +119,6 @@ const customSurface = (
   </InklingComposer>
 )
 void customSurface
-
-// Negative cases
 
 // @ts-expect-error - node lists must contain Lexical node classes or replacements
 const invalidNodes = <InklingComposer nodes={[42]} />
@@ -143,8 +135,6 @@ void wrongCallback
 // @ts-expect-error - InklingSurface onChange receives a SerializedEditorState, not a string
 const wrongSurfaceCallback = <InklingSurface onChange={(state: string) => void state} />
 void wrongSurfaceCallback
-
-// Host-config type family
 
 const gifSettings: GifSettings = {
   klipy: { apiKey: 'key', contentFilter: 'high' },
@@ -183,7 +173,6 @@ const fileUploader: FileUploader = {
 }
 const fileUploaderInput: FileUploaderInput = { fileTypes: { image: { mimeTypes: ['image/png'] } } }
 
-// a full closed CardConfig literal is accepted on InklingComposer
 const cardConfig: CardConfig = {
   ...gifSettings,
   ...linkingSettings,

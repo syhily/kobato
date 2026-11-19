@@ -40,15 +40,11 @@ function isDomElement(node: Node | null): node is HTMLElement {
   return node?.nodeType === 1
 }
 
-// Builds and renders text content, useful to ensure proper format tag opening/closing
-// and html escaping
 export default class TextContent {
   nodes: LexicalNode[]
   exportChildren: ExportChildren
-  // The render-context seam: link-href URL policy goes through
-  // `context.safeUrl`.
-  context: RenderContext
 
+  context: RenderContext
   constructor(exportChildren: ExportChildren, context: RenderContext) {
     this.exportChildren = exportChildren
     this.context = context
@@ -83,7 +79,6 @@ export default class TextContent {
       }
 
       if ($isTextNode(node)) {
-        // shortcut format code for plain text
         if (node.getFormat() === 0) {
           currentNode.append(node.getTextContent())
           continue
@@ -105,9 +100,7 @@ export default class TextContent {
         const remainingSortNodes =
           nextLinkNodeIndex === -1 ? remainingNodes : remainingNodes.slice(0, nextLinkNodeIndex)
 
-        // text nodes only — the only nodes that can open/close formats
         const remainingSortedTextNodes = remainingSortNodes.filter((n) => $isTextNode(n))
-
         formatsToOpen.sort((a, b) => {
           const aIndex = remainingSortedTextNodes.findIndex((n) => n.hasFormat(a))
           const bIndex = remainingSortedTextNodes.findIndex((n) => n.hasFormat(b))
@@ -143,8 +136,6 @@ export default class TextContent {
 
         if (firstFormatToClose !== -1) {
           while (openFormats.length > firstFormatToClose) {
-            // climb only while the parent chain stays elements (the root
-            // climb can meet a Document)
             const parent = currentNode.parentNode
             if (!isDomElement(parent)) {
               break

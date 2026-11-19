@@ -55,7 +55,6 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
     })
     expect(await screen.findByText('消息通知')).toBeTruthy()
 
-    // Closing must not unmount the chain — drawer state survives reopen.
     rerender(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
     expect(screen.getByText('消息通知')).toBeTruthy()

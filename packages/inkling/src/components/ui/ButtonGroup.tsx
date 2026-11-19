@@ -69,7 +69,7 @@ export function ButtonGroupIconButton({
     onClick
       ? () => onClick(name)
       : () => {
-          /* noop without a click handler */
+          /* noop */
         },
     name,
   )

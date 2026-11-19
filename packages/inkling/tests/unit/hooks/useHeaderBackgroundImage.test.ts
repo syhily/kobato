@@ -33,7 +33,6 @@ function renderPolicy(initialProps: PolicyProps) {
 
 describe('useHeaderBackgroundImage', () => {
   beforeEach(() => {
-    // the default test page carries no accent color
     vi.mocked(getAccentColor).mockReturnValue('')
   })
 
@@ -136,7 +135,6 @@ describe('useHeaderBackgroundImage', () => {
     it('re-runs the show transition when switching to split with no src but a remembered image', () => {
       const { applied, openFileDialog, view } = renderPolicy({ layout: 'full', backgroundImageSrc: 'img-a.png' })
 
-      // the user hides the image (node src clears), then switches to split
       act(() => view.result.current.hideImage())
       view.rerender({ layout: 'full', backgroundImageSrc: '' })
       applied.length = 0
@@ -152,7 +150,6 @@ describe('useHeaderBackgroundImage', () => {
       const { applied, view } = renderPolicy({ layout: 'full', backgroundImageSrc: '' })
       applied.length = 0
 
-      // a new src arriving without a layout change leaves visibility untouched
       view.rerender({ layout: 'full', backgroundImageSrc: 'img-a.png' })
 
       expect(view.result.current.showBackgroundImage).toBe(false)

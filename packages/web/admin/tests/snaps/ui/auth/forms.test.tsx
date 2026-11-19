@@ -46,10 +46,8 @@ describe('snapshot: AdminInstallForm (install form fields)', () => {
     expect(html).toContain('id="install-password"')
     expect(html).toContain('name="password"')
     expect(html).toContain('minLength="10"')
-    // Default showPassword=false → "显示密码" aria label.
     expect(html).toContain('aria-label="显示密码"')
     expect(html).toContain('创建账号并开始写作')
-    // Restore-mode copy absent (mode defaults to install).
     expect(html).not.toContain('备份文件')
     expect(html).not.toContain('恢复说明')
   })

@@ -4,9 +4,6 @@ import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { sendTestMail } from '@kobato/server/infra/email/sender.ts'
 import { ORPCError } from '@orpc/server'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/mail.ts`; this controller only implements the
-// procedure (admin base).
 const impl = implementAdmin(adminMailContract)
 
 const sendTest = impl.sendTest.handler(async ({ input, context }) => {

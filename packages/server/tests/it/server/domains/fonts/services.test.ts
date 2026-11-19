@@ -92,7 +92,6 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect(deleted.id).toBe(target.id)
     const remaining = await db.select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(0)
-    // The real deleteFontPackage ran: every object under fonts/<hash>/ is gone.
     expect(packageKeys(target.hash)).toHaveLength(0)
     expect(mem.deletedKeys).toContain(`fonts/${target.hash}/result.css`)
     expect(mem.deletedKeys).toContain(`fonts/${target.hash}/chunk-0.woff2`)
@@ -110,7 +109,6 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect((error as DomainError).message).toContain('global')
     const remaining = await db.select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(1)
-    // The refusal happened before the storage GC: the package is untouched.
     expect(packageKeys(target.hash)).toHaveLength(4)
     expect(mem.deletedKeys).toHaveLength(0)
   })

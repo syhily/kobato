@@ -24,7 +24,6 @@ export function verdictBodySave(payload: SaveBodyOutput): SaveBodyVerdict {
   return { kind: 'saved', revision: payload.revision, warning: payload.warning }
 }
 
-/** The full state transition for a landed body save (mutation leg or autosave flush). */
 export type BodySavePlan =
   | { kind: 'conflict'; expectedToken: string }
   | {
@@ -32,7 +31,6 @@ export type BodySavePlan =
       /** `warning` when the save landed with a non-fatal side-effect failure. */
       status: EditorShellStatus
       revision: RevisionLike
-      /** Consume the pending manual-save snapshot into the autosave baseline. */
       consumePendingSnapshot: boolean
     }
 
@@ -53,12 +51,10 @@ export function planBodySave(
   }
 }
 
-/** Wire decisions for the manual draft save (persistSave). */
 export interface DraftSavePlan {
   /** `undefined` = omit the field, `null` = cancel the server schedule, string = set it. */
   publishedAt: string | null | undefined
   bodyDiverged: boolean
-  /** Action-banner leg count: meta only, or meta + body. */
   bannerLegs: 1 | 2
 }
 
@@ -86,9 +82,7 @@ export function planCreatePublishedAt(pickerPublishedAt: string): string | undef
   return localInputValueToIso(pickerPublishedAt) ?? undefined
 }
 
-/** Wire + optimistic-state decisions for the publish leg. */
 export interface PublishPlan {
-  /** Include only when the picker holds a value. */
   publishedAtField: string | undefined
   /** Optimistic server publishedAt — reverted to the pre-publish truth on error. */
   optimisticServerPublishedAtIso: string

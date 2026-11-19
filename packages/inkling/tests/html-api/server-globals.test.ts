@@ -21,14 +21,12 @@ function stateOf(...children: Record<string, unknown>[]): string {
   })
 }
 
-// sanitizeBasicHtml: the markdown card's rendered body
 const MARKDOWN_STATE = stateOf({
   type: 'markdown',
   version: 1,
   markdown: '# Heading\n\nSome **bold** text with <script>alert(1)</script> raw',
 })
 
-// sanitizeCardHtml: callout nested HTML behind the unwrap-allowlist fallback
 const CALLOUT_STATE = stateOf({
   type: 'callout',
   version: 1,
@@ -37,7 +35,6 @@ const CALLOUT_STATE = stateOf({
   backgroundColor: 'blue',
 })
 
-// escapeText: the video card's caption
 const VIDEO_STATE = stateOf({
   type: 'video',
   version: 1,

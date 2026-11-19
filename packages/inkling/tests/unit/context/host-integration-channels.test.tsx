@@ -56,8 +56,6 @@ describe('InklingHostIntegrationProvider', () => {
     expect(mathRenders).toBe(1)
     expect(essentialsRenders).toBe(1)
 
-    // a fresh whole value whose gif slice changed identity: only the gif
-    // channel's consumers re-render
     rerender(
       <InklingHostIntegrationProvider
         value={{ ...value, cardConfig: { tenor: { googleApiKey: 'key-b' }, renderMath } }}
@@ -111,8 +109,6 @@ describe('InklingHostIntegrationProvider', () => {
     expect(mathRenders).toBe(1)
     expect(essentialsRenders).toBe(1)
 
-    // the host rebuilt cardConfig (the `cardConfig = {}` default policy):
-    // identical leaf references keep every channel's value stable
     rerender(
       <InklingHostIntegrationProvider value={{ ...value, cardConfig: { renderMath } }}>
         {children}

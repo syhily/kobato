@@ -20,12 +20,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 
-/**
- * Any non-clean root (a decorator, a list, another non-paragraph element, or more
- * than `paragraphs` children) is rewritten to at most `paragraphs` paragraphs with
- * the selection repaired to the end. A clean root is left untouched, as is any state
- * without a collapsed range selection.
- */
 export function $enforceParagraphRestriction(rootNode: RootNode, paragraphs: number): void {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -46,7 +40,6 @@ export function $enforceParagraphRestriction(rootNode: RootNode, paragraphs: num
 
   cleanedNodes = cleanedNodes.slice(0, paragraphs)
 
-  // Lists unwrap to their first item; other non-paragraph elements keep their children.
   cleanedNodes = cleanedNodes.map((node) => {
     if ($isListNode(node)) {
       const firstListItem = node.getFirstChild()
@@ -55,8 +48,6 @@ export function $enforceParagraphRestriction(rootNode: RootNode, paragraphs: num
       }
       return $createParagraphNode().append(...firstListItem.getChildren())
     } else if (!$isParagraphNode(node)) {
-      // After the decorator filter the remaining root children are element nodes
-      // (Lexical's root invariant) — narrow honestly instead of casting.
       if (!$isElementNode(node)) {
         return $createParagraphNode()
       }

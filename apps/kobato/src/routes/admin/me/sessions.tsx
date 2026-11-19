@@ -19,7 +19,6 @@ export const meta = titleMeta('meta.title.admin.mySessions')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer, session } = createSsrCaller({ request, context })
-  // admin.layout already gates visitor+; assert here to narrow `viewer` to non-null.
   requireRole(viewer ?? undefined, 'visitor')
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime'> = parseSessionSort(

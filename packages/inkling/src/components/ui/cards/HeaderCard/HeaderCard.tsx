@@ -37,7 +37,6 @@ import { isEditorEmpty } from '@kobato/inkling-internal/utils/is-editor-empty'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React, { useContext, useEffect, useState } from 'react'
 
-/** The card's view state — every presentational value the node carries. */
 export interface HeaderCardViewModel {
   alignment?: string
   backgroundColor?: string
@@ -55,7 +54,6 @@ export interface HeaderCardViewModel {
   textColor?: string
 }
 
-/** The card's write handlers — field-name-as-data on the node side (header-field-writer). */
 export interface HeaderCardHandlers {
   handleAlignment: (alignment: string) => void
   handleBackgroundColor: (color: string, matchingTextColor: string) => void
@@ -74,7 +72,6 @@ export interface HeaderCardHandlers {
   handleTextColor: (color: string) => void
 }
 
-/** The background-image upload channel (the media-card upload wiring). */
 export interface HeaderCardUpload {
   fileUploader?: FileUploaderLike
   imageDragHandler: DragHandlerLike
@@ -84,7 +81,6 @@ export interface HeaderCardUpload {
   onFileChange: (files: File[]) => void
 }
 
-/** The two nested editors. */
 export interface HeaderCardEditors {
   headerTextEditor: LexicalEditor
   headerTextEditorInitialState?: InitialEditorStateType
@@ -137,8 +133,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
     editors
 
   const labels = useInklingLabels()
-  // at most one picker expanded — structural, not a hand-kept pair of
-  // mutually exclusive booleans
   const [expandedPicker, setExpandedPicker] = useState<'background' | 'button' | null>(null)
 
   // null-safe composer read (the card renders without one in isolated unit
@@ -147,7 +141,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
   const composerContext = useContext(LexicalComposerContext)
   const editorRoot = composerContext?.[0]?.getRootElement() ?? null
 
-  // the background-image text color resolves in @/nodes/header/header-accent-color
   useEffect(() => {
     let cancelled = false
     void resolveHeaderImageTextColor(backgroundImageSrc, layout).then((color) => {
@@ -160,17 +153,13 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
     return () => {
       cancelled = true
     }
-    // This is only needed when the background image or layout is changed
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundImageSrc, layout === 'split'])
 
   useEffect(() => {
     if (backgroundColor && layout === 'split') {
-      // Make sure the text color matches the background color
-      // It might be different if an image was uploaded in a non-split layout
       handleBackgroundColor(backgroundColor, matchingHeaderTextColor(backgroundColor, editorRoot))
     }
-    // This is only needed when the layout is changed
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [layout === 'split'])
 
@@ -358,7 +347,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                 'px-[calc(3.2rem-(4rem/2))] xs:px-[calc(9.2rem-(8rem/2))] sm:px-[calc(9.2rem-(12rem/2))] md:pl-[calc(9.2rem-(12rem/2))] lg:pl-0',
             )}
           >
-            {/* Heading */}
             {
               <InklingNestedEditor
                 autoFocus={true}
@@ -389,7 +377,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
               />
             }
 
-            {/* Subheading */}
             {
               <InklingNestedEditor
                 dataTestId="header-subheader-editor"
@@ -417,8 +404,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
                 )}
               />
             }
-
-            {/* Button */}
 
             {buttonEnabled && (
               <div
@@ -556,7 +541,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
             />
           </ColorPickerSetting>
 
-          {/* Button settings */}
           <ToggleSetting
             dataTestId="header-button-toggle"
             isChecked={!!buttonEnabled}

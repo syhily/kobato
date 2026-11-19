@@ -6,9 +6,6 @@ import React from 'react'
 // is unexported.
 export type LexicalProviderFactory = React.ComponentProps<typeof CollaborationPlugin>['providerFactory']
 
-// The only value consumers read from this context. Everything else about
-// multiplayer (enable flag, endpoint, doc id, username) comes from
-// InklingComposer's props.
 export interface InklingCollaborationContextValue {
   createWebsocketProvider: LexicalProviderFactory
 }

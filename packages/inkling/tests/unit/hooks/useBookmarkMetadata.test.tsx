@@ -80,7 +80,6 @@ describe('useBookmarkMetadata', () => {
 
     expect(fetchEmbed).toHaveBeenCalledTimes(1)
     expect(fetchEmbed).toHaveBeenCalledWith('https://example.com/page', { type: 'bookmark' })
-    // the submit path keeps the submitted href, not the response's canonical url
     expect(readBookmark(editor, nodeKey)).toEqual({ title: 'Fetched title', url: 'https://example.com/page' })
     expect(result.current.loading).toBe(false)
     expect(result.current.urlError).toBe(false)
@@ -137,13 +136,11 @@ describe('useBookmarkMetadata', () => {
       await result.current.fetchInitialMetadata('https://example.com')
     })
 
-    // the init path adopts the response's canonical url
     expect(readBookmark(editor, nodeKey)).toEqual({ title: 'Fetched title', url: 'https://example.com/canonical' })
     editor.getEditorState().read(() => {
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
       expect($isRangeSelection(selection) && selection.anchor.getNode().getTextContent()).toBe('')
-      // the caret landed past the card (in the trailing paragraph)
       expect($isRangeSelection(selection) && !$isBookmarkNode(selection.anchor.getNode())).toBe(true)
     })
     expect(result.current.loading).toBe(false)

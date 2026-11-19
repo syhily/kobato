@@ -21,8 +21,6 @@ describe('getScrollAncestor — floating policy', () => {
   })
 
   it('walks up the tree until it finds a scrollable parent', () => {
-    // Attached to the document: jsdom 31's getComputedStyle resolves no
-    // styles for detached nodes.
     const parent = document.createElement('div')
     parent.style.overflowY = 'scroll'
     Object.defineProperty(parent, 'scrollHeight', { value: 300 })

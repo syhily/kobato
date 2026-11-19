@@ -33,8 +33,6 @@ function createTestEditor(nodes: LexicalNodeConfig[] = []) {
   })
 }
 
-// Mount under a per-composer card selection store provider, matching what
-// InklingComposer provides in production instead of a whole-context mock.
 function renderPlugin() {
   return renderHook(() => InklingBehaviourPlugin({}), { wrapper: createCardSelectionStoreWrapper().wrapper })
 }
@@ -91,10 +89,7 @@ describe('InklingBehaviourPlugin', () => {
     rerender()
     rerender()
 
-    // Handlers read card selection synchronously from the store, so forced
-    // re-renders must not tear down and re-register the listeners.
     expect(registerCommandSpy.mock.calls.length).toBe(registrationsAfterMount)
-
     unmount()
   })
 
@@ -113,15 +108,11 @@ describe('InklingBehaviourPlugin', () => {
       $getRoot().append(image)
       cardKey = image.getKey()
     })
-    // select through the plugin's store-backed command, dispatched inside an
-    // update so the node selection commits deterministically (the
-    // dispatchAndCommit convention from registerKeyboardNavigation.test.ts)
+
     await updateEditor(editor, () => {
       editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey })
     })
 
-    // higher-priority observer so the deselect dispatch is recorded without
-    // swallowing it before the plugin's own handler
     const deselected: string[] = []
     const unregister = editor.registerCommand(
       DESELECT_CARD_COMMAND,
@@ -137,7 +128,7 @@ describe('InklingBehaviourPlugin', () => {
     outsideElement.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
 
     expect(deselected).toEqual([cardKey])
-    // the fallback must not look the editor up through the .inkling-editor selector
+
     expect(querySelectorSpy).not.toHaveBeenCalledWith('.inkling-editor')
 
     unregister()

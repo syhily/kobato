@@ -43,9 +43,7 @@ export function buildObjectKey(spec: ImageKindSpec): string {
       const mm = String(spec.now.getUTCMinutes()).padStart(2, '0')
       const ss = String(spec.now.getUTCSeconds()).padStart(2, '0')
       // `% 100` of ms kept for name sortability; the random suffix kills
-      // the 10ms-bucket collision — two same-window uploads used to share
-      // one key, and the loser's put overwrote the winner's bytes while
-      // the winner's row kept pointing at it.
+      // the 10ms-bucket collision (same-key overwrite between same-window uploads).
       const nn = String(spec.now.getUTCMilliseconds() % 100).padStart(2, '0')
       return `images/${yyyy}/${MM}/${yyyy}${MM}${dd}${HH}${mm}${ss}${nn}-${randomBytes(4).toString('hex')}.jpg`
     }
@@ -56,10 +54,6 @@ export function buildObjectKey(spec: ImageKindSpec): string {
   }
 }
 
-/**
- * Normalise a friend's homepage URL into a bare hostname for the S3 key
- * segment; throws `DomainError('BAD_REQUEST')` on invalid URLs.
- */
 export function extractHostForFriendKey(homepage: string): string {
   let host: string
   try {

@@ -42,7 +42,6 @@ export function getGeoReader(): Promise<ReaderModel | null> {
   return readerPromise
 }
 
-/** Clear the cached reader so a newly-uploaded DB is picked up. */
 export function resetGeoReader(): void {
   readerPromise = undefined
 }

@@ -17,7 +17,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'audio-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -131,7 +130,6 @@ describe('AudioNodeComponent', () => {
       expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
-    // the flag is cleared on the node so a re-render does not trigger it again
     await waitFor(() => {
       expect(readTriggerFileDialog(editor, nodeKey)).toBe(false)
     })
@@ -148,7 +146,6 @@ describe('AudioNodeComponent', () => {
       expect(upload).toHaveBeenCalledWith([file])
     })
 
-    // the object URL is leased for metadata and released when the flow ends
     expect(createObjectURLSpy).toHaveBeenCalledExactlyOnceWith(file)
     expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:audio-preview')
   })
@@ -160,7 +157,6 @@ describe('AudioNodeComponent', () => {
 
     renderComponent(nodeKey, { src: '/audio.mp3', initialFile: file, upload })
 
-    // the mount effect runs synchronously; give any async work a chance to fire
     await tick()
     expect(upload).not.toHaveBeenCalled()
   })
@@ -172,7 +168,6 @@ describe('AudioNodeComponent', () => {
 
     renderComponent(nodeKey, { src: '', initialFile: file, upload, isLoading: true })
 
-    // the mount effect runs synchronously; give any async work a chance to fire
     await tick()
     expect(upload).not.toHaveBeenCalled()
   })

@@ -57,9 +57,7 @@ export interface LogPipeline {
 }
 
 export interface LogPipelineOptions {
-  /** Test seam: in-memory exporter instead of direct OTLP/HTTP. */
   exporter?: LogRecordExporter
-  /** Export-health token: when present, every export outcome is recorded under it. */
   healthToken?: object
 }
 

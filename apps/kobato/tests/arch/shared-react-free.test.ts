@@ -1,10 +1,10 @@
 /**
- * The thirteen leaf packages of the former `@kobato/shared`
+ * The thirteen leaf packages under `packages/shared/*`
  * (`packages/shared/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts,seo}`)
  * are UI-runtime-free: they must never carry React into either bundle. The
  * product settings contexts/hooks live in `@kobato/web-client`
  * (`@kobato/web-client/settings/blog-settings-context`); this scan pins that
- * migration result — no `.tsx` source file and no `react` / `react-dom`
+ * split — no `.tsx` source file and no `react` / `react-dom`
  * import (value OR type) anywhere under those `src` trees.
  *
  * Node-only imports are NOT this guard's concern — the client-bundle scan
@@ -55,27 +55,22 @@ function relativePath(absolutePath: string): string {
   return relative(PROJECT_ROOT, absolutePath).replace(/\\/g, '/')
 }
 
-/** Every specifier an import/export-from/dynamic-import statement resolves — type imports included. */
 function collectImportSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   let match: RegExpExecArray | null
-  // import [type] … from '…' (default / named / namespace, possibly multiline)
   const fromRegex =
     /import\s+(?:type\s+)?(?:[\w$]+\s*,\s*)?(?:\{[^}]*\}|\*\s+as\s+[\w$]+)?(?:[\w$]+)?\s+from\s+['"]([^'"]+)['"]/g
   while ((match = fromRegex.exec(source)) !== null) {
     specifiers.push(match[1]!)
   }
-  // side-effect: import '…'
   const sideEffectRegex = /import\s+['"]([^'"]+)['"]/g
   while ((match = sideEffectRegex.exec(source)) !== null) {
     specifiers.push(match[1]!)
   }
-  // dynamic: import('…')
   const dynamicRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   while ((match = dynamicRegex.exec(source)) !== null) {
     specifiers.push(match[1]!)
   }
-  // re-export: export [type] { … } from '…' / export * from '…'
   const exportFromRegex = /export\s+(?:type\s+)?(?:\{[^}]*\}|\*\s+as\s+[\w$]+|\*)\s+from\s+['"]([^'"]+)['"]/g
   while ((match = exportFromRegex.exec(source)) !== null) {
     specifiers.push(match[1]!)

@@ -64,10 +64,6 @@ interface PoolWorker {
   jobTimer: ReturnType<typeof setTimeout> | null
 }
 
-/**
- * Minimal `worker_threads` pool for sharp image processing: keeps warm
- * workers, queues jobs in arrival order, dispatches to the first idle one.
- */
 export class WorkerPool {
   private readonly workers: PoolWorker[] = []
   private readonly queue: PendingJob[] = []
@@ -114,7 +110,6 @@ export class WorkerPool {
     return poolWorker
   }
 
-  /** Run a single image through the pool; worker errors re-hydrate into a `DomainError` where applicable. */
   async process(input: ProcessImageInput, operation: ImageOperation = 'unspecified'): Promise<ProcessedImage> {
     if (this.stopped) {
       throw new Error('process pool has been stopped')
@@ -156,7 +151,6 @@ export class WorkerPool {
     this.pending.set(id, job)
   }
 
-  /** Queue wait is measured from `process()` entry to worker dispatch. */
   private recordQueueWait(job: PendingJob): void {
     if (job.queueRecorded) {
       return
@@ -274,9 +268,6 @@ export class WorkerPool {
     this.retireWorker(worker, new Error(`process job timed out after ${this.jobTimeoutMs}ms`))
   }
 
-  /**
-   * Remove a worker for good and spawn a replacement to keep the pool at size.
-   */
   private retireWorker(worker: PoolWorker, err: Error): void {
     const index = this.workers.indexOf(worker)
     if (index !== -1) {
@@ -307,7 +298,6 @@ export class WorkerPool {
 
   private replaceWorker(): void {
     this.spawnWorker()
-    // Flush anything queued while the pool was short-handed.
     this.drain()
   }
 
@@ -352,19 +342,12 @@ export class WorkerPool {
   }
 }
 
-/**
- * Re-hydrate the worker's wire-format error into a `DomainError`, else a plain `Error`.
- */
 function rehydrateError(msg: WorkerErrResponse): unknown {
   return domainErrorFromWire(msg.error) ?? new Error(msg.error.message)
 }
 
 let poolPromise: Promise<WorkerPool> | null = null
 
-/**
- * Lazily create and start the shared pool; memoised, so concurrent
- * callers share one instance.
- */
 export function getProcessPool(): Promise<WorkerPool> {
   if (poolPromise !== null) {
     return poolPromise
@@ -374,9 +357,6 @@ export function getProcessPool(): Promise<WorkerPool> {
   return poolPromise
 }
 
-/**
- * Tear down the pool on shutdown. Idempotent: calling twice is a no-op.
- */
 export async function stopProcessPool(): Promise<void> {
   const current = poolPromise
   poolPromise = null
@@ -391,10 +371,6 @@ export async function stopProcessPool(): Promise<void> {
   }
 }
 
-/**
- * Factory hook for tests: replace the default worker factory without
- * touching the module singleton. Production code never calls this.
- */
 let createWorker: () => Worker = defaultCreateWorker
 
 export function __setWorkerFactory(factory: () => Worker): void {

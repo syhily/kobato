@@ -20,7 +20,6 @@ describe('admin settings write (HTTP e2e)', () => {
         csrfToken,
       )
       expect(updated.status).toBe(200)
-      // The response is the authoritative merged section projection.
       expect(JSON.stringify(updated.json.section)).toContain(renamed)
 
       const anon = new E2eClient(env.baseUrl)
@@ -28,7 +27,6 @@ describe('admin settings write (HTTP e2e)', () => {
       expect(home.status).toBe(200)
       expect(await home.text()).toContain(renamed)
     } finally {
-      // Restore the seeded title — public/site asserts it.
       await callE2eRpc(
         admin,
         '/admin/settings/update',

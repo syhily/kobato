@@ -14,13 +14,10 @@ type UploadChannel = ReturnType<FileUploader['useFileUpload']>
 // per-lifecycle channels. UI prefs (darkMode, labels) live on
 // InklingUiPrefsContext, never here.
 export interface HostIntegrationValueOptions {
-  /** one upload fn applied to every kind; a per-kind `uploads` entry wins */
   upload?: UploadChannel['upload']
-  /** per-kind upload channels (image/audio/video/file/mediaThumbnail), merged over the default channel */
   uploads?: Partial<Record<UploadKind, Partial<UploadChannel>>>
   isLoading?: boolean
   errors?: Error[]
-  /** per-kind mime-type constraints, forwarded as `fileUploader.fileTypes` */
   fileTypes?: FileUploader['fileTypes']
   cardConfig?: CardConfig
   onError?: InklingHostIntegrationContextValue['onError']
@@ -44,8 +41,6 @@ export function createHostIntegrationValue({
   }
   return {
     fileUploader: {
-      // identity-stable per value — the composer contract requires the same
-      // hook fn for the editor's lifetime (src/inkling/hooks/useMediaCardUpload.ts)
       useFileUpload: (kind) => ({ ...defaultChannel, ...uploads[kind] }),
       ...(fileTypes ? { fileTypes } : {}),
     },

@@ -21,7 +21,6 @@ export function isPathInside(target: string, root: string): boolean {
   return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
 }
 
-// Create subdirectories at startup so first writes never hit a missing parent.
 for (const dir of [
   FONT_DIR,
   STORAGE_DIR,
@@ -48,14 +47,14 @@ function seedDefaultFonts(): void {
     try {
       copyFileSync(DEFAULT_FONT_PATH, og)
     } catch {
-      // ignore
+      /* noop */
     }
   }
   if (!existsSync(calendar)) {
     try {
       copyFileSync(DEFAULT_FONT_PATH, calendar)
     } catch {
-      // ignore
+      /* noop */
     }
   }
 }

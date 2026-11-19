@@ -1,26 +1,16 @@
 import React from 'react'
 
-// The headless keyboard-selection machine behind the option-list render shells
-// (KeyboardSelectionWithGroups; the flat list is one degenerate group): the
-// window keydown listener with the Safari preventDefault triad, the clamped
-// arrow-step policy, the render-time re-sync when the default changes or the
-// items shrink, the scroll-request latch, and the hasNavigated gate — before the
-// user navigates, Enter over a flagged link input (data-inkling-link-input) stays
-// with the input's own submit instead of selecting the default suggestion.
-
 export interface UseKeyboardListSelectionOptions<T> {
   items: T[]
   onSelect: (item: T) => void
   defaultSelected?: T
-  /** Enter with no selectable item: consumed and routed here instead of falling through. */
   onEnterWithoutSelection?: () => void
 }
 
 export interface KeyboardListSelection {
   selectedIndex: number
-  /** Latched by arrow-key navigation; the shell scrolls the selected item into view while set. */
   scrollSelectedIntoView: boolean
-  /** Mouse-over wiring: moves the selection and clears the scroll latch. */
+
   hoverIndex: (index: number) => void
 }
 

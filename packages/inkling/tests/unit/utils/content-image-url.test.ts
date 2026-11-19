@@ -22,9 +22,7 @@ describe('parseUrlPathname', () => {
 
   it('passes path-shaped srcs through instead of throwing', () => {
     expect(parseUrlPathname('/content/images/a.png')).toBe('/content/images/a.png')
-    // the marker is not a valid URL (underscores are not a scheme) — passthrough
     expect(parseUrlPathname('__INKLING_URL__/content/images/a.png')).toBe('__INKLING_URL__/content/images/a.png')
-    // blob URLs are valid: the pathname is the inner URL's path
     expect(parseUrlPathname('blob:https://example.com/uuid')).toBe('https://example.com/uuid')
   })
 })

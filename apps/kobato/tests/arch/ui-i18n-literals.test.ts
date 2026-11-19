@@ -260,13 +260,9 @@ describe('production sources', () => {
     const result = scanProduction()
 
     expect(result.scannedFiles.length).toBeGreaterThan(0)
-    // Every rule, `han-literal` included, covers the whole production tree;
-    // the only escapes are the exact entries below.
     expect(result.violations).toEqual([])
-    // The allowlist is exact: each entry names the file, the rule and (where a
-    // file carries several findings) the exact snippet — see ALLOWLIST.
+
     expect(result.allowlisted.length).toBeGreaterThan(0)
-    // Every exemption below is a documented, exact file/rule/snippet entry.
     expect(new Set(result.allowlisted.map((violation) => violation.file))).toEqual(
       new Set([
         'packages/shared/i18n/src/locales.ts',
@@ -295,7 +291,7 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/shared/SearchShortcutHint.tsx',
         'packages/web/admin/src/ui/users/UserDetailView.tsx',
         'packages/web/admin/src/ui/users/UserEditForm.tsx',
-        // The locale→label-table maps and the two glyph sites.
+
         'packages/shared/i18n/src/inkling-labels.ts',
         'packages/web/client/src/editor/inkling-labels.ts',
         'packages/web/admin/src/ui/editor-shell/RevisionsDrawer.tsx',
@@ -308,7 +304,7 @@ describe('production sources', () => {
         'packages/server/src/domains/webmentions/receive.ts',
         'packages/server/src/domains/webmentions/target.ts',
         'packages/server/src/domains/webmentions/verify.ts',
-        // Locale-keyed static maps and the feed producer guard.
+
         'packages/server/src/render/calendar/locale.ts',
         'packages/ui/src/lib/font-stacks.ts',
         'packages/server/src/render/feed/generator.tsx',
@@ -348,7 +344,7 @@ describe('production sources', () => {
     expect(scannedFiles).toContain('packages/shared/i18n/src/locales.ts')
     expect(scannedFiles).toContain('packages/shared/i18n/src/messages/ui/en-US.ts')
     expect(scannedFiles).toContain('packages/shared/i18n/src/messages/server/zh-TW.ts')
-    // Formatting and registry modules.
+
     expect(scannedFiles).toEqual(
       expect.arrayContaining([
         'packages/web/admin/src/ui/settings/display.ts',
@@ -361,7 +357,7 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/settings/cache/cache-formatters.ts',
         'packages/web/admin/src/ui/jobs/meta.ts',
         'packages/web/public/src/ui/shared/notifications/notification-meta.ts',
-        // The admin shell, settings pages and shared primitives.
+
         'packages/web/admin/src/ui/shell/AdminShell.tsx',
         'packages/web/admin/src/ui/settings/storage/StorageCards.tsx',
         'packages/web/admin/src/ui/settings/cache/BucketCard.tsx',
@@ -369,7 +365,7 @@ describe('production sources', () => {
         'apps/kobato/src/routes/admin/layout.tsx',
         'packages/ui/src/components/pagination.tsx',
         'packages/ui/src/components/combobox.tsx',
-        // The editor routes, admin editor families and client glue.
+
         'apps/kobato/src/routes/editor/layout.tsx',
         'apps/kobato/src/routes/editor/post/analytics.tsx',
         'packages/web/admin/src/ui/editor/PageBodyEditor.tsx',
@@ -377,13 +373,13 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/editor-meta/BasicInfoCard.tsx',
         'packages/web/admin/src/ui/editor/cards/music-player.tsx',
         'packages/web/admin/src/ui/editor/page-editor-card-config.ts',
-        // The server error protocol modules.
+
         'packages/server/src/infra/http/errors.ts',
         'packages/server/src/infra/http/error-descriptor.ts',
         'packages/server/src/http/errors.ts',
         'packages/server/src/http/orpc-base.ts',
         'packages/server/src/http/translate-domain-error.ts',
-        // Auth flows, perimeter middlewares, settings boundaries.
+
         'packages/server/src/domains/auth/services/credential.ts',
         'packages/server/src/domains/auth/services/password-reset.ts',
         'packages/server/src/domains/auth/services/magic-link.ts',
@@ -400,7 +396,7 @@ describe('production sources', () => {
         'packages/server/src/http/middlewares/csrf.ts',
         'packages/server/src/http/localized-http-exception.ts',
         'packages/server/src/http/controllers/admin/settings.controller.ts',
-        // Settings sections, taxonomies, content lifecycle.
+
         'packages/shared/settings/src/sections/assets.ts',
         'packages/shared/settings/src/sections/comments.ts',
         'packages/shared/settings/src/sections/security.ts',
@@ -415,19 +411,19 @@ describe('production sources', () => {
         'packages/server/src/infra/slug/resolve.ts',
         'packages/server/src/infra/slug/reservation.ts',
         'packages/server/src/http/controllers/admin/revision-shared.ts',
-        // Comments and webmentions.
+
         'packages/server/src/domains/comments/services/moderate.ts',
         'packages/server/src/domains/comments/services/policy.ts',
         'packages/server/src/domains/webmentions/reverify.ts',
         'packages/server/src/http/controllers/comments-public.controller.ts',
         'packages/server/src/http/controllers/admin/webmentions.controller.ts',
-        // Backup/restore validation and the password flow.
+
         'packages/server/src/domains/backup/services/restore.ts',
         'packages/server/src/domains/backup/services/backup.ts',
         'packages/server/src/domains/backup/pending-uploads.ts',
         'packages/server/src/http/resources/backup.ts',
         'packages/server/src/http/controllers/admin/backup.controller.ts',
-        // Asset domains (storage, images, music, fonts) and the worker wire.
+
         'packages/server/src/domains/storage/s3-migration.ts',
         'packages/server/src/domains/images/services/upload.ts',
         'packages/server/src/domains/images/key.ts',
@@ -439,7 +435,7 @@ describe('production sources', () => {
         'packages/server/src/http/resources/storage-redirect.ts',
         'packages/server/src/http/resources/admin-upload-route.ts',
         'packages/server/src/http/controllers/admin/images.controller.ts',
-        // Users, friends, newsletter, notifications, update, audit.
+
         'packages/server/src/domains/users/services/admin.ts',
         'packages/server/src/domains/users/services/account.ts',
         'packages/server/src/domains/friends/service.ts',
@@ -451,13 +447,12 @@ describe('production sources', () => {
         'packages/server/src/http/controllers/admin/audit.controller.ts',
         'packages/server/src/http/controllers/admin/users-admin.controller.ts',
         'packages/server/src/http/loaders/search.ts',
-        // GeoIP updates, the self-update pipeline, URL-schema message ids.
+
         'packages/server/src/domains/analytics/geoip/update.ts',
         'packages/server/src/domains/update/pipeline.ts',
         'packages/shared/utils/src/url-schema.ts',
-        // The Gravatar mirror preset labels render through `t()`.
+
         'packages/web/admin/src/ui/settings/comments/CommentsAvatarCard.tsx',
-        // Email templates/senders render server-catalog copy.
         'packages/server/src/infra/email/sender.ts',
         'packages/server/src/infra/email/templates/layout/EmailLayout.tsx',
         'packages/server/src/infra/email/templates/AdminNotificationEmail.tsx',
@@ -467,13 +462,13 @@ describe('production sources', () => {
         'packages/server/src/domains/newsletter/email.ts',
         'packages/server/src/domains/notifications/email.ts',
         'packages/server/src/domains/webmentions/email.ts',
-        // The notification descriptor resolver and producers.
+
         'packages/server/src/domains/notifications/message.ts',
         'packages/server/src/domains/notifications/email.ts',
         'packages/server/src/domains/notifications/service.ts',
         'packages/server/src/bootstrap/db-lifecycle.ts',
         'packages/server/src/domains/settings/services/zeabur-mail-cleanup.ts',
-        // Localized feed/calendar/manifest and locale font chains.
+
         'packages/server/src/render/feed/generator.tsx',
         'packages/server/src/render/calendar/render.ts',
         'packages/server/src/render/calendar/locale.ts',
@@ -511,7 +506,7 @@ describe('scanner rules', () => {
     expect(rules('export function A() { return <img alt="封面图" /> }')).toEqual(['jsx-attribute'])
     expect(rules('export function A() { return <input placeholder={`请输入`} /> }')).toEqual(['jsx-attribute'])
     expect(rules('export function A() { return <button aria-label="删除" /> }')).toEqual(['jsx-attribute'])
-    // Decorative images and technical class names are not copy.
+
     expect(rules('export function A() { return <img alt="" className="size-4" /> }')).toEqual([])
   })
 
@@ -559,7 +554,7 @@ describe('scanner rules', () => {
     expect(rules('export const a = (d: Date) => d.toLocaleString(void 0, options)')).toEqual(['to-locale'])
     expect(rules('export const a = (d: Date) => d.toLocaleString([], options)')).toEqual(['to-locale'])
     expect(rules("export const a = (d: Date) => d.toLocaleDateString('zh-CN')")).toEqual(['hardcoded-locale'])
-    // A real locale argument (variable or literal) is not this rule's target.
+
     expect(rules('export const a = (d: Date) => d.toLocaleDateString(locale)')).toEqual([])
     expect(rules('export const a = (d: Date) => d.toLocaleDateString(locales, options)')).toEqual([])
   })
@@ -588,12 +583,12 @@ describe('scanner rules', () => {
     const source = [
       'type A = 1',
       '',
-      'export const tag = "zh-CN"', // opening quote at column 20
-      'export const other = `zh-TW`', // opening backtick at column 22
-      "'zh-HK'", // a hit at the very start of a line
+      'export const tag = "zh-CN"',
+      'export const other = `zh-TW`',
+      "'zh-HK'",
       '',
       'export function C() {',
-      '  return <p>保存</p>', // JSX text at column 13
+      '  return <p>保存</p>',
       '}',
     ].join('\n')
 

@@ -1,7 +1,3 @@
-// SMTP transport via `nodemailer` for self-hosters; the registry in `sender.ts`
-// routes here when `mail.transport === 'smtp'`. Shares the other transports'
-// skip/error vocabulary.
-
 import type {
   EmailMessage,
   MailTransport,

@@ -15,18 +15,13 @@ export interface CoverInputRowProps {
   label: string
   htmlFor: string
   description?: string
-  /** Current URL value held by the parent form. */
   value: string
-  /** Updates the parent's draft when an upload completes or the value is cleared. */
   onChange: (value: string) => void
   /** `kind` for the upload dialog — the parent must keep `slug` / `host` in
    *  sync or the upload lands at a stale object key; `null` disables upload. */
   uploadKind: UploadKind | null
-  /** Preview inside the thumbnail when `value` is empty (e.g. the auto-generated OG card). */
   fallbackSrc?: string
-  /** Optional Tailwind classes for the thumbnail button; defaults to `h-24 w-full`. */
   thumbnailClassName?: string
-  /** Object-fit for the preview image; default `cover`, `contain` for fixed-aspect banners (1280×425). */
   objectFit?: 'cover' | 'contain'
 }
 

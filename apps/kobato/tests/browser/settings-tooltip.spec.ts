@@ -1,13 +1,8 @@
-// The observability settings cards are the only SettingsRow consumers of
-// labelTooltip; this journey proves the portal tooltip actually renders (and
-// paints above the fixed z-50 settings panel) when its trigger is hovered.
-
 import { expect, test } from '@tests/browser/support/fixtures.ts'
 import { openSettings } from '@tests/browser/support/journey.ts'
 
-const HINT_TRIGGER_LABEL = '了解更多' // admin.settings.shared.hintTooltip (zh-CN)
-const OBSERVABILITY_NAV_LABEL = '可观测性' // admin.settings.section.observability.label
-
+const HINT_TRIGGER_LABEL = '了解更多'
+const OBSERVABILITY_NAV_LABEL = '可观测性'
 interface TooltipProbe {
   hitInsidePopup: boolean
   hitDescription: string
@@ -117,7 +112,6 @@ test('observability hint tooltip opens above the fixed settings panel', async ({
   await expect(trigger).toBeVisible()
   await trigger.hover()
 
-  // Base UI renders Positioner > Popup; the popup is the last data-open element.
   const popup = page.locator('div[data-open]').last()
   await expect(popup).toBeVisible()
   const probe = await popup.evaluate(probeTooltip)

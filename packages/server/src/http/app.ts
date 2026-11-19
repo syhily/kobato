@@ -12,7 +12,6 @@ import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
 
-// The client-interceptor slot is the seam for the span owning the real procedure invocation.
 const handler = new RPCHandler(apiRouter, {
   clientInterceptors: [createOrpcTraceInterceptor('http'), orpcInputValidationInterceptor],
 })
@@ -35,7 +34,6 @@ export function createApiApp(): Hono<Env> {
     await next()
   })
 
-  // Live settings snapshot per request — admin changes apply on the next request.
   app.use(
     dynamicBodyLimit({
       maxSize: resolveMaxBodySize,

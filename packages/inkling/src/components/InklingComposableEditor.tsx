@@ -30,7 +30,6 @@ export interface InklingComposableEditorProps {
   placeholderText?: string
   placeholderClassName?: string
   className?: string
-  /** Extra host-supplied classes appended to the contentEditable (e.g. typeset preset classes), joined with `inkling-prose` when `useDefaultClasses` is on. */
   contentEditableClassName?: string
   readOnly?: boolean
   isDragEnabled?: boolean
@@ -39,9 +38,7 @@ export interface InklingComposableEditorProps {
   hiddenFormats?: HiddenFormat[]
   useDefaultClasses?: boolean
   dataTestId?: string
-  /** Keep text alignment (`format`) instead of stripping it; set on surfaces that expose alignment controls. */
   alignment?: boolean
-  /** Writing-focus mode: the focused top-level block gets `data-inkling-focus-active`, the root gets the `inkling-focus-mode` class; host CSS dims the rest. */
   focusMode?: boolean
 }
 
@@ -90,7 +87,6 @@ const InklingComposableEditor = ({
       }
 
       if (onChange) {
-        // onChange stays per-editor: only this instance's state is serialized
         const json = editorState.toJSON()
         onChange(json)
       }
@@ -98,10 +94,6 @@ const InklingComposableEditor = ({
     [onChange, sharedOnChange, editor, parentEditor],
   )
 
-  // local ref for InklingBehaviourPlugin; the same wrapper element feeds the
-  // drag-drop handle so the reorder plugin and the card drag hooks can reach
-  // it without a shared mutable context ref. useCallback keeps the ref
-  // identity stable so React attaches it once instead of on every render.
   const editorContainerRef = React.useRef<HTMLElement | null>(null)
   const onWrapperRef = React.useCallback(
     (wrapperElem: HTMLElement | null) => {
@@ -113,7 +105,6 @@ const InklingComposableEditor = ({
     [isNested, dragDropHandle],
   )
 
-  // anchor element for floating plugins rendered inside the editable container
   const [floatingAnchorElem, setFloatingAnchorElem] = React.useState<HTMLDivElement | null>(null)
   const onContentEditableRef = (_floatingAnchorElem: HTMLDivElement | null) => {
     // the null branch matters: without it a stale anchor survives between
@@ -121,9 +112,6 @@ const InklingComposableEditor = ({
     setFloatingAnchorElem(_floatingAnchorElem)
   }
 
-  // The core plugin set is data (CORE_PLUGINS): every mount below — conditions
-  // included — is one entry, so the default surface is enumerable as
-  // CORE_PLUGINS + DEFAULT_FEATURE_PLUGINS.
   const corePluginScope: CorePluginScope = {
     contentEditableRef: onContentEditableRef,
     contentEditableClassName: useDefaultClasses

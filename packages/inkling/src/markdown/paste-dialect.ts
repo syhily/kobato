@@ -1,23 +1,5 @@
 import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '@kobato/inkling-internal/utils'
 import { createHeadingIdTracker } from '@kobato/inkling-internal/utils/heading-id-tracker'
-// The paste dialect — one of Inkling's two markdown dialects (the card-aware
-// round-trip dialect is `@kobato/inkling-internal/markdown/round-trip`). Two pipelines speak it:
-// clipboard markdown (the headless `markdownToSanitizedHtml` in
-// `@kobato/inkling-internal/plugins/behaviour/markdown-paste`, fed into Lexical's HTML import by
-// `MarkdownPastePlugin`) and the markdown card's HTML export
-// (`@kobato/inkling-internal/nodes/base/nodes/markdown/markdown-renderer`).
-//
-// It speaks footnotes, ==mark==, ~sub~, ^sup^ — and no card-fence grammar. The
-// inline delimiters are declared once in the shared grammar table
-// (`@kobato/inkling-internal/markdown/grammar`); the engine is markdown-it with its plugin
-// stack, the cached per-slug-policy instances, and `inklingVersion` slug
-// branching.
-//
-// The dialects do not compose: a pasted ```inkling:*``` fence renders as
-// `<pre><code class="language-inkling:*">` and imports as a code block card
-// whose language is the fence tag (pinned in
-// tests/inkling/unit/plugins/MarkdownPastePlugin.test.tsx, "paste dialect
-// coverage").
 import MarkdownIt, {
   type Env,
   type MarkdownIt as MarkdownItInstance,
@@ -30,9 +12,7 @@ import markdownItLazyHeaders from 'markdown-it-lazy-headers'
 import markdownItMark from 'markdown-it-mark'
 import markdownItSub from 'markdown-it-sub'
 import markdownItSup from 'markdown-it-sup'
-
 const renderers: Partial<Record<'<4.x' | 'latest', MarkdownItInstance>> = {}
-
 interface RenderOptions {
   inklingVersion?: string
 }
@@ -76,8 +56,7 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
 
       const attrs = tokens[idx].attrs || []
       tokens[idx].attrs = attrs
-      // markdown-it emits heading_open → inline adjacently; children is the
-      // inline token's content array
+
       const title = (tokens[idx + 1].children ?? []).reduce(function (acc: string, t: Token) {
         return acc + t.content
       }, '')
@@ -110,10 +89,7 @@ const selectRenderer = function (options: RenderOptions): MarkdownItInstance {
   if (renderers[key]) {
     return renderers[key]
   }
-  // markdown-it-mark/sub/sup are this engine's projection of the shared
-  // grammar table's inline delimiters (`@kobato/inkling-internal/markdown/grammar`'s
-  // INLINE_DELIMITERS) — the plugins hardcode ==/~/^, and
-  // tests/inkling/markdown/grammar.test.ts pins the engines agreeing.
+
   const markdownIt = new MarkdownIt({ html: true, breaks: true, linkify: true })
     .use(markdownItFootnote)
     .use(markdownItLazyHeaders)
@@ -127,10 +103,7 @@ const selectRenderer = function (options: RenderOptions): MarkdownItInstance {
   return markdownIt
 }
 
-/** Render markdown to (unsanitized) HTML through the paste dialect's engine. */
 function render(markdown: string, options: RenderOptions = {}): string {
   return selectRenderer(options).render(markdown)
 }
-
-/** The paste dialect's single handle. */
 export const pasteDialect = { render }

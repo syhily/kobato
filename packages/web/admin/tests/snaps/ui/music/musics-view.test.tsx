@@ -303,7 +303,6 @@ describe('snapshot: MusicLibraryHero', () => {
       ),
     )
     expect(html).toContain('添加音乐')
-    // The "共 N 首歌曲" count is only rendered when total > 0.
     expect(html).not.toContain('共 0 首歌曲')
   })
 
@@ -346,7 +345,6 @@ describe('snapshot: AlbumCard', () => {
       ),
     )
     expect(html).toContain('无封面曲')
-    // No <img> emitted for missing cover.
     expect(html).not.toContain('src="https://cdn.example.com/cover.jpg"')
   })
 })
@@ -416,7 +414,6 @@ describe('snapshot: AdminMusicPlayerFloat', () => {
         '/admin/dashboard',
       ),
     )
-    // No current track → float intentionally unmounted.
     expect(html).toBe('')
   })
 })

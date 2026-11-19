@@ -8,10 +8,6 @@ import type { ContentEntityAdapter } from '@kobato/server/domains/content/lifecy
 import { recordForceOverwriteAudit } from '@kobato/server/domains/content/lifecycle.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 
-/**
- * Builds the body-lifecycle adapter from the descriptor that drives the meta
- * CRUD skeleton. Lives outside `lifecycle.ts` for test seams.
- */
 export function makeContentEntityAdapter<
   TMeta extends MetaRowBase,
   TNew,

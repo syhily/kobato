@@ -7,10 +7,8 @@ import { registerDefaultTransforms, type DefaultTransformsOptions } from '@kobat
 import { MINIMAL_DOCUMENT } from '@kobato/inkling-internal/utils/initial-document'
 
 export interface htmlToLexicalOptions {
-  /** Required DOM port — parse goes through `dom.window.document`, so the module itself never touches a global or jsdom. */
   dom: ExportDOMDom
   editorConfig?: CreateEditorArgs
-  /** Import-time alignment handling, passed through to the default transforms; 'strip' (default) resets `format`, 'keep' preserves imported text-align. */
   alignment?: DefaultTransformsOptions['alignment']
 }
 
@@ -27,15 +25,10 @@ export function htmlToLexical(html: string, options: htmlToLexicalOptions): Seri
   // @kobato/inkling-internal/html/headless-editor) — do not "unify" the two.
   const editor = createHeadlessHtmlEditor({ merge: 'wholesale', editorConfig: options.editorConfig })
 
-  // Standard parser entry — jsdom and browsers both support it, so the
-  // injected dom's provenance stays out of this module.
   const doc = options.dom.window.document.implementation.createHTMLDocument('')
   doc.body.innerHTML = html.trim()
 
-  // one-shot headless editor, so the default transforms only normalize this
-  // import — see the transform-policy note in @kobato/inkling-internal/utils/initial-document
   registerDefaultTransforms(editor, { alignment: options.alignment })
-
   editor.update(
     () => {
       $insertHtmlDocument(editor, doc)

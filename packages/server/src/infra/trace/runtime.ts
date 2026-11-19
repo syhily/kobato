@@ -113,25 +113,19 @@ const TRACE_CONTEXT_GETTER: TextMapGetter<Record<string, string>> = {
 }
 
 export interface TraceRuntimeHandle {
-  /** True only when a real provider + delegate were installed. */
   readonly started: boolean
-  /** Idempotent, bounded flush + shutdown. */
   shutdown(): Promise<void>
-  /** Flush buffered spans (tests and diagnostics only). */
   forceFlush(): Promise<void>
 }
 
-/** Test seam for the event-loop observer (fault injection). */
 export interface MetricObserverHooks {
   createMonitor?: () => ELDHistogram
   createGauge?: (meter: Meter) => ObservableGauge
 }
 
-/** Test seam for the startup tail side effects (fault injection). */
 export interface TraceLifecycleHooks {
   startSqliteQueryTrace?: (options: { includeRedactedSql: boolean }) => void
   registerShutdownHook?: (hook: () => Promise<void>, priority: number) => void
-  /** Test seams for stop/rollback fault injection; each is isolated by callers. */
   uninstallTraceDelegate?: (delegate: TraceDelegate) => void
   unregisterShutdownHook?: (hook: () => Promise<void>) => void
   stopSqliteQueryTrace?: () => void
@@ -139,23 +133,14 @@ export interface TraceLifecycleHooks {
 }
 
 export interface TraceRuntimeStartOptions {
-  /** The resolved settings projection; the domain orchestrator owns resolution. */
   resolution: TraceConfigResolution
-  /** Test seam: in-memory exporter instead of direct OTLP/HTTP. */
   spanExporter?: SpanExporter
-  /** Test seam: collect metrics in memory instead of the periodic OTLP reader. */
   metricReader?: MetricReader
-  /** Test seam: in-memory exporter instead of direct OTLP/HTTP for the log pipeline. */
   logRecordExporter?: LogRecordExporter
-  /** Test seam: replace the event-loop observer construction. */
   eventLoopObserver?: MetricObserverHooks
-  /** Test seam: replace startup tail side effects. */
   lifecycle?: TraceLifecycleHooks
-  /** Test seam: replace the OpenObserve privacy-pipeline verifier. */
   verifyFrontendPipeline?: FrontendPipelineVerifier
-  /** Test seam: shorten the frontend gate verification timeout. */
   frontendVerifyTimeoutMs?: number
-  /** Test seam: shorten the periodic gate re-verification interval. */
   frontendRecheckIntervalMs?: number
 }
 
@@ -170,7 +155,6 @@ interface RuntimeState {
   metricProvider: MeterProvider | null
   logPipeline: LogPipeline | null
   config: ServerTraceRuntimeConfig
-  /** Isolated, idempotent cleanup actions shared by rollback and stop. */
   cleanup: () => void
   /** Token guard so an old runtime cannot clear a newer gate. */
   gateToken: object
@@ -242,7 +226,6 @@ function readActiveTraceIds(): ActiveTraceIds | null {
   return span === undefined ? null : toActiveTraceIds(span)
 }
 
-/** Wrap a real OTel span in the facade contract, applying the privacy allowlist. */
 function createFacadeSpan(span: OtelSpan): Span {
   const facadeSpan: Span = {
     get traceId() {
@@ -876,7 +859,6 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
   }
 }
 
-/** Idempotent, bounded teardown. Safe to call from HMR disposal and shutdown hooks. */
 export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Promise<void> {
   const state = runtime
   if (state === null) {
@@ -903,7 +885,6 @@ export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Pr
   }
 }
 
-/** Whether a provider + delegate are currently installed (tests, HMR audit). */
 export function isTraceRuntimeRunning(): boolean {
   return runtime !== null
 }

@@ -10,7 +10,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 // the logger scope and the batch log line derive from it.
 
 export interface QueueSchedulerOptions {
-  /** `webmentions.<queue>` — logger scope is `${name}-scheduler`. */
   name: string
   /** Catalog task binding — live-state tracking only (no history: high-frequency batches would flood `job_run`). */
   task: { key: string }
@@ -26,7 +25,6 @@ export interface QueueScheduler {
 
 export function makeQueueScheduler(options: QueueSchedulerOptions): QueueScheduler {
   const log = getLogger(`${options.name}-scheduler`)
-  // 'webmentions.outbox' → 'Webmention outbox' (the batch log line prefix).
   const label = `Webmention ${options.name.slice('webmentions.'.length)}`
 
   function nextDelayMs(): number | null {

@@ -4,12 +4,6 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 
-/**
- * Shared storage resolution + response assembly for the public file routes;
- * callers own URL gates and content-type mapping, this owns filesystem
- * errors plus byte-range, ETag, and immutable-cache handling.
- */
-
 // Both consumers serve content-addressed assets (timestamped keys / sha256 names) — one-year immutable.
 export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 
@@ -38,7 +32,6 @@ export interface ByteRange {
   total: number
 }
 
-/** Parse a single-range `Range: bytes=start-end` header (`null` if absent/unsupported). */
 export function parseRange(header: string | undefined, size: number): ByteRange | 'unsatisfiable' | null {
   if (header === undefined || !header.startsWith('bytes=')) {
     return null
@@ -73,7 +66,6 @@ export function parseRange(header: string | undefined, size: number): ByteRange 
 }
 
 export interface LocalFileResponseInput {
-  /** Absolute filesystem path, already resolved and gated by the caller. */
   absPath: string
   size: number
   mtimeMs: number
@@ -131,7 +123,6 @@ export async function serveStoredLocalFile(input: StoredLocalFileInput): Promise
   }
 }
 
-/** Full GET response for a stat'ed file: 304 / 416 / 206 / 200 with the streamed body. */
 export function respondWithLocalFile(input: LocalFileResponseInput): Response {
   const { absPath, size, mtimeMs, contentType, cacheControl, ifNoneMatch } = input
   const etag = `"${size}-${mtimeMs}"`

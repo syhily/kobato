@@ -20,7 +20,6 @@ import PostAnalyticsRouteRaw from '@/routes/editor/post/analytics.tsx'
 import PostEditRouteRaw from '@/routes/editor/post/edit.tsx'
 import PostNewRouteRaw from '@/routes/editor/post/new.tsx'
 
-// `asRoute` widens the strict ComponentProps so tests supply only the fields each route reads.
 const EditorLayoutRoute = asRoute(EditorLayoutRouteRaw)
 const PageEditRoute = asRoute(PageEditRouteRaw)
 const PageNewRoute = asRoute(PageNewRouteRaw)
@@ -36,7 +35,6 @@ const testQueryClient = new QueryClient({
 
 describe('editor routes — Component SSR renders', () => {
   it('editor/layout forwards currentUser to its outlet', () => {
-    // Probe child confirms the layout's outlet context flows through.
     const html = stableHtml(
       renderNested('/editor/post/new', {
         parent: {},
@@ -66,7 +64,6 @@ describe('editor routes — Component SSR renders', () => {
   })
 
   it('editor/post/edit mounts the PostEditorRoute loader (detail query pending → skeleton)', () => {
-    // Under SSR the detail query stays pending → editor skeleton; assert the mount marker, not the error branch.
     const html = stableHtml(renderInRouter(<PostEditRoute loaderData={null} params={{ id: '7' }} />, '/editor/post/7'))
     expect(html).toContain('min-h-admin-content-min')
     expect(html).not.toContain('无法打开文章编辑器')
@@ -95,7 +92,6 @@ describe('editor routes — Component SSR renders', () => {
   })
 })
 
-/** Three-level router: root provides `parent` context, optional `middle` re-emits it, leaf is `child`. */
 function renderNested(
   initialPath: string,
   layers: {

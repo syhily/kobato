@@ -8,20 +8,16 @@ import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from 
  *  descriptor, issues, and headers can never diverge between transports. */
 export interface TranslatedDomainError {
   status: number
-  /** Transport code: a `DomainError` code, or the generic fallback. */
   code: string
-  /** Localized top-level message; raw text when the producer has no descriptor yet. */
   message: string
   descriptor: ErrorMessageDescriptor
   issues?: ErrorIssueWire[]
   headers?: HeadersInit
 }
 
-/** A transport-neutral error the adapters normalize into {@link TranslatedDomainError}. */
 export interface ApiErrorInput {
   status: number
   code: string
-  /** Descriptor, or raw text this boundary wraps in the passthrough key. */
   message: string | ErrorMessageDescriptor
   issues?: DomainErrorIssue[]
   headers?: HeadersInit
@@ -58,7 +54,6 @@ export function translateApiError(input: ApiErrorInput, translator?: ServerTrans
   }
 }
 
-/** `DomainError`/`ActionFailure` → the shared translation. */
 export function translateDomainError(
   error: DomainError | ActionFailure,
   translator?: ServerTranslator,
@@ -97,7 +92,6 @@ export function summarizeApiError(translated: TranslatedDomainError, translator:
   return translator.format('error.api.summary', { message: translated.message, issues: parts.join(separator) })
 }
 
-/** Join non-fatal descriptors into the wire `warning` string, space-separated. */
 export function formatWarningDescriptors(
   descriptors: readonly ErrorMessageDescriptor[],
   translator: ServerTranslator,
@@ -108,7 +102,6 @@ export function formatWarningDescriptors(
   return descriptors.map((descriptor) => translator.format(descriptor.messageKey, descriptor.params)).join(' ')
 }
 
-/** The wire payload the adapters attach (`ORPCError.data`, Hono's `error` body). */
 export function apiErrorData(translated: TranslatedDomainError): ApiErrorData {
   return {
     descriptor: translated.descriptor,
@@ -116,7 +109,6 @@ export function apiErrorData(translated: TranslatedDomainError): ApiErrorData {
   }
 }
 
-/** HTTP status → a stable transport code for errors Hono raises itself. */
 export function codeForStatus(status: number): string {
   switch (status) {
     case 400:

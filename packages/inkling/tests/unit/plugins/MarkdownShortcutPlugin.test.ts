@@ -46,7 +46,6 @@ function exportMarkdown(editor: LexicalEditor, transformers: Transformer[] = DEF
 
 describe('MarkdownShortcutPlugin transformers', () => {
   it('exports the shared transformer sets wired into the public API', () => {
-    // The element transformers include the custom hr and code block transformers.
     expect(ELEMENT_TRANSFORMERS.map((t) => t.type)).toEqual([
       'element',
       'element',
@@ -56,7 +55,6 @@ describe('MarkdownShortcutPlugin transformers', () => {
       'element',
     ])
     expect(DEFAULT_TRANSFORMERS.length).toBeGreaterThan(ELEMENT_TRANSFORMERS.length)
-    // Minimal and basic sets exclude the heading element transformer.
     expect(MINIMAL_TRANSFORMERS.some((t) => t === ELEMENT_TRANSFORMERS[0])).toBe(false)
     expect(BASIC_TRANSFORMERS.some((t) => t === ELEMENT_TRANSFORMERS[0])).toBe(false)
   })
@@ -123,8 +121,6 @@ describe('MarkdownShortcutPlugin transformers', () => {
       },
       { discrete: true },
     )
-    // TODO: bug — the decorator node's getTextContent appends '\n\n' for word
-    // counting, which leaks into the fence as trailing blank lines on export
     expect(exportMarkdown(editor)).toBe('```js\nconst x = 1\n\n\n```')
   })
 
@@ -144,9 +140,6 @@ describe('MarkdownShortcutPlugin transformers', () => {
   })
 
   it('transforms a typed fence into a code block on the trailing space keystroke (typing path)', async () => {
-    // Pins the transformer trigger semantics: the fence fires on the space
-    // keystroke after ```lang, producing a code block in edit mode with the
-    // language from the match capture.
     const editor = createTestEditor({
       nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, CodeBlockNode, HorizontalRuleNode],
       onError: (error) => {

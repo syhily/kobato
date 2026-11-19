@@ -65,7 +65,6 @@ describe('CodeBlockCard — plain code editor (codeEditor: plain)', () => {
     const { container } = renderEditingCard()
 
     expect(screen.queryByTestId('code-block-plain-editor')).toBeNull()
-    // the lazy boundary's static fallback is the display-mode code box
     expect(container.querySelector('pre')).not.toBeNull()
   })
 })

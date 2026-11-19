@@ -31,9 +31,7 @@ function clientStaticRoot(clientBuildPath: string): string {
 }
 
 interface HonoNodeServerOptions<E extends Env = BlankEnv> extends HonoServerOptionsBase<E> {
-  /** Listening listener (production mode only); the default logs the port. */
   listeningListener?: (info: AddressInfo) => void
-  /** Customize the node server (e.g. http2). */
   customNodeServer?: CreateNodeServerOptions
   onServe?: (server: ServerType) => void
   /**
@@ -43,7 +41,6 @@ interface HonoNodeServerOptions<E extends Env = BlankEnv> extends HonoServerOpti
   overrideGlobalObjects?: boolean
   hostname?: string
   serveStaticOptions?: {
-    /** Serve-static options for the `build/client/assets` tree. */
     clientAssets?: Omit<ServeStaticOptions<E>, 'root'>
   }
 }

@@ -108,7 +108,6 @@ export function getMemoryItem(id: CacheBucketId, key: string): unknown {
 }
 
 export interface MemoryEntryMeta {
-  /** Absolute deadline (epoch ms), `0` = never — the disk envelope's value. */
   expiresAtMs: number
   /** Encoded payload size for binary entries (a nested Buffer can't be
    *  measured by serializing the wrapper); omit for JSON values. */
@@ -153,12 +152,10 @@ export function clearMemoryBucket(id: CacheBucketId): void {
   stores.delete(id)
 }
 
-/** Restore-completion wipe: every bucket's L1 goes cold. */
 export function wipeMemoryCache(): void {
   stores.clear()
 }
 
-/** Test-only seam (mirrors `registry::__resetCacheCountersForTests`). */
 export function __resetMemoryCacheForTests(): void {
   wipeMemoryCache()
 }

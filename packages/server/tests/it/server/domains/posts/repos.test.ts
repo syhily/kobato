@@ -337,7 +337,6 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     expect(bySlug.get('h-rev')?.bodyHtmlFeed).toBe('<p>Hi</p>')
     expect(bySlug.get('h-rev')?.headings).toEqual(headings)
     expect(bySlug.get('h-rev')?.imageSources).toEqual(['images/x.jpg'])
-    // Meta without a published revision id still projects, with null body projections.
     expect(bySlug.get('h-rev-none')?.bodyHtml).toBeNull()
     expect(bySlug.get('h-rev-none')?.bodyHtmlFeed).toBeNull()
   })

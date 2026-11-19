@@ -19,18 +19,11 @@ import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-e
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/admin/pages.ts`;
-// this controller only implements the procedures (admin base — editing is
-// admin-only, so the revision pair passes no `viewer` ownership rule).
 const impl = implementAdmin(adminPagesContract)
 
 const list = impl.list.handler(({ input, context }) => listPagesForAdmin(context.db, input))
 
-const get = impl.get.handler(({ input, context }) =>
-  // NOT_FOUND comes from the service (DomainError, translated by
-  // `domainErrorGuard`) — same contract as the posts controller.
-  getPageDetailForAdmin(context.db, idFromString(input.id)),
-)
+const get = impl.get.handler(({ input, context }) => getPageDetailForAdmin(context.db, idFromString(input.id)))
 
 const remove = impl.delete.handler(async ({ input, context }) => {
   const result = await deletePage(context.db, idFromString(input.id))
@@ -73,8 +66,6 @@ const unpublish = impl.unpublish.handler(async ({ input, context }) => {
   return { page }
 })
 
-// Shared revision factory; pages hand in the admin implementer and pass no
-// `viewer` — there is no ownership rule to evaluate.
 const { saveDraft, publishLatest } = makeRevisionRouter({
   impl,
   adapter: pageLifecycleAdapter,

@@ -12,7 +12,6 @@ import { Loader } from '@kobato/inkling-internal/components/ui/file-selectors/Gi
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-// number of columns based on selector container width
 const TWO_COLUMN_WIDTH = 540
 const THREE_COLUMN_WIDTH = 940
 
@@ -30,11 +29,6 @@ export interface GifSelectorProps {
   provider?: string
 }
 
-// Render adapter over the headless gif browser: snapshot in, JSX out, DOM
-// events translated to intents. It owns only what is inherently DOM — the
-// geometry port (elementFromPoint probing), the keyboard focus request the Gif
-// tiles consume, the resize/scroll/click-outside listeners, and executing the
-// effects the browser returns for key intents.
 const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSelectorProps) => {
   const labels = useInklingLabels()
   const selectorRef = useRef<HTMLDivElement | null>(null)
@@ -100,9 +94,6 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     }
   }, [onClickOutside])
 
-  // The real probing implementation behind the navigation machine's geometry
-  // port: tile rects by data-gif-index, and elementFromPoint hits constrained
-  // to tiles contained in the selector.
   const geometry: GifGeometry = {
     tileRect(index) {
       const elem = selectorRef.current?.querySelector(`[data-gif-index="${index}"]`)
@@ -154,13 +145,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     const tagName = event.target instanceof HTMLElement ? event.target.tagName : ''
     const target: GifKeyTarget = tagName === 'INPUT' ? 'input' : tagName === 'BUTTON' ? 'button' : 'other'
     const effects = browser.dispatch({ type: 'key', key: event.key, shiftKey: event.shiftKey, target }, geometry)
-    // A keyboard-resolved highlight doubles as a focus request for its tile —
-    // including the no-transition case, where hover had already put the
-    // highlight on the grid-entry target. The reducer decides which keys are
-    // navigation: any returned effect means "this key navigated", so focus
-    // follows the highlight; an empty effect list (typing into the search
-    // input, caret keys) leaves focus alone. A focus-search effect (arrowing
-    // out of the grid back into the input) always wins instead.
+
     const nextHighlight = browser.getSnapshot().highlightedId
     const navigated = effects.length > 0 && !effects.some((effect) => effect.type === 'focus-search')
     if (nextHighlight && navigated) {
@@ -168,11 +153,9 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     }
     runEffects(effects, event)
   }
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     browser.dispatch({ type: 'search', term: e.target.value })
   }
-
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget
     if (container.scrollTop + container.clientHeight >= container.scrollHeight - 1000) {
@@ -187,7 +170,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
       ref={selectorRef}
       className="border-grey-200 bg-grey-50 dark:bg-grey-900 flex h-[54rem] flex-col rounded border dark:border-none"
       data-testid="gif-selector"
-      // stop clicks from reaching the editor while the selector is open
+
       onClick={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
     >

@@ -82,7 +82,6 @@ export function seaAssetPath(key: string): string | null {
   return root === null ? null : join(root, key)
 }
 
-/** Minimal asset source a reader needs — the real `node:sea` module in production, a stub in tests. */
 export interface EmbeddedAssetSource {
   getAsset(key: string): ArrayBuffer
 }
@@ -133,7 +132,6 @@ function parseCodecRegistry(manifestRaw: Buffer): Map<string, SeaAssetCodec> {
   return registry
 }
 
-/** Build the decoding asset reader bound to an asset source. Exported for tests. */
 export function createEmbeddedAssetReader(source: EmbeddedAssetSource): (key: string) => Buffer | null {
   let codecRegistry: Map<string, SeaAssetCodec> | undefined
   const decodedByKey = new Map<string, Buffer>()
@@ -200,10 +198,6 @@ export function requireExternal(name: string): unknown {
     : nodeRequire(name)
 }
 
-/**
- * Base cache dir for runtime-extracted files: `KOBATO_CACHE_DIR` >
- * `%LOCALAPPDATA%\kobato` (win32) > `$XDG_CACHE_HOME/kobato` > `~/.cache/kobato`.
- */
 export function resolveCacheDir(): string {
   const override = process.env.KOBATO_CACHE_DIR
   if (override !== undefined && override !== '') {

@@ -43,7 +43,6 @@ function hexToRgb(hex: string): Rgb {
   }
 }
 
-// sRGB (D65) → CIE L*a*b* b-channel
 function rgbToLabB({ r, g, b }: Rgb): number {
   const linearize = (channel: number) => {
     const c = channel / 255
@@ -111,12 +110,10 @@ class NativeColor implements ColorInstance {
   }
 }
 
-/** Accepts a hex string, `{ r, g, b }`, or another color instance. */
 export function Color(input: string | Rgb | ColorInstance): ColorInstance {
   return new NativeColor(input)
 }
 
-/** Returns black or white, whichever has better contrast against the given background. */
 export function textColorForBackgroundColor(background: string | ColorInstance): ColorInstance {
   const backgroundColor = Color(background)
 

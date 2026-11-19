@@ -167,7 +167,6 @@ describe('snapshot: AddMusicDialog', () => {
   it('renders the dialog chrome, search form and source selector when open', () => {
     queryMocks.query = {
       ...queryMocks.query,
-      // No data yet → results stay empty, empty-search prompt shows.
       data: null,
     }
     const html = stableHtml(
@@ -188,7 +187,6 @@ describe('snapshot: AddMusicDialog', () => {
   })
 
   it('renders skeletons when the search query is fetching and there are no results yet', () => {
-    // isSearching with no results → three Skeleton rows.
     searchHookMock.state = {
       ...searchHookMock.state,
       isSearching: true,
@@ -201,7 +199,6 @@ describe('snapshot: AddMusicDialog', () => {
       ),
     )
     expect(html).toContain('添加音乐')
-    // Base UI Skeleton renders with animate-pulse.
     expect(html).toContain('animate-pulse')
   })
 
@@ -353,12 +350,10 @@ describe('snapshot: AddMusicView', () => {
     )
     expect(html).toContain('添加音乐')
     expect(html).toContain('共 1 首歌曲')
-    // Search state stays empty on SSR, so the prompt remains.
     expect(html).toContain('输入关键词搜索音乐')
   })
 
   it('renders the grid skeleton when the search query is fetching', () => {
-    // isSearching with no results → GridSkeleton (12 animate-pulse cells).
     searchHookMock.state = {
       ...searchHookMock.state,
       isSearching: true,
@@ -557,12 +552,10 @@ describe('snapshot: MusicDetailView', () => {
     expect(html).toContain('青花瓷')
     expect(html).toContain('周杰伦 · 我很忙')
     expect(html).toContain('https://cdn.example.com/qinghua.jpg')
-    // Subtitle line: source · uploader · createdAt (formatted YYYY-MM-DD)
     expect(html).toContain('netease')
     expect(html).toContain('雨帆')
     expect(html).toContain('2024-03-04')
     expect(html).toContain('aria-label="关闭"')
-    // Action bar (not editing → play / copy / edit / delete)
     expect(html).toContain('aria-label="播放"')
     expect(html).toContain('复制 playerId')
     expect(html).toContain('编辑')

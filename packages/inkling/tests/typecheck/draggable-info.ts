@@ -16,31 +16,22 @@ import type {
  */
 import type { Equal, Expect } from '@kobato/inkling/tests/utils/type-pins'
 
-// The union's two branches carry their own dataset
-
 type CardBranch = Extract<DraggableInfo, { type: 'card' }>
 type ImageBranch = Extract<DraggableInfo, { type: 'image' }>
 
 type _CardBranchIsCardInfo = Expect<Equal<CardBranch, CardDraggableInfo>>
 type _ImageBranchIsImageInfo = Expect<Equal<ImageBranch, ImageDraggableInfo>>
-// an image drag carries the precise construction dataset — no assertion needed
 type _ImageDatasetIsPrecise = Expect<Equal<ImageBranch['dataset'], ImageNodeDataset>>
-// a card drag's dataset stays heterogeneous (gallery images, live editors …)
 type _CardDatasetStaysOpen = Expect<Equal<CardBranch['dataset'], Record<string, unknown>>>
 type _CardKeyIsRequired = Expect<Equal<CardBranch['nodeKey'], string>>
 type _ImageHasNoSourceKey = Expect<Equal<Extract<keyof ImageBranch, 'nodeKey'>, never>>
-// the card-only preview affordances do not leak onto the image payload
 type _ImageHasNoCardName = Expect<Equal<Extract<keyof ImageBranch, 'cardName' | 'Icon'>, never>>
-
-// Narrowing in value position, without a cast
 
 declare const info: DraggableInfo
 const imageDatasetFor = (value: DraggableInfo): ImageNodeDataset | null =>
   value.type === 'image' ? value.dataset : null
 void imageDatasetFor
 void info
-
-// Construction: the built-in payloads, and the rejected shapes
 
 const imagePayload: DraggableInfo = {
   type: 'image',

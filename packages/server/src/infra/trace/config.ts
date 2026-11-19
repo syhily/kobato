@@ -31,7 +31,6 @@ const MAX_AUTHORIZATION_HEADER_LENGTH = 8192
  * to the browser — the gate hands it only to the intake resource route.
  */
 export interface FrontendRumRelay {
-  /** Normalized OpenObserve origin (`http://127.0.0.1:5080`). */
   endpoint: string
   organization: string
   /** The provisioned RUM client token, injected into every relayed batch. */
@@ -44,14 +43,11 @@ export interface FrontendRumRelay {
 }
 
 export interface TraceLogsRuntimeConfig {
-  /** Direct OTLP/HTTP logs endpoint (`<origin>/api/<org>/v1/logs`). */
   otlpLogsUrl: string
-  /** The same server-only OTLP authorization value used by traces/metrics. */
   authorizationHeader: string
 }
 
 export interface ServerTraceRuntimeConfig {
-  /** Normalized OpenObserve origin (`http://127.0.0.1:5080`). */
   endpoint: string
   organization: string
   /** Exact server-only OTLP authorization value. Never projected to the browser. */
@@ -100,9 +96,7 @@ export interface TraceConfigResolution {
 
 export interface TraceFrontendSettings {
   enabled: boolean
-  /** The site name (`observability.organization`), used as the O2 application id. */
   applicationId: string
-  /** `observability.rumClientToken`. */
   clientToken: string
   sessionSampleRate: number
   clientIdentity: RumClientIdentity
@@ -125,7 +119,6 @@ export interface TraceRuntimeSettings {
 }
 
 export interface ResolveTraceConfigOptions {
-  /** Build-time environment; only projects the browser bootstrap label. */
   environment: TraceEnvironment
 }
 
@@ -139,7 +132,6 @@ const DIAGNOSTIC_MESSAGES: Record<TraceDiagnosticCode, string> = {
     'OpenObserve log export is disabled because it requires tracing (observability.logs.enabled is ignored)',
 }
 
-/** Derive the direct OpenObserve OTLP endpoints from the validated origin. */
 export function deriveOtlpUrls(origin: string, organization: string): OtlpUrls {
   const base = `${origin.replace(/\/+$/, '')}/api/${organization}`
   return {

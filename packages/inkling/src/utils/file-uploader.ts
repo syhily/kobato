@@ -32,7 +32,6 @@ function readFileTypes(fileUploader: FileUploaderInput): FileUploader['fileTypes
   if (typeof value !== 'object' || value === null) {
     return undefined
   }
-  // unknown media keys degrade away by never being read
   const fileTypes: NonNullable<FileUploader['fileTypes']> = {}
   for (const media of MEDIA_KEYS) {
     const entry: unknown = Object.getOwnPropertyDescriptor(value, media)?.value
@@ -44,7 +43,6 @@ function readFileTypes(fileUploader: FileUploaderInput): FileUploader['fileTypes
   return fileTypes
 }
 
-/** Normalizes the public `fileUploader` prop into the closed `FileUploader` the context publishes. */
 export function normalizeFileUploader(fileUploader: FileUploaderInput): FileUploader {
   const fileTypes = readFileTypes(fileUploader)
   const useFileUpload = hasFileUploadHook(fileUploader)

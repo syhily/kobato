@@ -49,8 +49,6 @@ describe('UrlInput', () => {
     editor.dispatchCommand(KEY_ENTER_COMMAND, new KeyboardEvent('keydown', { key: 'Enter' }))
 
     expect(handleUrlSubmit).toHaveBeenCalledTimes(1)
-    // the editor-level event's target is the editor root, so the submitted
-    // value is the controlled input value — a plain string, not the event
     expect(handleUrlSubmit).toHaveBeenCalledWith('https://example.com')
   })
 

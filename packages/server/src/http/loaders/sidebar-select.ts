@@ -8,11 +8,8 @@ import { sampleSize } from '@kobato/utils/sampling.ts'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 
 export interface SidebarSeedInput {
-  /** Entity/URL scope: `post:<id>`, `page:<id>`, `home`. */
   scope: string
-  /** Site calendar date (`yyyy-MM-dd`) in the request's time zone. */
   date: string
-  /** Settings snapshot revision. */
   revision: string
 }
 

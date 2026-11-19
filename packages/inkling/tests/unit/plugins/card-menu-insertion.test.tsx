@@ -83,7 +83,6 @@ describe('card declaration menu data → CardInsertPlugin', () => {
   it("constructs the image from the declaration's insertParams (__triggerFileDialog)", async () => {
     const item = await insertImageEntry('image')
 
-    // the declaration's own params reached the dataset
     expect(item.insertParams).toEqual({ triggerFileDialog: true })
 
     const image = readInsertedImage(editor)
@@ -93,10 +92,8 @@ describe('card declaration menu data → CardInsertPlugin', () => {
   it('maps a typed slash param through the declaration queryParams onto the constructed image', async () => {
     const item = await insertImageEntry('image', ['https://example.com/typed.png'])
 
-    // image's declaration names `src` as its one query param
     expect(item.queryParams).toEqual(['src'])
 
-    // a typed src suppresses the file dialog (the transient initial's rule)
     expect(readInsertedImage(editor)).toEqual({
       triggerFileDialog: false,
       src: 'https://example.com/typed.png',

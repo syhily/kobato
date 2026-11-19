@@ -13,7 +13,6 @@ export * from '@kobato/inkling-internal/transforms/denest'
 export * from '@kobato/inkling-internal/transforms/merge-list-nodes'
 export * from '@kobato/inkling-internal/transforms/remove-alignment'
 
-// registered only on render paths, never by default
 export * from '@kobato/inkling-internal/transforms/remove-at-link-nodes'
 
 export interface DefaultTransformsOptions {
@@ -35,12 +34,10 @@ export function registerDefaultTransforms(editor: LexicalEditor, options?: Defau
           registerRemoveAlignmentTransform(editor, HeadingNode),
           registerRemoveAlignmentTransform(editor, ExtendedHeadingNode),
           registerRemoveAlignmentTransform(editor, QuoteNode),
-          // upstream list items support formats, so strip alignment from them too
           registerRemoveAlignmentTransform(editor, ListItemNode),
         ]
       : []),
 
-    // fix invalid nesting of nodes
     registerDenestTransform(editor, ParagraphNode, () => $createParagraphNode()),
     registerDenestTransform(editor, HeadingNode, (node) => $createHeadingNode(node.getTag())),
     registerDenestTransform(editor, ExtendedHeadingNode, (node) => new ExtendedHeadingNode(node.getTag())),
@@ -48,10 +45,8 @@ export function registerDefaultTransforms(editor: LexicalEditor, options?: Defau
     registerDenestTransform(editor, ListNode, (node) => $createListNode(node.getListType(), node.getStart())),
     registerDenestTransform(editor, ListItemNode, () => $createListItemNode()),
 
-    // merge adjacent lists of the same type
     registerMergeListNodesTransform(editor),
 
-    // keep table cells inline-only (no-op when the table family isn't registered)
     registerTableCellGuard(editor),
   )
 }

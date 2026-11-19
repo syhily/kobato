@@ -58,11 +58,6 @@ function replaceScriptAndIframePlaceholders(html: string, window?: SanitizeWindo
   return doc.body.innerHTML
 }
 
-/**
- * The optional `window` port binds parsing and DOMPurify to a specific window so the
- * function never touches browser globals; headless renders pass their resolved window
- * through the render context.
- */
 export function sanitizeHtml(html = '', options: SanitizeHtmlOptions = {}, window?: SanitizeWindow): string {
   const resolvedOptions = {
     replaceJS: true,

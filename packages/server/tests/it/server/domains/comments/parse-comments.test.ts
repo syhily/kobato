@@ -85,7 +85,6 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
     const tree = await parseComments(input)
 
     expect(ids(tree)).toEqual(['1'])
-    // The grandchild re-attaches to the live grandparent (id=1).
     expect(ids(tree[0].children ?? [])).toEqual(['3'])
   })
 
@@ -101,7 +100,6 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
     const tree = await parseComments(input)
 
     expect(ids(tree)).toEqual(['1'])
-    // 4 climbs 3 → 2 → 1 and attaches under the live root.
     expect(ids(tree[0].children ?? [])).toEqual(['4'])
   })
 
@@ -126,7 +124,6 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
 
     const tree = await parseComments(input)
 
-    // Cycle guard rewrites its rid to 0 so it lands as a root.
     expect(ids(tree)).toEqual(['5'])
     expect(tree[0].rid).toBe(0)
   })

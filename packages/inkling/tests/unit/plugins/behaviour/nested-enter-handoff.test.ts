@@ -6,10 +6,6 @@ import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internal
 import { COMMAND_PRIORITY_LOW, createEditor, KEY_ENTER_COMMAND, type LexicalCommand, type LexicalEditor } from 'lexical'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Unit pins for the shared Enter hand-off both nested-editor surfaces
-// (InklingNestedEditorPlugin's default branch, CaptionPlugin) delegate to,
-// including the null-event (IME/mobile) guard.
-
 // The nested editor is built WITHOUT a parent so Lexical's own command
 // propagation up the parent-editor chain can't leak events into the captured
 // parent: every event the parent sees here came through the hand-off itself.
@@ -65,7 +61,7 @@ describe('registerNestedEnterHandoff', () => {
 
     expect(result).toBe(true)
     expect(listener).toHaveBeenCalledTimes(1)
-    // the SAME event object crosses the boundary, carrying nested provenance
+
     expect(listener.mock.calls[0]?.[0]).toBe(event)
     expect(getEventProvenance(event)).toBe('nested-editor')
 
@@ -83,8 +79,7 @@ describe('registerNestedEnterHandoff', () => {
     const result = await dispatchAndCommit(nested, KEY_ENTER_COMMAND, event)
 
     expect(result).toBe(true)
-    // exactly one delivery: the hand-off's marked dispatch, with Lexical's own
-    // parent-chain propagation stopped by the swallow
+
     expect(listener).toHaveBeenCalledTimes(1)
     expect(listener.mock.calls[0]?.[0]).toBe(event)
     expect(getEventProvenance(event)).toBe('nested-editor')
@@ -154,7 +149,7 @@ describe('registerNestedEnterHandoff', () => {
 
     expect(result).toBe(false)
     expect(listener).not.toHaveBeenCalled()
-    // a passed-through event is never marked
+
     expect(getEventProvenance(event)).toBeNull()
 
     cleanup()

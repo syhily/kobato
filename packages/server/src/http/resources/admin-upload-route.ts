@@ -30,7 +30,6 @@ interface AdminUploadValidation<T> {
 interface AdminUploadRouteOptions<TValidated> {
   path: string
   maxSize: number
-  /** Typed copy for the body-limit rejection; `params` may resolve per request. */
   tooLarge: { messageKey: UiMessageId; params?: (c: Context<Env>) => ErrorMessageParams }
   missingFile: UiMessageId
   logScope: string
@@ -47,7 +46,6 @@ interface AdminUploadRouteOptions<TValidated> {
   }) => Promise<AdminUploadResult | Response>
 }
 
-/** Mount the invariant admin multipart-upload perimeter around a domain-specific handler. */
 export function adminUploadRoute<TValidated>(options: AdminUploadRouteOptions<TValidated>): Hono<Env> {
   const log = getLogger(options.logScope)
 

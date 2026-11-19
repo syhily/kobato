@@ -78,7 +78,6 @@ describe('comments/repos/moderation — bulk mutations reach the sidebar digest'
     const postId = await seedPost('bulk-approve-target')
     const commentId = await seedComment(userId, postId, true)
 
-    // Pending comments are not listed yet.
     expect(await latestComments(db, TEST_BLOG_SETTINGS_BUNDLE)).toHaveLength(0)
 
     const { approved } = await bulkApproveCommentsByUser(db, userId)

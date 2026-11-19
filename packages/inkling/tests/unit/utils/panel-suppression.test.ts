@@ -26,7 +26,6 @@ describe('createPanelSuppression', () => {
 
     suppression.deactivate()
 
-    // the click capture and pointer-events restores are deferred a few ms
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 10)
     })

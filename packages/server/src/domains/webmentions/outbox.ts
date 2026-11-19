@@ -28,7 +28,6 @@ export const OUTBOX_MAX_ATTEMPTS = 5
 // The response body is worthless (W3C success is a status code) — cap it.
 const MAX_RESPONSE_BYTES = 16 * 1024
 
-/** Sender UA built from the configured site origin. */
 function senderUa(): string {
   const website = requireBlogSettingsSection('siteIdentity').website
   return `Kobato Webmention Sender (+${website})`
@@ -40,7 +39,6 @@ export type SendResult =
   | { kind: 'rejected'; status: number }
   | { kind: 'retry'; error: string }
 
-/** POST the form-encoded mention through the shared SSRF guard. */
 export async function sendWebmention(endpoint: string, sourceUrl: string, targetUrl: string): Promise<SendResult> {
   const result = await safeFetch(endpoint, {
     method: 'POST',
@@ -116,7 +114,6 @@ export async function processWebmentionOutboxRow(
   await scheduleRetry(db, row, result.error)
 }
 
-/** The scheduler's batch: a few due rows, processed strictly in sequence. */
 export async function runWebmentionOutboxBatch(db: Database, hooks: OutboxHooks = REAL_HOOKS): Promise<number> {
   return runDueRows({
     pick: () => pickDueWebmentionOutbox(db, new Date(), OUTBOX_BATCH_SIZE),

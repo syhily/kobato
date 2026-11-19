@@ -2,8 +2,6 @@ import { ensureLexicalNodeOwnMethods } from '@kobato/inkling-internal/nodes/base
 import { describe, expect, it } from 'vitest'
 
 describe('ensureLexicalNodeOwnMethods', () => {
-  // Simulate the generateDecoratorNode pattern:
-  // A base class with static and instance methods, then subclasses that inherit them.
   class GeneratedBase {
     static getType() {
       return 'generated'
@@ -77,13 +75,11 @@ describe('ensureLexicalNodeOwnMethods', () => {
       }
     }
 
-    // Already own properties
     expect(Object.hasOwn(ChildWithOverride, 'getType')).toBe(true)
     expect(Object.hasOwn(ChildWithOverride.prototype, 'exportJSON')).toBe(true)
 
     ensureLexicalNodeOwnMethods(ChildWithOverride)
 
-    // Preserved
     expect(ChildWithOverride.getType()).toBe('child-override')
     expect(new ChildWithOverride().exportJSON()).toEqual({ type: 'child-override', version: 2 })
   })

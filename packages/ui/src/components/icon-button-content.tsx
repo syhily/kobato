@@ -4,7 +4,6 @@ import { cn } from '@kobato/ui/lib/cn.ts'
 
 export interface IconButtonContentProps {
   children: ReactNode
-  /** Extra classes appended to the centring wrapper. */
   className?: string
 }
 

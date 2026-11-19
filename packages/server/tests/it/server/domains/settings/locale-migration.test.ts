@@ -67,7 +67,6 @@ describe('server/domains/settings/services/locale-migration', () => {
     expect(after?.updatedAt).toEqual(before?.updatedAt)
     expect(after?.data).toEqual(before?.data)
 
-    // A second pass after a rewrite is a no-op too.
     seedInstalledSite({ locale: 'zh-Hant-HK' })
     expect(migrateLegacySiteIdentityLocale(db).changed).toBe(true)
     expect(migrateLegacySiteIdentityLocale(db).changed).toBe(false)

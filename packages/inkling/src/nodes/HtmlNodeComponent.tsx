@@ -26,14 +26,8 @@ export function HtmlNodeComponent({ nodeKey, html }: { nodeKey: string; html?: s
   )
 }
 
-// Html is the only card with an indicator icon; the declaration's
-// `decorateTarget.hasIndicatorIcon` flag gates its attachment.
 export { IndicatorIcon }
 
-/**
- * Html's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderHtmlCard(node: HtmlNode) {
   return <HtmlNodeComponent html={node.html} nodeKey={node.getKey()} />
 }

@@ -9,18 +9,10 @@ import type { DraggableContainerHandle } from '@kobato/inkling-internal/utils/dr
 import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/use-drag-drop-container'
 import React from 'react'
 
-// Drop target — the one owner of the drop-target hover seam: the container
-// element state, the isDraggedOver hover flag (lit by the hover policy, cleared
-// on leave and on drag end), and the drag-start enablement policy. Adapters
-// supply their own predicates (the gallery's hover policy accepts every drag,
-// its enablement policy only enables).
-
 export interface UseDropTargetOptions {
-  /** Master toggle, flows through the container's enable/disable pair. */
   enabled?: boolean
-  /** Initial drag enablement of the registered container. */
+
   isDragEnabled?: boolean
-  /** Re-register (re-scan the DOM) when this value changes. */
   reRegisterKey?: unknown
   draggableSelector: string
   droppableSelector: string
@@ -32,22 +24,17 @@ export interface UseDropTargetOptions {
   ) => DropResolution | false
   onDrop?: (draggableInfo: DraggableInfo, resolution: DropResolution | null) => DropResult | false | undefined
   onDropEnd?: (draggableInfo: DraggableInfo, success: boolean, sourceHandled: boolean) => void
-  /** Hover policy: whether an entering drag lights the target up. */
+
   canDrop: (draggableInfo: DraggableInfo) => boolean
-  /**
-   * Drag-start enablement policy: true enables, false disables, undefined
-   * leaves the container's enablement untouched. Defaults to the hover
-   * policy (enable when droppable, disable otherwise).
-   */
+
   adjustEnableOnDragStart?: (draggableInfo: DraggableInfo) => boolean | undefined
 }
 
 export interface UseDropTargetResult {
   setRef: React.Dispatch<React.SetStateAction<HTMLElement | null>>
-  /** The registered container element (null until setRef) — for adapters that scan it for geometry. */
   containerElement: HTMLElement | null
   isDraggedOver: boolean
-  /** The registered container handle (no-op before registration) — for adapters that refresh after a mutation. */
+
   container: DraggableContainerHandle
 }
 

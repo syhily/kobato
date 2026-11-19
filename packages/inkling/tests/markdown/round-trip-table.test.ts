@@ -1,10 +1,6 @@
 import { lexicalStateToMarkdown, markdownToLexicalState } from '@kobato/inkling-internal/markdown/round-trip'
 import { describe, expect, it } from 'vitest'
 
-// The dialect speaks GFM pipe tables through the hand-written GFM_TABLE
-// transformer (round-trip.ts) — @lexical/markdown 0.53 has no upstream TABLE
-// transformer. Cells are inline-only by construction: cell markdown converts
-// through the dialect's minimal inline set on import.
 describe('Markdown round-trip: GFM tables', function () {
   function roundTrip(markdown: string) {
     return lexicalStateToMarkdown(markdownToLexicalState(markdown))

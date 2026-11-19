@@ -23,20 +23,16 @@ import { createIntl, createIntlCache } from 'react-intl'
 
 const log = getLogger('i18n')
 
-/** Runtime membership test against the SERVER catalog (email / notification keys). */
 export function isServerMessageId(value: string): value is ServerMessageId {
   return Object.hasOwn(serverMessagesEnUS, value)
 }
 
-/** Every message id a server surface may format (UI catalog + server catalog). */
 export type MessageId = UiMessageId | ServerMessageId
 
 export type MessageParams = Record<string, string | number | boolean | Date | null | undefined>
 
-/** Renders one rich-text tag's chunks — a rich message's `<tag>…</tag>` placeholder. */
 export type RichTextTag = (chunks: ReactNode[]) => ReactNode
 
-/** ICU values for a rich message: plain interpolation values plus tag renderers. */
 export type RichMessageParams = Record<string, string | number | boolean | Date | null | undefined | RichTextTag>
 
 type MergedMessages = UiMessages & ServerMessages

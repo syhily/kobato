@@ -201,9 +201,6 @@ describe('MathInlineNode', () => {
 })
 
 describe('math inline in the HTML string export', () => {
-  // Drives the live export path (HtmlOutputPlugin's own call): the string
-  // layer must splice inline decorators into the text flow instead of
-  // dropping them.
   function renderState(serializedState: string): string {
     const editor = createEditor({
       namespace: 'test',

@@ -9,7 +9,6 @@ import type { EditorScreenAdapter, EditorScreenEntity } from '@kobato/web-admin/
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
-/** Meta-draft shape the shared screen reads (mirrors EditorScreenAdapter). */
 type EditorMetaShape = { title: string; slug: string; published: boolean; publishedAt: string }
 
 /** Both entity detail DTOs carry the same revision pair. */
@@ -40,19 +39,14 @@ export interface EditorAdapterConfig<
   TWrappedEntity,
 > {
   entityKind: 'post' | 'page'
-  /** Display-noun message id woven into toolbar / panel / dialog copy (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
-  /** Admin list route (back button, delete navigation). */
   listPath: string
   /** Public URL prefix for the post-save preview banner (`/posts` / ``). */
   bannerBasePath: string
-  /** Public detail URL of the entity being edited. */
   publicPath: (slug: string) => string
-  /** Analytics dashboard URL; omit when the entity has none (pages). */
   analyticsPath?: (id: string) => string
   editPath: (id: string) => string
 
-  /** Unwrap the entity from the detail DTO (`d.post` / `d.page`). */
   getEntity: (detail: TDetail) => TEntity
 
   emptyMeta: TMeta
@@ -62,15 +56,11 @@ export interface EditorAdapterConfig<
   createDraftConfig: CreateDraftConfig<LexicalEditorState>
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
 
-  /** oRPC namespace (`orpc.admin.posts` / `orpc.admin.pages`). */
   api: EditorEntityApi<TUpsertMetaInput, TWrappedEntity>
-  /** Unwrap the entity from upsert / unpublish procedure outputs. */
   unwrapEntity: (output: TWrappedEntity) => TEntity
-  /** Query key of the entity's admin list namespace (invalidation target). */
   listQueryKey: () => QueryKey
 }
 
-/** Per-render inputs the static config cannot know: query client (list invalidation) and the entity meta sidebar. */
 export interface EditorAdapterRuntime<TMeta extends EditorMetaShape> {
   queryClient: QueryClient
   renderMetaSidebar: (props: MetaSidebarSlotProps<TMeta>) => ReactNode

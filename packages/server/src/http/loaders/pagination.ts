@@ -19,7 +19,6 @@ export function parseListingPage(raw: string | undefined, rootPath: string): num
   return pageNum
 }
 
-// Bounds-check: out-of-range pages redirect to the last valid page; an empty catalog 404s.
 export function redirectListingOverflow(
   raw: string | undefined,
   pageNum: number,

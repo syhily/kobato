@@ -146,7 +146,6 @@ describe('adminBackupRouter.create', () => {
     expect(res.size).toBeGreaterThan(0)
     expect(res.timestamp).toBe(res.fileName.replace(/^backup-/, '').replace(/\.db\.tar\.gz$/, ''))
 
-    // The real createBackup streamed a gzipped archive into the backend.
     const stored = s3Memory.store.get(`backup/${res.fileName}`)
     expect(stored).toBeDefined()
     expect(stored!.body.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
@@ -197,7 +196,6 @@ describe('adminBackupRouter.create', () => {
     const res = await first
     expect(s3Memory.store.has(`backup/${res.fileName}`)).toBe(true)
 
-    // Only the winning backup records an audit row.
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'backup_created'))
     expect(rows).toHaveLength(1)

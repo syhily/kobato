@@ -22,20 +22,6 @@ import {
 import { CARD_MARKDOWN_DECLARATIONS } from '@kobato/inkling-internal/nodes/cards/card-markdown-transformers'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Cross-registry consistency guard. The declaration pipeline's derived views
- * are each pinned in their own tests; this file pins the AGREEMENT between the
- * hand-keyed tables that remain — the command constants keyed by node type in
- * `card-commands`, and the fence payload table in
- * `card-markdown-transformers` — and the declarations they derive from, so a
- * new card cannot land in one table and drift in another.
- */
-
-// The per-card insert command the public barrel (via the shims) exports —
-// the resolution view must name exactly these objects, so a consumer
-// dispatching `INSERT_IMAGE_COMMAND` and the registrar resolving the
-// declaration's derived command always meet. The footnote definition is the
-// one card with no insert command.
 const EXPECTED_INSERT_COMMANDS = {
   audio: INSERT_AUDIO_COMMAND,
   bookmark: INSERT_BOOKMARK_COMMAND,
@@ -59,8 +45,6 @@ describe('insert command resolution agrees with the declarations', () => {
 
     for (const declaration of CARD_DECLARATIONS) {
       if (declaration.nodeType === 'footnotedefinition') {
-        // no insert command — the footnote behaviour module creates and
-        // orders definitions; the card declares neither menu nor insert spec
         expect('insert' in declaration).toBe(false)
         expect('menu' in declaration).toBe(false)
         continue
@@ -69,10 +53,9 @@ describe('insert command resolution agrees with the declarations', () => {
       expect(command, `${declaration.nodeType} has no expected insert command`).toBeDefined()
       expect(resolveCardInsertCommand(declaration.nodeType), declaration.nodeType).toBe(command)
     }
-    // the expectation table covers no node type the declarations do not carry
+
     expect(expected.size).toBe(CARD_DECLARATIONS.length - 1)
   })
-
   it('resolves the named extras to the Image selector commands, used only by the Image menu', () => {
     expect(resolveCardMenuCommand('openGifSelector', 'image')).toBe(OPEN_GIF_SELECTOR_COMMAND)
     expect(resolveCardMenuCommand('openImageLibrary', 'image')).toBe(OPEN_IMAGE_LIBRARY_COMMAND)
@@ -101,17 +84,12 @@ describe('markdown fence wiring agrees with the declaration markdown specs', () 
       const transformer = markdownByType.get(declaration.nodeType)?.markdownTransformer
 
       if (markdown?.kind === 'fence') {
-        // the fence tag is derived, never declared: the projection feeds the
-        // declaration's own nodeType to createCardTransformer
         expect(transformer, declaration.nodeType).toBeDefined()
         expect(
           transformer && 'regExpStart' in transformer ? transformer.regExpStart.source : undefined,
           declaration.nodeType,
         ).toBe('^```inkling:' + declaration.nodeType + '\\s*$')
       } else if (markdown?.kind === 'exempt') {
-        // exempt cards speak plain markdown — no inkling fence transformer;
-        // Image's hand-written `![alt](src)` element transformer is the one
-        // named exception
         if (declaration.nodeType === 'image') {
           expect(transformer).toBeDefined()
           expect(transformer && 'regExpStart' in transformer).toBe(false)
@@ -124,10 +102,9 @@ describe('markdown fence wiring agrees with the declaration markdown specs', () 
       }
     }
   })
-
   it('derives the markdown round-trip node set from exactly the markdown-bearing declarations', () => {
     const eligible = CARD_DECLARATIONS.filter((declaration) => 'markdown' in declaration && declaration.markdown)
-    // the same eligibility filter `markdown/round-trip.ts` applies inline
+
     const markdownCards = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown)
     expect(markdownCards.map((card) => card.nodeType)).toEqual(eligible.map((declaration) => declaration.nodeType))
   })

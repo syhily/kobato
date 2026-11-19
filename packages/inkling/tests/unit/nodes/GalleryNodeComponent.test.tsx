@@ -29,7 +29,6 @@ vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => null,
 }))
 
-// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey,
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -139,7 +138,6 @@ describe('GalleryNodeComponent', () => {
       expect(screen.getByTestId('gallery-error')).toHaveTextContent('Galleries are limited to 9 images')
     })
 
-    // only the 7 files that fit under the cap are uploaded
     expect(upload).toHaveBeenCalledTimes(1)
     expect(upload.mock.calls[0][0]).toHaveLength(7)
   })
@@ -184,7 +182,6 @@ describe('GalleryNodeComponent', () => {
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:gallery-preview-1')
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:gallery-preview-2')
 
-    // the node is written with the new images kept but their previews stripped
     const images = readNodeImages(nodeKey)
     expect(images).toHaveLength(4)
     expect(images[2]).toMatchObject({ fileName: 'a.png', width: 100, height: 100 })
@@ -199,8 +196,6 @@ describe('GalleryNodeComponent', () => {
 
     expect(screen.getAllByTestId('gallery-image')).toHaveLength(2)
 
-    // an external change to node.images (undo of a within-card delete, collab)
-    // must be reflected without a remount
     await act(async () => {
       editor.update(() => {
         const node = $getNodeByKey(nodeKey)
@@ -228,7 +223,6 @@ describe('GalleryNodeComponent', () => {
     })
     expect(screen.getAllByTestId('gallery-image')).toHaveLength(1)
 
-    // deleting from the resynced list must not resurrect the stale images
     fireEvent.click(screen.getByTestId('delete-image'))
     await act(async () => {})
 
@@ -237,7 +231,7 @@ describe('GalleryNodeComponent', () => {
 
   it('revokes all tracked previews on unmount', async () => {
     const nodeKey = await addGalleryNode(editor)
-    // an upload that never resolves leaves the previews tracked at unmount time
+
     const upload = vi.fn(() => new Promise<undefined>(() => {}))
     const { unmount } = renderComponent(nodeKey, upload)
 
@@ -287,7 +281,6 @@ describe('GalleryNodeComponent', () => {
     })
 
     it('keeps the toolbar visible while the card is editing', async () => {
-      // gallery's menu toolbar has no !isEditing factor
       const nodeKey = await addGalleryNode(editor)
       const { container } = renderWithToolbar(nodeKey, { selected: true, editing: true })
 
@@ -357,7 +350,6 @@ describe('GalleryNodeComponent', () => {
 
       fireEvent.click(screen.getByTestId('create-snippet'))
 
-      // the menu toolbar unmounts while the snippet input is open
       const toolbars = getToolbars(container)
       expect(toolbars).toHaveLength(1)
       expect(toolbars[0].querySelector('ul')).toBeNull()

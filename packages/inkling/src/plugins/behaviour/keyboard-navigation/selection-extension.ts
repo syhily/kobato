@@ -11,11 +11,6 @@ import { $isDecoratorNode, $isRootNode } from 'lexical'
 
 export type SelectionExtensionDirection = 'up' | 'down'
 
-/**
- * Extend a range selection one step in `direction`, switching to whole top-level
- * nodes via root element offsets once a card is in or about to enter the selection.
- * Returns false to mean "treat as a normal text selection".
- */
 export function $extendSelectionAcrossCardBoundary(
   direction: SelectionExtensionDirection,
   selection: RangeSelection,
@@ -32,12 +27,11 @@ export function $extendSelectionAcrossCardBoundary(
     const focusNode = selection.focus.getNode().getTopLevelElement()
 
     const boundarySibling = direction === 'up' ? focusNode?.getPreviousSibling() : focusNode?.getNextSibling()
-    // On or about to reach a decorator node: select whole nodes via root offsets.
+
     if (focusNode && boundarySibling && ($isDecoratorNode(anchorNode) || $isDecoratorNode(boundarySibling))) {
       const anchorIndex = anchorNode.getIndexWithinParent()
       const focusIndex = focusNode.getIndexWithinParent()
       if (direction === 'up') {
-        // At the start of the line, treat that line/node as not selected.
         if (selection.anchor.offset === 0) {
           selection.focus.set('root', focusIndex - 1, 'element')
           selection.anchor.set('root', anchorIndex, 'element')
@@ -46,7 +40,6 @@ export function $extendSelectionAcrossCardBoundary(
           selection.anchor.set('root', anchorIndex + 1, 'element')
         }
       } else {
-        // At the end of a line, treat that line/node as not selected.
         if (selection.anchor.offset === anchorNode.getTextContentSize()) {
           selection.anchor.set('root', anchorIndex + 1, 'element')
           selection.focus.set('root', focusIndex + 2, 'element')
@@ -60,7 +53,6 @@ export function $extendSelectionAcrossCardBoundary(
     }
   }
 
-  // Root-anchored selection: add the card in the direction of travel.
   if ($isRootNode(anchorNode)) {
     const offset = selection.focus.offset
     if (direction === 'up') {
@@ -80,10 +72,6 @@ export function $extendSelectionAcrossCardBoundary(
   return false
 }
 
-/**
- * Caption-provenance escape hatch: an arrow re-dispatched from a card's caption
- * editor moves selection back onto the owning card in the parent editor.
- */
 export function $selectCardFromCaptionArrow(
   editor: LexicalEditor,
   selectedCardKey: string | null,

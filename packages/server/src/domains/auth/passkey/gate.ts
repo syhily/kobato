@@ -4,10 +4,6 @@ export function isPasskeyEnabled(): boolean {
   return getBlogSettingsBundleSync()?.security?.passkey?.enabled === true
 }
 
-/**
- * Whether this user must authenticate with a passkey right now; false when the global
- * switch is off.
- */
 export function isPasskeySigninUser(
   user: { loginMethod: string; role: string | null; deletedAt: Date | null } | null,
 ): boolean {

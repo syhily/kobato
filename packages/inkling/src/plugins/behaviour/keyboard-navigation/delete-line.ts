@@ -15,7 +15,6 @@ export function registerDeleteLineCommand(editor: LexicalEditor, deps: KeyboardN
   return editor.registerCommand(
     DELETE_LINE_COMMAND,
     (isBackward) => {
-      // The payload is a direction boolean, so there is no event to preventDefault.
       if (dispatchSelectedCardDeletion(editor, store, isNested, isBackward ? 'backward' : 'forward')) {
         return true
       }
@@ -30,8 +29,6 @@ export function registerDeleteLineCommand(editor: LexicalEditor, deps: KeyboardN
           const anchor = selection.anchor
           const anchorNode = anchor.getNode()
           const topLevelElement = anchorNode.getTopLevelElement()
-          // Ungated on caret offsets: the first-line verdict below is the gate, and
-          // it is direction-independent.
           const sibling = topLevelElement
             ? $getLogicallyAdjacentCard(isBackward ? 'previous' : 'next', topLevelElement)
             : null

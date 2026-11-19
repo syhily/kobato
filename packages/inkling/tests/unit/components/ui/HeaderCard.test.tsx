@@ -100,8 +100,6 @@ function createEditorInstance() {
   return createEditor({ namespace: 'test', onError: () => {} })
 }
 
-// the flat defaults the tests override per case; groupProps maps them onto
-// the card's grouped seam (view/handlers/upload/editors)
 type FlatHeaderCardProps = React.ComponentProps<typeof HeaderCard>['view'] &
   React.ComponentProps<typeof HeaderCard>['handlers'] &
   React.ComponentProps<typeof HeaderCard>['upload'] &

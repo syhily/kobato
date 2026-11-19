@@ -6,11 +6,9 @@ describe('Default transforms', function () {
   it('registerDefaultTransforms() registers all transforms', function () {
     const editor = createEditor()
 
-    // "invalid" editor state that should be transformed
     const before = {
       root: {
         children: [
-          // nested paragraphs
           {
             children: [
               {
@@ -52,7 +50,6 @@ describe('Default transforms', function () {
             version: 1,
           },
 
-          // adjacent lists
           {
             children: [
               {
@@ -116,7 +113,6 @@ describe('Default transforms', function () {
             tag: 'ul',
           },
 
-          // heading with center alignment
           {
             children: [
               {
@@ -148,7 +144,6 @@ describe('Default transforms', function () {
     const after = {
       root: {
         children: [
-          // de-nested paragraphs
           {
             children: [
               {
@@ -190,7 +185,6 @@ describe('Default transforms', function () {
             version: 1,
           },
 
-          // adjacent lists merged
           {
             children: [
               {
@@ -244,7 +238,6 @@ describe('Default transforms', function () {
             tag: 'ul',
           },
 
-          // heading with alignment format reset
           {
             children: [
               {
@@ -276,7 +269,6 @@ describe('Default transforms', function () {
     assertTransform(editor, registerDefaultTransforms, before, after)
   })
 
-  // one heading + one paragraph carrying imported alignment formats
   const alignedBefore = {
     root: {
       children: [

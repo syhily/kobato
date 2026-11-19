@@ -2,12 +2,6 @@ import { type SearchResult, useSearchLinks } from '@kobato/inkling-internal/hook
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Adapter tests: the request tracks and race policy live in
-// search-coordinator.test.ts (synchronous, injected scheduler). This file only
-// pins the hook's wiring — mount prefetch, debounced query, and the
-// query/defaults display switch — with fake timers instead of wall-clock
-// debounce sleeps.
-
 function resultsFor(label: string): SearchResult[] {
   return [{ label, items: [{ title: `${label} result`, url: `https://example.com/${label}` }] }]
 }

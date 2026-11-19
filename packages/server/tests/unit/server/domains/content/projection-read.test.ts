@@ -32,7 +32,6 @@ describe('content/projection-read — readRevisionProjection (body routing)', ()
       },
     ]
     const result = readRevisionProjection(revisionRow({ body }))
-    // Legacy rows carry no projection columns, so every read returns null.
     expect(result.bodyHtml).toBeNull()
     expect(result.bodyHtmlFeed).toBeNull()
     expect(result.bodyState).toBeNull()
@@ -52,7 +51,6 @@ describe('content/projection-read — readRevisionProjection (body routing)', ()
     )
     expect(result.bodyHtml).toBe('<p>hi</p>')
     expect(result.bodyHtmlFeed).toBe('<p>hi</p>')
-    // No fallback needed — bodyState stays null when both projections exist.
     expect(result.bodyState).toBeNull()
   })
 

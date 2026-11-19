@@ -98,7 +98,6 @@ describe('LikeButton validate sequencing', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: '取消点赞' }).dataset.liked).toBe('true'))
     expect(readStoredTokens()[PERMALINK]).toBe('new-token')
 
-    // The late verdict must not flip the button back or delete the fresh token.
     await act(async () => {
       resolveValidate({ key: 'key-1', valid: false })
     })

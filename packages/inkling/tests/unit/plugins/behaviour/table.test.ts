@@ -45,8 +45,6 @@ function commit(editor: LexicalEditor, mutate: () => void) {
   editor.update(mutate, { discrete: true })
 }
 
-// An empty trigger paragraph, then the table through the same path the
-// command handler takes — the paragraph is replaced, root holds just the table.
 function insertTable(editor: LexicalEditor, payload: Parameters<typeof $insertTable>[0] = {}) {
   commit(editor, () => {
     const paragraph = $createParagraphNode()
@@ -165,7 +163,6 @@ describe('cell guard (registerDefaultTransforms)', () => {
         .map((node) => node.getKey()),
     }))
     commit(editor, () => {
-      // Dirty the cell so its transform reruns; the guard must no-op.
       $cell(0, 0).setWidth(120)
     })
     const after = editor.getEditorState().read(() => ({
@@ -207,8 +204,7 @@ describe('$insertTable', () => {
   it('replaces the empty trigger paragraph, keeping the trailing paragraph like card inserts', () => {
     const editor = createTestEditor()
     insertTable(editor, { columns: 1, rows: 1 })
-    // $insertAndSelectNode parity: the empty trigger paragraph is gone; the
-    // split remainder after the table plays the $ensureParagraphAfterCard role.
+
     expect(readTableSummary(editor).rootTypes).toEqual(['table', 'paragraph'])
   })
 })

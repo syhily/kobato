@@ -49,10 +49,6 @@ function UrlInputPlugin({ onEnter }: { onEnter?: () => void }) {
   return null
 }
 
-// The one URL field: a plain input by default, a search-suggestion list
-// when the host provides a searchLinks capability (read from
-// host-integration context — callers never fork). The loading, error, and
-// close chrome lives here once; the capability only changes the input row.
 export function UrlInput({
   dataTestId = 'url-input',
   handleClose,

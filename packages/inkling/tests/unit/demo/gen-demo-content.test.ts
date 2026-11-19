@@ -128,7 +128,6 @@ describe('gen-demo-content', () => {
         }),
       )
 
-      // upload-placeholder states: the upload flow is the thing to test
       root.append($createVideoNode({}))
       root.append($createAudioNode({}))
       root.append($createFileNode({}))
@@ -150,11 +149,10 @@ describe('gen-demo-content', () => {
       root.append($createMathNode({ tex: 'e^{i\\pi} + 1 = 0' }))
       root.append($createHorizontalRuleNode())
 
-      // 3×3 table with header row (the insert default)
       const table = new TableNode()
       const headerRow = new TableRowNode()
       for (const label of ['Feature', 'Where', 'How to trigger']) {
-        const cell = new TableCellNode(1) // header state
+        const cell = new TableCellNode(1)
         const p = $createParagraphNode()
         p.append($createTextNode(label))
         cell.append(p)

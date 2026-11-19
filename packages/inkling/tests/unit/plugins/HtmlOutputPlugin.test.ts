@@ -82,9 +82,6 @@ describe('HtmlOutputPlugin', () => {
   })
 
   it('calls setHtml with the card markup when the document only contains a text-less card', async () => {
-    // A pure-card document (here a bare horizontal rule) has no root text but
-    // is not empty: the live export must emit the card markup, matching the
-    // headless path.
     const cardEditor = createTestEditor({ headless: false, nodes: [HorizontalRuleNode] })
     mockComposerContext(cardEditor)
 

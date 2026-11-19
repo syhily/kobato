@@ -23,11 +23,9 @@ describe('shared markdown grammar table', () => {
     it(`${tag}…${tag} is honored by both engines as ${format}`, () => {
       const input = `${tag}marked${tag}`
 
-      // markdown-it engine (paste dialect)
       const html = pasteDialect.render(input)
       expect(html).toContain(`<${PASTE_TAG_BY_FORMAT[format]}>marked</${PASTE_TAG_BY_FORMAT[format]}>`)
 
-      // @lexical/markdown engine (round-trip dialect's inline set)
       const editor = createHeadlessEditor({
         namespace: 'test',
         nodes: [],

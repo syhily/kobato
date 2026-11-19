@@ -121,8 +121,6 @@ export function BookmarkCard({
     )
   }
 
-  // the field reads the searchLinks capability from host-integration
-  // context itself — this card only supplies the bookmark's handlers and copy
   return (
     <UrlInput
       dataTestId="bookmark-url"

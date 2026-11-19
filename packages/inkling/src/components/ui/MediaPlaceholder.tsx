@@ -84,10 +84,8 @@ const StandardContents = ({
   )
 }
 
-/** The placeholder's styled sizes ('medium' takes the default-style branch — it is the ErrorState story's size). */
 export type MediaPlaceholderSize = 'large' | 'medium' | 'small' | 'xsmall'
 
-/** The placeholder's style variants: 'button' restyles the container; 'image' (or absent) is the default. */
 export type MediaPlaceholderType = 'button' | 'image'
 
 export function MediaPlaceholder({

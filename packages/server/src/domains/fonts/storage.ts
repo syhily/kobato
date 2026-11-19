@@ -3,22 +3,17 @@ import type { StorageDriver } from '@kobato/settings/types.ts'
 import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
 import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
 
-// Storage entry point for the fonts domain. Writes go to the active backend;
-// reads/deletes dispatch on the row's recorded `driver`. Owns the
-// `fonts/<hash>/` key layout — nothing else reconstructs it.
+// Owns the `fonts/<hash>/` key layout — nothing else reconstructs it.
 
-/** Storage prefix for every file in a font package. Content-addressed by hash. */
 export function fontPrefix(hash: string): string {
   return `fonts/${hash}/`
 }
 
-/** The single public entry point the SSR `<link>` points at. */
 export function fontCssKey(hash: string): string {
   return `${fontPrefix(hash)}result.css`
 }
 
 export interface FontPackageFile {
-  /** Path relative to the package root, e.g. `chunk-abc.woff2` or `result.css`. */
   name: string
   body: Buffer
   contentType: string
@@ -45,7 +40,6 @@ export async function putFont(hash: string, files: FontPackageFile[]): Promise<P
   return { driver }
 }
 
-/** Delete every object under `fonts/<hash>/` on the recorded driver's backend. Best-effort — a missing prefix is not an error. */
 export async function deleteFontPackage(hash: string, driver: StorageDriver): Promise<void> {
   const backend = backendFor(driver)
   await backend.deletePrefix(fontPrefix(hash))

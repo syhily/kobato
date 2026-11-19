@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 interface UseDebouncedSearchOptions<T> {
-  /** Initial input value. Defaults to `''`. */
   initial?: string
   /** Debounce delay (ms). Defaults to 250 — snappy but tolerates CJK IME bursts. */
   delayMs?: number
-  /** Fired on the trailing edge of the debounce window. */
   onChange: (value: string) => T | undefined
 }
 
-/** Debounced text input helper: immediately-bound input value plus a setter
- *  that fires `onChange(value)` after `delayMs` of inactivity. */
 export function useDebouncedSearch<T>({ initial = '', delayMs = 250, onChange }: UseDebouncedSearchOptions<T>) {
   const [value, setValue] = useState(initial)
   const [lastInitial, setLastInitial] = useState(initial)

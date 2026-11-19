@@ -126,7 +126,6 @@ function buildRouteTree(manifest: RouteManifest): RouteObject[] {
   return [build('root')]
 }
 
-/** modulepreload chunks for a pathname: entry + matched route + ancestor layouts. Null in dev / missing manifest. */
 export function getCriticalChunksForPathname(pathname: string): string[] | null {
   const manifest = getRouteManifest()
   if (!manifest) {

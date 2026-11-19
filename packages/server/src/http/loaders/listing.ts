@@ -10,7 +10,6 @@ import { parseListingPage, redirectListingOverflow } from '@kobato/server/http/l
 import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
-// Per-page metadata fan-out; home overrides to also pull comment counts (card badges).
 export interface ListingMetadataFlags {
   likes?: boolean
   views?: boolean
@@ -44,9 +43,6 @@ function calculateTotalPages(postCount: number, pageSize: number, mergeTailThres
   return naturalTotalPage
 }
 
-// Shared skeleton for listing routes: slice & resolve posts, overflow
-// redirect, canonical/prev/next SEO. `computeExtra` runs per-route work
-// alongside the shared pipeline.
 export async function listingLoader<TExtra = undefined>(
   db: Database,
   {
@@ -75,7 +71,6 @@ export async function listingLoader<TExtra = undefined>(
     rootPath: string
     title?: string
     description?: string
-    /** Request UI locale — pagination copy is resolved from it. */
     locale: AppLocale
     /** Request-pinned settings bundle — the same capture the caller renders with. */
     settings: BlogSettingsBundle | null
@@ -85,15 +80,10 @@ export async function listingLoader<TExtra = undefined>(
     forceNoindex?: boolean
     metadata?: ListingMetadataFlags
     seoMode?: ListingSeoMode
-    /** Scoped feed links (per-category/tag RSS) advertised alongside the site-wide feeds. */
     feedLinks?: FeedLinkOptions
-    /** Custom OG image URL for the listing page. */
     ogImageUrl?: string
-    /** Async per-route `extra` producer — runs after overflow redirects, sees the in-page slice only. */
     computeExtra?: (args: ListingExtraArgs) => Promise<TExtra> | TExtra
-    /** Static extra payload, used when no async work is needed. */
     extra?: TExtra
-    /** Allow an empty catalog to render instead of 404 (home empty-state CTA). */
     allowEmpty?: boolean
   },
 ): Promise<ListingPageLoaderData<TExtra>> {

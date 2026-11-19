@@ -371,10 +371,9 @@ export default defineConfig({
       // Test code gets a deliberately lighter rule set: mocks, fixtures,
       // and deliberately-awkward components make the type-aware unsafe
       // family and friends fire constantly without finding real bugs.
-      // oxlint overrides cannot disable whole categories — only named
-      // rules — so the noisy offenders are listed explicitly. The
-      // tools/test sources are the former tests/_helpers tree
-      // and share the exemption.
+      // oxlint overrides cannot disable whole categories — only named rules,
+      // so the noisy offenders are listed explicitly; tools/test sources
+      // share the tests exemption.
       files: ['**/tests/**/*.ts', '**/tests/**/*.tsx', 'tools/test/src/**/*.ts', 'tools/test/src/**/*.tsx'],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,

@@ -78,7 +78,6 @@ describe('notifications / job-failure wiring', () => {
     expect(inbox.items).toHaveLength(1)
     expect(inbox.items[0]!.body).toContain("Unexpected token '<'")
 
-    // The detail pane resolves the same descriptor — identical literal text.
     const thread = await getThread(
       db,
       { id: String(adminId), name: 'admin', email: 'admin@example.com', website: null, role: 'admin' },

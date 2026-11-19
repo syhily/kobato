@@ -122,7 +122,6 @@ afterEach(async () => {
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
-/** Satisfies the real install gate (hasAdmin) without colliding with the per-test `admin@example.com` seeds. */
 async function seedGateAdmin() {
   await db.insert(user).values({
     name: 'Gatekeeper',
@@ -247,7 +246,6 @@ function extractData(result: unknown): Record<string, unknown> {
   return (result as { data?: Record<string, unknown> }).data ?? {}
 }
 
-/** Login (password verified, mail ready) and return the emailed OTP code. */
 async function doLogin(clientAddress = '127.0.0.1'): Promise<string> {
   await callAction(null, loginFormData(), '/admin', clientAddress)
   expect(mockHandles.sendSignInOtp).toHaveBeenCalled()
@@ -276,12 +274,10 @@ function stagePendingOtp(userId: number | string, overrides: Record<string, unkn
   })
 }
 
-/** The session rows the real establishLoginSession wrote for a user. */
 async function sessionRowsFor(userId: number) {
   return db.select().from(sessionTable).where(eq(sessionTable.userId, userId))
 }
 
-/** Audit rows of one action, flushed first so the batcher has drained. */
 async function auditRowsFor(actionName: string) {
   await flushAuditLog()
   return db.select().from(auditLog).where(eq(auditLog.action, actionName))
@@ -293,7 +289,6 @@ describe('routes/signin', () => {
     const response = await callLoader('?action=logout')
 
     expect(response.status).toBe(302)
-    // No session-destroying cookie goes out; the user stays signed in.
     expect(getSetCookie(response)).toBeNull()
     expect(testSession.get('user')).toBeDefined()
     expect(await auditRowsFor('logout')).toHaveLength(0)
@@ -349,8 +344,6 @@ describe('routes/signin', () => {
   })
 
   it('falls back to the login view for POST-only action names', async () => {
-    // POST-only action names must resolve to the login view, or the form
-    // unmounts on commit.
     for (const name of ['identify', 'passkey', 'verifyotp', 'resendotp', 'cancelotp']) {
       const result = await callLoader(`?action=${name}`)
       expect(extractData(result).action).toBe('login')
@@ -380,7 +373,7 @@ describe('routes/signin', () => {
 
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('/admin/signin?redirect_to=%2F')
-    // Expiry cleanup marks dirty; the middleware commits the redirect's Set-Cookie.
+
     expect(markSessionDirty).toHaveBeenCalledTimes(1)
     expect(response.headers.get('Set-Cookie')).toBeNull()
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
@@ -408,10 +401,10 @@ describe('routes/signin — OTP (real db + tokens)', () => {
       expect.objectContaining({ userId: String(admin.id), email: 'admin@example.com' }),
     )
     expect(testSession.get('otpFailCount')).toBe(0)
-    // Staging is a same-session mutation: dirty-marked, no Set-Cookie.
+
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
-    // The OTP row is real, and never stores the code in plaintext.
+
     const row = await getOtpRow(admin.id)
     expect(row).not.toBeNull()
     expect(row!.value).not.toContain(otpCode)
@@ -424,7 +417,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const result = await callAction(null, loginFormData())
 
     expect(mockHandles.sendSignInOtp).not.toHaveBeenCalled()
-    // Real establishLoginSession: sid rotation keeps its explicit Set-Cookie channel.
+
     expect(getSetCookie(result)).toMatch(/^__session=/)
     expect(await sessionRowsFor(admin.id)).toHaveLength(1)
     expect(markSessionDirty).not.toHaveBeenCalled()
@@ -455,7 +448,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     const result = await callAction('verifyotp', otpFormData(otpCode))
 
-    // Real establishLoginSession: session row + Set-Cookie + audit stamped method=otp.
     const sessions = await sessionRowsFor(admin.id)
     expect(sessions).toHaveLength(1)
     expect(getSetCookie(result)).toMatch(/^__session=/)
@@ -466,7 +458,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(logins[0]!.details).toMatchObject({ method: 'otp' })
 
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
-    // Cleanup marks dirty; the sid rotation still carries its own cookie.
+
     expect(markSessionDirty).toHaveBeenCalled()
     expect(await getOtpRow(admin.id)).toBeNull()
   })
@@ -534,12 +526,10 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const admin = await seedUser()
     const otpCode = await doLogin()
 
-    // Two wrong attempts consume the verify budget (below the lockout threshold).
     await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
     await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
     markSessionDirty.mockClear()
 
-    // The third attempt is throttled before the token check — even with the correct code.
     await callAction('verifyotp', otpFormData(otpCode))
 
     expect(await sessionRowsFor(admin.id)).toHaveLength(0)
@@ -587,7 +577,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     expect(extractData(result).error).toBe('验证码发送失败，请稍后重试。')
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
-    // Send failed before staging: no mutation, not dirty.
+
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
@@ -612,14 +602,14 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   it('returns error when OTP valid but user not found', async () => {
     const admin = await seedUser()
     const otpCode = await doLogin()
-    // No FK on verification: the OTP row survives the hard-deleted user.
+
     await db.delete(user).where(eq(user.id, admin.id))
     markSessionDirty.mockClear()
 
     const result = await callAction('verifyotp', otpFormData(otpCode))
 
     expect(extractData(result).error).toBe('账户状态异常，无法登录。')
-    // The pending entry was cleared before the user lookup failed.
+
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
     expect(await db.select().from(sessionTable)).toHaveLength(0)
@@ -703,7 +693,7 @@ describe('routes/signin — identify (real db)', () => {
 
   it('answers unknown email exactly like a magic-link send (no existence oracle)', async () => {
     const result = await callAction('identify', emailFormData('ghost@example.com'))
-    // Same shape and copy as a real send, but nothing is sent or persisted.
+
     expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
     expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
@@ -788,7 +778,6 @@ describe('routes/signin — magic-link consume (real db + tokens)', () => {
     fd.set('magic_token', token)
     const result = await callAction('magiclink', withCsrf(fd))
 
-    // Real establishLoginSession: session row + Set-Cookie + audit method=magic-link.
     const sessions = await sessionRowsFor(admin.id)
     expect(sessions).toHaveLength(1)
     expect(result.status).toBe(302)
@@ -798,7 +787,6 @@ describe('routes/signin — magic-link consume (real db + tokens)', () => {
     expect(logins[0]!.resourceId).toBe(sessions[0]!.id)
     expect(logins[0]!.details).toMatchObject({ method: 'magic-link' })
 
-    // Single-use: a replay with the same token fails.
     const replay = await callAction('magiclink', withCsrf(fd))
     expect(extractData(replay).error).toBe('链接无效或已过期，请重新获取。')
   })

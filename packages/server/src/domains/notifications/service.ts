@@ -38,8 +38,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 
-// DTO mapping
-
 // The inbox row renders a two-line preview; the detail pane reads the full
 // body from the thread query. Capping keeps the list wire small.
 const LIST_BODY_PREVIEW_LENGTH = 200
@@ -71,8 +69,6 @@ function senderDtosByIds(db: Database, senderIds: Iterable<number>): Map<number,
   const names = findUserNamesByIds(db, [...senderIds])
   return new Map([...names].map(([id, name]) => [id, { id: String(id), name }]))
 }
-
-// Producers (system + admin)
 
 function createAndFanOut(
   db: Database,
@@ -116,7 +112,6 @@ export function notifyAdmins(db: Database, message: SystemNotificationMessage): 
   return row
 }
 
-/** Admin → one user; always opens a replyable private thread. */
 export function sendDirectMessage(
   db: Database,
   senderId: number,
@@ -193,8 +188,6 @@ export function recallMessage(db: Database, id: number): RecalledMessage {
   }
 }
 
-// Inbox reads
-
 export interface InboxPage {
   items: NotificationDto[]
   nextCursor: string | null
@@ -211,7 +204,6 @@ export async function listInbox(
       : input.tab === 'announce'
         ? (['admin', 'broadcast'] as const)
         : undefined
-  // One extra row as the has-more probe.
   const rows = await listNotificationsForUser(db, userId, {
     kinds,
     unreadOnly: input.tab === 'unread',
@@ -241,17 +233,13 @@ export function unreadCount(db: Database, userId: number): number {
   return countUnreadNotifications(db, userId)
 }
 
-/** `ids` omitted = mark everything read. */
 export function markRead(db: Database, userId: number, ids?: readonly number[]): number {
   return markNotificationsRead(db, userId, ids)
 }
 
-/** Return messages to the unread pile ("deal with this later"). */
 export function markUnread(db: Database, userId: number, ids: readonly number[]): number {
   return markNotificationsUnread(db, userId, ids)
 }
-
-// Threads & replies
 
 async function loadThread(db: Database, threadId: number): Promise<NotificationRow[]> {
   const messages = await listThreadNotifications(db, threadId)

@@ -16,10 +16,8 @@ export default defineConfig({
     // option — the root config's maxWorkers is not inherited by projects.)
     maxWorkers: 4,
     environment: 'node',
-    // `../arch` keeps the architecture/contract guards (formerly
-    // tests/unit/arch) inside this project.
     include: ['**/*.test.{ts,tsx}', '../arch/**/*.test.{ts,tsx}'],
-    // DuckDB native-engine files run in the dedicated `duckdb` project.
+
     exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('apps/kobato/tests')],
     setupFiles: ['@kobato/test/setup/unit.ts'],
     testTimeout: 10_000,

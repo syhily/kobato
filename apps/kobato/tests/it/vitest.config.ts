@@ -16,7 +16,6 @@ export default defineConfig({
     maxWorkers: 4,
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],
-    // DuckDB native-engine files run in the dedicated `duckdb` project.
     exclude: [...configDefaults.exclude, ...duckdbTestFilesUnder('apps/kobato/tests')],
     setupFiles: ['@kobato/test/setup/it.ts'],
     testTimeout: 30_000,

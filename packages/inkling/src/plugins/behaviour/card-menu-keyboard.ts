@@ -11,26 +11,12 @@ import {
   mergeRegister,
 } from 'lexical'
 
-// The card menu's keyboard policy, headless — the mapping from keys to menu
-// actions. Two syntaxes, one module:
-// - the slash trigger navigates the menu (arrows) and inserts the selected
-//   item (Enter), through the menu navigator (createMenuNavigator);
-// - the button trigger closes the menu on any arrow (the caret is left alone;
-//   Escape and outside-mousedown stay owned by the session).
-// Registration happens once per editor and reads its inputs at EVENT time
-// through ports, so the popup mounts the registration while the menu is open
-// instead of re-registering per render.
-
 export interface MenuKeyboardPorts {
-  /** The menu is open at event time (the registration may outlive a close). */
   isOpen: () => boolean
-  /** Move the navigator selection (wrap-around index). */
   moveUp: () => void
-  /** Move the navigator selection (wrap-around index). */
   moveDown: () => void
-  /** The currently selected item, or undefined. */
+
   selectedItem: () => ResolvedMenuItem | undefined
-  /** Enter on the selected item: insert it and report analytics. */
   onSelect: (item: ResolvedMenuItem) => void
 }
 

@@ -1,6 +1,3 @@
-// Content-owned canonical public URL helpers: pure string builders over the
-// public post/page permalink surface, with no Response/redirect side effects.
-
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 
@@ -8,7 +5,6 @@ export function searchRootPath(query: string): string {
   return `/search/${encodeURIComponent(query)}`
 }
 
-/** Site-relative permalink of a post (`/posts/<slug>`) or page (`/<slug>`). */
 export function entityPermalink(type: 'post' | 'page', slug: string): string {
   return type === 'post' ? `/posts/${slug}` : `/${slug}`
 }
@@ -22,7 +18,6 @@ export function entityCommentUrl(type: 'post' | 'page', slug: string): string {
   return joinUrl(website, entityPermalink(type, slug), '/')
 }
 
-/** Strip the `<separator> <site title>` suffix document titles carry. */
 export function trimSiteSuffix(title: string | null): string {
   let trim = title ?? ''
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
@@ -33,8 +28,6 @@ export function trimSiteSuffix(title: string | null): string {
   return trim
 }
 
-// Non-canonical requested slug → canonical `/posts/<slug>` for a 301;
-// `undefined` when the requested slug is already canonical.
 export function canonicalPostPath(requestedSlug: string | undefined, canonicalSlug: string): string | undefined {
   return requestedSlug !== undefined && requestedSlug !== canonicalSlug ? `/posts/${canonicalSlug}` : undefined
 }

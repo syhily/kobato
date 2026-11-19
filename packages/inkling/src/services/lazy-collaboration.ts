@@ -11,7 +11,6 @@ import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/In
 
 import { createRequestTrack } from '@kobato/inkling-internal/services/request-track'
 
-/** The lazy chunk's public shape — only the factory builder is consumed. */
 export interface CollaborationChunk {
   createWebsocketProviderFactory: (config: {
     endpoint?: string
@@ -20,22 +19,12 @@ export interface CollaborationChunk {
   }) => LexicalProviderFactory
 }
 
-/** The dynamic import — tests inject a scripted one. */
 export type LoadCollaborationChunk = () => Promise<CollaborationChunk>
 
 export interface LazyProviderFactorySession {
-  /**
-   * Kick the lazy load. `apply` receives the chunk's factory builder only
-   * when this load is still the latest at resolve time — a superseded load
-   * (restart with new config, disable, unmount) never applies. A rejected
-   * import (network/chunk error) never applies either: the session stays
-   * inert and the rejection is swallowed, never unhandled.
-   */
   start: (apply: (createFactory: CollaborationChunk['createWebsocketProviderFactory']) => void) => void
-  /** Supersede every in-flight load (disable, unmount, config change). */
   cancel: () => void
 }
-
 export function createLazyProviderFactory(
   load: LoadCollaborationChunk = () => import('@kobato/inkling-internal/services/collaboration'),
 ): LazyProviderFactorySession {
@@ -51,7 +40,7 @@ export function createLazyProviderFactory(
         })
         // A failed chunk import (network/chunk error) leaves the factory inert — never an unhandled rejection.
         .catch(() => {
-          // swallow: the session stays inert (see above)
+          /* noop */
         })
     },
     cancel: () => track.dispose(),

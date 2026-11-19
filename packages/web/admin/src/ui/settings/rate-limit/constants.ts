@@ -96,10 +96,8 @@ export const BUCKET_META: Record<
   },
 }
 
-/** Everyday scenarios — always visible in the card. */
 export const COMMON_KEYS: readonly BucketKey[] = ['signIn', 'comment', 'like', 'resource']
 
-/** Advanced scenarios — grouped behind the advanced-options disclosure. */
 export const ADVANCED_GROUPS: readonly { labelId: UiMessageId; keys: readonly BucketKey[] }[] = [
   { labelId: 'admin.settings.rateLimit.group.auth', keys: ['otpSend', 'otpVerify', 'passkeyAuth', 'passkeyManage'] },
   { labelId: 'admin.settings.rateLimit.group.passwordReset', keys: ['passwordReset', 'passwordResetTarget'] },

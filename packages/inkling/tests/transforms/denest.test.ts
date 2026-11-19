@@ -14,7 +14,6 @@ describe('Denest transform', function () {
       registerDenestTransform(editor, ParagraphNode, () => $createParagraphNode())
     }
 
-    // invalid state with image inside paragraph
     const before = {
       root: {
         children: [
@@ -50,7 +49,6 @@ describe('Denest transform', function () {
       },
     }
 
-    // image pulled out to top-level
     const after = {
       root: {
         children: [
@@ -86,7 +84,6 @@ describe('Denest transform', function () {
       registerDenestTransform(editor, ListItemNode, () => $createListItemNode())
     }
 
-    // invalid state with image inside paragraph
     const before = {
       root: {
         children: [
@@ -133,7 +130,6 @@ describe('Denest transform', function () {
       },
     }
 
-    // image pulled out to top-level
     const after = {
       root: {
         children: [
@@ -384,7 +380,6 @@ describe('Denest transform', function () {
       registerDenestTransform(editor, ParagraphNode, () => $createParagraphNode())
     }
 
-    // invalid state with image inside paragraph
     const before = {
       root: {
         children: [
@@ -431,7 +426,6 @@ describe('Denest transform', function () {
       },
     }
 
-    // image pulled out to top-level
     const after = {
       root: {
         children: [
@@ -694,8 +688,6 @@ describe('Denest transform', function () {
       nodes: [ParagraphNode, TextNode, HeadingNode, ExtendedHeadingNode, ListNode, ListItemNode],
     })
 
-    // a list nested inside a heading is invalid: the denest fires on the
-    // heading and re-creates its collector through the registered fn
     editor.update(() => {
       const heading = new ExtendedHeadingNode('h4')
       heading.append($createTextNode('Heading'))
@@ -728,7 +720,6 @@ describe('Denest transform', function () {
       registerDenestTransform(editor, ParagraphNode, () => $createParagraphNode())
     }
 
-    // invalid state with image inside paragraph
     const before = {
       root: {
         children: [
@@ -795,7 +786,6 @@ describe('Denest transform', function () {
       },
     }
 
-    // image pulled out to top-level
     const after = {
       root: {
         children: [
@@ -872,7 +862,6 @@ describe('Denest transform', function () {
       registerDenestTransform(editor, ParagraphNode, () => $createParagraphNode())
     }
 
-    // invalid state with image inside paragraph
     const before = {
       root: {
         children: [
@@ -926,7 +915,6 @@ describe('Denest transform', function () {
       },
     }
 
-    // image pulled out to top-level
     const after = {
       root: {
         children: [

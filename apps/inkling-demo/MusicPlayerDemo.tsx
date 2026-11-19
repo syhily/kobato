@@ -5,9 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 import '@kobato/ui/styles/ui.css'
 import '@kobato/inkling-demo/styles/public.css'
 
-// Minimal article-page demo for MusicPlayerCard (`/#/music-player`). External media fixtures (SoundHelix audio,
-// picsum covers) require network access; the LRC fixtures are inline.
-
 const SAMPLE_LRC = `[ti:SoundHelix Song 1]
 [ar:T. Schürger]
 [00:00.00]SoundHelix 示例音频
@@ -78,10 +75,6 @@ function mountPointHtml(sample: Sample): string {
   return `<div class="${MUSIC_PLAYER_CARD_CLASSES.wrapper}"><div class="aplayer" ${attrs}>${musicPlayerFallbackHtml(meta, escapeAttr)}</div></div>`
 }
 
-/**
- * SSR-simulated zone: static mount-point markup (as the saved bodyHtml projection carries) upgraded by the real
- * hydration hook.
- */
 function HydratedMounts({ samples }: { samples: Sample[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const html = samples.map((sample) => mountPointHtml(sample)).join('')

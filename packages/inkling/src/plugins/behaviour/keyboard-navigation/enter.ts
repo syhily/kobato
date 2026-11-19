@@ -19,7 +19,6 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
     (event) => {
       const { selectedCardKey, isEditingCard } = store.getState()
 
-      // Ctrl/Cmd+Enter toggles edit mode regardless of selection.
       if (selectedCardKey && event && (event.metaKey || event.ctrlKey)) {
         const cardNode = $getNodeByKey(selectedCardKey)
 
@@ -48,13 +47,10 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
         }
       }
 
-      // Let the browser handle selection inside a card inner element (e.g. nested editor).
-      // Must come after ctrl/cmd+enter, which toggles regardless of selection.
       if (event && getEventProvenance(event) !== 'nested-editor' && !editorOwnsFocus(editor)) {
         return true
       }
 
-      // The selected key may point at a card since removed: only intercept then.
       if (!isNested && selectedCardKey) {
         const cardNode = $getNodeByKey(selectedCardKey)
         if ($isInklingCard(cardNode)) {
@@ -66,8 +62,6 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
         }
       }
 
-      // Code card shortcut: trigger only; regex, language extraction and
-      // replace-and-select live in @kobato/inkling-internal/markdown/card-shortcuts.
       if (!isNested && event && $fireFenceKeyboardShortcut(event)) {
         return true
       }

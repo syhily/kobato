@@ -186,7 +186,6 @@ describe('admin badge endpoints (count / passkeyFlag / pendingCounts)', () => {
   it('admin.comments.pendingCount counts approval + deletion pending rows', async () => {
     await seedComment(1, { isPending: true })
     await seedComment(1, { deleteRequestedAt: new Date('2024-01-05') })
-    // Settled rows stay out of the badge.
     await seedComment(1, {})
     await seedComment(1, { isPending: true, deletedAt: new Date(Date.now() - 60_000) })
 
@@ -354,7 +353,6 @@ describe('admin.posts.mySummary', () => {
 
     expect(json.draftCount).toBe(2)
     expect(json.publishedCount).toBe(1)
-    // Recent lists sort draft by updatedAt desc and only show own rows.
     expect(json.recentDrafts.map((p) => p.title)).toEqual(['Mine Draft A', 'Mine Draft B'])
     expect(json.recentPublished.map((p) => p.title)).toEqual(['Mine Published'])
   })

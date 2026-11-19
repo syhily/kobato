@@ -6,23 +6,13 @@ import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { restartServer } from '@kobato/server/infra/lifecycle.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 
-/**
- * The restore completion chain behind the machine's `complete` step: rollback
- * → reopen → reschedule → migrate → ANALYZE → cache wipe → restart. A failed
- * reopen aborts the chain before the restart — never restart into a dead
- * handle.
- */
+/** A failed reopen aborts the chain before the restart — never restart into a dead handle. */
 
 export interface RestoreCompletionDeps {
-  /** Idempotent reopen of BOTH engines on the (possibly swapped) files. */
   reopenDatabase(): Promise<DatabaseHandle>
-  /** The live content-db handle (post-restore migration + ANALYZE). */
   getDb(): Database
-  /** Run package-owned content migrations through the composition root's adapters. */
   migrateDatabase(db: Database): Promise<void>
-  /** Drop the restored-instance file cache; may reject with a partial-wipe failure. */
   wipeCache(): Promise<void>
-  /** Tell admins the cache wipe failed (the restore itself succeeded). */
   notifyCacheWipeFailed(): void
 }
 
@@ -75,7 +65,6 @@ export function createRestoreCompletion(
       try {
         await deps.migrateDatabase(deps.getDb())
         log.info('Database migrations completed after restore')
-        // Bulk-loaded file — refresh planner statistics.
         analyzeDatabase(deps.getDb())
       } catch (migrateErr) {
         log.error('Database migrations failed after restore', {

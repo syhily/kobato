@@ -2,12 +2,6 @@ import type { Database } from '@kobato/db/database.ts'
 
 import { getLogger } from '@kobato/server/infra/logger.ts'
 
-/**
- * The single owner of the restore job lifecycle (claim → drain → swap →
- * reopen → validate → complete → release): `current` holds the running
- * slot, `last` the one-shot terminal report.
- */
-
 export type RestorePhase = 'idle' | 'draining' | 'restoring' | 'completed' | 'failed'
 
 export interface RestoreJobStatus {
@@ -20,13 +14,10 @@ export interface RestoreJobStatus {
 }
 
 export interface RestoreMachineDeps {
-  /** Stop accepting requests and drain in-flight ones (HTTP close + server phase). */
   drain(): Promise<void> | void
   /** Flush batchers and close the live database handle — MUST run before the swap. */
   prepareForSwap(): Promise<void> | void
   reopenAfterSwap(): Promise<Database>
-  /** Post-chain completion: migrations, ANALYZE, restart, recovery reopen
-   * on failure. Runs inside the slot. */
   complete(success: boolean, error?: Error): Promise<void>
 }
 
@@ -36,13 +27,10 @@ let deps: RestoreMachineDeps | null = null
 let current: RestoreJobStatus | null = null
 let last: RestoreJobStatus | null = null
 
-/** Composition-root wiring (db-lifecycle at boot); re-registration is allowed
- *  for HMR. */
 export function wireRestoreMachine(d: RestoreMachineDeps): void {
   deps = d
 }
 
-/** Test seam: drop wiring and in-flight state between cases. */
 export function resetRestoreMachine(): void {
   deps = null
   current = null
@@ -66,8 +54,6 @@ export function tryBeginRestore(): boolean {
   return true
 }
 
-/** Release a claimed-but-never-started slot (body parse or pre-swap
- *  validation failed before `startRestoreJob` ran). */
 export function abortRestoreClaim(): void {
   if (current?.phase === 'draining') {
     current = null
@@ -77,18 +63,11 @@ export function abortRestoreClaim(): void {
 export interface RestoreJobInput {
   restoreFn: () => Promise<RestoreChainResult>
   afterReopenFn?: (db: Database) => Promise<void>
-  /**
-   * Cleanup for state staged before the chain: invoked only when
-   * `restoreFn` never started; best-effort.
-   */
   onFailureFn?: () => Promise<void> | void
 }
 
-/** The swap chain's terminal payload; paths without a config leg resolve with nothing. */
 export type RestoreChainResult = { configApplied?: boolean } | undefined
 
-/** Claim the slot before `prepare` runs, release it on throw/decline, then
- * start the job. Outcomes: 'busy' | 'declined' | 'started'. */
 export async function withRestoreClaim(
   prepare: () => Promise<RestoreJobInput | null>,
 ): Promise<'busy' | 'declined' | 'started'> {
@@ -110,8 +89,6 @@ export async function withRestoreClaim(
   return 'started'
 }
 
-/** Non-consuming status read (`/ready` polls): running phase, the terminal
- * report WITHOUT consuming it, else idle. */
 export function peekRestoreJobPhase(): RestoreJobStatus {
   if (current !== null) {
     return current
@@ -122,7 +99,6 @@ export function peekRestoreJobPhase(): RestoreJobStatus {
   return { phase: 'idle', startedAt: '' }
 }
 
-/** Restore-status endpoint read: the terminal report is returned ONCE (consumed on read). */
 export function consumeRestoreJobReport(): RestoreJobStatus {
   if (current !== null) {
     return current
@@ -172,7 +148,6 @@ export function startRestoreJob(
       error = err instanceof Error ? err : new Error(String(err))
       log.error('Restore failed', { err: error.message })
       if (!swapStarted && onFailureFn !== undefined) {
-        // drain/prepare threw before the swap — the caller's staged temp dir needs cleanup.
         try {
           await onFailureFn()
         } catch (cleanupErr) {

@@ -16,11 +16,9 @@ import {
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// The device-environment beacon side (`device_env_client`): the beacon arrives
-// seconds after the server-side event row, so it is a pure append into its own
-// table, joined at query time by `event_id`. The id is NOT validated against
-// `access_events`: a bot-gated or direct-POST id simply yields an orphan row,
-// which the JOIN drops and retention clears in the same 180-day window.
+// The beacon's `event_id` is NOT validated against `access_events`: a bot-gated or
+// direct-POST id simply yields an orphan row, which the JOIN drops and retention
+// clears in the same 180-day window.
 
 const BATCHER_NAME = 'DeviceEnvBeaconBatcher'
 
@@ -28,7 +26,6 @@ function deadLetterPath(): string {
   return ANALYTICS_ENV_DEAD_LETTER_PATH
 }
 
-/** Map the wire beacon onto its sidecar row; absent fields become NULL / ''. */
 export function toDeviceEnvClientRow(beacon: DeviceEnvBeacon, receivedAt: Date = new Date()): DeviceEnvClientRow {
   return {
     eventId: beacon.eventId,

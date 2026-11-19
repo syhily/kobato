@@ -69,9 +69,6 @@ function PopulatedImageCard({
       ? interpolateLabel(labels['alt.imageUploadProgress'], { progress: `${imageUploader.progress}` })
       : ''
 
-  // the setRef dispatchers are stable (useState setters), so depending on
-  // them directly keeps this callback's identity stable too — no
-  // re-registration churn from the handler objects' identities
   const setFileDragRef = imageFileDragHandler?.setRef
   const setCardDragRef = imageCardDragHandler?.setRef
   const setRef = React.useCallback(

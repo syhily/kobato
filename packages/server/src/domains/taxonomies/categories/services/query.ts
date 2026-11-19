@@ -86,7 +86,6 @@ export async function getCategoryLinks(db: Database, names: readonly string[]): 
   return result
 }
 
-// Public routes resolve strictly by slug.
 export async function findCategoryBySlug(db: Database, slug: string): Promise<CategoryRow | null> {
   const rows = await db.select().from(categoryTable).where(eq(categoryTable.slug, slug)).limit(1)
   return rows[0] ?? null

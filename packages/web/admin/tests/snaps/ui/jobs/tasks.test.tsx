@@ -60,7 +60,6 @@ function makeMigration(overrides: Partial<StorageMigrationStatus> = {}): Storage
 function makeJobsList(overrides: Partial<JobsListDto> = {}): JobsListDto {
   return {
     tasks: [
-      // 系统
       makeTask({ lastRun: makeRun() }),
       makeTask({
         taskKey: 'audit-archive',
@@ -77,7 +76,6 @@ function makeJobsList(overrides: Partial<JobsListDto> = {}): JobsListDto {
         scheduleHint: 'admin.tasks.task.storageMigration.schedule',
         liveState: null,
       }),
-      // 内容
       makeTask({
         taskKey: 'scheduled-publish',
         label: 'admin.tasks.task.scheduledPublish.label',
@@ -104,7 +102,6 @@ function makeJobsList(overrides: Partial<JobsListDto> = {}): JobsListDto {
         liveState: { suspended: true, nextRunAt: null, running: false },
         queue: { depth: 0, nextDueAt: null, attentionCount: 0 },
       }),
-      // 维护
       makeTask({
         taskKey: 'token-purge',
         label: 'admin.tasks.task.tokenPurge.label',
@@ -145,7 +142,6 @@ describe('snapshot: TasksView', () => {
     queryMocks.query = { ...queryMocks.query, data: makeJobsList() }
     const html = stableHtml(renderInRouter(<TasksView />, '/admin/tasks'))
 
-    // Groups.
     expect(html).toContain('系统')
     expect(html).toContain('内容')
     expect(html).toContain('维护')
@@ -160,12 +156,10 @@ describe('snapshot: TasksView', () => {
     expect(html).toContain('上次运行 2026-08-20 04:00:00 · 成功 · 耗时 1.2秒钟')
     expect(html).toContain('S3 连接超时')
 
-    // Queue stats.
     expect(html).toContain('待处理 3 条')
     expect(html).toContain('需关注 1 条')
     expect(html).toContain('下一批 2026-08-20 04:05:00')
 
-    // Actions: backup mutation, cross-links, history sheets (non-queue tasks only).
     expect(html).toContain('立即备份')
     expect(html).toContain('href="/admin/webmentions?tab=outbox"')
     expect(html).toContain('去审核')
@@ -173,7 +167,6 @@ describe('snapshot: TasksView', () => {
     expect(html).toContain('href="/admin/settings"')
     // 5 non-queue tasks → 5 history triggers; queue tasks never record history.
     expect(html.match(/执行历史/g)).toHaveLength(5)
-    // Idle migration offers neither cancel nor resume.
     expect(html).not.toContain('取消迁移')
     expect(html).not.toContain('从断点继续')
   })

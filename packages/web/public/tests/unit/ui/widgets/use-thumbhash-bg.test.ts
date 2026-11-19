@@ -91,7 +91,6 @@ async function importModule() {
   return import('@kobato/web-public/ui/widgets/use-thumbhash-bg.ts')
 }
 
-// Decode a base64 thumbhash string into the Uint8Array the decoder expects.
 function decodeBase64(value: string): Uint8Array {
   const binary = typeof atob === 'function' ? atob(value) : Buffer.from(value, 'base64').toString('binary')
   const bytes = new Uint8Array(binary.length)

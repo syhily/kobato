@@ -19,8 +19,6 @@
  * so an in-progress at-link search serializes as its inline query text.
  */
 
-// renderLive drives the HtmlOutputPlugin route with the node set and theme
-// InklingComposer passes; renderHeadless goes through the public seam.
 import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
 import { describe, expect, it } from 'vitest'
 
@@ -63,7 +61,7 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'basic text formats',
-    // Single semantic tags: strong, em, s, u, code.
+
     input: doc([
       block('paragraph', [
         text('bold', 1),
@@ -82,21 +80,20 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'text-transform formats',
-    // lowercase/uppercase/capitalize have no semantic tag; TextContent emits
-    // them as SPANs carrying inline text-transform styles.
+
     input: doc([block('paragraph', [text('lowercase', 256), text('uppercase', 512), text('capitalize', 1024)])]),
     output:
       '<p><span style="text-transform: lowercase;">lowercase</span><span style="text-transform: uppercase;">uppercase</span><span style="text-transform: capitalize;">capitalize</span></p>',
   },
   {
     name: 'heading',
-    // Both paths add the generated id (simple-transformers.ts).
+
     input: doc([block('heading', [text('Heading one')], { tag: 'h1' })]),
     output: '<h1 id="heading-one">Heading one</h1>',
   },
   {
     name: 'duplicate headings',
-    // Ids are deduped within one render (render-context tracking).
+
     input: doc([
       block('heading', [text('Heading one')], { tag: 'h1' }),
       block('heading', [text('Heading one')], { tag: 'h2' }),
@@ -105,8 +102,7 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'extended-heading',
-    // Inkling's serialized heading type; both paths resolve it to
-    // ExtendedHeadingNode.
+
     input: doc([block('extended-heading', [text('Extended heading')], { tag: 'h3' })]),
     output: '<h3 id="extended-heading">Extended heading</h3>',
   },
@@ -117,8 +113,7 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'aside',
-    // The aside transformer renders the alt blockquote and flattens the inner
-    // paragraph (transformers/element/simple-transformers.ts).
+
     input: doc([block('aside', [block('paragraph', [text('An aside')])])]),
     output: '<blockquote class="inkling-blockquote-alt">An aside</blockquote>',
   },
@@ -180,15 +175,13 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'trailing empty paragraph',
-    // The serializer drops the trailing blank paragraph Inkling keeps at the
-    // end of a doc, on both paths.
+
     input: doc([block('paragraph', [text('content')]), block('paragraph', [])]),
     output: '<p>content</p>',
   },
   {
     name: 'card (horizontal rule)',
-    // Control case: a divergence here means a card stopped sharing its
-    // exportDOM implementation across both paths.
+
     input: doc([{ type: 'horizontalrule', version: 1 }]),
     output: '<hr>',
   },
@@ -206,8 +199,7 @@ const cases: ExportPathCase[] = [
   },
   {
     name: 'math inline spliced into text',
-    // The string layer splices inline decorators into the text flow; both
-    // paths run that one branch.
+
     input: doc([
       block('paragraph', [
         text('before '),

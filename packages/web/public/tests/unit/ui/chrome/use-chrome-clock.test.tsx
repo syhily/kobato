@@ -10,8 +10,6 @@ const LOADER_NOW = '2026-07-31T23:59:00.000Z'
 // The live client clock — already past the loader's instant.
 const CLIENT_NOW = '2026-08-01T00:30:00.000Z'
 
-// Mounts the hook under a memory router whose root route carries the
-// loader's `nowIso`, recording every rendered value.
 function setup() {
   const renders: string[] = []
   function Harness() {

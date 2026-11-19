@@ -130,7 +130,6 @@ describe('content/repos/mutate — saveDraftRevision', () => {
     })
     expect(result.status).toBe('saved')
     if (result.status === 'saved') {
-      // Should reuse the published row, not insert a new draft.
       expect(result.row.status).toBe('published')
     }
   })

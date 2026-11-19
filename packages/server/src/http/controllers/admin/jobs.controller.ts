@@ -12,10 +12,7 @@ import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder.ts'
 import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils.ts'
 
-// Admin task center — read-only aggregation over the task catalog, the
-// scheduler's live states, the job_run history, and the webmention queue
 // tables. No audit events (read-only queries MUST NOT record them).
-// Contract-first: method/path/input/output live in `@kobato/api/admin/jobs.ts`.
 const impl = implementAdmin(adminJobsContract)
 
 function toJobRunDto(row: JobRunRow): JobRunDto {

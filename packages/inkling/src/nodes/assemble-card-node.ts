@@ -32,8 +32,6 @@ export type CardNodeClass<TNode extends LexicalNode, D = unknown> = {
   // oxlint-disable-next-line typescript/no-explicit-any
   new (...args: any[]): TNode & { decorate(): ReactNode } & CardSpecFieldMap<D> &
     CardSpecAccessorMap<D> & {
-      // inherited from the generateDecoratorNode base the assembled class
-      // extends (getDataset is an instance member, the statics below class-side)
       getDataset(): Record<string, unknown>
     }
   prototype: TNode & { decorate(): ReactNode } & CardSpecFieldMap<D> &
@@ -47,36 +45,10 @@ export type CardNodeClass<TNode extends LexicalNode, D = unknown> = {
   readonly urlTransformMap: Record<string, string | Record<string, string>>
 }
 
-/**
- * The declaration facts assembly actually reads: node type, React-free base class,
- * and the two spec statics adopted on the assembled class. Menu/dragIcon/markdown
- * feed the derived views, not assembly — host card specs satisfy this shape too, so
- * `defineCard` assembles through the same memoized path.
- */
 export type CardAssemblyDeclaration = Pick<
   CardDeclaration,
   'nodeType' | 'baseNode' | 'nestedEditors' | 'transientProps'
 >
-
-/**
- * The one wrapper-layer assembly helper: builds the registered node class for a card
- * from its declaration. The assembled class subclasses the declaration's React-free
- * base node and adopts the spec statics — `nestedEditors`/`transientProps` (read off
- * `this.constructor` by the generated node machinery). Its only method is
- * `decorate()`, delegated through the injection port
- * (`@kobato/inkling-internal/nodes/card-decorate-slot`) the wrapper layer registers into — the
- * inversion keeps this module off the React component tree, so card shims (and the
- * markdown round-trip built on them) stay importable from the `./headless` entry.
- *
- * Behaviour the spec language can't express is NOT assembled here: gallery image
- * helpers and the isEmpty()/getCardWidth() overrides live on the base node classes.
- * The transient accessors ARE spec language — one get/set pair per `accessor: true`
- * entry, defined on the assembled prototype below.
- *
- * The base class's `getType`/`clone`/`importJSON`/`exportJSON` are inherited, not
- * own properties, so the assembled class runs through `ensureLexicalNodeOwnMethods`
- * at assembly time.
- */
 export function assembleCardNode<
   TNode extends LexicalNode,
   D extends CardAssemblyDeclaration = CardAssemblyDeclaration,
@@ -84,25 +56,20 @@ export function assembleCardNode<
 >(declaration: D & { baseNode: new (...args: any[]) => TNode }): CardNodeClass<TNode, D> {
   // oxlint-disable-next-line typescript/no-explicit-any
   const baseNode = declaration.baseNode as new (...args: any[]) => LexicalNode
-
   class AssembledCardNode extends baseNode {
     static nestedEditors = declaration.nestedEditors
     static transientProps = declaration.transientProps
-
     // Stamped at assembly, not inherited from the generated base: every card built
     // through the declaration pipeline — built-in or host-defined, generated or
     // hand-written base — passes the $isInklingCard gate with no per-class ceremony.
     isInklingCard(): true {
       return true
     }
-
     decorate(): ReactNode {
       return decorateCardNode(this)
     }
   }
 
-  // the spec's accessor entries: one get/set pair per `accessor: true`
-  // transient prop, reading/writing its private field
   for (const spec of declaration.transientProps ?? []) {
     if (!spec.accessor) {
       continue
@@ -112,11 +79,6 @@ export function assembleCardNode<
 
   ensureLexicalNodeOwnMethods(AssembledCardNode)
 
-  // Every CardNodeClass member is genuinely present on the assembled class (the
-  // Lexical statics through the base, the spec statics and accessors adopted
-  // above), but a class extending an expression-typed base cannot be proven
-  // against the mapped interface — and no runtime check can prove a generic class
-  // shape either.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the assembled class carries every member at runtime
   return AssembledCardNode as unknown as CardNodeClass<TNode, D>
 }
@@ -151,10 +113,6 @@ export function assembleCardNodeOnce<
   assembledCardNodeCache ??= new WeakMap()
   const cached = assembledCardNodeCache.get(declaration)
   if (cached) {
-    // The WeakMap is keyed on the declaration object itself, so a hit IS the
-    // CardNodeClass<TNode, D> this call would assemble — the cache value type
-    // is deliberately widened to the shared base, and TS cannot recover the
-    // per-declaration type from the key.
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- memoization cache; the key identity carries the type
     return cached as unknown as CardNodeClass<TNode, D>
   }

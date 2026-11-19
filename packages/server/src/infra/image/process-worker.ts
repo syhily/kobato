@@ -1,7 +1,6 @@
 import type { DomainErrorWire } from '@kobato/server/infra/http/errors.ts'
 import type { Metadata, Sharp } from 'sharp'
 
-// Relative import — the worker loads without a path-alias resolver.
 import { rgbaToThumbHash } from '@kobato/utils/thumbhash.ts'
 import { parentPort, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
@@ -108,9 +107,6 @@ const REENCODE_FAILED = {
   fallbackMessage: 'Re-encoding the image failed',
 } as const
 
-/**
- * The pure sharp transform shared by the dev inline path and the worker entry point.
- */
 export async function processImageInWorker(input: ProcessImageInput): Promise<ProcessedImage> {
   // Reject undecodable/oversized inputs on metadata alone, before any
   // pixels decode; `limitInputPixels` re-enforces the ceiling at decode.

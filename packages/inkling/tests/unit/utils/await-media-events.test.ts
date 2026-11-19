@@ -67,7 +67,6 @@ describe('awaitMediaEvents', () => {
     element.dispatchEvent(new Event('load'))
     await expect(wait).resolves.toBeUndefined()
 
-    // A late error must not flip the settled promise or throw.
     element.dispatchEvent(new Event('error'))
     await expect(wait).resolves.toBeUndefined()
   })

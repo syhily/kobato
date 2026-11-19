@@ -73,19 +73,13 @@ if (!hmr?.secretsMigrated) {
 await hydrateBlogSettings(getDb())
 await syncObservabilityRuntime()
 
-// Best-effort asset upgrade: a verified config whose stored asset fingerprint no longer matches this build
-// re-provisions the RUM privacy pipeline and the four dashboards. Fire-and-forget; failures only log.
 void upgradeObservabilityProvisioningAtBoot({
   site: getBlogSettingsBundleSync()?.observability?.observability ?? null,
   writeSettings: (patch) =>
     updateBlogSettingsSection(getDb(), 'observability', { observability: patch }, null).then(() => undefined),
 })
 
-// Opt-in stream retention: reconciled at boot and on every section save when
-// the admin owns the policy (`retentionDays` > 0); 0 leaves OpenObserve
-// untouched. Same best-effort posture as the asset upgrade above.
 void syncObservabilityRetention()
-
 if (!hmr?.secretsMigrated) {
   startAllRegisteredJobs()
 
@@ -93,8 +87,6 @@ if (!hmr?.secretsMigrated) {
     hmr.secretsMigrated = true
   }
 }
-
-// Uninstalled deployments only: emit the setup token at startup for the console/docker logs; errors are swallowed — /admin/setup creates it lazily.
 
 try {
   if (!(await hasAdmin(getDb()))) {

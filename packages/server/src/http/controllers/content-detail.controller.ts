@@ -20,8 +20,6 @@ import {
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/content.ts`;
-// this controller only implements the detail procedures.
 const impl = implementPublic(contentDetailContract)
 
 // `/posts/:slug`. The decision tree (draft fallback → 404 → canonical 301)
@@ -56,7 +54,6 @@ const postBySlug = impl.postBySlug.handler(async ({ input, context }) => {
     localization: context.localization,
   })
 
-  // Parallel: the critical path is the max of these reads, not their sum.
   const [visibleTags, bodyHtml, sidebarTags, sidebarPosts, critical] = await Promise.all([
     getTagsByNames(db, preview.post.tags),
     resolveBodyHtml(preview.sourcePost),
@@ -95,9 +92,6 @@ const postBySlug = impl.postBySlug.handler(async ({ input, context }) => {
   return { kind: 'ok' as const, etag, payload }
 })
 
-// `/:slug`. Same union shape; branches preserved through `loadPagePreview`
-// (throws Responses, translated here): post slug → redirect 301; draft
-// previews never carry the published ETag (`etag: null`).
 const pageBySlug = impl.pageBySlug.handler(async ({ input, context }) => {
   const db = context.db
 
@@ -115,8 +109,6 @@ const pageBySlug = impl.pageBySlug.handler(async ({ input, context }) => {
 
   const target: EntityTarget = { type: 'page', ownerId: idFromString(preview.page.id) }
 
-  // Friends (only when the section renders), the body_html fallback
-  // projection and the interaction critical load in parallel.
   const [friends, bodyHtml, critical] = await Promise.all([
     preview.showFriends ? listAllFriends(db) : [],
     resolveBodyHtml(preview.sourcePage),

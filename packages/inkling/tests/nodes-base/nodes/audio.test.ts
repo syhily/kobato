@@ -573,7 +573,6 @@ describe('BaseAudioNode', function () {
           const node = $createBaseAudioNode({})
           node.title = 'Testing'
 
-          // audio nodes don't have text content
           expect(node.getTextContent()).toBe('')
         },
       ),

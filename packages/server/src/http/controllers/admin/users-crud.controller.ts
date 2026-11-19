@@ -13,16 +13,10 @@ import {
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/admin/users.ts`
-// (the flat crud/admin/sessions merge); this controller group implements the
-// crud slice on the admin base.
 const impl = implementAdmin(adminUsersCrudContract)
 
-// Total user count for the admin layout's badge — one `count(*)`, no
-// filters (the list endpoint owns the filtered count).
 const count = impl.count.handler(({ context }) => countUsers(context.db))
 
-// Passkey gate for the user detail page — same `isPasskeyEnabled` as the account/passkey procedures.
 const passkeyFlag = impl.passkeyFlag.handler(() => isPasskeyEnabled())
 
 const list = impl.list.handler(async ({ input, context }) => {

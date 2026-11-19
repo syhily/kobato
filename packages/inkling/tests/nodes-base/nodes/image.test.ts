@@ -373,7 +373,6 @@ describe('BaseImageNode', function () {
         async function () {
           dataset.width = 3000
           dataset.height = 6000
-          // add defaultMaxWidth property to options
           ;(exportOptions.imageOptimization as Record<string, unknown>).defaultMaxWidth = 2000
           exportOptions.canTransformImage = () => true
 
@@ -392,8 +391,6 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          // the resize block requires both dimensions: a missing height must
-          // not emit height="0"
           dataset.width = 3000
           dataset.height = null
           ;(exportOptions.imageOptimization as Record<string, unknown>).defaultMaxWidth = 2000

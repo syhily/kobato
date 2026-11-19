@@ -75,7 +75,6 @@ describe('MediaUploader', function () {
       <MediaUploader icon="image" setFileInputRef={setFileInputRef} onFileChange={() => {}} />,
     )
 
-    // Trigger a render of the ref callback by mounting the hidden input
     const input = container.querySelector('input[name="image-input"]') as HTMLInputElement
     expect(input).toBeInTheDocument()
     expect(setFileInputRef).toHaveBeenCalled()

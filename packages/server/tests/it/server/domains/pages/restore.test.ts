@@ -36,7 +36,6 @@ describe('integration / admin pages restore', () => {
     expect(restored.warning).toBeTruthy()
     expect(restored.warning).toContain('shared-slug')
 
-    // The seeded owner still owns the slug.
     const owner = await findSlugRegistryBySlug(db, 'shared-slug')
     expect(owner).not.toBeNull()
     expect(owner?.entityType).toBe('page')
@@ -100,7 +99,6 @@ describe('integration / admin pages restore', () => {
     expect(restored.warning).toContain('cross-slug')
     expect(restored.warning).toContain('文章')
 
-    // Post B still owns the slug.
     const owner = await findSlugRegistryBySlug(db, 'cross-slug')
     expect(owner?.entityType).toBe('post')
     expect(owner?.entityId).toBe(Number(post.post.id))

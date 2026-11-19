@@ -110,7 +110,6 @@ export type O2StreamType = 'logs' | 'traces' | 'metrics'
 
 export interface O2StreamInfo {
   name: string
-  /** `settings.data_retention` in days; `null` when the upstream omits it. */
   retentionDays: number | null
 }
 

@@ -255,7 +255,6 @@ describe('account controller', () => {
 
       expect(res.success).toBe(true)
       expect(await bcrypt.compare('NewPassword1', (await userRow(id)).password)).toBe(true)
-      // Other sessions are revoked; the caller's own survives.
       expect(await sessionRow('session-2')).toBeUndefined()
       expect(await sessionRow('session-1')).toBeDefined()
       expect(await auditRowsFor('password_changed')).toHaveLength(1)

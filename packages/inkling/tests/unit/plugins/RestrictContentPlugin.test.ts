@@ -83,13 +83,8 @@ describe('RestrictContentPlugin', () => {
   })
 
   it('wins over an earlier-registered low-priority general paste handler', () => {
-    // InklingBehaviourPlugin mounts first and registers the general plain-text
-    // paste handler at COMMAND_PRIORITY_LOW; same-priority listeners run in
-    // registration order, so the restriction needs a higher priority or it
-    // never sees the paste and allowBr: true leaks <br> into restricted editors.
     const generalHandler = vi.fn(() => true)
     editor.registerCommand(PASTE_COMMAND, generalHandler, COMMAND_PRIORITY_LOW)
-
     mockComposerContext(editor)
 
     renderHook(() => RestrictContentPlugin({ paragraphs: 1 }))
@@ -104,7 +99,6 @@ describe('RestrictContentPlugin', () => {
       COMMAND_PRIORITY_LOW,
     )
 
-    // jsdom has no ClipboardEvent implementation; see the plain-text paste test.
     vi.stubGlobal('ClipboardEvent', class extends Event {})
 
     const event = new ClipboardEvent('paste')

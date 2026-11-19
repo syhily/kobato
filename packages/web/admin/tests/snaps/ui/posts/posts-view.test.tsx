@@ -46,7 +46,6 @@ describe('snapshot: PostsView', () => {
 
   it('seeds a status pill from the URL search params', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts?status=draft'))
-    // The seeded pill shows the field label and the resolved option label.
     expect(html).toContain('状态')
     expect(html).toContain('草稿')
     expect(html).toContain('添加筛选')
@@ -149,7 +148,6 @@ describe('snapshot: PublishStatusRow (post meta)', () => {
       ),
     )
     expect(html).toContain('定时发布')
-    // DateTimePicker renders the chosen instant as a localized string.
     expect(html).toContain('2099/1/1 09:00')
     expect(html).toContain('点击「发布草稿」会按上述时间上线')
   })

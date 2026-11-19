@@ -88,7 +88,6 @@ function preserveSecretOnPatch(
   const existingPayloadValue: unknown = isRecord(existingData) ? existingData[payloadPath] : undefined
   const existingPayload = isRecord(existingPayloadValue) ? existingPayloadValue : undefined
 
-  // Pass the existing ciphertext through unchanged — encryptSecretsInRow skips re-encryption.
   const previousSecret = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
   const nextPayload: Record<string, unknown> = { ...incoming, [secretKey]: previousSecret }
   return { ...validated, [payloadPath]: nextPayload }

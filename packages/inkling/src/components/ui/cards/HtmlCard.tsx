@@ -8,8 +8,6 @@ import React from 'react'
 // the static source fallback, then the editor chunk takes over after mount.
 const LazyHtmlEditor = React.lazy(() => import('@kobato/inkling-internal/components/ui/cards/HtmlCard/HtmlEditor'))
 
-// Static read-only mirror of the editor's initial state: the raw source at
-// the CodeMirror surface's min-height and type metrics.
 function HtmlEditorFallback({ html }: { html?: string }) {
   return (
     <div className="not-inkling-prose min-h-[17rem]">

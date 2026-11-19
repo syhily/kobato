@@ -161,7 +161,6 @@ describe('accountRouter.updatePassword', () => {
 
     expect(res.success).toBe(true)
     expect(await bcrypt.compare('New-password-1', (await userRow(id)).password)).toBe(true)
-    // Other sessions are revoked; the caller's own survives.
     expect(await sessionRow('other-session')).toBeUndefined()
     expect(await sessionRow('keep-me')).toBeDefined()
   })

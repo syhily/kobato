@@ -30,8 +30,6 @@ function state(overrides: Partial<HoverState<FakeContainer>>): HoverState<FakeCo
   return { ...initialHoverState(), ...overrides }
 }
 
-// a container element owning two droppables (containment powers the
-// dead-area rule)
 function createScene() {
   const containerElem = document.createElement('div')
   const droppableA = document.createElement('div')
@@ -53,7 +51,7 @@ describe('resolveDroppablePosition', () => {
     [{ x: 90, y: 10 }, 'top-right'],
     [{ x: 10, y: 30 }, 'bottom-left'],
     [{ x: 90, y: 30 }, 'bottom-right'],
-    // exact halves fall to bottom/right (the < comparison)
+
     [{ x: 50, y: 20 }, 'bottom-right'],
   ] as const)('maps mouse %o to %s', (mouse, expected) => {
     expect(resolveDroppablePosition(RECT, mouse)).toBe(expected)
@@ -170,8 +168,6 @@ describe('resolveHoverTransition', () => {
       frame({ containerElem, container }),
     )
 
-    // the indicator keeps its last position — hiding on dead space is the
-    // resolve-drop effect's job, and no resolve happens here
     expect(effects).toEqual([{ kind: 'leave-droppable', droppable: droppableA }])
     expect(next.droppableElem).toBeNull()
   })
@@ -219,8 +215,6 @@ describe('resolveHoverTransition', () => {
       frame({ containerElem, droppableElem: droppableA, droppableRect: RECT, mouse: { x: 10, y: 10 } }),
     )
 
-    // no enter-droppable (no container to fire it on) — but resolve-drop
-    // still arrives so the caller can clear a stale resolution
     expect(effects).toEqual([{ kind: 'resolve-drop', droppable: droppableA, position: 'top-left' }])
     expect(next.droppableElem).toBe(droppableA)
   })

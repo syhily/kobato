@@ -150,7 +150,6 @@ describe('runUploadIntent', () => {
       expect(result).toBe('https://example.com/image.png')
       expect(createObjectURLSpy).toHaveBeenCalledExactlyOnceWith(file)
       expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:preview')
-      // ordered invocation, not just final state: lease → publish → upload → release
       expect(createObjectURLSpy.mock.invocationCallOrder[0]).toBeLessThan(publish.mock.invocationCallOrder[0])
       expect(publish.mock.invocationCallOrder[0]).toBeLessThan(upload.mock.invocationCallOrder[0])
       expect(upload.mock.invocationCallOrder[0]).toBeLessThan(revokeObjectURLSpy.mock.invocationCallOrder[0])
@@ -180,9 +179,7 @@ describe('runUploadIntent', () => {
       ).rejects.toThrow('upload failed')
 
       expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:preview')
-      // released only after the upload settled (rejected), not before it started
       expect(upload.mock.invocationCallOrder[0]).toBeLessThan(revokeObjectURLSpy.mock.invocationCallOrder[0])
-      // the preview patch was applied before the rejection and stays
       expect(readImage(nodeKey)?.previewSrc).toBe('blob:preview')
     })
 

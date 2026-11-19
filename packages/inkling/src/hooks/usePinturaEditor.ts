@@ -14,9 +14,6 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 export interface PinturaConfig {
   jsUrl?: string
   cssUrl?: string
-  /** Pintura `locale` overrides — merged ON TOP of the labels table's
-   * `pintura.*` entries, so a host can patch any Pintura string the labels
-   * table does not cover. */
   locale?: Record<string, string>
 }
 
@@ -48,8 +45,6 @@ interface PinturaEditor {
   on(event: 'process', handler: (result: PinturaHandleSaveResult) => void): void
 }
 
-// the adapter's DOM ports: the loader, the options table, and the close gate
-// live headless in pintura-session
 function createDomPorts(): PinturaAssetPorts {
   return {
     importModule: importPinturaModule,
@@ -81,7 +76,7 @@ export default function usePinturaEditor({
     [config?.jsUrl, config?.cssUrl],
   )
   const { scriptLoaded, cssLoaded, error: assetError } = useSyncExternalStore(loader.subscribe, loader.getSnapshot)
-  // the editor's own loaderror channel (asset errors ride the loader's snapshot)
+
   const [editorError, setEditorError] = useState<Error | null>(null)
 
   const closeGate = useMemo(() => createPinturaCloseGate(), [])

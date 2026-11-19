@@ -5,8 +5,6 @@ import { nextDailyMaintenanceDelayMs } from '@kobato/server/infra/scheduler-util
 
 const log = getLogger('auth.token-purge')
 
-// Purges verification rows expired for over a day, riding the shared 04:30 maintenance slot.
-
 registerJob({
   name: 'auth.token-purge',
   task: { key: 'token-purge', recordHistory: true },

@@ -3,10 +3,6 @@ import type { LexicalEditor } from 'lexical'
 import { $selectCard } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import { $createParagraphNode, $getRoot, $isDecoratorNode, $isElementNode } from 'lexical'
 
-// External control — the headless host-facing control surgeries behind
-// ExternalControlPlugin (which keeps only API assembly), so hosts can drive
-// the editor without a React mount.
-
 /**
  * Focuses the editor at a document end. Lexical does not automatically
  * select a decorator node, so when the end child is a card it goes through
@@ -19,7 +15,7 @@ export function focusEditorAt(
 ): void {
   editor.focus(
     () => {
-      /* focus only — the selection repair below owns the decorator-node dance */
+      /* noop */
     },
     { defaultSelection: position === 'top' ? 'rootStart' : undefined },
   )

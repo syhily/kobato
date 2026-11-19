@@ -63,8 +63,6 @@ export async function updateBlogSettingsSection(
   updatedBy: number | null,
   options?: SectionUpdateOptions,
 ): Promise<SectionUpdateResult> {
-  // Widened to the interface: the registry's concrete entry types only
-  // carry `writeSchema` on the assets entry, and this path is generic.
   const meta: SectionMeta = SECTION_REGISTRY[section]
   // Strict key check before any DB work — unknown keys are a client bug; the
   // assertion signature types the passing payload for the merge below.
@@ -199,10 +197,6 @@ async function assertAssetsStoragePatchAllowed(
   }
 }
 
-/**
- * Merge base: the stored row through the same lenient parse as hydrate, registry defaults
- * when no row exists, or `{}` for sections that ship no defaults (general / assets).
- */
 function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<string, unknown> {
   if (storedRow !== null && isRecord(storedRow.data)) {
     const parsed = meta.schema.safeParse(storedRow.data)
@@ -213,7 +207,6 @@ function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<
     log.warn('Setting row failed schema validation; merging onto section defaults', { scope: meta.scope })
   }
   if (meta.defaults !== null) {
-    // The registry owns the one defaults validator, shared with the hydration backfill path.
     return validateSectionDefaults(meta)
   }
   return {}

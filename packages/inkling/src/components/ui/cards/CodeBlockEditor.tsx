@@ -42,7 +42,6 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
     codeRef.current = code
   }, [code])
 
-  // show the language input when the mouse moves
   React.useEffect(() => {
     const onMouseMove = () => {
       setShowLanguage(true)
@@ -73,7 +72,7 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
 
   const onChange = React.useCallback(
     (value: string) => {
-      setShowLanguage(false) // hide language input whenever the user types in the editor
+      setShowLanguage(false)
       updateCode?.(value)
     },
     [updateCode],

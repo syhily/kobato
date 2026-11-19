@@ -61,17 +61,13 @@ describe('snapshot: BackupView', () => {
     const html = stableHtml(
       renderInRouter(<BackupView backup={scheduledBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
     )
-    // The loading banner is shown while status is pending.
     expect(html).toContain('正在读取备份信息')
-    // The schedule form always renders (independent of the status query).
     expect(html).toContain('定时备份')
     expect(html).toContain('配置自动备份的频率与保留策略')
     expect(html).toContain('备份文件')
   })
 
   it('renders the schedule form populated with the supplied backup config plus the file and manual-restore sections', () => {
-    // The three child sections mount regardless of status-query state —
-    // assert the populated wiring even while loading.
     queryMocks.query = { data: undefined, isPending: true, error: null }
     const html = stableHtml(
       renderInRouter(<BackupView backup={scheduledBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
@@ -80,7 +76,6 @@ describe('snapshot: BackupView', () => {
     expect(html).toContain('启用定时备份')
     expect(html).toContain('备份频率')
     expect(html).toContain('保留策略')
-    // backupFiles is undefined on SSR → the empty placeholder renders.
     expect(html).toContain('备份文件')
     expect(html).toContain('暂无备份文件')
     expect(html).toContain('手动还原')
@@ -94,7 +89,6 @@ describe('snapshot: BackupView', () => {
     const html = stableHtml(
       renderInRouter(<BackupView backup={dailyBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
     )
-    // scheduled.enabled=false → weekly/daily detail rows collapse.
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
     expect(html).not.toContain('保留天数')
@@ -118,7 +112,6 @@ describe('snapshot: BackupScheduleForm', () => {
     const html = stableHtml(renderToHtml(<BackupScheduleForm backup={dailyBackup} />))
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
-    // Detail rows are gated behind the scheduledEnabled watch.
     expect(html).not.toContain('备份频率')
     expect(html).not.toContain('保留天数')
   })
@@ -171,7 +164,6 @@ describe('snapshot: BackupFileList', () => {
     expect(html).toContain('2024-01-14.sql.gz.enc')
     // Long hex/`.enc` tails must wrap anywhere — otherwise the row overflows the card.
     expect(html).toContain('<span class="break-all">2024-01-14.sql.gz.enc</span>')
-    // The encrypted row carries the lock marker.
     expect(html).toContain('已加密')
     expect(html).toContain('下载')
     expect(html).toContain('还原')

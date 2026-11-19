@@ -21,11 +21,8 @@ export interface UseEditorShellPersistMutationsArgs<
   saveDraftFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['saveDraftFn']
   publishFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['publishFn']
   unpublishFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['unpublishFn']
-  /** Entity → meta-draft projection (the server-confirmed meta adoption). */
   metaDraftFromEntity: (entity: TEntity) => TMeta
-  /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
   applyServerMeta: (meta: TMeta) => void
-  /** Flip the local meta draft's `published` flag after a successful publish. */
   markMetaPublished: () => void
   setStatus: React.Dispatch<React.SetStateAction<EditorShellStatus>>
   setDisplaySaveAtMs: React.Dispatch<React.SetStateAction<number | null>>

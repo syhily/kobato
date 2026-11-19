@@ -29,8 +29,6 @@ import {
 } from '@kobato/server/infra/http/etag.ts'
 import { ORPCError } from '@orpc/server'
 
-// Contract-first: method/path/input/output live in `@kobato/api/content.ts`;
-// this controller only implements the listing procedures.
 const impl = implementPublic(contentListingsContract)
 
 type ListingOutput<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
@@ -61,8 +59,6 @@ function trackListingPageView(context: HandlerContext): void {
   })
 }
 
-// Every listing procedure answers pagination redirects through the same
-// thrown-`Response` → union translation — wrap the revalidation once.
 async function runListing<T>(
   context: HandlerContext,
   ifNoneMatch: string | undefined,
@@ -84,8 +80,6 @@ async function runListing<T>(
   return { kind: 'ok' as const, etag, listing }
 }
 
-// Archives/categories ship a flat payload rather than a paginated listing —
-// same revalidation contract, different payload slot.
 async function runListingPayload<T>(
   context: HandlerContext,
   ifNoneMatch: string | undefined,
@@ -101,8 +95,6 @@ async function runListingPayload<T>(
   return { kind: 'ok' as const, etag, payload }
 }
 
-// The tag/category scoped listings differ only in their taxonomy lookup and
-// the filter/rootPath/SEO fields derived from it — one shared pipeline.
 async function scopedPostsListing({
   db,
   num,
@@ -120,7 +112,6 @@ async function scopedPostsListing({
   rootPath: string
   title: string
   description?: string
-  /** Request UI locale — pagination copy is system text. */
   locale: AppLocale
   /** Request-pinned settings bundle — page size comes from THIS capture. */
   settings: BlogSettingsBundle | null
@@ -141,8 +132,6 @@ async function scopedPostsListing({
   })
 }
 
-// The home listing — the whole pipeline lives in `loadHomeData`; this
-// only wraps the thrown-Response → union translation.
 const home = impl.home.handler(async ({ input, context }) => {
   return runListing(context, input.ifNoneMatch, () =>
     loadHomeData({
@@ -156,7 +145,6 @@ const home = impl.home.handler(async ({ input, context }) => {
   )
 })
 
-// Scoped listings (`/tags/:slug`, `/cats/:slug`); unknown slug → NOT_FOUND.
 const postsList = impl.postsList.handler(async ({ input, context }) => {
   const db = context.db
 
@@ -229,8 +217,7 @@ const categoriesList = impl.categoriesList.handler(async ({ input, context }) =>
 
 // The archives payload (up to 10k posts + 4 metadata statements) is a
 // deliberate full-corpus fan-out — throttle it like the other expensive reads.
-// The limiter attaches per procedure, after input validation (the original
-// chain declared it after `.output(...)`).
+// The limiter attaches per procedure, after input validation.
 const archives = impl.archives.use(resourceRateLimit).handler(async ({ input, context }) => {
   return runListingPayload(context, input.ifNoneMatch, async () => {
     const db = context.db

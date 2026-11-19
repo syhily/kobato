@@ -38,19 +38,8 @@ import type { AnyLexicalCommand } from 'lexical'
 
 import { createCommand } from 'lexical'
 
-/**
- * The card insert commands: a derived view over the card declarations. Declarations
- * never import this module — they name commands by string (`CardMenuCommand`), and the
- * maps below key the command objects by card node type. Each payload derives from the
- * base node module's `*Data` intersected with its exported spec arrays; every import
- * here is type-only, so the runtime module graph is untouched. `INSERT_SNIPPET_COMMAND`
- * shares this home because the snippet menu entry dispatches through the same
- * type-erased insert path (`snippet-insertion` owns `SnippetDataset` and the surgery).
- */
-
 export type AudioNodeDataset = AudioData & CardSpecTransientDataset<typeof audioTransientProps>
 export const INSERT_AUDIO_COMMAND = createCommand<AudioNodeDataset>()
-
 export type BookmarkNodeDataset = BookmarkData &
   CardSpecNestedEditorDataset<typeof bookmarkNestedEditors> &
   CardSpecTransientDataset<typeof bookmarkTransientProps> & {
@@ -93,24 +82,19 @@ export type ImageNodeDataset = ImageData &
     // merge (`@kobato/inkling-internal/plugins/behaviour/drop-surgery`) reads fileName back.
     fileName?: string
     row?: number
-    // Image-library picks map host-schema pass-through keys onto the insert
-    // dataset (`@kobato/inkling-internal/components/ui/LibraryPlugin`); the stock declaration
-    // ignores them, a host card's own properties persist them.
+
     thumbhash?: string
     storagePath?: string
     imageId?: string
-    // A dragged image CARD's payload is its getDataset(), which re-exposes the
-    // datasetKey'd transient fields, so they ride the drag payload too.
+
     __previewSrc?: string | null
     __triggerFileDialog?: boolean
   }
 export const INSERT_IMAGE_COMMAND = createCommand<ImageNodeDataset>()
-
 export type MathNodeDataset = MathData
 export const INSERT_MATH_COMMAND = createCommand<MathNodeDataset>()
 
 export const INSERT_SNIPPET_COMMAND = createCommand<SnippetDataset>('INSERT_SNIPPET_COMMAND')
-
 export type ToggleNodeDataset = ToggleData & CardSpecNestedEditorDataset<typeof toggleNestedEditors>
 export const INSERT_TOGGLE_COMMAND = createCommand<ToggleNodeDataset>('INSERT_TOGGLE_COMMAND')
 
@@ -162,12 +146,6 @@ const NAMED_MENU_COMMANDS: Record<Exclude<CardMenuCommand, 'insert'>, AnyLexical
 // the same object for host cards registered after module init.
 const hostInsertCommands = new Map<string, AnyLexicalCommand>()
 
-/**
- * Resolves a card's insert command by node type: built-ins answer from the
- * exhaustive table; an unknown (host) node type gets one command created and
- * memoized on first resolution. Both the menu projection and the insert registrar
- * resolve through this function, so dispatch and registration name one object.
- */
 export function resolveCardInsertCommand(nodeType: string): AnyLexicalCommand {
   const builtin = (BUILTIN_INSERT_COMMANDS as Partial<Record<string, AnyLexicalCommand>>)[nodeType]
   if (builtin !== undefined) {
@@ -180,11 +158,6 @@ export function resolveCardInsertCommand(nodeType: string): AnyLexicalCommand {
   }
   return command
 }
-
-/**
- * Resolves a menu entry's named command to the command object: `'insert'` names the
- * entry's own card insert command; the extras name the Image card's selector commands.
- */
 export function resolveCardMenuCommand(command: CardMenuCommand, nodeType: string): AnyLexicalCommand {
   return command === 'insert' ? resolveCardInsertCommand(nodeType) : NAMED_MENU_COMMANDS[command]
 }

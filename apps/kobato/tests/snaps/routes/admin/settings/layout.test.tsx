@@ -12,7 +12,6 @@ import { describe, expect, it } from 'vitest'
 
 import SettingsLayoutRoute, { type SettingsOutletContext } from '@/routes/admin/settings/layout.tsx'
 
-// The settings layout's loader transitively pulls in the DB bootstrap — irrelevant to these snapshots.
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 
 const MASKS = {

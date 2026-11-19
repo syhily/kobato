@@ -17,8 +17,6 @@ function TasksSkeleton() {
   )
 }
 
-// Task center: polls the aggregated `admin.jobs.list` every 10s and renders
-// one card per catalog task, bucketed by its catalog group.
 export function TasksView() {
   const { t } = useI18n()
   const jobsQuery = useQuery(orpcQuery.admin.jobs.list.queryOptions({ input: {}, refetchInterval: 10_000 }))

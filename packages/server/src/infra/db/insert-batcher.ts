@@ -48,7 +48,6 @@ export abstract class FlushLoop<Pending, Result> {
     registerShutdownHook(this.shutdownHook, 100)
   }
 
-  /** Detach the shutdown hook, disarm the timer, drop pending payload (registry reset / restore). */
   dispose(): void {
     unregisterShutdownHook(this.shutdownHook)
     if (this.timer !== null) {
@@ -59,16 +58,12 @@ export abstract class FlushLoop<Pending, Result> {
     this.takePending()
   }
 
-  /** Detach the pending payload for a flush (null = nothing pending). */
   protected abstract takePending(): Pending | null
 
-  /** Write the detached batch. */
   protected abstract writePending(pending: Pending): Result | Promise<Result>
 
-  /** Recover from a failed write (dead-letter, merge-back retry, …). */
   protected abstract onWriteFailed(pending: Pending, error: unknown): Result | Promise<Result>
 
-  /** Arm the lazy interval flush — idempotent while a timer is pending. */
   protected armFlushTimer(): void {
     if (this.paused) {
       return
@@ -139,7 +134,6 @@ export abstract class FlushLoop<Pending, Result> {
     return (this.flushing ?? Promise.resolve(this.emptyResult)).catch(() => this.emptyResult)
   }
 
-  /** Singleflight drain — the shared write path for flush(), pause(), and flushForTeardown(). */
   private async drain(): Promise<Result> {
     if (this.flushing) {
       return this.flushing
@@ -187,7 +181,6 @@ export abstract class FlushLoop<Pending, Result> {
 export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], FlushResult> {
   private buffer: T[] = []
   private readonly maxBufferSize: number
-  /** Cumulative drops since construction — rides every overflow warning. */
   private dropped = 0
   /** True while the buffer is saturated — one warning per drop burst, so a flood cannot become a log flood. */
   private overflowing = false
@@ -228,7 +221,6 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
    * may be async for engines with an async client (DuckDB). */
   protected abstract insertBatch(writer: W, events: T[]): void | Promise<void>
 
-  /** Called when the batch insert fails. Implement per-row fallback or dead-letter here. */
   protected abstract onInsertFailed(events: T[], error: unknown): Promise<FlushResult>
 
   push(event: T): void {
@@ -256,7 +248,6 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
     this.armFlushTimer()
   }
 
-  /** Write events directly (used by dead-letter replay). */
   ingest(events: T[]): void | Promise<void> {
     return this.insertBatch(this.resolveWriter(), events)
   }
@@ -264,7 +255,6 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
 
 // Dead-letter wire format: one plain-JSON object per line, Dates as epoch ms.
 
-/** Serialize a batch to JSON-lines (trailing newline included). */
 export function serializeDeadLetterJsonLines(events: unknown[]): string {
   return events.map((event) => JSON.stringify(toJsonSafe(event))).join('\n') + '\n'
 }

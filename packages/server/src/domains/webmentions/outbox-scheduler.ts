@@ -14,8 +14,6 @@ const queue = makeQueueScheduler({
 // burst from hammering third-party hosts back-to-back.
 export const OUTBOX_MIN_DELAY_MS = queue.minDelayMs
 
-/** Nudge from the enqueue path (post publish hook) — new rows are due now.
- *  No-op until the composition root starts the job. */
 export function rescheduleWebmentionOutbox(): void {
   nudgeRegisteredJob('webmentions.outbox')
 }

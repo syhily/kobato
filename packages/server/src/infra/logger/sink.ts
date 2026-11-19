@@ -12,7 +12,6 @@ let sink: LogSink | null = null
 // itself, which would recurse without bound. Re-entrant lines are dropped.
 let inFlight = false
 
-/** Install the sink into the process-wide empty slot. Build-independent. */
 export function setLogSink(next: LogSink): boolean {
   if (sink !== null) {
     return false
@@ -46,7 +45,6 @@ export function pushLogLine(line: string): void {
   }
 }
 
-/** Test-only: restore the module slots. */
 export function __resetLogSinkForTests(): void {
   sink = null
   inFlight = false

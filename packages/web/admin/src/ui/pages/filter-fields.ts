@@ -6,7 +6,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { deriveStatusQueryFields } from '@kobato/web-admin/ui/shared/filter-bar/status-fields.ts'
 import { ListChecksIcon, UserIcon } from 'lucide-react'
 
-// Pages-list filter-pill specs + `toQuery` mappers onto `admin.pages.list` input.
 export type PageFilterFieldKey = 'status' | 'author'
 
 export type PageStatusFilter = 'all' | 'published' | 'draft' | 'deleted'
@@ -32,7 +31,6 @@ export function deriveStatusFields(status: PageStatusFilter): {
   return deriveStatusQueryFields(status, PAGE_STATUS_FIELDS)
 }
 
-/** The `admin.pages.list` input contributed by the active pills. */
 export interface PagesFilterQuery {
   deletedStatus?: 'all' | 'deleted' | 'normal'
   published?: boolean

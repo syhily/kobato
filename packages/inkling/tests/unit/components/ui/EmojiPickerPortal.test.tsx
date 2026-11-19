@@ -36,7 +36,6 @@ describe('EmojiPickerPortal', () => {
   })
 
   it('positions the picker at the anchor’s viewport coordinates regardless of scroll', () => {
-    // fixed positioning uses viewport coordinates; scroll offsets must not be added
     document.documentElement.scrollTop = 200
     document.documentElement.scrollLeft = 100
     const positionRef = createAnchor({ top: 300, left: 400 })
@@ -50,13 +49,11 @@ describe('EmojiPickerPortal', () => {
   })
 
   it('flips the picker above the anchor when it would overflow the viewport bottom', () => {
-    // windowHeight (viewport) is jsdom’s default 768; 700 + 352 exceeds it
     const positionRef = createAnchor({ top: 700, left: 50 })
 
     render(<EmojiPickerPortal onEmojiClick={() => {}} positionRef={positionRef} />)
 
     const container = screen.getByTestId('emoji-picker-container')
-    // rect.top - pickerHeight (352) - shiftPixels (35)
     expect(container.style.top).toBe('313px')
     expect(container.style.left).toBe('50px')
   })

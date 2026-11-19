@@ -117,7 +117,6 @@ describe('snapshot: AuditLogView branches', () => {
   })
 
   it('renders populated log rows via the rows.map callback', () => {
-    // Two rows drive rows.map; assert label/actor/resource resolve.
     setList([
       makeRow({ action: 'login', actorName: '雨帆', resourceType: 'session' }),
       makeRow({ action: 'post_published', actorName: '访客甲', resourceType: 'post', resourceId: '128' }),
@@ -125,15 +124,12 @@ describe('snapshot: AuditLogView branches', () => {
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
-    // Row 1 — login action label resolves through ACTION_OPTIONS.
     expect(html).toContain('登录')
     expect(html).toContain('雨帆')
     expect(html).toContain('会话')
-    // Row 2 — published-post action + resource id suffix.
     expect(html).toContain('文章发布')
     expect(html).toContain('访客甲')
     expect(html).toContain('文章')
-    // End-of-list footer (no hasNextPage + rows > 0).
     expect(html).toContain('已加载全部审计日志')
   })
 
@@ -151,14 +147,12 @@ describe('snapshot: AuditLogView branches', () => {
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
-    // Skeleton mounts placeholder rows instead of empty state/footer.
     expect(html).toContain('data-slot="skeleton"')
     expect(html).not.toContain('暂无审计日志记录')
     expect(html).not.toContain('已加载全部审计日志')
   })
 
   it('renders the active-filter pills (multi-type) and relocates the filter bar below the header', () => {
-    // Active filters relocate the bar below the header and flip the add-button; multiple types drive every pill branch.
     mocks.filters = [
       { field: 'action', value: 'login', label: '登录' },
       { field: 'resourceType', value: 'post', label: '文章' },
@@ -168,22 +162,17 @@ describe('snapshot: AuditLogView branches', () => {
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
-    // Each pill surfaces its field label (from FILTER_FIELDS).
     expect(html).toContain('操作类型')
     expect(html).toContain('资源类型')
-    // The IP pill renders a text input editor.
     expect(html).toContain('IP')
     expect(html).toContain('登录')
     expect(html).toContain('文章')
-    // With filters active the trigger switches to "添加筛选" and the
-    // "清除" clear affordance appears.
     expect(html).toContain('添加筛选')
     expect(html).toContain('清除')
     expect(html).toContain('雨帆')
   })
 
   it('renders the export button and export-pending label branch', () => {
-    // Pending mutation → export label flips to '导出中…'.
     mocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: true }
     setList([])
 
@@ -194,7 +183,6 @@ describe('snapshot: AuditLogView branches', () => {
   })
 
   it('renders the load-more branch when hasNextPage is true', () => {
-    // hasNextPage suppresses the end-of-list footer.
     setList([makeRow()], true, 50)
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))

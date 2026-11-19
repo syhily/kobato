@@ -57,10 +57,6 @@ export function ButtonNodeComponent({
   )
 }
 
-/**
- * Button's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderButtonCard(node: ButtonNode) {
   return (
     <ButtonNodeComponent

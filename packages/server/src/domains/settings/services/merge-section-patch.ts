@@ -14,8 +14,6 @@ export function mergeSectionPatch<T extends object>(
   patch: Record<string, unknown>,
   seen: WeakSet<object> = new WeakSet(),
 ): T {
-  // T is an arbitrary settings DTO; spreading into a plain record is the
-  // canonical shape-preserving copy (the patch only touches existing keys).
   const result: Record<string, unknown> = { ...unsafeCast<Record<string, unknown>>(base) }
   for (const key of Object.keys(patch)) {
     const patchVal = patch[key]

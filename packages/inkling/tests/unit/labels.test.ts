@@ -67,9 +67,6 @@ describe('labels', () => {
     })
   })
 
-  // The table is a public contract the moment it lands in the barrel — this
-  // snapshot pins the key list so a rename or removal is a deliberate,
-  // review-visible change, never a drive-by edit.
   it('pins the full key list', () => {
     expect(Object.keys(DEFAULT_LABELS).sort()).toMatchSnapshot()
   })

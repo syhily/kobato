@@ -1,5 +1,3 @@
-// Body-lifecycle glue shared by both inkling surfaces (page + comment):
-//
 // - Mount snapshot: Lexical consumes the initial state only at editor creation, so
 //   the lazy state pins the mount-time seed — later `initialBody` prop changes must
 //   NOT recreate the composer.
@@ -11,8 +9,6 @@
 //   `handleChange` never changes identity. The emitter casts instead of zod-parsing:
 //   each surface's body type is the same JSON restricted to its whitelist, and the
 //   server re-validates on save.
-//
-// `prepareSeed` shapes the seed before the composer parses it (the comment
 // surface's legacy math-fence downgrade).
 
 import type { LexicalEditor, SerializedEditorState } from '@kobato/inkling'

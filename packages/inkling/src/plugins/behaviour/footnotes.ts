@@ -30,13 +30,7 @@ import { $isTableCellNode } from '@lexical/table'
 import { mergeRegister } from '@lexical/utils'
 import { $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, RootNode } from 'lexical'
 
-/**
- * Caret trigger: `^ ` typed at the caret. The character before `^` must be
- * whitespace or line start, so `\^ ` never fires.
- */
 export const FOOTNOTE_INSERT_TRIGGER_REGEX = /(\s|^)\^ $/
-
-/** Editable, with a collapsed range selection outside a table cell or code block. */
 export function $canInsertFootnoteRef(editor: LexicalEditor): boolean {
   if (!editor.isEditable()) {
     return false
@@ -56,12 +50,10 @@ export function $canInsertFootnoteRef(editor: LexicalEditor): boolean {
 }
 
 interface FootnoteSnapshot {
-  /** Every ref occurrence in document order (top-level walk — see the nested-editor gap above). */
   refs: FootnoteRefNode[]
-  /** The definition cards in document order. */
+
   definitions: BaseFootnoteDefinitionNode[]
 }
-
 function $walkFootnoteRefs(node: LexicalNode, refs: FootnoteRefNode[]): void {
   if ($isFootnoteRefNode(node)) {
     refs.push(node)
@@ -74,7 +66,6 @@ function $walkFootnoteRefs(node: LexicalNode, refs: FootnoteRefNode[]): void {
   }
 }
 
-/** Top-level snapshot: refs in document order, definitions in document order. */
 export function $collectFootnoteSnapshot(): FootnoteSnapshot {
   const refs: FootnoteRefNode[] = []
   const definitions: BaseFootnoteDefinitionNode[] = []
@@ -100,7 +91,6 @@ export function $footnoteSyncSignature(snapshot: FootnoteSnapshot): string {
   return `${occurrences.join('\u001f')}\u001e${defs.join('\u001f')}`
 }
 
-/** Citation order: first-citation order, then orphan definitions in their stored order. */
 function collectCitationOrder(snapshot: FootnoteSnapshot): string[] {
   const order: string[] = []
   const seen = new Set<string>()
@@ -119,12 +109,6 @@ function collectCitationOrder(snapshot: FootnoteSnapshot): string[] {
   return order
 }
 
-/**
- * The renumber engine: number refs by first-citation order, tail orphan
- * definitions, write the digits back into the ref texts, and reorder the
- * doc-end definition run to match. Skips wholesale when there are no
- * definitions or a ref targets a missing one.
- */
 export function $syncFootnoteIndices(snapshot: FootnoteSnapshot = $collectFootnoteSnapshot()): void {
   const { refs, definitions } = snapshot
   if (definitions.length === 0) {
@@ -143,7 +127,6 @@ export function $syncFootnoteIndices(snapshot: FootnoteSnapshot = $collectFootno
   }
   const keyToIndex = new Map(order.map((key, index) => [key, index + 1]))
 
-  // digits live in the ref text — rewrite in place where renumbered
   for (const ref of refs) {
     const index = keyToIndex.get(ref.targetKey)
     if (index !== undefined && ref.getTextContent() !== String(index)) {
@@ -151,10 +134,8 @@ export function $syncFootnoteIndices(snapshot: FootnoteSnapshot = $collectFootno
     }
   }
 
-  // reorder the definition run to citation order, keeping the run's anchor
   const byKey = new Map(definitions.map((definition) => [definition.targetKey, definition]))
-  // every ref's targetKey resolves a definition — the sync is skipped when
-  // one doesn't, so a miss here names a broken invariant, never undefined
+
   const desired = order.map((key) => {
     const definition = byKey.get(key)
     if (!definition) {
@@ -182,18 +163,11 @@ export function $syncFootnoteIndices(snapshot: FootnoteSnapshot = $collectFootno
   }
 }
 
-/** The next visible index for a freshly inserted ref — the engine renumbers right after, so distinct-cited + 1 is enough. */
 function $computeNextFootnoteIndex(): number {
   const cited = new Set($collectFootnoteSnapshot().refs.map((ref) => ref.targetKey))
   return cited.size + 1
 }
 
-/**
- * The caret-trigger insert body: consume the `^ ` trigger text, mint the
- * targetKey, append the definition card at the document end (the run
- * transform keeps it contiguous), insert the ref where the caret sat, and
- * file the focus handoff for the new definition's nested editor.
- */
 export function $insertFootnoteReference(handle: FootnoteHandle): void {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -205,7 +179,6 @@ export function $insertFootnoteReference(handle: FootnoteHandle): void {
   }
   const text = anchorNode.getTextContent()
   const triggerStart = text.length - 2
-
   const targetKey = createFootnoteTargetKey()
   const ref = $createFootnoteRefNode(String($computeNextFootnoteIndex()), targetKey)
   const definition = $createFootnoteDefinitionNode({ targetKey, content: '' })
@@ -221,7 +194,6 @@ export function $insertFootnoteReference(handle: FootnoteHandle): void {
   handle.requestFocus(targetKey)
 }
 
-/** Removes the definition card plus every ref targeting `targetKey`; false when nothing matched. */
 export function $removeFootnote(targetKey: string): boolean {
   if (targetKey === '') {
     return false
@@ -243,13 +215,6 @@ export function $removeFootnote(targetKey: string): boolean {
   return removed
 }
 
-/**
- * The doc-end run invariant as a RootNode transform: any non-definition
- * sitting after the run's first definition moves before the run. One
- * operation covers both directions — a definition dragged mid-document gets
- * its trailing non-definitions hoisted ahead of it (so it lands back at the
- * end), and a paragraph inserted after the run is pulled before it.
- */
 function $guardFootnoteDefinitionRun(root: RootNode): void {
   const children = root.getChildren()
   const firstDefinitionIndex = children.findIndex((child) => $isFootnoteDefinitionNode(child))
@@ -265,11 +230,9 @@ function $guardFootnoteDefinitionRun(root: RootNode): void {
     firstDefinition.insertBefore(child)
   }
 }
-
 interface FootnoteScanState {
   lastSignature: string | undefined
 }
-
 function $scanFootnoteCaretTrigger(editor: LexicalEditor, handle: FootnoteHandle): void {
   if (!$canInsertFootnoteRef(editor)) {
     return
@@ -285,7 +248,7 @@ function $scanFootnoteCaretTrigger(editor: LexicalEditor, handle: FootnoteHandle
     return
   }
   const text = anchorNode.getTextContent()
-  // the caret must sit at the very tail of the trigger text
+
   if (selection.anchor.offset !== text.length || !FOOTNOTE_INSERT_TRIGGER_REGEX.test(text)) {
     return
   }
@@ -311,8 +274,7 @@ function $scanFootnoteRenumber(handle: FootnoteHandle, state: FootnoteScanState)
     return
   }
   $syncFootnoteIndices(before)
-  // re-snapshot after the engine's writes: the signature to remember and the
-  // handle maps both describe the settled state
+
   const after = $collectFootnoteSnapshot()
   state.lastSignature = $footnoteSyncSignature(after)
 
@@ -320,7 +282,6 @@ function $scanFootnoteRenumber(handle: FootnoteHandle, state: FootnoteScanState)
   handle.publishMaps(indices, definitionNodeKeys)
 }
 
-/** The initial publish: rows rendering preloaded footnotes need their badges before the first edit fires a scan. */
 export function publishFootnoteMaps(editor: LexicalEditor, handle: FootnoteHandle): void {
   editor.read(() => {
     const { indices, definitionNodeKeys } = footnoteMapsFromSnapshot($collectFootnoteSnapshot())
@@ -328,25 +289,18 @@ export function publishFootnoteMaps(editor: LexicalEditor, handle: FootnoteHandl
   })
 }
 
-/**
- * Register the whole footnote behaviour on one editor: the caret-trigger
- * scan, the renumber scan, and the doc-end run transform. Skipped on
- * editors without the footnote node pair and on nested editors (insertion
- * is top-level only, guarded per editor instance).
- */
 export function registerFootnotes(editor: LexicalEditor, handle: FootnoteHandle): () => void {
   if (isNestedEditor(editor)) {
     return () => {
-      /* noop — nested editors never register (insertion is top-level only) */
+      /* noop */
     }
   }
   const registeredTypes = new Set([...getRegisteredNodeMap(editor).values()].map(({ klass }) => klass.getType()))
   if (!registeredTypes.has('footnote-ref') || !registeredTypes.has('footnotedefinition')) {
     return () => {
-      /* noop — the footnote node pair is not registered */
+      /* noop */
     }
   }
-
   const scanState: FootnoteScanState = { lastSignature: undefined }
 
   return mergeRegister(

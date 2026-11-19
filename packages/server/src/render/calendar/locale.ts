@@ -11,9 +11,7 @@
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 export interface LunarCopy {
-  /** Month label by 1-based lunar month (leap months reuse the base name). */
   months: readonly string[]
-  /** Day label by 1-based lunar day (1–30). */
   days: readonly string[]
   leapPrefix: string
   yearSuffix: string
@@ -245,11 +243,8 @@ export function calendarCopyFor(locale: AppLocale): CalendarCopy {
 }
 
 export interface LunarParts {
-  /** Gan-zhi year, e.g. `甲辰` (identical glyphs in traditional). */
   yearGanZhi: string
-  /** Signed lunar month: negative = leap month. */
   month: number
-  /** 1-based lunar day. */
   day: number
 }
 

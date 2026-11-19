@@ -30,11 +30,6 @@ function pageOgTarget(meta: PageMetaRow) {
   }
 }
 
-/**
- * The page entity descriptor: existence-only access, admin-only draft
- * preview, `showFriends`, and invalidation on every meta mutation
- * (the sitemap lists pages). The rest comes from `content/entities/*`.
- */
 export const pageDescriptor: MetaEntityDescriptor<
   PageMetaRow,
   NewPageMeta,

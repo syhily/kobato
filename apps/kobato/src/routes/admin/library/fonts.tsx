@@ -3,8 +3,6 @@ import { FontsView } from '@kobato/web-admin/ui/fonts/FontsView.tsx'
 
 import { titleMeta } from '@/seo/title-meta.ts'
 
-// Self-hosted web-font library and slot assignment, managed outside the settings autosave framework (slot
-// changes call `admin.fonts.setSlot` directly and revalidate). Data is fetched client-side via oRPC.
 export const loader = guardOnlyLoader('admin')
 
 export const meta = titleMeta('meta.title.admin.fonts')

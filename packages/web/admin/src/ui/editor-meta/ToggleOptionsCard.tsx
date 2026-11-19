@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ToggleRow } from '@kobato/web-admin/ui/editor-meta/ToggleRow.tsx'
 
-/** Shape shared by `POST_META_TOGGLE_FIELDS` / `PAGE_META_TOGGLE_FIELDS` rows. */
 export interface ToggleField {
   key: string
   id: string

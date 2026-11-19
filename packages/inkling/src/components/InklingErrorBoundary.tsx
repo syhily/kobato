@@ -8,8 +8,6 @@ interface InklingErrorBoundaryInnerProps {
   onError: (error: unknown, info: React.ErrorInfo) => void
 }
 
-// The error boundary: catch render errors, report through the host's onError sink,
-// and render the fallback until the boundary remounts.
 class InklingErrorBoundaryInner extends React.Component<InklingErrorBoundaryInnerProps, { error: unknown }> {
   state = { error: null }
 

@@ -1,14 +1,9 @@
-// Shared browser-journey helpers: sign-in, settings-panel interactions, and
-// console-error collection. Selectors anchor on the real controls (`#general-*`
-// ids the settings rows own) and ARIA roles — never on styling.
-
 import type { BrowserContext, Locator, Page } from '@playwright/test'
 import type { BrowserEnv } from '@tests/browser/support/env.ts'
 
 import { expect } from '@playwright/test'
 import { BASELINE_GENERAL } from '@tests/browser/support/settings-api.ts'
 
-/** Endonyms, deliberately NOT translated (see `LOCALE_DISPLAY_NAMES`). */
 export const LOCALE_LABELS = {
   'en-US': 'English (United States)',
   'zh-HK': '繁體中文（香港）',
@@ -42,7 +37,6 @@ export async function signInAdmin(context: BrowserContext, env: BrowserEnv): Pro
   }
 }
 
-/** Wait until the settings form is hydrated, seeded, and past its post-hydration re-render. */
 export async function waitForSettingsReady(page: Page): Promise<void> {
   await expect(page.locator('#general-locale')).toBeVisible()
   await waitForHydration(page, '#general-description')
@@ -54,17 +48,11 @@ export async function waitForSettingsReady(page: Page): Promise<void> {
   await page.waitForTimeout(400)
 }
 
-/** Open the settings panel and wait until React has hydrated and seeded the form. */
 export async function openSettings(page: Page): Promise<void> {
   await page.goto('/admin/settings')
   await waitForSettingsReady(page)
 }
 
-/**
- * Wait for React to hydrate the node behind `selector`: before hydration the server
- * markup carries no React expando properties, so a `fill` would update the DOM without
- * the component's state and the next render would drop the input.
- */
 export async function waitForHydration(page: Page, selector: string): Promise<void> {
   await page.waitForFunction(
     (target) => {
@@ -76,19 +64,11 @@ export async function waitForHydration(page: Page, selector: string): Promise<vo
   )
 }
 
-/**
- * Pick a language in the General card. The locale switch flushes dirty cards, commits,
- * broadcasts and reloads, so callers that care arm `page.waitForEvent('load')` first.
- */
 export async function switchLocale(page: Page, locale: JourneyLocale): Promise<void> {
   await page.locator('#general-locale').click()
   await page.getByRole('option', { name: LOCALE_LABELS[locale], exact: true }).click()
 }
 
-/**
- * Replace an input's value with real keyboard input: `locator.fill()` updates the DOM
- * but leaves the RHF field clean, so the next render restores the baseline.
- */
 export async function replaceInput(page: Page, locator: Locator, value: string): Promise<void> {
   let lastError: unknown = null
   for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -100,8 +80,6 @@ export async function replaceInput(page: Page, locator: Locator, value: string):
         return
       }
     } catch (error) {
-      // A settings re-render can replace the SSR input right after the page
-      // settles; re-resolve the locator and retype into the live element.
       if (!/not attached|detached|not visible|element is not/i.test(String(error))) {
         throw error
       }
@@ -113,8 +91,6 @@ export async function replaceInput(page: Page, locator: Locator, value: string):
     `could not replace the input value${lastError === null ? '' : `: ${String(lastError)}`} (wanted "${value}")`,
   )
 }
-
-/** Pick a time zone through the searchable combobox (field-scoped commit). */
 export async function chooseTimeZone(page: Page, timeZone: string): Promise<void> {
   await page.locator('#general-timezone').click()
   const popup = page.locator('[data-slot="combobox-content"]')
@@ -128,9 +104,8 @@ export async function chooseTimeZone(page: Page, timeZone: string): Promise<void
 }
 
 export interface ConsoleIssues {
-  /** Every console error / uncaught page error, in arrival order. */
   errors: string[]
-  /** The subset that points at a hydration mismatch (React 18/19 wording or minified codes). */
+
   hydration: string[]
 }
 
@@ -142,7 +117,6 @@ const HYDRATION_PATTERNS = [
   /Minified React error #(?:418|421|422|423|425)/,
 ]
 
-/** Collect console errors and uncaught exceptions for the lifetime of the page. */
 export function collectConsoleIssues(page: Page): ConsoleIssues {
   const issues: ConsoleIssues = { errors: [], hydration: [] }
   const record = (text: string) => {
@@ -160,7 +134,6 @@ export function collectConsoleIssues(page: Page): ConsoleIssues {
   return issues
 }
 
-/** A window marker that a full reload would erase. */
 export async function markWindow(page: Page, value: string): Promise<void> {
   await page.evaluate((marker) => {
     ;(window as unknown as Record<string, unknown>).__kobatoJourneyMarker = marker
@@ -171,7 +144,6 @@ export function readWindowMarker(page: Page): Promise<unknown> {
   return page.evaluate(() => (window as unknown as Record<string, unknown>).__kobatoJourneyMarker)
 }
 
-/** The public document's `<html lang>` as served (not the DOM after client work). */
 export async function fetchHtmlLang(page: Page): Promise<string | null> {
   const response = await page.request.get('/')
   expect(response.status()).toBe(200)

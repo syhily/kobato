@@ -9,7 +9,6 @@ interface SettingGroupProps {
   description?: string
   children?: ReactNode
   className?: string
-  /** Action buttons / controls rendered in the top-right of the header. */
   actions?: ReactNode
   saveState?: 'idle' | 'saving' | 'saved' | 'error'
 }

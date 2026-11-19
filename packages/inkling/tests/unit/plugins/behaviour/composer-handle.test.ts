@@ -200,7 +200,6 @@ describe('createComposerHandleBinding', () => {
     expect(result.current).toBe(0)
     expect(renderCount).toBe(1)
 
-    // an unrelated slice changing must not re-render this subscriber
     act(() => handle.setState({ label: 'a' }))
     expect(renderCount).toBe(1)
     expect(result.current).toBe(0)

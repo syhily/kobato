@@ -9,10 +9,6 @@ import { hydratePublishedRevisions } from '@kobato/server/domains/content/revisi
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance.ts'
 import { toCmsPost } from '@kobato/server/domains/posts/projection.ts'
 
-/**
- * Resolves `cover` to its CDN public URL and attaches `coverThumbhash`
- * for any post-shaped projection carrying both fields.
- */
 export async function hydratePostImages(
   db: Database,
   posts: { cover: string; coverThumbhash?: string }[],
@@ -40,17 +36,10 @@ export function buildPublicPostFilters(
 }
 
 export interface HydratePostListOptions {
-  /** `'none'` (default): empty body, for cards/metadata listings.
-   *  `'published'`: join published revisions for real bodies + headings. */
   revision?: 'none' | 'published'
-  /** Resolve covers to CDN public URLs + thumbhashes. Default `true`. */
   images?: boolean
 }
 
-/**
- * The public post-list assembly pipeline — mount this instead of
- * hand-assembling a new copy.
- */
 export async function hydratePostList(
   db: Database,
   metas: PostMetaRow[],

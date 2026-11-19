@@ -194,7 +194,6 @@ describe('snapshot: NavMenuItem', () => {
     )
     expect(html).toContain('媒体库')
     expect(html).toContain('音乐')
-    // The collapsible auto-expands when a child path is active.
     expect(html).toContain('aria-expanded="true"')
     expect(html).toContain('aria-controls="grp-1"')
   })
@@ -216,7 +215,6 @@ describe('snapshot: NavMenuItem', () => {
       '/admin/posts',
     )
     expect(html).toContain('媒体库')
-    // No active child => collapsed by default.
     expect(html).toContain('aria-expanded="false"')
   })
 })

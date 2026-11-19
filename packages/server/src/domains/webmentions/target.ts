@@ -12,7 +12,6 @@ export interface WebmentionTarget {
   ownerId: number
   slug: string
   title: string
-  /** Canonical site URL with trailing slash (comment-URL convention). */
   canonicalUrl: string
 }
 
@@ -27,8 +26,6 @@ function decodeSegment(segment: string | undefined): string | null {
   }
 }
 
-/** Resolve a webmention `target` URL to a live post/page, else null
- *  (the receive route answers 404). */
 export async function resolveWebmentionTarget(db: Database, rawTarget: string): Promise<WebmentionTarget | null> {
   const target = tryParseUrl(rawTarget)
   if (target === null || (target.protocol !== 'http:' && target.protocol !== 'https:')) {

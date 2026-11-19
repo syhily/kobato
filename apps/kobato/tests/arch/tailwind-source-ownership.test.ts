@@ -13,7 +13,6 @@ const SOURCE_ROOTS = [
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
 
-// @source owners without their own Tailwind compile: surface entries compose them via CSS @import.
 const SOURCE_PARTIALS = [
   { file: 'packages/shared/lexical/src/styles/cards.css', specifier: '@kobato/lexical/styles/cards.css' },
   { file: 'packages/web/public/src/styles/public.css', specifier: '@kobato/web-public/styles/public.css' },
@@ -95,10 +94,8 @@ describe('Tailwind source ownership', () => {
     for (const [file, required] of Object.entries(WEB_PARTIAL_REQUIRED_SOURCES)) {
       const source = readFileSync(file, 'utf8')
       const declared = [...source.matchAll(/@source\s+['"]([^'"]+)['"]/g)].map((match) => match[1]).sort()
-      // Exact set: a missing entry drops that tier's utilities from the surface CSS; an extra
-      // entry (e.g. the admin subset scanning all of `../ui`) breaks the per-surface bundling.
       expect(declared, file).toEqual([...required].sort())
-      // The scanned tier must still exist — a rename would leave the scan matching nothing.
+
       const partialDir = dirname(resolve(REPO_ROOT, file))
       for (const entry of required) {
         expect(existsSync(resolve(partialDir, entry.split('*')[0]!)), `${file}: ${entry}`).toBe(true)
@@ -108,12 +105,9 @@ describe('Tailwind source ownership', () => {
 
   it('keeps UI ui.css on the root route as the single eager document entry', () => {
     const rootSource = readFileSync('apps/kobato/src/root.tsx', 'utf8')
-    // Eager side-effect import, so the root route's link precedes every nested route sheet in cascade order.
-    // A dynamic `import()` would move the design system's utilities behind a lazy chunk and let them outrun
-    // the surface sheets again.
+
     expect(rootSource).toMatch(/^import '@kobato\/ui\/styles\/ui\.css'$/m)
     expect(rootSource).not.toContain(`import('@kobato/ui/styles/ui.css')`)
-
     const files = collectFiles(resolve(REPO_ROOT, 'apps/kobato/src'), (name) => /\.tsx?$/.test(name)).filter((path) =>
       readFileSync(path, 'utf8').includes(`@kobato/ui/styles/ui.css`),
     )
@@ -123,12 +117,9 @@ describe('Tailwind source ownership', () => {
   it('keeps source partials free of their own Tailwind compile', () => {
     for (const { file } of SOURCE_PARTIALS) {
       const source = readFileSync(file, 'utf8')
-      // A partial must never re-open a Tailwind compile: surface entries own the single `@import 'tailwindcss'`
-      // per document surface, so base and responsive utilities are sorted by one generator instead of racing
-      // across separate stylesheet links.
+
       expect(source, file).not.toContain(`@import 'tailwindcss'`)
-      // The dark variant is UI-owned (`dark-variant.css` via the UI reference import); a partial re-declaring
-      // `@custom-variant` would fight it inside the composing surface compile.
+
       expect(source, file).not.toContain('@custom-variant')
     }
   })
@@ -138,13 +129,11 @@ describe('Tailwind source ownership', () => {
       for (const file of collectFiles(resolve(REPO_ROOT, sourceRoot), (name) => /\.tsx?$/.test(name))) {
         const source = readFileSync(file, 'utf8')
         for (const { specifier } of SOURCE_PARTIALS) {
-          // Partials ride the surface entry's CSS @import; component/route imports would spawn a competing sheet.
           expect(source.includes(specifier), `${relative(REPO_ROOT, file)}: ${specifier}`).toBe(false)
         }
       }
     }
   })
-
   it('pins shared card compile tokens to the UI runtime contract', () => {
     const shared = readFileSync('packages/shared/lexical/src/styles/cards.css', 'utf8')
     const ui = readFileSync('packages/ui/src/styles/tailwind.css', 'utf8')

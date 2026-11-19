@@ -39,7 +39,6 @@ export function ColorOptionButtons({ buttons = [], selectedName, onClick }: Colo
         ></span>
       </button>
 
-      {/* Color options popover */}
       {isOpen && (
         <div
           className="dark:bg-grey-900 absolute -right-3 bottom-full z-10 mb-2 rounded-lg bg-white px-3 py-2 shadow"

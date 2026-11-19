@@ -76,14 +76,13 @@ describe('createPanelDragSession', () => {
     const { session, effects, positions, listeners, panel } = setup()
 
     session.grab({ x: 110, y: 110 }, [panel])
-    listeners().move({ x: 113, y: 112 }) // within the 3px threshold
+    listeners().move({ x: 113, y: 112 })
     expect(effects.activate).not.toHaveBeenCalled()
     expect(positions).toEqual([])
 
-    listeners().move({ x: 120, y: 125 }) // threshold crossed → effects on, drag
+    listeners().move({ x: 120, y: 125 })
     expect(effects.activate).toHaveBeenCalledTimes(1)
     expect(session.isDragging()).toBe(true)
-    // grab offset 110-100 = 10 → position = pointer - offset
     expect(positions).toEqual([{ x: 110, y: 115 }])
   })
 
@@ -120,7 +119,6 @@ describe('createPanelDragSession', () => {
     expect(effects.deactivate).toHaveBeenCalledTimes(1)
     expect(session.isDragging()).toBe(false)
 
-    // a further release is inert — the listeners are already detached
     session.release()
     expect(detach).toHaveBeenCalledTimes(1)
   })
@@ -141,7 +139,6 @@ describe('createPanelDragSession', () => {
     session.adjustOffset(5, 0)
     listeners().move({ x: 120, y: 110 })
 
-    // offset 110-100-5 = 5 → position = 120 - 5
     expect(positions).toEqual([{ x: 115, y: 100 }])
   })
 

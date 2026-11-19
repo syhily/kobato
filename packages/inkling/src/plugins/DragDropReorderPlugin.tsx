@@ -42,7 +42,7 @@ function useDragDropReorder(editor: LexicalEditor): void {
     element: editor.getRootElement(),
     enabled: !isEditingCard,
     draggable: {
-      draggableSelector: ':scope > div', // cards
+      draggableSelector: ':scope > div',
       getDraggableInfo: (draggableElement: HTMLElement | null): DraggableInfo | false => {
         if (!draggableElement) {
           return false
@@ -66,8 +66,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
               target: null,
               mousePosition: { x: 0, y: 0 },
               dataset: cardNode.getDataset(),
-              // what the per-card getIcon() copies returned: the first menu
-              // entry's icon, or the declaration's dragIcon for menu-less cards
               Icon: getCardDragIcon(cardNode.getType()),
             }
           }
@@ -76,15 +74,12 @@ function useDragDropReorder(editor: LexicalEditor): void {
         return draggableInfo || false
       },
       createDragPreviewElement: (draggableInfo: DraggableInfo) => {
-        // loose image drags (gallery rows) have no card preview — the
-        // container's own image fallback handles them
         if (draggableInfo.type !== 'card') {
           return
         }
 
         const { cardName, Icon } = draggableInfo
 
-        // image cards fall through to the container's own image preview
         if (cardName === 'image') {
           return
         }
@@ -127,7 +122,7 @@ function useDragDropReorder(editor: LexicalEditor): void {
       },
     },
     droppable: {
-      droppableSelector: ':scope > *', // all block elements
+      droppableSelector: ':scope > *',
       getIndicatorPosition: (
         draggableInfo: DraggableInfo,
         droppableElem: HTMLElement,
@@ -138,8 +133,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
           return false
         }
 
-        // the single insertIndex derivation of this drag — the handler hands
-        // it back to onDrop below as the resolution argument
         const resolution = resolveReorder(
           createReorderGeometry(rootElement, ':scope > *'),
           draggableInfo.element,
@@ -152,12 +145,10 @@ function useDragDropReorder(editor: LexicalEditor): void {
       },
       onDrop: (draggableInfo: DraggableInfo, dropResolution: DropResolution | null): DropResult => {
         const rootElement = editor.getRootElement()
-        // no resolution, no drop: the card container only accepts drops the
-        // indicator resolved a slot for
+
         if (!rootElement || !draggableInfo.element || !dropResolution) {
           return false
         }
-
         // insertIndex was derived by getIndicatorPosition (resolveReorder) and
         // arrives as the resolution argument — re-verify it against a fresh
         // scan, never re-derive it
@@ -199,13 +190,9 @@ function useDragDropReorder(editor: LexicalEditor): void {
         cardContainer.refresh()
       },
       onDropEnd: (draggableInfo: DraggableInfo, success: boolean, sourceHandled: boolean): void => {
-        // only card payloads own a source node key; the removal policy itself
-        // is about the drop outcome (a same-container reorder reports
-        // sourceHandled, a failed drop removes nothing)
         if (draggableInfo.type !== 'card' || !shouldRemoveDropSource(success, sourceHandled)) {
           return
         }
-
         editor.update(() => {
           $removeDropSource(draggableInfo.nodeKey)
         })
@@ -221,29 +208,19 @@ function useDragDropReorder(editor: LexicalEditor): void {
     }
     const dndHandler = new DragDropHandler({
       editorContainerElement: containerElement,
-      // the host's drag auto-scroll container (composer option); absent, the
-      // document scrolling element is used as found
+
       scrollHandlerOptions: { documentScrollContainerSelector: dragScrollContainerSelector },
-      // the handler publishes its own isDragging truth straight onto the
-      // handle — no lifecycle-callback mirroring in this adapter
+
       onDraggingChange: (isDragging) => {
         dragDropHandle.setState({ isDragging })
       },
     })
-    // publish the handler so the card drag hooks register against it — they
-    // subscribe to the handle, so a hook whose registration effect ran before
-    // this one registers as soon as the handler appears (no mount-order
-    // dependency)
     dragDropHandle.setState({ handler: dndHandler })
-
     return () => {
       dragDropHandle.setState({ handler: null })
       dndHandler.destroy()
     }
   }, [editor, containerElement, dragDropHandle, dragScrollContainerSelector])
-
-  // the refresh policy (which dirty sets mean a top-level block changed)
-  // lives in the drop-surgery module as a synchronous test table
   React.useEffect(() => {
     return editor.registerUpdateListener(({ dirtyElements, editorState }) => {
       if (resolveDragMarkerRefresh(dirtyElements, editorState)) {
@@ -252,7 +229,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
     })
   }, [editor, cardContainer])
 
-  // disable native drag start so it does not interfere with the custom drag handling
   React.useEffect(() => {
     return editor.registerRootListener((rootElement, prevRootElement) => {
       rootElement?.addEventListener('dragstart', preventDefault)

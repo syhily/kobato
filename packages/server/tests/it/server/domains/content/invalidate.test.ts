@@ -42,7 +42,6 @@ describe('invalidateContent', () => {
     expect(await getCounter('searchResult')).toBe(1)
     expect(readFileSync(generationFile(), 'utf8')).toBe('1')
 
-    // A second post event advances the same counter file.
     invalidateContent({ entity: 'post' })
     expect(await getCounter('searchResult')).toBe(2)
   })

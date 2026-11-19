@@ -16,7 +16,6 @@ describe('resolvePanelReclamp', () => {
   })
 
   it('returns the re-clamped position and the grab-offset delta when the panel outgrows the viewport', () => {
-    // right edge 700 + 400 = 1100 > settle inset 1004 → x = 1004 - 400 = 604
     const reclamp = resolvePanelReclamp({
       position: { x: 700, y: 150 },
       lastSpacing: null,
@@ -29,8 +28,6 @@ describe('resolvePanelReclamp', () => {
   })
 
   it('keeps a deliberate offscreen placement through the last spacing', () => {
-    // lastSpacing.top -50 wins over the settle minimum 66 so the settle keeps
-    // y 0, then the drag boundary lifts it to 10 (the clampOnResize two-pass)
     const reclamp = resolvePanelReclamp({
       position: { x: 100, y: 0 },
       lastSpacing: { top: -50, bottom: 20, right: 20, left: 20 },
@@ -45,7 +42,6 @@ describe('resolvePanelReclamp', () => {
 
 describe('resolvePanelViewportShift', () => {
   it('drifts towards the initial position by at most the viewport growth, then settle-clamps', () => {
-    // height grew 32 → y drifts 32 of the 50 gap, then the settle clamp leaves it
     const shifted = resolvePanelViewportShift({
       position: { x: 100, y: 100 },
       initial: { x: 500, y: 150 },
@@ -60,7 +56,6 @@ describe('resolvePanelViewportShift', () => {
   })
 
   it('settle-clamps the position when the viewport shrank', () => {
-    // right edge 320 + 320 = 640 > settle inset 480 → x = 160
     const shifted = resolvePanelViewportShift({
       position: { x: 320, y: 150 },
       initial: { x: 320, y: 150 },
@@ -75,8 +70,6 @@ describe('resolvePanelViewportShift', () => {
   })
 
   it('passes the position through origin-adjusted when the panel element is missing', () => {
-    // panelSize null passes through origin-adjusted in both clampOnResize
-    // passes (settle then drag boundary)
     const shifted = resolvePanelViewportShift({
       position: { x: 10, y: 20 },
       initial: undefined,

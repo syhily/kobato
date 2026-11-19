@@ -84,9 +84,6 @@ describe('adaptWebsocketProvider', function () {
     const fake = createFakeWebsocketProvider()
     const adapted = adaptFake(fake)
 
-    // y-websocket only ever emits sync/status; the adapter multiplexes those
-    // two, so handlers for the remaining Lexical channels stay dead even if
-    // the provider itself emitted on them
     const onUpdate = vi.fn()
     const onReload = vi.fn()
     adapted.on('update', onUpdate)

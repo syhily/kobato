@@ -18,7 +18,6 @@ export interface ConfirmState {
   description: string
   actionLabel: string
   destructive: boolean
-  /** Icon on the confirm button; defaults to `Trash2Icon` / `CheckIcon`. */
   actionIcon?: ReactNode
   onConfirm: () => void
 }

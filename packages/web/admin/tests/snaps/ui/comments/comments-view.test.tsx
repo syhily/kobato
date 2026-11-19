@@ -118,7 +118,6 @@ describe('snapshot: CommentsView', () => {
     controllerState.isFetchingNextPage = false
   })
 
-  // Chrome + skeleton render while the first page is still pending.
   it('renders the page chrome with title and loading skeleton', () => {
     controllerState.isLoading = true
     const html = stableHtml(
@@ -129,7 +128,6 @@ describe('snapshot: CommentsView', () => {
     )
     expect(html).toContain('评论管理')
     expect(html).toContain('审核、回复、编辑站点评论')
-    // Loading branch — pulse placeholders instead of the empty state.
     expect(html).toContain('animate-pulse')
     expect(html).not.toContain('暂无评论')
   })
@@ -162,20 +160,14 @@ describe('snapshot: CommentsView', () => {
       ),
     )
     expect(html).toContain('评论管理')
-    // Approved-row branch (map callback executed for Alice).
     expect(html).toContain('Alice')
     expect(html).toContain('已审核')
-    // Pending-row branch (map callback executed for Bob, distinct status).
     expect(html).toContain('Bob')
     expect(html).toContain('待审核')
-    // Page-title button affordance.
     expect(html).toContain('Hello World')
     expect(html).toContain('Second Post')
-    // Author badge rendered through the conditional branch.
     expect(html).toContain('站长')
-    // End-of-list sentinel (rendered when !hasMore && comments.length > 0).
     expect(html).toContain('已加载全部评论')
-    // Filter-chrome affordance (the status operator trigger).
     expect(html).toContain('全部')
   })
 
@@ -236,16 +228,12 @@ describe('snapshot: AdminCommentRow', () => {
     expect(html).toContain('data-slot="admin-comment-row"')
     expect(html).toContain('Alice')
     expect(html).toContain('Comment body')
-    // Status badge for a non-pending, non-delete-requested comment.
     expect(html).toContain('已审核')
     expect(html).toContain('站长')
-    // Action labels (the sm:inline spans are still emitted in SSR output).
     expect(html).toContain('编辑评论')
     expect(html).toContain('编辑用户')
     expect(html).toContain('查看文章')
-    // The page title button used for "filter by page".
     expect(html).toContain('Hello World')
-    // Avatar fallback initial derived from the author name.
     expect(html).toContain('A')
   })
 
@@ -292,7 +280,6 @@ describe('snapshot: AdminCommentRow', () => {
 // Date/text filter editors are covered in shared/filter-bar.test.tsx.
 
 describe('snapshot: EditUserDialog', () => {
-  // comment=null → closed dialog renders nothing visible.
   it('renders nothing user-visible in the closed state', () => {
     const html = stableHtml(renderInRouter(<EditUserDialog comment={null} onClose={() => {}} onSaved={() => {}} />))
     expect(html).not.toContain('编辑评论用户')

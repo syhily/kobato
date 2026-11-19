@@ -18,15 +18,12 @@ import { Link } from 'react-router'
 export interface PostDetailBodyProps {
   post: DetailPostShell
   headings: MarkdownHeading[]
-  /** Saved `body_html` projection from the loader. */
   bodyHtml: string
   visibleTags: ClientTag[]
   mode: 'admin' | 'public'
   likes: number
   commentKey: string
-  /** Streamed in via React Router `<Await>`. */
   commentsPromise: Promise<DetailPageComments>
-  /** Webmentions block node (route wraps the streamed list in `<Await>`). */
   webmentions?: ReactNode
   currentUser?: CommentFormUser
   draftMarker?: DraftMarker

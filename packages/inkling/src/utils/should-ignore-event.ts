@@ -1,4 +1,3 @@
-// Events originating from an editor element inside a card must not be handled by Inkling.
 export const shouldIgnoreEvent = (
   event: { metaKey?: boolean; key?: string; target?: EventTarget | null } | null | undefined,
 ): boolean => {

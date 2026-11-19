@@ -46,7 +46,6 @@ describe('matchingHeaderTextColor', () => {
   })
 
   it('picks a readable counterpart for a color', () => {
-    // white background reads as dark text, black as light text
     expect(matchingHeaderTextColor('#ffffff')).toBe('#000000')
     expect(matchingHeaderTextColor('#000000')).toBe('#FFFFFF')
   })
@@ -62,21 +61,16 @@ describe('mergeWhiteColor', () => {
   })
 
   it('blends a semi-transparent color over white', () => {
-    // ~50% black over white → #7F7F7F
     expect(mergeWhiteColor({ r: 0, g: 0, b: 0, a: 128 })).toBe('#7F7F7F')
   })
 })
 
 describe('resolveHeaderImageTextColor', () => {
   it('averages the image and matches the text color', async () => {
-    // opaque black average → white text
     await expect(resolveHeaderImageTextColor('https://example.com/bg.png', 'regular')).resolves.toBe('#FFFFFF')
   })
 
   it('merges a transparent image over white before matching', async () => {
-    // semi-transparent (128/255 ≈ 0.5) (200,100,50) over white ≈ #E3B198 —
-    // the merge ran (the raw average would be #C86432); the matching policy
-    // picks white for the merged color either way
     await expect(resolveHeaderImageTextColor('https://example.com/transparent.png', 'wide')).resolves.toBe('#FFFFFF')
   })
 

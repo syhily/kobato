@@ -21,13 +21,10 @@ export function normalizeDocumentUrl(url: URL): URL {
   return normalized
 }
 
-/** True when the raw URL is a React Router data request (`.data` / `_.data`). */
 export function isDataRequestUrl(url: URL): boolean {
   return url.pathname.endsWith('.data')
 }
 
-/** Transport-agnostic facts the domain layer may see — extracted once per
- *  request; header names and URL normalization live in exactly one place. */
 export function extractRequestFacts(request: Request): RequestFacts {
   const headers = request.headers
   const rawUrl = new URL(request.url)

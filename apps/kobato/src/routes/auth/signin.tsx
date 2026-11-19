@@ -59,8 +59,6 @@ function toActionResult(result: AuthFlowResult, locale: AppLocale, extraData?: R
       return data(
         {
           error: authFlowMessage(result.message, result.descriptor, locale),
-          // The descriptor's key is the stable identity the UI branches on
-          // (OtpForm's resend cooldown), never the localized sentence.
           ...(result.descriptor === undefined ? {} : { errorDescriptor: result.descriptor }),
           ...extraData,
         },
@@ -78,8 +76,6 @@ function toActionResult(result: AuthFlowResult, locale: AppLocale, extraData?: R
   }
 }
 
-// Flow routing (logout branch, token peek, OTP-session branching) lives in
-// `@/server/http/loaders/signin` — this route is wiring only.
 export async function loader({ request, context }: Route.LoaderArgs) {
   return loadSigninData({ request, context })
 }
@@ -101,7 +97,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'logout') {
-    // POST + CSRF only — see handleSigninLogout.
     return handleSigninLogout(rc, redirectTo)
   }
 
@@ -166,8 +161,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
 export const meta = titleMeta('meta.title.auth.signin')
 
-// Stable query-string codes → catalog ids. Unknown codes render the raw value
-// (external callers may pass their own diagnostic text).
 const AUTH_ERROR_MESSAGE_IDS: Record<string, UiMessageId> = {
   invalid_credentials: 'auth.signin.error.invalidCredentials',
 }

@@ -63,8 +63,6 @@ const InklingNestedEditor = ({
 }: InklingNestedEditorProps) => {
   const initialNodes = nodes === 'minimal' ? MINIMAL_NODES : BASIC_NODES
   const markdownTransformers = nodes === 'minimal' ? MINIMAL_TRANSFORMERS : BASIC_TRANSFORMERS
-  // minimal surfaces (the host's comment composer) opt out of the emoji
-  // typeahead through the composer's ui-prefs channel
   const { isEmojiEnabled } = React.useContext(InklingUiPrefsContext)
 
   return (

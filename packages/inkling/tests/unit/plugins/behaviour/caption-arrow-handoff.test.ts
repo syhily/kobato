@@ -57,7 +57,6 @@ describe('registerCaptionArrowHandoff', () => {
 
     expect(result).toBe(true)
     expect(listener).toHaveBeenCalledTimes(1)
-    // the SAME event object crosses the boundary, carrying caption provenance
     expect(listener.mock.calls[0]?.[0]).toBe(event)
     expect(getEventProvenance(event)).toBe('caption-editor')
 

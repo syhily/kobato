@@ -100,7 +100,6 @@ describe('ui/shared/notifications/ComposeNotificationDialog', () => {
   it('defaults to broadcast mode and reveals the recipient picker in direct mode', () => {
     render(<ComposeNotificationDialog open onOpenChange={() => {}} />)
 
-    // Broadcast mode: the replyable switch shows, no recipient picker.
     expect(screen.getByLabelText('允许回复')).toBeTruthy()
     expect(screen.queryByLabelText('收件人')).toBeNull()
 

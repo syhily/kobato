@@ -4,9 +4,6 @@ import { getUpdateJobStatus } from '@kobato/server/domains/update/job.ts'
 import { applyUpdate, checkForUpdate } from '@kobato/server/domains/update/service.ts'
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/update.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminUpdateContract)
 
 const check = impl.check.handler(() => checkForUpdate())

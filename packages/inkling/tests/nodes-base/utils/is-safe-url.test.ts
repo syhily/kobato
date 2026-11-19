@@ -94,8 +94,6 @@ describe('isSafeMediaUrl', () => {
   })
 
   it('rejects URLs with control characters or whitespace inside the scheme', () => {
-    // browsers strip ASCII tab/LF/CR before scheme parsing, so these would
-    // otherwise be treated as relative URLs and navigated as javascript:
     expect(isSafeMediaUrl('jav\tascript:alert(1)')).toBe(false)
     expect(isSafeMediaUrl('java\nscript:alert(1)')).toBe(false)
     expect(isSafeMediaUrl('java\rscript:alert(1)')).toBe(false)

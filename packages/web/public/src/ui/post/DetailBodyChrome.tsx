@@ -47,8 +47,6 @@ export interface DetailBodyChromeProps {
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   comments?: boolean
-  /** Webmentions block, streamed by the route via `<Await>`; renders between the body
-   *  and the comment section (IndieWeb convention). */
   webmentions?: ReactNode
   mode?: 'admin' | 'public'
   editHref?: string
@@ -63,7 +61,6 @@ export interface DetailBodyChromeProps {
    * also stamps `dir="auto"` on the body only, so RTL prose does not flip the UI chrome.
    */
   contentLanguage?: string | null
-  /** Trailing slot rendered after the body container (page friends grid). */
   children?: ReactNode
   postContentRef: React.RefObject<HTMLDivElement | null>
   contentWrapperClassName?: string

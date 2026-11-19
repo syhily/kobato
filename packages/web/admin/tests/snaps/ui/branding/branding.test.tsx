@@ -54,7 +54,6 @@ describe('snapshot: BrandingView', () => {
   })
 
   it('never renders a storage-disabled banner — uploads always succeed via the active backend', () => {
-    // Uploads fall back to local storage — no disabled state regardless of config.
     const branding = buildBranding()
     const html = stableHtml(renderToHtml(<BrandingView branding={branding} />))
     expect(html).toContain('品牌素材')

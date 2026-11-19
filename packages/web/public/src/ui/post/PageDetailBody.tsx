@@ -16,17 +16,14 @@ import { type ReactNode, useRef } from 'react'
 export interface PageDetailBodyProps {
   page: DetailPageShell
   headings: MarkdownHeading[]
-  /** Saved `body_html` projection from the loader. */
   bodyHtml: string
   draftMarker?: DraftMarker
   likes: number
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
-  /** Webmentions block node (route wraps the streamed list in `<Await>`). */
   webmentions?: ReactNode
   currentUser?: CommentFormUser
   mode?: 'admin' | 'public'
-  /** Trailing slot after the body (the friends grid — a page meta toggle, not a body block). */
   children?: ReactNode
 }
 

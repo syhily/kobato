@@ -59,8 +59,6 @@ describe('countWords with a language (C7 — Intl.Segmenter)', () => {
 
   it('counts Chinese by word, not by character', function () {
     const text = '我今天在家吃了好多好多好吃的，现在的我非常开心非常满足'
-    // the legacy regex path counts every CJK character (26); the segmenter
-    // path counts dictionary words
     expect(countWords(text)).toBe(26)
     expect(countWords(text, 'zh')).toBe(15)
   })
@@ -70,7 +68,6 @@ describe('countWords with a language (C7 — Intl.Segmenter)', () => {
   })
 
   it('pins the English segmenter semantics (contractions stay one word)', function () {
-    // the regex path splits "don't" into "don" + "t"; the segmenter keeps it
     expect(countWords("don't stop")).toBe(3)
     expect(countWords("don't stop", 'en')).toBe(2)
   })

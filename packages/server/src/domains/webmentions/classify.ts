@@ -18,7 +18,6 @@ const MARKER_TYPES: ReadonlyArray<[marker: string, type: WebmentionType]> = [
   ['u-like-of', 'like'],
 ]
 
-// Priority when several markers point at the target: the strongest wins.
 const TYPE_PRIORITY: Record<WebmentionType, number> = {
   mention: 0,
   like: 1,

@@ -19,11 +19,6 @@ import { z } from 'zod'
 const COMMENT_MAX_BLOCKS = 200
 const COMMENT_MAX_HTTP_URLS = 3
 
-// Validate and prepare a comment body for persistence: parse the comment
-// Lexical dialect, reject empty/link-spam bodies, strip forged server-rendered
-// artifact slots, re-prerender them server-side, and project the
-// feed-variant degraded HTML for the `comment.content` snapshot. Failures →
-// DomainError.
 export async function canonicalizeCommentBody(input: unknown): Promise<{ body: CommentEditorState; content: string }> {
   let parsed: CommentEditorState
   try {

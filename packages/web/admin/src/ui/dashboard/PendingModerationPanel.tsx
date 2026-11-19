@@ -101,8 +101,6 @@ export function PendingModerationPanel({ initial, emptyStateLineId }: PendingMod
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1
 
   return (
-    // Compact fixed-frame card: exactly five rows + slim chrome; the body is
-    // the only scroll container (header / pagination pinned via `shrink-0`).
     <div className="flex min-h-[280px] flex-col rounded-xl border bg-card p-5">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
@@ -114,8 +112,6 @@ export function PendingModerationPanel({ initial, emptyStateLineId }: PendingMod
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{t('admin.welcome.pending.description')}</p>
         </div>
-        {/* Both header CTAs share the same ghost-button shape so "refresh"
-            and "go to full moderation page" read as one inline action group. */}
         <div className="flex items-center gap-1">
           <Button type="button" variant="ghost" size="sm" onClick={refresh} disabled={anyMutationPending}>
             <RefreshCwIcon data-icon /> <span className="hidden sm:inline">{t('admin.welcome.pending.refresh')}</span>

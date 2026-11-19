@@ -50,7 +50,6 @@ function keyEvent(init: KeyboardEventInit): KeyboardEvent {
   return new KeyboardEvent('keydown', init)
 }
 
-/** Appends a paragraph carrying `text` and collapses the caret inside it. */
 function appendParagraphWithCaret(editor: LexicalEditor, text: string) {
   editor.update(() => {
     const paragraph = $createParagraphNode()
@@ -67,8 +66,6 @@ describe('registerModifierCommand', () => {
   beforeEach(() => {
     editor = createTestEditor()
     registerModifierCommand(editor, deps)
-    // same-priority listener registered afterwards only runs when no
-    // shortcut consumes the event (returns true)
     fallthrough = vi.fn<(event: KeyboardEvent) => boolean>(() => false)
     editor.registerCommand(KEY_DOWN_COMMAND, fallthrough, COMMAND_PRIORITY_LOW)
   })
@@ -131,10 +128,8 @@ describe('registerModifierCommand', () => {
       appendParagraphWithCaret(editor, 'hello')
 
       editor.dispatchCommand(KEY_DOWN_COMMAND, keyEvent({ key: '3', ctrlKey: true, altKey: true }))
-      // Lexical commits updates on a microtask — tick() drains the queue
-      // after each dispatch so state assertions see the settled editor
-      await tick()
 
+      await tick()
       editor.getEditorState().read(() => {
         const first = $getRoot().getFirstChild()
         expect($isHeadingNode(first)).toBe(true)

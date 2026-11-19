@@ -89,7 +89,6 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
   })
 
   it('returns dirty=false for a modern session that already has role (no db lookup)', async () => {
-    // Modern path never hits the db: a nonexistent user survives untouched.
     const modernUser = {
       id: '999999',
       name: 'modern',
@@ -104,7 +103,6 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
     expect(result.dirty).toBe(false)
     expect(result.user).toEqual(modernUser)
 
-    // An authenticated resolve bumps the real session row's activity meta.
     const [row] = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
     expect(row!.lastActiveAt).not.toBeNull()
   })

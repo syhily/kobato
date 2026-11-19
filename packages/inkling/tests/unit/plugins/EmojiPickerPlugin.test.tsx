@@ -137,7 +137,6 @@ describe('EmojiPickerPlugin', () => {
       })
       expect(typeaheadCapture.props?.options.map((option) => option.id)).toEqual(['smile'])
 
-      // The stale response arrives late and must not overwrite the newer one.
       await act(async () => {
         pending.get('smi')?.([{ id: 'smirk', skins: [{ native: '😏' }] }])
       })
@@ -160,7 +159,6 @@ describe('EmojiPickerPlugin', () => {
       await act(async () => {
         typeaheadCapture.props?.onQueryChange('smi')
       })
-      // A cold file settles the chunk import before the search resolves.
       await vi.dynamicImportSettled()
       await act(async () => {
         await Promise.resolve()
@@ -171,7 +169,6 @@ describe('EmojiPickerPlugin', () => {
       await act(async () => {
         typeaheadCapture.props?.onQueryChange('smile')
       })
-      // Flush the rejection's microtask chain.
       await act(async () => {
         await Promise.resolve()
       })

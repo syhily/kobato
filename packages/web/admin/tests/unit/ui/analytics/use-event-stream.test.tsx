@@ -94,7 +94,6 @@ describe('useEventStream', () => {
     act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a')]))
     act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a'), makeEvent('2026-08-01T00:00:02.000Z', '/b')]))
 
-    // An effect re-run rebuilds the URL from the watermark.
     rerender({ enabled: false })
     expect(first.closed).toBe(true)
     rerender({ enabled: true })

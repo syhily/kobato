@@ -7,17 +7,6 @@ import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { POPUP_LIST_MAX_HEIGHT } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import React from 'react'
 
-/**
- * The link-dropdown suggestion chrome — the one home of the render wiring shared
- * by the three URL surfaces (UrlInput, LinkInput, AtLinkResultsPopup): the
- * `getItem`/`getGroup` mapping onto LinkInputSearchItem, the loading item, the
- * opened-tracking mount effect, and the window-level Escape-to-close gesture. The
- * search coordinator owns the behaviour; this module owns the chrome. Per-surface
- * variance (test id, highlight string, tracking context, the Escape swallow)
- * arrives as data.
- */
-
-/** The opened-tracking mount effect, fired once when the gate holds. */
 export function useLinkDropdownOpenedTracking(context: string, enabled: boolean): void {
   React.useEffect(() => {
     if (enabled) {
@@ -27,12 +16,6 @@ export function useLinkDropdownOpenedTracking(context: string, enabled: boolean)
   }, [])
 }
 
-/**
- * The window-level Escape-to-close dismissal gesture. `swallow` matches
- * UrlInput's preventDefault+stopPropagation variant (its dropdown floats
- * over an editor that must not see the key); LinkInput's plain close passes
- * nothing.
- */
 export function useLinkDropdownEscape(
   onClose: (() => void) | undefined,
   { swallow = false }: { swallow?: boolean } = {},
@@ -55,7 +38,6 @@ export function useLinkDropdownEscape(
   }, [onClose, swallow])
 }
 
-/** The shared `getItem` factory — the LinkInputSearchItem mapping all three surfaces share. */
 export function createLinkSuggestionGetItem({
   dataTestId,
   highlightString,
@@ -79,12 +61,6 @@ export function createLinkSuggestionGetItem({
   )
 }
 
-/**
- * The suggestion list itself: the popup-max-height `<ul>`, the loading
- * item, and the keyboard-selection mapping. LinkInput shows the loading
- * item while a first search is in flight; the at-link popup passes
- * `onEnterWithoutSelection` so Enter commits the typed query.
- */
 export function LinkSuggestionList({
   dataTestId,
   groups,

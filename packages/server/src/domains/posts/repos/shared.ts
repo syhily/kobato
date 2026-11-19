@@ -26,10 +26,6 @@ export interface ListPostsFilters extends MetaListFiltersBase {
   lifecycle?: 'draft' | 'published'
 }
 
-/**
- * Admin-list WHERE: shared legs from `buildMetaListWhere` plus the
- * post-specific taxonomy / visible / lifecycle legs.
- */
 export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
   const extras: SQL[] = []
   if (filters.categoryId !== undefined) {

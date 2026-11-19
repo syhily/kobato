@@ -2,9 +2,6 @@ import { registerCaptionTypeToFocus } from '@kobato/inkling-internal/plugins/beh
 import { $createParagraphNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The caption type-to-focus policy as a synchronous table: printable key +
-// selected card + unfocused caption → focus; every other leg passes through.
-
 describe('registerCaptionTypeToFocus', () => {
   let editor: LexicalEditor
   let rootElement: HTMLElement

@@ -7,9 +7,6 @@ import {
 } from '@kobato/web-client/hooks/use-device-env-beacon.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The collector's behaviour gates: deepest `eid`, DNT opt-out, sendBeacon
-// availability, and the session-once static block.
-
 const EVENT_ID = '00000000-0000-4000-8000-0000000000e1'
 
 function memoryStorage(): Storage {

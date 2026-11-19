@@ -64,12 +64,6 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
   )
 }
 
-/**
- * The inline label+control row shared by the settings below: label (with
- * optional description) left, control right; `stacked` switches to the column
- * layout. Internal by design — the rows' layouts genuinely diverge beyond these
- * four (sr-only, custom), so only the shared skeleton folds; see SettingLabel.tsx.
- */
 function SettingRow({
   label,
   description,
@@ -220,7 +214,6 @@ interface InputListSettingProps {
   value: string
 }
 
-// onChange passes the value, not an event
 export function InputListSetting({
   dataTestId,
   description,
@@ -367,19 +360,19 @@ export function ColorPickerSetting({
           onChange={
             onPickerChange ??
             (() => {
-              /* noop default */
+              /* noop */
             })
           }
           onSwatchChange={
             onSwatchChange ??
             (() => {
-              /* noop default */
+              /* noop */
             })
           }
           onTogglePicker={
             onTogglePicker ??
             (() => {
-              /* noop default */
+              /* noop */
             })
           }
         >

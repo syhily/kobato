@@ -26,7 +26,6 @@ class ResizeObserverMock {
 
 global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
 
-// the card is selected and editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'button-1',
   { selected = true, editing = true }: { selected?: boolean; editing?: boolean } = {},
@@ -156,7 +155,6 @@ describe('ButtonNodeComponent', () => {
 
       const labels = Array.from(toolbar.querySelectorAll('button')).map((button) => button.getAttribute('aria-label'))
       expect(labels).toEqual(['Edit', 'Save as snippet'])
-      // every item renders an icon
       expect(toolbar.querySelectorAll('button svg')).toHaveLength(2)
       expect(screen.getByTestId('edit-button-card')).toBeTruthy()
       expect(screen.getByTestId('create-snippet')).toBeTruthy()

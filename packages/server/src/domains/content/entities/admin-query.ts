@@ -27,7 +27,6 @@ export interface EntityAdminQuery<TFilters extends LimitOffset, TAdminDto> {
   listRevisionsForAdmin: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<AdminRevisionDto[]>
 }
 
-/** Admin-query trio every content entity shares; all gated through `assertAccess`, so a missing entity is NOT_FOUND. */
 export function makeEntityAdminQuery<
   TMeta extends MetaRowBase,
   TNew,
@@ -54,7 +53,6 @@ export function makeEntityAdminQuery<
       toDto: (row, engagement, extras) =>
         descriptor.adminDto.project(
           row,
-          // Both partials are plain DTO option bags; the spread keeps every key optional.
           unsafeCast<Partial<AdminListEngagement> & Partial<TExtras>>({ ...engagement, ...extras }),
         ),
     })

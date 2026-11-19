@@ -12,9 +12,7 @@ describe('injectWarmupChunks', () => {
     const out = injectWarmupChunks(script, chunks)
 
     expect(out).not.toContain(SENTINEL)
-    // The placeholder (quotes included) is replaced by the JSON array literal.
     expect(out).toContain('var e=["/assets/a.js","/assets/b.js"]')
-    // The rest of the script is preserved verbatim.
     expect(out).toContain('function t(e){return e.length}t(e)})();')
   })
 

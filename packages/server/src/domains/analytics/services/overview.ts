@@ -7,7 +7,6 @@ import { queryCounters } from '@kobato/db/duckdb/queries/counters.ts'
 import { queryMetric } from '@kobato/db/duckdb/queries/metric.ts'
 
 /**
- * First-paint fan-out: counters plus the first tab of every metric group. The
  * views series and the heatmap are deliberately absent — SSR buckets would be
  * UTC-bound, so the client fetches both in its own timezone.
  */

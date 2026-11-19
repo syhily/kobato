@@ -94,7 +94,6 @@ describe('audit/archive', () => {
       expect(input.ContentType).toBe('application/gzip')
       expect(input.CacheControl).toContain('private')
 
-      // Only the archived rows are gone; the fresh row is untouched.
       const remaining = await db.select().from(auditLog)
       expect(remaining).toHaveLength(1)
       expect(remaining[0]?.action).toBe('fresh')
@@ -124,7 +123,6 @@ describe('audit/archive', () => {
       expect(await db.select().from(auditLog)).toHaveLength(0)
     })
 
-    // Half-configured S3 (endpoint missing) takes the purge fallback: one warn, zero errors.
     it('purges expired rows when S3 is half-configured (endpoint missing)', async () => {
       setS3Storage({ endpoint: '' })
       await seedAuditRow()
@@ -146,7 +144,6 @@ describe('audit/archive', () => {
 
   describe('deleteArchivedRows', () => {
     it('deletes in batches when the id list exceeds one batch', async () => {
-      // Five rows, batch size two → three DELETEs.
       for (let i = 0; i < 5; i++) {
         await seedAuditRow()
       }

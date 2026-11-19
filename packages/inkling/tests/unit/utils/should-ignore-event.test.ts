@@ -42,7 +42,6 @@ describe('shouldIgnoreEvent', () => {
 
     input.remove()
 
-    // When target is disconnected and activeElement is inside cm-editor
     cm.focus()
     const detached = document.createElement('input')
     expect(shouldIgnoreEvent({ target: detached })).toBe(true)

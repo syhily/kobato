@@ -7,7 +7,6 @@ import { readRevisionProjection } from '@kobato/server/domains/content/projectio
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared.ts'
 import { readStringArray } from '@kobato/server/infra/coerce.ts'
 
-// `toCmsPost` returns the shared `Post` DTO directly — no server-side variant.
 export function toCmsPost(
   meta: PostMetaRow,
   publishedRevision: ContentRow | null,
@@ -21,8 +20,6 @@ export function toCmsPost(
 ): Post {
   const { bodyHtml, bodyHtmlFeed, bodyState, imageSources, headings } = readRevisionProjection(publishedRevision)
 
-  // Compose from `toClientPostFromMeta`; only revision-joined fields are
-  // stated here — `headings` overrides the projection's empty default.
   return {
     ...toClientPostFromMeta(meta, options.tags ?? [], options.categoryName ?? ''),
     coverThumbhash: options.coverThumbhash,

@@ -70,7 +70,6 @@ function serializeError(err: Error): Record<string, unknown> {
   return out
 }
 
-// Split out so the map callback keeps a typed return instead of `unknown`.
 function tagArrayElement(item: unknown, keyIsL3: boolean): unknown {
   if (typeof item === 'object' && item !== null && !(item instanceof Error)) {
     return applyPrivacyTagsRecursive(unsafeCast<LogContext>(item))
@@ -125,13 +124,11 @@ const stdout = new Writable({
 export const root = pino(
   {
     level: resolveLevel(),
-    // Output "info" instead of 30, "warn" instead of 40, etc.
     formatters: {
       level(label: string) {
         return { level: label }
       },
     },
-    // ISO-8601 timestamps.
     timestamp: pino.stdTimeFunctions.isoTime,
     serializers: {
       error: serializeError,
@@ -163,12 +160,10 @@ const CAPTURE_ENABLED = isVitest()
 const CAPTURE_LIMIT = 200
 const captureRing: LogCaptureEntry[] = []
 
-/** Test-only: the bounded ring of captured entries (oldest first). */
 export function __logCaptureForTests(): LogCaptureEntry[] {
   return captureRing
 }
 
-/** Test-only: reset the ring between cases. */
 export function __clearLogCaptureForTests(): void {
   captureRing.length = 0
 }

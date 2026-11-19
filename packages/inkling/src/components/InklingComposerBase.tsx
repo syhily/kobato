@@ -55,28 +55,15 @@ export interface InklingComposerProps {
   darkMode?: boolean
   enableMultiplayer?: boolean
   isTKEnabled?: boolean
-  /** Surface flag forwarded to `InklingUiPrefsContext`: set false to keep the
-   * emoji typeahead out of nested/caption editors (minimal surfaces). */
   isEmojiEnabled?: boolean
-  /** Surface flag forwarded to `InklingUiPrefsContext`: 'plain' edits code
-   * block cards in a static textarea instead of the lazy CodeMirror editor. */
+
   codeEditor?: 'rich' | 'plain'
-  /** BCP 47 language for Intl.Segmenter word counting — the host's UI locale.
-   * `WordCountPlugin` (host-mounted, as today, or any future composer-owned
-   * mount) uses it as its default language and publishes it on the word-count
-   * handle so nested composers segment in the same language. */
   wordCountLanguage?: string
-  /** Host label overrides — a partial table
-   * merged over the English defaults; unknown keys are compile errors. */
   labels?: InklingLabelsInput
   multiplayerEndpoint?: string
   multiplayerDebug?: boolean
   multiplayerDocId?: string
   multiplayerUsername?: string
-  /** The host's drag auto-scroll container selector — when a drag's only
-   * scrollable ancestor is the document, the drag-scroll prefers this
-   * element (kobato passes its editor container selector; absent, the
-   * document scrolling element is used). */
   dragScrollContainerSelector?: string
   children?: React.ReactNode
 }
@@ -117,18 +104,13 @@ const InklingComposerBase = ({
     buildInklingRootExtension({
       nodes,
       onError: (error: Error) => onError(error),
-      // collaboration owns the bootstrap state via the plugin below
+
       initialEditorState: enableMultiplayer ? null : normalizedInitialEditorState,
     }),
   )
 
-  // the legacy-bag degradation policy lives in file-uploader (a synchronous
-  // test table); the composer keeps one memo line
   const normalizedFileUploader = React.useMemo<FileUploader>(() => normalizeFileUploader(fileUploader), [fileUploader])
 
-  // the lazy collaboration chunk's load choreography (inert factory +
-  // unmounted plugin until the chunk resolves) lives in
-  // useCollaborationProviderFactory over the headless session
   const createWebsocketProvider = useCollaborationProviderFactory({
     enabled: enableMultiplayer,
     endpoint: multiplayerEndpoint,
@@ -136,13 +118,7 @@ const InklingComposerBase = ({
     debug: multiplayerDebug,
   })
 
-  // the telemetry port: the host's handler replaces the default
-  // plausible/posthog adapter page-wide while this composer is mounted
   React.useEffect(() => setTelemetryHandler(cardConfig.telemetry), [cardConfig.telemetry])
-
-  // the whole-value transport — InklingHostIntegrationProvider fans it out
-  // into the per-lifecycle channels, each memoized on its own leaves, so a
-  // fresh `cardConfig = {}` default keeps every channel stable
   const hostIntegrationValue = React.useMemo(
     () => ({
       fileUploader: normalizedFileUploader,
@@ -152,23 +128,19 @@ const InklingComposerBase = ({
     }),
     [normalizedFileUploader, cardConfig, onError, dragScrollContainerSelector],
   )
-
   const collaborationValue = React.useMemo(
     () => ({ createWebsocketProvider: createWebsocketProvider ?? noopWebsocketProviderFactory }),
     [createWebsocketProvider],
   )
-
   const uiPrefsValue = React.useMemo(
     () => ({
       darkMode,
       isTKEnabled,
       isEmojiEnabled,
       codeEditor,
-      // the host names its UI locale; WordCountPlugin segments with it and
-      // nested composers inherit it through the word-count handle
+
       wordCountLanguage,
-      // the host's override table merges over the English defaults exactly
-      // once, here — every label-reading consumer sees a full table
+
       labels: resolveLabels(labels),
     }),
     [darkMode, isTKEnabled, isEmojiEnabled, codeEditor, wordCountLanguage, labels],

@@ -24,7 +24,6 @@ interface BackupFileListProps {
   backups: BackupFileDto[]
   timeZone: string
   isCreating: boolean
-  /** Settings-level encryption switch — the create dialog hints accordingly. */
   encryptionEnabled: boolean
   /** Called with the optional one-off password (undefined = the settings default). */
   onCreate: (password?: string) => void

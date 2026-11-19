@@ -13,10 +13,8 @@ import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { eq, inArray } from 'drizzle-orm'
 
-// Mutation side of the fonts domain: slot assignment and direct delete. Slot
-// edits never garbage-collect a font package — only an explicit delete does.
+// Slot edits never garbage-collect a font package — only an explicit delete does.
 
-/** Read the current `fonts` settings section within the caller's transaction. */
 async function readCurrentFonts(db: Database): Promise<FontsSettings> {
   const row = findSettingByScope(db, SECTION_REGISTRY.fonts.scope)
   const data = row?.data
@@ -44,7 +42,6 @@ export async function setFontSlot(
   await updateBlogSettingsSection(db, 'fonts', next, updatedBy)
 }
 
-/** Delete a font (storage package + DB row); 409 if any slot still references it. */
 export async function deleteFont(db: Database, fontId: string): Promise<FontRow> {
   const row = await db.select().from(font).where(eq(font.id, fontId)).limit(1)
   const target = row[0]
@@ -82,7 +79,7 @@ async function gcFonts(db: Database, fontIds: readonly string[]): Promise<void> 
     try {
       await deleteFontPackage(row.hash, row.storageDriver)
     } catch {
-      // best-effort — the row delete below is what actually frees the slot
+      /* noop */
     }
     await db.delete(font).where(eq(font.id, row.id))
   }

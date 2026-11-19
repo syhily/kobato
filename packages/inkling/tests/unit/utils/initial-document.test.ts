@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest'
 
 function createThrowingEditor() {
   return createEditor({
-    // lexical swallows errors inside updates by default;
-    // onError rethrows so the test fails
     onError: (error) => {
       throw error
     },

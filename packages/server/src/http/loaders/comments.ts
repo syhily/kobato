@@ -31,8 +31,6 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
   }
 }
 
-// The streamed comments payload (`content.comments.byKey`) — split out so
-// the route streams it via `<Await>` while the rest of the detail renders.
 export async function loadCommentsAndItems(
   db: Database,
   session: BlogSession,
@@ -43,8 +41,6 @@ export async function loadCommentsAndItems(
   return { commentData, commentItems: asCommentItemsWire(commentItems) }
 }
 
-// Above-the-fold detail data (likes, sidebar, current user, comment digest);
-// comment rows are excluded so the route streams them alongside the SSR HTML.
 export async function loadDetailPageCritical(
   db: Database,
   session: BlogSession,

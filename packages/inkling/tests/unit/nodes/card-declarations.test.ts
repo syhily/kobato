@@ -32,10 +32,6 @@ import { createHeadlessEditor } from '@lexical/headless'
 import { createCommand } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// The card declaration is the single per-card source of truth: these tests
-// pin the declarations themselves and that every registry is derived from
-// them, rather than pinning the derived wiring twice.
-
 /**
  * Constructs every registered card class with an empty dataset inside one
  * headless-editor update (node construction requires an active editor) and
@@ -76,9 +72,6 @@ describe('card declarations as the single source of truth', () => {
       (card) => card.nodeType,
     )
 
-    // every insert-bearing declaration joins exactly one insert command,
-    // derived from its node type — the spec carries only flags, so a
-    // registration can never drift from the card it inserts
     expect(CARD_INSERT_COMMANDS.map((registration) => registration.nodeType).sort()).toEqual(insertNodeTypes.sort())
     for (const registration of CARD_INSERT_COMMANDS) {
       expect(registration.command).toBe(resolveCardInsertCommand(registration.nodeType))
@@ -91,21 +84,16 @@ describe('card declarations as the single source of truth', () => {
       const resolved = getCardMenu(declaration.nodeType)
 
       if (!menu) {
-        // the footnote definition is the one menu-less card — created/ordered
-        // by the footnote behaviour module, never inserted from the menu
         expect(declaration.nodeType).toBe('footnotedefinition')
         expect(resolved).toBeUndefined()
         continue
       }
-
       expect(resolved?.map((item) => item.label)).toEqual(menu.map((entry) => entry.label))
-      // each resolved entry dispatches the command its spec entry NAMES —
-      // the string resolves through the same card-commands view the registrar
-      // reads, so menu dispatch and registration name one object
+
       expect(resolved?.map((item) => item.insertCommand)).toEqual(
         menu.map((entry) => resolveCardMenuCommand(entry.command, declaration.nodeType)),
       )
-      // and the icon id resolved to a component
+
       for (const item of resolved ?? []) {
         expect(typeof item.Icon).toBe('function')
       }
@@ -113,9 +101,6 @@ describe('card declarations as the single source of truth', () => {
   })
 
   it('resolves every menu entry labelKey against the labels table (C7)', () => {
-    // the declaration carries the English default; the labels table carries
-    // the same text as the overridable default — a labelKey without a table
-    // entry (or a stale table entry) fails here, not at render time
     for (const declaration of CARD_DECLARATIONS) {
       const menu = 'menu' in declaration ? declaration.menu : undefined
       for (const entry of menu ?? []) {
@@ -125,7 +110,7 @@ describe('card declarations as the single source of truth', () => {
         }
       }
     }
-    // the table pseudo-source is not a declaration but resolves the same way
+
     const tableMenu = TABLE_MENU_SOURCE[1].cardMenu
     const tableEntry = Array.isArray(tableMenu) ? tableMenu[0] : tableMenu
     expect(DEFAULT_LABELS[`menu.${tableEntry?.labelKey}.label` as keyof typeof DEFAULT_LABELS]).toBe(tableEntry?.label)
@@ -133,10 +118,6 @@ describe('card declarations as the single source of truth', () => {
   })
 
   it('carries no menu.* labels-table key without a menu entry naming it (and vice versa)', () => {
-    // the reverse direction of the resolution leg above: the labels table is
-    // closed, so a stale `menu.*` key whose labelKey no declaration (or the
-    // table pseudo-source) names is drift, and a new menu entry without its
-    // table entry fails the resolution leg above
     const declaredLabelKeys = new Set<string>()
     for (const declaration of CARD_DECLARATIONS) {
       const menu = 'menu' in declaration ? declaration.menu : undefined
@@ -145,7 +126,6 @@ describe('card declarations as the single source of truth', () => {
       }
     }
     declaredLabelKeys.add('table')
-
     const tableLabelKeys = new Set(
       Object.keys(DEFAULT_LABELS)
         .filter((key) => key.startsWith('menu.') && !key.startsWith('menu.section.'))
@@ -157,8 +137,6 @@ describe('card declarations as the single source of truth', () => {
 
   it('resolves a drag icon for every draggable card', () => {
     for (const declaration of CARD_DECLARATIONS) {
-      // the footnote definition is menu-less and names no dragIcon — it lives
-      // in the doc-end run and the run-invariant transform re-parks it anyway
       if (declaration.nodeType === 'footnotedefinition') {
         expect(getCardDragIcon(declaration.nodeType)).toBeUndefined()
         continue
@@ -220,9 +198,6 @@ describe('card declarations as the single source of truth', () => {
   })
 })
 
-// Regression: with a host card registered, every built-in derived view keeps
-// answering from the built-in declarations — the host registry is a fallback,
-// never an override.
 describe('built-in derived views with a host card present', () => {
   const REGRESSION_PROBE_COMMAND = createCommand('REGRESSION_PROBE_COMMAND')
 
@@ -252,15 +227,13 @@ describe('built-in derived views with a host card present', () => {
     expect(typeof getCardDragIcon('audio')).toBe('function')
     expect(getCardDecorateTarget('audio')?.nodeType).toBe('audio')
     expect(getCardToolbarLabel('audio')).toBe('audio')
-    // the host card's facts land only in the opened fallback views
+
     expect(getCardMenu('regressionProbe')?.[0]?.label).toBe('Probe')
     expect(getCardToolbarLabel('regressionProbe')).toBe('regression-probe')
     expect(getCardInsertRegistrations().some((registration) => registration.nodeType === 'audio')).toBe(true)
   })
 
   it('adopts the host card spec on the assembled class', () => {
-    // the same spec-adoption path the built-in cards run: the assembled host
-    // class initializes the transient fields its spec names
     const editor = createHeadlessEditor({ nodes: [probe.node], onError: () => {} })
     editor.update(() => {
       const node = new probe.node({})

@@ -6,49 +6,22 @@ import { ProgressBar } from '@kobato/inkling-internal/components/ui/ProgressBar'
 import { cx } from '@kobato/inkling-internal/utils/cx'
 import React from 'react'
 
-/**
- * Upload chrome — the visual half of the media cards' upload UI (the headless
- * flow is "upload intent" in nodes/upload-intent.ts; this module never touches
- * it). It owns the shared pieces: the empty↔uploading swap
- * (UploadPlaceholder), the hidden file input (UploadFileInput), the
- * progress-width rule (uploadProgressStyle — the only `toFixed(0)`), the two
- * uploading indicators (UploadingPanel for the empty state, UploadingOverlay for
- * the populated one), and the file-input-ref tunnelling (useFileInputRefTunnel).
- * Per-card variance — icon, description, input name, mimeTypes, overlay track,
- * and the input's click propagation (see
- * UploadFileInputProps.stopClickPropagation) — arrives as data.
- */
-
-/** The one progress-width rule: whole-percent width, 0 when the host does not report progress. */
 export function uploadProgressStyle(progress?: number): React.CSSProperties {
   return { width: `${progress?.toFixed(0) ?? '0'}%` }
 }
-
 export interface UploadFileInputProps {
   /** The input's `name` — a DOM contract unit tests and e2e query (`input[name="…"]`). */
   name: string
   fileInputRef?: React.Ref<HTMLInputElement>
-  /** Rendered as the input's `accept` (joined with ','); the attribute is omitted when undefined. */
   mimeTypes?: string[]
   multiple?: boolean
   disabled?: boolean
-  /**
-   * Whether clicks on the input stop propagating. Load-bearing per-card data,
-   * not a cosmetic: the media cards with an edit mode (audio, file, video —
-   * `hasEditMode() === true`, no `openInEditMode` on their insert spec) enter
-   * edit mode on insert BECAUSE the triggerFileDialog click on this input
-   * propagates through the editor's CLICK_COMMAND → EDIT_CARD_COMMAND chain;
-   * standardizing stopPropagation onto them leaves inserted cards selected but
-   * not editing (12 e2e failures). The image card is the inverse —
-   * `hasEditMode() === false`, and its upload form carries the stopPropagation —
-   * so only the image call sites pass true.
-   */
+
   stopClickPropagation?: boolean
-  /** Fires with the picked files — the chrome adapts the DOM event at this boundary, so cards carry files only. */
+
   onFileChange?: (files: File[]) => void
 }
 
-/** The hidden file input every upload affordance binds. */
 export function UploadFileInput({
   name,
   fileInputRef,
@@ -81,20 +54,11 @@ export function UploadFileInput({
 }
 
 export interface FileInputRefTunnel {
-  /** The chrome's own input ref — the file picker clicks this one. */
   fileInputRef: FileInputRef
-  /** Ref to hand to UploadFileInput. */
+
   onFileInputRef: React.Ref<HTMLInputElement>
 }
 
-/**
- * The file-input-ref tunnelling: the chrome binds its hidden input to a local
- * ref (so its own filePicker always works) and shares it with the parent
- * channel — either the node component's FileInputRef (which
- * useTriggerFileDialog clicks; it becomes the input's ref directly so parent
- * and chrome read one object, no mirroring mutation) or a callback receiving
- * the local ref object (MediaUploader's setFileInputRef prop, e.g. HeaderCard).
- */
 export function useFileInputRefTunnel(target?: FileInputRef | ((ref: FileInputRef) => void)): FileInputRefTunnel {
   const localRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -114,7 +78,6 @@ export function useFileInputRefTunnel(target?: FileInputRef | ((ref: FileInputRe
   return { fileInputRef: localRef, onFileInputRef }
 }
 
-/** The empty card's uploading state: a placeholder-shaped panel holding the progress bar. */
 export function UploadingPanel({ progress }: { progress?: number }) {
   return (
     <div className="h-full border border-transparent">
@@ -130,13 +93,12 @@ export function UploadingPanel({ progress }: { progress?: number }) {
 export interface UploadingOverlayProps {
   progress?: number
   dataTestId?: string
-  /** Forwarded to the ProgressBar track — 'transparent' where the overlay sits on media. */
+
   bgStyle?: 'transparent' | 'default'
-  /** Overlay background override; defaults to the white wash ('bg-white/50'). */
+
   className?: string
 }
 
-/** The populated card's uploading state: an absolute overlay holding the progress bar. */
 export function UploadingOverlay({ progress, dataTestId, bgStyle = 'default', className }: UploadingOverlayProps) {
   return (
     <div
@@ -155,7 +117,7 @@ export interface UploadPlaceholderProps {
   icon: PlaceholderIconName
   desc: string
   size: MediaPlaceholderSize
-  /** The hidden input's `name` (see UploadFileInput). */
+
   inputName: string
   onFileChange: (files: File[]) => void
   mimeTypes?: string[]
@@ -164,17 +126,11 @@ export interface UploadPlaceholderProps {
   errors?: Error[] | { message?: string }[]
   dragHandler?: DragHandlerLike
   errorDataTestId?: string
-  /** The node component's input ref, mirrored by the tunnel. */
   fileInputRef?: FileInputRef
-  /** Forwarded to the hidden input (see UploadFileInputProps.stopClickPropagation). */
+
   stopClickPropagation?: boolean
 }
 
-/**
- * The empty card's upload chrome: the empty↔uploading swap (UploadingPanel
- * while isUploading), the MediaPlaceholder whose click opens the hidden
- * UploadFileInput, and the ref tunnelling into the parent's FileInputRef.
- */
 export function UploadPlaceholder({
   icon,
   desc,

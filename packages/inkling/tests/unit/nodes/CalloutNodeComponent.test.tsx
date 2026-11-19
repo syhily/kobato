@@ -23,7 +23,6 @@ function createCollaborationContext() {
   return { color: '#000000', isCollabActive: false, name: 'test', yjsDocMap: new Map() }
 }
 
-// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey,
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},

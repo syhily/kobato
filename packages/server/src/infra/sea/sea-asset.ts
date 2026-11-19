@@ -5,7 +5,6 @@
 import { seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
 import { existsSync, readFileSync } from 'node:fs'
 
-/** Read a text asset as UTF-8 — VFS-mounted `key` under SEA, `diskPath` otherwise; null when missing. */
 export function readAssetTextOrDisk(key: string, diskPath: string): string | null {
   const assetPath = seaAssetPath(key)
   const path = assetPath ?? diskPath

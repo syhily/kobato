@@ -14,9 +14,6 @@ interface BatcherOptions {
   flushThreshold: number
 }
 
-// In-memory counter aggregator for high-frequency page views. Shares the
-// FlushLoop skeleton with the insert batchers; on failure it merges the snapshot
-// back for a retry instead of dead-lettering rows.
 class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
   private buffer = new Map<string, number>()
 
@@ -66,15 +63,10 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
     this.armFlushTimer()
   }
 
-  /**
-   * Unflushed delta for one key — the read-time-merge half of the
-   * batcher. Peeks without detaching.
-   */
   pendingDelta(key: string): number {
     return this.buffer.get(key) ?? 0
   }
 
-  /** Detach the shutdown hook (registry reset on restore — see InsertBatcher). */
   override dispose(): void {
     if (this.buffer.size > 0) {
       log.warn('page-view batcher dropped with unflushed counts', {
@@ -103,10 +95,6 @@ export function bumpPageView(target: EntityTarget): void {
   requireBatcher<PageViewBatcher>(BATCHER_NAME).increment(targetKey(target))
 }
 
-/**
- * Read-time merge for view counters: readers add the unflushed delta
- * to serve an exact count. Returns 0 when the batcher is not running.
- */
 export function pendingViewDelta(target: EntityTarget): number {
   return getBatcher<PageViewBatcher>(BATCHER_NAME)?.pendingDelta(targetKey(target)) ?? 0
 }

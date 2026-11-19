@@ -41,8 +41,6 @@ export const HtmlOutputPlugin = ({
     })
   }, [editor, setHtml])
 
-  // trailing-edge debounce from the timing module (cancel on unmount),
-  // not a hand-rolled timer ref
   const debouncedExportHtml = React.useMemo(() => debounce(exportHtml, debounceMs), [exportHtml, debounceMs])
 
   React.useEffect(() => {
@@ -68,8 +66,6 @@ export const HtmlOutputPlugin = ({
         const parser = new DOMParser()
         const dom = parser.parseFromString(html, 'text/html')
 
-        // The same import surgery the headless htmlToLexical importer runs —
-        // @lexical/clipboard's normalization covers the legacy filtering.
         $insertHtmlDocument(editor, dom)
       },
       { discrete: true },

@@ -26,19 +26,12 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { BLUR_COMMAND, FOCUS_COMMAND } from 'lexical'
 import React from 'react'
 
-// The render-scope values InklingComposableEditor derives and the core plugin
-// entries consume. Unlike DEFAULT_FEATURE_PLUGINS (whose entries take no
-// props), the core set's props are per-instance — contexts, refs, derived
-// flags — so they travel as one typed scope instead of being re-derived per
-// entry.
 export interface CorePluginScope {
-  /** Wires the floating anchor element the toolbar plugin renders into. */
   contentEditableRef: (element: HTMLDivElement | null) => void
   contentEditableClassName: string
   readOnly: boolean
-  /** The resolved placeholder element (host element or the default EditorPlaceholder). */
   placeholder: React.ReactElement
-  /** The composable editor's change handler (shared + per-instance onChange). */
+
   onEditorChange: (editorState: EditorState) => void
   historyState: HistoryState
   isCollabActive: boolean
@@ -72,11 +65,6 @@ export interface CorePluginEntry {
   render: (scope: CorePluginScope) => React.ReactNode
 }
 
-// The core plugin set every InklingComposableEditor mounts, as data and in
-// render order. The shipped default surface is CORE_PLUGINS (here) +
-// DEFAULT_FEATURE_PLUGINS (./DefaultFeaturePlugins): one enumerable list.
-// InklingEditorEventPlugin appears twice (blur/focus) as two entries — the
-// two mounts differ only in props, not in kind.
 export const CORE_PLUGINS: readonly CorePluginEntry[] = [
   {
     key: 'rich-text',
@@ -93,8 +81,7 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
     ),
   },
   { key: 'link', render: () => <LinkPlugin /> },
-  // typed-URL autolinking (tiptap `autolink: true` parity); no-ops on
-  // surfaces composed without AutoLinkNode (the card-free core surface)
+
   { key: 'autolink', render: () => <InklingAutoLinkPlugin /> },
   {
     key: 'on-change',
@@ -130,10 +117,7 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
   {
     key: 'floating-toolbar',
     when: (scope) => scope.floatingAnchorElem !== null,
-    // render re-narrows locally; the `when` guard above is the data-shaped
-    // mount condition, this branch can only run with a non-null anchor.
-    // `alignment` rides the same surface flag the behaviour plugin reads:
-    // opted-in surfaces keep element `format` AND get the alignment group.
+
     render: ({ floatingAnchorElem, hiddenFormats, isSnippetsEnabled, alignment }) =>
       floatingAnchorElem ? (
         <FloatingToolbarPlugin
@@ -147,13 +131,7 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
   { key: 'drag-drop-paste', render: () => <DragDropPastePlugin /> },
   {
     key: 'card-picker-host',
-    // The pick seam's picker host (CONTEXT.md: "pick seam"): top-level
-    // editable surfaces only — nested composers share the top-level pick
-    // store, so a nested mount would render the active picker twice. The
-    // readOnly gate is enforced end to end: the host's unmount cleanup drops
-    // the active request (the page editor flips readOnly on every save), and
-    // `useCardPicker().open` no-ops on a non-editable editor, so a read-only
-    // surface can neither originate nor inherit a pick request.
+
     when: (scope) => !scope.isNested && !scope.readOnly,
     render: () => <CardPickerHostPlugin />,
   },
@@ -190,8 +168,7 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
   },
   {
     key: 'focus-mode',
-    // writing-focus mode: the plugin marks the selected top-level block for
-    // host CSS to dim the rest
+
     when: (scope) => scope.focusMode === true,
     render: () => <FocusModePlugin />,
   },

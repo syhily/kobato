@@ -17,7 +17,6 @@ describe('integration / admin webmentions outbox', () => {
   it('lists rows with per-status counts, newest first', async () => {
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://example.com/posts/a/', targetUrl: 'https://x.dev/1' })
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://example.com/posts/a/', targetUrl: 'https://x.dev/2' })
-    // One delivered, one still pending.
     const rows = await db.select().from(webmentionOutbox)
     await db
       .update(webmentionOutbox)

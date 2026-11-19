@@ -59,7 +59,6 @@ describe('commentAvatarClass / commentContentClass — depth boundaries', () => 
 
   it('uses the wider content spacing only at exactly depth 1', () => {
     expect(commentContentClass(1)).toContain('my-2')
-    // Non-1 depths get the tighter spacing.
     expect(commentContentClass(0)).toContain('my-1.5')
     expect(commentContentClass(3)).toContain('my-1.5')
   })

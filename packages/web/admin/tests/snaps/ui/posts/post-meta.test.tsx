@@ -49,7 +49,6 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('基本信息')
     expect(html).toContain('A populated summary for the post.')
-    // Optional content language — author metadata, not a UI locale switch.
     expect(html).toContain('id="post-content-language"')
     expect(html).toContain('内容语言（可选）')
     expect(html).toContain('value="zh-Hant-TW"')
@@ -61,7 +60,6 @@ describe('snapshot: PostMetaSidebar', () => {
     expect(html).toContain('显示目录')
     expect(html).toContain('显示修改时间')
     expect(html).toContain('文章可见')
-    // Pinned toggle only renders when featureGate is enabled.
     expect(html).toContain('置顶到首页')
   })
 
@@ -95,7 +93,6 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('尚未保存')
     expect(html).toContain('未保存')
-    // No cover value => the empty hint copy shows.
     expect(html).toContain('点击此处上传封面，或粘贴一张图片 URL。')
     expect(html).toContain('摘要')
   })
@@ -113,9 +110,7 @@ describe('snapshot: PostMetaSidebar', () => {
       ),
     )
     expect(html).toContain('已计划发布')
-    // DateTimePicker renders the chosen instant as a localized string.
     expect(html).toContain('2099/6/1 09:00')
-    // Saved-at hint from the saveStatus — site-zone + locale via the facade.
     expect(html).toContain('2023/11/15 06:13')
   })
 
@@ -163,7 +158,6 @@ describe('snapshot: PostMetaSidebar', () => {
         />,
       ),
     )
-    // Empty og → GeneratedOgPreview pointing at the slug.
     expect(html).toContain('当前展示的是默认生成的 OG')
     expect(html).toContain('hello-world')
   })
@@ -305,7 +299,6 @@ describe('snapshot: EditorMetaPanel (aside)', () => {
     const post = makeAdminPost({ title: 'Editable Post' })
     const html = renderMetaPanel({ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt })
     expect(html).toContain('基本信息')
-    // Extras renders the revision-history trigger + delete button (edit mode).
     expect(html).toContain('历史版本')
     expect(html).toContain('删除文章')
   })

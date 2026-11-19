@@ -1,4 +1,3 @@
-/** Shared zod-issues → DomainError detail mapping for the body canonicalizers. */
 export function extractZodIssues(error: unknown): { message: string; path?: string[] }[] | undefined {
   if (typeof error !== 'object' || error === null) {
     return undefined

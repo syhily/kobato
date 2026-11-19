@@ -96,7 +96,6 @@ describe('ui/shared/use-debounced-search', () => {
     })
     expect(result.current[0]).toBe('typed')
 
-    // Back/forward updates the URL param, and the input follows the new external value.
     rerender({ initial: 'back-forward' })
     expect(result.current[0]).toBe('back-forward')
   })

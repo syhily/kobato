@@ -25,17 +25,14 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
   let preserveCardSelection: { key: string; until: number; setAt: number } | null = null
 
   return editor.registerUpdateListener(({ editorState, tags }: { editorState: EditorState; tags: Set<string> }) => {
-    // Ignore updates from other users or from card node exportJSON calls.
     if (tags.has('collaboration') || tags.has('card-export')) {
       return
     }
 
-    // Ignore selections inside nested editors, which would deselect the containing card.
     if (isNested || document.activeElement?.closest('[data-lexical-decorator]')) {
       return
     }
 
-    // Read the store fresh on every update rather than a React mirror.
     const { selectedCardKey } = store.getState()
 
     const { isCardSelected, cardKey, cardNode } = editorState.read(() => {
@@ -65,7 +62,6 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
       }
     }
 
-    // An undo/redo restore arms the protection window.
     if (tags.has('historic') && isCardSelected && cardKey) {
       const now = performance.now()
       preserveCardSelection = { key: cardKey, until: now + PRESERVE_SELECTION_WINDOW_MS, setAt: now }
@@ -103,7 +99,6 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
         return
       }
       if (preserveCardSelection?.key === selectedCardKey) {
-        // The window elapsed — from here on deselections are real.
         preserveCardSelection = null
       }
 
@@ -128,7 +123,7 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
           clearOpenInEditMode.call(cardNode)
         },
         { tag: 'history-merge' },
-      ) // don't include a history entry for clearing the open in edit mode prop
+      )
 
       store.setState({ isEditingCard: true })
     }

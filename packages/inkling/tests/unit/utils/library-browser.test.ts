@@ -64,7 +64,6 @@ describe('createLibraryBrowser: search track', () => {
 
     browser.dispatch({ type: 'search', term: '' })
 
-    // no scheduler round-trip: the request is already in flight
     expect(search).toHaveBeenCalledTimes(1)
     expect(search).toHaveBeenCalledWith('')
     expect(scheduler.pendingCount()).toBe(0)
@@ -147,7 +146,6 @@ describe('createLibraryBrowser: search track', () => {
 
     browser.dispatch({ type: 'search', term: 'dogs' })
     scheduler.flush()
-    // the error clears when the next request starts
     expect(browser.getSnapshot().error).toBeNull()
     expect(browser.getSnapshot().isLoading).toBe(true)
 
@@ -174,12 +172,10 @@ describe('createLibraryBrowser: races and outcomes', () => {
     browser.dispatch({ type: 'search', term: 'second' })
     scheduler.flush()
 
-    // the newer response lands first
     second.resolve([makeItem('new')])
     await tick()
     expect(browser.getSnapshot().items.map((item) => item.id)).toEqual(['new'])
 
-    // the older response lands late and must be dropped
     first.resolve([makeItem('stale')])
     await tick()
     expect(browser.getSnapshot().items.map((item) => item.id)).toEqual(['new'])
@@ -273,9 +269,9 @@ describe('createLibraryBrowser: lifecycle', () => {
     const unsubscribe = browser.subscribe(listener)
 
     browser.dispatch({ type: 'search', term: '' })
-    expect(listener).toHaveBeenCalledTimes(1) // loading flip
+    expect(listener).toHaveBeenCalledTimes(1)
     await tick()
-    expect(listener).toHaveBeenCalledTimes(2) // results
+    expect(listener).toHaveBeenCalledTimes(2)
 
     unsubscribe()
     browser.dispatch({ type: 'search', term: '' })
@@ -292,13 +288,11 @@ describe('createLibraryBrowser: lifecycle', () => {
       .mockImplementationOnce(() => Promise.resolve([makeItem('later')]))
     const { browser, scheduler } = setup({ search })
 
-    // a scheduled search never fires after dispose
     browser.dispatch({ type: 'search', term: 'cats' })
     browser.dispose()
     scheduler.flush()
     expect(search).not.toHaveBeenCalled()
 
-    // an in-flight response landing after dispose is dropped
     browser.dispatch({ type: 'search', term: '' })
     expect(search).toHaveBeenCalledTimes(1)
     browser.dispose()

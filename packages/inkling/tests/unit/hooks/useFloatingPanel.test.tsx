@@ -135,7 +135,6 @@ describe('useFloatingPanel', () => {
     render(<Harness />)
     const panel = screen.getByTestId('settings-panel')
 
-    // visible card height 200 → y = 100 + 100 - 50 = 150, x = 300 + 20 = 320
     expect(panel.style.transform).toBe('translate(320px, 150px)')
   })
 
@@ -165,12 +164,10 @@ describe('useFloatingPanel', () => {
     const observer = findContainerObserver(scrollContainer)
     expect(observer).toBeDefined()
 
-    // leading call: window 500 → right edge 320+320=640 offscreen → x = 160
     setWindowSize(500, 768)
     observer!.emit(500)
     expect(panel.style.transform).toBe('translate(160px, 150px)')
 
-    // trailing call: only after the debounce settles, with the last width
     setWindowSize(480, 768)
     observer!.emit(480)
     expect(panel.style.transform).toBe('translate(160px, 150px)')
@@ -207,11 +204,11 @@ describe('useFloatingPanel', () => {
     expect(panel.style.transform).toBe('translate(320px, 150px)')
 
     mousedown(panel, 400, 200)
-    mousemove(403, 202) // within the 3px threshold
+    mousemove(403, 202)
     expect(panel.style.transform).toBe('translate(320px, 150px)')
     expect(document.head.querySelectorAll('style')).toHaveLength(0)
 
-    mousemove(420, 220) // threshold crossed → drag, effects on
+    mousemove(420, 220)
     expect(panel.style.transform).toBe('translate(340px, 170px)')
     expect(document.head.querySelectorAll('style')).toHaveLength(1)
     expect(panel.style.pointerEvents).toBe('none')

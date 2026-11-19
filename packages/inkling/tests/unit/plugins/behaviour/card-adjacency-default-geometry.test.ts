@@ -20,7 +20,6 @@ function createTestEditor() {
   })
 }
 
-/** A native block element ([data-lexical-editor] > p) with two element children. */
 function mountNativeBlock() {
   const container = document.createElement('div')
   container.setAttribute('data-lexical-editor', 'true')
@@ -54,7 +53,6 @@ describe('default CardAdjacencyGeometry', () => {
     document.body.innerHTML = ''
   })
 
-  /** [paragraph("Some content")] [image] with the Lexical caret collapsed mid-text. */
   async function buildParagraphThenCard() {
     let cardKey = ''
     await updateEditor(editor, () => {
@@ -107,7 +105,6 @@ describe('default CardAdjacencyGeometry', () => {
     )
 
     expect(read(() => $getVisuallyAdjacentCard('down'))).toBeNull()
-    // the query fell through to the caret-rect comparison (which found no rects)
     expect(getRangeAt).toHaveBeenCalled()
   })
 

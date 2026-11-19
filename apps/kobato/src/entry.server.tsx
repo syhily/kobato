@@ -39,11 +39,9 @@ function documentLocale(routerContext: EntryContext): AppLocale {
 // Required export — RR would otherwise log errors via bare console.error, bypassing pino.
 // Only non-Response errors route here; post-shell streaming errors go to `onError` below.
 export function handleError(error: unknown, { request }: { request: Request }) {
-  // Client-aborted requests are not server faults — skip them.
   if (request.signal.aborted) {
     return
   }
-  // Unwrap RouteErrorResponses carrying the original error so the log never degrades to "[object Object]".
   const cause = isRouteErrorResponse(error) && 'error' in error && error.error instanceof Error ? error.error : error
   log.error('Router request error', {
     error: cause instanceof Error ? cause.message : String(cause),
@@ -77,8 +75,6 @@ export default function handleRequest(
   const serverRouterNonce = import.meta.env.DEV ? undefined : nonce
 
   return new Promise<Response>((resolve, reject) => {
-    // `ssr.shell` covers the initial render until shell/all-ready; `ssr.stream` covers only the post-shell stream.
-    // Both are manual spans because their boundaries are React callbacks, not one call site.
     const shellStartedAt = performance.now()
     const shellSpan: Span = startSpan('ssr.shell', { attributes: { 'ssr.phase': 'shell' } })
     let shellEnded = false
@@ -138,7 +134,6 @@ export default function handleRequest(
             streamSpan = startSpan('ssr.stream', { attributes: { 'ssr.phase': 'stream' } })
             const body = new PassThrough({
               final(callback) {
-                // Clear the timeout to prevent retaining the closure and memory leak
                 clearTimeout(timeoutId)
                 timeoutId = undefined
                 // A boundary error may already have marked this stream; keep it.
@@ -184,15 +179,13 @@ export default function handleRequest(
           },
           onError(error: unknown) {
             statusCode = 500
-            // Log post-shell streaming errors; the initial shell render rejects via `onShellError`.
+
             if (shellRendered) {
               streamOutcome = 'error'
               streamSpan?.recordError(error)
               streamSpan?.setStatus('error')
               log.error('SSR streaming error', { error: error instanceof Error ? error.message : String(error) })
             } else {
-              // A boundary may still recover and render the shell; `onShellError`
-              // ends the span with an error status if it does not.
               shellSpan.recordError(error)
             }
           },
@@ -201,7 +194,6 @@ export default function handleRequest(
       pipe = renderer.pipe
       abort = renderer.abort
     } catch (error) {
-      // A synchronous renderer throw must not leak the shell span or its timer.
       clearTimeout(timeoutId)
       timeoutId = undefined
       shellSpan.recordError(error)

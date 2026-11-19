@@ -36,8 +36,6 @@ function CaptionPlugin({ parentEditor }: { parentEditor: LexicalEditor }) {
   const { setCaptionHasFocus, captionHasFocus, nodeKey } = useContext(CardContext)
   const isSelected = useCardIsSelected(nodeKey)
 
-  // the type-to-focus policy lives in the nested-editor protocol; this
-  // adapter only supplies the card's selection/focus reads
   React.useEffect(() => {
     return registerCaptionTypeToFocus(editor, {
       isSelected: () => isSelected,
@@ -64,8 +62,7 @@ function CaptionPlugin({ parentEditor }: { parentEditor: LexicalEditor }) {
         COMMAND_PRIORITY_LOW,
       ),
       registerNestedEnterHandoff(editor, parentEditor),
-      // the caption arrow hand-off lives in the nested-editor protocol
-      // beside the Enter hand-off it mirrors
+
       registerCaptionArrowHandoff(editor, parentEditor),
     )
   }, [editor, setCaptionHasFocus, parentEditor])
@@ -89,8 +86,7 @@ const InklingCaptionEditor = ({
   className = 'inkling-lexical-caption',
 }: InklingCaptionEditorProps) => {
   const [parentEditor] = useLexicalComposerContext()
-  // minimal surfaces (the host's comment composer) opt out of the emoji
-  // typeahead through the composer's ui-prefs channel
+
   const { isEmojiEnabled } = useContext(InklingUiPrefsContext)
   return (
     <InklingNestedComposer

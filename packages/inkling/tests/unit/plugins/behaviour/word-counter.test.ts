@@ -146,8 +146,6 @@ describe('createWordCounter', () => {
     const counter = createWordCounter({ editor, onChange, language: 'zh', throttleFn: synchronousThrottle })
     counter.attach()
 
-    // word-level via Intl.Segmenter (15), not the legacy char-level (26), and
-    // the language reached the counting util
     expect(onChange).toHaveBeenCalledWith(15)
     expect(vi.mocked(countWords)).toHaveBeenCalledWith(expect.any(String), 'zh')
     counter.detach()
@@ -212,7 +210,6 @@ describe('createWordCounter', () => {
       { discrete: true },
     )
 
-    // the flush ran (one block recomputed) but the count did not change
     expect(vi.mocked(countWords)).toHaveBeenCalledTimes(1)
     expect(onChange).not.toHaveBeenCalled()
     counter.detach()
@@ -253,8 +250,6 @@ describe('createWordCounter', () => {
       { discrete: true },
     )
 
-    // the dirty text node remaps to its root child, so only that one block is
-    // recounted — a full recompute would call countWords once per block
     expect(vi.mocked(countWords)).toHaveBeenCalledTimes(1)
     expect(onChange).toHaveBeenLastCalledWith(697)
     counter.detach()
@@ -295,8 +290,6 @@ describe('createWordCounter', () => {
     const topLevelEditor = createSelectionEditor({ root: false, nodes: [TestDecoratorNode] })
     const nestedEditor = createSelectionEditor({ root: false, parentEditor: topLevelEditor })
 
-    // Set up the top-level state before attaching so the initial full count
-    // includes the top-level paragraph.
     await updateEditor(
       topLevelEditor,
       () => {
@@ -348,15 +341,9 @@ describe('createWordCounter', () => {
     const onChange = vi.fn()
     const counter = attachCounter(grandchildEditor, onChange)
 
-    // Initial count is computed from the top-level editor.
     expect(onChange).toHaveBeenCalledWith(3)
     onChange.mockClear()
 
-    // A grandchild update triggers the full-recompute fallback, which emits
-    // unconditionally. Lexical caches RootNode.getTextContent() across
-    // nested-editor boundaries, so the grandchild text does not reach the
-    // top-level count; the assertion pins the callback with the current
-    // top-level count.
     await updateEditor(
       grandchildEditor,
       () => {
@@ -401,12 +388,6 @@ describe('createWordCounter', () => {
   })
 })
 
-// Selection word count: the same engine reports
-// the count owned by the focused AND editable editor, coordinated per
-// TOP-LEVEL editor across the main editor and its nested caption editors.
-// Selection-only counters must never pay for the full-document pass. The
-// rootless editor harness keeps focus in the FOCUS_COMMAND/BLUR_COMMAND
-// ledger — explicit and deterministic; the rooted specs use the DOM root.
 function focusEditor(editor: LexicalEditor) {
   editor.dispatchCommand(FOCUS_COMMAND, new FocusEvent('focus'))
 }
@@ -414,7 +395,6 @@ function focusEditor(editor: LexicalEditor) {
 function blurEditor(editor: LexicalEditor) {
   editor.dispatchCommand(BLUR_COMMAND, new FocusEvent('blur'))
 }
-
 describe('createWordCounter selection channel', () => {
   beforeEach(() => {
     vi.mocked(countWords).mockClear()
@@ -481,7 +461,7 @@ describe('createWordCounter selection channel', () => {
     focusEditor(editor)
 
     const textKey = firstTextKey(editor)
-    // no content change: the only delta in this commit is the selection
+
     await selectText(editor, textKey, 0, 5)
 
     expect(onSelectionChange).toHaveBeenLastCalledWith(1)
@@ -558,8 +538,6 @@ describe('createWordCounter selection channel', () => {
     await selectText(nestedEditor, firstTextKey(nestedEditor), 7, 19)
     expect(calls.at(-1)).toBe(2)
 
-    // focusing the main editor with a collapsed selection owns the channel:
-    // the nested 2 must not survive as a fallback
     focusEditor(topLevelEditor)
     expect(calls.at(-1)).toBe(null)
 
@@ -598,7 +576,6 @@ describe('createWordCounter selection channel', () => {
     await selectText(nestedEditor, firstTextKey(nestedEditor), 7, 19)
     expect(calls.at(-1)).toBe(2)
 
-    // a late main-editor blur must not clear the nested owner's count
     blurEditor(topLevelEditor)
     expect(calls.at(-1)).toBe(2)
 
@@ -672,8 +649,6 @@ describe('createWordCounter selection channel', () => {
     focusEditor(nestedEditor)
     expect(calls.at(-1)).toBe(2)
 
-    // the top-level attach forces a delivery, but the focused nested editor
-    // still owns the value — no trailing null
     const topCounter = createWordCounter({ editor: topLevelEditor, onSelectionChange, throttleFn: synchronousThrottle })
     topCounter.attach()
     expect(calls.at(-1)).toBe(2)
@@ -686,7 +661,6 @@ describe('createWordCounter selection channel', () => {
   it('lets a programmatically focused editor win when the old BLUR was missed', async () => {
     const topLevelEditor = createSelectionEditor({ nodes: [TestDecoratorNode] })
     const nestedEditor = createSelectionEditor({ parentEditor: topLevelEditor })
-
     await updateEditor(
       topLevelEditor,
       () => {
@@ -715,7 +689,6 @@ describe('createWordCounter selection channel', () => {
     await selectText(topLevelEditor, firstTextKey(topLevelEditor), 0, 5)
     expect(calls.at(-1)).toBe(1)
 
-    // focus moves without FOCUS/BLUR commands reaching the editors
     activeElementSpy.mockReturnValue(nestedEditor.getRootElement())
     await selectText(nestedEditor, firstTextKey(nestedEditor), 7, 19)
     expect(calls.at(-1)).toBe(2)
@@ -758,27 +731,21 @@ describe('createWordCounter selection channel', () => {
     await selectText(nestedEditor, firstTextKey(nestedEditor), 7, 19)
     expect(calls.at(-1)).toBe(2)
 
-    // FOCUS propagates to the parent; its collapsed main selection must not
-    // claim the rootless ledger
     focusEditor(nestedEditor)
     expect(calls.at(-1)).toBe(2)
 
-    // a parent BLUR that does not own the ledger leaves the nested count alone
     blurEditor(topLevelEditor)
     expect(calls.at(-1)).toBe(2)
 
-    // the nested editor's own blur clears it
     blurEditor(nestedEditor)
     expect(calls.at(-1)).toBeNull()
 
     nestedCounter.detach()
     topCounter.detach()
   })
-
   it('dedups a shared callback across main and nested counters', async () => {
     const topLevelEditor = createSelectionEditor({ root: false, nodes: [TestDecoratorNode] })
     const nestedEditor = createSelectionEditor({ root: false, parentEditor: topLevelEditor })
-
     await updateEditor(
       topLevelEditor,
       () => {
@@ -797,8 +764,6 @@ describe('createWordCounter selection channel', () => {
     topCounter.attach()
     expect(calls).toEqual([null])
 
-    // the same callback is already at null — attaching the nested counter
-    // must not emit the same value again
     const nestedCounter = createWordCounter({
       editor: nestedEditor,
       onSelectionChange,
@@ -814,7 +779,6 @@ describe('createWordCounter selection channel', () => {
     nestedCounter.detach()
     topCounter.detach()
   })
-
   it('recounts selection and document when setLanguage changes the segmentation', async () => {
     const editor = createSelectionEditor({ root: false })
     const cjk = '我今天在家吃了好多好多好吃的现在的我非常开心非常满足'
@@ -828,7 +792,7 @@ describe('createWordCounter selection channel', () => {
       throttleFn: synchronousThrottle,
     })
     counter.attach()
-    // no language: the regex fallback counts each CJK character
+
     expect(onChange).toHaveBeenLastCalledWith(cjk.length)
 
     focusEditor(editor)
@@ -839,7 +803,6 @@ describe('createWordCounter selection channel', () => {
     expect(calls.at(-1)).toBe(15)
     expect(onChange).toHaveBeenLastCalledWith(15)
 
-    // the same segmentation does not re-emit either channel
     const selectionCallsBefore = calls.length
     const onChangeCallsBefore = onChange.mock.calls.length
     counter.setLanguage('zh-CN')
@@ -859,15 +822,12 @@ describe('createWordCounter selection channel', () => {
     const counter = attachSelectionCounter(editor, onSelectionChange)
     focusEditor(editor)
 
-    // no selection yet: nothing counted at all
     expect(vi.mocked(countWords)).not.toHaveBeenCalled()
 
     await selectText(editor, firstTextKey(editor), 0, 9)
     expect(vi.mocked(countWords)).toHaveBeenCalledTimes(1)
     expect(vi.mocked(countWords).mock.calls[0]?.[0]).toBe('Paragraph')
 
-    // a content edit only recounts the (unchanged) selected text — a
-    // document pass would call countWords once per block
     vi.mocked(countWords).mockClear()
     await updateEditor(
       editor,
@@ -928,12 +888,10 @@ describe('createWordCounter selection channel', () => {
     counterB.attach()
     focusEditor(editor)
     await selectText(editor, firstTextKey(editor), 0, 5)
-    // per-callback dedup: each callback receives the combined value
+
     expect(callsA.at(-1)).toBe(1)
     expect(callsB.at(-1)).toBe(1)
 
-    // detaching A must remove only A's entry: B still owns the editor, so the
-    // combined count does not fall back to null
     const callsAfterSelection = callsA.length
     counterA.detach()
     expect(callsA).toHaveLength(callsAfterSelection)
@@ -960,8 +918,6 @@ describe('createWordCounter selection channel', () => {
     await selectText(editor, firstTextKey(editor), 0, 5)
     expect(callsA.at(-1)).toBe(1)
 
-    // same value as the last emission (forced) — the replacement callback
-    // still receives it
     const callsB: Array<number | null> = []
     const counterB = createWordCounter({
       editor,
@@ -979,7 +935,6 @@ describe('createWordCounter selection channel', () => {
     const editor = createSelectionEditor({ root: false })
     await seedSelectionEditor(editor, ['Hello world'])
     const onSelectionChange = vi.fn()
-
     const counter = attachSelectionCounter(editor, onSelectionChange)
     focusEditor(editor)
     await selectText(editor, firstTextKey(editor), 0, 5)

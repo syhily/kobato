@@ -1,8 +1,6 @@
-/* Components */
 import InklingComposer from '@kobato/inkling-internal/components/InklingComposer'
 import InklingEditor from '@kobato/inkling-internal/components/InklingEditor'
 import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
-/* Transformers */
 import {
   CODE_BLOCK as CODE_BLOCK_TRANSFORMER,
   DEFAULT_TRANSFORMERS,
@@ -10,9 +8,7 @@ import {
   HR as HR_TRANSFORMER,
 } from '@kobato/inkling-internal/markdown/transformers'
 import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
-/* Nodes */
 import DEFAULT_NODES, { EDITOR_BASE_NODES } from '@kobato/inkling-internal/nodes/DefaultNodes'
-/* Plugins */
 import CardInsertPlugin from '@kobato/inkling-internal/plugins/CardInsertPlugin'
 import CardMenuPlugin from '@kobato/inkling-internal/plugins/CardMenuPlugin'
 import CardPickerHostPlugin from '@kobato/inkling-internal/plugins/CardPickerHostPlugin'
@@ -62,9 +58,6 @@ export type { InklingNestedComposerProps } from '@kobato/inkling-internal/compon
 export type { PinturaConfig } from '@kobato/inkling-internal/hooks/usePinturaEditor'
 export type { FeaturePluginEntry } from '@kobato/inkling-internal/plugins/DefaultFeaturePlugins'
 
-/* The card family: node classes, guards, factories, dataset and serialized
- * types, and insert commands. A subset surface joins picked card classes with
- * EDITOR_BASE_NODES. */
 export {
   CodeBlockNode,
   $createCodeBlockNode,
@@ -158,9 +151,6 @@ export {
 export type { MathInlineDataset, SerializedMathInlineNode } from '@kobato/inkling-internal/nodes/math/MathInlineNode'
 export { EDIT_MATH_INLINE_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/math-inline'
 
-/* Footnotes: the inline ref (a TextNode entity — its text IS the citation
- * index) and the menu-less definition card. FootnotePlugin wires the
- * behaviour module that creates and orders them. */
 export {
   $createFootnoteRefNode,
   $isFootnoteRefNode,
@@ -174,18 +164,10 @@ export {
 } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
 export type { FootnoteDefinitionNodeDataset } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
 
-/* Host card pipeline: `defineCard` declares a card once and every derived view
- * (node class, menus, decorate target, insert registrar, toolbar label,
- * markdown fence) picks it up; `generateDecoratorNode` builds the base node the
- * declaration names. `EDITOR_BASE_NODES` is the non-card run a subset surface
- * composes with its picked card classes instead of forking DEFAULT_NODES. */
 export { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 export type { HostCard, HostCardMenuEntrySpec, HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-cards'
-/* The host-card node-set projection: every registered host card's assembled
- * class in registration order, so a host composes `...getHostCardNodes()` into
- * its node set instead of hand-spreading each handle's `node`. */
-export { getHostCardNodes } from '@kobato/inkling-internal/nodes/cards/host-card-nodes'
 
+export { getHostCardNodes } from '@kobato/inkling-internal/nodes/cards/host-card-nodes'
 /* The shared card-insert dispatch target: a host that intercepts a per-card
  * INSERT_* command to construct its own node class (kobato's KobatoImageNode;
  * the stock registration builds the declaration's assembled class and drops
@@ -221,8 +203,7 @@ export type {
 } from '@kobato/inkling-internal/nodes/base/card-specs'
 export { InklingDecoratorNode } from '@kobato/inkling-internal/nodes/base/InklingDecoratorNode'
 export type { CardNodeClass } from '@kobato/inkling-internal/nodes/assemble-card-node'
-// The render-context seam hosts write card renderers against; ExportDOMOutput
-// flows through `@kobato/inkling-internal/nodes/base`.
+
 export type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 // A host VARIANT subclassing an assembled card class (kobato's KobatoImageNode)
 // overrides exportDOM and needs the entry-internal context factory:
@@ -232,7 +213,6 @@ export type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-c
 // never delegate.
 export { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 export type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
-
 export * from '@kobato/inkling-internal/utils'
 export { lexicalStateToMarkdown, markdownToLexicalState } from '@kobato/inkling-internal/markdown'
 export type { MarkdownRoundTripOptions } from '@kobato/inkling-internal/markdown/round-trip'

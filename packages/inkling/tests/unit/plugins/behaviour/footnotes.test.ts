@@ -25,13 +25,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Pins for the footnote behaviour module: the renumber engine (the footnote-
-// sync matrix, table-driven), the signature short-circuit, the caret trigger
-// (with backslash suppression and the table-cell guard), the doc-end-run
-// transform, and `$removeFootnote`. The undo-merge pin lives in
-// FootnotePlugin.test.tsx (it needs a real history stack); the export byte
-// contract in footnote-export.test.ts.
-
 function createTestEditor(nodes: typeof DEFAULT_NODES = DEFAULT_NODES): LexicalEditor {
   return createHeadlessEditor({
     namespace: 'test',
@@ -63,14 +56,12 @@ function $buildDoc(entries: DocEntry[]): void {
   }
 }
 
-/** Refs in document order as `text→targetKey`. */
 function readRefs(editor: LexicalEditor): string[] {
   return editor
     .getEditorState()
     .read(() => $collectFootnoteSnapshot().refs.map((ref) => `${ref.getTextContent()}→${ref.targetKey}`))
 }
 
-/** Definition targetKeys in document order. */
 function readDefinitionOrder(editor: LexicalEditor): string[] {
   return editor
     .getEditorState()
@@ -101,12 +92,10 @@ describe('$syncFootnoteIndices (the renumber engine)', () => {
       $syncFootnoteIndices()
     })
 
-    // keyB is cited first → 1; keyA second → 2 (both occurrences renumbered)
     expect(readRefs(editor)).toEqual(['1→keyB', '2→keyA', '2→keyA'])
-    // the run reorders to citation order
+
     expect(readDefinitionOrder(editor)).toEqual(['keyB', 'keyA'])
   })
-
   it('tails orphan definitions after the cited ones, keeping their stored order', async () => {
     await drainEnqueuedUpdates(editor, () => {
       $buildDoc([
@@ -119,7 +108,7 @@ describe('$syncFootnoteIndices (the renumber engine)', () => {
     })
 
     expect(readRefs(editor)).toEqual(['1→keyA'])
-    // cited first, then the orphans in their stored order (C before B)
+
     expect(readDefinitionOrder(editor)).toEqual(['keyA', 'keyC', 'keyB'])
   })
 
@@ -132,7 +121,6 @@ describe('$syncFootnoteIndices (the renumber engine)', () => {
       $syncFootnoteIndices()
     })
 
-    // nothing is touched: prose-only round-trips keep their digits
     expect(readRefs(editor)).toEqual(['9→missing'])
     expect(readDefinitionOrder(editor)).toEqual(['keyA'])
   })
@@ -184,13 +172,11 @@ describe('$footnoteSyncSignature (the short-circuit)', () => {
     })
     const base = await signature()
 
-    // irrelevant: typing elsewhere in the prose
     await drainEnqueuedUpdates(editor, () => {
       $getRoot().getLastChild()?.insertBefore($createParagraphNode())
     })
     expect(await signature()).toBe(base)
 
-    // relevant: a ref digit changed (e.g. a paste wrote its own number)
     await drainEnqueuedUpdates(editor, () => {
       const ref = $collectFootnoteSnapshot().refs.find((node) => node.getKey() === refAKey)
       ref?.setTextContent('7')
@@ -209,8 +195,6 @@ describe('$footnoteSyncSignature (the short-circuit)', () => {
     })
     const base = await signature()
 
-    // move the keyB paragraph ahead of the keyA one: same texts, same
-    // definitions, different citation order
     await drainEnqueuedUpdates(editor, () => {
       const first = $getRoot().getFirstChild()
       const second = first?.getNextSibling()
@@ -227,20 +211,12 @@ describe('the registered renumber scan', () => {
   let editor: LexicalEditor
   let handle: FootnoteHandle
 
-  // Registration precedes content — the production order (the plugin mounts
-  // with the composer) and the order every other test here uses. Registering
-  // a transform on an ALREADY non-empty editor makes Lexical schedule a
-  // 'history-merge'-tagged mark-dirty commit as a microtask, and a
-  // synchronous edit in between inherits the tag and gets gate-skipped
-  // (upstream quirk; RestrictContentPlugin's RootNode transform has it too).
   beforeEach(() => {
     editor = createTestEditor()
     handle = createFootnoteHandle()
     registerFootnotes(editor, handle)
   })
-
   it('publishes when the signature flips and short-circuits unchanged signatures', async () => {
-    // the buildDoc commit settles the scan: first publish of the maps
     await drainEnqueuedUpdates(editor, () => {
       $buildDoc([
         { kind: 'p', parts: [{ ref: '1', cites: 'keyA' }, ' prose'] },
@@ -251,7 +227,6 @@ describe('the registered renumber scan', () => {
 
     const publishSpy = vi.spyOn(handle, 'publishMaps')
 
-    // a renumber-irrelevant commit: same signature → no re-publish
     await drainEnqueuedUpdates(editor, () => {
       const first = $getRoot().getFirstChild()
       if ($isParagraphNode(first)) {
@@ -260,8 +235,6 @@ describe('the registered renumber scan', () => {
     })
     expect(publishSpy).not.toHaveBeenCalled()
 
-    // a relevant commit (a paste wrote its own digit): the engine runs and
-    // re-publishes — the digit is renumbered straight back
     await drainEnqueuedUpdates(editor, () => {
       $collectFootnoteSnapshot().refs[0].setTextContent('7')
     })
@@ -278,7 +251,6 @@ describe('the registered renumber scan', () => {
       ])
     })
 
-    // cite keyB ahead of keyA: the scan's engine renumbers both rows
     await drainEnqueuedUpdates(editor, () => {
       const first = $getRoot().getFirstChild()
       const paragraph = $createParagraphNode()
@@ -331,29 +303,25 @@ describe('the caret trigger scan', () => {
     const [definition] = definitions
     expect(ref).toBe(`1→${definition}`)
 
-    // the trigger text is consumed; the prose keeps its trailing space
     editor.getEditorState().read(() => {
       const paragraph = $getRoot().getFirstChild()
       expect(paragraph?.getTextContent()).toBe('hello 1')
     })
 
-    // the focus handoff targets the fresh definition
     expect(handle.getState().focusRequest?.targetKey).toBe(definition)
   })
 
   it('`^ ` at line start triggers', async () => {
-    // a fresh empty paragraph: the caret sits at the line start
     await drainEnqueuedUpdates(editor, () => {
       const paragraph = $createParagraphNode()
       $getRoot().getFirstChild()?.insertAfter(paragraph)
       paragraph.select()
     })
     await typeText('^ ')
-
     const { refs, definitions } = readFootnotes()
     expect(refs).toHaveLength(1)
     expect(definitions).toHaveLength(1)
-    // the paragraph holds only the ref now
+
     editor.getEditorState().read(() => {
       const paragraphs = $getRoot()
         .getChildren()
@@ -401,7 +369,7 @@ describe('the caret trigger scan', () => {
     await drainEnqueuedUpdates(editor, () => {
       const paragraph = $createParagraphNode()
       paragraph.append($createTextNode('again'))
-      // the fresh paragraph must land before the definition run
+
       $getRoot().getFirstChild()?.insertAfter(paragraph)
       paragraph.selectEnd()
     })
@@ -530,8 +498,7 @@ describe('registration guards', () => {
   it('no-ops on a nested editor (the reviewed v1 gap)', async () => {
     const editor = createTestEditor()
     const nested = createTestEditor()
-    // what Lexical's nested-composer machinery sets; the guard reads it
-    // through getParentEditor
+
     ;(nested as unknown as { _parentEditor: LexicalEditor })._parentEditor = editor
     const handle = createFootnoteHandle()
     registerFootnotes(nested, handle)

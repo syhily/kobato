@@ -16,9 +16,7 @@
 
 import type { LexicalEditor } from 'lexical'
 
-/** Mode class the plugin toggles on the editor root element. */
 export const FOCUS_MODE_CLASS = 'inkling-focus-mode'
-/** Data attribute marking the top-level block element that holds the selection. */
 export const FOCUS_ACTIVE_ATTRIBUTE = 'data-inkling-focus-active'
 
 // The top-level block element the native selection is anchored in: the
@@ -46,13 +44,8 @@ export function getFocusedBlockElement(rootElement: HTMLElement): HTMLElement | 
   return element instanceof HTMLElement ? element : null
 }
 
-// Attach focus mode to the editor: FOCUS_MODE_CLASS on the root element and
-// FOCUS_ACTIVE_ATTRIBUTE tracking the selected top-level block, until the
-// returned cleanup runs (which removes both). Safe to call before the root
-// element exists — attachment follows the root listener.
 export function registerFocusMode(editor: LexicalEditor): () => void {
   let detachRoot: (() => void) | null = null
-
   const attach = (rootElement: HTMLElement) => {
     let focusedElement: HTMLElement | null = null
     const sync = () => {

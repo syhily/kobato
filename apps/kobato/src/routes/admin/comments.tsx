@@ -6,8 +6,6 @@ import { useOutletContext, useSearchParams } from 'react-router'
 
 import { titleMeta } from '@/seo/title-meta.ts'
 
-// The parse helper lives next to the controller's write-back so both URL directions stay in sync.
-
 export const loader = guardOnlyLoader('admin')
 
 export const meta = titleMeta('meta.title.admin.comments')

@@ -12,11 +12,8 @@ import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 
-// Cards join the set from their declarations.
 const CARDS = CARD_WRAPPER_NODES
 
-// The non-card base run the editor's node set starts from. The table
-// element family closes the run, after LinkNode.
 export const EDITOR_BASE_NODES = [
   ...EXTENDED_TEXT_NODE_PAIR,
   HeadingNode,

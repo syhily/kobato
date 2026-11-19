@@ -7,9 +7,6 @@ import { regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// WordPress probe decoy: `isWordPressDecoyPath` predicate + a sanity check that
-// real page slugs still resolve through the page-detail loader.
-
 const db = getTestDb()
 const session = regularSession()
 
@@ -61,9 +58,9 @@ describe('isWordPressDecoyPath', () => {
   it('preserves the legitimate WordPress-style routes (login, install, SPA shell)', () => {
     expect(isWordPressDecoyPath('/admin/signin')).toBe(false)
     expect(isWordPressDecoyPath('/admin')).toBe(false)
-    // `/admin/setup` ends in `.php` — an explicit allow list keeps it from being decoyed.
+
     expect(isWordPressDecoyPath('/admin/setup')).toBe(false)
-    // Non-`.php` paths under `/admin/*` are SPA routes, not scanner probes.
+
     expect(isWordPressDecoyPath('/admin/comments')).toBe(false)
     expect(isWordPressDecoyPath('/admin/security/users')).toBe(false)
     expect(isWordPressDecoyPath('/admin/security/users/12345')).toBe(false)

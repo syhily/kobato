@@ -37,7 +37,6 @@ function registerCardInsert(
       command,
       (dataset) => {
         if (insert.requiresRangeSelection) {
-          // bookmark parity: the selection check precedes the dataset guard
           const selection = $getSelection()
           if (!$isRangeSelection(selection)) {
             return false
@@ -74,19 +73,8 @@ function registerCardInsert(
   )
 }
 
-/**
- * The derived view of the card declarations' insert specs — one registrar for
- * every card's insert command. Every registration fact (command, payload
- * guard, `openInEditMode`, media claiming, priority, bookmark's selection
- * quirk, the picker auto-open) comes from the card declarations via the
- * `@kobato/inkling-internal/nodes/cards/card-insert-commands` projection, which also carries
- * the host cards' insert registrations (CONTEXT.md: "host card"). The
- * per-card `hasNodes` guard against the wrapper class reproduces the
- * mounting matrix: the web editor registers every card, nested composers none.
- */
 export const CardInsertPlugin = () => {
   const [editor] = useLexicalComposerContext()
-
   React.useEffect(() => {
     return mergeRegister(
       ...getCardInsertRegistrations()

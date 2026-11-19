@@ -10,8 +10,6 @@ import { describe, expect, it } from 'vitest'
 // Lexical upgrade changes a serializer default or stops healing one, this
 // corpus fails before stored payloads silently change meaning.
 
-// A full-dialect document covering every node family the article schema
-// accepts (fixtures pin the live-export key shape; cards included).
 const CORPUS = {
   root: {
     type: 'root',
@@ -234,7 +232,7 @@ describe('compact storage dialect', () => {
 
     const fullBytes = JSON.stringify(full).length
     const compactBytes = JSON.stringify(compact).length
-    // regression floor, not a target
+
     expect(compactBytes).toBeLessThan(fullBytes * 0.8)
   })
 })

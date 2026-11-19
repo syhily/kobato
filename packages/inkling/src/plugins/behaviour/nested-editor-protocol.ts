@@ -29,9 +29,6 @@ import {
 
 export type NestedEditorProvenance = 'nested-editor' | 'caption-editor'
 
-// Marker properties carrying provenance on a re-dispatched event; private to
-// this module so external code goes through the mark/get functions and no
-// reader casts.
 interface ProvenanceMarkedKeyboardEvent extends KeyboardEvent {
   _fromNested?: boolean
   _fromCaptionEditor?: boolean
@@ -49,7 +46,6 @@ export function markEventFromCaptionEditor(event: KeyboardEvent): KeyboardEvent 
   return marked
 }
 
-// Reads back a (possibly re-dispatched) event's provenance; null means never marked.
 export function getEventProvenance(event: KeyboardEvent | null | undefined): NestedEditorProvenance | null {
   if (!event) {
     return null
@@ -71,9 +67,6 @@ export function isTypeaheadMenuOpen(): boolean {
   return typeof document !== 'undefined' && document.getElementById(TYPEAHEAD_MENU_ID) !== null
 }
 
-// Shared Enter choreography of both nested-editor surfaces: hand Enter to the
-// parent editor. `parentEditor` is the editor itself or a per-event resolver;
-// a missing parent is a pass-through.
 export function registerNestedEnterHandoff(
   editor: LexicalEditor,
   parentEditor: LexicalEditor | (() => LexicalEditor | null),
@@ -90,18 +83,14 @@ export function registerNestedEnterHandoff(
         return false
       }
 
-      // the IME/mobile path dispatches a null event; leave it to Lexical's default Enter handling
       if (!event) {
         return false
       }
-
       const parent = typeof parentEditor === 'function' ? parentEditor() : parentEditor
       if (!parent) {
         return false
       }
 
-      // the parent either toggles edit mode (ctrl/cmd+enter) or creates a
-      // paragraph after the card and moves the caret there
       parent.dispatchCommand(KEY_ENTER_COMMAND, markEventFromNested(event))
 
       return true
@@ -110,19 +99,11 @@ export function registerNestedEnterHandoff(
   )
 }
 
-/**
- * Caption arrow hand-off: arrow keys in a caption editor re-dispatch to the
- * parent editor, marked with caption provenance so the parent's handlers can
- * reselect the card, with the same typeahead bail as the Enter hand-off.
- * Registered at COMMAND_PRIORITY_HIGH so the caption's arrows pre-empt the
- * shared LOW-priority handlers.
- */
 export function registerCaptionArrowHandoff(editor: LexicalEditor, parentEditor: LexicalEditor): () => void {
   const registerArrowHandoff = (command: LexicalCommand<KeyboardEvent>) =>
     editor.registerCommand(
       command,
       (event) => {
-        // arrows navigate the open typeahead menu instead of moving focus
         if (isTypeaheadMenuOpen()) {
           return false
         }
@@ -135,13 +116,6 @@ export function registerCaptionArrowHandoff(editor: LexicalEditor, parentEditor:
   return mergeRegister(registerArrowHandoff(KEY_ARROW_UP_COMMAND), registerArrowHandoff(KEY_ARROW_DOWN_COMMAND))
 }
 
-/**
- * Blur half of the nested-editor boundary choreography: while a card's
- * settings panel is open, the parent editor clears its selection when the
- * nested editor takes focus — so on blur the parent card is reselected and the
- * panel keeps its anchor. Claims the blur only in that case; the reselect is
- * tagged history-merge so it never lands in undo history.
- */
 export function registerNestedBlurCardReselect(
   editor: LexicalEditor,
   {
@@ -159,7 +133,6 @@ export function registerNestedBlurCardReselect(
     () => {
       const parent = parentEditor()
 
-      // restore the parent's card selection, cleared when the nested editor took focus
       if (hasSettingsPanel && parent) {
         parent.getEditorState().read(() => {
           parent.update(
@@ -185,13 +158,6 @@ export function registerNestedBlurCardReselect(
   )
 }
 
-/**
- * Caption type-to-focus policy: while the parent card is selected and the
- * caption is not focused, a printable keystroke — single character, no
- * ctrl/meta/alt, and not landing on an input or textarea — focuses the caption
- * editor. Document-level listener; returns the teardown. The ports are read per
- * event, so callers register once per state change cycle, not per keystroke.
- */
 export function registerCaptionTypeToFocus(
   editor: LexicalEditor,
   { isSelected, hasFocus }: { isSelected: () => boolean; hasFocus: () => boolean },
@@ -210,7 +176,6 @@ export function registerCaptionTypeToFocus(
       editor.focus()
     }
   }
-
   document.addEventListener('keydown', handleKeyDown)
   return () => {
     document.removeEventListener('keydown', handleKeyDown)

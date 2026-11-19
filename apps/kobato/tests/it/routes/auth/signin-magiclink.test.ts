@@ -101,8 +101,6 @@ afterEach(async () => {
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
-/** Satisfies the real install gate (hasAdmin) without colliding with the
- * per-test `admin@example.com` seeds. */
 async function seedGateAdmin() {
   await db.insert(user).values({
     name: 'Gatekeeper',
@@ -216,13 +214,11 @@ async function getLinkRow(userId: number) {
   return rows[0] ?? null
 }
 
-/** Audit rows of one action, flushed first so the batcher has drained. */
 async function auditRowsFor(actionName: string) {
   await flushAuditLog()
   return db.select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
-/** Run identify and pull the raw token out of the emailed link. */
 async function identifyAndExtractToken(email = 'admin@example.com'): Promise<string> {
   await callAction('identify', emailFormData(email))
   expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
@@ -250,17 +246,13 @@ describe('integration: magic-link signin flow (real DB)', () => {
     expect(row).not.toBeNull()
     expect(row!.purpose).toBe('signin-link')
 
-    // Sending stages nothing in the session.
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('builds the emailed link from the configured site origin, never the request Host', async () => {
     await seedUser('magic-link')
 
-    // Bare-metal deployments do not validate Host: a spoofed header must not
-    // make the server email a valid token link pointing at the attacker.
     await callAction('identify', emailFormData(), '/admin', '127.0.0.1', 'http://evil.tld/admin/signin')
-
     expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
     const link = mockHandles.sendSignInLink.mock.calls[0]![1] as string
     expect(link.startsWith('https://example.com/admin/signin?action=magiclink')).toBe(true)
@@ -269,7 +261,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
 
   it('identify answers unknown emails exactly like a magic-link send (no existence oracle)', async () => {
     const result = await callAction('identify', emailFormData('ghost@example.com'))
-    // Same generic copy as a real send, but nothing is sent or persisted.
+
     expect(result.data?.message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
     expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
   })
@@ -292,7 +284,6 @@ describe('integration: magic-link signin flow (real DB)', () => {
     const admin = await seedUser('magic-link')
     const token = await identifyAndExtractToken()
 
-    // The loader peeks the token without consuming it.
     const peeked = await callLoader(`?action=magiclink&token=${encodeURIComponent(token)}`)
     expect(peeked.data?.action).toBe('magiclink')
     expect(peeked.data?.magicToken).toBe(token)

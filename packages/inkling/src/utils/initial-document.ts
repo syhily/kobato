@@ -23,7 +23,6 @@ const FULL_EMPTY_PARAGRAPH: SerializedParagraphNode = {
   version: 1,
 }
 
-// not SerializedParagraphNode: this dialect omits textFormat/textStyle on purpose (see above)
 const LEGACY_EMPTY_PARAGRAPH = {
   children: [],
   direction: null,
@@ -33,7 +32,6 @@ const LEGACY_EMPTY_PARAGRAPH = {
   version: 1,
 }
 
-/** The minimal valid document in the full dialect — what an empty live editor serializes to. */
 export const MINIMAL_DOCUMENT: SerializedEditorState = {
   root: {
     children: [FULL_EMPTY_PARAGRAPH],
@@ -46,7 +44,6 @@ export const MINIMAL_DOCUMENT: SerializedEditorState = {
   },
 }
 
-/** The minimal valid document in the legacy payload dialect (see the dialect note above). */
 export const MINIMAL_DOCUMENT_LEGACY_PAYLOAD = {
   root: {
     children: [LEGACY_EMPTY_PARAGRAPH],
@@ -74,8 +71,6 @@ function hasRootChildren(value: unknown): value is { root: { children: unknown[]
   return typeof root === 'object' && root !== null && 'children' in root && Array.isArray(root.children)
 }
 
-// Empty-root repair, serialized side: a root with no children won't accept focus, so seed
-// the legacy dialect's paragraph.
 function repairSerializedEmptyRoot(value: unknown): boolean {
   if (!hasRootChildren(value) || value.root.children.length > 0) {
     return false
@@ -85,28 +80,17 @@ function repairSerializedEmptyRoot(value: unknown): boolean {
   return true
 }
 
-/** Empty-root repair, live-editor side: an empty root won't accept focus. Must run inside `editor.update()`. */
 export function $appendEmptyParagraph(): void {
   $getRoot().append($createParagraphNode())
 }
 
-/**
- * The initial editor state accepted by `<InklingComposer>`: the shapes Lexical supports,
- * plus a plain serialized editor-state object (normalized to JSON before reaching Lexical).
- */
 export type InklingInitialEditorState = InitialEditorStateType | SerializedEditorState
-
-/**
- * Normalizes the public `initialEditorState` prop into `InitialEditorStateType`. The
- * caller's serialized object is never mutated.
- */
 export function normalizeInitialEditorState(
   initialEditorState: InklingInitialEditorState | undefined,
 ): InitialEditorStateType | undefined {
   if (initialEditorState === null || initialEditorState === undefined || typeof initialEditorState === 'function') {
     return initialEditorState
   }
-
   if (typeof initialEditorState === 'string') {
     const parsed: unknown = JSON.parse(initialEditorState)
 
@@ -117,12 +101,10 @@ export function normalizeInitialEditorState(
     return initialEditorState
   }
 
-  // an `EditorState` instance has no `root` property — hand it to Lexical as-is
   if (!('root' in initialEditorState)) {
     return initialEditorState
   }
 
-  // clone so the caller's serialized object is never mutated
   const cloned: unknown = JSON.parse(JSON.stringify(initialEditorState))
   repairSerializedEmptyRoot(cloned)
 

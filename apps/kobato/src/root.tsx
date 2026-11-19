@@ -79,7 +79,6 @@ function collectTier2Chunks(
   return result
 }
 
-// Root middleware wraps loaders/actions and the SSR entry, so one document/`.data` span covers the whole request.
 export const middleware: MiddlewareFunction<Response>[] = [traceRouteMiddleware]
 
 // Root is the nearest error boundary for loader-thrown 304s; this passes the
@@ -97,7 +96,6 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, cspNonce } = createSsrCaller({ request, context })
 
-  // Boot data loads through the content API like every public route; the theme cookie is parsed inside.
   const boot = await caller.content.bootstrap()
 
   // The browser bootstrap exists only once the settings projection and the runtime's OpenObserve pipeline
@@ -176,7 +174,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const activePostFonts = wantsPostFonts ? postFonts : []
   const activeCodeFonts = wantsPostFonts ? codeFonts : []
 
-  // Preconnect to every distinct host the self-hosted fonts load from ('self' relative URLs are skipped).
   const fontHosts = new Set<string>()
   for (const f of [...globalFonts, ...activePostFonts, ...activeCodeFonts]) {
     if (!f.href) {
@@ -188,7 +185,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         fontHosts.add(host)
       }
     } catch {
-      // Relative URL (local 'self') — nothing to preconnect.
+      /* noop */
     }
   }
 
@@ -204,14 +201,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const criticalLinks = rootData?.criticalLinks ?? []
   const tier2Chunks = rootData?.tier2Chunks ?? []
 
-  // `fallbackMessages` is the only synchronous message module the client may import directly; the full catalog
-  // arrives as loader data.
   const i18n = rootData?.i18n ?? null
   const locale: AppLocale = i18n?.locale ?? DEFAULT_LOCALE
   const messages = i18n?.messages ?? fallbackMessages
 
-  // Custom fonts prepend to the locale's default fallback chain (`defaultFontStackFor`, the same map the
-  // CSS `:lang()` branches use).
   const htmlStyle: Record<string, string> = {}
   const defaultFonts = defaultFontStackFor(locale)
   if (globalFonts.length > 0) {
@@ -237,13 +230,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content={theme ?? 'light dark'} />
-        {/* Self-hosted web-font packages: one <link> per font pulls the whole woff2 cascade (self/S3 — both CSP-safe). */}
         {globalFonts.map((f) => (f.href ? <link key={`g-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         {activePostFonts.map((f) => (f.href ? <link key={`p-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         {activeCodeFonts.map((f) => (f.href ? <link key={`c-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         <Meta />
         <Links />
-        {/* W3C Webmention endpoint discovery (relative — resolved against the origin). Same switch as the SSR Link header and the 410 gate. */}
         {isWebmentionReceiveEnabled(rootData?.blogSettings) && <link rel="webmention" href="/webmention" />}
         {criticalLinks.map((href) => (
           <link key={href} rel="modulepreload" href={href} />
@@ -262,7 +253,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
-// `handle.layout = 'admin'` marks routes that own their chrome (admin SPA, login/install split-screen).
 export type RouteHandle = {
   layout?: 'admin'
   footer?: boolean
@@ -275,21 +265,16 @@ export default function App({ loaderData }: Route.ComponentProps) {
   }, [loaderData.csrfToken])
 
   const rum = loaderData.rum ?? null
-  // The consent gate applies only when the relay forwards request identity; in `anonymous` mode the decision is
-  // irrelevant and RUM starts consent-free. The banner renders only after the post-mount storage read (`ready`),
-  // so SSR and the first client render agree (no hydration flash), and DNT/GPC visitors are never asked.
+
   const consentRequired = rum?.clientIdentity === 'forward'
   const consent = useRumConsent()
-  // Anonymous mode never consults the decision; passing a constant keeps a
-  // consent change from retriggering the RUM effect there.
   useRum(rum, consentRequired ? consent.decision : null)
   const showConsentBanner = consentRequired && consent.ready && consent.decision === null && !isRumDenied()
   useFocusHash()
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()
   const [queryClient] = useState(() => makeQueryClient())
-  // `i18n` is required by the loader contract; the fallback keeps a hand-built
-  // loaderData (tests, error-recovery remounts) from crashing the provider.
+
   const i18n = loaderData.i18n
   const locale = i18n?.locale ?? DEFAULT_LOCALE
 
@@ -321,8 +306,6 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-          {/* Full chrome only with a complete i18n payload; a root-loader failure renders the minimal ErrorView
-              over the fallback messages. */}
           {loaderData?.i18n ? (
             <Suspense fallback={body}>
               <PublicErrorLayout currentUser={loaderData?.currentUser ?? null} pathname="/" search="">

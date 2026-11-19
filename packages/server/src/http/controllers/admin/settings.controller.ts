@@ -13,10 +13,6 @@ import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { getSupportedTimeZones } from '@kobato/settings/timezones.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/settings.ts`; this controller only implements the
-// procedures (admin base). The strict-keyed section merge patch itself is
-// unchanged — see `domains/settings`.
 const impl = implementAdmin(adminSettingsContract)
 
 const update = impl.update.handler(async ({ input, context }) => {

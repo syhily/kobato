@@ -49,7 +49,6 @@ function scheduleSelfRestart(): void {
   void (async () => {
     // 8s budget matches the graceful close in `performShutdown`.
     await closeHttpServer(8_000)
-    // Respawn failure: re-bind the listener, release the job slot.
     const recover = async (err: unknown): Promise<void> => {
       const message = err instanceof Error ? err.message : String(err)
       log.error('self-update respawn failed; restoring the listener', { err: message })
@@ -84,7 +83,6 @@ function scheduleSelfRestart(): void {
 }
 
 export interface StartUpdateJobOptions {
-  /** Defaults to the detached-respawn restart; tests inject a spy. */
   restart?: () => void
 }
 

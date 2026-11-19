@@ -11,7 +11,6 @@ interface NavNotificationsProps {
   onOpen: () => void
 }
 
-// The notifications entry renders as a bare menu item — AppSidebarContent groups it with
 // the settings entry in one menu so the bottom entries share item spacing. It is a
 // button opening the global right-side drawer, not a route.
 export function NavNotifications({ unreadCount, onOpen }: NavNotificationsProps) {

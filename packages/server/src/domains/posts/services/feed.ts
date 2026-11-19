@@ -4,10 +4,6 @@ import type { Database } from '@kobato/db/database.ts'
 import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'
 import { listPublicPosts } from '@kobato/server/domains/posts/services/public-query.ts'
 
-/**
- * Like {@link listClientPosts} but loads bodies + headings from the published
- * `content` revision — use for feeds, {@link listClientPosts} for metadata only.
- */
 export async function listPublicPostsWithContent(
   db: Database,
   options?: PostVisibilityOptions & {

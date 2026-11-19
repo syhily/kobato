@@ -80,8 +80,6 @@ export function ImageNodeComponent({
         nodeKey,
         upload,
         files,
-        // reset original src on picker change so it can be replaced with
-        // preview and upload progress (drops/initial/data-URL files keep it)
         prePatch:
           source === 'input'
             ? (node) => {
@@ -112,8 +110,6 @@ export function ImageNodeComponent({
   }, [uploadSettings.image?.allowedWidths])
   const hasMultipleImageCardWidths = allowedImageCardWidths.length > 1
 
-  // the mount-time document migrations (data:-URL upload, dimension
-  // backfill, width clamp) live in @kobato/inkling-internal/plugins/behaviour/image-lifecycle
   React.useEffect(() => {
     let isMounted = true
     void migrateImageDataUrl(
@@ -133,10 +129,8 @@ export function ImageNodeComponent({
       { write, onError: (error) => onError(error, {}) },
     )
 
-    // init only
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
   const setHref = setField('href')
 
   const setAltText = setField('alt')
@@ -150,7 +144,7 @@ export function ImageNodeComponent({
       // the node write is enough: decorate() re-reads cardWidth on the commit
       // and the new width arrives as the cardWidth prop
       write((node) => {
-        node.cardWidth = newWidth // this is a property on the node, not the card
+        node.cardWidth = newWidth
       })
     },
     [allowedImageCardWidths, write],
@@ -165,17 +159,12 @@ export function ImageNodeComponent({
     reselectImageCard()
   }
 
-  // selection repair after the link toolbar closes — through the one home
-  // of the select-a-card operation; focus stays untouched ('never': the
-  // toolbar's own close policy owns focus)
   const reselectImageCard = () => {
     editor.update(() => {
       $selectCard(editor, nodeKey, { focus: 'never' })
     })
   }
 
-  // the link-input toolbar is a raw ActionToolbar (not a CardActionToolbar),
-  // so it resolves the declaration's toolbar label itself
   const toolbarLabel = useCardToolbarLabel(nodeKey)
 
   return (
@@ -256,10 +245,6 @@ export function ImageNodeComponent({
   )
 }
 
-/**
- * Image's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderImageCard(node: ImageNode) {
   const Selector = node.__selector
   const cardWidth = normalizeCardWidth(node.cardWidth) ?? 'regular'
@@ -267,7 +252,6 @@ export function renderImageCard(node: ImageNode) {
   return (
     <>
       {Selector && <Selector nodeKey={node.getKey()} />}
-
       {!node.__isImageHidden && (
         <ImageNodeComponent
           altText={node.alt}

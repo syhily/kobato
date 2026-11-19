@@ -9,12 +9,6 @@ import { $isHeadingNode, $isQuoteNode } from '@lexical/rich-text'
 import { $isParagraphNode } from 'lexical'
 /* c8 ignore stop */
 
-// The simple element wrappers — the whole "how a plain element exports"
-// policy on one screen: one $is guard and one template each. List and table
-// stay their own modules (a nesting state machine and a tree-direct walk).
-// The guards are type-exclusive — a node matches exactly one — so their
-// order in the registry carries no meaning.
-
 // Element `format` exports as an inline text-align style (upstream
 // exportDOM parity), so the alignment kept by opted-in surfaces survives
 // the HTML leg; the importer reads it back via $setFormatFromDOM.

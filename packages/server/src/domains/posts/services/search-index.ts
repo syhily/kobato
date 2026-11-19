@@ -33,11 +33,6 @@ export async function indexPost(
     })
 }
 
-/**
- * Index from a persisted revision row: the saved `body_text` column wins;
- * a NULL column falls back to computing the projection from the Lexical
- * body. Returns false when the stored body is not a Lexical state.
- */
 export async function indexPostFromRevision(
   db: Database,
   postId: number,

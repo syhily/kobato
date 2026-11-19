@@ -20,13 +20,6 @@ import { render, renderHook } from '@testing-library/react'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Smoke suite for the React adapter: handle publish/clear, publisher
-// ownership across two plugins, callback replacement, and engine wiring. The
-// counting behaviour itself (initial count, incremental flushes, dirty-key
-// remapping, nested-editor fallback, focus/editable selection state, detach)
-// is pinned headlessly and without wall-clock sleeps in
-// behaviour/word-counter.test.ts.
-
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
@@ -154,8 +147,6 @@ describe('WordCountPlugin', () => {
     const onChange = vi.fn()
     const { unmount, wordCountHandle } = renderPlugin({ onChange })
 
-    // a top-level plugin owns the shared callback so that nested composers can
-    // mount their own WordCountPlugin with it
     expect(wordCountHandle.getState().onChange).toBe(onChange)
 
     unmount()
@@ -170,7 +161,6 @@ describe('WordCountPlugin', () => {
     const onChange = vi.fn()
     const { unmount, wordCountHandle } = renderPlugin({ onChange, editor: nestedEditor })
 
-    // Nested plugins do not own the shared root callback, but still count.
     expect(wordCountHandle.getState().onChange).toBeNull()
     expect(onChange).toHaveBeenCalledWith(0)
 
@@ -183,30 +173,22 @@ describe('WordCountPlugin', () => {
     const onChange = vi.fn()
     const { unmount, wordCountHandle } = renderPlugin({ onChange, language: 'zh' })
 
-    // nested composers read this so their own WordCountPlugin counts with the
-    // top-level plugin's language
     expect(wordCountHandle.getState().language).toBe('zh')
 
     unmount()
 
     expect(wordCountHandle.getState().language).toBeNull()
   })
-
   it('keeps the language unset (regex fallback) when neither side names one', () => {
     const onChange = vi.fn()
     const { wordCountHandle } = renderPlugin({ onChange })
 
-    // The host-agnostic contract: no language means countWords' original regex
-    // path — never an implicit English Intl.Segmenter.
     expect(wordCountHandle.getState().language).toBeNull()
   })
 
   it('uses the composer wordCountLanguage when the plugin names none (host locale seam)', () => {
     const onChange = vi.fn()
     const { wordCountHandle, unmount } = renderPlugin({ onChange, composerLanguage: 'zh-CN' })
-
-    // The kobato composer shell passes its active UI locale here; nested
-    // composers then read this same value off the handle.
     expect(wordCountHandle.getState().language).toBe('zh-CN')
 
     unmount()
@@ -271,17 +253,14 @@ describe('WordCountPlugin', () => {
     const onSelectionChange = vi.fn()
     const { wordCountHandle, rerender } = renderPlugin({ onSelectionChange })
 
-    // selection-only: no document pass and no onChange channel
     expect(wordCountHandle.getState().onChange).toBeNull()
     expect(wordCountHandle.getState().onSelectionChange).toBe(onSelectionChange)
     expect(vi.mocked(countWords)).not.toHaveBeenCalled()
 
-    // adding onChange mounts the document counter; selection stays live
     rerender({ onChange, onSelectionChange })
     expect(wordCountHandle.getState().onChange).toBe(onChange)
     expect(onChange).toHaveBeenCalledWith(2)
 
-    // removing onChange unmounts only the document counter
     onChange.mockClear()
     vi.mocked(countWords).mockClear()
     rerender({ onSelectionChange })
@@ -292,7 +271,6 @@ describe('WordCountPlugin', () => {
     expect(vi.mocked(countWords)).toHaveBeenCalledTimes(1)
     expect(vi.mocked(countWords).mock.calls[0]?.[0]).toBe('Hello')
 
-    // removing selection returns the plugin to a no-op
     rerender({})
     expect(wordCountHandle.getState()).toEqual({ onChange: null, onSelectionChange: null, language: null })
   })
@@ -319,9 +297,8 @@ describe('WordCountPlugin', () => {
     const onSelectionChange = vi.fn()
     const { wordCountHandle } = renderPlugin({ onSelectionChange, editor: nestedEditor })
 
-    // nested counters never own the handle's publish channel…
     expect(wordCountHandle.getState()).toEqual({ onChange: null, onSelectionChange: null, language: null })
-    // …but they still count their own non-collapsed selection
+
     expect(onSelectionChange).toHaveBeenLastCalledWith(1)
   })
 
@@ -330,7 +307,6 @@ describe('WordCountPlugin', () => {
 
     const onChange = vi.fn()
     renderPlugin({ onChange })
-
     expect(onChange).toHaveBeenCalledWith(2)
   })
 
@@ -345,7 +321,6 @@ describe('WordCountPlugin', () => {
     const onSelectionChange = vi.fn()
     renderPlugin({ onSelectionChange })
 
-    // no selection yet: a document pass would have counted every block
     expect(vi.mocked(countWords)).not.toHaveBeenCalled()
 
     await selectFirstText(editor, 0, 9)
@@ -364,7 +339,6 @@ describe('WordCountPlugin', () => {
     await selectFirstText(editor, 0, 5)
     expect(first).toHaveBeenLastCalledWith(1)
 
-    // same value as the previous emission: the new callback still receives it
     rerender({ onSelectionChange: second })
     expect(second).toHaveBeenLastCalledWith(1)
   })
@@ -373,23 +347,19 @@ describe('WordCountPlugin', () => {
     const cjk = '我今天在家吃了好多好多好吃的现在的我非常开心非常满足'
     await seedSelectionEditor(editor, [cjk])
     spyActiveElement(editor.getRootElement())
-
     const onChange = vi.fn()
     const onSelectionChange = vi.fn()
     const { rerender } = renderPlugin({ onChange, onSelectionChange })
 
     await selectFirstText(editor, 0, cjk.length)
-    // regex fallback (no language) counts every CJK character
+
     expect(onChange).toHaveBeenLastCalledWith(cjk.length)
     expect(onSelectionChange).toHaveBeenLastCalledWith(cjk.length)
 
-    // setLanguage keeps counter identity and recounts both channels with the
-    // zh segmenter
     rerender({ onChange, onSelectionChange, language: 'zh' })
     expect(onChange).toHaveBeenLastCalledWith(15)
     expect(onSelectionChange).toHaveBeenLastCalledWith(15)
   })
-
   it('does not recount the document when the selection callback changes', async () => {
     await seedSelectionEditor(
       editor,
@@ -409,9 +379,6 @@ describe('WordCountPlugin', () => {
     vi.mocked(countWords).mockClear()
     rerender({ onChange, onSelectionChange: second })
 
-    // only the selection counter is rebuilt: one countWords call for the
-    // selected text, never the 40-block document pass, and no full-count
-    // callback
     expect(vi.mocked(countWords)).toHaveBeenCalledTimes(1)
     expect(vi.mocked(countWords).mock.calls[0]?.[0]).toBe('Paragraph')
     expect(onChange).toHaveBeenCalledTimes(1)

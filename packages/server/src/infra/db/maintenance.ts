@@ -16,7 +16,6 @@ const log = getLogger('db.maintenance')
  * is never scheduled.
  */
 
-/** Read a single-value PRAGMA (page_count, freelist_count) as a number. */
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
   const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
   const value = row === undefined ? undefined : Object.values(row)[0]

@@ -6,9 +6,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('audit.service')
 
-/**
- * Fire-and-forget: never throws; failures are logged and swallowed.
- */
 export function recordAuditEvent(input: AuditEventInput): void {
   try {
     const tagged = tagL3InDetails(input.details)
@@ -17,7 +14,6 @@ export function recordAuditEvent(input: AuditEventInput): void {
       details: tagged,
     })
   } catch (err) {
-    // Defensive: push is synchronous, so only tagL3InDetails can fail.
     log.error('recordAuditEvent failed', {
       action: input.action,
       err: err instanceof Error ? err.message : String(err),

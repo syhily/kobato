@@ -1,5 +1,3 @@
-// Session meta data access; orchestration lives in `services/sessions.ts`.
-
 import type { Role } from '@kobato/auth/roles.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { SessionRow } from '@kobato/db/types.ts'
@@ -36,7 +34,6 @@ interface RecordLoginInput {
   userAgent: string | null
   platformHint?: string | null
   ip: string
-  /** Defaults to now. Overridable for tests. */
   loginAt?: Date
 }
 
@@ -81,7 +78,6 @@ export function recordSessionActivity(db: Database, sid: string): void {
     )
 }
 
-// Rows with missing owner or login meta (e.g. OTP-pending) map to null.
 function sessionRowToMeta(row: SessionRow | undefined): SessionMeta | null {
   if (!row || row.userId === null || row.loginAt === null || row.lastActiveAt === null) {
     return null
@@ -98,12 +94,10 @@ function sessionRowToMeta(row: SessionRow | undefined): SessionMeta | null {
   }
 }
 
-/** Revoke one session; role-blind, the perimeter check lives in `session-guard.ts`. */
 export async function revokeSessionById(db: Database, sid: string, userId: number): Promise<void> {
   await db.delete(sessionTable).where(and(eq(sessionTable.id, sid), eq(sessionTable.userId, userId)))
 }
 
-/** Fetch one session's meta by id; null when gone, expired, or unstamped. */
 export async function findSessionMeta(db: Database, sid: string): Promise<SessionMeta | null> {
   const rows = await db
     .select()
@@ -113,7 +107,6 @@ export async function findSessionMeta(db: Database, sid: string): Promise<Sessio
   return sessionRowToMeta(rows[0])
 }
 
-/** Live (unexpired, owner-stamped) sessions belonging to one user. */
 export async function listLiveSessionsByUser(db: Database, userId: number): Promise<SessionMeta[]> {
   const rows = await db
     .select()
@@ -122,7 +115,6 @@ export async function listLiveSessionsByUser(db: Database, userId: number): Prom
   return rows.map(sessionRowToMeta).filter((meta): meta is SessionMeta => meta !== null)
 }
 
-/** Live sessions across the site, soft-capped at `maxRows`. */
 export async function listLiveSessions(db: Database, maxRows: number): Promise<SessionMeta[]> {
   const rows = await db
     .select()

@@ -1,7 +1,3 @@
-// The settings panel's two re-clamp resolutions as rects-as-data transitions over
-// floating-panel's clamp/drift math, plus the DOM assembly (`createPanelDomWiring`).
-// Every measurement goes through injected ports.
-
 import type { PanelSuppression } from '@kobato/inkling-internal/utils/panel-suppression'
 import type { RefObject } from 'react'
 
@@ -26,9 +22,7 @@ import { getScrollAncestor } from '@kobato/inkling-internal/utils/scroll-ancesto
 import { debounce } from '@kobato/inkling-internal/utils/timing'
 
 export interface PanelReclampInput {
-  /** Current committed panel position. */
   position: PanelPosition
-  /** Spacing at the last committed position, so the settle clamp keeps a deliberate offscreen placement. */
   lastSpacing: PanelSpacing | null
   panelSize: PanelSize
   viewport: PanelViewport
@@ -36,16 +30,10 @@ export interface PanelReclampInput {
 }
 
 export interface PanelReclamp {
-  /** The re-clamped position to commit. */
   position: PanelPosition
-  /** The grab-offset shift keeping a mid-drag resize from jumping the drag position. */
   offsetDelta: PanelPosition
 }
 
-/**
- * The panel-resize resolution: settle-clamp the committed position against the panel's new
- * size. Returns null when the clamp leaves the position untouched.
- */
 export function resolvePanelReclamp({
   position,
   lastSpacing,
@@ -61,22 +49,16 @@ export function resolvePanelReclamp({
 }
 
 export interface PanelViewportShiftInput {
-  /** Current committed panel position. */
   position: PanelPosition
-  /** The panel's preferred position; undefined when the card anchor is gone (no drift). */
+
   initial: PanelPosition | undefined
   previousViewport: PanelViewport
   viewport: PanelViewport
   lastSpacing: PanelSpacing | null
-  /** Null when the panel element is missing — the clamp passes the position through origin-adjusted. */
   panelSize: PanelSize | null
   origin: PanelPosition
 }
 
-/**
- * The container-resize resolution: viewport-growth drift back towards the initial
- * placement, then the settle clamp honouring the last spacing.
- */
 export function resolvePanelViewportShift({
   position,
   initial,
@@ -90,7 +72,6 @@ export function resolvePanelViewportShift({
   return clampOnResize({ ...drifted, panelSize, viewport, origin, lastSpacing })
 }
 
-/** Pointer-event → client point; null for events that carry no pointer. */
 function eventPoint(e: Event): PanelPosition | null {
   if (e instanceof TouchEvent) {
     return { x: e.touches[0].clientX, y: e.touches[0].clientY }
@@ -102,50 +83,34 @@ function eventPoint(e: Event): PanelPosition | null {
 }
 
 export interface PanelDomWiringPorts {
-  /** The panel element (the movable chrome). */
   getElement: () => HTMLElement | null
-  /** The card anchoring the panel (positioning origin); null when gone. */
+
   resolveCardElement: () => HTMLElement | null
-  /** Committed panel position; undefined axes mean "never positioned". */
+
   getCommittedPosition: () => { x: number | undefined; y: number | undefined; lastSpacing: PanelSpacing | null }
-  /** Normalized committed position (undefined axes read as 0) — the drag input. */
+
   getPosition: () => PanelPosition & { lastSpacing: PanelSpacing | null }
-  /** Commit a position (writes the transform). */
   setPosition: (position: PanelPosition) => void
-  /** The current viewport with the breakout adjustment applied. */
   getViewport: () => PanelViewport
-  /** Current committed card width ('wide' vs anything else). */
   getCardWidth: () => string
-  /** Previous committed card width — the wide-transition state slot. */
   previousCardWidth: RefObject<string>
-  /** Origin at the last committed wide transition. */
   previousCardOrigin: RefObject<PanelPosition>
-  /** Viewport at the last committed re-position. */
   previousViewport: RefObject<PanelViewport>
-  /** Whether a composed-path element is the panel itself. */
   isPanel: (element: unknown) => boolean
-  /** Whether a composed-path element swallows the grab (an input, a dropdown trigger). */
   isInteractive: (element: unknown) => boolean
-  /** The drag suppression (created once by the adapter). */
   suppression: PanelSuppression
 }
 
 export interface PanelDomWiring {
-  /** Mount: set up the body press listeners, the drag session, and both ResizeObservers. */
   start: () => void
-  /** Unmount: detach every listener and observer (drag session effects stay dormant). */
+
   destroy: () => void
-  /** Position the panel on mount (and when the card anchor changes). */
+
   placeInitial: (panelElem: HTMLElement | null) => void
-  /** Re-base the origin when the card width transitions (regular ↔ wide). */
+
   applyCardWidthTransition: () => void
 }
 
-/**
- * The settings panel's DOM lifecycle as headless assembly: drag grab/release through
- * body-level press listeners and window drag-lifetime listeners, the panel-resize re-clamp,
- * the scroll-container resize drift, and the wide-card origin transition.
- */
 export function createPanelDomWiring({
   getElement,
   resolveCardElement,
@@ -161,8 +126,6 @@ export function createPanelDomWiring({
   isInteractive,
   suppression,
 }: PanelDomWiringPorts): PanelDomWiring {
-  // preferred placement: the initial-position resolution over the card anchor, viewport,
-  // and panel size (measured at the edge here)
   const getInitialPosition = (panelElem: HTMLElement): PanelPosition | undefined => {
     const cardElement = resolveCardElement()
     if (!cardElement) {
@@ -180,8 +143,6 @@ export function createPanelDomWiring({
     })
   }
 
-  // The drag session reads every changing input through the ports, so it never captures a
-  // stale element or viewport.
   const session = createPanelDragSession({
     getPosition,
     setPosition,
@@ -196,7 +157,7 @@ export function createPanelDomWiring({
     },
     activateEffects: suppression.activate,
     deactivateEffects: suppression.deactivate,
-    // the drag-lifetime listeners: window-level, capture, detached on release
+
     listenActive: ({ move, end }: PanelDragActiveListeners) => {
       const onMove = (e: Event) => {
         const point = eventPoint(e)
@@ -217,7 +178,6 @@ export function createPanelDomWiring({
         window.removeEventListener('mouseup', onEnd, { capture: true })
         window.removeEventListener('mousemove', onMove, { capture: true })
 
-        // deferred for the same reason as the drag-end click suppression
         setTimeout(() => {
           window.removeEventListener('click', suppression.cancelClick, { capture: true })
         }, 1)
@@ -264,9 +224,6 @@ export function createPanelDomWiring({
     document.body.addEventListener('touchstart', startListener, false)
     document.body.addEventListener('mousedown', startListener, false)
 
-    // panel resize: re-clamp the settled position and shift the session's grab offset so a
-    // resize mid-drag (e.g. a collapsible section toggled from a panel button) doesn't
-    // jump the drag position
     const panelResizeObserver = new ResizeObserver(() => {
       const { x, y, lastSpacing } = getCommittedPosition()
       if (x === undefined || y === undefined) {
@@ -280,7 +237,6 @@ export function createPanelDomWiring({
         viewport: getViewport(),
         origin: resolveCardOrigin(resolveCardElement()),
       })
-
       if (reclamp) {
         session.adjustOffset(reclamp.offsetDelta.x, reclamp.offsetDelta.y)
         setPosition(reclamp.position)
@@ -288,8 +244,6 @@ export function createPanelDomWiring({
     })
     panelResizeObserver.observe(elem)
 
-    // Reposition on scroll-container resize: covers a window resize and a sidebar
-    // opening/closing.
     const container = getScrollAncestor(elem) || document.body
     let prevWidth = 0
 
@@ -342,8 +296,7 @@ export function createPanelDomWiring({
       panelResizeObserver.disconnect()
       containerResizeObserver.disconnect()
       panelRepositionDebounced.cancel()
-      // Belt-and-braces recovery: a drag ending on unmount leaves the suppression active
-      // because the deferred deactivate timeouts never ran.
+
       suppression.dispose()
       destroy = null
     }
@@ -359,7 +312,7 @@ export function createPanelDomWiring({
         setPosition(initialPosition)
       }
     } catch {
-      // positioning is best-effort
+      /* noop */
     }
     previousViewport.current = getViewport()
   }
@@ -368,7 +321,6 @@ export function createPanelDomWiring({
     const cardElement = resolveCardElement()
     const cardWidth = getCardWidth()
     if (cardWidth === 'wide' && previousCardWidth.current !== 'wide' && !cardElement) {
-      // no card element yet — leave previousCardWidth so the shift can apply later
       return
     }
     const cardRect = cardElement?.getBoundingClientRect() ?? null

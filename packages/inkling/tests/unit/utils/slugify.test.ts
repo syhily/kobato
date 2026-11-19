@@ -1,8 +1,6 @@
 import { DEFAULT_INKLING_VERSION, isLegacyVersion, slugify } from '@kobato/inkling-internal/utils/slugify'
 import { describe, expect, it } from 'vitest'
 
-// Direct pins for the slug-version policy single-sourced here (the paste
-// dialect imports both the predicate and the default from this module).
 describe('isLegacyVersion', () => {
   it('treats versions that do not parse as latest', () => {
     expect(isLegacyVersion('not-a-version')).toBe(false)

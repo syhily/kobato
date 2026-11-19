@@ -47,7 +47,6 @@ export function asAdminWebmentionOutboxListWire(rows: WebmentionOutboxRow[]): Ad
   return rows.map(asAdminWebmentionOutboxWire)
 }
 
-// Public display projection — only the DTO fields cross the boundary.
 export function asPublicWebmentionWire(row: WebmentionRow): PublicWebmentionWire {
   return {
     id: row.id.toString(),

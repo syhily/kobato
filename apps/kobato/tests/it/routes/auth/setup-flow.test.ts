@@ -17,8 +17,6 @@ vi.mock('@kobato/server/http/request-context.ts', async () => {
 
 const db = getTestDb()
 
-// Setup install flow against the real engine: gate from `user` (cleared
-// table = noAdmin), real `one_time_token` row, real CSRF check.
 const CSRF_TOKEN = 'setup-flow-csrf-token'
 
 const mockContext = await import('@kobato/server/http/request-context.ts')
@@ -45,7 +43,6 @@ afterEach(async () => {
   resetAllBatchers()
 })
 
-/** Read the setup token the loader minted into `one_time_token`. */
 async function readMintedSetupToken(): Promise<string> {
   const rows = await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))
   expect(rows).toHaveLength(1)
@@ -57,7 +54,6 @@ describe('integration: /admin/setup full install flow', () => {
     const session = emptySession()
     session.set('csrfToken', CSRF_TOKEN)
 
-    // 1. Loader returns unverified state, minting the real setup token as a side effect.
     const loaderResult = await loader({
       request: new Request('http://localhost/admin/setup'),
       url: new URL('http://localhost/admin/setup'),
@@ -69,7 +65,6 @@ describe('integration: /admin/setup full install flow', () => {
     const loaderPayload = (loaderResult as { data: Record<string, unknown> }).data
     expect(loaderPayload.setupTokenVerified).toBe(false)
 
-    // 2. Submit setup token verification with the real minted token.
     const setupToken = await readMintedSetupToken()
     const verifyFormData = new FormData()
     verifyFormData.set('intent', 'verify-token')
@@ -90,7 +85,6 @@ describe('integration: /admin/setup full install flow', () => {
     const verifyPayload = (verifyResult as { data?: Record<string, unknown> }).data
     expect(verifyPayload?.setupTokenVerified).toBe(true)
 
-    // 3. Submit install form
     const installFormData = new FormData()
     installFormData.set('intent', 'install')
     installFormData.set('title', 'My Blog')
@@ -152,7 +146,6 @@ describe('integration: /admin/setup full install flow', () => {
       expect(scopes.has(scope)).toBe(true)
     }
 
-    // The real refreshBlogSettings: the in-process snapshot reflects the rows just written.
     const { getBlogSettingsBundleSync } = await import('@kobato/settings/getters.ts')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.locale).toBe('en-US')

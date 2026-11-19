@@ -46,7 +46,6 @@ describe('contract: public URL stability', () => {
   })
 
   it('RSS / Atom / sitemap routes are mounted by Hono at the historical paths', () => {
-    // Hono-native (server/http/resources/); must stay out of the RR manifest.
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('feed')).toBe(false)
     expect(paths.has('feed/atom')).toBe(false)
@@ -54,7 +53,6 @@ describe('contract: public URL stability', () => {
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
-    // Image endpoints are Hono routes (server/http/resources/images.ts).
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('images/og/:slug.png')).toBe(false)
     expect(paths.has('images/calendar/:year/:time.png')).toBe(false)
@@ -76,7 +74,6 @@ describe('contract: public URL stability', () => {
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
     const paths = new Set(all.map((r) => r.path))
-    // /search is handled by Hono redirects + client forms; no RR route entry.
     expect(paths.has('search')).toBe(false)
     expect(paths.has('search/:keyword')).toBe(true)
     expect(paths.has('search/:keyword/page/:num')).toBe(true)

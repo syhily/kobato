@@ -20,12 +20,10 @@ import { redirect } from 'react-router'
 export interface SearchLoaderOptions {
   keyword: string | undefined
   num: string | undefined
-  /** Request UI locale — the result-page title is rendered server-side. */
   locale: AppLocale
   /** Request-pinned settings bundle — the same capture the caller renders with. */
   settings: BlogSettingsBundle | null
   forceNoindex?: boolean
-  /** Canonical request facts; when present, a `search` audit event is recorded. */
   auditContext?: AuditContext
 }
 export async function searchLoader(

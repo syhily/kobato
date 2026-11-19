@@ -170,7 +170,7 @@ export async function backfillSettingsSections(
       upsertSetting(db, meta.defaults, null, meta.scope)
       mutable[key] = meta.defaults
     } catch {
-      // Best-effort backfill — a row that fails to persist simply stays missing.
+      /* noop */
     }
   }
   return mutable

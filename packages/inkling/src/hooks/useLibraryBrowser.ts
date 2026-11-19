@@ -5,11 +5,6 @@ import {
   type LibraryScheduler,
 } from '@kobato/inkling-internal/services/library-browser'
 
-// React adapter over library-browser (the deep module — the debounced request
-// track and race policy live there). The browser is recreated when the search
-// function or the injected ports change, mirroring useGifBrowser; hosts resolve
-// their adapter once, so the deps key on function identity.
-
 interface UseLibraryBrowserOptions<TItem> {
   search: (query: string) => Promise<TItem[] | undefined>
   scheduler?: LibraryScheduler

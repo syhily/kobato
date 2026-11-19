@@ -22,7 +22,6 @@ import { and, count, eq, sql } from 'drizzle-orm'
 export interface MineCommentItem {
   id: string
   body: CommentEditorState
-  /** Saved feed-variant HTML projection — what the row renders. */
   content: string | null
   createdAtIso: string
   deletedAtIso: string | null

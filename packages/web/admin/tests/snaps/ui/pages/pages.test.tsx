@@ -10,7 +10,6 @@ describe('snapshot: PagesView', () => {
     const html = stableHtml(renderInRouter(<PagesView />, '/admin/pages'))
     expect(html).toContain('页面管理')
     expect(html).toContain('新建页面')
-    // No active filters — just the pill-bar 筛选 trigger in the header slot.
     expect(html).toContain('筛选')
   })
 })

@@ -80,11 +80,7 @@ describe('protocol-owned modifier listeners', () => {
   })
 
   it('stays pressed while one of two held Shift keys is released', () => {
-    // Reading `event.shiftKey` off every key event reports held-state, so
-    // releasing one of two held Shift keys (shiftKey still true) keeps the
-    // state pressed until the last Shift is released.
     const state = getModifierState(createTestEditor())
-
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', code: 'ShiftLeft', shiftKey: true }))
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', code: 'ShiftRight', shiftKey: true }))
     expect(state.current).toBe(true)
@@ -121,13 +117,10 @@ describe('MarkdownPastePlugin modifier state', () => {
     })
     expect(getModifierState(editor).current).toBe(false)
 
-    // the PASTE_MARKDOWN_COMMAND listener stays registered: Shift press/release
-    // must not tear it down and re-register it
     expect(registerSpy.mock.calls.length).toBe(registrations)
   })
 })
 
-// Input-side link acceptance: which pasted text becomes a link.
 describe('isPasteableLinkUrl', () => {
   it('accepts http and https urls', () => {
     expect(isPasteableLinkUrl('https://example.com')).toBe(true)

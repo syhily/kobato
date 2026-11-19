@@ -14,8 +14,6 @@ import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/admin/users.ts`;
-// this controller group implements the admin-action slice (admin base).
 const impl = implementAdmin(adminUsersAdminContract)
 
 const mute = impl.mute.handler(async ({ input, context }) => {
@@ -89,6 +87,7 @@ const sendPasswordReset = impl.sendPasswordReset.handler(async ({ input, context
 })
 
 // The passkey gate rides AFTER the base guard chain (role gate → domain-error
+// translation).
 // translation), matching the pre-contract `.use(passkeyGuard)` order.
 const clearPasskeys = impl.clearPasskeys.use(passkeyGuard).handler(async ({ input, context }) => {
   const targetId = idFromString(input.id)

@@ -44,7 +44,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
 
     const className = [
       'relative border-transparent caret-grey-800',
-      isSelected ? 'z-20' : 'z-10', // ensure setting panels sit above other cards
+      isSelected ? 'z-20' : 'z-10',
       isSelected && !isDragging ? 'shadow-[0_0_0_0.2rem] shadow-green' : '',
       !isSelected && !isDragging ? 'hover:shadow-[0_0_0_0.1rem] hover:shadow-green' : '',
       CARD_WIDTH_CLASSES[cardWidth] || '',

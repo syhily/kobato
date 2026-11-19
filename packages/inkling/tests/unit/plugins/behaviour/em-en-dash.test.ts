@@ -12,12 +12,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Synchronous test table for the em/en dash grammar — em/en replacement,
-// boundary guards, the HR-shortcut exemption, and caret offset adjustment,
-// pinned by calling the scan body directly on a headless editor. The
-// registration wiring (update-scan seam, 'history-push' tag, undo) stays in
-// EmEnDashPlugin.test.tsx.
-
 function createTestEditor(): LexicalEditor {
   return createHeadlessEditor({
     namespace: 'test',
@@ -31,15 +25,13 @@ function createTestEditor(): LexicalEditor {
 interface ScanCase {
   name: string
   input: string
-  // collapsed caret offset before the scan; defaults to end of input
+
   caret?: number
   supportsHrShortcut?: boolean
   expected: string
   expectedCaret: number
 }
 
-// Awaits the commit like the neighboring behaviour tests do — headless
-// updates flush on a deferred callback, not synchronously.
 async function runScan(
   editor: LexicalEditor,
   { input, caret = input.length, supportsHrShortcut = false }: Omit<ScanCase, 'name' | 'expected' | 'expectedCaret'>,
@@ -62,14 +54,13 @@ async function runScan(
 }
 
 const cases: ScanCase[] = [
-  // em dash
   { name: 'replaces three dashes with an em dash', input: '---', expected: '—', expectedCaret: 1 },
   { name: 'replaces three dashes mid-text', input: 'a---b', expected: 'a—b', expectedCaret: 3 },
   { name: 'replaces three dashes after text', input: 'ab---', expected: 'ab—', expectedCaret: 3 },
-  // em dash boundary guards: a run longer than three dashes never matches
+
   { name: 'leaves four consecutive dashes alone', input: '----', expected: '----', expectedCaret: 4 },
   { name: 'leaves five consecutive dashes alone', input: '-----', expected: '-----', expectedCaret: 5 },
-  // en dash: non-dash char + '--' + whitespace
+
   {
     name: 'replaces two dashes followed by whitespace with an en dash',
     input: 'a-- ',
@@ -78,14 +69,14 @@ const cases: ScanCase[] = [
   },
   { name: 'replaces two dashes followed by a tab with an en dash', input: 'a--\t', expected: 'a–\t', expectedCaret: 3 },
   { name: 'replaces two dashes followed by whitespace mid-text', input: 'a-- b', expected: 'a– b', expectedCaret: 4 },
-  // en dash boundary guards
+
   { name: 'leaves two dashes at paragraph start alone', input: '-- ', expected: '-- ', expectedCaret: 3 },
   { name: 'leaves two dashes without trailing whitespace alone', input: 'a--', expected: 'a--', expectedCaret: 3 },
   { name: 'leaves two dashes followed by a non-space char alone', input: 'a--x', expected: 'a--x', expectedCaret: 4 },
-  // no-op
+
   { name: 'leaves dash-free text alone', input: 'hello', expected: 'hello', expectedCaret: 5 },
   { name: 'leaves a lone dash alone', input: 'a-b', expected: 'a-b', expectedCaret: 3 },
-  // caret offset adjustment
+
   {
     name: 'adjusts the caret for each replacement before it',
     input: 'a--- b-- ',
@@ -106,7 +97,7 @@ const cases: ScanCase[] = [
     expected: 'a—b',
     expectedCaret: 2,
   },
-  // HR-shortcut exemption
+
   {
     name: "leaves a sole '---' paragraph alone when the HR shortcut is supported",
     input: '---',

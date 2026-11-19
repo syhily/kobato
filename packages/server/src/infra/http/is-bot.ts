@@ -52,7 +52,6 @@ const BOT_TOKENS = [
 
 const BOT_PATTERN = new RegExp(BOT_TOKENS.join('|'), 'i')
 
-/** Whether a User-Agent string looks like a bot, crawler, or HTTP client. */
 export function isBot(userAgent: string | null | undefined): boolean {
   return !!userAgent && BOT_PATTERN.test(userAgent)
 }

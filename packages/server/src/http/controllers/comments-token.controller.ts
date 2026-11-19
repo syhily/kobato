@@ -10,8 +10,7 @@ import {
 import { commentTokenCookie, implementPublic } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/comments.ts`;
-// this controller only implements the `__comment_tokens` procedures. The
+// The
 // cookie jar attaches per procedure, after the contract's input validation —
 // exactly where the original chains placed it.
 const impl = implementPublic(commentsTokenContract)

@@ -63,7 +63,6 @@ describe('locale font stacks — CSS ⇔ shared map contract', () => {
 
   it('has root.tsx consume the same map instead of a hardcoded fallback tail', () => {
     expect(ROOT).toContain('defaultFontStackFor')
-    // No inline copy of any locale chain may survive in the component.
     for (const locale of SUPPORTED_LOCALES) {
       expect(ROOT).not.toContain(DEFAULT_FONT_STACKS[locale].body)
       expect(ROOT).not.toContain(DEFAULT_FONT_STACKS[locale].serif)

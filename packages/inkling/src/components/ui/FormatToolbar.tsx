@@ -38,13 +38,9 @@ interface FormatToolbarProps {
   onLinkClick?: () => void
   onSnippetClick?: () => void
   hiddenFormats?: HiddenFormat[]
-  /** Surfaces that keep element `format` (InklingComposableEditor's `alignment` prop) expose the alignment group. */
   isAlignmentEnabled?: boolean
 }
 
-// the selection classifier, the block-format surgeries, and the visibility gates
-// live in the format-toolbar behaviour module (a synchronous test table); this
-// component is the render adapter
 export default function FormatToolbar({
   editor,
   isSnippetsEnabled,

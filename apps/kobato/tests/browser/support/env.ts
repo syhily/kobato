@@ -1,13 +1,8 @@
-// Env contract for the real-browser journeys. The runner (`tools/browser/src/run.ts`,
-// `pnpm run sea:browser`) injects it after booting a throwaway SEA instance and seeding
-// the admin; exporting the same variables targets an external instance.
-
 export interface BrowserEnv {
-  /** Base URL of the live instance, no trailing slash. */
   baseUrl: string
   adminEmail: string
   adminPassword: string
-  /** Slug of the post staged by `support/global-setup.ts`. */
+
   postSlug: string
 }
 

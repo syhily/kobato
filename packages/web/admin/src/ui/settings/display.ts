@@ -8,12 +8,9 @@ import type { SettingsSection } from '@kobato/settings/sections.ts'
 export type SettingsNavGroup = 'site' | 'content' | 'service' | 'system'
 
 export interface SectionDisplayMeta {
-  /** Short label message id rendered as the sidebar item title. */
   labelId: UiMessageId
-  /** One-line description message id shown beneath the label. */
   descriptionId: UiMessageId
   group: SettingsNavGroup
-  /** Lucide icon name (PascalCase, e.g. 'Settings'). */
   icon: string
 }
 

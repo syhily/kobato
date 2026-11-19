@@ -94,7 +94,6 @@ export async function countAllComments(db: Database, filters: AdminListFilters):
   return rows[0].counts
 }
 
-// Single-query variant of countAllComments — all four status counts in one round trip.
 export async function countAdminComments(
   db: Database,
   baseFilters: Omit<AdminListFilters, 'status'>,

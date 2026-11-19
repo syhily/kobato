@@ -13,12 +13,8 @@ import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services
 import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input.ts'
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/analytics.ts`;
-// this controller only implements the procedures (admin-gated, like the
-// original `adminProc` chain).
 const impl = implementAdmin(analyticsContract)
 
-/** Wire input → db-owned resolved query; the range resolution itself lives in `@kobato/db`. */
 function resolve(input: AnalyticsQuery): ResolvedAnalyticsQuery {
   return { ...input, range: resolveAnalyticsRange(input) }
 }
@@ -33,16 +29,12 @@ const metrics = impl.metrics.handler(({ input }) => {
   return queryMetric(getAnalyticsReader(), resolve(input), input.type, input.limit)
 })
 
-/** CSV text export grouped by path (views / visitors / referers). */
 const exportCsv = impl.export.handler(({ input }) => queryExportCsv(getAnalyticsReader(), resolve(input)))
 
-// Site-wide analytics first-paint fan-out behind `/admin/analytics/overview`;
-// `search` carries the raw query string, parsed server-side.
 const overview = impl.overview.handler(({ input }) =>
   loadAnalyticsOverview(getAnalyticsReader(), parseAnalyticsSearch(new URLSearchParams(input.search))),
 )
 
-// Mentions page data: top 50 referers for the parsed range.
 const mentions = impl.mentions.handler(async ({ input }) => {
   const referers = await queryMetric(
     getAnalyticsReader(),

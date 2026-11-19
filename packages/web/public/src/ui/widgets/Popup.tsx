@@ -17,7 +17,6 @@ export interface PopupProps {
   size?: PopupSize
   /** Initial focus target. `dialog` avoids activating a field on open. */
   initialFocus?: 'control' | 'dialog'
-  /** Forwarded to the dialog container for screen reader naming. */
   'aria-label'?: string
   /** Element id whose textContent names the dialog. Takes precedence over aria-label. */
   'aria-labelledby'?: string

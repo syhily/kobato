@@ -8,9 +8,6 @@ import { describe, expect, it } from 'vitest'
 
 mockTanstackQuery()
 
-// Comments is a pure-render orchestrator over a pre-loaded aggregate +
-// items; covers the populated/nested tree, load-more, empty and failure branches.
-
 // useMutation hooks run during render even though their effects don't fire
 // under SSR — stubbed to avoid network plumbing.
 
@@ -28,7 +25,6 @@ describe('snapshot: Comments data-loaded tree', () => {
       makeComment({ id: '1', name: 'Alice', userId: '10' }),
       makeComment({ id: '2', name: 'Bob', userId: '11' }),
     ]
-    // count=5 but only 2 roots shipped → LoadMore fires.
     const html = stableHtml(
       renderInRouter(
         <Comments commentKey="/posts/hello" comments={commentsData(5, 5)} items={items} />,
@@ -44,10 +40,8 @@ describe('snapshot: Comments data-loaded tree', () => {
     expect(html).toContain('Bob')
     expect(html).toContain('Body 1')
     expect(html).toContain('Body 2')
-    // Reply-form slot renders with no active reply target.
     expect(html).toContain('id="respond"')
     expect(html).toContain('发表评论')
-    // rootsLoaded (2) < rootsTotal (5) → LoadMore fires.
     expect(html).toContain('加载更多')
   })
 
@@ -84,7 +78,6 @@ describe('snapshot: Comments data-loaded tree', () => {
     expect(html).toContain('Alice')
     expect(html).toContain('Carol')
     expect(html).toContain('Dave')
-    // All three roots shipped → no load-more sentinel.
     expect(html).not.toContain('加载更多')
   })
 
@@ -107,14 +100,11 @@ describe('snapshot: Comments data-loaded tree', () => {
     const html = stableHtml(
       renderInRouter(<Comments commentKey="/posts/hello" comments={commentsData(0, 0)} items={[]} />, '/posts/hello'),
     )
-    // Header still renders with a zero count.
     expect(html).toContain('id="comments"')
     expect(html).toContain('评论')
     expect(html).toContain('(0)')
     expect(html).not.toContain('user-comment-')
-    // rootsLoaded (0) >= rootsTotal (0) → no load-more button.
     expect(html).not.toContain('加载更多')
-    // Empty thread still accepts a top-level comment.
     expect(html).toContain('id="respond"')
   })
 
@@ -140,7 +130,6 @@ describe('snapshot: Comments data-loaded tree', () => {
     )
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('id="user-comment-2"')
-    // rootsLoaded === rootsTotal → load-more branch returns null.
     expect(html).not.toContain('加载更多')
   })
 })

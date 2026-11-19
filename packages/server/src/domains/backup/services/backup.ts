@@ -77,8 +77,6 @@ function restrictStagingFile(filePath: string): void {
   }
 }
 
-/** Reconcile: insert DB rows for backend objects that have none — idempotent
- * via the `storage_path` unique constraint. */
 async function reconcileBackups(db: Database): Promise<void> {
   const known = new Set(await listBackupStoragePaths(db))
   const candidates: { key: string; size: number; driver: 's3' | 'local' }[] = []
@@ -135,7 +133,6 @@ export function resetBackupEncryption(): void {
  *  a plaintext archive must never be written while the UI claims encryption.
  *  Create lets it propagate; restore declines into the password prompt. */
 export class BackupEncryptionMisconfiguredError extends Error {
-  /** User-facing descriptor; `message` stays the English technical fallback. */
   readonly descriptor: ErrorMessageDescriptor
 
   constructor(descriptor: ErrorMessageDescriptor | string) {
@@ -160,7 +157,6 @@ export function resolveStoredEncryptionPassword(): string | null {
 }
 
 export interface CreateBackupOptions {
-  /** Per-run override (manual backups); empty/absent falls back to the wired settings password. */
   passwordOverride?: string
 }
 
@@ -250,7 +246,6 @@ async function createBackupUnchecked(
       })
     }
 
-    // Streaming archive — a full database file is never held in memory.
     entries.unshift({ name: 'kobato.db', path: stagingPath, size: 0 })
 
     // The env-converged config rides along so a restored instance keeps its
@@ -348,8 +343,6 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
   return backendFor(row.storageDriver).get(row.storagePath)
 }
 
-/** Streamed, so neither the restore pipeline nor the download endpoint holds
- * the archive in memory; `byteSize` lets the route set Content-Length. */
 export async function getBackupStream(
   db: Database,
   timestamp: string,

@@ -12,7 +12,6 @@ const REPLACEMENT_STRING_SPLIT_REGEX = /({.*?})/g
 
 export function $replacementStringTransform(node: TextNode): void {
   if (node.hasFormat('code')) {
-    // prevent infinite loop
     return
   }
   const textContent = node.getTextContent()

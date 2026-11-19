@@ -51,7 +51,6 @@ const SWEEP_AGE_MS = 60 * 60 * 1000
 const TRASH_INFIX = '.trash-'
 
 export interface FileStoreSetOptions {
-  /** Time-to-live in seconds. Ignored when `expiresAtMs` is provided. */
   ttlSeconds?: number
   /** Absolute deadline (epoch ms, `0` = never). The registry passes the deadline
    *  it also stores in L1, so both planes share one value. */
@@ -62,8 +61,6 @@ export interface FileStoreSetOptions {
 // test files; one throwaway root per process/module instance.
 let inMemoryRoot: string | undefined
 
-/** The cache root (`<storage.data>/cache`); in-memory test databases get a
- *  per-process `mkdtemp` directory instead. */
 export function resolveCacheRoot(): string {
   if (isInMemoryPath(serverConfig.storage.database)) {
     inMemoryRoot ??= mkdtempSync(path.join(tmpdir(), 'kobato-cache-'))

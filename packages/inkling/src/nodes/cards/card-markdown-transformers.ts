@@ -49,30 +49,10 @@ export const IMAGE_CARD_TRANSFORMER: ElementTransformer = {
   type: 'element',
 }
 
-/**
- * One card's ` ```inkling:<card>``` ` fence vocabulary: which node fields the fence
- * body holds (`getData`) and how to rebuild the node from the parsed body
- * (`createNode`). The fence tag and constructed class are deliberately absent — the
- * projection derives them from the declaration's `nodeType` and wrapper class, so they
- * cannot drift from the registry. Exported for `defineCard`: a host card's
- * `markdownFence` speaks the same vocabulary.
- *
- * Method-shorthand signatures keep each entry's `getData` parameter at the card's own
- * node type (method parameters are bivariant under `strictFunctionTypes`); the
- * projection consumes the widened `LexicalNode` signature.
- */
 export interface CardFencePayload {
   getData(node: LexicalNode): Record<string, unknown>
   createNode(data: Record<string, unknown>): LexicalNode
 }
-
-/**
- * Builds one card's fence transformer from the declaration-derived fence tag (`card`)
- * and wrapper class (`nodeClass`) plus the card's payload vocabulary. Every constructed
- * node gets its nested editors detached (`$detachNestedEditorsForRoundTrip`), so a
- * fence-imported card keeps the payload's plain-text fields verbatim. Exported for
- * `defineCard`, which builds host fence transformers through the same path.
- */
 export function createCardTransformer({
   card,
   nodeClass,
@@ -94,9 +74,7 @@ export function createCardTransformer({
       return '```inkling:' + card + '\n' + JSON.stringify(data) + '\n```'
     },
     regExpEnd: /^```\s*$/,
-    // `card` is an arbitrary host nodeType via `defineCard` — escape it so
-    // regex metacharacters in a host type cannot over-match or throw at
-    // RegExp construction
+
     regExpStart: new RegExp('^```inkling:' + escapeRegExp(card) + '\\s*$'),
     replace: (rootNode, _children, _startMatch, _endMatch, linesInBetween, _isImport) => {
       const raw = linesInBetween?.join('\n') ?? ''
@@ -110,8 +88,7 @@ export function createCardTransformer({
           `card markdown transformer: expected '${card}' fence body to be a JSON object, got ${describeValue(parsed)}`,
         )
       }
-      // object literals from JSON.parse are plain records; the const binding
-      // is the honest bridge (an assertion would warn, a binding does not)
+
       const data: Record<string, unknown> = { ...parsed }
       const node = createNode(data)
       $detachNestedEditorsForRoundTrip(node)
@@ -121,22 +98,12 @@ export function createCardTransformer({
   }
 }
 
-/**
- * Detaches a markdown-imported card's nested editors: nulls every `__<name>` field the
- * class's adopted `nestedEditors` spec declares. The fence payload carries the card's
- * text as plain data properties; a live nested editor would re-serialize its HTML over
- * those properties on `exportJSON`.
- */
 function $detachNestedEditorsForRoundTrip(node: LexicalNode): void {
-  // the spec-declared `__<name>` fields exist on the node at runtime but are
-  // not reachable through the widened LexicalNode signature — Reflect.set
-  // writes through the dynamic key without an assertion
   getNestedEditorSpecs(node).forEach((spec) => {
     Reflect.set(node, `__${spec.name}`, null)
   })
 }
 
-// standard regex-literal escape for host-supplied fence tags
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -155,14 +122,10 @@ function str(value: unknown, field: string): string {
   return value
 }
 
-// GalleryImage's scalar fields, type-checked so a malformed fence body cannot land a
-// number in `__images`
 const GALLERY_IMAGE_STRING_FIELDS = ['src', 'fileName', 'alt', 'caption', 'href', 'previewSrc', 'title'] as const
 const GALLERY_IMAGE_NUMBER_FIELDS = ['width', 'height', 'row'] as const
 
 function galleryImageEntry(image: object, field: string, index: number): GalleryImage {
-  // object literals from JSON.parse are plain records; the const binding
-  // narrows without an assertion warning
   const entry: Record<string, unknown> = { ...image }
   for (const key of GALLERY_IMAGE_STRING_FIELDS) {
     const value = entry[key]
@@ -187,8 +150,7 @@ function galleryImages(value: unknown, field: string): GalleryImage[] {
   if (!Array.isArray(value)) {
     throw new TypeError(`card markdown transformer: expected '${field}' to be an array, got ${describeValue(value)}`)
   }
-  // Array.isArray narrows to any[]; the callback re-anchors each entry at
-  // unknown so the object guard below is a real narrowing, not an any read
+
   return value.map((image: unknown, index) => {
     if (typeof image !== 'object' || image === null || Array.isArray(image)) {
       throw new TypeError(
@@ -199,11 +161,6 @@ function galleryImages(value: unknown, field: string): GalleryImage[] {
   })
 }
 
-/**
- * The fence-eligible card node types, derived from the declarations' `markdown: { kind:
- * 'fence' }` entries: the payload table is keyed by this union with an exhaustive
- * `Record`, so declaring a fence-eligible card without its payload is a compile error.
- */
 type FenceCardNodeType = Extract<(typeof CARD_DECLARATIONS)[number], { markdown: { kind: 'fence' } }>['nodeType']
 
 const CARD_FENCE_PAYLOADS: Record<FenceCardNodeType, CardFencePayload> = {
@@ -310,20 +267,9 @@ const CARD_FENCE_PAYLOADS: Record<FenceCardNodeType, CardFencePayload> = {
   },
 }
 
-/**
- * Wrapper-layer projection of the card declarations: each declaration paired with its
- * wrapper node class and, for markdown-eligible cards whose markdown form
- * `DEFAULT_TRANSFORMERS` does not cover, its card transformer.
- * `@kobato/inkling-internal/markdown/round-trip` derives `MARKDOWN_NODES` and `CARD_TRANSFORMERS`
- * from this list. The throw below is the runtime backstop behind the payload
- * table's exhaustive-`Record` compile-time guarantee.
- */
 export const CARD_MARKDOWN_DECLARATIONS = CARD_WRAPPER_NODES.map((card) => {
-  // `in` narrows the union to the declarations carrying the optional markdown entry
   const markdown = 'markdown' in card ? card.markdown : undefined
-  // the exhaustive Record is keyed by the fence-eligible subset; indexing
-  // with an arbitrary card node type widens through Partial — the kind
-  // check below is the authoritative gate
+
   const payload = (CARD_FENCE_PAYLOADS as Partial<Record<CardNodeType, CardFencePayload>>)[card.nodeType]
   if (markdown?.kind === 'fence' && payload === undefined) {
     throw new Error(
@@ -338,8 +284,6 @@ export const CARD_MARKDOWN_DECLARATIONS = CARD_WRAPPER_NODES.map((card) => {
         : card.nodeType === 'image'
           ? IMAGE_CARD_TRANSFORMER
           : undefined
-  // Object.assign into a fresh object: a shallow copy of the shared wrapper
-  // entry, so the projection's added `markdownTransformer` key can never
-  // mutate the registry object
+
   return Object.assign({}, card, { markdownTransformer })
 })

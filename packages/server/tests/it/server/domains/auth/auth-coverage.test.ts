@@ -208,7 +208,6 @@ describe('auth/verification-tokens — OTP', () => {
     expect(result).not.toBeNull()
     expect(result!.userId).toBe(u.id)
 
-    // Single-use: the row was deleted.
     expect(await verifyOtpToken(db, u.id, otpCode)).toBeNull()
   })
 
@@ -480,7 +479,6 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     expect(result.sid).toMatch(/^[0-9a-f-]+$/)
     expect(result.setCookie).toContain('__session=')
 
-    // Row written through the process-level session-storage pool.
     const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, result.sid))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.userId).toBe(u.id)
@@ -557,7 +555,6 @@ describe('auth/otp-flow — handleCredentialLogin', () => {
     if (result.type === 'error') {
       expect(result.descriptor).toMatchObject({ messageKey: 'auth.signin.error.credentialsRequired' })
     }
-    // Error results carry no mutation — no dirty mark, no setCookie.
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 

@@ -19,7 +19,6 @@ interface InklingBehaviourPluginProps {
   containerElem?: React.RefObject<HTMLElement | null>
   cursorDidExitAtTop?: () => void
   isNested?: boolean
-  /** True on surfaces that expose alignment controls: imported/typed `format` is kept instead of stripped. */
   alignment?: boolean
 }
 
@@ -70,9 +69,6 @@ function useInklingBehaviour({
     )
   }, [editor, cardSelectionStore, cardPickerStore, isNested, cursorDidExitAtTop, isShiftPressed])
 
-  // remove alignment formats (unless the surface keeps alignment),
-  // denest invalid node nesting,
-  // merge list nodes of same type
   React.useEffect(() => {
     return registerDefaultTransforms(editor, { alignment: alignment ? 'keep' : 'strip' })
   }, [editor, alignment])
@@ -87,13 +83,7 @@ export default function InklingBehaviourPlugin({
   alignment,
 }: InklingBehaviourPluginProps) {
   const [editor] = useLexicalComposerContext()
-  // Fallback container for the outside-click deselect: this editor's own root
-  // element, read lazily because it is null at first render and set on mount.
-  // Scoping per editor keeps multi-editor pages from cross-scoping the
-  // deselect, and no document access happens during render.
-  // the getter reads the editor lazily (outside render), so the memo itself
-  // has no reactive inputs — the composer editor is stable for the
-  // component's lifetime, hence the empty dep list
+
   const fallbackRef = React.useMemo<React.RefObject<HTMLElement | null>>(
     () => ({
       get current() {

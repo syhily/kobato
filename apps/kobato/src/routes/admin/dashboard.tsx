@@ -24,11 +24,9 @@ export const meta = titleMeta('meta.title.admin.dashboard')
 // Keep in lockstep with the `PAGE_SIZE` constant in `PendingModerationPanel.tsx` — the panel's pagination assumes this size.
 const PENDING_PAGE_SIZE = 3
 
-// `analytics.*` inputs are strings (`parseAnalyticsInput` parseInts them); `computeDateRange` yields unix seconds.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   const user = viewer ?? undefined
-  // Re-assert author+ so `user` narrows to non-null for the loader body.
   requireRole(user, 'author')
 
   const admin = user.role === 'admin'
@@ -64,7 +62,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       myCommentsTotal: myCommentCounts.total,
       myCommentsPending: myCommentCounts.pending,
     },
-    // Pass through untouched (id stringified, title, published falls back to updatedAt).
     recentDrafts: mySummary.recentDrafts,
     recentPublished: mySummary.recentPublished,
   }

@@ -44,8 +44,6 @@ export class MathInlineNode extends DecoratorNode<null> {
   }
 
   static importJSON(serializedNode: Record<string, unknown>) {
-    // Trust boundary: same model as the generated nodes' importJSON — payload
-    // fields are read at face value, with absent slots defaulting to empty.
     const { tex, mathml, svg } = serializedNode
     return $createMathInlineNode({
       tex: typeof tex === 'string' ? tex : '',
@@ -127,8 +125,6 @@ export class MathInlineNode extends DecoratorNode<null> {
     return null
   }
 
-  // Priority svg > mathml > <code>tex</code>; the artifacts pass through the
-  // render-context sanitize.
   exportDOM(_editor: LexicalEditor, options: ExportDOMOptions = {}): DOMExportOutput {
     const context = createRenderContext(options)
     const document = context.createDocument()

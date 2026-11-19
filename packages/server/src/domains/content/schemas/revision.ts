@@ -1,8 +1,3 @@
-/**
- * Shared revision primitives for post and page body revisions — the types that
- * cross the post/page boundary.
- */
-
 import type { ContentRow } from '@kobato/db/types.ts'
 import type { BodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 

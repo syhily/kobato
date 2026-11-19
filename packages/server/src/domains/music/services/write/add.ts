@@ -42,10 +42,6 @@ export interface AddMusicInputs {
   source: string
   sourceId: string
   uploader: { id: number; name: string } | null
-  /**
-   * Optional pre-resolved metadata + asset URLs; missing fields fall
-   * through to the provider.
-   */
   prefill?: AddMusicPrefill
 }
 

@@ -15,8 +15,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// One card type is enough to exercise the surgery in jsdom (the same
-// approach as the drop-surgery tests).
 function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', nodes: [BookmarkNode, LinkNode], onError: () => {} })
 }

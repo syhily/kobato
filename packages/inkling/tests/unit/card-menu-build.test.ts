@@ -218,12 +218,9 @@ describe('buildCardMenu', function () {
 
     const cardMenu = buildCardMenu(nodes)
 
-    // Primary section first, then declaration order — the same order CardMenu
-    // assigns data-inkling-cardmenu-idx
     expect(cardMenu.items.map((item) => item.label)).to.deep.equal(['One', 'Three', 'Two'])
     expect(cardMenu.maxItemIndex).to.equal(cardMenu.items.length - 1)
-    // derived from the sections and sharing item identity, so the two views
-    // can't drift
+
     expect(cardMenu.items).to.deep.equal(cardMenu.sections.flatMap((section) => section.items))
     expect(cardMenu.items[0]).toBe(cardMenu.sections[0].items[0])
     expect(cardMenu.items[2]).toBe(cardMenu.sections[1].items[0])
@@ -271,14 +268,10 @@ describe('buildCardMenu', function () {
   })
 
   it('gates the image declaration’s library entry on the host imageLibrary config (plan C8)', async function () {
-    // the declaration-derived image menu: 'Image' is ungated, 'GIF' is gated
-    // on tenor/klipy, 'Image library' on imageLibrary
     const imageMenu = getCardMenu('image')
     expect(imageMenu?.map((item) => item.label)).to.deep.equal(['Image', 'GIF', 'Image library'])
     const nodes: NodeEntries = [['image', { cardMenu: imageMenu }]]
 
-    // no library config → no menu entry, zero UI trace (the GIF entry is
-    // hidden too — no provider keys either)
     expect(buildCardMenu(nodes).items.map((item) => item.label)).to.deep.equal(['Image'])
 
     const config: CardConfig = { imageLibrary: { search: () => Promise.resolve([]) } }
@@ -344,7 +337,6 @@ describe('buildCardMenu', function () {
 
     const cardMenu = buildCardMenu(nodes)
 
-    // ascending priority, items without a priority last
     expect(cardMenu.items.map((item) => item.label)).to.deep.equal(['Three', 'One', 'Two'])
   })
 
@@ -826,8 +818,6 @@ describe('buildCardMenu', function () {
     })
   })
 
-  // Label resolution: the resolver is optional, so every test above also pins
-  // the default path — no resolver, declared text unchanged.
   describe('label resolution', function () {
     it('resolves label, desc, and the built-in section names through the resolver', async function () {
       const nodes: NodeEntries = [
@@ -856,7 +846,7 @@ describe('buildCardMenu', function () {
       const imageItem = cardMenu.sections[0].items[0]
       expect(imageItem.label).to.equal('zh(menu.image.label)Image')
       expect(imageItem.desc).to.equal('zh(menu.image.desc)Upload, or embed with /image [url]')
-      // snippet names are host data — never resolved
+
       expect(cardMenu.sections[1].items[0].label).to.equal('One snippet')
     })
 
@@ -881,15 +871,11 @@ describe('buildCardMenu', function () {
 
       const cardMenu = buildCardMenu(nodes, { query: 'one', resolveLabel })
 
-      // the array-form matches aliases matched the query as declared, the
-      // resolved item keeps the declared array, and a custom section name
-      // never goes through the resolver
       expect(cardMenu.sections).to.have.lengthOf(1)
       expect(cardMenu.sections[0].label).to.equal('Embed')
       expect(cardMenu.sections[0].items[0].matches).to.deep.equal(['one'])
       expect(cardMenu.sections[0].items[0].label).to.equal('zh(menu.one.label)One')
     })
-
     it('passes the RESOLVED label to function-form matches', async function () {
       const matchFn = (query: string, label: string) => label.includes(query)
       const nodes: NodeEntries = [
@@ -908,8 +894,6 @@ describe('buildCardMenu', function () {
       ]
       const resolveLabel = (key: string, fallback: string) => (key === 'menu.one.label' ? '图片' : fallback)
 
-      // the declared English label does not contain the query; the resolved
-      // one does — proof the function received the resolved label
       expect(buildCardMenu(nodes, { query: '图片', resolveLabel }).items.map((item) => item.label)).to.deep.equal([
         '图片',
       ])
@@ -931,11 +915,7 @@ describe('buildCardMenu', function () {
           },
         ],
       ]
-      // a resolver without a fallback of its own (e.g. a partial table the
-      // merge in resolveLabels didn't cover) returns undefined at runtime,
-      // which ResolveMenuLabel's `string` return can't express — the cast
-      // models that miss honestly, and buildCardMenu's `?? item.label` is
-      // what leaves the declared text alone
+
       const resolveLabel = ((): string | undefined => undefined) as ResolveMenuLabel
 
       const cardMenu = buildCardMenu(nodes, { resolveLabel })

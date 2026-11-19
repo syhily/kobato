@@ -48,7 +48,6 @@ describe('extractVideoMetadata', () => {
   const originalCreateObjectURL = Reflect.get(URL, 'createObjectURL') as typeof URL.createObjectURL
   const originalRevokeObjectURL = Reflect.get(URL, 'revokeObjectURL') as typeof URL.revokeObjectURL
 
-  // a local handle avoids unbound-method on URL.revokeObjectURL references
   let revokeObjectURL: ReturnType<typeof vi.fn<(url: string) => void>>
 
   beforeEach(() => {

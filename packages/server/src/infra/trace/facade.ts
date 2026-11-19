@@ -40,7 +40,6 @@ export interface Span {
   setAttributes(attributes: SpanAttributes): void
   setStatus(status: SpanStatus, message?: string): void
   recordError(error: unknown): void
-  /** `endTime` is epoch milliseconds; omit for "now". */
   end(endTime?: number): void
 }
 
@@ -79,7 +78,6 @@ export interface UpDownCounter {
  */
 export interface TraceDelegate {
   startSpan(name: string, options?: SpanOptions): Span
-  /** Run `fn` with `span` installed as the active OTel context. */
   runInSpan<T>(span: Span, fn: () => T): T
   activeTraceIds(): ActiveTraceIds | null
   counter?(name: string, options?: MetricOptions): Counter
@@ -596,7 +594,6 @@ export function runInSpan(span: Span, fn: () => unknown): unknown {
   return fn()
 }
 
-/** Active W3C ids for the current async context, or null when inert. */
 export function activeTraceIds(): ActiveTraceIds | null {
   const delegate = currentDelegate()
   if (delegate === null) {
@@ -649,7 +646,6 @@ export function upDownCounter(name: string, options?: MetricOptions): UpDownCoun
   }
 }
 
-/** True only while a runtime delegate is installed. */
 export function isTraceActive(): boolean {
   return currentDelegate() !== null
 }
@@ -689,7 +685,6 @@ export function isTraceDelegateInstalled(): boolean {
   return currentDelegate() !== null
 }
 
-/** Test-only: reset the module slot and its one-shot diagnostic memory. */
 export function __resetTraceFacadeForTests(): void {
   activeDelegate = null
   reportedFailures.clear()

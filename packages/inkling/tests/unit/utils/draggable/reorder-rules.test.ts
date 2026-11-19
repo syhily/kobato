@@ -104,13 +104,10 @@ describe('reorder-rules', () => {
 
     it('rejects drops that would leave the element where it already is', () => {
       const { droppables } = createDroppables(3)
-      // before the next sibling → insertIndex === draggableIndex + 1
       expect(resolveReorder(fakeGeometry(droppables), droppables[0], droppables[1], 'top-left', 'vertical')).toBe(false)
-      // after the previous sibling → insertIndex === draggableIndex
       expect(resolveReorder(fakeGeometry(droppables), droppables[1], droppables[0], 'bottom-left', 'vertical')).toBe(
         false,
       )
-      // same no-ops horizontally
       expect(resolveReorder(fakeGeometry(droppables), droppables[0], droppables[1], 'top-left', 'horizontal')).toBe(
         false,
       )
@@ -163,7 +160,7 @@ describe('reorder-rules', () => {
   describe('adjustInsertIndexForRemoval', () => {
     it('shifts the slot down by one when the dragged element sits before it', () => {
       expect(adjustInsertIndexForRemoval(0, 3)).toBe(2)
-      expect(adjustInsertIndexForRemoval(1, 2)).toBe(1) // unreachable in practice (disallowed), pinned for safety
+      expect(adjustInsertIndexForRemoval(1, 2)).toBe(1)
     })
 
     it('leaves the slot alone when the dragged element sits at or after it', () => {

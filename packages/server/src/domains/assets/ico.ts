@@ -1,6 +1,3 @@
-// ICO container encoder — callers pass ready PNG buffers straight through;
-// no pixel re-encoding happens here.
-
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const IHDR_TYPE = 0x49484452 // 'IHDR'
 const ICONDIR_HEADER_SIZE = 6

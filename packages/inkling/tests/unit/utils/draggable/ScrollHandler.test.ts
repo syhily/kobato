@@ -11,8 +11,6 @@ describe('ScrollHandler', function () {
   })
 
   it('uses the document scrolling element by default (no host container baked in)', function () {
-    // the host supplies its container selector via the composer's
-    // dragScrollContainerSelector option; absent, no override applies
     const adminEditor = document.createElement('div')
     adminEditor.className = 'gh-inkling-editor'
     const target = document.createElement('div')

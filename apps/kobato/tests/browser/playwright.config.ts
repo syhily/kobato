@@ -1,9 +1,3 @@
-// Playwright config for the real-browser i18n journeys. It never boots a server itself:
-// `pnpm run test:browser` / `pnpm run sea:browser` start a throwaway SEA instance (or point
-// at an external one) and inject the KOBATO_BROWSER_* env contract — see
-// `tools/browser/src/run.ts`. Local runs use the system Chrome channel; CI sets
-// KOBATO_BROWSER_CHANNEL=chromium, and KOBATO_BROWSER_HEADLESS=0 gives a headed run.
-
 import { defineConfig } from '@playwright/test'
 
 // The one relative import: Playwright loads the config itself WITHOUT tsconfig
@@ -16,7 +10,7 @@ const channel = process.env.KOBATO_BROWSER_CHANNEL ?? (process.env.CI ? 'chromiu
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
-  // A path option (resolved against this config file), not a module import.
+
   globalSetup: './support/global-setup.ts',
   // One shared instance with mutable settings and cross-tab journeys — never parallel.
   fullyParallel: false,

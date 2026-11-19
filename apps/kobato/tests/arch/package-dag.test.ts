@@ -1,18 +1,16 @@
 /**
- * Package-boundary DAG guard — the physical successor of the pre-monorepo
- * `boundaries.test.ts` / `layer-constraints.test.ts` contracts.
+ * Package-boundary DAG guard.
  *
- * The workspace layout itself now enforces most of what those giant scanners
- * pinned textually: cross-package code physically lives in `packages/*` and
- * resolves through `@kobato/*` package specifiers, so the direction rules
- * collapse into five small checks over package.json manifests and import
- * specifiers:
+ * The workspace layout enforces most of the direction rules structurally:
+ * cross-package code physically lives in `packages/*` and resolves through
+ * `@kobato/*` package specifiers, so the rules collapse into five small
+ * checks over package.json manifests and import specifiers:
  *
  *  a. every package's declared `@kobato/*` dependencies fit the allowed DAG;
  *  b. every `src/**` file imports `@kobato/*` only along the DAG (tests-only
  *     edges live in `tests/**`, never in `src/**`);
- *  c. no relative import escapes its package (`../../packages/…` shapes are
- *     how the pre-split layout leaked across layers);
+ *  c. no relative import escapes its package (`../../packages/…` shapes
+ *     cross package boundaries without a specifier);
  *  d. the `@/` app alias resolves to `apps/kobato/src` (root tsconfig), so it
  *     may appear only inside the app package itself;
  *  e. inkling is reached only through its public entry specifiers — its own
@@ -43,10 +41,6 @@ const IGNORE_DIRS = new Set([
   'tmp',
 ])
 
-/**
- * The former `@kobato/shared` package: thirteen leaf packages under
- * `packages/shared/*`, each importable by name (`@kobato/utils`, …).
- */
 const SHARED_SPLIT = [
   '@kobato/utils',
   '@kobato/i18n',
@@ -63,7 +57,6 @@ const SHARED_SPLIT = [
   '@kobato/seo',
 ] as const
 
-/** The workspace's package roots (name = the package.json `name`). */
 const REPO_PACKAGES = [
   { name: 'kobato', dir: 'apps/kobato' },
   { name: '@kobato/inkling', dir: 'packages/inkling' },
@@ -109,13 +102,8 @@ const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
  * the stricter SRC_TARGETS map.
  */
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
-  // inkling is a host-agnostic island: tests borrow lexical fixtures + test-helpers.
-  // `@kobato/lexical` is a tests-only edge (its fixtures pin the storage format).
   '@kobato/inkling': ['@kobato/inkling', '@kobato/lexical', '@kobato/test'],
-  // The split leaf packages. `@kobato/test` is the suite-utility convention;
-  // the remaining edges mirror SRC_TARGETS below, except the tests-only ones:
-  // settings → contracts (contract-pinning fixtures),
-  // i18n → inkling (the label-table suite pins the barrel's DEFAULT_LABELS).
+
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n', '@kobato/test'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n', '@kobato/test'],
   '@kobato/catalog': ['@kobato/catalog', '@kobato/lexical', '@kobato/test'],
@@ -133,8 +121,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
   '@kobato/assets': ['@kobato/assets', '@kobato/test'],
-  // lexical → inkling is a real src edge (the heading-slug save pipeline composes
-  // inkling's own `slugify`/tracker through `@kobato/inkling/headless`).
+
   '@kobato/lexical': [
     '@kobato/lexical',
     '@kobato/inkling',
@@ -157,11 +144,10 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  // The oRPC contract-first layer: Zod wire schemas from contracts, nothing else.
+
   '@kobato/api': ['@kobato/api', '@kobato/contracts', '@kobato/test'],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/test', '@kobato/utils'],
-  // server's web-admin entry exists only for its test fixtures; the api entry is the
-  // contract-first surface its controllers implement.
+
   '@kobato/server': [
     '@kobato/server',
     '@kobato/api',
@@ -179,10 +165,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/web-admin',
     '@kobato/test',
   ],
-  // web-admin consumes the public oRPC contract; server is a tests-only fixture
-  // edge; web-client is the browser platform leaf and web-public the
-  // public-frontend leaf whose audited modules admin reuses as long-term
-  // seams.
+
   '@kobato/web-admin': [
     '@kobato/web-admin',
     '@kobato/web-client',
@@ -205,10 +188,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
-  // The browser platform leaf (hooks, oRPC client, editor platform). `@kobato/lexical`
-  // is a tests-only edge (editor fixtures pin the storage schemas); production never
-  // reaches back into `@kobato/web-admin` — the product leaves compose this
-  // package, never the reverse.
+
   '@kobato/web-client': [
     '@kobato/web-client',
     '@kobato/ui',
@@ -223,10 +203,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/lexical',
     '@kobato/test',
   ],
-  // The public-frontend leaf (public chrome/comments/widgets plus the
-  // cross-surface shared/lib tiers). Composes web-client; never imports back
-  // into `@kobato/web-admin` (admin reuses audited modules of THIS package,
-  // never the reverse) and never `@kobato/server`.
   '@kobato/web-public': [
     '@kobato/web-public',
     '@kobato/web-client',
@@ -243,7 +219,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/contracts',
     '@kobato/test',
   ],
-  // Cross-leaf contract/snapshot tests have no production src tree.
   '@kobato/web-tests': [
     '@kobato/catalog',
     '@kobato/inkling',
@@ -255,9 +230,9 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/web-client',
     '@kobato/web-public',
   ],
-  // The shared umbrella's vitest roots: no production src tree.
+
   '@kobato/shared-tests': ['@kobato/test'],
-  // test-helpers fixtures touch every layer.
+
   '@kobato/test': [
     '@kobato/test',
     '@kobato/db',
@@ -270,10 +245,9 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     ...SHARED_SPLIT,
   ],
   '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
-  // The out-of-process instance harness: drives built artifacts, not source
-  // graphs — its internal surface is deliberately narrow (see its AGENTS.md).
+
   '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
-  // Orchestration and tooling layers may depend on anything internal.
+
   kobato: INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
   '@kobato/i18n-tools': INTERNAL_SCOPES,
@@ -283,12 +257,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/inkling-demo': INTERNAL_SCOPES,
 }
 
-/**
- * Runtime DAG: which internal packages a package's `src/**` may import. This
- * is stricter than the declared set — the tests-only edges stop at `tests/**`.
- */
 const SRC_TARGETS: Record<string, readonly string[]> = {
-  // The editor island imports no @kobato/* package at all.
   '@kobato/inkling': [],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
@@ -313,14 +282,12 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/cache',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
-  // Contract procedures compose contracts schemas; the server implements them.
+
   '@kobato/api': ['@kobato/api', '@kobato/contracts'],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/utils'],
   '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
-  // web-admin consumes the public oRPC contract, never the server
-  // implementation; it composes the browser platform leaf (web-client) and
-  // reuses the audited modules of the public-frontend leaf (web-public).
+
   '@kobato/web-admin': [
     '@kobato/web-admin',
     '@kobato/web-client',
@@ -341,10 +308,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
-  // The browser platform leaf: hooks, the oRPC client, and the editor platform.
-  // Never `@kobato/web-admin` (product leaves compose client, never the
-  // reverse) and never
-  // `@kobato/server` — the oRPC client is typed through `@kobato/api` only.
+
   '@kobato/web-client': [
     '@kobato/web-client',
     '@kobato/ui',
@@ -357,10 +321,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/distribution',
     '@kobato/contracts',
   ],
-  // The public-frontend leaf: public chrome/comments/widgets plus the
-  // cross-surface shared/lib tiers. Composes web-client; never
-  // `@kobato/web-admin` (admin reuses this package, never the reverse) and
-  // never `@kobato/server`.
+
   '@kobato/web-public': [
     '@kobato/web-public',
     '@kobato/web-client',
@@ -389,11 +350,8 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   ],
   '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
   kobato: INTERNAL_SCOPES,
-  // The instance harness keeps the same narrow src DAG as its declarations.
   '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
-  // Tooling packages (SEA pipeline, OpenObserve DEV container, journey
-  // runner, preview/report generators) may reach any internal package from
-  // their src trees.
+
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
@@ -416,8 +374,7 @@ const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []
  */
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
   'tools/pack/src/sea/server-entry.ts:../../../../apps/kobato/build/server/index.js',
-  // Generated JavaScript inside the SEA sandbox capability probe — not a
-  // module import in the tool's own graph.
+
   'tools/pack/src/sea/vfs-capabilities.ts:./lib/greet.mjs',
 ])
 
@@ -450,7 +407,6 @@ function isAllowedRelativeImport(file: string, specifier: string): boolean {
   }
   return RELATIVE_IMPORT_FILE_EXCEPTIONS.has(file) || RELATIVE_ESCAPE_EXCEPTIONS.has(`${file}:${specifier}`)
 }
-
 function collectTsconfigs(dir: string, out: string[]): void {
   if (!existsSync(dir)) {
     return
@@ -468,7 +424,6 @@ function collectTsconfigs(dir: string, out: string[]): void {
   }
 }
 
-/** The `@/` alias resolves to `apps/kobato/src` — app-package internal shorthand. */
 const APP_PACKAGE_DIR = 'apps/kobato'
 
 function walk(root: string, out: string[]): void {
@@ -501,8 +456,6 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-// Whole-file match: static `from`, side-effect/dynamic `import`, and vi.mock
-// module paths — the shapes a bundler or test runner would resolve.
 function importSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   const specifierRe = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+|\bvi\.mock\(\s*)['"]([^'"]+)['"]/g
@@ -516,7 +469,6 @@ function readSource(file: string): string {
   return stripComments(readFileSync(`${REPO_ROOT}/${file}`, 'utf8'))
 }
 
-/** `import type … from '<specifier>'` (whole clause type-only). */
 function isTypeOnlyImport(source: string, specifier: string): boolean {
   const escaped = specifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return new RegExp(`import\\s+type\\s+[\\s\\S]{0,400}?from\\s+['"]${escaped}['"]`).test(source)
@@ -536,7 +488,6 @@ function declaredInternalDeps(pkgName: string): string[] {
     dep.startsWith('@kobato/'),
   )
 }
-
 describe('package DAG', () => {
   it('every package declares only DAG-allowed @kobato/* dependencies', () => {
     const offenders: string[] = []
@@ -550,7 +501,6 @@ describe('package DAG', () => {
     }
     expect(offenders).toEqual([])
   })
-
   it('src trees import @kobato/* only along the DAG, only as declared targets', () => {
     const offenders: string[] = []
     const exceptionKeys = new Set(SRC_IMPORT_EXCEPTIONS.map((entry) => `${entry.file}:${entry.specifier}`))
@@ -588,8 +538,6 @@ describe('package DAG', () => {
       expect(isTypeOnlyImport(source, specifier), `${file}: ${specifier} must stay type-only`).toBe(true)
     }
 
-    // Nothing else in any src tree reaches across the DAG: the exceptions
-    // above are the complete backward-edge set.
     const exceptionFiles = new Set(SRC_IMPORT_EXCEPTIONS.map((entry) => entry.file))
     const strays: string[] = []
     for (const pkg of REPO_PACKAGES.filter((p) => existsSync(`${REPO_ROOT}/${p.dir}/src`))) {
@@ -818,8 +766,6 @@ describe('package DAG', () => {
   })
 
   it('inkling is reached only through its barrel, headless, or styles entries', () => {
-    // The package's own source/tests use @kobato/inkling-internal; the demo
-    // playground alias reaches internals through its vite config.
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools')) {
       if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/')) {

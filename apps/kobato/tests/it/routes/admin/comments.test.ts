@@ -30,7 +30,6 @@ describe('parseCommentFiltersFromSearchParams — status / page / author', () =>
   })
 
   it('falls back to the raw value for unknown statuses', () => {
-    // Unknown statuses stay visible; the controller rejects them at the Zod layer.
     const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('status=bogus'))
     expect(filters[0]).toEqual({ field: 'status', value: 'bogus', label: 'bogus' })
   })

@@ -33,7 +33,6 @@ export interface HeaderProps {
   navigation: NavigationItem[]
   currentUser: HeaderCurrentUser | null
   pathname: string
-  /** Where the logout flow returns to; built once by BaseLayout and threaded down. */
   logoutRedirectTo: string
   /** BaseLayout owns the shell's one unread-count subscription — never re-subscribe here.
    *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
@@ -280,7 +279,6 @@ export function Header({
               aria-haspopup="dialog"
               onClick={() => setMenuOpen(true)}
             >
-              {/* Fixed pixel size for consistent icon rendering. */}
               <MenuIcon className="block" size={24} aria-hidden />
             </button>
           </div>

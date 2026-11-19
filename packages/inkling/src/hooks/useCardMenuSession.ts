@@ -1,36 +1,18 @@
 import React from 'react'
 
-// Card-menu session — the one owner of popup-session behaviour shared by the
-// slash and plus card menus: the cursor lease (a cached native Range saved while
-// the menu is open, restored on demand), the close policy (Escape closes and
-// restores the cursor because it always blurs the contenteditable; outside
-// mousedown and other closes leave the cursor where the user put it), and
-// insert-and-close. The lease has exactly one holder — this module: the slash
-// menu's cursor arrives through saveCursor, the plus menu's button anchor at
-// openMenu({ anchor }), which restores the caret onto it; no plugin holds a
-// Range of its own. The native Selection arrives through an injected adapter so
-// the close policy is unit-testable without a plugin mount. Slash trigger state
-// (query, commandParams) lives in useSlashCardMenuTrigger.
-
 export interface CardMenuSessionSelection {
   removeAllRanges: () => void
   addRange: (range: Range) => void
 }
-
 interface UseCardMenuSessionOptions {
-  /** Native selection adapter; defaults to document.getSelection(). */
   getSelection?: () => CardMenuSessionSelection | null
 }
 
 interface CloseMenuOptions {
-  /** Restore the cached cursor range before closing (Escape). */
   resetCursor?: boolean
 }
 
 interface OpenMenuOptions {
-  /** Lease this range as the cursor and restore the caret onto it while
-   * opening (the plus button's anchor). Omit to open without touching the
-   * cursor (the slash keypress — its range arrives via saveCursor). */
   anchor?: Range | null
 }
 
@@ -39,7 +21,6 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
   const cachedRange = React.useRef<Range | null>(null)
   const containerRef = React.useRef<HTMLDivElement | null>(null)
 
-  /** Cache the cursor position the menu may later restore (the cursor lease). */
   const saveCursor = React.useCallback((range: Range | null) => {
     cachedRange.current = range
   }, [])
@@ -57,9 +38,6 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
 
   const openMenu = React.useCallback(
     ({ anchor }: OpenMenuOptions = {}) => {
-      // an anchored open leases the anchor and puts the caret back on it
-      // before the menu mounts — the single-lease entry point for triggers
-      // whose cursor is not the live selection (the plus button's)
       if (anchor) {
         saveCursor(anchor)
         restoreCursor()
@@ -82,7 +60,6 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     [restoreCursor],
   )
 
-  /** Insert-then-close: run the insertion, then close with the default policy. */
   const insert = React.useCallback(
     (doInsert: () => void) => {
       doInsert()
@@ -110,7 +87,6 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     }
   }, [isOpen, closeMenu])
 
-  // clicks outside the menu close it (without touching the cursor)
   React.useEffect(() => {
     if (!isOpen) {
       return

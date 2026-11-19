@@ -306,7 +306,6 @@ describe('posts/services/mutate — restorePost', () => {
     expect(meta[0]?.deletedAt).toBeNull()
     const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityId).toBe(postId)
-    // Re-indexed from the published revision's saved `body_text` projection.
     expect(indexPostFromRevisionMock).toHaveBeenCalledTimes(1)
     const rows = await indexRows()
     expect(rows).toHaveLength(1)

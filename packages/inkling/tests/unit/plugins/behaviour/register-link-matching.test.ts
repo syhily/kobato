@@ -61,7 +61,6 @@ describe('registerLinkMatching bookmark card path', () => {
         inserted.push(cardNode)
         return true
       },
-      // outrank the link-matching listener so the capture sees the dispatch
       COMMAND_PRIORITY_HIGH,
     )
     registerLinkMatching(editor, { isShiftPressed: { current: false } })
@@ -78,8 +77,6 @@ describe('registerLinkMatching bookmark card path', () => {
   })
 
   it('degrades to a plain link when the bookmark card is not registered', async () => {
-    // A card-free composition (the ./core entry) pastes a bare URL into a
-    // blank paragraph as a link, not a bookmark card.
     const editor = createEditor({ namespace: 'test', nodes: [LinkNode], onError: () => {} })
     registerLinkMatching(editor, { isShiftPressed: { current: false } })
     await placeCaretInBlankParagraph(editor)
@@ -96,7 +93,7 @@ describe('registerLinkMatching bookmark card path', () => {
       expect($isLinkNode(link)).toBe(true)
       expect($isLinkNode(link) && link.getURL()).toBe(PASTE_URL)
       expect(link?.getTextContent()).toBe(PASTE_URL)
-      // the caret lands after the link (trailing-space workaround removes its node)
+
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
     })

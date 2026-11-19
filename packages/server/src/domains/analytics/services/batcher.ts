@@ -20,7 +20,6 @@ import { randomUUID } from 'node:crypto'
 
 const BATCHER_NAME = 'AccessLogBatcher'
 
-/** One event plus its device-environment sidecar row — written in the same flush. */
 export interface AccessLogItem {
   event: EnrichedAccessEvent
   /** NULL only for legacy flat dead-letter rows. */

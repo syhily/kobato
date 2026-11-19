@@ -6,14 +6,6 @@ import { SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/
 import { nextTkNodeKey } from '@kobato/inkling-internal/plugins/behaviour/tk-indicator'
 import { $getNodeByKey, $getSelection, $isDecoratorNode, $isRangeSelection, $isTextNode } from 'lexical'
 
-// TK tracking — the headless half of TKPlugin: the mutation-listener →
-// handle bookkeeping (which TK node lives under which top-level node, per
-// editor), the hover-highlight feed (the class swap across a top-level
-// node's TK elements), and the indicator click's selection surgery. The
-// plugin keeps the indicator component, the positioning (tk-indicator),
-// and the portal; the behaviour registers against the editor and the
-// handle, React renders.
-
 /**
  * Feeds the tk handle from the editor's TKNode mutations: a created/updated
  * TK node is filed under its top-level element (or the card's own key when
@@ -45,18 +37,11 @@ export function registerTkNodeTracking(
 }
 
 export interface TkHighlightClasses {
-  /** The resting TK classes (removed while highlighted). */
   tkClasses: string[]
-  /** The highlighted TK classes (added while highlighted). */
+
   tkHighlightClasses: string[]
 }
 
-/**
- * The hover-highlight feed: swaps the TK class set on every TK element
- * under a top-level node. No-op when the top-level node is a card — the
- * indicator belongs to the card's own chrome, and the card's TK nodes live
- * in nested editors whose elements the highlight must not touch.
- */
 export function applyTkHoverHighlight(
   editor: LexicalEditor,
   parentKey: string,
@@ -90,12 +75,6 @@ export function applyTkHoverHighlight(
   })
 }
 
-/**
- * The indicator click's selection surgery (the component keeps only the DOM
- * event): a decorator parent selects the whole card; otherwise the
- * selection cycles to the TK node after the currently selected one
- * (nextTkNodeKey — first when none is selected). Runs inside editor.update.
- */
 export function $selectTkFromIndicator(editor: LexicalEditor, parentKey: NodeKey, nodeKeys: NodeKey[]): void {
   if ($isDecoratorNode($getNodeByKey(parentKey))) {
     editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: parentKey })

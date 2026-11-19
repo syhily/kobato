@@ -38,8 +38,6 @@ interface WordCountPublisherState {
   language: PublishedEntry<string>[]
 }
 
-// Per-handle ownership stacks, keyed by the handle instance so multiple composers on one
-// page cannot share publisher state and a discarded handle stays collectable.
 const publisherStates = new WeakMap<WordCountHandle, WordCountPublisherState>()
 
 function getPublisherState(handle: WordCountHandle): WordCountPublisherState {
@@ -81,12 +79,6 @@ export function createWordCountHandle(): WordCountHandle {
   return createComposerHandle<WordCountHandleState>({ onChange: null, onSelectionChange: null, language: null })
 }
 
-/**
- * The top-level-only publish gate: a top-level editor's callbacks ride the handle so
- * nested composers mount their own WordCountPlugin with them; nested editors never
- * publish. Either callback may be absent. Returns the unpublish teardown, which restores
- * this publisher's predecessor on each channel it owns.
- */
 export function publishWordCountCallback(
   handle: WordCountHandle,
   editor: LexicalEditor,
@@ -102,13 +94,12 @@ export function publishWordCountCallback(
 ): () => void {
   if (isNestedEditor(editor)) {
     return () => {
-      /* noop — nested editors never publish */
+      /* noop */
     }
   }
 
   const state = getPublisherState(handle)
   const cleanups: Array<() => void> = []
-
   if (onChange) {
     cleanups.push(publishEntry(handle, state.onChange, onChange))
   }

@@ -15,7 +15,6 @@ export function registerDeleteCommand(editor: LexicalEditor, deps: KeyboardNavig
   return editor.registerCommand(
     KEY_DELETE_COMMAND,
     (event) => {
-      // Focus is inside an inner element (e.g. a nested editor): swallow the key.
       if (!editorOwnsFocus(editor)) {
         return true
       }
@@ -24,8 +23,6 @@ export function registerDeleteCommand(editor: LexicalEditor, deps: KeyboardNavig
         return true
       }
 
-      // 'from-mode-blank' keeps the deliberate empty-block check (see EmptyBlockCheck
-      // in card-adjacency).
       if ($removeEmptyBlockAndSelectCard('next', 'from-mode-blank')) {
         event.preventDefault()
         return true

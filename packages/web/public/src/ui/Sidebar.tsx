@@ -220,7 +220,6 @@ function TodayCalendar() {
   return (
     <div className={widgetClass}>
       <WidgetTitle tooltip={t('public.sidebar.calendarTooltip')}>{t('public.sidebar.calendar')}</WidgetTitle>
-      {/* Light/dark PNG pair — same pattern as `BrandLogo`. */}
       <img
         loading="lazy"
         decoding="async"

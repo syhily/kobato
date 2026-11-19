@@ -33,8 +33,6 @@ export function $getSelectionRangeRect({
     return null
   }
 
-  // A selection spanning several lines or containing inline nodes (links) yields several
-  // rects.
   if (selectionRects.length > 1) {
     for (let i = 1; i < selectionRects.length; i++) {
       const rect = selectionRects[i]

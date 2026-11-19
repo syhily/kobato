@@ -1,7 +1,3 @@
-// Fixtures shared by the browser journeys: one real server sign-in per worker
-// (reused as a storage state), a worker-scoped context for two-tab journeys, and
-// one authenticated HTTP client for deterministic settings staging.
-
 // Playwright's fixture `use` callback is not React's `use` hook; the
 // react-hooks rule cannot tell the two apart in this file.
 /* eslint-disable react-hooks/rules-of-hooks */
@@ -14,7 +10,6 @@ import { signInAdmin } from '@tests/browser/support/journey.ts'
 import { SettingsApi } from '@tests/browser/support/settings-api.ts'
 
 interface WorkerFixtures {
-  /** Cookies + localStorage from the one real server sign-in. */
   authState: Awaited<ReturnType<BrowserContext['storageState']>>
   /** One context shared by every test in the worker — BroadcastChannel peers
    *  need a single browser context (origin + process), exactly like two tabs. */
@@ -23,7 +18,6 @@ interface WorkerFixtures {
 }
 
 interface TestFixtures {
-  /** A fresh tab in the shared, authenticated context. */
   adminPage: Page
 }
 

@@ -73,8 +73,6 @@ describe('SettingsPanel', function () {
       </SettingsPanel>,
     )
 
-    // the tab id renders raw — capitalization is CSS (`capitalize` on the
-    // tab button in TabView), not a JS transform
     expect(screen.getByTestId('tab-general')).toHaveTextContent('general')
     expect(screen.getByTestId('tab-general')).toHaveClass('capitalize')
     expect(screen.getByTestId('tab-advanced')).toHaveTextContent('advanced')

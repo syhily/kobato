@@ -18,13 +18,9 @@ import { Link } from 'react-router'
 
 export interface EditorToolbarProps {
   mode: 'create' | 'edit'
-  /** Display-noun message id woven into button copy (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
-  /** Admin list route for the back button. */
   listPath: string
-  /** Public detail URL for the entity being edited; `null` in create mode. */
   publicPath: string | null
-  /** Analytics dashboard URL; `null` when the entity has none (pages). */
   analyticsPath: string | null
   state: EditorToolbarState
 }

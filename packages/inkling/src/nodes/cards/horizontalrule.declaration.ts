@@ -16,9 +16,6 @@ export const horizontalRuleDeclaration = checkedCardDeclaration({
       shortcut: '/hr',
     },
   ],
-  // No toolbar renders for the divider; the label matches the node type.
   toolbarLabel: 'horizontalrule',
-  // Markdown-eligible without a card fence: `HR` in `@kobato/inkling-internal/markdown/transformers`
-  // owns `---`.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<'horizontalrule', typeof BaseHorizontalRuleNode, readonly [], readonly []>)

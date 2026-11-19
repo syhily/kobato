@@ -88,7 +88,6 @@ async function renderSelector({
     <GifSelector browser={browser} provider={provider} onGifInsert={onGifInsert} onClickOutside={onClickOutside} />,
   )
 
-  // the mount search is debounced; flush it and let the page land
   await act(async () => {
     scheduler.flush()
     await tick()
@@ -185,7 +184,6 @@ describe('GifSelector: snapshot rendering', () => {
     const input = screen.getByPlaceholderText('Search Tenor for GIFs')
     fireEvent.change(input, { target: { value: 'cats' } })
 
-    // the search is debounced inside the browser
     expect(fetchPage).toHaveBeenCalledTimes(1)
 
     await act(async () => {
@@ -205,7 +203,6 @@ describe('GifSelector: keyboard navigation through the adapter', () => {
     const input = screen.getByPlaceholderText('Search Tenor for GIFs')
     const handled = fireEvent.keyDown(input, { key: 'ArrowDown' })
 
-    // a handled key is swallowed
     expect(handled).toBe(false)
 
     const button = screen.getByRole('button', { name: 'Gif 0' })
@@ -227,7 +224,6 @@ describe('GifSelector: keyboard navigation through the adapter', () => {
     const { browser } = await renderSelector({
       gifs: [createGif(0), createGif(1, { media_formats: {} }), createGif(2)],
     })
-    // one column so ArrowDown walks the rows
     act(() => {
       browser.dispatch({ type: 'set-column-count', count: 1 })
     })

@@ -146,7 +146,6 @@ describe('HorizontalRulePlugin shortcut listener', () => {
       expect($isParagraphNode(after)).toBe(true)
       expect(after?.getKey()).toBe(afterKey)
       expect(after?.getTextContent()).toBe('after')
-      // line.selectNext(): the caret lands at the start of the surviving paragraph
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
       if (!$isRangeSelection(selection)) {
@@ -170,8 +169,6 @@ describe('HorizontalRulePlugin shortcut listener', () => {
       const trailing = root.getChildAtIndex(1)
       expect($isParagraphNode(trailing)).toBe(true)
       expect(trailing?.getTextContent()).toBe('')
-      // The hand-rolled path creates a fresh paragraph, unlike the markdown
-      // transformer path which keeps the emptied one.
       expect(trailing?.getKey()).not.toBe(paragraphKey)
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
@@ -204,8 +201,6 @@ describe('HorizontalRulePlugin shortcut listener', () => {
   })
 
   it('keeps the restored --- paragraph on undo of the HR creation (historic-tag gate)', async () => {
-    // The historic-tag gate must keep the restored '---' paragraph from
-    // re-firing the transform on the undo update.
     trackNativeSelection()
     await mountPlugin()
     await setContent([''])

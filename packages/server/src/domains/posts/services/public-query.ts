@@ -93,17 +93,12 @@ export async function getClientPostsWithMetadata<PostLike extends { id: string }
   })
 }
 
-/** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
 interface SitemapPostRow {
   slug: string
   firstPublishedAt: Date | null
   publishedAt: Date
 }
 
-/**
- * Sitemap projection: applies `livePostWhere` but selects only the slug +
- * date columns — no revision join or image hydration.
- */
 export async function listSitemapPosts(db: Database, now = new Date()): Promise<SitemapPostRow[]> {
   return db
     .select({

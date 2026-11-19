@@ -184,7 +184,6 @@ describe('ui/admin/comments/useCommentsController hook', () => {
     const { pills, controller } = renderController([{ field: 'status', value: 'pending', label: '待审' }])
     expect(pills.filters).toHaveLength(1)
     expect(pills.queryInput<CommentsFilterQuery>().status).toBe('pending')
-    // The list query is pending under SSR — the view renders its skeleton.
     expect(controller.comments).toEqual([])
     expect(controller.total).toBe(0)
     expect(controller.statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })

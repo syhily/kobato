@@ -25,7 +25,6 @@ export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   await sweepFileCache()
 }
 
-/** Filesystem leg: expired entries, aged `_tmp` orphans, and aged trash dirs. */
 export async function sweepFileCache(now: number = Date.now()): Promise<void> {
   for (const declaration of CACHE_DECLARATIONS) {
     try {

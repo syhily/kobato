@@ -35,7 +35,6 @@ describe('snapshot: ViewsChart', () => {
     expect(html).toContain('role="status"')
     expect(html).toContain('aria-busy="true"')
     expect(html).toContain('加载中')
-    // No chart markup on the server.
     expect(html).not.toContain('vis-xy-container')
   })
 })
@@ -43,7 +42,6 @@ describe('snapshot: ViewsChart', () => {
 describe('snapshot: Heatmap', () => {
   it('renders the skeleton during SSR — the UTC-bucketed loader cells never paint', () => {
     const html = stableHtml(renderInRouter(withAnalyticsState(<Heatmap metric="visits" />), '/admin/analytics'))
-    // The client-timezone-aware query owns the first grid paint.
     expect(html).toContain('role="status"')
     expect(html).toContain('aria-busy="true"')
     expect(html).toContain('加载中')
@@ -110,7 +108,6 @@ describe('snapshot: DateRangePicker', () => {
     const html = stableHtml(
       renderToHtml(<DateRangePicker preset={null} range={RANGE} onSelect={() => {}} onSelectRange={() => {}} />),
     )
-    // The custom chip is the only pressed one and carries the range label.
     expect((html.match(/aria-pressed="true"/g) ?? []).length).toBe(1)
     expect(html).not.toContain('>自定义<')
   })
@@ -160,10 +157,8 @@ describe('snapshot: MetricList', () => {
     expect(html).toContain('中国')
     expect(html).toContain('美国')
     expect(html).toContain('日本')
-    // Counts are toLocaleString-formatted; percent shares appear next to them.
     expect(html).toContain('100')
     expect(html).toContain('(67%)')
-    // The details-dialog trigger sits in the footer.
     expect(html).toContain('详情')
   })
 
@@ -183,11 +178,9 @@ describe('snapshot: MetricsGroup', () => {
         '/admin/analytics',
       ),
     )
-    // Tabs from METRIC_GROUP_TABS.location.
     expect(html).toContain('国家')
     expect(html).toContain('地区')
     expect(html).toContain('城市')
-    // The active tab's MetricList renders the initial rows.
     expect(html).toContain('中国')
   })
 

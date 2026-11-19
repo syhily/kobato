@@ -62,7 +62,5 @@ export const imageDeclaration = checkedCardDeclaration({
   insert: { claimsMediaInsert: true },
   uploadType: 'image',
   toolbarLabel: 'image',
-  // Markdown-eligible without a card fence: `IMAGE_CARD_TRANSFORMER` in
-  // `@kobato/inkling-internal/nodes/cards/card-markdown-transformers` owns `![alt](src)`.
   markdown: { kind: 'exempt' },
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)

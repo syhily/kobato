@@ -1,8 +1,3 @@
-// Playwright global setup: stage the public fixture (one published post with comments
-// enabled and `contentLanguage: 'ar'`) plus the deterministic general settings baseline;
-// the returned teardown removes what the run created. Everything goes through the admin
-// HTTP surface of the instance the browser drives — no database seam, config file or secret.
-
 import { browserEnv } from '@tests/browser/support/env.ts'
 import { SettingsApi } from '@tests/browser/support/settings-api.ts'
 

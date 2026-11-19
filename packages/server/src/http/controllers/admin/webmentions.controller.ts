@@ -11,9 +11,6 @@ import {
 } from '@kobato/server/domains/webmentions/service.ts'
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/webmentions.ts` (the deployed `/admin/webmentions/*`
-// surface); this controller only implements the procedures (admin base).
 const impl = implementAdmin(adminWebmentionsContract)
 
 const loadAll = impl.loadAll.handler(async ({ input, context }) => {
@@ -55,7 +52,6 @@ const outbox = impl.outbox.handler(async ({ input, context }) => {
   return listAdminWebmentionOutbox(context.db, input)
 })
 
-// Pending mention count for the admin layout's badge — one `count(*)`.
 const pendingCount = impl.pendingCount.handler(({ context }) => countWebmentions(context.db, 'pending'))
 
 export const adminWebmentionsRouter = impl.router({

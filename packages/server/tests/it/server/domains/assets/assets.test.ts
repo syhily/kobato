@@ -75,7 +75,6 @@ describe('resolveSiteAsset', () => {
     expect(result).not.toBeNull()
     expect(result!.etag).toBe('etag-legacy')
     expect(result!.content.equals(legacy)).toBe(true)
-    // fetchBrandingObject copied the bytes to the current key.
     expect(mem.store.has('branding/logo.svg')).toBe(true)
   })
 
@@ -122,7 +121,6 @@ describe('resolveSiteAsset', () => {
 
     const first = await fetchBrandingObject('faviconSvg', ref('etag-cached', 'image/svg+xml', 42))
     expect(first?.toString('utf8')).toBe('<svg>cached</svg>')
-    // Drop the stored object: the cached read must still succeed.
     mem.store.clear()
     const second = await fetchBrandingObject('faviconSvg', ref('etag-cached', 'image/svg+xml', 42))
     expect(second?.toString('utf8')).toBe('<svg>cached</svg>')

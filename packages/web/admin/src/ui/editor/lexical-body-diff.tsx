@@ -163,7 +163,6 @@ function lcsMatches(left: readonly string[], right: readonly string[]): Array<[n
 
 export interface DiffPanelProps {
   diff: DiffEntry[]
-  /** Which side of each diff entry to render in this panel. */
   side: 'left' | 'right'
 }
 

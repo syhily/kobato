@@ -169,7 +169,6 @@ export const imagesRouter = new Hono<Env>()
         return c.redirect(defaultAvatarUrl())
       }
       const size = resolveAvatarSize(c.req.query('s'))
-      // The domain service owns the serving policy; the resource only maps the outcome.
       const avatar = await serveAvatar(c.var.requestContext.db, hash, size)
       if (avatar.kind === 'redirect') {
         return c.redirect(defaultAvatarUrl())

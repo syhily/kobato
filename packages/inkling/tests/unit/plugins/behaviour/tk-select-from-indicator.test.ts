@@ -10,7 +10,6 @@ describe('$selectTkFromIndicator', () => {
   let editor: LexicalEditor
 
   function mount(editor: LexicalEditor) {
-    // a root element keeps the selection alive across separate updates
     editor.setRootElement(document.createElement('div'))
   }
 
@@ -71,7 +70,6 @@ describe('$selectTkFromIndicator', () => {
 
     it('advances the selection to the next TK node', async () => {
       await updateEditor(editor, () => {
-        // select the first TK node as the current position
         firstNode.select(0, 5)
       })
 

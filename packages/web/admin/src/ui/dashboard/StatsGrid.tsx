@@ -5,7 +5,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ClockIcon, FileCheck2Icon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-// Per-card palette: soft status bg + matching fg icon, auto-flips in dark mode.
 const TONE_CLASSES = {
   warn: { bg: 'bg-status-warn-bg', icon: 'text-status-warn-fg' },
   success: { bg: 'bg-status-success-bg', icon: 'text-status-success-fg' },

@@ -10,9 +10,6 @@ import { createEditor, type LexicalEditor } from 'lexical'
 // pre-evaluating the component tree there defeats those mocks.
 registerCardDecorateAdapter()
 
-// The suite's shared editor harness. Bespoke editor configs (html import
-// config, themes, parentEditor) keep their own createEditor calls.
-
 type HeadlessEditorArgs = NonNullable<Parameters<typeof createHeadlessEditor>[0]>
 
 type EditorUpdateOptions = Omit<NonNullable<Parameters<LexicalEditor['update']>[1]>, 'onUpdate'>
@@ -20,7 +17,7 @@ type EditorUpdateOptions = Omit<NonNullable<Parameters<LexicalEditor['update']>[
 export interface CreateTestEditorOptions {
   nodes?: HeadlessEditorArgs['nodes']
   onError?: (error: Error) => void
-  /** false for the rendered-component specs: a real editor (jsdom), namespace 'test'. */
+
   headless?: boolean
 }
 
@@ -28,7 +25,6 @@ export function createTestEditor({ nodes = [], onError = () => {}, headless = tr
   return headless ? createHeadlessEditor({ nodes, onError }) : createEditor({ namespace: 'test', nodes, onError })
 }
 
-/** Await one committed editor update; options (discrete, tag, …) pass through to editor.update. */
 export function updateEditor(
   editor: LexicalEditor,
   updateFn: () => void,
@@ -74,7 +70,6 @@ export function editorTest(getEditor: () => LexicalEditor, testFn: () => void | 
   }
 }
 
-/** One macrotask hop: flushes React effect registration and listener-enqueued work. */
 export function tick(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, 0)

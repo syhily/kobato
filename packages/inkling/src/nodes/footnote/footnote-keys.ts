@@ -37,12 +37,6 @@ export function createFootnoteTargetKey(): string {
 
 const importedSlugMaps = new WeakMap<Document, Map<string, string>>()
 
-/**
- * Resolve an imported ref or definition to its targetKey: the key already
- * minted under this slug earlier in the same import pass, or a fresh one.
- * Every lookup is get-or-mint, so an orphan definition (no ref imported its
- * slug) still lands a fresh key.
- */
 export function resolveImportedFootnoteTargetKey(document: Document, slug: string): string {
   // No null early-return: a null document must not silently mint a fresh key
   // per call — refs and definitions of the same import batch carrying the

@@ -70,7 +70,6 @@ describe('analytics/pv-batcher', () => {
 
     await flushPromise
 
-    // The failed flush rolled back: nothing was written.
     expect(await pvOf('post', 1)).toBe(0)
     expect(await pvOf('post', 2)).toBe(0)
 
@@ -91,7 +90,6 @@ describe('analytics/pv-batcher', () => {
     await flushPageViews()
     expect(await pvOf('post', 1)).toBe(1)
 
-    // Second flush is a no-op: the empty buffer must not move the count.
     await flushPageViews()
     expect(await pvOf('post', 1)).toBe(1)
   })
@@ -99,7 +97,6 @@ describe('analytics/pv-batcher', () => {
   it('reports the unflushed delta via pendingViewDelta, and zero after the flush lands', async () => {
     const { bumpPageView, flushPageViews, pendingViewDelta } = await freshBatcher()
 
-    // Pre-init the guard degenerates to 0 — readers never throw.
     expect(pendingViewDelta({ type: 'post', ownerId: 1 })).toBe(0)
 
     initAllBatchers(getDatabaseHandle())

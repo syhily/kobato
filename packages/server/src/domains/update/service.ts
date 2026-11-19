@@ -1,6 +1,3 @@
-// Self-update service — orchestrates release lookup, gate evaluation,
-// and version comparison. The job state machine lives in `job.ts`.
-
 import type { UpdateCheckResult } from '@kobato/contracts/update.ts'
 
 import { APP_VERSION } from '@kobato/distribution/app.ts'

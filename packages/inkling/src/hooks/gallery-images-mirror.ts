@@ -3,44 +3,17 @@ import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 import { ALLOWED_IMAGE_PROPS } from '@kobato/inkling-internal/nodes/base'
 import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
 
-// Gallery images mirror — headless owner of BOTH directions of the gallery
-// card's image list:
-//
-//   node → view: the node is the persistent truth. Every external change
-//     (within-card undo, collab) resyncs the snapshot wholesale, so a mounted
-//     card never renders a stale list and can't write one back through the seam.
-//   view → node: local mutations (reorder, delete, upload results) publish to
-//     the snapshot FIRST and write the node through the injected seam port.
-//     In-flight upload previews publish as a local-only overlay, preserving the
-//     upload-intent adapter's preview-first ordering (preview before the upload
-//     resolves; the node is written only after).
-//
-// The node persists only ALLOWED_IMAGE_PROPS (its setImages picks them), so the
-// write's echo arrives with a fresh array of stripped clones: echo detection
-// compares persisted props only, and an echo adopts the node's copy as the new
-// baseline while KEEPING the overlay — a reorder during an in-flight upload must
-// not drop the previews' blob srcs. Anything that is not an echo is external and
-// replaces the overlay wholesale.
-//
-// Editor plumbing lives behind injected ports so the resync/echo policy is a
-// synchronous test table; useGalleryImages is the React adapter.
-
 export interface GalleryImagesMirrorPorts {
-  /** Reads the node's current images; undefined when the node is gone. */
   readNodeImages: () => GalleryImage[] | undefined
-  /** Writes images to the node through the card write seam. */
   writeNodeImages: (images: GalleryImage[]) => void
-  /** Fires when the node's images may have changed; returns an unsubscribe. */
   subscribeToNodeImages: (listener: () => void) => () => void
 }
-
 function samePersistedImages(a: GalleryImage[], b: GalleryImage[]): boolean {
   if (a.length !== b.length) {
     return false
   }
   return a.every((image, index) => ALLOWED_IMAGE_PROPS.every((prop) => image[prop] === b[index][prop]))
 }
-
 export function createGalleryImagesMirror({
   readNodeImages,
   writeNodeImages,
@@ -74,7 +47,6 @@ export function createGalleryImagesMirror({
   }
 
   return {
-    /** The rendered list: the local overlay while one is set, else the node images. */
     getSnapshot: () => {
       const { nodeImages, overlay } = store.getSnapshot()
       return overlay ?? nodeImages
@@ -82,23 +54,19 @@ export function createGalleryImagesMirror({
 
     subscribe: store.subscribe,
 
-    /** Local mutation: renders immediately, then writes the node through the seam port. */
     setImages: (images: GalleryImage[]) => {
       store.emit({ overlay: images })
       writeNodeImages(images)
     },
 
-    /** Preview overlay: renders immediately, never written to the node. */
     setPreviewImages: (images: GalleryImage[]) => {
       store.emit({ overlay: images })
     },
 
-    /** Begin the node subscription (adapter mount). */
     start: () => {
       unsubscribeFromNode ??= subscribeToNodeImages(resyncFromNode)
     },
 
-    /** End the node subscription (adapter unmount). */
     dispose: () => {
       unsubscribeFromNode?.()
       unsubscribeFromNode = null

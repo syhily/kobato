@@ -7,15 +7,8 @@ export type { SerializedVideoNode } from '@kobato/inkling-internal/nodes/base/no
 export { INSERT_VIDEO_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 export type { VideoNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-/**
- * The registered class, assembled once from the card declaration by
- * `assembleCardNodeOnce`; `$isVideoNode` is canonical on the base node. The
- * instance type carries the spec-derived `__*` field map, so `$createVideoNode`
- * needs no cast.
- */
 export const VideoNode = assembleCardNodeOnce(videoDeclaration)
 export type VideoNode = InstanceType<typeof VideoNode>
-
 export const $createVideoNode = (dataset: VideoNodeDataset): VideoNode => {
   return new VideoNode(dataset)
 }

@@ -7,9 +7,7 @@ import { Link } from 'react-router'
 
 export interface EditorRouteErrorProps {
   message: string
-  /** Display-noun message id — the title renders as `admin.editor.routeErrorTitle`. */
   entityLabelId: UiMessageId
-  /** Admin list path the back button returns to. */
   listPath: string
 }
 

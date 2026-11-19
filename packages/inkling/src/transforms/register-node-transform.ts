@@ -19,6 +19,6 @@ export function registerNodeTransformIfPresent<T extends LexicalNode>(
   }
 
   return () => {
-    // node class absent — nothing was registered, so nothing to teardown
+    /* noop */
   }
 }

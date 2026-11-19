@@ -84,8 +84,6 @@ export async function clearDeleteRequest(db: Database, id: number, userId: numbe
   return updated.length > 0
 }
 
-/** Variant of {@link clearDeleteRequest} clearing the request regardless
- *  of origin — the "reject delete request" admin action. */
 export async function adminClearDeleteRequest(db: Database, id: number): Promise<boolean> {
   const updated = await db
     .update(comment)
@@ -95,8 +93,6 @@ export async function adminClearDeleteRequest(db: Database, id: number): Promise
   return updated.length > 0
 }
 
-/** Admin decision on a delete request: approve → soft-delete, reject →
- *  clear. Each branch audits; error codes/messages are the wire contract. */
 export async function resolveCommentDeleteRequest(
   db: Database,
   rid: string,
@@ -219,8 +215,6 @@ export async function applyOwnCommentEdit(db: Database, rid: string, newBody: Co
   return updated
 }
 
-/** Visitor self-edit: ownership check, then the shared own-edit policy.
- *  Audits; wire-contract errors. */
 export async function editOwnComment(
   db: Database,
   rid: string,
@@ -241,8 +235,6 @@ export async function editOwnComment(
   return updated
 }
 
-/** Visitor delete request: ownership check, idempotent no-op, flag-setting
- *  mutation, audit, re-fetch. Wire-contract errors. */
 export async function requestOwnCommentDeletion(
   db: Database,
   rid: string,
@@ -271,8 +263,6 @@ export async function requestOwnCommentDeletion(
   return updated
 }
 
-/** Visitor cancel of a delete request: ownership check, guarded clear,
- *  audit, re-fetch. Wire-contract errors. */
 export async function cancelOwnCommentDeletion(db: Database, rid: string, viewer: ViewerIdentity, audit: AuditContext) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)

@@ -3,9 +3,6 @@ import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
 import { defineConfig } from 'vitest/config'
 
-// The inkling editor suite (packages/inkling/src): jsdom + RTL, compiled
-// through the React Compiler like the app bundle. Kept as its own project
-// because the other unit projects are node-env; globals stay off like them.
 export default defineConfig({
   plugins: [svgr(), react({ compiler: true })],
   resolve: {

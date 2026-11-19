@@ -10,9 +10,6 @@ import { regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// home loader pins the URL-surface contracts (`/` canonical, `/page/N`
-// redirects) against the real engine: pagination, sidebar, listing SEO.
-
 const db = getTestDb()
 const session = regularSession()
 
@@ -60,7 +57,6 @@ async function seedPost(opts: {
   return postId
 }
 
-/** Seed `count` live posts, newest first by day. */
 async function seedCatalog(count: number, slugPrefix: string, categoryId?: number): Promise<void> {
   for (let i = 0; i < count; i++) {
     await seedPost({ slug: `${slugPrefix}-${i}`, categoryId: categoryId ?? null, day: i + 1 })
@@ -137,7 +133,7 @@ describe('routes/home loader', () => {
   it('returns the unified listing payload (resolvedPosts, extra.sidebar, empty seo) on /', async () => {
     const categoryId = await seedCategory('general', 'general')
     await seedTag('typescript', 'typescript')
-    // 10 posts → 6 + 4; a tail of exactly 4 meets the strict threshold, so /page/2 renders.
+
     await seedCatalog(10, 'post', categoryId)
 
     const result = unwrapLoaderData<PublicListingLoaderData<HomeExtra>>(
@@ -155,12 +151,12 @@ describe('routes/home loader', () => {
     expect(result.seo).toEqual([])
     expect(result.totalPage).toBe(2)
     expect(result.resolvedPosts).toHaveLength(6)
-    // Newest first (firstPublishedAt desc).
+
     expect(result.resolvedPosts[0]?.slug).toBe('post-9')
     expect(Object.keys(result.extra.categoryLinks)).toContain('general')
     expect(result.extra.categoryLinks.general).toBe('/cats/general')
     expect(result.extra.sidebar.recentComments).toEqual([])
-    // The client beacon's join key rides the loader data.
+
     expect(result.eid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
@@ -213,7 +209,6 @@ describe('routes/home loader', () => {
   })
 })
 
-// 7 posts split 6 + 1; the threshold of 4 collapses the trailing post into page 1.
 describe('routes/home loader — tail-merge guard', () => {
   it('absorbs a 1-post tail into the previous page so /page/2 redirects to /', async () => {
     await seedCatalog(7, 'short')

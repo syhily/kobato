@@ -252,7 +252,6 @@ export function TextFilterEditor<K extends string>({
   )
 }
 
-/** Bare blur-commit input (audit IP). */
 export function FreetextEditor({
   value,
   placeholder,
@@ -288,7 +287,6 @@ export function FreetextEditor({
   )
 }
 
-/** From/to range picker (audit date range). */
 export function DateRangeEditor({
   value,
   onChange,

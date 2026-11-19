@@ -83,7 +83,6 @@ function buildPluginContext() {
     logs,
     errors,
     ctx: {
-      // `environment` unset + ssr off: neither writeBundle early-return fires.
       environment: undefined,
       options: { dir: '/build/server' } as { dir?: string },
       async writeFile(path: string, content: string) {
@@ -121,14 +120,12 @@ describe('route-warmup plugin — writeBundle handler', () => {
 
   it('skips when the client assets dir does not exist', async () => {
     const { ctx } = buildPluginContext()
-    // /build/client/assets is not in the existsSync allow-list.
     await invokeWriteBundle(ctx)
     expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
   })
 
   it('skips when no manifest file is found in the client assets dir', async () => {
     fsState.dirExists.add('/build/client/assets')
-    // List-able directory but no manifest-*.js file inside.
     fsState.files.set('/build/client/assets/entry.js', '')
     fsState.sizes.set('/build/client/assets/entry.js', 100)
 
@@ -168,7 +165,6 @@ describe('route-warmup plugin — writeBundle handler', () => {
     fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
     fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
 
-    // Small sizes so every chunk clears the IDLE_SIZE_LIMIT gate.
     for (const name of [
       'entry',
       'runtime',
@@ -194,7 +190,6 @@ describe('route-warmup plugin — writeBundle handler', () => {
     expect(typeof raw).toBe('string')
     const manifest = JSON.parse(raw as string)
 
-    // tier1 is the public launch route: root + home + entry imports.
     expect(manifest.tier1).toEqual(
       expect.arrayContaining([
         '/assets/root.js',
@@ -205,17 +200,13 @@ describe('route-warmup plugin — writeBundle handler', () => {
       ]),
     )
 
-    // tier2_public is empty: no secondary public routes exist here.
     expect(manifest.tier2_public).toEqual([])
 
-    // tier2_admin only collects chunks reachable from admin routes; the
-    // editor tier keeps its own route chunks.
     expect(manifest.tier2_admin).toContain('/assets/dashboard.js')
     expect(manifest.tier2_admin).not.toContain('/assets/editor-shared.js')
     expect(manifest.tier2_editor).toContain('/assets/editor-post.js')
     expect(manifest.tier2_editor).toContain('/assets/editor-shared.js')
 
-    // Lazy-only / native canvas chunks are excluded from every tier.
     for (const tier of ['tier1', 'tier2_public', 'tier2_admin', 'tier2_editor', 'tier2_auth']) {
       expect(manifest[tier]).not.toContain('/assets/canvas-hl.js')
     }
@@ -225,7 +216,7 @@ describe('route-warmup plugin — writeBundle handler', () => {
     fsState.dirExists.add('/build/client/assets')
     fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
     fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
-    // dashboard.js is 200KB — bigger than the 100KB idle cap.
+
     for (const name of ['entry', 'runtime', 'root', 'home', 'shared', 'dashboard', 'admin-shared']) {
       fsState.files.set(`/build/client/assets/${name}.js`, '')
       fsState.sizes.set(`/build/client/assets/${name}.js`, 1024)
@@ -267,7 +258,6 @@ describe('route-warmup tier derivation', () => {
   })
 
   it('excludes TIER1 members from prefix buckets even when they carry a prefix', () => {
-    // Prefix-carrying TIER1 routes must stay tier-1-only.
     for (const id of TIER1_ROUTES) {
       const buckets = deriveTier2RouteIds(manifestOf([id]))
       expect(Object.values(buckets).flat(), `TIER1 route "${id}" leaked into a tier-2 bucket`).toEqual([])
@@ -299,7 +289,6 @@ describe('route-warmup tier derivation — src/routes.ts coverage', () => {
 
   it('every route declared in src/routes.ts lands in exactly one warmup bucket', () => {
     for (const entry of flatten(routes)) {
-      // Paginated aliases share the base file's chunk, so its bucket covers them.
       const baseId = entry.file.replace(/\.tsx$/, '')
       const manifestId = entry.id ?? baseId
       const bucket =
@@ -323,7 +312,6 @@ describe('route-warmup plugin — environment guards', () => {
   })
 
   it('skips when running under the client Vite environment', async () => {
-    // Mirror the v8_viteEnvironmentApi path: env.name === 'client'.
     const { ctx } = buildPluginContext()
     ;(ctx as unknown as { environment: unknown }).environment = { name: 'client' }
     fsState.dirExists.add('/build/client/assets')

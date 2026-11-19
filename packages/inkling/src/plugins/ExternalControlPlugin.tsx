@@ -21,13 +21,8 @@ export interface ExternalControlAPI {
   lastNodeIsDecorator: () => boolean
 }
 
-// Minimal API for controlling the editor from the host app, so typical
-// behaviours do not require the host to bundle lexical. The tree surgeries
-// live in @kobato/inkling-internal/plugins/behaviour/external-control; this plugin is API
-// assembly only.
 export const ExternalControlPlugin = ({ registerAPI }: { registerAPI: (api: ExternalControlAPI | null) => void }) => {
   const [editor] = useLexicalComposerContext()
-
   React.useEffect(() => {
     if (!registerAPI) {
       return

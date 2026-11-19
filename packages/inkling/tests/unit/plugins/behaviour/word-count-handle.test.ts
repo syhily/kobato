@@ -7,11 +7,6 @@ import { renderHook } from '@testing-library/react'
 import { createEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// Thin per-instance suite: the generic handle semantics (partial setState,
-// change guard, subscribe/unsubscribe, fallback) live in
-// composer-handle.test.ts. What remains here is the word-count channel's own
-// state shape and its context wiring.
-
 describe('createWordCountHandle', () => {
   it('starts with no callbacks and no language', () => {
     const handle = createWordCountHandle()
@@ -80,10 +75,8 @@ describe('publishWordCountCallback ownership', () => {
 
     expect(handle.getState()).toEqual({ onChange, onSelectionChange, language: null })
 
-    // unmounting the selection-only publisher leaves the count publisher alone
     unpublishSelection()
     expect(handle.getState()).toEqual({ onChange, onSelectionChange: null, language: null })
-
     unpublishCount()
     expect(handle.getState()).toEqual({ onChange: null, onSelectionChange: null, language: null })
   })
@@ -99,15 +92,12 @@ describe('publishWordCountCallback ownership', () => {
     const unpublishB = publishWordCountCallback(handle, editor, { onChange: b, language: null })
     expect(handle.getState().onChange).toBe(b)
 
-    // A unmounts while B is on top: A's token is removed from beneath B
     unpublishA()
     expect(handle.getState().onChange).toBe(b)
 
-    // both owners are gone — no stale A to restore
     unpublishB()
     expect(handle.getState().onChange).toBeNull()
 
-    // a later publisher's teardown must not resurrect A either
     const unpublishC = publishWordCountCallback(handle, editor, { onChange: c, language: null })
     unpublishC()
     expect(handle.getState().onChange).toBeNull()

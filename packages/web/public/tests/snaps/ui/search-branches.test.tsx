@@ -20,7 +20,6 @@ describe('snapshot: Search branches', () => {
     expect(html).toContain('aria-label="打开搜索"')
     expect(html).toContain('title="搜索"')
     expect(html).toContain('lucide-search')
-    // The Popup portal is skipped during SSR.
     expect(html).not.toContain('role="dialog"')
   })
 })

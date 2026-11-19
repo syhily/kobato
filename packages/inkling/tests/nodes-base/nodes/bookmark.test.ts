@@ -280,7 +280,6 @@ describe('BaseBookmarkNode', function () {
           const result = bookmarkNode.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          // Check that text fields are escaped
           expect(element.innerHTML).toContain(
             'Inkling: Independent technology &lt;script&gt;alert("XSS")&lt;/script&gt; for modern publishing.',
           )
@@ -288,7 +287,6 @@ describe('BaseBookmarkNode', function () {
           expect(element.innerHTML).toContain("fa'ker")
           expect(element.innerHTML).toContain('Fake &lt;script&gt;alert("XSS")&lt;/script&gt;')
 
-          // Check that caption is sanitized before insertion
           expect(element.innerHTML).toContain(
             '<p><span style="white-space: pre-wrap;">This is a </span><b><strong style="white-space: pre-wrap;">caption</strong></b></p>',
           )
@@ -506,8 +504,6 @@ describe('BaseBookmarkNode', function () {
           try {
             const [bookmarkNode] = $getRoot().getChildren() as BaseBookmarkNode[]
 
-            // non-string url/caption coerce to ''; metadata keeps only the
-            // declared string fields
             expect(bookmarkNode.url).toBe('')
             expect(bookmarkNode.title).toBe('Kept')
             expect(bookmarkNode.icon).toBe('')
@@ -589,12 +585,7 @@ describe('BaseBookmarkNode', function () {
       ),
     )
 
-    // mixtape embeds parse into bookmark cards
     describe('mixtapes', function () {
-      // Mobiledoc {\"version\":\"0.3.1\",\"atoms\":[],\"cards\":[[\"bookmark\",{\"url\":\"https://slack.engineering/typescript-at-slack-a81307fa288d\",\"metadata\":{\"url\":\"https://slack.engineering/typescript-at-slack-a81307fa288d\",\"title\":\"TypeScript at Slack\",\"description\":\"When Brendan Eich created the very first version of JavaScript for Netscape Navigator 2.0 in merely ten days, it’s likely that he did not expect how far the Slack Desktop App would take his…\",\"author\":\"Felix Rieseberg\",\"publisher\":\"Several People Are Coding\",\"thumbnail\":\"https://miro.medium.com/max/1200/1*-h1bH8gB3I7gPh5AG1HmsQ.png\",\"icon\":\"https://cdn-images-1.medium.com/fit/c/152/152/1*8I-HPL0bfoIzGied-dzOvA.png\"},\"type\":\"bookmark\"}]],\"markups\":[],\"sections\":[[10,0],[1,\"p\",[]]]}
-      // Inkling HTML <figure class="inkling-card inkling-bookmark-card"><a class="inkling-bookmark-container" href="https://slack.engineering/typescript-at-slack-a81307fa288d"><div class="inkling-bookmark-content"><div class="inkling-bookmark-title">TypeScript at Slack</div><div class="inkling-bookmark-description">When Brendan Eich created the very first version of JavaScript for Netscape Navigator 2.0 in merely ten days, it’s likely that he did not expect how far the Slack Desktop App would take his…</div><div class="inkling-bookmark-metadata"><img class="inkling-bookmark-icon" src="https://cdn-images-1.medium.com/fit/c/152/152/1*8I-HPL0bfoIzGied-dzOvA.png"><span class="inkling-bookmark-author">Felix Rieseberg</span><span class="inkling-bookmark-publisher">Several People Are Coding</span></div></div><div class="inkling-bookmark-thumbnail"><img src="https://miro.medium.com/max/1200/1*-h1bH8gB3I7gPh5AG1HmsQ.png"></div></a></figure>
-      // Medium Export HTML <div class="graf graf--mixtapeEmbed graf-after--p"><a href="https://slack.engineering/typescript-at-slack-a81307fa288d" data-href="https://slack.engineering/typescript-at-slack-a81307fa288d" class="markup--anchor markup--mixtapeEmbed-anchor" title="https://slack.engineering/typescript-at-slack-a81307fa288d"><strong class="markup--strong markup--mixtapeEmbed-strong">TypeScript at Slack</strong><br><em class="markup--em markup--mixtapeEmbed-em">Or, How I Learned to Stop Worrying &amp; Trust the Compiler</em>slack.engineering</a><a href="https://slack.engineering/typescript-at-slack-a81307fa288d" class="js-mixtapeImage mixtapeImage u-ignoreBlock" data-media-id="abc123" data-thumbnail-img-id="1*-h1bH8gB3I7gPh5AG1HmsQ.png" style="background-image: url(https://cdn-images-1.medium.com/fit/c/160/160/1*-h1bH8gB3I7gPh5AG1HmsQ.png);"></a></div>
-
       it(
         'parses mixtape block with all data',
         editorTest(

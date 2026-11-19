@@ -29,7 +29,6 @@ export function TextInput({
   'data-testid': dataTestId,
   ...props
 }: TextInputProps) {
-  // Empty/absent maxLength means no cap; anything non-numeric must not reach the DOM as NaN
   const parsedMaxLength = maxLength === undefined || maxLength === '' ? undefined : Number(maxLength)
 
   return (

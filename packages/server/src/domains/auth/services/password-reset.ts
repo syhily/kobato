@@ -1,6 +1,3 @@
-// Password reset / claim flows: `lostpassword` (enumeration-safe reset email) and
-// `resetpassword` / `accept-invite` (consume the single-use token, set a new password).
-
 import type { Database } from '@kobato/db/database.ts'
 import type { User } from '@kobato/db/types.ts'
 
@@ -34,10 +31,6 @@ export interface PasswordResetFlowDeps {
   hasApprovedComments(db: Database, userId: number): Promise<boolean>
 }
 
-/**
- * Issue a single-use reset token, email the link, and audit the request; shared by the
- * existing-user and commenter-claim paths.
- */
 async function issueTokenAndEmail(
   db: Database,
   user: User,
@@ -85,7 +78,6 @@ export async function requestPasswordReset(
     if (u?.role && !u.deletedAt) {
       await issueTokenAndEmail(db, u, u.role, clientAddress, request)
     } else if (u && !u.role && u.password === '' && !u.deletedAt) {
-      // Anonymous commenter with an approved comment can claim the account.
       if (await deps.hasApprovedComments(db, u.id)) {
         await updateUserById(db, u.id, { role: 'visitor' })
         await issueTokenAndEmail(db, u, 'visitor', clientAddress, request)
@@ -95,10 +87,6 @@ export async function requestPasswordReset(
   return authFlowSuccess('auth.passwordReset.sent')
 }
 
-/**
- * `resetpassword` / `accept-invite`: consume a single-use token and set a new password.
- * Both intents share this path; only the token `purpose` differs.
- */
 export async function resetPasswordWithToken(
   ctx: SigninFlowContext,
   request: Request,
@@ -128,7 +116,6 @@ export async function resetPasswordWithToken(
   }
 
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
-  // Password reset also returns the account to password signin.
   await updateUserById(db, result.userId, { password: hashed, loginMethod: 'password' })
   // Rotating the password kills every other credential-bypass token on the account:
   // remaining reset links, magic signin links, and pending OTPs.

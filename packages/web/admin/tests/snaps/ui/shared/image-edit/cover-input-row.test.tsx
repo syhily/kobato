@@ -9,7 +9,6 @@ vi.mock('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx', () => ({
 
 describe('CoverInputRow — upload gating', () => {
   it('keeps the upload trigger enabled whenever a kind is supplied (no S3 toggle)', () => {
-    // Uploads always go to the active backend — a populated kind is the only precondition.
     const html = stableHtml(
       renderToHtml(
         <CoverInputRow
@@ -22,7 +21,6 @@ describe('CoverInputRow — upload gating', () => {
       ),
     )
     expect(html).toContain('点击上传')
-    // No stale S3-disabled hint leaks into the UI.
     expect(html).not.toContain('S3 上传未开启')
     expect(html).not.toContain('请到 /admin/settings/assets 启用')
   })

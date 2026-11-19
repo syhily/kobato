@@ -78,7 +78,6 @@ export default function EmojiPicker({
     return () => {
       setInstance(null)
     }
-    // init-only mount — mount-only deps are deliberate
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

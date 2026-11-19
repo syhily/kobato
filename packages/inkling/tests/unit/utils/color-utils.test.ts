@@ -27,7 +27,6 @@ describe('colorUtils', function () {
     })
 
     it('returns white for the #cccccc Lab-b edge case', function () {
-      // .b() returns the Lab b-channel, not RGB blue — preserved from upstream source
       expect(textColorForBackgroundColor('#cccccc').hex()).toBe('#FFFFFF')
     })
 

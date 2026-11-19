@@ -314,7 +314,6 @@ describe('comments/services/token — verifyCommentOwnership', () => {
 
 describe('comments/services/access — verifyCommentAccess', () => {
   it('short-circuits with ok=true for an admin session, no token rows needed', async () => {
-    // Admin bypass: access is granted with an empty token jar.
     const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
     const r = await verifyCommentAccess(db, {}, '1', { id: '1', role: 'admin' })
     expect(r.ok).toBe(true)
@@ -327,7 +326,6 @@ describe('comments/services/access — verifyCommentAccess', () => {
       await import('@kobato/server/domains/comments/services/token-store.ts')
     const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
     const token = await issueCommentToken(db, id, u1, 'post:1', 60)
-    // A second, un-backed entry must be dropped by the cleanup passthrough.
     const cookie = appendCommentToken(appendCommentToken({}, 'post:9', 'ghost-token', 60), 'post:1', token, 60)
 
     const r = await verifyCommentAccess(db, cookie, String(id))

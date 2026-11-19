@@ -10,9 +10,6 @@ import { adminSession, regularSession } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Listing routes pin the public 404/redirect contracts (the URL surface must
-// remain stable forever) against the real engine.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -41,7 +38,7 @@ async function seedPost(opts: {
     .values({
       slug: opts.slug,
       title: `${opts.slug} react notes`,
-      // 'react' in title + summary keeps every seeded post searchable for /search/:keyword.
+
       summary: 'react summary',
       published: true,
       publishedAt: date,
@@ -63,7 +60,6 @@ async function linkTag(postId: number, tagId: number): Promise<void> {
   await db.insert(postTag).values({ postId, tagId })
 }
 
-/** The shared catalogue: three visible posts + one hidden, all in the seeded category/tag. */
 async function seedCatalog(): Promise<void> {
   const categoryId = await seedCategory('general', 'general')
   const tagId = await seedTag('typescript', 'typescript')

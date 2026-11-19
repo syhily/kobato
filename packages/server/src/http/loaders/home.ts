@@ -23,7 +23,6 @@ function homeMergeTailWhenLessThan(homePageSize: number): number {
   return Math.max(0, homePageSize - 2)
 }
 
-// Feature posts ride the home payload as plain listing cards — project to exactly the card fields.
 function toFeaturePostCards(posts: ClientPost[]): ListingPostCard[] {
   return posts.map((post) => ({
     id: post.id,
@@ -53,11 +52,9 @@ export async function loadHomeData({
   db: Database
   session: BlogSession
   num: string | undefined
-  /** Request UI locale — drives pagination copy in the listing SEO. */
   locale: AppLocale
   /** Request-pinned settings snapshot (same capture as `locale`). */
   settings: BlogSettingsBundle | null
-  /** Listing-scope generation — the sidebar rotation bucket's generation. */
   revision: string
 }): Promise<ListingPageLoaderData<HomeExtra>> {
   const homePageSize = requireBlogSettingsSection('content', settings).pagination.posts

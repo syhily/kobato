@@ -10,28 +10,15 @@ import React from 'react'
 interface UseSelectionAnchoredPopupOptions {
   editor: LexicalEditor
   popupRef: React.RefObject<HTMLElement | null>
-  /** Anchor-rect adapter (node element or selection range); resolved inside an editor update. */
   anchor: PopupAnchor
-  /** Fixed mode: rect the popup spans horizontally. Absolute mode: the positioning parent's rect. */
   containerRect: () => PopupRectLike | null
-  /** Gap above the anchor when the popup flips; defaults to the below gap. */
   aboveGap?: number
-  /** 'fixed' (default): viewport coords, container-spanning width. 'absolute': parent-relative offsets at natural width. */
   positioning?: 'fixed' | 'absolute'
-  /** Absolute mode: the positioning parent's viewport-to-local scale (CSS zoom); forwarded to the seam. Defaults to 1. */
   coordinateScale?: () => number
-  /** Absolute mode: the unflipped popup sits below the anchor or at the anchor's top. */
   absoluteEdge?: 'below' | 'at-anchor'
-  /** Absolute mode: 'measured' flips when below overflows the viewport and the popup fits above. */
   absoluteFlip?: 'measured' | 'never'
 }
 
-/**
- * React adapter over the selection-anchored popup layout seam: positions
- * popupRef against its anchor, then keeps it positioned across window resize,
- * container scroll, and popup content mutations. Returns the reposition callback
- * so a consumer can request an extra pass (e.g. after loading content).
- */
 export function useSelectionAnchoredPopup({
   editor,
   popupRef,
@@ -108,24 +95,12 @@ export function useSelectionAnchoredPopup({
   return updatePopupPosition
 }
 
-/**
- * The reposition subscription set: window resize, container scroll, and — when
- * observeRef is given — popup content mutations (results arriving/leaving
- * change the popup height, which matters when it is flipped above its anchor).
- */
 export function usePopupRepositionSubscriptions(
   update: () => void,
   scrollElement: HTMLElement,
   observeRef?: React.RefObject<HTMLElement | null>,
 ) {
-  // The observed element arrives through a ref, which render must not read —
-  // a post-commit effect mirrors the current element into state so a
-  // late-mounted popup (its ref goes null → element on the render that mounts
-  // it) re-runs the subscription effect and re-attaches the MutationObserver.
   const [observedElement, setObservedElement] = React.useState<HTMLElement | null>(null)
-  // Runs after EVERY commit by design: the guarded setState terminates, and
-  // any dependency list would miss the ref's null → element transition on the
-  // render that mounts the popup, leaving the MutationObserver unattached.
   // oxlint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     const element = observeRef?.current ?? null
@@ -133,12 +108,10 @@ export function usePopupRepositionSubscriptions(
       setObservedElement(element)
     }
   })
-
   React.useEffect(() => {
     const onReposition = () => update()
     window.addEventListener('resize', onReposition)
     scrollElement.addEventListener('scroll', onReposition)
-
     const observer = observeRef ? new MutationObserver(onReposition) : null
     if (observedElement) {
       observer?.observe(observedElement, { childList: true, subtree: true })

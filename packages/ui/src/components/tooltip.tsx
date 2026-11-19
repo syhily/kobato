@@ -44,7 +44,6 @@ function TooltipRoot({ children, placement = 'top' }: TooltipRootProps) {
 }
 
 export interface TooltipTriggerProps extends React.ButtonHTMLAttributes<HTMLElement> {
-  /** Element type to render. Defaults to `<button type="button">`. */
   as?: keyof React.JSX.IntrinsicElements
   children: ReactNode
   closeOnClick?: boolean

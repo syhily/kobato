@@ -4,9 +4,7 @@ import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@kobato/server
 import { implementAdmin, implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/tags.ts`. Mixed bases map per procedure exactly as
-// before: `list`/`upsert` run on the author base, `delete` on the admin base
+// `list`/`upsert` run on the author base, `delete` on the admin base
 // (deleting shared tags is admin-only — the in-use CONFLICT enumerates the
 // posts carrying the tag, which would leak other authors' post titles to any
 // author probing tag ids).

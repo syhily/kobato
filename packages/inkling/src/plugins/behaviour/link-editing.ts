@@ -26,14 +26,8 @@ import {
 //
 // The $-functions must run inside editor.read()/editor.update().
 
-/**
- * Applies `url` to the current selection (empty removes the link), then
- * collapses the selection to the end of the focus node so the format toolbar
- * does not pop back up over the freshly linked text.
- */
 export function $applyLinkToSelection(editor: LexicalEditor, url: string): void {
   editor.dispatchCommand(TOGGLE_LINK_COMMAND, url || null)
-
   const selection = $getSelection()
   if (!$isRangeSelection(selection)) {
     return
@@ -47,7 +41,6 @@ export function $applyLinkToSelection(editor: LexicalEditor, url: string): void 
   $setSelection(collapsed)
 }
 
-/** The href of the link at the selection — the selected node or its parent — or '' when not on a link. */
 export function $getLinkHrefAtSelection(): string {
   const selection = $getSelection()
   if (!$isRangeSelection(selection)) {
@@ -82,7 +75,6 @@ export function $selectLinkText(linkNode: LinkNode): boolean {
   return true
 }
 
-/** Removes `linkNode` while keeping its text — the hover toolbar's remove action. */
 export function $removeLink(editor: LexicalEditor, linkNode: LinkNode): void {
   linkNode.select()
   editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)
@@ -90,28 +82,21 @@ export function $removeLink(editor: LexicalEditor, linkNode: LinkNode): void {
 
 export type ToolbarSessionType = 'hidden' | 'text' | 'link' | 'snippet'
 
-/** The link under the mouse, as resolved by the hover feed — the hover toolbar's target and anchor. */
 export interface HoveredLink {
-  /** The hovered link node — the target of the edit/remove surgeries. */
   linkNode: LinkNode
   href: string
-  /** The hovered DOM element — the hover toolbar's anchor rect. */
+
   targetElem: HTMLElement
 }
 
 export interface ToolbarSessionState {
   type: ToolbarSessionType
   href: string
-  /**
-   * The link the hover toolbar is open for. Non-null only while
-   * `type === 'hidden'`: entering any toolbar clears it and hover feeds are
-   * ignored until the session is hidden again.
-   */
+
   hoveredLink: HoveredLink | null
 }
 
 export interface ToolbarSelectionSnapshot {
-  /** True for a valid in-editor range selection over non-empty text. */
   textSelected: boolean
   href: string
 }
@@ -191,27 +176,15 @@ export function createToolbarSession(
 
 export type ToolbarSession = ReturnType<typeof createToolbarSession>
 
-/**
- * The floating toolbar's selection classifier, headless behind the session
- * seam (mirrors registerAtLinkSession): owns the document selectionchange
- * listener and its policy — composing skip, outside-editor close
- * (native-selection containment), at-link-search suppression, and the
- * textSelected/href derivation — feeding session.syncSelection. Returns the
- * unregister.
- */
 export function registerToolbarSelectionSync(editor: LexicalEditor, session: ToolbarSession): () => void {
   const syncToolbarToSelection = () => {
     editor.getEditorState().read(() => {
-      // never open over an IME composition
       if (editor.isComposing()) {
         return
       }
-
       const selection = $getSelection()
       const nativeSelection = window.getSelection()
       const rootElement = editor.getRootElement()
-
-      // a selection outside the editor closes the toolbar
       if (
         nativeSelection !== null &&
         (!$isRangeSelection(selection) || rootElement === null || !rootElement.contains(nativeSelection.anchorNode))
@@ -238,25 +211,16 @@ export function registerToolbarSelectionSync(editor: LexicalEditor, session: Too
   }
 }
 
-/** Debounce of the hover feed's mousemove adapter — the hover delay before the link toolbar appears. */
 export const LINK_HOVER_DEBOUNCE_MS = 50
 
 export interface LinkHoverFeedPorts {
-  /** The hover toolbar's own element — hovers over it keep the current link (the toolbar stays open). */
   getToolbarElement: () => HTMLElement | null
 }
 
 export interface LinkHoverFeed {
-  /** One (debounced) mousemove target in; resolves the link under the mouse into the session. */
   hover: (target: EventTarget | null) => void
 }
 
-/**
- * The hovered-link feed: debounced mousemove targets in, the link under the
- * mouse resolved via $getNearestNodeFromDOMNode inside editor.read() and pushed
- * into the session. The session owns the truth; suppression while another
- * toolbar is open is the session's own guard.
- */
 export function createLinkHoverFeed(
   editor: LexicalEditor,
   session: ToolbarSession,
@@ -284,10 +248,6 @@ export function createLinkHoverFeed(
   }
 }
 
-/**
- * Distance in px the mouse must travel before the format toolbar may reveal —
- * avoids accidental toolbar display when clicking buttons that select content.
- */
 export const REVEAL_MOVE_THRESHOLD = 5
 
 export interface RevealPoint {
@@ -296,34 +256,17 @@ export interface RevealPoint {
 }
 
 export interface ToolbarRevealFeedPorts {
-  /**
-   * The reveal effect: the adapter flips the toolbar's opacity, guarded by
-   * session state (a hidden toolbar never reveals) and the current opacity.
-   */
   reveal: () => void
 }
 
 export interface ToolbarRevealFeed {
-  /**
-   * Raw mousemove point in; crossing the move threshold with a range selection
-   * active fires the reveal effect and restarts the threshold. Drags
-   * (buttons held) are ignored.
-   */
   move: (point: RevealPoint, buttons: number) => void
-  /** mouseup/touchend target in; releasing inside the selection fires the reveal effect. */
+
   release: (target: EventTarget | null) => void
 }
 
-/**
- * The format toolbar's reveal gesture, headless behind an effect port: the
- * toolbar stays at opacity 0 until the selection gesture completes — a
- * mouseup/touchend inside the selection or a threshold mousemove with a range
- * selection — so it does not re-position while dragging. The adapter feeds it
- * DOM events and owns the opacity write.
- */
 export function createToolbarRevealFeed(editor: LexicalEditor, { reveal }: ToolbarRevealFeedPorts): ToolbarRevealFeed {
   let initialPosition: RevealPoint | null = null
-
   return {
     move(point, buttons) {
       if (buttons > 0) {
@@ -333,7 +276,6 @@ export function createToolbarRevealFeed(editor: LexicalEditor, { reveal }: Toolb
       if (!initialPosition) {
         initialPosition = point
       }
-
       const distanceMoved = Math.sqrt(
         Math.pow(point.x - initialPosition.x, 2) + Math.pow(point.y - initialPosition.y, 2),
       )
@@ -341,9 +283,7 @@ export function createToolbarRevealFeed(editor: LexicalEditor, { reveal }: Toolb
       if (distanceMoved < REVEAL_MOVE_THRESHOLD) {
         return
       }
-
       initialPosition = null
-
       editor.read(() => {
         const selection = $getSelection()
         if (selection === null || !$isRangeSelection(selection)) {
@@ -352,7 +292,6 @@ export function createToolbarRevealFeed(editor: LexicalEditor, { reveal }: Toolb
         reveal()
       })
     },
-
     release(target) {
       editor.read(() => {
         const selection = $getSelection()
@@ -371,16 +310,10 @@ export function createToolbarRevealFeed(editor: LexicalEditor, { reveal }: Toolb
   }
 }
 
-/** The link-shortcut press grammar: ctrl/cmd+K without shift. */
 export function isLinkShortcutPress(event: KeyboardEvent): boolean {
   return !event.shiftKey && event.code === 'KeyK' && (event.ctrlKey || event.metaKey)
 }
 
-/**
- * The floating toolbar's command registration: the link shortcut with a
- * non-collapsed range selection opens the link toolbar and is swallowed;
- * anything else falls through.
- */
 export function registerToolbarCommands(editor: LexicalEditor, session: ToolbarSession): () => void {
   return editor.registerCommand(
     KEY_DOWN_COMMAND,

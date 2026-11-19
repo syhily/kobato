@@ -19,11 +19,8 @@ import { isRecord } from '@kobato/utils/type-guards.ts'
 const log = getLogger('settings.locale-migration')
 
 export interface LocaleMigrationResult {
-  /** Whether the stored row was rewritten. */
   changed: boolean
-  /** The raw stored value before the pass; `null` when the row or key is absent. */
   previous: string | null
-  /** The canonical value the row holds after the pass. */
   locale: AppLocale
 }
 

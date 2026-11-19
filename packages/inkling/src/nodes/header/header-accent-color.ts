@@ -2,16 +2,6 @@ import { Color, textColorForBackgroundColor } from '@kobato/inkling-internal/uti
 import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { FastAverageColor } from 'fast-average-color'
 
-// Header accent color — the one owner of the header card's color policy: the
-// 'accent' keyword resolution, the transparency-over-white merge, the
-// readable-counterpart pick, and the async background-image resolution behind
-// it all. HeaderCard keeps only the race guard and the write.
-
-/**
- * Resolves a header color token to a hex value: the 'accent' keyword reads
- * the host accent color (scoped to the calling editor's root element when
- * given); everything else passes through trimmed.
- */
 export function headerHexColor(color: string, rootElement?: HTMLElement | null): string {
   if (color === 'accent') {
     return getAccentColor(rootElement).trim()
@@ -19,23 +9,12 @@ export function headerHexColor(color: string, rootElement?: HTMLElement | null):
   return color.trim()
 }
 
-/**
- * The text color matching a header background: 'transparent' matches
- * nothing (keeps the inherited color); everything else gets a readable
- * counterpart for the resolved hex.
- */
 export function matchingHeaderTextColor(color: string, rootElement?: HTMLElement | null): string {
   return color === 'transparent' ? '' : textColorForBackgroundColor(headerHexColor(color, rootElement)).hex()
 }
 
-/**
- * Converts a semi-transparent color to a fully opaque one by merging it
- * over a white background (a transparent image's average reads as
- * semi-transparent).
- */
 export function mergeWhiteColor({ r, g, b, a }: { r: number; g: number; b: number; a: number }): string {
   const aPercentage = a / 255
-
   return Color({
     r: r * aPercentage + 255 * (1 - aPercentage),
     g: g * aPercentage + 255 * (1 - aPercentage),
@@ -43,14 +22,6 @@ export function mergeWhiteColor({ r, g, b, a }: { r: number; g: number; b: numbe
   }).hex()
 }
 
-/**
- * Resolves the text color matching a header background IMAGE: averages the
- * image (defaulting to white when it can't be read), merges transparency
- * over white, and picks a readable counterpart. Returns null when the
- * policy doesn't apply — no src, the split layout (whose media panel owns
- * its background), or the image failed to average — so the caller keeps the
- * current color.
- */
 export async function resolveHeaderImageTextColor(
   src: string | undefined,
   layout: string | undefined,
@@ -69,7 +40,6 @@ export async function resolveHeaderImageTextColor(
     })
     return matchingHeaderTextColor(correctedHex)
   } catch {
-    // failed to load/average the image — keep the current text color
     return null
   }
 }

@@ -38,23 +38,13 @@ import {
   type LexicalNode,
 } from 'lexical'
 
-/**
- * The registered class for a card node type, looked up on the active editor.
- * `undefined` when the editor doesn't register the card — every caller treats
- * that as "shortcut unavailable".
- */
 function $registeredCardClass(nodeType: string): Klass<LexicalNode> | undefined {
   return getRegisteredNodeMap($getEditor()).get(nodeType)?.klass
 }
 
-/**
- * The one code-fence serialization: opening fence with language, body, closing
- * fence. Both export transformers delegate here so the fence shape cannot fork.
- */
 export function codeBlockFence(language: string, text: string): string {
   return '```' + language + (text ? '\n' + text : '') + '\n```'
 }
-
 /**
  * The one bracketing-fence strip for multiline-element import: `linesInBetween`
  * includes the (always empty) remainder of the opening fence line and the
@@ -64,12 +54,6 @@ export function stripFenceLines(linesInBetween: string[] | null | undefined): st
   return linesInBetween?.slice(1, -1).join('\n') ?? ''
 }
 
-/**
- * Replace the fence paragraph with a code block card and put a NodeSelection
- * on it so the card immediately renders in edit mode. Shared by the enter,
- * tab, and markdown-transformer triggers. Returns false — leaving the tree
- * untouched — when the editor doesn't register the code card.
- */
 export function $insertCodeBlockForShortcut(topLevelElement: ElementNode, language: string | undefined): boolean {
   const CodeBlockNodeClass = $registeredCardClass('codeblock')
   if (!CodeBlockNodeClass) {
@@ -77,21 +61,10 @@ export function $insertCodeBlockForShortcut(topLevelElement: ElementNode, langua
   }
 
   const replacementNode = topLevelElement.replace(new CodeBlockNodeClass({ language, _openInEditMode: true }))
-
-  // A NodeSelection makes the card render in editing mode immediately
-  // (keyboard-triggered: the caller already owns focus — the 'never' leg)
   $selectDecoratorNode(replacementNode)
   return true
 }
 
-/**
- * enter/tab keyboard trigger body: the caret text starts with a fence
- * (FENCE_KEYBOARD_REGEXP), so swap its paragraph for a code block card. Owns
- * the keyboard trigger's language extraction — the full rest of the line.
- * Returns true when the shortcut fired (event consumed); false when the caret
- * isn't on a fence line or the code card isn't registered, so the caller falls
- * through to its other key handling.
- */
 export function $fireFenceKeyboardShortcut(event: KeyboardEvent): boolean {
   const selection = $getSelection()
   const currentNode = selection?.getNodes()[0]
@@ -113,15 +86,8 @@ export function $fireFenceKeyboardShortcut(event: KeyboardEvent): boolean {
   return true
 }
 
-/** divider trigger, single-sourced for both HR triggers. */
 export const DIVIDER_REGEXP = /^(---|\*\*\*|___)\s?$/
 
-/**
- * The phase a markdown transformer `replace` runs in, named at the seam
- * instead of threading `@lexical/markdown`'s `isImport` boolean through:
- * 'import' during `$convertFromMarkdownString`, 'typing' on a live shortcut
- * keystroke. Only the HR markdown trigger branches on it.
- */
 export type MarkdownTriggerPhase = 'import' | 'typing'
 
 /**
@@ -143,10 +109,8 @@ export function $insertHorizontalRuleForMarkdownTrigger(parentNode: ElementNode,
   } else {
     parentNode.insertBefore(line)
   }
-
   line.selectNext()
 }
-
 /**
  * per-update scan trigger (HorizontalRulePlugin). Same sibling branch as the
  * markdown trigger, but at the document end it creates a FRESH paragraph

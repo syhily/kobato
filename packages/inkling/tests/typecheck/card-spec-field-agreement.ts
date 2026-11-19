@@ -28,13 +28,9 @@ import { bookmarkDeclaration } from '@kobato/inkling-internal/nodes/cards/bookma
 import { calloutDeclaration } from '@kobato/inkling-internal/nodes/cards/callout.declaration'
 import { toggleDeclaration } from '@kobato/inkling-internal/nodes/cards/toggle.declaration'
 
-// the derivation itself: the audio spec yields exactly its two transient
-// field names
 type _DerivationSanity = Expect<
   Equal<CardSpecFieldNames<typeof audioDeclaration>, '__triggerFileDialog' | '__initialFile'>
 >
-
-// Derived value types
 
 type _AudioValues = Expect<
   Equal<CardSpecFieldMap<typeof audioDeclaration>, { __triggerFileDialog: boolean; __initialFile: File | undefined }>
@@ -45,8 +41,7 @@ type _BookmarkKeys = Expect<
     '__createdWithUrl' | '__captionEditor' | '__captionEditorInitialState'
   >
 >
-// a plain nested-editor literal derives a non-null editor field; the
-// `nullable: true` entry derives the nullable one
+
 type _BookmarkEditorValue = Expect<
   Equal<CardSpecFieldMap<typeof bookmarkDeclaration>['__captionEditor'], LexicalEditor>
 >
@@ -57,14 +52,10 @@ type _ToggleInitialState = Expect<
   Equal<CardSpecFieldMap<typeof toggleDeclaration>['__titleEditorInitialState'], EditorState | undefined>
 >
 
-// The base classes self-type the same vocabulary (interface merging)
-
 type _AudioBaseField = Expect<Equal<BaseAudioNode['__triggerFileDialog'], boolean>>
 type _AudioBaseAccessor = Expect<Equal<BaseAudioNode['triggerFileDialog'], boolean>>
 type _ImageBaseAccessor = Expect<Equal<BaseImageNode['previewSrc'], string | null>>
 type _CalloutBaseEditor = Expect<Equal<BaseCalloutNode['__calloutTextEditor'], LexicalEditor | null>>
-
-// The pins themselves work
 
 // @ts-expect-error - a `__*` field the spec does not name fails the pin
 type _NegativeBase = Expect<Extends<'__staleField', CardSpecFieldNames<typeof audioDeclaration>>>
@@ -72,10 +63,6 @@ type _NegativeBase = Expect<Extends<'__staleField', CardSpecFieldNames<typeof au
 // @ts-expect-error - a value type that drifts from the spec fails the pin
 type _NegativeValue = Expect<Equal<CardSpecFieldMap<typeof audioDeclaration>['__triggerFileDialog'], string>>
 
-// Host cards: the same derivation over a `defineCard` spec
-
-// A host spec const-asserts its spec arrays like the built-in declarations, so
-// `CardSpecFieldMap` derives its field vocabulary the same way.
 const hostSpec = {
   nodeType: 'hostProbe',
   baseNode: generateDecoratorNode({ nodeType: 'hostProbe' }),

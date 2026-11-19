@@ -11,17 +11,11 @@ export interface SettingsControlProps {
 type SettingsRowChildren = ReactNode | ((controlProps: SettingsControlProps) => ReactNode)
 
 interface SettingsRowProps {
-  /** Label rendered in the row's left column on desktop. */
   label: string
-  /** Sets the label's `htmlFor` so it points at the control's `id`. */
   htmlFor?: string
-  /** Optional richer explanation shown behind a help icon next to the label. */
   labelTooltip?: string
-  /** Optional helper text rendered below the control. */
   hint?: ReactNode
-  /** Validation error rendered through `FieldError`. Drives `data-invalid` styling. */
   error?: string
-  /** Form control(s) — `<Input>`, `<Select>`, etc. May receive a11y props by render prop. */
   children: SettingsRowChildren
 }
 

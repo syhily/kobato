@@ -202,7 +202,6 @@ describe('DragDropHandler', () => {
     handler.simulateDrag(draggable)
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
 
-    // the drop consumes exactly the resolution the indicator derived
     expect(handlers.droppable.onDrop).toHaveBeenCalledWith(expect.objectContaining({ type: 'image' }), {
       insertIndex: 1,
     })
@@ -222,8 +221,6 @@ describe('DragDropHandler', () => {
 
     const containerElement = createContainer('null-resolution')
     const handlers = createHandlers()
-    // getIndicatorPosition returns false (the mock default): the drop is
-    // container-level, so onDrop receives a null resolution
     handler.registerContainer(containerElement, handlers)
     const draggable = containerElement.querySelector('.draggable') as HTMLElement
     const droppable = containerElement.querySelector('.droppable') as HTMLElement
@@ -304,8 +301,6 @@ describe('DragDropHandler', () => {
   })
 
   it('ignores non-Element mouse targets', () => {
-    // a mousedown whose target is a text node bubbles to the handler's
-    // document listener with a non-Element target
     const textNode = document.createTextNode('text')
     document.body.appendChild(textNode)
 
@@ -377,10 +372,7 @@ describe('DragDropHandler', () => {
     img.height = 100
     draggable.appendChild(img)
 
-    // a drag in the second editor shows that editor's own indicator — never
-    // one adopted from the first editor
     ownHandler.simulateDrag(draggable)
-
     const ownIndicator = ownEditorContainer.querySelector(DROP_INDICATOR_SELECTOR)
     expect(ownIndicator).not.toBeNull()
     expect(ownHandler.dropIndicator.element).toBe(ownIndicator)
@@ -420,8 +412,6 @@ describe('DragDropHandler', () => {
     expect(editorRoot.dataset.inklingDragging).toBeUndefined()
   })
 
-  // the production shape: the handler's container is the editor wrapper,
-  // which holds its own [data-inkling="editor"] root
   function createEditorWrapper() {
     const wrapper = document.createElement('div')
     const editorRoot = document.createElement('div')
@@ -453,13 +443,10 @@ describe('DragDropHandler', () => {
     handler = new DragDropHandler({ editorContainerElement: own.wrapper })
     dragIn(handler, 'hover-scope')
 
-    // the handler's own root is found through the container (never the
-    // document), so the first editor in the document is left alone
     expect(own.editorRoot.dataset.inklingDragging).toBe('true')
     expect(first.editorRoot.dataset.inklingDragging).toBeUndefined()
 
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
-
     expect(own.editorRoot.dataset.inklingDragging).toBeUndefined()
   })
 
@@ -471,15 +458,11 @@ describe('DragDropHandler', () => {
     handler = new DragDropHandler({ editorContainerElement: own.wrapper })
     dragIn(handler, 'cursor-scope')
 
-    // cursor suppression is the stylesheet's [data-inkling-dragging] rule —
-    // the handler writes no inline cursor style it would have to restore
-    // (and would clobber card-specific cursor styling with)
     expect(own.lexicalEditor.style.getPropertyValue('cursor')).toBe('')
     expect(first.lexicalEditor.style.getPropertyValue('cursor')).toBe('')
     expect(own.editorRoot.dataset.inklingDragging).toBe('true')
 
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
-
     expect(own.lexicalEditor.style.getPropertyValue('cursor')).toBe('')
     expect(own.editorRoot.dataset.inklingDragging).toBeUndefined()
   })

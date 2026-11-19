@@ -11,15 +11,10 @@ import { applyLimitOffset } from '@kobato/server/domains/content/pagination.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { and, eq, getColumns, isNotNull, isNull, or, sql, type Column, type SQL } from 'drizzle-orm'
 
-/** The two meta tables — type-only union; the generic queries bind shared columns structurally, never entity extras. */
 export type MetaTable = typeof postMetaTable | typeof pageMetaTable
 
 type AnyNewMeta = NewPostMeta | NewPageMeta
 
-/**
- * The meta-table CRUD every content entity shares, over the shared columns; the
- * table comes in as a parameter so no entity fork drifts.
- */
 export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>(
   table: MetaTable,
 ): MetaCrud<TMeta, TNew> {
@@ -88,16 +83,13 @@ export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>
   }
 }
 
-/** The list filters both entities share (posts add taxonomy/visible/lifecycle legs as `extras`). */
 export interface MetaListFiltersBase extends LimitOffset {
-  /** Free-text query matched case-insensitively against `slug` and `title`. */
   q?: string
   deletedStatus?: 'all' | 'deleted' | 'normal'
   published?: boolean
   authorId?: number
 }
 
-/** Shared admin-list WHERE legs plus entity `extras`. */
 export function buildMetaListWhere(
   table: MetaTable,
   filters: MetaListFiltersBase,
@@ -141,10 +133,6 @@ export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends Lim
   countMetas: (db: Database, filters: TFilters) => Promise<number>
 }
 
-/**
- * Admin-list meta queries both entities share: author-joined meta columns,
- * per-entity filters/ordering/pagination, and the count.
- */
 export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset>(
   table: MetaTable,
   options: MetaListQueriesOptions<TFilters>,

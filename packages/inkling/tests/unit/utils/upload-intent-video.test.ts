@@ -188,7 +188,6 @@ describe('videoFlowUploadIntent', () => {
     })
 
     expect(url).toBe('https://example.com/video.mp4')
-    // the synthesized `${file.name}.jpg` rides the thumbnail uploader with the video url as formData
     const [thumbFiles, thumbOptions] = thumbnailUpload.mock.calls[0]
     expect(thumbFiles[0].name).toBe('clip.mp4.jpg')
     expect(thumbFiles[0].type).toBe('image/jpeg')

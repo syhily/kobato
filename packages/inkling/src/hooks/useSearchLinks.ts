@@ -6,13 +6,6 @@ import {
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
 
-// React adapter over search-coordinator (the deep module — request tracks, URL
-// short-circuit, and race policy live there). The coordinator is recreated when
-// the search function or options change, which both restarts the default prefetch
-// and re-issues the current query. The labels table's URL-option strings are
-// resolved here and injected into the coordinator, which keeps its own English
-// fallbacks for headless consumers.
-
 export type {
   ListOptionItem,
   ListOptionSection,
@@ -57,8 +50,6 @@ export const useSearchLinks = (
     coordinator.setQuery(query)
   }, [coordinator, query])
 
-  // the coordinator's subscribe/getSnapshot are closure-bound, so they ride
-  // useSyncExternalStore directly — a recreated coordinator re-subscribes
   const snapshot = React.useSyncExternalStore(coordinator.subscribe, coordinator.getSnapshot)
 
   return {

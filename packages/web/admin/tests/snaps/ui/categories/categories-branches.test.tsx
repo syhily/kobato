@@ -139,7 +139,6 @@ describe('snapshot: CategoriesView branches', () => {
     }
     const html = stableHtml(renderInRouter(<CategoriesView />, '/admin/taxonomy/categories'))
     expect(html).toContain('分类管理')
-    // No rows + not fetching → empty state (toast mocked).
     expect(html).toContain('未找到分类')
   })
 

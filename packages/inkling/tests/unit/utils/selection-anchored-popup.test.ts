@@ -45,7 +45,6 @@ describe('resolveAnchoredPopupPlacement', () => {
   })
 
   it('flips above the anchor when the below position plus the budget overflows the scroll container', () => {
-    // belowTop 730 + budget 354 = 1084 > scrollHeight 800
     const placement = layout({ scrollHeight: 800 })
 
     expect(placement.top).toBe(700 - 200 - 10)
@@ -53,7 +52,6 @@ describe('resolveAnchoredPopupPlacement', () => {
   })
 
   it('accounts for the scroll position when checking overflow', () => {
-    // scrolled to the bottom: document-coordinate overflow even though scrollHeight is large
     const placement = layout({ scrollTop: 1500, scrollHeight: 2000 })
 
     expect(placement.flipped).toBe(true)
@@ -79,7 +77,6 @@ describe('resolveAnchoredPopupPlacement', () => {
 })
 
 describe('resolveAnchoredPopupPlacement — absolute mode', () => {
-  // the card menus' geometry: parent-relative offsets at natural width
   const parent = rect(0, 0, 700, 2000)
 
   function absolute(overrides: Partial<Parameters<typeof resolveAnchoredPopupPlacement>[0]> = {}) {
@@ -104,14 +101,12 @@ describe('resolveAnchoredPopupPlacement — absolute mode', () => {
   })
 
   it('never flips without the measured policy, even when below overflows the viewport', () => {
-    // 120 + 300 = 420 > 400 overflows — but the policy is 'never'
     const placement = absolute({ viewportHeight: 400, absoluteEdge: 'below', absoluteFlip: 'never' })
 
     expect(placement).toEqual({ top: 120, left: 0, flipped: false })
   })
 
   it('measured flips above when below overflows the viewport and the popup fits above', () => {
-    // anchor bottom 520 + 300 = 820 > 800 overflows; 500 - 300 = 200 ≥ 0 fits above
     const placement = absolute({
       anchorRect: rect(500, 0, 100, 20),
       viewportHeight: 800,
@@ -119,20 +114,16 @@ describe('resolveAnchoredPopupPlacement — absolute mode', () => {
       absoluteFlip: 'measured',
     })
 
-    // the flipped popup's bottom edge sits at the anchor's top: parent height minus the anchor offset
     expect(placement).toEqual({ bottom: 2000 - 500, left: 0, flipped: true })
   })
 
   it('measured stays below when below overflows but the popup does not fit above', () => {
-    // 120 + 300 = 420 > 400 overflows; 100 - 300 < 0 does not fit above
     const placement = absolute({ viewportHeight: 400, absoluteEdge: 'below', absoluteFlip: 'measured' })
 
     expect(placement).toEqual({ top: 120, left: 0, flipped: false })
   })
 
   it('measured judges the overflow in viewport coordinates when the parent is offset from the viewport top', () => {
-    // parent top 300: the parent-relative below position (420 + 300 = 720) fits, but the
-    // viewport-relative one (720 + 300 = 1020 > 1000) overflows — the flip must fire
     const placement = absolute({
       anchorRect: rect(700, 0, 100, 20),
       containerRect: rect(300, 0, 700, 2000),
@@ -145,8 +136,6 @@ describe('resolveAnchoredPopupPlacement — absolute mode', () => {
   })
 
   it('measured stays below at the exact viewport boundary with an offset parent', () => {
-    // 720 + 280 = 1000 fits exactly — no flip, even though the offset parent would
-    // change the parent-relative comparison
     const placement = absolute({
       anchorRect: rect(700, 0, 100, 20),
       containerRect: rect(300, 0, 700, 2000),
@@ -178,7 +167,6 @@ describe('resolveAnchoredPopupPlacement — absolute mode', () => {
     })
 
     it('measured flip un-scales the bottom offset while judging overflow in viewport coordinates', () => {
-      // anchor bottom 520 + 300 = 820 > 800 overflows; 500 - 300 = 200 ≥ 0 fits above
       const placement = absolute({
         anchorRect: rect(500, 0, 100, 20),
         viewportHeight: 800,

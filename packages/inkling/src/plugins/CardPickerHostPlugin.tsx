@@ -20,11 +20,7 @@ export function CardPickerHostPlugin() {
   const store = useCardPickerStore()
   const request = useCardPickerState((state) => state.request)
 
-  // The registry read is pure — resolve during render so the effect below
-  // can drop requests whose picker is gone (the writers already gate on a
-  // registered picker, so this only fires for one unregistered mid-session).
   const picker = request === null ? undefined : resolveCardPicker(request.nodeType)
-
   // A card deleted while its picker is open strands the dialog on a dead key
   // — drop the request on the first update that loses the node. Read node
   // existence ONCE at registration too: a deletion committed between the
@@ -65,7 +61,7 @@ export function CardPickerHostPlugin() {
   if (request === null || picker === undefined) {
     return null
   }
-  // Keyed on the request's node key so a reopened pick mounts a fresh dialog.
+
   return (
     <React.Fragment key={request.nodeKey}>
       {picker.render({

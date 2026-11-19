@@ -35,18 +35,14 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
 export interface MetaSidebarProps {
   draft: PageMetaDraft
   onChange: (next: PageMetaDraft) => void
-  /** Disable every input while a save / publish is in flight. */
   disabled?: boolean
   /** Lifecycle status for the basic-info badge; `null` falls back to `never-saved`. */
   publishStatus?: SidebarPublishStatus | null
   /** Persisted (server-side) slug for the `/images/og/:slug.png` preview — reads
    *  `page.slug`, not `draft.slug`, so the preview stays live while typing. */
   ogPreviewSlug?: string | null
-  /** Revision-versioning summary for the visibility badge; `null` / `no-revision` renders as "no saved version yet". */
   revisionSummary?: SidebarRevisionSummary | null
-  /** Shell-derived draft / persist lifecycle for the save-status row. */
   saveStatus: SidebarSaveStatus
-  /** Extra slot at the bottom of the panel (revision history drawer trigger). */
   extras?: ReactNode
 }
 

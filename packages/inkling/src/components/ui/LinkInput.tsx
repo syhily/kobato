@@ -17,15 +17,9 @@ interface LinkInputProps {
   cancel: () => void
 }
 
-// The one link-field: plain input by default, a search-suggestion list when
-// the host provides a searchLinks capability (read from host-integration
-// context — callers never fork). Shared chrome (href mirroring, dismissal,
-// Enter-submits-raw) lives here once; the search capability only changes
-// what renders below the input.
 export function LinkInput({ href, update, cancel }: LinkInputProps) {
   const { searchLinks } = useInklingLinkingSettings()
   const labels = useInklingLabels()
-
   // href/query live in local state so typing never touches the saved editor value
   const [_href, setHref] = React.useState<string | undefined>(href)
   const searchEnabled = typeof searchLinks === 'function'
@@ -117,9 +111,6 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       }}
       onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-          // prevent Enter from triggering in the editor and removing text.
-          // Read the live input value so the last keystroke is always captured
-          // even if React state updates lag the native value.
           e.preventDefault()
           update(e.currentTarget.value || '')
         }

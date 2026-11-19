@@ -50,17 +50,14 @@ export function cleanBasicHtml(html: string = '', options: CleanBasicHtmlOptions
     .replace(/^&nbsp;|&nbsp;$/g, '')
     .trim()
 
-  // remove any elements that have a blank textContent
   if (cleanHtml) {
     const doc = resolvedOptions.createDocument(cleanHtml)
 
-    // don't analyze the document if it's empty (can result in storing <br> tags if allowed)
     if (doc.body.textContent === '') {
       return ''
     }
 
     doc.body.querySelectorAll('*').forEach((element) => {
-      // Treat Zero Width Non-Joiner characters as spaces
       if (!element.textContent?.trim().replace(/\u200c+/g, '')) {
         if (resolvedOptions.allowBr && element.tagName === 'BR') {
           return
@@ -69,7 +66,6 @@ export function cleanBasicHtml(html: string = '', options: CleanBasicHtmlOptions
           return element.replaceWith(doc.createElement('br'))
         }
         if (element.textContent && element.textContent.length > 0) {
-          // keep a single space to avoid collapsing spaces
           const space = doc.createTextNode(' ')
           return element.replaceWith(space)
         }

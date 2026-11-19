@@ -227,7 +227,6 @@ async function listObjects(
   return objects
 }
 
-/** `GetObject` with not-found normalization; any other failure propagates unchanged. */
 async function sendGetObject(
   sdk: AwsSdk,
   client: S3ClientInstance,
@@ -270,8 +269,6 @@ async function getObjectBuffer(ctx: S3StorageContext, key: string, maxSize = MAX
   })
 }
 
-/** Stream an object without buffering (backups exceed the buffered-read cap); throws
- *  `StorageObjectNotFound` on a missing/empty object. */
 async function getObjectStream(ctx: S3StorageContext, key: string): Promise<Readable> {
   const sdk = await getAwsSdk()
   const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
@@ -281,7 +278,6 @@ async function getObjectStream(ctx: S3StorageContext, key: string): Promise<Read
   return unsafeCast<Readable>(response.Body)
 }
 
-/** `getObjectStream` plus the stored headers a verbatim migration copy needs. */
 async function getObjectStreamWithMeta(ctx: S3StorageContext, key: string): Promise<StreamWithMeta> {
   const sdk = await getAwsSdk()
   const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
@@ -313,7 +309,6 @@ async function deleteObjects(ctx: S3StorageContext, keys: string[]): Promise<voi
   )
 }
 
-/** A config is usable once every connection field carries a real value. */
 function isS3ConfigComplete(storage: S3StorageConfig): boolean {
   return (
     storage.endpoint.trim() !== '' &&

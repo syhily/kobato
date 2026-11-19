@@ -23,7 +23,6 @@ vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => <div data-testid="card-caption-editor" />,
 }))
 
-// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'code-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -33,8 +32,6 @@ function createSelection(
   })
 }
 
-// the code preview's dark/light styling reads the UI-prefs context, a
-// separate lifecycle from the host-integration value
 function createUiPrefsValue(darkMode: boolean) {
   return { darkMode, labels: DEFAULT_LABELS }
 }

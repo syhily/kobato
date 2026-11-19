@@ -6,7 +6,6 @@ import { makeEntityMutations } from '@kobato/server/domains/content/entities/mut
 import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
-// The five meta mutations come from the shared descriptor-driven skeleton via `pageDescriptor`.
 const mutations = makeEntityMutations(pageDescriptor)
 
 export const createPage = mutations.create

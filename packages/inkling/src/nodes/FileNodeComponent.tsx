@@ -61,8 +61,6 @@ function FileNodeComponent({
         nodeKey,
         upload,
         files,
-        // reset original src on picker change so it can be replaced with
-        // preview and upload progress (drops/initial files keep it)
         prePatch:
           source === 'input'
             ? (node) => {
@@ -125,10 +123,6 @@ function FileNodeComponent({
 
 export default FileNodeComponent
 
-/**
- * File's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderFileCard(node: FileNode) {
   return (
     <FileNodeComponent

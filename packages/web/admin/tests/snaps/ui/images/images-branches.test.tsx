@@ -81,14 +81,12 @@ describe('snapshot: ImagesView branches', () => {
   })
 
   it('renders the active-filter chips (q + kind) so the filter-bar pill branches run', () => {
-    // q + kind chips drive the pill map; hasFilters flips trigger to "添加筛选" + "清除".
     controller.q = 'poster'
     controller.kind = 'friend'
     controller.activeFilters = [
       { field: 'q', value: 'poster', label: 'poster' },
       { field: 'kind', value: 'friend', label: '友链海报' },
     ]
-    // Populate the grid so the data-loaded branch renders alongside the chips.
     queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a', kind: 'friend' })], total: 1, hasMore: false }],
     }
@@ -97,7 +95,6 @@ describe('snapshot: ImagesView branches', () => {
 
     expect(html).toContain('搜索')
     expect(html).toContain('poster')
-    // Kind chip label is hardcoded to "用途".
     expect(html).toContain('用途')
     expect(html).toContain('添加筛选')
     expect(html).toContain('清除')
@@ -105,7 +102,6 @@ describe('snapshot: ImagesView branches', () => {
   })
 
   it('renders the "加载中…" spinner when the next page is fetching', () => {
-    // hasNextPage + isFetchingNextPage → spinner branch in the sentinel footer.
     queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a' })], total: 5, hasMore: true }],
     }
@@ -115,12 +111,10 @@ describe('snapshot: ImagesView branches', () => {
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
 
     expect(html).toContain('加载中…')
-    // Sentinel hidden while fetching (renders only when !hasNextPage).
     expect(html).not.toContain('已加载全部')
   })
 
   it('renders the end-of-list footer when there is no next page and images exist', () => {
-    // !hasNextPage + images → "已加载全部 N 张图片" branch.
     queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a' }), makeImage({ id: 'b' })], total: 2, hasMore: false }],
     }
@@ -137,7 +131,6 @@ describe('snapshot: ImagesView branches', () => {
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
 
     expect(html).toContain('未找到图片')
-    // The end-of-list footer is gated behind `allImages.length > 0`.
     expect(html).not.toContain('已加载全部')
   })
 

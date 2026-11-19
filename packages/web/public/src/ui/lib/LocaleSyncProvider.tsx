@@ -64,7 +64,6 @@ const LocaleSyncContext = createContext<LocaleSyncContextValue>({
 })
 
 export interface LocaleSyncProviderProps {
-  /** The locale this document bootstrapped with. */
   locale: AppLocale
   /** The bootstrap settings revision (`<bootId>:<counter>`) — an opaque dedupe token. */
   revision?: string

@@ -101,10 +101,6 @@ export interface DomainErrorWire {
   issues?: DomainErrorIssue[]
 }
 
-/**
- * Rehydrate a wire error into a `DomainError`, else `null` when it is not
- * one; the caller owns the fallback for non-domain errors.
- */
 export function domainErrorFromWire(error: DomainErrorWire): DomainError | null {
   if (error.name === 'DomainError' && error.code !== undefined && isDomainErrorCode(error.code)) {
     return new DomainError(error.code, error.descriptor ?? error.message, error.issues)

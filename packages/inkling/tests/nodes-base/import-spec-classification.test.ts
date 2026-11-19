@@ -18,8 +18,6 @@ const DERIVABLE_CARDS = ['audio', 'button', 'callout', 'file', 'horizontalrule',
 const STRUCTURAL_CARDS = ['bookmark', 'codeblock', 'footnotedefinition', 'gallery', 'header', 'html', 'math']
 
 function baseNodeImportSpec(declaration: AnyCardDeclaration): CardImportSpec | undefined {
-  // declaration.baseNode is typed CardBaseNodeClass — the generated statics
-  // are on the field type, no cast
   return declaration.baseNode.importSpec
 }
 

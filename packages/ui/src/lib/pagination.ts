@@ -2,17 +2,12 @@
 // the same chip ladder so `/page/3` reads identically in both.
 // Inputs / outputs are 1-based; admin callers `+1` / `-1` around calls.
 
-/** Threshold above which the layout switches from dense to windowed. */
 export const DENSE_THRESHOLD = 6
 
-/** A single chip in the rendered ladder: a 1-based page number, or the
- *  literal `'ellipsis'` sentinel for the gap separator. */
 export type PageWindowItem = number | 'ellipsis'
 
 export interface PageWindowOptions {
-  /** 1-based current page. Must be in `[1, total]`. */
   current: number
-  /** Total number of pages. `total < 2` returns an empty array. */
   total: number
 }
 

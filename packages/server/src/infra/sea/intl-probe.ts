@@ -139,7 +139,6 @@ function assertSupported(locale: AppLocale): void {
   }
 }
 
-/** Run every surface for one locale and compare with the expected output. */
 export function probeIntlLocale(locale: AppLocale): IntlLocaleProbeResult {
   assertSupported(locale)
 

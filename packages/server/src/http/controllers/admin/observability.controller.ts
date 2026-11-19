@@ -81,9 +81,6 @@ async function provisionAfterConnectionTest(
   }
 }
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/observability.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminObservabilityContract)
 
 const testConnection = impl.testConnection.handler(async ({ context }) => {

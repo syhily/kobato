@@ -177,8 +177,6 @@ describe('TKPlugin', () => {
     const cardValue = createCardContextValue()
     renderTKPlugin(handle, cardValue)
 
-    // The third call argument is the plugin's createTKNode closure; invoke it
-    // directly to pin what the plugin hands to the entity transform.
     const [, , createTKNode] = vi.mocked(useInklingTextEntity).mock.calls[0]
 
     let isTKNode = false

@@ -64,7 +64,6 @@ describe('TKPlugin in nested editors', () => {
       </TestWrapper>,
     )
 
-    // Wait for React effects to run so TKPlugin registers its transforms
     await tick()
 
     await updateEditor(nestedEditor, () => {

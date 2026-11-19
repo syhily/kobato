@@ -51,13 +51,10 @@ function walk(root: string, out: string[]): void {
   }
 }
 
-// Comments may quote specifiers; only real import statements count.
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-// Whole-file match: static `from`, side-effect/dynamic `import`, and vi.mock
-// module paths — the shapes a bundler or test runner would resolve.
 function importSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   const specifierRe = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+|\bvi\.mock\(\s*)['"]([^'"]+)['"]/g
@@ -114,9 +111,6 @@ describe('web direction', () => {
     const files: string[] = []
     walk(`${REPO_ROOT}/${ADMIN_ROOT}`, files)
 
-    // The cross-surface tiers (`ui/shared`, `ui/lib`) are sanctioned wholesale —
-    // they render on every document. Everything else public-side admin touches
-    // stays on the audited per-module list.
     const actual = new Set<string>()
     for (const file of files.sort()) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {

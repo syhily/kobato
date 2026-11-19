@@ -31,15 +31,12 @@ export interface FileUploadMessages {
 
 export interface UseFileUploadOptions {
   endpoint: string
-  /** The caller's `useI18n().t` — resolves the failure title and the inline `onError` copy. */
   t: ToastTranslator
-  /** Extra fields appended to the FormData ahead of the file (File uploads only). */
   fields?: Record<string, string>
   /** Dotted-suffix allowlist matched against the file name (e.g. '.svg', '.sql.gz'); omit to skip the type guard. Guards only run for File inputs. */
   accept?: readonly string[]
   /** Size cap in bytes. Omit to skip the size guard. */
   maxBytes?: number
-  /** Fetch credentials mode for the POST. */
   credentials?: RequestCredentials
   /** Parse the response body as JSON before the ok check; a malformed body lands in the failure channel like a transport error. */
   parseJson?: boolean

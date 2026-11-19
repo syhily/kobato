@@ -59,7 +59,6 @@ describe('snapshot: UserOperationsCard', () => {
     })
     const html = renderOpsCard(user)
     expect(html).toContain('恢复用户')
-    // Soft-delete branch swaps delete → restore.
     expect(html).not.toContain('软删除用户')
     // Mute gates on role !== 'admin' (not deletedAt) — restore swap is the deleted-branch signal.
     expect(html).not.toContain('通过全部待审')
@@ -231,7 +230,6 @@ describe('snapshot: UserDetailView', () => {
     expect(html).toContain('Detail Diana')
     expect(html).toContain('diana@example.com')
     expect(html).toContain('作者')
-    // Viewing another user renders the role editor in the operations card.
     expect(html).toContain('data-slot="select-trigger"')
     // Status badge: not muted, not deleted => 正常.
     expect(html).toContain('正常')

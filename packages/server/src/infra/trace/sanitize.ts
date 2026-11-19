@@ -113,7 +113,6 @@ const VALUE_PATTERNS: Readonly<Record<string, RegExp>> = {
 
 const ROUTE_KEYS: ReadonlySet<string> = new Set(['http.route', 'rr.route'])
 
-/** Standard + application error class names worth distinguishing in a dashboard. */
 const SAFE_ERROR_TYPES: ReadonlySet<string> = new Set([
   'Error',
   'TypeError',
@@ -192,7 +191,6 @@ export function sanitizeAttributeValue(key: string, value: SpanAttributeValue): 
   return sanitizeValue(key, value)
 }
 
-/** Project one attribute through the allowlist; `null` means drop it. */
 export function sanitizeSpanAttribute(key: string, value: SpanAttributeValue): SanitizedAttribute | null {
   if (!SPAN_ATTRIBUTE_KEYS.has(key)) {
     return null
@@ -204,7 +202,6 @@ export function sanitizeSpanAttribute(key: string, value: SpanAttributeValue): S
   return [key, sanitized]
 }
 
-/** Project a whole attribute bag, dropping every key outside the allowlist. */
 export function sanitizeSpanAttributes(
   attributes: SpanAttributes | undefined,
 ): Record<string, string | number | boolean> {
@@ -222,9 +219,7 @@ export function sanitizeSpanAttributes(
 }
 
 export interface ErrorProjection {
-  /** Safe, closed-set error class name. */
   type: string
-  /** Stable low-cardinality category derived from the error's code/status. */
   category: string
 }
 

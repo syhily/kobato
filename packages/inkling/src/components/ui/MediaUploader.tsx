@@ -65,7 +65,7 @@ export function MediaUploader({
   progress,
   errors,
   onRemoveMedia = () => {
-    /* noop default — read-only renders */
+    /* noop */
   },
   additionalActions,
   setFileInputRef,
@@ -74,7 +74,7 @@ export function MediaUploader({
   const labels = useInklingLabels()
 
   const onRemove = (e: React.MouseEvent) => {
-    e.stopPropagation() // prevents card from losing selected state
+    e.stopPropagation()
     onRemoveMedia()
   }
 

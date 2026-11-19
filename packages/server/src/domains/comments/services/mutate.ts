@@ -36,7 +36,6 @@ import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.loader')
 
-/** sha256 hex of the `content` snapshot. */
 export function hashContent(content: string): string {
   return createHash('sha256').update(content).digest('hex')
 }

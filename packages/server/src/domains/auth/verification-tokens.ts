@@ -11,7 +11,6 @@ const log = getLogger('verification-tokens')
 const RESET_TTL_MS = 15 * 60 * 1000
 const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-// Purpose tags persisted to `verification.purpose`; new values go here so typos fail type-check.
 export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp' | 'signin-link'
 
 export interface TokenResult {
@@ -99,10 +98,6 @@ export async function peekToken(db: Database, rawToken: string, purpose: TokenPu
   }
 }
 
-/**
- * Delete the row matching `rawToken` and return `{ userId }` only when it existed,
- * was unexpired, and matched the purpose. Single-shot.
- */
 export async function consumeToken(
   db: Database,
   rawToken: string,
@@ -181,7 +176,6 @@ export async function issueOtpToken(db: Database, userId: number): Promise<OtpTo
   return { otpCode, expiresAt }
 }
 
-/** Verify a 6-digit OTP for a user; deletes the row on success (single-use). */
 export async function verifyOtpToken(db: Database, userId: number, rawOtpCode: string): Promise<ValidatedToken | null> {
   try {
     // Sync transaction (node:sqlite): writers serialise on the connection.

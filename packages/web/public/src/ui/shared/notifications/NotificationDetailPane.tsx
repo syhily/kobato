@@ -37,7 +37,6 @@ interface NotificationDetailPaneProps {
   /** Admins can recall announcements / system alerts (never direct messages). */
   isAdmin: boolean
   onBack: () => void
-  /** Closes the host drawer; the action link navigates underneath it. */
   onClose: () => void
 }
 

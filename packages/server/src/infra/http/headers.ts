@@ -12,7 +12,6 @@ export const CACHE_PROFILES = {
   imageImmutable: 'public, max-age=86400, immutable',
 } as const
 
-/** Headers that describe the representation, not the request/response envelope. */
 const REPRESENTATION_HEADERS = ['ETag', 'Content-Language', 'Cache-Control', 'Vary'] as const
 
 /**

@@ -1,4 +1,3 @@
-// Input-side counterpart of `isLocalContentImage` (`@kobato/inkling-internal/nodes/base/utils/content-image-url`); used for at-link labeling.
 export function isInternalUrl(url: string, siteUrl?: string): boolean {
   if (!url || !siteUrl) {
     return false

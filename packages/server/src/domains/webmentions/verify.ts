@@ -116,7 +116,6 @@ export interface SourceMetadata {
   summary: string | null
 }
 
-/** Best-effort author/title/summary extraction for the moderation list. */
 export function extractSourceMetadata(html: string): SourceMetadata {
   const titleMatch = TITLE_RE.exec(html)
   const title = titleMatch?.[1] !== undefined ? clean(titleMatch[1], MAX_TITLE_LENGTH) : null

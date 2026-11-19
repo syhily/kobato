@@ -14,7 +14,6 @@ import { $insertSelectedEmoji } from '@kobato/inkling-internal/plugins/behaviour
 
 const taco: EmojiSearchResult = { id: 'taco', skins: [{ native: '🌮' }] }
 
-// the reader every consumer relies on is total
 const native: string = taco.skins[0].native
 void native
 

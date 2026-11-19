@@ -105,14 +105,11 @@ async function stageUploadForRestore(
   return staged
 }
 
-/** Slot contention: the staged upload is dropped, the caller retries later. */
 function busyRestoreResponse(c: Context<Env>, staged: StagedBackup): Response {
   rmSync(staged.dir, { recursive: true, force: true })
   return errorJsonResponse(c, 409, 'backup.error.restoreRunning')
 }
 
-/** Shared tail for both upload entry points: claim the slot and start the
- *  restore chain over an already-staged upload. */
 async function claimAndStartRestore(
   c: Context<Env>,
   staged: StagedBackup,
@@ -143,7 +140,6 @@ async function claimAndStartRestore(
         userAgent,
       })
     },
-    // A pre-swap throw means the swap never ran — drop the staged dir.
     onFailureFn: () => {
       rmSync(staged.dir, { recursive: true, force: true })
     },
@@ -161,7 +157,6 @@ const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
     return errorJsonResponse(c, 409, 'backup.error.siteInstalled')
   }
 
-  // Require a verified session to prove console access.
   const setupTokenVerified = c.var.requestContext.session.get('setupTokenVerified')
   if (!setupTokenVerified) {
     return errorJsonResponse(c, 403, 'backup.error.setupTokenIncomplete')
@@ -172,7 +167,6 @@ const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
     return errorJsonResponse(c, 403, 'auth.setup.error.tokenExpired')
   }
 
-  // CSRF: restore rides the setup session cookie — require the CSRF header.
   const csrfToken = c.req.header(CSRF_HEADER)
   if (!validateCsrfToken(c.var.requestContext.session, csrfToken)) {
     return errorJsonResponse(c, 403, 'error.api.csrfFailed')
@@ -183,7 +177,6 @@ const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
 
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
-    // Pure projection of the restore machine — consumed once on read.
     return c.json(consumeRestoreJobReport())
   })
   .get('/api/admin/backup/restore-progress', requireRoleMw('admin'), (c) => {
@@ -254,8 +247,6 @@ export const backupRouter = new Hono<Env>()
       onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
     }),
     async (c) => {
-      // Follow-up to an `{encrypted: true, token}` upload-restore response:
-      // the parked upload is staged again WITH the password.
       const body: unknown = await c.req.json().catch(() => null)
       if (typeof body !== 'object' || body === null) {
         return errorJsonResponse(c, 400, 'backup.error.requestInvalid')

@@ -86,7 +86,6 @@ describe('loadAllComments — text filter propagation', () => {
     })
 
     expect(result.comments.map((c) => c.id).sort((a, b) => a - b)).toEqual([foo1, foo2])
-    // The count query honors the same filter: tabs reflect the filtered corpus.
     expect(result.statusCounts).toEqual({ all: 2, pending: 1, approved: 1, deleteRequested: 0 })
     expect(result.total).toBe(2)
     expect(result.hasMore).toBe(false)
@@ -198,7 +197,6 @@ describe('loadAllComments — date filter propagation', () => {
   })
 
   it('stacks the date bounds on top of the status filter so the count breakdown stays consistent', async () => {
-    // Same guarantee: the count query shares the date `extraFilters` with the list.
     const uid = await seedUser()
     const pid = await seedPost('p7')
     await seedComment({

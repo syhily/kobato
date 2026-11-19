@@ -25,7 +25,6 @@ export interface PageEditorShellProps {
 // Module-level accessor — stable identity so the memoized detail only recomputes when the loader DTO changes.
 const getEntity = (d: AdminPageDetailDto) => d.page
 
-// Static page binding for the shared editor adapter: nouns, paths, draft configs, meta helpers, oRPC namespace.
 const PAGE_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   PageMetaDraft,
   AdminPageDto,

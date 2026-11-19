@@ -45,10 +45,6 @@ function createTestEditor(): LexicalEditor {
   })
 }
 
-// Lexical commits updates on a microtask, and listener-triggered
-// cascade updates defer again — the harness's drainEnqueuedUpdates drains
-// the whole queue so assertions see the settled state.
-
 async function buildParagraph(
   editor: LexicalEditor,
   text: string,
@@ -74,7 +70,6 @@ async function buildParagraph(
   })
 }
 
-// The selected node's top-level element is the list, not a paragraph.
 async function buildListItem(editor: LexicalEditor, text: string, caretOffset = 0) {
   await drainEnqueuedUpdates(editor, () => {
     const root = $getRoot()
@@ -132,8 +127,6 @@ const slashPress = (overrides: Partial<SlashPressEvent> = {}): SlashPressEvent =
   ...overrides,
 })
 
-// jsdom has no document.elementFromPoint; the hover policy reads it, so
-// hover cases stub it with the element the hit test should land on.
 function stubElementFromPoint(element: Element | null) {
   const mock = vi.fn(() => element)
   ;(document as unknown as { elementFromPoint: (x: number, y: number) => Element | null }).elementFromPoint = mock
@@ -357,8 +350,6 @@ describe('card-menu-trigger', () => {
     })
 
     it('stops emitting after unregistration', async () => {
-      // separate channel: the describe-level registration stays active and
-      // keeps filling `verdicts`, which this test never reads
       let extra: SlashMenuVerdict[] = []
       const unregister = registerSlashCardMenuTrigger(editor, { onVerdict: (verdict) => extra.push(verdict) })
       await buildParagraph(editor, '/x', { anchorOffset: 2 })
@@ -432,8 +423,7 @@ describe('card-menu-trigger', () => {
 
     it('hides the button when the native anchor is not the caret paragraph itself', async () => {
       await buildParagraph(editor, '', { anchorOffset: 0 })
-      // an empty paragraph renders a <br> placeholder — anchor the native
-      // selection on it (an element anchor that is not the <p> itself)
+
       const paragraph = rootElement.querySelector('p')
       if (!paragraph?.firstChild) {
         throw new Error('expected a rendered paragraph')

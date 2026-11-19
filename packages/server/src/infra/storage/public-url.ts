@@ -17,7 +17,6 @@ export function getPublicBaseUrl(): string | null {
   return `${assets.asset.scheme}://${trimTrailingSlash(host)}`
 }
 
-/** Canonical site origin; base for every site-owned asset URL. */
 export function getGeneralWebsite(): string {
   return trimTrailingSlash(requireBlogSettingsSection('siteIdentity').website)
 }

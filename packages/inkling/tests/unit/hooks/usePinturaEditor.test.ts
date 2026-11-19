@@ -10,13 +10,9 @@ vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
 }))
 
 class MockPinturaEditor {
-  on(): void {
-    // no-op — the locale tests only capture the openDefaultEditor options
-  }
+  on(): void {}
 }
 
-/** Opens the editor against a mocked window.pintura and returns the options
- * `openDefaultEditor` received. */
 async function captureOpenOptions({
   config = {},
   labels: labelsInput,
@@ -73,10 +69,7 @@ describe('usePinturaEditor', () => {
   })
 
   it('sets error when the script URL is invalid', async () => {
-    // 'http://' is invalid even with a base URL; a RELATIVE jsUrl is valid and
-    // resolves against window.location (pinned in the pintura-session test table)
     const { result } = renderHook(() => usePinturaEditor({ config: { jsUrl: 'http://' } }))
-
     await waitFor(() => {
       expect(result.current.error).toBeInstanceOf(Error)
     })
@@ -194,11 +187,8 @@ describe('usePinturaEditor', () => {
       },
     })
 
-    // the config locale wins on conflict and patches keys the table has no
-    // entry for
     expect(options.locale).toEqual({ labelButtonExport: 'Export now', labelCancel: 'Cancel' })
   })
-
   it('removes the capture-phase click listener on unmount', () => {
     const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')

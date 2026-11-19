@@ -38,10 +38,6 @@ export function toastApiError(
   }
 }
 
-/**
- * Mutation `onError` shorthand for the toast-only failure path:
- * `onError: onMutationError('admin.toast.saveFailed', t)`.
- */
 export function onMutationError(
   titleId: UiMessageId,
   t: ToastTranslator,

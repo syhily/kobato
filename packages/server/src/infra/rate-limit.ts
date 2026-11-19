@@ -58,15 +58,12 @@ export function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
 }
 
 export interface RateLimitResult {
-  /** Post-increment counter value within the current window. */
   count: number
-  /** True once the counter strictly exceeds the configured `maxAttempts`. */
   exceeded: boolean
 }
 
 interface WindowEntry {
   count: number
-  /** Epoch ms at which the current window closes and the counter resets. */
   resetAt: number
 }
 
@@ -116,18 +113,15 @@ export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): P
   return { count: entry.count, exceeded: entry.count > bucket.maxAttempts }
 }
 
-/** Number of live (unexpired) counter windows for the admin cache panel. */
 export function rateLimitEntryCount(): number {
   sweepExpired(Date.now())
   return entries.size
 }
 
-/** Test-only seam: wipe every counter so cases start from a clean map. */
 export function __resetRateLimitsForTests(): void {
   entries.clear()
 }
 
-/** Test-only seam: list the tracked key strings (key-shape/privacy assertions). */
 export function __rateLimitKeysForTests(): string[] {
   return [...entries.keys()]
 }
@@ -136,7 +130,6 @@ export function __rateLimitKeysForTests(): string[] {
 // families (per-IP, per-email, …). The families stay distinct — only the
 // configured (window, maxAttempts) is shared since the twin-bucket merge.
 
-/** Counter keyed by client IP (IPv6 grouped by /64 — see rateLimitIpKey). */
 function byIp(bucket: keyof RateLimitSettings, ns: string) {
   return (ip: string): Promise<RateLimitResult> =>
     tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${rateLimitIpKey(ip)}`, readBucket(bucket))
@@ -155,7 +148,6 @@ function byUserId(bucket: keyof RateLimitSettings, ns: string) {
     tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${userId.toString()}`, readBucket(bucket))
 }
 
-/** Counter keyed by `(adminId, invitee email)`; additive to the per-IP one. */
 function byAdminEmail(bucket: keyof RateLimitSettings, ns: string) {
   return (adminId: number, email: string): Promise<RateLimitResult> =>
     tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}${ns}:${adminId.toString()}:${hashEmail(email)}`, readBucket(bucket))
@@ -164,7 +156,6 @@ function byAdminEmail(bucket: keyof RateLimitSettings, ns: string) {
 /** Login attempts by client IP; success and failure both bump the counter. */
 export const tryRateLimit = byIp('signIn', 'signin')
 
-/** Login attempts by target email; additive to the per-IP one. */
 export const trySignInByEmailRateLimit = byEmail('signIn', 'signin-email')
 
 export const tryOtpSendRateLimit = byIp('otpSend', 'otp-send')
@@ -172,19 +163,14 @@ export const tryOtpSendByEmailRateLimit = byEmail('otpSend', 'otp-send-email')
 export const tryOtpVerifyRateLimit = byIp('otpVerify', 'otp-verify')
 export const tryOtpVerifyByEmailRateLimit = byEmail('otpVerify', 'otp-verify-email')
 
-/** Public lostpassword form by client IP. */
 export const tryPasswordResetRateLimit = byIp('passwordReset', 'password-reset')
 
-/** Public lostpassword form by target email; additive to the per-IP one. */
 export const tryPasswordResetByEmailRateLimit = byEmail('passwordReset', 'password-reset-email')
 
-/** Admin-triggered password-reset emails by target user id. */
 export const tryPasswordResetByTargetRateLimit = byUserId('passwordResetTarget', 'password-reset-target')
 
-/** Public comment submissions by IP (independent of login rate limits). */
 export const tryCommentPostRateLimit = byIp('comment', 'comment-post')
 
-/** Public comment submissions by author email. */
 export const tryCommentPostRateLimitByEmail = byEmail('comment', 'comment-email')
 
 // Newsletter subscribe is anonymous AND mails the submitted address, so the
@@ -193,7 +179,6 @@ export const tryCommentPostRateLimitByEmail = byEmail('comment', 'comment-email'
 // twin-bucket merge): 3/hour per address is ample for a human confirming.
 const NEWSLETTER_SUBSCRIBE_EMAIL_BUCKET: RateLimitBucket = { windowSeconds: 60 * 60, maxAttempts: 3 }
 
-/** Newsletter subscribe attempts by target address. */
 export const tryNewsletterSubscribeByEmailRateLimit = (email: string): Promise<RateLimitResult> =>
   tryKeyedRateLimit(
     `${RATE_LIMIT_NAMESPACE}newsletter-subscribe-email:${hashEmail(email)}`,
@@ -205,7 +190,6 @@ export const tryNewsletterSubscribeByEmailRateLimit = (email: string): Promise<R
 // team. Generous for humans, fatal for scripts.
 const NOTIFICATION_REPLY_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttempts: 10 }
 
-/** Notification replies by author id. */
 export const tryNotificationReplyRateLimit = (userId: number | string): Promise<RateLimitResult> =>
   tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}notification-reply:${userId}`, NOTIFICATION_REPLY_BUCKET)
 
@@ -215,7 +199,6 @@ export const tryNotificationReplyRateLimit = (userId: number | string): Promise<
 // (admin, backup) leaves ample room for typos.
 const BACKUP_RESTORE_PASSWORD_BUCKET: RateLimitBucket = { windowSeconds: 60 * 60, maxAttempts: 10 }
 
-/** Stored-backup restore password attempts by `(adminId, backup key)`. */
 export const tryBackupRestorePasswordRateLimit = (adminId: string, backupKey: string): Promise<RateLimitResult> =>
   tryKeyedRateLimit(
     `${RATE_LIMIT_NAMESPACE}backup-restore-password:${adminId}:${backupKey}`,
@@ -226,13 +209,10 @@ export const tryBackupRestorePasswordRateLimit = (adminId: string, backupKey: st
  *  only fresh inserts add rows, keeping table growth bounded. */
 export const tryLikeIncreaseRateLimit = byIp('like', 'like-increase')
 
-/** Admin invitations by client IP. */
 export const tryInviteRateLimit = byIp('invite', 'invite')
 
-/** Admin invitations by `(adminId, invitee email)`; additive to the per-IP one. */
 export const tryInviteByEmailRateLimit = byAdminEmail('invite', 'invite-email')
 
-/** Public resources (RSS, sitemap, OG images, avatars) by client IP. */
 export const tryResourceRateLimit = byIp('resource', 'resource')
 
 // Device-environment beacons arrive once per page view from anonymous
@@ -241,7 +221,6 @@ export const tryResourceRateLimit = byIp('resource', 'resource')
 // while bounding a spray. 120/min per IP.
 const DEVICE_ENV_BEACON_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttempts: 120 }
 
-/** Device-environment beacons (`POST /api/analytics/env`) by client IP. */
 export const tryDeviceEnvBeaconRateLimit = (ip: string): Promise<RateLimitResult> =>
   tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}analytics-env-beacon:${rateLimitIpKey(ip)}`, DEVICE_ENV_BEACON_BUCKET)
 
@@ -251,7 +230,6 @@ export const tryDeviceEnvBeaconRateLimit = (ip: string): Promise<RateLimitResult
 // fleet while bounding a relay spray. 240/min per IP.
 const RUM_INTAKE_BUCKET: RateLimitBucket = { windowSeconds: 60, maxAttempts: 240 }
 
-/** Browser RUM intake relays (`POST /api/rum/intake/*`) by client IP. */
 export const tryRumIntakeRateLimit = (ip: string): Promise<RateLimitResult> =>
   tryKeyedRateLimit(`${RATE_LIMIT_NAMESPACE}rum-intake:${rateLimitIpKey(ip)}`, RUM_INTAKE_BUCKET)
 

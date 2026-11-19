@@ -3,7 +3,6 @@ import sharp from 'sharp'
 
 // Keep sharp statically imported — under SEA the bundler rewrites its platform loads.
 
-// Caller (settings service) is responsible for uploading each buffer to S3.
 export interface FaviconPack {
   faviconIco: Buffer
   appleTouchIcon: Buffer

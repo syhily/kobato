@@ -83,7 +83,6 @@ describe('HTMLtoLexical', function () {
     it('can convert whitespace-only document', function () {
       const lexical = htmlToLexical('   \n\t  ', options)
 
-      // whitespace-only HTML must follow the same MINIMAL_DOCUMENT path as an empty import
       assert.deepEqual(lexical, htmlToLexical('', options))
     })
 
@@ -577,7 +576,6 @@ describe('HTMLtoLexical', function () {
     })
 
     it('can convert multiple <hr> into cards', function () {
-      // $insertNodes() doesn't work with just decorators, uses $appendNodes() instead
       const lexical = htmlToLexical('<hr><hr>', options)
 
       assert.ok(lexical.root)
@@ -587,7 +585,6 @@ describe('HTMLtoLexical', function () {
     })
 
     it('can convert <p>Hello World</p><hr> into cards', function () {
-      // ensure decorators still get inserted OK after other nodes
       const lexical = htmlToLexical('<p>Hello World</p><hr>', options)
 
       assert.ok(lexical.root)
@@ -599,7 +596,6 @@ describe('HTMLtoLexical', function () {
     })
 
     it('can convert <hr><p>Hello World</p> into cards', function () {
-      // ensure decorators still get inserted OK before other nodes
       const lexical = htmlToLexical('<hr><p>Hello World</p>', options)
 
       assert.ok(lexical.root)
@@ -725,7 +721,6 @@ describe('HTMLtoLexical', function () {
       assert.equal(lexical.root.children[0].type, 'list')
       assert.equal(lexical.root.children[0].children[0].type, 'listitem')
       assert.equal(lexical.root.children[0].children[0].children.length, 0)
-      // extracted children
       assert.equal(lexical.root.children[1].type, 'extended-heading')
       assert.equal(lexical.root.children[1].children[0].text, 'Heading')
       assert.equal(lexical.root.children[2].type, 'paragraph')
@@ -1122,7 +1117,7 @@ describe('HTMLtoLexical', function () {
       assert.equal(outputNodeTypes.length, 13)
       assert.deepEqual(outputNodeTypes, [
         'image',
-        'paragraph', // markdown parses as paragraph/text content
+        'paragraph',
         'html',
         'gallery',
         'horizontalrule',

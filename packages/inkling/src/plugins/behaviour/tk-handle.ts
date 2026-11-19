@@ -1,20 +1,10 @@
 import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 import { throttle } from '@kobato/inkling-internal/utils'
 
-// Editor-side handle for the per-top-level-composer tk channel, built on the
-// composer handle factory. Owns the per-editor map of TK node keys plus the
-// throttled derivation of the top-level tkNodeMap/tkCount used to render
-// indicators, so TKPlugin's Lexical mutation listeners read and write
-// synchronously instead of closing over a stale React mirror. Fed by
-// TKPlugin's mutation listener and unmount cleanup; React subscribes
-// render-only via useTKHandleState. One instance per top-level composer
-// (created in InklingComposer); nested composers share the top-level handle.
-
 export interface TKHandleState {
   tkNodeMap: Record<string, string[]>
   tkCount: number
 }
-
 export interface TKHandle extends ComposerHandle<TKHandleState> {
   addEditorTkNode: (editorKey: string, topLevelNodeKey: string, tkNodeKey: string) => void
   removeEditorTkNode: (editorKey: string, tkNodeKey: string) => void
@@ -35,8 +25,6 @@ export function createTKHandle(): TKHandle {
   // its own nodes.
   const editorTkNodeMap = new Map<string, Map<string, { topLevelNodeKey: string }>>()
 
-  // Throttled: add/remove fire many times in succession when the editor opens
-  // or large blocks of TK-containing content are added/removed (delete, undo).
   const updateTkNodeMap = throttle(
     () => {
       const tkNodeMap: Record<string, string[]> = {}

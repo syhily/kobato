@@ -3,9 +3,6 @@ import { recordAuditEventFromContext } from '@kobato/server/domains/audit/servic
 import { recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service.ts'
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/notifications.ts`; this controller only implements the
-// procedures (admin base).
 const impl = implementAdmin(adminNotificationsContract)
 
 const sendDirect = impl.sendDirect.handler(({ input, context }) => {

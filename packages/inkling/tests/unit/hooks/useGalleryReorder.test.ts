@@ -105,12 +105,8 @@ describe('useGalleryReorder', () => {
       },
     })
 
-    // empty gallery: the drop is container-level, so the resolution is null
-    // and the first image lands at slot 0
     const result = options.droppable.onDrop(draggableInfo, null)
 
-    // the gallery consumed the drop itself, so it reports the source as
-    // handled — its own onDropEnd must not remove the image again
     expect(result).toEqual({ success: true, sourceHandled: true })
     expect(updateImages).toHaveBeenCalledWith([
       expect.objectContaining({
@@ -201,8 +197,6 @@ describe('useGalleryReorder', () => {
       dataset: { src: 'https://example.com/one.jpg' },
     })
 
-    // the handler routes the drop result back to the target container's own
-    // onDropEnd — sourceHandled tells it not to remove the reordered image
     const result = options.droppable.onDrop(draggableInfo, { insertIndex: 2 })
     expect(result).toEqual({ success: true, sourceHandled: true })
     expect(updateImages).toHaveBeenCalledWith([
@@ -223,18 +217,13 @@ describe('useGalleryReorder', () => {
       dataset: { src: 'https://example.com/one.jpg' },
     })
 
-    // dropped elsewhere: this gallery's onDrop never ran, so the handler
-    // reports sourceHandled=false and the source image is removed — located
-    // by the dragged element's slot among the droppables
     onDropEnd(draggableInfo, true, false)
 
     expect(updateImages).toHaveBeenCalledWith([{ src: 'https://example.com/two.jpg' }])
   })
-
   it('does not allow dropping non-image draggables', async () => {
     const { options, updateImages } = await getRegisteredOptions([])
 
-    // a real non-image card payload: the gallery rejects it by kind
     const draggableInfo = cardDrag({ cardName: 'file', nodeKey: 'file-key', element: null })
 
     const success = options.droppable.onDrop(draggableInfo, null)

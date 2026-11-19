@@ -16,7 +16,6 @@ import { useEditorDeleteRestore } from '@kobato/web-admin/ui/editor-shell/use-ed
 import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
 import { Trash2Icon, Undo2Icon } from 'lucide-react'
 
-/** Props handed to the entity's meta-sidebar render slot. */
 export interface MetaSidebarSlotProps<TMeta> {
   draft: TMeta
   onChange: (next: TMeta) => void
@@ -38,7 +37,6 @@ export interface EditorMetaPanelDeleteRestore {
 
 export interface EditorMetaPanelProps<TMeta> {
   entityKind: 'post' | 'page'
-  /** Display-noun message id woven into the Sheet / button copy (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
   /** Edit-mode entity; `undefined` in create mode (extras stay unmounted). */
   entity: { id: string; slug: string; title: string; deletedAt: string | null } | undefined

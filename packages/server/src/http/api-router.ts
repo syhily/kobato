@@ -43,15 +43,12 @@ import { notificationsRouter } from '@kobato/server/http/controllers/notificatio
 import { passkeyPublicRouter } from '@kobato/server/http/controllers/passkey-public.controller.ts'
 import { webmentionPublicRouter } from '@kobato/server/http/controllers/webmention-public.controller.ts'
 
-// The composed router shape is the permission-matrix audit surface
-// (grep adminProc/authorProc under src/server/http/controllers/).
 export const apiRouter = {
   account: accountRouter,
   analytics: analyticsRouter,
   avatar: avatarRouter,
   github: githubRouter,
   comments: { ...commentsPublicRouter, ...commentsAuthedRouter, ...commentsTokenRouter },
-  // Ghost-Content-API-style read-only group — consumed in-process by the SSR loaders, headless via `/rpc/content/*`.
   content: {
     bootstrap: contentBootstrap,
     home: contentListingsRouter.home,

@@ -80,7 +80,6 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
   }
 }
 
-// `setUserMuted` returns a raw row — refetch the aggregated DTO for the wire shape.
 export async function fetchAdminUserDto(db: Database, id: number): Promise<AdminUserDto | null> {
   const row = await findAdminUserById(db, id)
   return row ? toAdminUserDto(row) : null
@@ -122,7 +121,6 @@ export async function listUsersForAdmin(
 
 export interface RoleUpdateResult {
   user: User
-  /** The role the target held before the write — for the audit `from`. */
   previousRole: User['role']
 }
 

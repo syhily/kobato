@@ -24,7 +24,6 @@ const revisionImplementer = implementAuthor<RevisionContract>
 type RevisionRouterImplementer = Pick<ReturnType<typeof revisionImplementer>, 'saveDraft' | 'publishLatest'>
 
 export interface MakeRevisionRouterOptions<TMeta, TPreview> {
-  /** Contract implementer for the save-draft/publish-latest pair: posts use `implementAuthor(...)`, pages `implementAdmin(...)`. */
   impl: RevisionRouterImplementer
   adapter: ContentEntityAdapter<TMeta, TPreview>
   audit: RevisionRouterAudit
@@ -35,17 +34,12 @@ export interface MakeRevisionRouterOptions<TMeta, TPreview> {
   passViewerToSaveBody: boolean
 }
 
-/** Localize the non-fatal side-effect notices for the request locale. */
 function localizeSaveResult(result: SaveBodyOutcome, context: HandlerContext): SaveBodyResult {
   const { warningDescriptors, ...rest } = result
   const warning = formatWarningDescriptors(warningDescriptors, createServerTranslator(context.localization.locale))
   return warning === undefined ? rest : { ...rest, warning }
 }
 
-/** The save-draft / publish-latest pair shared by the posts and pages
- *  controllers. Route paths and wire schemas live in the per-domain
- *  `revisionContract(basePath)` spread inside `@kobato/api/admin/*`; NOT_FOUND
- *  surfaces via the adapter's `assertAccess`. */
 export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterOptions<TMeta, TPreview>) {
   const { impl, adapter, audit, passViewerToSaveBody } = options
 

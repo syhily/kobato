@@ -21,10 +21,6 @@ interface InklingCardWrapperProps {
   children?: React.ReactNode
 }
 
-// The select→edit click choreography lives in
-// `@kobato/inkling-internal/plugins/behaviour/card-interaction` (one stable registration per card);
-// this component keeps the render, the card-type init read, and the width
-// dataset marker.
 const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, children }: InklingCardWrapperProps) => {
   const [editor] = useLexicalComposerContext()
   const { historyState } = useSharedEditorStateContext()
@@ -47,7 +43,6 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
       setCardType(cardNode ? cardNode.getType() : null)
     })
 
-    // init-only read — mount-only deps are deliberate
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -69,10 +64,7 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
   }, [editor, historyState])
 
   React.useEffect(() => {
-    // Mark the Lexical-created parent element so CSS can target it (spacing
-    // between stacked full-width cards)
     if (containerRef.current?.parentElement) {
-      // avoid setting property when 'regular' so there's less test churn
       if (normalizedWidth === 'regular') {
         delete containerRef.current.parentElement.dataset.inklingCardWidth
       } else {
@@ -88,7 +80,7 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
       setCaptionHasFocus,
       nodeKey,
     }),
-    // setState dispatchers are stable and do not need to be listed
+
     [captionHasFocus, cardType, nodeKey],
   )
 

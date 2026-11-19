@@ -28,21 +28,15 @@ function getEditorText(editor: ReturnType<typeof createTestEditor>): string {
   return editor.getEditorState().read(() => $getRoot().getTextContent())
 }
 
-// Types each character as its own keystroke. The typography grammar itself
-// is pinned synchronously in behaviour/typography.test.ts;
-// these tests pin the plugin wiring — the registered scan, the
-// 'history-push' tag that keeps the replacement a separate undo entry, and
-// the update-scan seam's composing skip that protects IME input.
 async function typeText(editor: ReturnType<typeof createTestEditor>, text: string): Promise<void> {
   for (const char of text) {
     await act(async () => {
       editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, char)
     })
-    // Flush the listener-enqueued scan commit before the next keystroke.
+
     await tick()
   }
 }
-
 async function undo(editor: ReturnType<typeof createTestEditor>): Promise<void> {
   await act(async () => {
     editor.dispatchCommand(UNDO_COMMAND, undefined)

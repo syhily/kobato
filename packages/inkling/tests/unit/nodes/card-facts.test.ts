@@ -6,11 +6,7 @@ import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import { createCommand } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// The merge policy's single home: the built-in declarations answer first, the
-// host card registry is a fallback, never an override. Registered at module
-// scope, mirroring the host's own module-top-level `defineCard` idiom.
 const FACTS_PROBE_COMMAND = createCommand('FACTS_PROBE_COMMAND')
-
 defineCard({
   nodeType: 'factsProbe',
   baseNode: generateDecoratorNode({ nodeType: 'factsProbe' }),

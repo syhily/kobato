@@ -6,7 +6,6 @@ import path from 'node:path'
  * adapter's header defaults, and the migration's header-less fallback read from here.
  */
 
-/** Cache-visibility class of a stored object: `public` assets are CDN-cacheable. */
 export type ObjectVisibility = 'public' | 'private'
 
 export const DEFAULT_PUBLIC_CACHE_CONTROL = 'public, max-age=31536000, immutable'
@@ -16,23 +15,18 @@ export const DEFAULT_PRIVATE_CACHE_CONTROL = 'private, max-age=31536000'
 // audit-log archives); everything else is public.
 const PRIVATE_KEY_PREFIXES = ['backup/', 'branding/', 'audit-log/']
 
-/** Key → visibility: the prefix rule upload callers and the migration fallback share. */
 export function visibilityForKey(key: string): ObjectVisibility {
   return PRIVATE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)) ? 'private' : 'public'
 }
 
-/** The visibility → Cache-Control mapping — applied by the S3 adapter at write time. */
 export function cacheControlForVisibility(visibility: ObjectVisibility): string {
   return visibility === 'private' ? DEFAULT_PRIVATE_CACHE_CONTROL : DEFAULT_PUBLIC_CACHE_CONTROL
 }
 
-/** Default Cache-Control for a key whose source cannot report a stored header. */
 export function defaultCacheControlForKey(key: string): string {
   return cacheControlForVisibility(visibilityForKey(key))
 }
 
-// Superset of every extension the site stores or serves: images, audio,
-// fonts, feed/manifest documents, and backup artefacts.
 const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -57,7 +51,6 @@ const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   '.gz': 'application/gzip',
 }
 
-/** Extension → Content-Type, `application/octet-stream` for anything unlisted. */
 export function contentTypeForKey(key: string): string {
   return CONTENT_TYPE_BY_EXT[path.extname(key).toLowerCase()] ?? 'application/octet-stream'
 }

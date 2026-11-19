@@ -30,7 +30,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   )
 
   const all = await caller.admin.users.listSessions()
-  // Display collation follows the active UI locale (settings seam); machine timestamps keep numeric order.
   const { locale } = resolveAppLocalization()
   const sorted = [...all].sort((a, b) => {
     let cmp = 0

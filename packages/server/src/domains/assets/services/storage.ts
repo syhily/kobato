@@ -17,7 +17,6 @@ import { createHash } from 'node:crypto'
 
 const log = getLogger('branding.storage')
 
-// Branding slots = SVG + binary user assets; `robotsTxt` is config text, not an asset.
 export type BrandingSlot = SvgSlot | BinarySlot
 
 export const BRANDING_SLOTS: readonly BrandingSlot[] = [...SVG_SLOTS, ...BINARY_SLOTS]
@@ -34,7 +33,6 @@ export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
 // SVG uploads are served AS-IS — no sanitization (accepted risk; the
 // dangerous-construct rejection in `validateSvg` is the only guard).
 
-// Per-slot expected MIME type: rejects mismatched uploads, sets response Content-Type.
 export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
   faviconSvg: 'image/svg+xml',
   logoSvg: 'image/svg+xml',
@@ -79,7 +77,6 @@ const SVG_DANGEROUS = [
 ]
 
 function looksLikeSvg(buffer: Buffer): boolean {
-  // Skip BOM/whitespace; the SVG must begin with `<?xml` or `<svg`.
   const text = buffer.toString('utf8').replace(/^﻿/, '').trimStart()
   return text.startsWith('<?xml') || text.startsWith('<svg')
 }
@@ -139,7 +136,6 @@ export function ensureMatchesSlot(slot: BrandingSlot, buffer: Buffer): void {
   validateBinary(slot, buffer)
 }
 
-// Strip the `Svg`/`Ico` suffix from slot names; PNG slots pass through.
 function slotBaseName(slot: BrandingSlot): string {
   if (slot.endsWith('Svg')) {
     return slot.slice(0, -3)
@@ -150,7 +146,6 @@ function slotBaseName(slot: BrandingSlot): string {
   return slot
 }
 
-// Kebab-case: `logoLargeDark` -> `logo-large-dark`.
 function slotToKebab(slot: BrandingSlot): string {
   return slotBaseName(slot).replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
 }
@@ -170,12 +165,10 @@ export function s3KeyForSlot(slot: BrandingSlot): string {
   return `branding/${slotToKebab(slot)}${extensionForSlot(slot)}`
 }
 
-/** Kebab-case preserving the slot suffix; only used by {@link legacyKeyForSlot}. */
 function slotToKebabLegacy(slot: BrandingSlot): string {
   return slot.replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
 }
 
-/** Legacy extensionless key format — migration only; new uploads use {@link s3KeyForSlot}. */
 export function legacyKeyForSlot(slot: BrandingSlot): string {
   return `branding/${slotToKebabLegacy(slot)}`
 }
@@ -197,7 +190,6 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   cacheSet(slot, etag, buffer)
   log.info('Branding object uploaded', { slot, key, driver, size: buffer.length, etag })
 
-  // Best-effort cleanup of any legacy extensionless object.
   const legacyKey = legacyKeyForSlot(slot)
   backend.delete(legacyKey).catch((error) => {
     log.debug('Legacy key cleanup skipped', { slot, legacyKey, error: String(error) })
@@ -206,7 +198,6 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   return ref
 }
 
-// Best-effort; `driver` targets the backend the ref was uploaded to.
 export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDriver = 's3'): Promise<void> {
   const backend = backendFor(driver)
   const key = s3KeyForSlot(slot)
@@ -257,7 +248,6 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
     cacheSet(slot, ref.etag, buffer)
     return buffer
   } catch (error) {
-    // Current key missing — retry the legacy key, then migrate it to the current key.
     if (error instanceof StorageObjectNotFound) {
       const legacyKey = legacyKeyForSlot(slot)
       try {
@@ -276,7 +266,6 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
         log.info('Branding object auto-migrated to extensioned key', { slot, legacyKey, key, driver })
         return legacyBuffer
       } catch (legacyError) {
-        // Legacy key also not found (or copy failed) — genuinely missing.
         log.warn('Failed to fetch branding object; falling back to default', {
           slot,
           etag: ref.etag,
@@ -297,13 +286,6 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
   }
 }
 
-/**
- * Re-point every branding slot's object ref after a storage-driver flip
- * (`storage_driver` columns are flipped by the migration task; the refs live
- * HERE, in the assets settings row). No-op when nothing carries the old
- * driver. The storage migration consumes this surface through perimeter
- * wiring — Platform domains stay leaves.
- */
 export async function flipBrandingDrivers(db: Database, from: StorageDriver, to: StorageDriver): Promise<void> {
   const scope = SECTION_REGISTRY.assets.scope
   const existing = findSettingByScope(db, scope)

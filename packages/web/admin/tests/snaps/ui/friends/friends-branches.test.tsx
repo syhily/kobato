@@ -88,10 +88,8 @@ describe('snapshot: FriendsView branches', () => {
     const html = stableHtml(renderInRouter(<FriendsView />, '/admin/links'))
     expect(html).toContain('示例博客')
     expect(html).toContain('老朋友')
-    // FriendRow renders the homepage URL (safeHref renders as an href).
     expect(html).toContain('https://a.example.com')
     expect(html).toContain('https://b.example.com')
-    // Edit / delete affordances carry the website name in their aria-labels.
     expect(html).toContain('编辑友链 示例博客')
     expect(html).toContain('删除友链 老朋友')
     expect(html).toContain('友链管理')
@@ -121,7 +119,6 @@ describe('snapshot: FriendsView branches', () => {
     const html = stableHtml(renderInRouter(<FriendsView />, '/admin/links'))
     expect(html).toContain('friends-include-hidden')
     expect(html).toContain('包含已隐藏')
-    // Unchecked → aria-checked="false", no checkmark svg.
     expect(html).toContain('aria-checked="false"')
     expect(html).not.toContain('aria-checked="true"')
   })

@@ -94,7 +94,6 @@ describe('getRegisteredCardNodes', () => {
     expect(cards.get('file')?.uploadType).toBe('file')
     expect(cards.get('bookmark')?.uploadType).toBeUndefined()
 
-    // resolved through resolveCardMenuEntries: the icon id and command are already bound
     expect(cards.get('image')?.cardMenu?.[0]?.label).toBe('Image')
     expect(cards.get('image')?.cardMenu?.[0]?.insertCommand).toBe(INSERT_IMAGE_COMMAND)
   })
@@ -102,8 +101,6 @@ describe('getRegisteredCardNodes', () => {
   it('carries the codeblock menu entry added for trimmed comment surfaces', () => {
     const cards = new Map(getRegisteredCardNodes(new Set(['codeblock'])))
 
-    // the slash entry exists so trimmed comment surfaces can insert a code
-    // block (markdown fence is the other path)
     expect(cards.get('codeblock')?.cardMenu?.[0]?.label).toBe('Code')
     expect(cards.get('codeblock')?.uploadType).toBeUndefined()
   })

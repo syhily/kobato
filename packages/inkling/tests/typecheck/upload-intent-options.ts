@@ -41,19 +41,10 @@ declare const nodeKey: NodeKey
 declare const upload: UploadFn
 declare const files: File[]
 
-// Host uploader contract
-
-// The host's `FileUploader['useFileUpload']` upload is structurally identical
-// to `UploadFn`: same `files`/`formData` parameters and the same
-// `{ url?, fileName? }[] | undefined` result. No contravariance to excuse.
 type _HostUpload = ReturnType<FileUploader['useFileUpload']>['upload']
 type _HostUploadAssignableToUploadFn = Expect<Extends<_HostUpload, UploadFn>>
 type _UploadFnAssignableToHostUpload = Expect<Extends<UploadFn, _HostUpload>>
 
-// Positive variants
-
-// image: lease + publish, before-upload extraction from the preview URL,
-// patch-always — and TMeta inferred from the extractor, not annotated.
 runUploadIntent({
   editor,
   nodeKey,
@@ -78,7 +69,6 @@ runUploadIntent({
   },
 })
 
-// audio: metadata-only lease (no publish), after-upload extraction, bail.
 runUploadIntent({
   editor,
   nodeKey,
@@ -97,8 +87,6 @@ runUploadIntent({
   },
 })
 
-// video: pre-extracted metadata, bail with an onBail hook, TMeta inferred
-// from the pre-extracted value.
 runUploadIntent({
   editor,
   nodeKey,
@@ -118,7 +106,6 @@ runUploadIntent({
   },
 })
 
-// file: no preview, no metadata, a custom empty-result predicate under bail.
 runUploadIntent({
   editor,
   nodeKey,
@@ -134,8 +121,6 @@ runUploadIntent({
   },
 })
 
-// header: patch-always with an after-upload extractor that may resolve
-// undefined (the extractor opts out on an empty URL).
 runUploadIntent({
   editor,
   nodeKey,
@@ -153,7 +138,6 @@ runUploadIntent({
   },
 })
 
-// every per-card factory still composes without explicit type arguments
 void imageUploadIntent({ editor, nodeKey, upload, files })
 void audioUploadIntent({ editor, nodeKey, upload, files })
 void fileUploadIntent({ editor, nodeKey, upload, files })
@@ -178,8 +162,6 @@ void videoFlowUploadIntent({
   meta: { duration: 3, width: 1, height: 2, mimeType: 'video/mp4', thumbnailBlob: null },
   onEmptyPreview: () => {},
 })
-
-// Negative pins: combinations that must not compile
 
 // a publish without a lease — a top-level previewPatch would be silently ignored
 runUploadIntent({
@@ -248,7 +230,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// the same exclusion from the extract side
 runUploadIntent({
   editor,
   nodeKey,
@@ -266,7 +247,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// a timing without an extractor — the extract policy requires the function
 runUploadIntent({
   editor,
   nodeKey,
@@ -279,7 +259,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// a metadata policy without a kind is not a valid policy
 runUploadIntent({
   editor,
   nodeKey,
@@ -292,7 +271,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// the empty-result policy is required (there is no implicit default)
 // @ts-expect-error - emptyResult is required
 runUploadIntent({
   editor,
@@ -319,8 +297,6 @@ runUploadIntent({
   },
 })
 
-// TNode stays inferred from the guard for both policies and the patch —
-// an explicit mismatch is rejected rather than widened
 runUploadIntent({
   editor,
   nodeKey,

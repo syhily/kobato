@@ -2,7 +2,6 @@ import { CORE_PLUGINS } from '@kobato/inkling-internal/plugins/CorePlugins'
 import { DEFAULT_FEATURE_PLUGINS } from '@kobato/inkling-internal/plugins/DefaultFeaturePlugins'
 import { describe, expect, it } from 'vitest'
 
-// Guards for the default plugin sets.
 describe('default feature plugin set', () => {
   it('assigns every entry a unique render key', () => {
     const keys = DEFAULT_FEATURE_PLUGINS.map((entry) => entry.key)
@@ -21,8 +20,6 @@ describe('core plugin set', () => {
     expect(CORE_PLUGINS.filter((entry) => featureKeys.has(entry.key))).toEqual([])
   })
 
-  // The uniqueness checks above guard shape, not membership; this snapshot
-  // fails CI when a plugin is silently dropped from either set.
   it('pins the default surface plugin keys', () => {
     expect({
       core: CORE_PLUGINS.map((entry) => entry.key),

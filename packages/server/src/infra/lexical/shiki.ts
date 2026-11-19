@@ -110,8 +110,6 @@ const SHIKI_THEME_MODULES = [solarizedLight, solarizedDark]
  *  build time instead of silently degrading to plain text. */
 export const SHIKI_SUPPORTED_LANGUAGES: ReadonlySet<string> = new Set(HIGHLIGHT_LANGUAGES)
 
-/** The 36 languages + two solarized themes on the Oniguruma engine; callers wrap it in
- *  their own lazy singleton (`createPromiseMemo`). */
 export function createShikiHighlighter() {
   return createHighlighterCore({
     langs: SHIKI_LANGUAGE_MODULES,

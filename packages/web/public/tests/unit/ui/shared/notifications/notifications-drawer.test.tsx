@@ -89,7 +89,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     for (const label of ['全部', '未读', '私信', '公告']) {
       expect(screen.getByRole('tab', { name: label })).toBeTruthy()
     }
-    // Non-admin: no compose entry.
     expect(screen.queryByLabelText('写消息')).toBeNull()
   })
 
@@ -134,7 +133,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     expect(screen.getByText('系统升级公告')).toBeTruthy()
     expect(screen.getByText('今晚 24 点例行维护')).toBeTruthy()
-    // System-generated rows label the sender as 系统.
     expect(screen.getByText('系统')).toBeTruthy()
   })
 
@@ -169,7 +167,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
-    // The already-loaded pages survive — no full-screen error.
     expect(screen.getByText('系统升级公告')).toBeTruthy()
     expect(screen.getByText('第二条消息')).toBeTruthy()
     expect(screen.queryByText('消息加载失败')).toBeNull()
@@ -205,7 +202,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     expect(screen.getByText('你好，在吗')).toBeTruthy()
     expect(screen.getByPlaceholderText('输入回复…')).toBeTruthy()
-    // Opening the unread message marks it read.
     expect(control.mutation.mutate).toHaveBeenCalledWith({ ids: ['1'] })
   })
 
@@ -254,7 +250,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     fireEvent.click(screen.getByText('系统升级公告'))
     fireEvent.click(screen.getByRole('button', { name: '撤回' }))
 
-    // Opening the entry only asks — the mutation fires on confirm.
     expect(control.mutation.mutate).not.toHaveBeenCalledWith({ id: '1' })
     const dialog = screen.getByRole('alertdialog')
     expect(within(dialog).getByText('撤回这条消息？')).toBeTruthy()
@@ -348,7 +343,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
-    // The row's accessible name carries the state via the sr-only prefix.
     const rowButton = screen.getByRole('button', { name: /未读/ })
     expect(within(rowButton).getByText('未读：')).toBeTruthy()
     // The dot is decorative — it carries no label of its own.

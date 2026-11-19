@@ -3,7 +3,6 @@
 export interface Inflight<T> {
   (key: string, run: () => Promise<T>): Promise<T>
   size(): number
-  /** Whether a load for `key` is already in flight (telemetry attribution). */
   has(key: string): boolean
 }
 

@@ -210,7 +210,7 @@ export const CardSnippetItem = ({
   })
 
   const handleSnippetRemove = (event: React.MouseEvent) => {
-    event.stopPropagation() // prevent snippet insertion
+    event.stopPropagation()
     onRemove?.()
     closeMenu?.()
   }
@@ -244,9 +244,6 @@ export const CardSnippetItem = ({
 }
 
 export interface CardMenuProps {
-  /** Sections in render order (buildCardMenu's `sections`). The rendered
-   * `data-inkling-cardmenu-idx` numbering is the flat index across sections,
-   * matching buildCardMenu's `items` ordering. */
   sections?: CardMenuSectionData[]
   insert?: (insertCommand?: AnyLexicalCommand, params?: CardMenuInsertParams) => void
   selectedItemIndex?: number
@@ -257,14 +254,12 @@ export interface CardMenuProps {
 export const CardMenu = ({
   sections = [],
   insert = () => {
-    /* noop default — read-only menu renders */
+    /* noop */
   },
   selectedItemIndex = 0,
   scrollToSelectedItem = false,
   closeMenu,
 }: CardMenuProps) => {
-  // the flat item index spans section boundaries so the rendered
-  // data-inkling-cardmenu-idx matches buildCardMenu's items ordering
   const sectionStartIndexes: number[] = []
   let itemCount = 0
   for (const section of sections) {

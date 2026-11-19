@@ -13,12 +13,10 @@
 // surface seeds its bundled engine via `registerLoadedPasteDialect`.
 import type { pasteDialect } from '@kobato/inkling-internal/markdown/paste-dialect'
 
-/** The lazy chunk's public shape — the dialect handle is all consumers use. */
 export interface PasteDialectChunk {
   pasteDialect: typeof pasteDialect
 }
 
-/** The dynamic import — tests inject a scripted one. */
 export type LoadPasteDialect = () => Promise<PasteDialectChunk>
 
 let loadedChunk: PasteDialectChunk | null = null
@@ -37,13 +35,10 @@ export function loadPasteDialect(
   return pendingChunk
 }
 
-/** The loaded engine, or null while the chunk is still in flight. */
 export function getLoadedPasteDialect(): PasteDialectChunk['pasteDialect'] | null {
   return loadedChunk?.pasteDialect ?? null
 }
 
-/** Synchronous seed for a host that already holds the engine statically
- * (the `@kobato/inkling-internal/headless` HTML surface). */
 export function registerLoadedPasteDialect(chunk: PasteDialectChunk): void {
   loadedChunk = chunk
 }

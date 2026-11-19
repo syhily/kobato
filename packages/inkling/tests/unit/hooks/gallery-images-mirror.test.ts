@@ -86,7 +86,6 @@ describe('createGalleryImagesMirror', () => {
     mirror.setPreviewImages([one, two, image({ fileName: 'p.png', previewSrc: 'blob:p' })])
     listener.mockClear()
 
-    // undo of a within-card delete / collab: the node wins wholesale
     externalSet([three])
 
     expect(mirror.getSnapshot()).toEqual([three])
@@ -118,7 +117,6 @@ describe('createGalleryImagesMirror', () => {
     expect(mirror.getSnapshot()).toBe(reordered)
     expect(mirror.getSnapshot()[0].previewSrc).toBe('blob:p')
 
-    // ...and a later external change still resyncs
     externalSet([three])
     expect(mirror.getSnapshot()).toEqual([three])
   })

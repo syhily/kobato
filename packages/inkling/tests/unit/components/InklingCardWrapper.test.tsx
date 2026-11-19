@@ -111,7 +111,6 @@ describe('InklingCardWrapper', () => {
     const { container, rerenderWidth } = renderWrapperWithWidth(nodeKey, 'wide')
     expect(container).toHaveAttribute('data-inkling-card-width', 'wide')
 
-    // 'regular' deletes the attribute so there is less test churn
     rerenderWidth('regular')
     expect(container).not.toHaveAttribute('data-inkling-card-width')
 

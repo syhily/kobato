@@ -13,7 +13,6 @@ export interface DoctorReport {
 export interface DoctorProbes {
   version: string
   sea: boolean
-  /** Resolves when the native libraries load and round-trip; throws otherwise. */
   checkNatives: () => Promise<void>
   evaluateGate: () => { canSelfUpdate: boolean; reasons: string[] }
   probeConfig: () => Promise<{ ok: boolean; issues: string[] }>
@@ -42,7 +41,6 @@ export function doctorOk(report: DoctorReport): boolean {
   return report.natives.ok && report.config.ok
 }
 
-/** Probe issues ride stderr as `  - key: message` lines; anything else is preserved whole. */
 export function parseProbeIssues(stderr: string): string[] {
   const issues = stderr
     .split('\n')

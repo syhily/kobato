@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
 
-// Comment and article bodies are Lexical editor states (same wire format).
 const COMMENT_BODY = {
   root: {
     type: 'root',
@@ -35,7 +34,6 @@ const COMMENT_BODY = {
   },
 }
 
-/** Minimal one-paragraph article body (lexicalEditorStateSchema-valid). */
 function makePostBody(text: string) {
   return {
     root: {
@@ -62,7 +60,6 @@ interface CommentListJson {
   comments: Array<{ id: string; name: string; isPending: boolean | null }>
 }
 
-/** The post detail SSR embeds the metric public_id in the reply form's hidden input. */
 function scrapePageKey(html: string): string {
   const input = /<input[^>]*name="page_key"[^>]*>/.exec(html)
   const value = input?.[0].match(/value="([^"]+)"/)
@@ -88,7 +85,6 @@ describe('public comments flow (HTTP e2e)', () => {
     expect(created.status).toBe(200)
     const postId = String(created.json.post.id)
 
-    // upsertMeta alone never publishes — publish a real revision so the live gate opens.
     const published = await callE2eRpc(
       admin,
       '/admin/posts/publishLatest',

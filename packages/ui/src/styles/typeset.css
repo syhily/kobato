@@ -1,8 +1,4 @@
 /*
- * Kobato typeset — all content typography in one owned file. Vendored from
- * shadcn/typeset, then extended with kobato's presets and visual identity.
- * OWNED by kobato: edit rules directly, there is no upstream package.
- *
  * Layout of this file:
  *   @layer components  .typeset base rules, then the kobato bridge and the
  *                      .typeset-post / .typeset-comment presets. Every rule
@@ -10,19 +6,6 @@
  *                      against the base by source order — the base MUST stay
  *                      first. Utilities on an element still beat everything
  *                      here (later layer).
- *   @layer utilities   post-body content chrome: the table rules, the
- *                      client-injected code-block header (scoped to
- *                      .post-content — the editor canvas renders inkling's
- *                      own code block), and the footnote hover-preview
- *                      popover (global-scoped: the popover element mounts on
- *                      document.body, outside any .typeset container).
- *
- * Four surfaces share the presets:
- *   .post-content.typeset-post       rendered post/page body
- *   .comment-content.typeset-comment rendered comments (public + admin)
- *   .kobato-page-editor canvas       contentEditable: typeset typeset-post
- *   .kobato-comment-editor canvas    contentEditable: typeset typeset-comment
- *
  * ZOOM CONTRACT: the page-editor canvas runs under `zoom: 2/3` (inkling's
  * 10px-root rem normalization against kobato's 15px root). Everything
  * text-decorative in the preset sections is therefore authored in EM (it
@@ -46,8 +29,6 @@
  *
  * Shiki token colors are NOT repeated here: the unlayered `pre.shiki` rules
  * in tailwind.css always beat this layer. `.typeset-scroll` stays although
- * nothing emits it yet — reserved for the planned vertical-writing (竖排)
- * article mode.
  *
  * Base rules that duplicate a kobato-bridge declaration are dead: the bridge
  * applies to every element under .typeset (unguarded) while the base
@@ -55,8 +36,6 @@
  */
 @layer components {
   .typeset {
-    /* kobato has no --font-heading token: bare .typeset headings inherit the
-       body face; both presets pin --font-serif explicitly. */
     --typeset-font-body: inherit;
     --typeset-font-heading: inherit;
     --typeset-font-mono: var(--font-code);
@@ -129,24 +108,19 @@
       color: var(--typeset-muted);
       margin-block-start: calc(var(--typeset-flow) / 0.875);
     }
-    /* h6: rhythm (line-height, margin) lives here; the look (plain small
-       heading, no uppercase) is the kobato bridge's. */
     &:where(h6) {
       line-height: 1.5;
       margin-block-start: calc(var(--typeset-flow) / 0.8125);
     }
-    /* Anchors. */
     &:where([id]) {
       scroll-margin-block-start: var(--typeset-flow);
     }
 
-    /* Headings own the space below them. */
     &:where(h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + *) {
       margin-block-start: 1em;
     }
 
     &:where(a) {
-      /* color + decoration-color come from the kobato bridge (brand). */
       font-weight: 500;
       text-decoration-line: underline;
     }
@@ -165,7 +139,6 @@
     &:where(strong, b) {
       font-weight: 600;
     }
-    /* Colors/backgrounds for mark, del/s come from the kobato bridge. */
     &:where(mark) {
       color: inherit;
       padding-block: 0.05em;
@@ -211,8 +184,6 @@
       margin-block-start: 0.5em;
     }
 
-    /* Inline code — font-family only; the pill visuals live in the kobato
-       bridge (its `code:not(pre *)` selector also covers card interiors). */
     &:where(:not(pre) > code) {
       font-family: var(--typeset-font-mono);
     }
@@ -239,7 +210,6 @@
       margin-inline: 0;
     }
 
-    /* Dividers. The line color comes from the kobato bridge (var(--line)). */
     &:where(hr) {
       border: 0;
       border-block-start: 1px solid;
@@ -305,10 +275,6 @@
       margin-block-end: 0;
     }
 
-    /* Horizontal scroll wrapper for wide blocks: the wrapper owns the flow
-       margin, tables widen to scroll instead of compress. Nothing emits this
-       class yet — reserved for the planned vertical-writing (竖排) article
-       mode. */
     &:where(.typeset-scroll) {
       overflow-x: auto;
       margin-block-start: var(--typeset-flow);
@@ -345,7 +311,6 @@
       text-align: end;
     }
 
-    /* Blocks inside list items keep the list's tighter rhythm. */
     &:where(li > blockquote, li > table, li > figure) {
       margin-block-start: 0.5em;
     }
@@ -409,12 +374,7 @@
   }
 }
 
-/* Kobato presets + visual identity. */
-
 @layer components {
-  /* Shared kobato bridge (both presets). */
-
-  /* Inkling exportDOM emits these bare tags. */
   .typeset :where(u) {
     text-decoration: underline;
     text-underline-offset: 2px;
@@ -441,8 +401,6 @@
     color: var(--ink-1);
   }
 
-  /* h6 keeps the base rhythm but renders as a plain small heading (no
-     uppercase/letter-spacing). */
   .typeset :where(h6) {
     font-size: 1em;
     font-weight: 600;
@@ -467,9 +425,6 @@
     color: var(--ink-4);
   }
 
-  /* The inkling export already carries both footnotes hooks, so the base
-     `.footnotes` rule applies as-is; the section title is a real <h3> that
-     must be kept out of the article-heading look. */
   .typeset :where(.footnotes, [data-footnotes]) :where(h3) {
     padding-left: 0;
     font-size: 1em;
@@ -483,10 +438,6 @@
     content: none;
   }
 
-  /* Code inside a pre resets to a plain block (the inline pill's :not(pre *)
-     guard already excludes this case; this rule pins the block layout). The
-     shiki token colors come from the unlayered `pre.shiki` rules in
-     tailwind.css, which always win over this layer. */
   .typeset :where(pre) > :where(code) {
     display: block;
     min-width: 100%;
@@ -507,8 +458,6 @@
     -webkit-box-decoration-break: unset;
   }
 
-  /* Blockquote: surface card with a brand-tinted left border (padding and
-     border width are per-preset em values below). */
   .typeset :where(blockquote) {
     font-style: normal;
     font-weight: 400;
@@ -517,7 +466,6 @@
     display: flow-root;
   }
 
-  /* Inline-code pill — one look for post and comment bodies. */
   .typeset :where(code):not(:where(pre *)) {
     background-color: var(--code-bg);
     color: var(--code-inline-fg);
@@ -531,12 +479,6 @@
     -webkit-box-decoration-break: clone;
   }
 
-  /* Inline formulas (MathML in <span class="inkling-math-inline">, legacy
-     span[data-math-inline]) render as plain inline content — no code-pill
-     chrome. The feed-only <code class="inkling-math-inline"> TeX fallback is
-     styled by feed readers, not this sheet. */
-
-  /* KaTeX MathML cards — the inkling exportDOM `.inkling-math-card` wrapper. */
   .typeset :where(.inkling-math-card) :where(math) {
     max-width: none;
   }
@@ -555,12 +497,8 @@
     margin-inline: auto;
   }
 
-  /* typeset-post — article body. */
-
   .typeset-post {
     --typeset-size: 1.125rem;
-    /* The article body reads at 1.125rem on every viewport — opt out of the
-       small-screen scale (typeset-comment keeps the 1.125× default). */
     --typeset-mobile-scale: 1;
     --typeset-leading: 1.7778;
     --typeset-flow: 1.3333em;
@@ -581,8 +519,6 @@
     scroll-margin-top: 5rem;
   }
 
-  /* Article headings — em sizes against the 1.125rem body so the zoomed
-     editor canvas stays in lockstep with the rendered article. */
   .typeset-post :where(h1) {
     font-size: 1.5556em;
     line-height: 1.3;
@@ -730,8 +666,6 @@
     max-width: 100%;
     height: auto;
   }
-
-  /* typeset-comment — comment bodies. */
 
   .typeset-comment {
     --typeset-size: 0.875rem;

@@ -1,42 +1,19 @@
-// Markdown special-markup unwrap — the headless body of the backspace
-// policy "undo a markdown special format when deleting at the end of a
-// formatted text node". The keyboard handler keeps only its caret-position
-// gate and event choreography.
-
 import type { RangeSelection, TextNode } from 'lexical'
 
-/**
- * The formats a trailing backspace unwraps, and the markup re-added around
- * the text so the writer can keep editing the unformatted source (`code`
- * before `superscript` before `subscript` before `strikethrough` — the first
- * format the node carries wins).
- */
 export const SPECIAL_MARKUPS = {
   code: '`',
   superscript: '^',
   subscript: '~',
   strikethrough: '~~',
 }
-
 export type SpecialMarkupFormat = keyof typeof SPECIAL_MARKUPS
 
-// Object.keys loses the literal key type; narrow each key back through the
-// map itself instead of casting
 function isSpecialMarkupFormat(format: string): format is SpecialMarkupFormat {
   return format in SPECIAL_MARKUPS
 }
 
-/**
- * Unwrap the first special markup format `anchorNode` carries: clear the
- * format, re-add the markup around the text minus its last character (the
- * one backspace would have eaten), and push the caret offsets to accommodate
- * the added markup. Returns true when an unwrap happened; false when the
- * node carries no special format and the caller falls through to its other
- * backspace handling.
- */
 export function $unwrapSpecialMarkupFormat(anchorNode: TextNode, selection: RangeSelection): boolean {
   const textContent = anchorNode.getTextContent()
-
   for (const format of Object.keys(SPECIAL_MARKUPS)) {
     if (!isSpecialMarkupFormat(format)) {
       continue
@@ -48,8 +25,7 @@ export function $unwrapSpecialMarkupFormat(anchorNode: TextNode, selection: Rang
       if (!(format === 'code' && /{.*?}(?![A-Za-z\s])/.test(textContent))) {
         newText = markup + newText + markup
       }
-      newText = newText.slice(0, -1) // remove the last character (the eaten one or the trailing markup)
-
+      newText = newText.slice(0, -1)
       anchorNode.setFormat(0)
       anchorNode.setTextContent(newText)
       selection.anchor.offset = selection.anchor.offset + newText.length - textContent.length

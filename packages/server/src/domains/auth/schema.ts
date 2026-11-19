@@ -42,7 +42,6 @@ export const updateUserSchema = z
     link: httpUrlOrEmptyStringSchema.optional(),
     badgeName: z.string().optional(),
     badgeColor: z.string().optional(),
-    // Manual override: string (picker output), `null` = clear, `undefined` = don't touch.
     badgeTextColor: z
       .union([z.string(), z.null()])
       .optional()

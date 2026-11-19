@@ -99,7 +99,6 @@ describe('KeyboardSelectionWithGroups', () => {
       />,
     )
 
-    // the default index is 0 — the placeholder — but it must not render selected
     expect(screen.getByText('No results')).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByText('Example')).toHaveAttribute('aria-selected', 'false')
   })

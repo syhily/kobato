@@ -5,9 +5,6 @@ import type { FontRow } from '@kobato/db/schema/font.ts'
 import { font } from '@kobato/db/schema/font.ts'
 import { eq, inArray } from 'drizzle-orm'
 
-// Read side of the fonts domain: pure DB queries plus the row→DTO mapping shared
-// by `fonts.list` and the SSR bundle resolver.
-
 export function toAdminFontDto(row: FontRow): AdminFontDto {
   return {
     id: row.id,
@@ -23,7 +20,6 @@ export function toAdminFontDto(row: FontRow): AdminFontDto {
   }
 }
 
-/** Every font row, ordered by creation time (oldest first). */
 export async function listFonts(db: Database): Promise<AdminFontDto[]> {
   const rows = await db.select().from(font).orderBy(font.createdAt)
   return rows.map(toAdminFontDto)
@@ -43,7 +39,6 @@ export async function findFontsByIds(db: Database, ids: readonly string[]): Prom
   return byId
 }
 
-/** Slot ids → `FontRow`s in declared order; ids with no row are dropped. */
 export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontRow>): FontRow[] {
   const out: FontRow[] = []
   for (const id of ids) {
@@ -55,7 +50,6 @@ export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontR
   return out
 }
 
-/** Single-row fetch by content hash (the dedup key). `null` when absent. */
 export async function findFontByHash(db: Database, hash: string): Promise<FontRow | null> {
   const rows = await db.select().from(font).where(eq(font.hash, hash)).limit(1)
   return rows[0] ?? null

@@ -271,7 +271,6 @@ export function MusicLibraryHero({ musics, total, title, children }: MusicLibrar
         <EmptyBackground />
       )}
 
-      {/* Readability scrim over the hero background. */}
       <div
         className="absolute inset-0"
         style={{

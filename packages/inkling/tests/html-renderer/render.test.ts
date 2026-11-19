@@ -13,8 +13,6 @@ describe('render()', function () {
   })
 
   it('accepts an error handler callback', async function () {
-    // the seam forwards onError to the headless editor; a clean render never
-    // calls it
     const onError = vi.fn()
 
     const html = await lexicalStateToHtml(

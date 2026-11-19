@@ -21,7 +21,6 @@
 
 import type { LinkMatcher } from '@lexical/link'
 
-/** The boundary characters that validate the edges of an auto-link match. */
 export const AUTOLINK_SEPARATOR = /[\s.,;:!?'"()[\]{}<>]/
 
 const SCHEME_URL = String.raw`(?:https?|ftps?)://[^\s<>"']+`
@@ -40,7 +39,6 @@ const TRAILING_PUNCTUATION = /[.,;:!?'"]+$/
 
 const CLOSING_BRACKET_OPENERS: Record<string, string> = { ')': '(', ']': '[', '}': '{' }
 
-/** Strips characters that belong to the sentence, not the URL, off a raw match. */
 export function stripUrlTrailingPunctuation(text: string): string {
   let result = text
   for (;;) {
@@ -63,7 +61,6 @@ export function stripUrlTrailingPunctuation(text: string): string {
   }
 }
 
-/** Derives the href from the matched text: verbatim for scheme URLs, tiptap's `defaultProtocol` for the rest. */
 export function autolinkUrl(text: string): string {
   if (/^(?:https?|ftps?):\/\//i.test(text)) {
     return text

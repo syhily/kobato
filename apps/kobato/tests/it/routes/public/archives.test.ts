@@ -13,9 +13,6 @@ type ArchivesPayload = {
   eid: string | null
 }
 
-// Archives promises completeness: every live post, including hidden ones.
-// Real engine: hidden inclusion and scheduled exclusion fall out of the shared live gate.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -83,7 +80,7 @@ describe('routes/archives loader', () => {
   it('includes visible=false posts while still excluding scheduled posts', async () => {
     await seedPost({ slug: 'visible-post', firstPublishedAt: new Date('2024-01-02') })
     await seedPost({ slug: 'hidden-post', visible: false, firstPublishedAt: new Date('2024-01-01') })
-    // Live except a future publishedAt — the scheduled leg of the live gate excludes it.
+
     await seedPost({
       slug: 'scheduled-post',
       firstPublishedAt: new Date('2024-01-03'),
@@ -94,7 +91,6 @@ describe('routes/archives loader', () => {
       await loader(makeLoaderArgs({ request: new Request('http://localhost/archives'), db })),
     )
 
-    // firstPublishedAt desc.
     expect(result.resolvedPosts.map((post) => post.slug)).toEqual(['visible-post', 'hidden-post'])
     expect(typeof result.listingNowIso).toBe('string')
     expect(result.listingNowIso).toMatch(/^\d{4}-\d{2}-\d{2}T/)

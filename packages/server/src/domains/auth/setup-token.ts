@@ -18,7 +18,6 @@ async function readSetupToken(db: Database): Promise<string | null> {
     .where(and(eq(oneTimeToken.key, TOKEN_KEY), gt(oneTimeToken.expiresAt, new Date())))
     .limit(1)
   const payload = rows[0]?.payload
-  // Rows carry the plain-JSON token string; anything else reads as a miss.
   try {
     return typeof payload === 'string' ? payload : null
   } catch {
@@ -49,13 +48,11 @@ export async function getSetupToken(db: Database): Promise<string> {
   return token
 }
 
-/** Call after the first admin is created to invalidate the token. */
 export async function invalidateSetupToken(db: Database): Promise<void> {
   tokenInvalidated = true
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, TOKEN_KEY))
 }
 
-/** Test seam: reset the process-local invalidation flag. */
 export function __resetSetupTokenForTests(): void {
   tokenInvalidated = false
 }

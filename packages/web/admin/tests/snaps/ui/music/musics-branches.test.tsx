@@ -124,7 +124,6 @@ describe('MusicsView render branches', () => {
   it('renders the loading skeleton', () => {
     const html = renderMusics()
     expect(html).toContain('animate-pulse')
-    // Skeleton renders 12 placeholder cells — no empty-state copy while loading.
     expect(html).not.toContain('还没有音乐')
     expect(html).not.toContain('已加载全部')
   })
@@ -138,7 +137,6 @@ describe('MusicsView render branches', () => {
       error: { message: 'upstream timeout' },
       data: undefined,
     }
-    // undefined data + !isLoading falls through to the empty-state copy.
     const html = renderMusics()
     expect(html).toContain('还没有音乐')
   })
@@ -170,7 +168,6 @@ describe('MusicsView render branches', () => {
     expect(html).toContain('千里之外')
     expect(html).toContain('周杰伦')
     expect(html).toContain('费玉清')
-    // Sentinel needs hasNextPage=false AND musics on screen — both hold here.
     expect(html).toContain('已加载全部 2 首歌曲')
     expect(html).not.toContain('还没有音乐')
   })
@@ -188,7 +185,6 @@ describe('MusicsView render branches', () => {
     const html = renderMusics()
     expect(html).toContain('蓝色风暴')
     expect(html).toContain('加载中…')
-    // With a next page pending the sentinel never prints the all-loaded copy.
     expect(html).not.toContain('已加载全部')
   })
 
@@ -319,7 +315,6 @@ describe('MusicDetailView render branches', () => {
     }
     const html = renderDetail()
     expect(html).toContain('无封面曲')
-    // No <img> for the cover — the placeholder div is rendered instead.
     expect(html).not.toContain('https://cdn.example.com/cover.jpg')
     expect(html).toContain('size-56 rounded-lg bg-surface-dim')
   })
@@ -374,7 +369,6 @@ describe('AddMusicView render branches', () => {
   })
 
   it('renders the populated library snapshot count when the library has musics', () => {
-    // libraryQuery payload drives the MusicLibraryHero count + collage.
     const music = makeAdminMusic({ id: 'lib-1', name: '蓝色风暴', coverUrl: 'https://cdn.example.com/a.jpg' })
     queryMocks.query = {
       data: { musics: [music], total: 1 },
@@ -394,12 +388,10 @@ describe('AddMusicView render branches', () => {
       ),
     )
     expect(html).toContain('添加音乐')
-    // Hero count only renders when total > 0.
     expect(html).toContain('共 1 首歌曲')
   })
 
   it('renders the loading skeleton when an initial search is in flight', () => {
-    // isSearching with no results → GridSkeleton branch.
     searchHookMock.state = {
       ...searchHookMock.state,
       isSearching: true,
@@ -413,7 +405,6 @@ describe('AddMusicView render branches', () => {
       ),
     )
     expect(html).toContain('animate-pulse')
-    // The empty prompt is replaced by the skeleton.
     expect(html).not.toContain('输入关键词搜索音乐')
   })
 

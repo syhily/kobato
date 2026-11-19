@@ -60,7 +60,6 @@ export interface MyCommentsViewProps {
   q: string
   /** `${type}:${ownerId}` if the URL pins a specific post / page, else null. */
   entity: string | null
-  /** Posts / pages the user commented on, plus the currently-selected entity (when the URL pins one outside the capped set). */
   entityOptions: MyCommentEntityOption[]
   currentUser: { id: string; name: string; email: string }
 }

@@ -5,13 +5,10 @@ import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-bas
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { ORPCError } from '@orpc/server'
 
-// Contract-first: method/path/output live in `@kobato/api/github.ts`; this
-// controller only implements the procedures. The limiter attaches per
-// procedure (the original chains ran it after the output declaration).
+// The limiter attaches per procedure
 const impl = implementPublic(githubContract)
 
 const avatar = impl.avatar.use(resourceRateLimit).handler(async () => {
-  // Fetch + base64 inlining lives in the comments domain; upstream failures resolve to ''.
   return { avatar: await fetchGithubAvatarDataUrl() }
 })
 

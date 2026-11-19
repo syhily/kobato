@@ -29,10 +29,6 @@ export interface LockedMeta {
   firstPublishedAt: Date | null
 }
 
-/**
- * Shared transaction prologue for the revision mutations: load the owner meta row
- * (NOT_FOUND when gone) and the latest revision.
- */
 export function lockMetaAndLoadLatest(
   tx: RevisionTx,
   type: ContentType,
@@ -102,10 +98,6 @@ export function isEquivalentToPublishedLatest(
   )
 }
 
-/**
- * The single revision-write primitive: conflict check, then an in-place rewrite of
- * the latest DRAFT row or an appended revision at `status`.
- */
 function writeRevisionRow(
   tx: RevisionTx,
   type: ContentType,
@@ -132,7 +124,6 @@ function writeRevisionRow(
       : {}
 
   if (latest?.status === 'draft') {
-    // Only runs on a draft row — `status` is an identity write or the draft→published flip.
     const updated = tx
       .update(contentTable)
       .set({

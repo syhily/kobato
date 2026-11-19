@@ -35,7 +35,6 @@ import { useEditorShellPersistMutations } from '@kobato/web-admin/ui/editor-shel
 import { useEditorShellPersistRace } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-race.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-/** Live draft snapshot the persist flows read (autosave + the four persist handlers). */
 export interface EditorShellPersistDraft<TMeta> {
   meta: TMeta
   body: LexicalEditorState
@@ -43,7 +42,6 @@ export interface EditorShellPersistDraft<TMeta> {
   initialBody: LexicalEditorState
 }
 
-/** Entity-specific wire calls, straight from `UseEditorShellStateArgs`. */
 export interface EditorShellPersistMutations<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
@@ -63,11 +61,9 @@ export interface EditorShellPersistMutations<
  *  owns feeds the draft key, and the conflict it detects feeds the freeze with
  *  no render-input round-trip. */
 export interface EditorShellPersistNotifications<TMeta> {
-  /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
   applyServerMeta: (meta: TMeta) => void
   /** Flip the local meta draft's `published` flag after a successful publish. */
   markMetaPublished: () => void
-  /** Replace the editor body + remount key (draft/conflict adoption flows). */
   replaceBody: (body: LexicalEditorState, key: string) => void
 }
 
@@ -81,7 +77,6 @@ export interface UseEditorShellPersistArgs<
   draft: EditorShellPersistDraft<TMeta>
   localDraftConfig: LocalDraftConfig<LexicalEditorState>
   mutations: EditorShellPersistMutations<TMeta, TEntity, TUpsertMetaInput>
-  /** Entity → meta-draft projection, straight from `UseEditorShellStateArgs`. */
   metaDraftFromEntity: (entity: TEntity) => TMeta
   notifications: EditorShellPersistNotifications<TMeta>
   routing: {

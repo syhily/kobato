@@ -25,7 +25,6 @@ vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
   CardCaptionEditor: () => null,
 }))
 
-// the card is selected (its toolbar renders) and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'img-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -90,7 +89,6 @@ describe('ImageNodeComponent', () => {
     render(
       <InklingHostIntegrationProvider value={composerValue}>
         <CardSelectionStoreProvider>
-          {/* the insert flow: no src yet, so the empty card's hidden file input exists to click */}
           <ImageNodeComponent cardWidth="regular" nodeKey="img-1" src="" triggerFileDialog />
         </CardSelectionStoreProvider>
       </InklingHostIntegrationProvider>,
@@ -115,7 +113,6 @@ describe('ImageNodeComponent', () => {
 
     await waitFor(() => expect(upload).toHaveBeenCalledWith([file]))
 
-    // the preview object URL is leased, then released when the flow ends
     expect(createObjectURLSpy).toHaveBeenCalledExactlyOnceWith(file)
     expect(revokeObjectURLSpy).toHaveBeenCalledExactlyOnceWith('blob:image-preview')
   })
@@ -134,7 +131,6 @@ describe('ImageNodeComponent', () => {
       </InklingHostIntegrationProvider>,
     )
 
-    // the mount effect runs synchronously; give any async work a chance to fire
     await tick()
     expect(upload).not.toHaveBeenCalled()
   })
@@ -190,8 +186,6 @@ describe('ImageNodeComponent', () => {
     })
 
     it('keeps the toolbar visible while the card is editing', async () => {
-      // image's menu toolbar has no !isEditing factor — unlike the other
-      // edit-mode cards it stays up while editing
       const nodeKey = await addImageNode(editor)
       const { container } = renderWithToolbar(nodeKey, { selected: true, editing: true })
 

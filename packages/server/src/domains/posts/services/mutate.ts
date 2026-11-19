@@ -7,8 +7,6 @@ import { makeEntityMutations } from '@kobato/server/domains/content/entities/mut
 import { postDescriptor } from '@kobato/server/domains/posts/descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
-// The five mutations come from the shared descriptor-driven skeleton;
-// everything post-specific attaches through `postDescriptor`.
 const mutations = makeEntityMutations(postDescriptor)
 
 export const createPost = mutations.create

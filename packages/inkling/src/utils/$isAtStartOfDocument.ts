@@ -14,7 +14,6 @@ export function $isAtStartOfDocument(selection: BaseSelection): boolean {
 
   const selectedTopLevelElement = selectedNode.getTopLevelElement()
 
-  // handle nested lists, where parent for a text node is not enough
   if ($isListItemNode(selectedNode) && selectedTopLevelElement !== selectedNode.getParent()) {
     return false
   }

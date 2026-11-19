@@ -67,10 +67,8 @@ interface CacheBehavior<P> {
   key: (params: P) => string
   /** Forward-compat eviction for json entries: a stale shape reads as a miss. */
   schema?: ZodType
-  /** Binary codecs; the default is a raw Buffer passthrough. */
   encode?: (value: unknown) => Buffer
   decode?: (raw: Buffer) => unknown
-  /** Skip caching the loader result when this returns false. */
   cacheWhen?: (value: unknown) => boolean
   /** Per-value TTL override (seconds); `undefined` falls back to the slot TTL.
    *  Lets one bucket cache failures briefly while successes ride the full TTL. */
@@ -89,7 +87,6 @@ export enum AvatarStatus {
   NO_AVATAR = 1,
 }
 
-/** The avatar bucket's decoded entry shape — what `get` returns and `set` stores. */
 export interface AvatarEntry {
   status: AvatarStatus
   buffer: Buffer | null
@@ -376,7 +373,6 @@ export async function through<K extends CacheBucketId, V>(
   })
 }
 
-/** Concurrent reads of the same key coalesce. */
 export async function get<K extends CacheBucketId, V>(id: K, params: CacheParamsMap[K]): Promise<V | null> {
   const { key } = keyFor(id, params)
   const joinKey = `read:${id}:${key}`
@@ -396,7 +392,6 @@ export async function get<K extends CacheBucketId, V>(id: K, params: CacheParams
   })
 }
 
-/** Direct write (best-effort — failures are logged and swallowed). */
 export async function set<K extends CacheBucketId>(id: K, params: CacheParamsMap[K], value: unknown): Promise<void> {
   const { key, slot } = keyFor(id, params)
   await writeEntry(id, key, slot, value)
@@ -460,7 +455,6 @@ function assertCounter(id: CacheBucketId): void {
   }
 }
 
-/** Drop every memoized generation so the next counter read re-reads `_generation`. */
 export function resetCacheCounterMemo(): void {
   counterMemo.clear()
 }
@@ -498,7 +492,6 @@ export function bumpCounter(id: CacheBucketId): number | null {
   }
 }
 
-/** Whether the bucket owns a `_generation` counter (only `searchResult`). */
 export function isCounterBucket(id: CacheBucketId): boolean {
   return BEHAVIORS[id].counter === true
 }
@@ -520,7 +513,6 @@ export async function wipeCacheForRestore(): Promise<void> {
   }
 }
 
-/** Test-only seam: drop the process-cached counters so the next read re-reads `_generation`. */
 export function __resetCacheCountersForTests(): void {
   resetCacheCounterMemo()
 }

@@ -352,7 +352,6 @@ describe('BaseButtonNode', function () {
           node.buttonText = 'Testing'
           node.buttonUrl = 'http://someblog.com/somepost'
 
-          // button nodes don't have text content
           expect(node.getTextContent()).toBe('')
         },
       ),

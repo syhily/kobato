@@ -61,8 +61,6 @@ export default function useGalleryReorder({
       return false
     }
 
-    // the application half (external add / internal reorder) is the pure
-    // gallery-drop module; the natural-size read is its probe port
     const img = draggableInfo.element?.querySelector<HTMLImageElement>('img')
     const updatedImages = resolveGalleryDrop(images, draggableInfo, resolution.draggableIndex, insertIndex, {
       naturalSize: img ? { width: img.naturalWidth, height: img.naturalHeight } : null,
@@ -125,8 +123,6 @@ export default function useGalleryReorder({
       return false
     }
 
-    // the single insertIndex derivation of this drag — the handler hands it
-    // back to onDrop above as the resolution argument
     const resolution = resolveReorder(
       createReorderGeometry(containerElement, '[data-image]'),
       draggableInfo.element,
@@ -141,9 +137,7 @@ export default function useGalleryReorder({
   const dropTarget = useDropTarget({
     enabled: isSelected,
     isDragEnabled: !disabled && images.length > 0,
-    // re-register when the image set changes so the container re-scans the
-    // gallery's draggable/droppable markers (callbacks are ref-forwarded and
-    // would see fresh images either way)
+
     reRegisterKey: images,
     draggableSelector: '[data-image]',
     droppableSelector: '[data-image]',
@@ -151,10 +145,9 @@ export default function useGalleryReorder({
     getIndicatorPosition,
     onDrop,
     onDropEnd,
-    // hover policy: any drag entering the gallery lights it up
+
     canDrop: () => true,
-    // enablement policy: enable dropping when an image is dragged in from
-    // outside of this card — other drags leave enablement untouched
+
     adjustEnableOnDragStart: (draggableInfo) => {
       return isGalleryImageDrag(draggableInfo) && draggableInfo.dataset.src && images.length !== maxImages
         ? true

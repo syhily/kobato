@@ -6,15 +6,8 @@ import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-pro
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { count, eq } from 'drizzle-orm'
 
-// The admin "重建文章缓存" recovery hatch (dashboard button →
-// `/admin/renders/reproject-bodies`): re-derives the three projection
-// columns (`bodyHtml` / `bodyText` / `bodyHtmlFeed`) of every `content`
-// revision row from its stored Lexical `body` — the repair path when a
-// renderer-side change (card markup, sanitize allowlist, projection-state
-// transform) leaves the saved projections stale. Only drifted rows are
-// written, and the write touches neither `updatedAt` nor
-// `clientRevisionToken` (a re-projection is not an edit). Rows whose stored
-// body is not a Lexical state count as failed.
+// Only drifted rows are written, and the write touches neither `updatedAt` nor
+// `clientRevisionToken` (a re-projection is not an edit).
 
 const log = getLogger('content.reproject-body-html')
 
@@ -24,19 +17,13 @@ export interface ReprojectBodyHtmlBatchInput {
 }
 
 export interface ReprojectBodyHtmlBatchResult {
-  /** Rows whose projections recomputed cleanly (rewritten or already current). */
   processed: number
   failed: number
-  /** Processed rows whose stored columns had drifted and were updated. */
   rewritten: number
   total: number
   nextOffset: number | null
 }
 
-/**
- * Rebuild the body projections in `batchSize` batches (default 50); without
- * `offset` only the first batch runs, `nextOffset: null`.
- */
 export async function reprojectBodyHtmlBatch(
   db: Database,
   input: ReprojectBodyHtmlBatchInput = {},

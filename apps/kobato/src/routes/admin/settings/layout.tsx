@@ -12,13 +12,8 @@ interface ParentContext {
 }
 
 export interface SettingsOutletContext extends ParentContext {
-  /**
-   * Bucketed settings document; every bucket is non-null (loader-enforced). Secrets are redacted — use `masks`.
-   */
   bundle: SettingsBundle
-  /** Canonical IANA timezone list for every timezone picker; resolved once per process. */
   timeZones: readonly string[]
-  /** Pre-computed secret masks so the admin UI can show "…last4" hints without receiving plaintext keys. */
   masks: SecretMasks
 }
 
@@ -37,7 +32,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-// Render section errors inside a simple card so the admin chrome survives.
 export function ErrorBoundary() {
   const { t } = useI18n()
   const error = useRouteError()

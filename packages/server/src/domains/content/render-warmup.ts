@@ -22,7 +22,6 @@ export function wireContentRenderWarmup(next: ContentRenderWarmup): void {
   impl = next
 }
 
-/** Fire-and-forget pre-warm of the OG + calendar buckets. */
 export function warmContentRenderCaches(og: OgWarmTarget): void {
   impl(og)
 }

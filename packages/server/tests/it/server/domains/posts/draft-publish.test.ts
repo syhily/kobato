@@ -28,7 +28,6 @@ describe('integration / draft publish flow', () => {
     )
     expect(draftRes.status).toBe(200)
 
-    // The body is required by saveBodyInput.
     const publishRes = await callRpc(
       '/admin/posts/publishLatest',
       {

@@ -41,7 +41,6 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
     expect(html).toContain('展开文章目录')
     expect(html).toContain('文章目录')
     expect(html).toContain('aria-expanded="false"')
-    // Closed state: drawer pushed off-screen, inert, not focusable.
     expect(html).toContain('inert=""')
     expect(html).toContain('tabindex="-1"')
   })

@@ -80,7 +80,6 @@ describe('snapshot: FontsForm', () => {
     expect(html).toContain('日历图字体')
     expect(html).toContain('id="fonts-og-family"')
     expect(html).toContain('id="fonts-calendar-family"')
-    // Family name renders via FontUploadRow's family prop (a <span>, not a form input).
     expect(html).toContain('上传字体')
     expect(html).toContain('已配置族名：OPPOSans')
     expect(html).toContain('已配置族名：OPPOSerif')
@@ -102,7 +101,6 @@ describe('snapshot: FontsForm', () => {
 
   it('renders empty-state copy when canvas family is unconfigured', () => {
     const html = stableHtml(renderInRouter(<FontsForm fonts={emptyFonts} />))
-    // Empty family -> FontUploadRow shows the "未配置族名" fallback span.
     expect(html).toContain('未配置族名')
   })
 })
@@ -140,9 +138,7 @@ describe('snapshot: SecurityForm', () => {
       passkey: { enabled: true },
     }
     const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
-    // Empty exempt paths copy (no rows -> the empty <p> branch).
     expect(html).toContain('无豁免路径。所有请求均需携带令牌。')
-    // CORS enabled: two origin rows — values are uncontrolled, assert the field-array names.
     expect(html).toContain('name="origins.0.url"')
     expect(html).toContain('name="origins.1.url"')
     // Valid passkey domain → no invalid-domain warning.
@@ -263,7 +259,6 @@ describe('snapshot: CacheView', () => {
     expect(html).toContain('当前共 142 条缓存')
     expect(html).toContain('清空全部缓存')
     expect(html).toContain('Session 与限流计数不会受影响')
-    // Bucket cards (id-keyed settings render the bucket label)
     expect(html).toContain('OG 图缓存')
     expect(html).toContain('头像缓存')
     expect(html).toContain('受保护的缓存（只读）')
@@ -277,7 +272,6 @@ describe('snapshot: CacheView', () => {
     cacheQueryMocks.query = { data: null, isPending: true, error: null }
     const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
     expect(html).toContain('正在读取缓存统计…')
-    // Reserved section always renders (empty list)
     expect(html).toContain('受保护的缓存（只读）')
   })
 

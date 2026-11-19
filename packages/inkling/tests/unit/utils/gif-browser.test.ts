@@ -41,7 +41,6 @@ function makeGif(id: string, { dims = [100, 100], usable = true, withGifFormat =
   }
 }
 
-/** Lay gifs out in columns, assigning the global index / column coordinates. */
 function placeColumns(...columns: GifData[][]): { gifs: GifData[]; columns: GifData[][] } {
   const gifs: GifData[] = []
   columns.forEach((column, columnIndex) => {
@@ -101,7 +100,6 @@ function createFakeGeometry({
   }
 }
 
-/** a (usable), skip (unusable), b (usable) laid out as [a, skip] [b] — Tab order a, skip, b. */
 function skipFixture(): GifNavState {
   const a = makeGif('a')
   const skip = makeGif('skip', { usable: false })
@@ -110,7 +108,6 @@ function skipFixture(): GifNavState {
   return { gifs, columns, highlightedId: null }
 }
 
-/** Single column [top, mid (unusable), bottom]. */
 function columnFixture(): GifNavState {
   const top = makeGif('top')
   const mid = makeGif('mid', { usable: false })
@@ -119,7 +116,6 @@ function columnFixture(): GifNavState {
   return { gifs, columns, highlightedId: null }
 }
 
-/** Two one-gif columns [left] [right]. */
 function horizontalFixture(): GifNavState {
   const left = makeGif('left')
   const right = makeGif('right')
@@ -276,7 +272,6 @@ describe('reduceGifKey: horizontal moves via the geometry port', () => {
 
     expect(next.highlightedId).toBe('right')
     expect(effects).toEqual([PREVENT_DEFAULT])
-    // probing starts to the right of the tile, one third of its height down
     expect(fake.probes).toEqual([{ x: 250, y: 90 }])
     expect(fake.tileCalls).toEqual([0])
   })
@@ -452,7 +447,6 @@ describe('reduceGifKey: dispatch table edges', () => {
   })
 
   it('prevents default even when the move itself is a no-op', () => {
-    // ArrowRight with a highlight but no columns at all: swallowed, no move
     const gif = makeGif('a')
     gif.index = 0
     gif.columnIndex = 0
@@ -596,12 +590,10 @@ describe('createGifBrowser: pages and columns', () => {
 
     const snapshot = browser.getSnapshot()
     expect(snapshot.gifs.map((gif) => gif.index)).toEqual([0, 1, 2, 3])
-    // default 4 columns: one gif each
     expect(snapshot.columns.map((column) => column.map((gif) => gif.id))).toEqual([['g0'], ['g1'], ['g2'], ['g3']])
     expect(snapshot.isLoading).toBe(false)
     expect(snapshot.error).toBeNull()
 
-    // rebalance into 2 columns: heights 600/300/300/300 greedy by min height
     browser.dispatch({ type: 'set-column-count', count: 2 })
     const rebalanced = browser.getSnapshot()
     expect(rebalanced.columns.map((column) => column.map((gif) => gif.id))).toEqual([
@@ -617,8 +609,6 @@ describe('createGifBrowser: pages and columns', () => {
   })
 
   it('treats gifs without tinygif dims as ratio 1, never deriving it from the gif format', async () => {
-    // g0 has no tinygif; its gif format is tall (ratio 4), which must not leak
-    // into the column height (ratio 1 => 300px, so g2 balances onto column 0)
     const g0: GifData = {
       id: 'g0',
       media_formats: { gif: { url: 'https://media.example.com/g0.gif', dims: [100, 400] } },
@@ -653,7 +643,7 @@ describe('createGifBrowser: pages and columns', () => {
     expect(browser.getSnapshot().gifs.map((gif) => gif.id)).toEqual(['a', 'b'])
 
     browser.dispatch({ type: 'load-more' })
-    // the lazy flags flip synchronously with the dispatch
+
     expect(browser.getSnapshot().isLoading).toBe(true)
     expect(browser.getSnapshot().isLazyLoading).toBe(true)
 
@@ -668,7 +658,7 @@ describe('createGifBrowser: pages and columns', () => {
 
     const snapshot = browser.getSnapshot()
     expect(snapshot.gifs.map((gif) => gif.id)).toEqual(['a', 'b', 'c', 'd'])
-    // page-2 gifs continue the global index sequence
+
     expect(snapshot.gifs.map((gif) => gif.index)).toEqual([0, 1, 2, 3])
     expect(snapshot.isLoading).toBe(false)
     expect(snapshot.isLazyLoading).toBe(false)
@@ -813,7 +803,7 @@ describe('createGifBrowser: loading and error states', () => {
 
     browser.dispatch({ type: 'search', term: 'dogs' })
     scheduler.flush()
-    // the error clears when the next request starts
+
     expect(browser.getSnapshot().error).toBeNull()
     await tick()
     expect(browser.getSnapshot().error).toBeNull()
@@ -849,12 +839,10 @@ describe('createGifBrowser: races and lifecycle', () => {
     browser.dispatch({ type: 'search', term: 'second' })
     scheduler.flush()
 
-    // the newer response lands first
     second.resolve(pageOutcome([makeGif('new')]))
     await tick()
     expect(browser.getSnapshot().gifs.map((gif) => gif.id)).toEqual(['new'])
 
-    // the older response lands late and must be dropped
     first.resolve(pageOutcome([makeGif('stale')]))
     await tick()
     expect(browser.getSnapshot().gifs.map((gif) => gif.id)).toEqual(['new'])
@@ -878,10 +866,10 @@ describe('createGifBrowser: races and lifecycle', () => {
 
     browser.dispatch({ type: 'search', term: 'two' })
     scheduler.flush()
-    // the highlight survives the in-flight window
+
     expect(browser.getSnapshot().highlightedId).toBe('b')
     await tick()
-    // the new list still holds a gif with id b — the highlight stays
+
     expect(browser.getSnapshot().highlightedId).toBe('b')
 
     browser.dispatch({ type: 'search', term: 'three' })
@@ -967,11 +955,9 @@ describe('createGifBrowser: highlight, select, and key intents', () => {
     expect(browser.getSnapshot().highlightedId).toBe('b')
     expect(listener).toHaveBeenCalledTimes(2)
 
-    // a no-op move publishes nothing
     browser.dispatch({ type: 'key', key: 'Tab', shiftKey: false, target: 'button' })
     expect(listener).toHaveBeenCalledTimes(2)
 
-    // two gifs land in separate columns, so ArrowUp runs off the top
     const upEffects = browser.dispatch({ type: 'key', key: 'ArrowUp', shiftKey: false, target: 'button' })
     expect(upEffects).toEqual([PREVENT_DEFAULT, FOCUS_SEARCH])
     browser.dispose()

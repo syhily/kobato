@@ -75,7 +75,6 @@ beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   setBlogSettingsBundleForTests(OTP_TEST_BUNDLE)
   await clearAllTables(db)
-  // The real install gate needs an installed deployment: seed one admin.
   await seedGateAdmin()
   // Process-level rate-limit Map: reset or earlier tests exhaust the otpSend* budgets.
   __resetRateLimitsForTests()
@@ -101,8 +100,6 @@ afterEach(async () => {
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
-/** Satisfies the real install gate (hasAdmin) without colliding with the
- * per-test `admin@example.com` seeds. */
 async function seedGateAdmin() {
   await db.insert(user).values({
     name: 'Gatekeeper',
@@ -229,7 +226,6 @@ async function sessionRowsFor(userId: number) {
   return db.select().from(sessionTable).where(eq(sessionTable.userId, userId))
 }
 
-/** Audit rows of one action, flushed first so the batcher has drained. */
 async function auditRowsFor(actionName: string) {
   await flushAuditLog()
   return db.select().from(auditLog).where(eq(auditLog.action, actionName))
@@ -239,7 +235,6 @@ describe('integration: OTP login flow (real DB)', () => {
   it('full happy path: login → OTP → verify → session established', async () => {
     const admin = await seedAdminUser()
 
-    // Same-session staging marks dirty; the redirect carries no Set-Cookie (middleware commits it).
     const loginResult = await callAction(null, loginFormData())
     expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
     const otpCode = mockHandles.sendSignInOtp.mock.calls[0]![1] as string
@@ -267,7 +262,7 @@ describe('integration: OTP login flow (real DB)', () => {
 
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toBe('/admin')
-    // sid rotation keeps the explicit Set-Cookie channel — minted by the real establishLoginSession.
+
     expect(result.headers.get('Set-Cookie')).toMatch(/^__session=/)
 
     const sessions = await sessionRowsFor(admin.id)
@@ -295,7 +290,6 @@ describe('integration: OTP login flow (real DB)', () => {
     const row = await getOtpRow(admin.id)
     expect(row).not.toBeNull()
 
-    // Value is salt:hash format (32-hex salt : 64-hex sha256)
     expect(row!.value).toMatch(/^[0-9a-f]{32}:[0-9a-f]{64}$/)
 
     expect(row!.value).not.toContain(otpCode)
@@ -308,7 +302,6 @@ describe('integration: OTP login flow (real DB)', () => {
     const result = await callAction('verifyotp', otpFormData('000000'))
     expect(result.data?.error).toBe('验证码无效或已过期。')
 
-    // Same-session mutation: marked dirty; the data result carries no Set-Cookie.
     expect(testSession.get('otpFailCount')).toBe(1)
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
@@ -327,7 +320,7 @@ describe('integration: OTP login flow (real DB)', () => {
 
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
     expect(testSession.get('otpFailCount')).toBeUndefined()
-    // Each failed attempt marks the session dirty.
+
     expect(markSessionDirty).toHaveBeenCalled()
 
     const failures = await auditRowsFor('otp_failed')
@@ -343,11 +336,10 @@ describe('integration: OTP login flow (real DB)', () => {
     const result = await callAction(null, loginFormData('admin@example.com', wrongPassword))
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toContain('error=invalid_credentials')
-    // Invalid credentials mutate nothing: no dirty mark, no Set-Cookie on the redirect.
+
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(result.headers.get('Set-Cookie')).toBeNull()
 
-    // Failed credential logins are audited; the password must never appear.
     const fails = await auditRowsFor('credential_login_failed')
     expect(fails).toHaveLength(1)
     const row = fails[0]!
@@ -355,7 +347,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(row.resourceId).toBeNull()
     const details = row.details as Record<string, unknown>
     expect(details.reason).toBe('invalid_credentials')
-    // The email lands L3-tagged ({E}…{/E}) but present.
+
     expect(JSON.stringify(details)).toContain('admin@example.com')
     expect(details).not.toHaveProperty('password')
     expect(JSON.stringify(details)).not.toContain(wrongPassword)
@@ -395,7 +387,6 @@ describe('integration: OTP login flow (real DB)', () => {
       .set({ expiresAt: new Date(Date.now() - 1000) })
       .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, admin.id)))
 
-    // Expired token still increments the fail counter: marked dirty, no Set-Cookie.
     const result = await callAction('verifyotp', otpFormData(otpCode))
     expect(result.data?.error).toBe('验证码无效或已过期。')
     expect(markSessionDirty).toHaveBeenCalled()
@@ -408,10 +399,8 @@ describe('integration: OTP login flow (real DB)', () => {
   it('rate limiting blocks after 3 OTP sends', async () => {
     await seedAdminUser()
 
-    // Use a unique IP so parallel tests don't share the same rate-limit bucket.
     const uniqueIp = '127.0.0.99'
 
-    // Send OTP 3 times (maxAttempts=3 for otpSend)
     for (let i = 0; i < 3; i++) {
       await callAction(null, loginFormData(), '/admin', uniqueIp)
       testSession.unset('pendingOtpUser')
@@ -420,7 +409,6 @@ describe('integration: OTP login flow (real DB)', () => {
 
     expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(3)
 
-    // Throttled before staging: no dirty mark, no Set-Cookie.
     markSessionDirty.mockClear()
     const result = await callAction(null, loginFormData(), '/admin', uniqueIp)
     expect(result.data?.error).toBe('发送过于频繁，请稍后再试。')
@@ -432,7 +420,6 @@ describe('integration: OTP login flow (real DB)', () => {
     await seedAdminUser()
     await doLogin()
 
-    // The wrong code carries the typed identity plus the zh-CN sentence.
     const wrong = await callAction('verifyotp', otpFormData('000000'))
     expect(wrong.data?.error).toBe('验证码无效或已过期。')
     expect(wrong.data?.errorDescriptor).toMatchObject({
@@ -440,11 +427,9 @@ describe('integration: OTP login flow (real DB)', () => {
       fallbackMessage: 'The verification code is invalid or has expired.',
     })
 
-    // en-US renders from the same descriptor.
     const wrongEn = await callAction('verifyotp', otpFormData('000000'), '/admin', '127.0.0.1', 'en-US')
     expect(wrongEn.data?.error).toBe('The verification code is invalid or has expired.')
 
-    // The resend acknowledgment exposes the stable key OtpForm branches on.
     const resent = await callAction('resendotp', withCsrf())
     expect(resent.data?.message).toBe('验证码已重新发送。')
     expect(resent.data?.messageDescriptor).toMatchObject({

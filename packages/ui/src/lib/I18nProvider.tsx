@@ -1,4 +1,3 @@
-// react-intl provider fed with the current locale's UI catalog from the root loader.
 // Never value-import the catalogs here: messages arrive as props, so one locale, not
 // four, reaches the browser. Pinned by tests/unit/arch/client-bundle.test.ts.
 
@@ -28,7 +27,6 @@ export type I18nMessageParams = Record<
 export type I18nPlainMessageParams = Record<string, string | number | boolean | null | undefined>
 
 const LOCALIZE_FALLBACK_ID: UiMessageId = 'error.api.badRequest'
-/** Last resort when even the generic catalog entry is absent (no English map on the client). */
 const LOCALIZE_FALLBACK_TEXT = 'Invalid input'
 
 function toIcuValues(params?: I18nPlainMessageParams): Record<string, string | number | null> {
@@ -57,12 +55,10 @@ export interface I18nValue {
 
 const LocaleContext = createContext<AppLocale | null>(null)
 
-/** A full `UiMessages` map, or the minimal `FallbackMessages` when the root loader failed. */
 export type I18nMessages = Record<string, string>
 
 export interface I18nProviderProps {
   locale: AppLocale
-  /** The locale's UI catalog (already merged over the English baseline), or the fallback subset. */
   messages: I18nMessages
   children: ReactNode
 }
@@ -122,7 +118,7 @@ export function useI18n(): I18nValue {
         return formatted
       }
     } catch {
-      // Formatting threw instead of reporting through onError — same fallback.
+      /* noop */
     }
     log.warn('localizeMessage: missing params or unformattable message; using fallback', {
       locale,

@@ -11,10 +11,8 @@ import { desc } from 'drizzle-orm'
 
 export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
 
-/** Pages filter exactly the shared admin-list legs — no entity extras. */
 export type ListPagesFilters = MetaListFiltersBase
 
-// CRUD + admin-list queries come from the shared factories bound to the page table.
 const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 
 export const findPageMetaById = crud.findMetaById

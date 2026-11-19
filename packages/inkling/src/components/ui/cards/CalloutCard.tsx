@@ -39,7 +39,6 @@ export const CALLOUT_TEXT_COLORS: Record<CalloutColorName, string> = {
   red: TEXT_BLACK,
   pink: TEXT_BLACK,
   purple: TEXT_BLACK,
-  // .inkling-callout-accent makes sure links are not in accent color anymore
   accent: TEXT_WHITE + ' inkling-callout-accent',
 }
 
@@ -113,9 +112,8 @@ export function CalloutCard({
   setShowEmojiPicker,
   toggleEmoji,
   hasEmoji = true,
-  // stories render without a color-change handler; the picker becomes a no-op
   handleColorChange = () => {
-    /* noop for story renders */
+    /* noop */
   },
   changeEmoji,
   calloutEmoji = '💡',
@@ -128,8 +126,6 @@ export function CalloutCard({
   const { darkMode } = React.useContext(InklingUiPrefsContext)
   const labels = useInklingLabels()
 
-  // The picker table keeps its English labels as defaults; the host's label
-  // table overrides each entry by its color name.
   const colorButtons = calloutColorPicker.map((entry) => ({
     label: lookupLabel(labels, `color.${entry.name}`, entry.label),
     name: entry.name,

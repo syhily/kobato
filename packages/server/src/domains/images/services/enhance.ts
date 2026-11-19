@@ -1,7 +1,3 @@
-// Render-enhance projections over the `./resolve` pipeline: image blocks get
-// sparse dims + thumbhash (no public URL); `hydrateImageRefs` rewrites
-// cover/poster fields on list DTOs.
-
 import type { ResolvedImageMeta } from '@kobato/assets/images.ts'
 import type { Database } from '@kobato/db/database.ts'
 

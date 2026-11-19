@@ -21,10 +21,6 @@ export interface ReindexBatchResult {
   nextOffset: number | null
 }
 
-/**
- * Rebuild the search index for live posts in `batchSize` batches (default
- * 50); without `offset` only the first batch runs, `nextOffset: null`.
- */
 export async function reindexSearchBatch(db: Database, input: ReindexBatchInput = {}): Promise<ReindexBatchResult> {
   const useBatching = input.batchSize !== undefined || input.offset !== undefined
   const offset = input.offset ?? 0
@@ -82,10 +78,6 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
   return { processed, failed, total, nextOffset }
 }
 
-/**
- * Drives `reindexSearchBatch` to completion (the bare call processes one
- * batch only). Idempotent.
- */
 export async function reindexSearchToCompletion(
   db: Database,
 ): Promise<{ processed: number; failed: number; total: number }> {

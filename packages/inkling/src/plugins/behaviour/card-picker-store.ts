@@ -20,17 +20,11 @@ export interface CardPickRequest {
 }
 
 export interface CardPickerState {
-  /** The active pick request; null when no picker is open. */
   request: CardPickRequest | null
 }
 
 export type CardPickerStore = ComposerHandle<CardPickerState>
 
-// Editor-side handle for the card pick seam, built on the composer handle
-// factory. Writers are the useCardPicker hook (placeholder/chrome clicks) and
-// CardInsertPlugin (autoOpenOnInsert); the reader is CardPickerHostPlugin,
-// render-only via the context binding. One instance per top-level composer
-// (created in ComposerHandlesProvider).
 export function createCardPickerStore(): CardPickerStore {
   return createComposerHandle<CardPickerState>({
     request: null,

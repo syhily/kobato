@@ -24,7 +24,6 @@ const SELECTION_EDITOR_ROOT_ATTRIBUTE = 'data-test-selection-editor'
 export interface SelectionEditorOptions {
   nodes?: LexicalNodeConfig[]
   parentEditor?: LexicalEditor
-  /** Attach a DOM root (default true). Rootless editors drive focus through the FOCUS/BLUR ledger. */
   root?: boolean
 }
 
@@ -60,7 +59,6 @@ export function createSelectionEditor({
   return editor
 }
 
-/** Remove every rooted editor this harness attached; call from a suite's afterEach. */
 export function cleanupSelectionEditors() {
   for (const rootElement of document.querySelectorAll(`[${SELECTION_EDITOR_ROOT_ATTRIBUTE}]`)) {
     rootElement.remove()
@@ -114,12 +112,10 @@ export async function selectText(
   )
 }
 
-/** Select a range in the first text node of the document. */
 export async function selectFirstText(editor: LexicalEditor, anchorOffset: number, focusOffset: number) {
   await selectText(editor, firstTextKey(editor), anchorOffset, focusOffset)
 }
 
-/** Select from the first paragraph's anchor offset to the last paragraph's focus offset. */
 export async function selectAcrossParagraphs(editor: LexicalEditor, anchorOffset: number, focusOffset: number) {
   await updateEditor(
     editor,

@@ -41,10 +41,6 @@ export function ToggleNodeComponent({
   )
 }
 
-/**
- * Toggle's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderToggleCard(node: ToggleNode) {
   // Same headless-round-trip invariant as callout's nested editor: null only
   // inside the headless markdown round-trip editor, which never reconciles

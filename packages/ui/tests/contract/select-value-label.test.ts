@@ -37,7 +37,6 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-/** Every `<Select ...>` root opening tag: `{ attrs, block }` (block = body up to `</Select>`). */
 function findSelectRoots(source: string): { attrs: string; block: string; line: number }[] {
   const roots: { attrs: string; block: string; line: number }[] = []
   // `<Select` not followed by a child name; optional generic; attrs may span lines.

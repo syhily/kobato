@@ -103,7 +103,6 @@ describe('backup service — storage_path validation (a restored DB can forge it
   it('accepts every generated key shape and rejects anything outside backup/', () => {
     expect(isValidBackupStoragePath(VALID_KEY)).toBe(true)
     expect(isValidBackupStoragePath(`backup/backup-${TIMESTAMP}-0123456789abcdef.db.tar.gz.enc`)).toBe(true)
-    // Legacy content-only archive generation.
     expect(isValidBackupStoragePath(`backup/backup-${TIMESTAMP}.db.gz`)).toBe(true)
 
     expect(isValidBackupStoragePath(ASSET_KEY)).toBe(false)

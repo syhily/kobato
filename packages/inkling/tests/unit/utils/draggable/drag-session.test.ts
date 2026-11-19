@@ -36,12 +36,10 @@ describe('createDragStartSession', () => {
   it('ignores pointer travel within the start threshold', () => {
     const { session, onStart, listeners } = setup()
 
-    // exactly at the threshold is not a crossing, through the session port…
     session.move({ x: 10 + DRAG_START_THRESHOLD, y: 10 })
     expect(onStart).not.toHaveBeenCalled()
     expect(session.isPending()).toBe(true)
 
-    // …or through the listener port, on either axis
     listeners().move({ x: 10, y: 10 + DRAG_START_THRESHOLD })
     expect(onStart).not.toHaveBeenCalled()
     expect(session.isPending()).toBe(true)
@@ -98,7 +96,6 @@ describe('createDragStartSession', () => {
     expect(detach).toHaveBeenCalledTimes(1)
     expect(session.isPending()).toBe(false)
 
-    // the session is finished — a later move is inert
     session.move({ x: 100, y: 100 })
     expect(onStart).not.toHaveBeenCalled()
   })

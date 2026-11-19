@@ -37,19 +37,10 @@ function useFloatingFormatToolbar(
   hiddenFormats: HiddenFormat[] = [],
   isAlignmentEnabled: boolean = false,
 ) {
-  // the toolbar session (hidden | text | link | snippet, plus the hovered-link
-  // slot) lives in the headless link-editing module; this hook only feeds it
-  // selection/DOM events and renders its state
   const [session] = React.useState<ToolbarSession>(() => createToolbarSession())
   const { type, href, hoveredLink } = React.useSyncExternalStore(session.handle.subscribe, session.handle.getState)
 
-  // the hover toolbar's element, so the hover feed can ignore mousemoves over
-  // the toolbar itself (they must not clear the hovered link)
   const linkToolbarRef = React.useRef<HTMLDivElement | null>(null)
-
-  // the format toolbar's element; the reveal feed flips its opacity once the
-  // selection gesture completes (mouseup inside the selection, or a threshold
-  // mousemove) so the toolbar does not re-position while dragging
   const formatToolbarRef = React.useRef<HTMLDivElement | null>(null)
 
   React.useEffect(() => {
@@ -65,20 +56,17 @@ function useFloatingFormatToolbar(
       10,
     )
 
-    document.addEventListener('mouseup', onRelease) // desktop
-    document.addEventListener('touchend', onRelease) // mobile
+    document.addEventListener('mouseup', onRelease)
+    document.addEventListener('touchend', onRelease)
     document.addEventListener('mousemove', onMouseMove)
 
     return () => {
       onMouseMove.cancel()
-      document.removeEventListener('mouseup', onRelease) // desktop
-      document.removeEventListener('touchend', onRelease) // mobile
+      document.removeEventListener('mouseup', onRelease)
+      document.removeEventListener('touchend', onRelease)
       document.removeEventListener('mousemove', onMouseMove)
     }
   }, [editor, session])
-
-  // the hover feed: debounced document mousemoves in, hovered-link truth out
-  // into the session (suppressed by the session while any toolbar is open)
   React.useEffect(() => {
     const hoverFeed = createLinkHoverFeed(editor, session, { getToolbarElement: () => linkToolbarRef.current })
     const onMouseMove = debounce((event: MouseEvent) => hoverFeed.hover(event.target), LINK_HOVER_DEBOUNCE_MS)
@@ -89,15 +77,11 @@ function useFloatingFormatToolbar(
     }
   }, [editor, session])
 
-  // the selection classifier (composing skip, outside-editor close, at-link
-  // suppression, textSelected/href derivation) lives headlessly in the
-  // link-editing module; this hook only registers it
   React.useEffect(() => {
     return registerToolbarSelectionSync(editor, session)
   }, [editor, session])
 
   React.useEffect(() => {
-    // clear out the toolbar when the user removes selected content
     return editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
       () => {
@@ -108,8 +92,6 @@ function useFloatingFormatToolbar(
     )
   }, [editor, session])
 
-  // the link-shortcut registration (press grammar + range check) lives in
-  // the link-editing module beside the session
   React.useEffect(() => {
     return registerToolbarCommands(editor, session)
   }, [editor, session])

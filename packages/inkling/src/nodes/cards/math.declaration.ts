@@ -21,5 +21,4 @@ export const mathDeclaration = checkedCardDeclaration({
   ],
   insert: { openInEditMode: true },
   toolbarLabel: 'math',
-  // Absent from the markdown round-trip: GFM has no math block syntax.
 } satisfies CardDeclaration<'math', typeof BaseMathNode, readonly [], readonly []>)

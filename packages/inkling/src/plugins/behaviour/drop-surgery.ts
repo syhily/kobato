@@ -28,20 +28,11 @@ import {
 //
 // The $-functions must run inside editor.update()/editor.read().
 
-/**
- * Moves the dragged card to the resolved drop slot: before the droppable at
- * `insertIndex`, or after the last droppable when the index runs past the end
- * of the document. Clears the selection so no toolbar pops back up over the
- * moved card and the caret is not left stranded. Returns false — leaving the
- * tree and the selection untouched — when the node key no longer resolves or
- * the droppable scan came back empty.
- */
 export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElement[], insertIndex: number): boolean {
   const draggedNode = nodeKey ? $getNodeByKey(nodeKey) : null
   if (!draggedNode) {
     return false
   }
-
   if (droppables.length === 0) {
     return false
   }
@@ -62,14 +53,6 @@ export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElem
   return true
 }
 
-/**
- * Inserts a new image card built from the dragged image's dataset before the
- * droppable at `insertIndex` and selects it (images can be dragged out of a
- * gallery). Returns null when the slot does not resolve to a node — the caller
- * maps null to a failed drop (the source node stays) — or when the editor does
- * not register the image card (the class comes from the registered-node map,
- * not the shim, so this module stays off the decorate tree).
- */
 export function $insertDraggedImage(
   dataset: ImageNodeDataset,
   droppables: HTMLElement[],
@@ -79,7 +62,6 @@ export function $insertDraggedImage(
   if (!ImageNodeClass) {
     return null
   }
-
   const targetNode = $getNearestNodeFromDOMNode(droppables[insertIndex])
   if (!targetNode) {
     return null
@@ -99,14 +81,6 @@ export function $insertDraggedImage(
   return imageNode
 }
 
-/**
- * Merges an image card dropped onto another image card into a two-image
- * gallery: the gallery takes the target's slot (target image first, dragged
- * image second) and the dragged card's source node is removed. Returns false —
- * leaving the tree untouched — when either key no longer resolves to an image
- * card, when either dataset lacks a src, or when the editor does not register
- * the gallery card.
- */
 export function $mergeImagesIntoGallery(
   targetImageKey: NodeKey,
   draggedImageKey: NodeKey,
@@ -123,7 +97,6 @@ export function $mergeImagesIntoGallery(
   if (!GalleryNodeClass) {
     return false
   }
-
   // a registry key could resolve to a non-gallery class (a host replaced it) —
   // check the constructed node instead of asserting
   const galleryNode = new GalleryNodeClass({})
@@ -155,15 +128,8 @@ export function $mergeImagesIntoGallery(
   return true
 }
 
-/** A card drag whose card is the image card — the gallery-merge payload. */
 export type ImageCardDraggableInfo = CardDraggableInfo & { cardName: 'image' }
 
-/**
- * The image-card-onto-image drop allowance (gallery creation): the payload is
- * an image CARD dragged from a different node than the target. Whether the key
- * still resolves is the surgery's concern — a card deleted mid-drag is a stale
- * node, not a malformed payload.
- */
 export function isImageCardDropAllowed(
   draggable: DraggableInfo,
   targetNodeKey: NodeKey,
@@ -171,11 +137,6 @@ export function isImageCardDropAllowed(
   return draggable.type === 'card' && draggable.cardName === 'image' && draggable.nodeKey !== targetNodeKey
 }
 
-/**
- * Applies the image-card-onto-image drop: merges both cards into a gallery
- * ($mergeImagesIntoGallery — the gallery takes the target's slot). Returns
- * without touching the tree when the allowance fails.
- */
 export function applyImageCardDrop(editor: LexicalEditor, targetNodeKey: NodeKey, draggable: DraggableInfo): void {
   if (!isImageCardDropAllowed(draggable, targetNodeKey)) {
     return
@@ -197,10 +158,6 @@ export function shouldRemoveDropSource(success: boolean, sourceHandled: boolean)
   return !sourceHandled && success
 }
 
-/**
- * Removes the dragged card's source node after a cross-card drop. Returns
- * false when the key no longer resolves — the card can be deleted mid-drag.
- */
 export function $removeDropSource(nodeKey: NodeKey): boolean {
   const cardNode = $getNodeByKey(nodeKey)
   if (!cardNode) {
@@ -230,7 +187,6 @@ export function resolveDragMarkerRefresh(dirtyElements: Map<NodeKey, boolean>, e
   if (!hasDirtyRootChildCandidate) {
     return false
   }
-
   return editorState.read(() => {
     const root = $getRoot()
     for (const [key, intentionallyDirty] of dirtyElements) {

@@ -29,8 +29,6 @@ import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.parse')
 
-/** "Established commenter" rule — consumed cross-domain, e.g. the signin
- *  flow's account claim for anonymous commenters. */
 export async function hasApprovedComments(db: Database, userId: number): Promise<boolean> {
   return countApprovedCommentsByUser(db, userId) >= 1
 }
@@ -38,7 +36,7 @@ export async function hasApprovedComments(db: Database, userId: number): Promise
 /**
  * The latest-comments digest for the sidebar. `settings` is the request-pinned
  * snapshot (the caller's `context.settings`) — this function never reads the
- * process snapshot. A straight SQLite read: three small indexed queries.
+ * process snapshot.
  */
 export async function latestComments(db: Database, settings: BlogSettingsBundle | null): Promise<LatestComment[]> {
   const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar', settings), 'recentComments')

@@ -1,15 +1,9 @@
-// Authenticated HTTP staging for the browser journeys — sign-in, settings
-// patches, and the staged post. Same wire the HTTP e2e suite uses
-// (`@kobato/harness/http.ts` + `@kobato/harness/rpc.ts`), so the journeys
-// never read a real config or reach for a private database seam.
-
 import type { BrowserEnv } from '@tests/browser/support/env.ts'
 
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
 import { callE2eRpc } from '@kobato/harness/rpc.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 
-/** Deterministic site state every journey starts from (restored after each test). */
 export const BASELINE_GENERAL = {
   locale: 'zh-CN',
   timeZone: 'Asia/Shanghai',
@@ -17,8 +11,6 @@ export const BASELINE_GENERAL = {
   description: 'Browser acceptance baseline',
 } as const
 
-/** The staged post carries both journey fixtures: comments enabled (composer
- *  activation) and a non-Latin `contentLanguage` (body `lang`/`dir`). */
 export const STAGED_POST = {
   title: 'Browser Acceptance Post',
   summary: 'Staged by the Playwright global setup.',
@@ -132,8 +124,6 @@ export class SettingsApi {
     return result.json.post
   }
 
-  /** Save and publish a real body — an empty body renders a zero-height
-   *  container (and the public page shows the draft badge). */
   async publishStagedPostBody(id: string, prose: string): Promise<void> {
     const body = lexicalBodyWith([lexicalParagraph(prose)])
     const draft = await callE2eRpc<{ status: string }>(

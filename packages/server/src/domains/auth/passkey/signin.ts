@@ -36,7 +36,6 @@ export async function signInWithPasskey(
   try {
     const result = await verifyAuthenticationResponse(
       db,
-      // parsed JSON validated by verifyAuthenticationResponse
       unsafeCast<Parameters<typeof verifyAuthenticationResponse>[1]>(response),
       rawChallenge,
     )

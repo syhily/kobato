@@ -45,13 +45,11 @@ describe('seo/title-meta — titleMeta', () => {
   })
 
   it('localizes the pre-install title through matches', () => {
-    // Pre-install: no settings row anywhere — the payload still carries the locale's catalog.
     setBlogSettingsBundleForTests(null)
     const meta = titleMeta('meta.title.auth.setup')({
       matches: rootMatchWithI18n('zh-TW', null),
     }) as MetaEntry[]
 
-    // `<title>` + the two noindex robots tags; no site chrome at all.
     expect(meta).toHaveLength(3)
     expect(meta[0]).toMatchObject({ title: '建立網站' })
     expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')

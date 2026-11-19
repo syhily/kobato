@@ -27,25 +27,20 @@ export function SnippetInput({
   snippets = [],
 }: SnippetInputProps) {
   const snippetRef = useRef<HTMLDivElement | null>(null)
-  // one slot ring (snippet-navigator): 0 is the create button, 1..N the items
   const [activeSlot, setActiveSlot] = useState(0)
   const isCreateButtonActive = activeSlot === 0
   const activeMenuItem = slotToItemIndex(activeSlot)
-  // derived from the query and the snippet list — no state needed
   const suggestedList = React.useMemo(
     () => snippets.filter((snippet) => snippet.name.toLowerCase().includes(value.toLowerCase())),
     [value, snippets],
   )
 
-  // default to first snippet or create new button — adjusted during render
-  // when the query or snippet list changes
   const [prevFilterInputs, setPrevFilterInputs] = useState({ value, snippets })
   if (prevFilterInputs.value !== value || prevFilterInputs.snippets !== snippets) {
     setPrevFilterInputs({ value, snippets })
     setActiveSlot(initialSlot(suggestedList.length))
   }
 
-  // close snippets menu if clicked outside the input/dropdown
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target
@@ -102,10 +97,7 @@ export function SnippetInput({
   }
 
   return (
-    <div
-      ref={snippetRef}
-      onClick={(e) => e.stopPropagation()} // prevents card from losing selected state
-    >
+    <div ref={snippetRef} onClick={(e) => e.stopPropagation()}>
       <Input value={value} onChange={onChange} onClear={onClose} onKeyDown={handleInputKeyDown} />
       {!!value && (
         <Dropdown

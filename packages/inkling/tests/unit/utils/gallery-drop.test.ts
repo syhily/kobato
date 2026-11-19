@@ -101,7 +101,6 @@ describe('resolveGalleryDrop', () => {
       { src: 'https://example.com/three.jpg' },
     ]
 
-    // dragging index 2 to slot 0: removal adjusts nothing
     const forward = resolveGalleryDrop(images, facts({ src: 'https://example.com/three.jpg' }), 2, 0)
     expect(forward?.map((i) => i.src)).toEqual([
       'https://example.com/three.jpg',
@@ -123,8 +122,6 @@ describe('resolveGalleryDrop', () => {
       { src: 'https://example.com/other.jpg' },
     ]
 
-    // dragging index 1 (the second copy) to slot 0 must move that copy, not
-    // the first one a src-value find would have grabbed
     const result = resolveGalleryDrop(images, facts({ src: 'https://example.com/same.jpg' }), 1, 0)
 
     expect(result?.map((i) => i.fileName)).toEqual(['second.jpg', 'first.jpg', undefined])
@@ -137,10 +134,7 @@ describe('resolveGalleryDrop', () => {
       { src: 'https://example.com/three.jpg' },
     ]
 
-    // dragging index 1: a src-value find would grab index 0 (the first
-    // undefined src) instead
     const result = resolveGalleryDrop(images, facts({}), 1, 0)
-
     expect(result?.map((i) => i.previewSrc ?? i.src)).toEqual(['blob:two', 'blob:one', 'https://example.com/three.jpg'])
   })
 })

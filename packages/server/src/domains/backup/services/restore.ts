@@ -67,7 +67,6 @@ export function hasDuckdbMagic(buffer: Buffer): boolean {
   )
 }
 
-/** A restored database is data only — never executed as SQL by the restore path. */
 export function assertSqliteBackup(buffer: Buffer): void {
   if (buffer.length > MAX_BACKUP_FILE_SIZE) {
     throw new ActionFailure(400, descriptorFor('backup.error.fileTooLarge'))
@@ -82,8 +81,6 @@ export function assertDuckdbBackup(buffer: Buffer): void {
     throw new ActionFailure(400, descriptorFor('backup.error.notDuckdb'))
   }
 }
-
-// Production path streams to disk; the in-memory buffer tier lives in tests/_helpers/backup-buffer.ts.
 
 /** The upload is encrypted and no password was supplied — the perimeter maps
  *  this to a "password required" response and parks the staged dir for the
@@ -135,7 +132,6 @@ async function copyRange(sourcePath: string, offset: number, size: number, destP
   await pipeline(createReadStream(sourcePath, { start: offset, end: offset + size - 1 }), createWriteStream(destPath))
 }
 
-/** Exported for unit tests. */
 export function decompressedSizeGuard(maxBytes: number): Transform {
   let total = 0
   return new Transform({
@@ -172,12 +168,8 @@ async function assertConfigBackup(configPath: string): Promise<void> {
 }
 
 export interface StageBackupOptions {
-  /** Required when the upload is an encrypted archive (`EncryptedBackupPasswordRequired` otherwise). */
   password?: string
-  /** Defaults to MAX_BACKUP_FILE_SIZE. */
   maxBytes?: number
-  /** Byte-progress callback for the decrypt/extract legs (doneBytes so far;
-   *  totalBytes known only for decrypting — the encrypted file size). */
   onProgress?: (stage: 'decrypting' | 'extracting', doneBytes: number, totalBytes: number | null) => void
 }
 
@@ -192,7 +184,6 @@ function byteCounter(onBytes: (doneBytes: number) => void): Transform {
   })
 }
 
-/** Stage an uploaded backup to a temp dir (decrypt/decompress/extract). Caller owns `dir` cleanup. */
 export async function stageBackup(source: Buffer | Readable, options: StageBackupOptions = {}): Promise<StagedBackup> {
   const maxBytes = options.maxBytes ?? MAX_BACKUP_FILE_SIZE
   const dir = await mkdtemp(join(tmpdir(), RESTORE_TEMP_PREFIX))
@@ -205,8 +196,6 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
       await pipeline(source, createWriteStream(uploadPath))
     }
 
-    // Encrypted archives decrypt to a sibling file first; every later step
-    // reads the plaintext. The first GCM tag check IS the password check.
     let payloadSource = uploadPath
     if (isEncryptedBackup(await readPrefix(uploadPath, 8))) {
       if (options.password === undefined || options.password === '') {
@@ -226,7 +215,6 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
         )
       } catch (error) {
         if (error instanceof BackupDecryptionError) {
-          // Only an 'auth' (GCM tag) failure is retryable with a different password.
           if (error.kind === 'auth') {
             throw new BackupPasswordError()
           }
@@ -304,7 +292,6 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
   }
 }
 
-/** Boot-time sweep of staged-restore temp dirs orphaned by a crash; best-effort per entry. */
 export async function sweepStaleRestoreDirs(): Promise<void> {
   let entries
   try {
@@ -351,7 +338,6 @@ export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Pro
   }
 }
 
-/** Swap a staged engine file over the live one; the live file moves aside to `.pre-restore` for rollback. */
 async function swapStagedFile(sourcePath: string, targetPath: string): Promise<void> {
   const stagingPath = `${targetPath}.restore-staging`
   const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
@@ -390,7 +376,6 @@ async function swapStagedConfig(sourcePath: string, targetPath: string): Promise
     // so the live file stays untouched.
     await chmod(stagingPath, 0o600)
     await copyFile(targetPath, preRestorePath).catch((error: unknown) => {
-      // Nothing to park (a first install, or a missing parent dir).
       if (!isMissingFileError(error)) {
         throw error
       }
@@ -419,7 +404,6 @@ function engineTargets(): string[] {
   return targets
 }
 
-/** Engine files plus the config file; null config path in the env-only (VITEST) mode. */
 function restoreTargets(): string[] {
   const targets = engineTargets()
   const configPath = resolveConfigFilePath()
@@ -471,7 +455,6 @@ export async function recoverPreRestoreFiles(): Promise<void> {
   }
 }
 
-/** Roll the `.pre-restore` originals back — must run before the recovery reopen; best-effort per file. */
 export async function rollbackPreRestoreFiles(): Promise<void> {
   for (const target of restoreTargets()) {
     const backupPath = `${target}${PRE_RESTORE_SUFFIX}`
@@ -494,7 +477,6 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
   }
 }
 
-/** Best-effort cleanup of the `.pre-restore` originals after a successful restore chain. */
 export async function cleanupPreRestoreFiles(): Promise<void> {
   for (const target of restoreTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true }).catch(() => undefined)
@@ -513,7 +495,6 @@ async function discardSwapLeftovers(): Promise<void> {
 }
 
 export interface RestoreOptions {
-  /** Apply the analytics payload when the upload carries one (default true; setup passes false). */
   withAnalytics?: boolean
 }
 

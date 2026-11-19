@@ -37,7 +37,6 @@ export default function FloatingToolbar({
           return
         }
 
-        // don't reposition toolbar if visible and reposition disabled
         if (toolbarElement.style.opacity === '1' && !reposition) {
           return
         }

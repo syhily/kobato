@@ -38,8 +38,6 @@ describe('Markdown round-trip', function () {
   it('round-trips a code block', function () {
     const markdown = '```js\nconst x = 1\n```'
     const state = markdownToLexicalState(markdown)
-    // the dialect's own CODE_FENCE transformer claims the fence on import —
-    // no more literal paragraphs that export re-escapes to \`\`\`
     expect((state.root.children[0] as SerializedCodeBlockNode).type).toBe('codeblock')
     expect(lexicalStateToMarkdown(state)).toBe(markdown)
   })
@@ -50,9 +48,6 @@ describe('Markdown round-trip', function () {
   })
 
   it('round-trips a code block with a non-word language name', function () {
-    // the export side emits free-input languages verbatim, so the import side
-    // must accept more than \w — otherwise c++/shell-session import as literal
-    // paragraphs
     const markdown = '```c++\nint main() {}\n```'
     const state = markdownToLexicalState(markdown)
     expect((state.root.children[0] as SerializedCodeBlockNode).type).toBe('codeblock')
@@ -65,33 +60,22 @@ describe('Markdown round-trip', function () {
     expect(roundTrip(markdown)).toBe('---')
   })
 
-  // Markdown cards round-trip via the `inkling:markdown` fence, whose body is
-  // the card's raw markdown content (see `round-trip-cards.test.ts` for the
-  // full field-level coverage).
   it('round-trips a markdown card', function () {
     const markdown = '```inkling:markdown\nSome **bold** text\n```'
     expect(roundTrip(markdown).trim()).toBe(markdown)
   })
 
-  // This dialect's coverage vs the paste dialect: card-fence import itself is
-  // pinned in round-trip-cards.test.ts and not re-pinned here.
   function firstTextOf(state: SerializedEditorState) {
     const paragraph = state.root.children[0] as unknown as { children: Array<{ text: string; format: number }> }
     return paragraph.children[0]
   }
-
   it('imports ==marked== as highlight-formatted text', function () {
-    // @lexical/markdown's TEXT_FORMAT_TRANSFORMERS include HIGHLIGHT, so this
-    // dialect speaks ==mark== like the paste dialect's <mark> import
-    // (pinned in tests/inkling/unit/plugins/MarkdownPastePlugin.test.tsx).
     const text = firstTextOf(markdownToLexicalState('==marked=='))
     expect(text.text).toBe('marked')
     expect(text.format).toBe(IS_HIGHLIGHT)
   })
 
   it('imports a footnote reference as literal text', function () {
-    // No footnote transformer exists in this dialect; the paste dialect's
-    // markdown-it-footnote handling is pinned in MarkdownPastePlugin.test.tsx.
     const text = firstTextOf(markdownToLexicalState('text[^1]'))
     expect(text.text).toBe('text[^1]')
     expect(text.format).toBe(0)

@@ -7,15 +7,8 @@ export type { SerializedToggleNode } from '@kobato/inkling-internal/nodes/base/n
 export { INSERT_TOGGLE_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 export type { ToggleNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-/**
- * The registered class, assembled once from the card declaration by
- * `assembleCardNodeOnce`; `$isToggleNode` is canonical on the base node. The
- * instance type carries the spec-derived `__*` field map, so `$createToggleNode`
- * needs no cast.
- */
 export const ToggleNode = assembleCardNodeOnce(toggleDeclaration)
 export type ToggleNode = InstanceType<typeof ToggleNode>
-
 export const $createToggleNode = (dataset?: ToggleNodeDataset): ToggleNode => {
   return new ToggleNode(dataset)
 }

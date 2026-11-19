@@ -33,8 +33,6 @@ import { $insertDataTransferForRichText } from '@lexical/clipboard'
 
 const PORTS: FileDropPorts = {
   hasUploader: () => true,
-  // the host's per-upload-type mime config — without it the image card
-  // claims nothing (the routing rule)
   fileTypes: () => ({ image: { mimeTypes: ['image/png', 'image/jpeg'] } }),
 }
 

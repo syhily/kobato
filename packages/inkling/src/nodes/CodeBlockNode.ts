@@ -7,15 +7,8 @@ export type { SerializedCodeBlockNode } from '@kobato/inkling-internal/nodes/bas
 export { INSERT_CODE_BLOCK_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 export type { CodeBlockNodeDataset } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-/**
- * The registered class, assembled once from the card declaration by
- * `assembleCardNodeOnce`; `$isCodeBlockNode` is canonical on the base node. The
- * instance type carries the spec-derived `__*` field map, so `$createCodeBlockNode`
- * needs no cast.
- */
 export const CodeBlockNode = assembleCardNodeOnce(codeBlockDeclaration)
 export type CodeBlockNode = InstanceType<typeof CodeBlockNode>
-
 export function $createCodeBlockNode(dataset: CodeBlockNodeDataset): CodeBlockNode {
   return new CodeBlockNode(dataset)
 }

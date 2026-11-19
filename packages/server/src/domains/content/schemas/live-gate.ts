@@ -11,9 +11,7 @@ export interface LiveMeta {
 }
 
 export interface LiveContentOptions {
-  /** Rows are live when `publishedAt <= asOf`; defaults to the current time. */
   asOf?: Date
-  /** Escape hatch for listings: include rows with a future `publishedAt`. */
   includeScheduled?: boolean
 }
 
@@ -37,7 +35,6 @@ export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolea
   return true
 }
 
-/** The four meta columns the live gate reads — structural over `post`/`page`. */
 export interface LiveContentColumns {
   deletedAt: typeof postMetaTable.deletedAt | typeof pageMetaTable.deletedAt
   published: typeof postMetaTable.published | typeof pageMetaTable.published
@@ -65,12 +62,10 @@ export interface PromotedMeta {
   publishedRevisionId: number | null
 }
 
-/** In-memory projection of the shared "promoted" gate; a type predicate, so `publishedRevisionId` narrows. */
 export function isPromoted(meta: PromotedMeta): meta is PromotedMeta & { publishedRevisionId: number } {
   return meta.published && meta.publishedRevisionId !== null
 }
 
-/** The two meta columns the promoted gate reads — structural over `post`/`page`. */
 export interface PromotedContentColumns {
   published: typeof postMetaTable.published | typeof pageMetaTable.published
   publishedRevisionId: typeof postMetaTable.publishedRevisionId | typeof pageMetaTable.publishedRevisionId

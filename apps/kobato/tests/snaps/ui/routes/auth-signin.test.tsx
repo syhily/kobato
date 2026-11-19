@@ -11,15 +11,12 @@ import { asRoute } from '@kobato/test/route-test-utils.tsx'
 
 import AdminLayoutRouteRaw from '@/routes/auth/layout.tsx'
 import AdminInstallRouteRaw from '@/routes/auth/setup/index.tsx'
-// Drive the route Component directly with fixture loaderData/actionData — branches are
-// pure given the data. `asRoute` widens the strict ComponentProps to the fields each reads.
 import LoginRouteRaw from '@/routes/auth/signin.tsx'
 
 const LoginRoute = asRoute(LoginRouteRaw)
 const AdminInstallRoute = asRoute(AdminInstallRouteRaw)
 const AdminLayoutRoute = asRoute(AdminLayoutRouteRaw)
 
-// Base loader fixture; each test spreads overrides for a different branch.
 const baseLoader = {
   redirectTo: '/',
   action: 'login' as const,
@@ -36,7 +33,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
       const html = stableHtml(renderInRouter(<LoginRoute loaderData={baseLoader} />, '/signin'))
       expect(html).toContain('登陆')
       expect(html).toContain('邮箱')
-      // The password step only appears after the identify round-trip.
+
       expect(html).not.toContain('忘记')
       expect(html).not.toContain('name="password"')
     })
@@ -99,7 +96,6 @@ describe('routes/auth/signin — Component SSR branches', () => {
     })
 
     it('falls back to no OTP form when pendingOtpEmail is missing (in guard check)', () => {
-      // Missing pending-email fields → the 'pendingOtpEmail' in loaderData guard fails.
       const html = stableHtml(
         renderInRouter(
           <LoginRoute
@@ -255,7 +251,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
           '/signin?error=invalid_credentials',
         ),
       )
-      // The route maps the stable `invalid_credentials` code to its catalog message.
+
       expect(html).toContain('用户名或密码不正确。')
     })
 
@@ -291,7 +287,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
 
     it('renders nothing in the notice block when all error/message sources are absent', () => {
       const html = stableHtml(renderInRouter(<LoginRoute loaderData={baseLoader} />, '/signin'))
-      // Notice wrapper is conditional — no error sources set.
+
       expect(html).not.toContain('role="alert"')
     })
   })
@@ -358,7 +354,6 @@ describe('routes/auth/setup — Component SSR branches', () => {
   })
 
   it('renders the token verify form (not the install form) when not yet verified', () => {
-    // Not verified → SetupTokenVerifyForm, so install chrome must be absent.
     const html = stableHtml(
       renderInRouter(
         <AdminInstallRoute
@@ -375,10 +370,9 @@ describe('routes/auth/setup — Component SSR branches', () => {
 
 describe('routes/auth/layout — Component SSR', () => {
   it('renders the admin auth layout shell with an <Outlet/>', () => {
-    // The layout reads no loaderData — just the split-screen chrome and its <Outlet/>.
     const html = stableHtml(renderInRouter(<AdminLayoutRoute />, '/admin/signin'))
     expect(html).toContain('<main')
-    // The layout uses a max width of 520px for the centered panel.
+
     expect(html).toContain('max-w-[520px]')
   })
 })

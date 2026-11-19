@@ -12,7 +12,6 @@ import { notFound } from '@kobato/server/infra/http/status.ts'
 
 export interface PagePreviewResult {
   page: DetailPageShell
-  /** The full page row — the controller needs `bodyHtml`/`bodyState` and the published revision. */
   sourcePage: Page
   showFriends: boolean
   draftMarker: DraftMarker
@@ -31,10 +30,8 @@ export async function loadPagePreview({
   db: Database
   slug: string
   wantsDraftPreview: boolean
-  /** Viewer identity for the draft-preview gate (`undefined`/`null` = anonymous). */
   viewer: ViewerIdentity | null | undefined
 }): Promise<PagePreviewResult> {
-  // findPublicPostMetaBySlug is sync (node:sqlite); findPageBySlug stays async.
   const postMeta = findPublicPostMetaBySlug(db, slug)
 
   // Live post slug → canonical 301 (only live posts appear in the catalog).
@@ -51,10 +48,8 @@ export async function loadPagePreview({
 
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
   if (needsDraftLookup && viewer) {
-    // The page descriptor owns the rule (admin only) — load denies anyone else.
     const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug, viewer)
     if (draftPreview !== null) {
-      // `draftPreview.preview` is already the shared `Page` DTO — no promotion.
       if (sourcePage === undefined) {
         sourcePage = draftPreview.preview
         draftMarker = 'draft'

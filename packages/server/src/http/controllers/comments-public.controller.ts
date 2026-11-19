@@ -26,8 +26,6 @@ import { tryCommentPostRateLimitByEmail } from '@kobato/server/infra/rate-limit.
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Contract-first: method/path/input/output live in `@kobato/api/comments.ts`;
-// this controller only implements the public procedures.
 const impl = implementPublic(commentsPublicContract)
 
 // The comment body carries a whole Lexical state (≤10 MB), so the post rate

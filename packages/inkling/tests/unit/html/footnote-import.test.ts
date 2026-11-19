@@ -54,21 +54,16 @@ describe('footnote import — the markdown paste lane', () => {
     expect(refs).toHaveLength(1)
     expect(definitions).toHaveLength(1)
 
-    // the markdown-it label brackets are stripped; the digit is the text
     expect(refs[0].text).toBe('1')
-    // recast: the source slug never becomes the targetKey, and ref ↔
-    // definition agree on the fresh one
     expect(refs[0].targetKey).not.toBe('fn1')
     expect(refs[0].targetKey).toBe(definitions[0].targetKey)
 
-    // the definition content carries the inline markup, minus the backrefs
     expect(definitions[0].content).toContain('<strong>text</strong>')
     expect(definitions[0].content).not.toContain('footnote-backref')
     expect(definitions[0].content).not.toContain('↩')
-    // kobato wire alignment: the export-time index rides along
+
     expect(definitions[0].index).toBe(1)
 
-    // markdown-it's <hr class="footnotes-sep"> must not become an HR card
     expect(collect(state.root.children, 'horizontalrule')).toHaveLength(0)
   })
 
@@ -81,7 +76,7 @@ describe('footnote import — the markdown paste lane', () => {
     const definitions = collect(state.root.children, 'footnotedefinition')
     expect(refs).toHaveLength(2)
     expect(definitions).toHaveLength(1)
-    // markdown-it labels the second citation [1:1] — the visible digit is 1
+
     expect(refs.map((ref) => ref.text)).toEqual(['1', '1'])
     expect(refs[0].targetKey).toBe(refs[1].targetKey)
     expect(refs[0].targetKey).toBe(definitions[0].targetKey)
@@ -116,7 +111,7 @@ describe('footnote import — the HTML lane', () => {
     const firstKey = collect(first.root.children, 'footnote-ref')[0].targetKey
     const secondKey = collect(second.root.children, 'footnote-ref')[0].targetKey
     expect(firstKey).not.toBe(secondKey)
-    // …while each pass stays internally consistent
+
     expect(collect(first.root.children, 'footnotedefinition')[0].targetKey).toBe(firstKey)
     expect(collect(second.root.children, 'footnotedefinition')[0].targetKey).toBe(secondKey)
   })

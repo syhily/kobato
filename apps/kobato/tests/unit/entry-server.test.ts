@@ -119,7 +119,6 @@ describe('entry.server.tsx / handleRequest', () => {
       loadContext as never,
     )
 
-    // The Layout renders DEFAULT_LOCALE without loader data — the header must agree.
     expect(responseHeaders.get('Content-Language')).toBe('zh-CN')
   })
 
@@ -185,8 +184,6 @@ describe('entry.server.tsx / handleRequest', () => {
       loadContext as any,
     )
 
-    // renderToPipeableStream is async (onShellReady / onAllReady),
-    // so we just verify it was called with the nonce before the Promise resolves.
     expect(renderToPipeableStreamMock).toHaveBeenCalledOnce()
     const [, options] = renderToPipeableStreamMock.mock.calls[0]
     expect(options).toMatchObject({

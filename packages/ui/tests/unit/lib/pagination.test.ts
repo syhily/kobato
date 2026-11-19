@@ -1,9 +1,6 @@
 import { computePageWindow, DENSE_THRESHOLD } from '@kobato/ui/lib/pagination.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pins the page-window algorithm shared between the public site and
-// the admin shell so the rendered chip ladder is identical for any
-// `(current, total)` tuple.
 describe('computePageWindow', () => {
   describe('edge cases', () => {
     it('returns [] for total <= 1 (caller renders nothing)', () => {

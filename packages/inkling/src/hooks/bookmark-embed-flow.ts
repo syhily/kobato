@@ -1,12 +1,3 @@
-/**
- * The bookmark embed flow — headless module behind `useBookmarkMetadata`: the
- * loading/urlError machine, the init-vs-submit divergence, and the defensive
- * `isEmbedResponse` classifier, composed from the tracked-request skeleton over
- * the request-track guard so the latest ISSUED fetch wins — an impatient
- * `submitUrl` supersedes a slower mount-time fetch that would otherwise resolve
- * last and patch the node (or paste-as-link) over the newer result.
- */
-
 import type {
   BookmarkEmbedResponse,
   LinkingSettings,
@@ -61,14 +52,13 @@ export interface BookmarkEmbedFlow {
   getSnapshot: () => BookmarkEmbedFlowSnapshot
   subscribe: (listener: () => void) => () => void
   clearUrlError: () => void
-  /** The submit path: focuses the editor before the input dismounts, applies the submitted href, folds fetch failures into urlError. */
+
   submitUrl: (href: string) => Promise<void>
-  /** The init path (a card constructed with a bare url): applies the response's canonical url and rejects on fetch failure so the caller can paste-as-link. */
+
   fetchInitialMetadata: (href: string) => Promise<void>
-  /** Supersede every in-flight fetch (adapter teardown / recreation) — a late response then no-ops instead of patching the node. */
+
   dispose: () => void
 }
-
 export function createBookmarkEmbedFlow({
   editor,
   nodeKey,
@@ -84,14 +74,13 @@ export function createBookmarkEmbedFlow({
   const fetchAndApply = async (href: string, init: boolean): Promise<void> => {
     const generation = track.next()
     if (!init) {
-      focusEditorRoot(editor) // focus editor before causing the input element to dismount
+      focusEditorRoot(editor)
     }
     store.emit({ loading: true })
 
     const outcome = await runTrackedRequest(track, generation, () =>
       Promise.resolve(fetchEmbed?.(href, { type: 'bookmark' })),
     )
-
     // a newer fetch was issued while this one was in flight — it owns the
     // card: no error state, and no init rethrow (no paste-as-link over the
     // newer flow)
@@ -109,8 +98,6 @@ export function createBookmarkEmbedFlow({
       return
     }
 
-    // an undefined response (no fetchEmbed, or a deliberate host skip)
-    // falls through the same not-an-embed-response exit
     if (!isEmbedResponse(outcome.value)) {
       store.emit({ loading: false, urlError: true })
       return
@@ -159,7 +146,7 @@ export function createBookmarkEmbedFlow({
     },
     submitUrl: (href: string) => fetchAndApply(href, false),
     fetchInitialMetadata: (href: string) => fetchAndApply(href, true),
-    /** Supersede every in-flight fetch (adapter teardown / recreation) — a late response then no-ops instead of patching the node. */
+
     dispose: () => {
       track.dispose()
       store.dispose()

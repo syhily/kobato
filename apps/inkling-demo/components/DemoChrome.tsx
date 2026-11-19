@@ -22,9 +22,6 @@ export function useDemoSidebar() {
   return { isSidebarOpen, sidebarView, openSidebar }
 }
 
-/**
- * Each surface passes its own `useDemoSidebar()` state, since it may read `isSidebarOpen` for layout adjustments.
- */
 export function DemoChrome({
   sidebar,
   saveContent,

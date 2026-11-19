@@ -1,5 +1,3 @@
-// Retry-policy helpers shared by the webmention outbox and inbox workers.
-
 /** min(2^attempts × 60s, 12h) — both call sites pass the ALREADY-incremented
  *  attempt count (`row.attempts + 1`), so the first failure waits 2m, then
  *  4m → 8m → 16m, capped at 12h. */

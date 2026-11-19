@@ -176,7 +176,6 @@ describe('analytics/track — trackPageView', () => {
     )
     expect(rows.getRowObjects()).toEqual([{ eventId, path: '/post/1', index1: 'post:1' }])
 
-    // The sidecar row joins on the same id.
     expect(await deviceEnvRows()).toEqual([
       {
         eventId,
@@ -233,7 +232,6 @@ describe('analytics/track — trackPageView', () => {
 
   it('skips only the counter when the target is null (homepage)', async () => {
     await track(makeFacts({ userAgent: CHROME_UA }), null)
-    // No metric row is ever created for a null target.
     expect(await db.select().from(metric)).toHaveLength(0)
     const rows = await accessLogRows()
     expect(rows).toHaveLength(1)

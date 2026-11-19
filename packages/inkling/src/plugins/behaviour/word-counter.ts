@@ -15,35 +15,15 @@ import {
   type LexicalNode,
 } from 'lexical'
 
-// Headless word counter — the counting engine behind WordCountPlugin.
-//
-// Document channel: dirty keys accumulate and remap to their root children, so
-// a small edit recomputes one block — throttled flush, with a full-recompute
-// fallback for nested editors (which don't receive top-level dirty maps).
-// Selection-only surfaces never build the document machinery; a counter with
-// neither callback attaches no listeners.
-//
-// Selection channel (`onSelectionChange`) is coordinated per TOP-LEVEL editor:
-// one entry per counter identity, only focused+editable entries count, the
-// newest eligible entry wins, and dedup is per CALLBACK
-// (`lastSelectionWordCounts`). The throttle is an injected port so tests drive
-// the engine synchronously.
-
 export const WORD_COUNT_THROTTLE_MS = 200
-
-/** A scheduled flush — the shape the engine needs from its throttle port. */
 export interface WordCounterThrottled {
   (): void
   cancel: () => void
 }
-
-/** Throttle port — tests inject a synchronous implementation. */
 export type WordCounterThrottle = (fn: () => void, waitMs: number) => WordCounterThrottled
-
 const defaultThrottle: WordCounterThrottle = (fn, waitMs) => throttle(fn, waitMs)
 
 type SelectionCountCallback = (count: number | null) => void
-
 interface SelectionCountEntry {
   editor: LexicalEditor
   count: number | null
@@ -54,15 +34,11 @@ interface SelectionCountEntry {
 interface WordCountState {
   nodeWordCounts: Map<string, number>
   lastWordCount: number
-  /** Selection count per counter instance (null = no active selection). */
+
   selectionCounts: Map<object, SelectionCountEntry>
-  /**
-   * Focus ledger for rootless (headless) editors only — rendered editors use
-   * their DOM root as the authority, so a missed BLUR cannot veto a newly
-   * focused editor.
-   */
+
   focusedEditor: LexicalEditor | null
-  /** Dedup per callback: the last value delivered to that callback. */
+
   lastSelectionWordCounts: Map<SelectionCountCallback, number | null>
   selectionUpdateSequence: number
 }
@@ -111,10 +87,6 @@ function findRootChild(node: LexicalNode): LexicalNode | null {
   return current
 }
 
-// A Lexical editor keeps its selection when focus moves elsewhere, so the
-// rendered editor's own root (when it has one) is the authority. A rootless
-// editor has no DOM focus to read: its focus comes from the per-composer ledger
-// set by FOCUS_COMMAND/BLUR_COMMAND.
 function hasEditorFocus(editor: LexicalEditor, state: WordCountState): boolean {
   const rootElement = editor.getRootElement()
   if (rootElement) {
@@ -126,13 +98,12 @@ function hasEditorFocus(editor: LexicalEditor, state: WordCountState): boolean {
 interface CreateWordCounterOptions {
   editor: LexicalEditor
   onChange?: (count: number) => void
-  /** Receives the active selection's word count, or null while nothing is selected. */
+
   onSelectionChange?: (count: number | null) => void
   language?: string
   throttleMs?: number
   throttleFn?: WordCounterThrottle
 }
-
 function collectDocumentWordCount(state: WordCountState, language?: string): number {
   const rootNode = $getRoot()
   const children = rootNode.getChildren()
@@ -148,8 +119,6 @@ function collectDocumentWordCount(state: WordCountState, language?: string): num
   return wordCount
 }
 
-// Drop dedup entries whose callback no remaining counter owns, so replacement
-// callbacks do not accumulate across a composer's lifetime.
 function pruneSelectionEmissions(state: WordCountState) {
   const inUse = new Set<SelectionCountCallback>()
   for (const entry of state.selectionCounts.values()) {
@@ -170,9 +139,6 @@ export function createWordCounter({
   throttleMs = WORD_COUNT_THROTTLE_MS,
   throttleFn = defaultThrottle,
 }: CreateWordCounterOptions) {
-  // A counter with neither channel has no work to do: no update listener, no
-  // command listener, no throttle. `setLanguage` stays callable from the React
-  // adapter.
   if (onChange === undefined && onSelectionChange === undefined) {
     return {
       attach() {
@@ -193,10 +159,6 @@ export function createWordCounter({
   let currentLanguage = initialLanguage
   let pendingDirtyKeys = new Set<string>()
   let cleanupRegister: (() => void) | null = null
-
-  // One full-document recount path. `forceEmission` drives the initial attach
-  // (always deliver) and the nested-editor full-recompute fallback; language
-  // swaps and ordinary recounts dedup against `lastWordCount`.
   const countDocumentWords = countCallback
     ? (forceEmission: boolean) => {
         const topLevelEditor = getTopLevelEditor(editor)
@@ -220,7 +182,6 @@ export function createWordCounter({
         if (pendingDirtyKeys.size === 0) {
           return
         }
-
         const topLevelEditor = getTopLevelEditor(editor)
         const state = getWordCountState(topLevelEditor)
         const keysToRecompute = new Set<string>()
@@ -269,11 +230,6 @@ export function createWordCounter({
       }
     : null
 
-  // Broadcast the count of the newest focused + editable entry to every
-  // registered callback, deduping per callback. Evaluating each entry (rather
-  // than one composer-wide focused editor) means a programmatically focused
-  // editor wins even when the previous editor's BLUR was missed, while a
-  // focused editor with a collapsed selection still emits null.
   const broadcastSelectionCount = (callbacks: Iterable<SelectionCountCallback>) => {
     const state = getWordCountState(getTopLevelEditor(editor))
     let activeEntry: SelectionCountEntry | null = null
@@ -300,7 +256,6 @@ export function createWordCounter({
       callback(combined)
     }
   }
-
   const emitSelectionCount = () => {
     const state = getWordCountState(getTopLevelEditor(editor))
     broadcastSelectionCount([...state.selectionCounts.values()].map((entry) => entry.callback))
@@ -343,7 +298,6 @@ export function createWordCounter({
   const throttledSelectionCount = updateSelectionCount ? throttleFn(updateSelectionCount, throttleMs) : null
 
   return {
-    /** Run the initial counts and start listening for editor updates. */
     attach() {
       if (cleanupRegister) {
         return
@@ -402,8 +356,6 @@ export function createWordCounter({
                 return false
               }
 
-              // a blurred editor keeps its selection in state even though the
-              // page no longer shows it — drop its count at once
               throttledSelectionCount?.cancel()
               const state = getWordCountState(getTopLevelEditor(editor))
 
@@ -439,8 +391,7 @@ export function createWordCounter({
             },
             COMMAND_PRIORITY_LOW,
           ),
-          // read-only surfaces cannot own a selection; recompute on both
-          // directions of the flip so the count disappears and returns
+
           editor.registerEditableListener(() => {
             updateSelectionCount()
           }),
@@ -450,7 +401,6 @@ export function createWordCounter({
       cleanupRegister = mergeRegister(...registrations)
     },
 
-    /** Cancel pending flushes and stop listening for editor updates. */
     detach() {
       throttledCount?.cancel()
       throttledIncrementalCount?.cancel()
@@ -459,8 +409,6 @@ export function createWordCounter({
       cleanupRegister = null
 
       if (selectionCallback) {
-        // an unmounting editor may hold the active selection (e.g. a card
-        // deleted mid-edit), so re-evaluate without its entry
         const state = getWordCountState(getTopLevelEditor(editor))
         state.selectionCounts.delete(counterToken)
 
@@ -470,20 +418,17 @@ export function createWordCounter({
             state.focusedEditor = null
           }
         }
-
         const callbacks = new Set<SelectionCountCallback>()
         for (const entry of state.selectionCounts.values()) {
           callbacks.add(entry.callback)
         }
-        // the departing consumer still sees the re-evaluated value; shared
-        // callbacks are deduped like any other broadcast
+
         callbacks.add(selectionCallback)
         broadcastSelectionCount(callbacks)
         pruneSelectionEmissions(state)
       }
     },
 
-    /** Swap the Intl.Segmenter language without rebuilding counter identity. */
     setLanguage(nextLanguage?: string) {
       if (nextLanguage === currentLanguage) {
         return

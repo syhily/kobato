@@ -1,4 +1,3 @@
-// Languages used in the code block editor and pre-render pass.
 export const HIGHLIGHT_LANGUAGES = [
   'bash',
   'shell',

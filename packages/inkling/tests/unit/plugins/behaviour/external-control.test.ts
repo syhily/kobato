@@ -99,7 +99,6 @@ describe('external-control', () => {
     editor.getEditorState().read(() => {
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
-      // the paragraph's own select() ran: the range covers its text
       expect(selection?.getNodes().some((node) => node.getTextContent() === 'body')).toBe(true)
     })
   })

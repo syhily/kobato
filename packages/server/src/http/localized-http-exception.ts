@@ -17,7 +17,6 @@ export class LocalizedHttpException extends HTTPException {
   }
 }
 
-/** Convenience factory: status + catalog key → a translatable exception. */
 export function localizedHttpException(status: ContentfulStatusCode, messageKey: UiMessageId): LocalizedHttpException {
   return new LocalizedHttpException(status, descriptorFor(messageKey))
 }

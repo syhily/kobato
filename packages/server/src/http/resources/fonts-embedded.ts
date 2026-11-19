@@ -31,7 +31,6 @@ fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
   }
   const storageKey = parsed.key
 
-  // S3 primary: 302 to the raw storage key on the current public base.
   const redirect = s3StorageRedirect(
     storageKey,
     new URL(c.req.url).search,

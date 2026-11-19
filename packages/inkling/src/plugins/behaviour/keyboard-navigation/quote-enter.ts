@@ -21,8 +21,6 @@ import {
 // breaks for that reason. Two breaks also keep the markdown export's quote contiguous
 // (a blank '>' line).
 
-// Leave the quote: drop the caret into a fresh paragraph after it, or replace the
-// quote outright when nothing worth keeping is left inside.
 function $exitQuote(quote: QuoteNode): void {
   const paragraph = $createParagraphNode()
   paragraph.setDirection(quote.getDirection())
@@ -35,8 +33,6 @@ function $exitQuote(quote: QuoteNode): void {
 }
 
 function $handleQuoteEnter(event: KeyboardEvent | null): boolean {
-  // A null event is the IME/mobile Enter path; shift+enter is a soft line break and
-  // cmd/ctrl+enter belongs to the card edit-mode toggle (enter.ts runs first).
   if (!event || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
     return false
   }
@@ -60,8 +56,6 @@ function $handleQuoteEnter(event: KeyboardEvent | null): boolean {
     return true
   }
 
-  // Second Enter: the caret sits at the quote end right after the break pair the
-  // previous Enter inserted — remove both breaks and leave the quote.
   if (anchor.type === 'element' && anchorNode === quote && anchor.offset === quote.getChildrenSize()) {
     const last = quote.getLastChild()
     const previous = last?.getPreviousSibling()

@@ -1,4 +1,3 @@
-// Observability runtime orchestration (Platform domain, leaf).
 //
 // The settings section is the single source of truth: this module maps it onto
 // the infra trace input, decides whether the configuration may activate, and
@@ -27,11 +26,6 @@ export type ObservabilityRuntimePhase = 'disabled' | 'unverified' | 'invalid' | 
 
 export interface ObservabilityRuntimeStatus {
   phase: ObservabilityRuntimePhase
-  /**
-   * Runtime fingerprint (every pipeline-affecting setting) of the currently
-   * applied configuration, `null` before the first sync. Verification compares
-   * the CONNECTION fingerprint instead — see `observabilityConnectionFingerprint`.
-   */
   fingerprint: string | null
   /** Diagnostics-free failure summary (codes / field names only, never a value). */
   lastError: string | null
@@ -48,7 +42,6 @@ interface RuntimeState {
   phase: ObservabilityRuntimePhase
   fingerprint: string | null
   lastError: string | null
-  /** True while this module instance believes a provider is installed. */
   started: boolean
 }
 
@@ -223,7 +216,6 @@ export function syncObservabilityRuntime(): Promise<void> {
   return guarded
 }
 
-/** Test seam: drop the module state between cases. */
 export function __resetObservabilityRuntimeForTests(): void {
   cancelPostStartRetentionSync()
   state = { phase: 'disabled', fingerprint: null, lastError: null, started: false }

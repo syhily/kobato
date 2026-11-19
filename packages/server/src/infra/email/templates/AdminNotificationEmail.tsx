@@ -11,22 +11,14 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 export type AdminNotificationRow = { label?: string; value: string } | { html: string }
 
 interface Props {
-  /** Explicit site-locale translator (see `emailTranslator`). */
   t: ServerTranslator
-  /** Greeting name; defaults to the site author (the other callers are admin alerts). */
   receiver?: string
-  /** Inbox preheader line, e.g. `在《…》中有一条新留言`. */
   preview: string
-  /** Bold headline, e.g. `新留言`. */
   title: string
-  /** Optional context line under the title — a label followed by a bold link. */
   contextLine?: { label: string; link: { text: string; href: string } }
-  /** Optional muted note between the context line and the card. */
   mutedNote?: string
-  /** Card content. The last rendered row drops its bottom margin. */
   rows: AdminNotificationRow[]
   cta: { label: string; href: string }
-  /** Optional footer line under the CTA (opt-out copy for notification emails). */
   footerNote?: string
 }
 

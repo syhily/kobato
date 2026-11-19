@@ -10,11 +10,8 @@ export const meta = titleMeta('meta.title.admin.webmentions')
 
 export default function WpAdminWebmentionsRoute() {
   const [searchParams, setSearchParams] = useSearchParams()
-  // `?tab=outbox` deep-links the send log (the task center links here); anything else lands on the inbox.
   const tab: WebmentionTab = searchParams.get('tab') === 'outbox' ? 'outbox' : 'inbox'
 
-  // Tab switches write back into the URL (comments controller precedent: replace + preventScrollReset) so
-  // reload/Back keeps the selection.
   const onTabChange = (next: WebmentionTab) => {
     setSearchParams(
       (prev) => {

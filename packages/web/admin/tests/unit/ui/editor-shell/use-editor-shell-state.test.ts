@@ -83,7 +83,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(result.initialBody).toEqual(emptyLexicalBody())
     expect(result.isEditing).toBe(false)
 
-    expect(result.metaOpen).toBe(true) // the SSR/default viewport is non-mobile
+    expect(result.metaOpen).toBe(true)
     expect(result.isLg).toBe(true)
 
     expect(result.previewBanner).toBeNull()
@@ -105,7 +105,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(toolbar.canPublish).toBe(false)
     expect(toolbar.canPersistMeta).toBe(false)
     expect(toolbar.published).toBe(false)
-    expect(toolbar.publishStatus).toBe('never-saved') // not editing
+    expect(toolbar.publishStatus).toBe('never-saved')
 
     expect(toolbar.persistCreate).toBeInstanceOf(Function)
     expect(toolbar.persistSave).toBeInstanceOf(Function)
@@ -119,8 +119,8 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
 
     expect(sidebar.draft).toEqual(emptyMeta)
     expect(sidebar.disabled).toBe(false)
-    expect(sidebar.publishStatus).toBe('never-saved') // not editing
-    expect(sidebar.revisionSummary).toBeNull() // not editing
+    expect(sidebar.publishStatus).toBe('never-saved')
+    expect(sidebar.revisionSummary).toBeNull()
     expect(sidebar.saveStatus).toEqual({ kind: 'unsaved' })
     expect(sidebar.expectedToken).toBeNull()
     expect(sidebar.body).toEqual(emptyLexicalBody())

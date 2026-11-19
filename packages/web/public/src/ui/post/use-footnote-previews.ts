@@ -1,11 +1,6 @@
 import { sanitizeHtml } from '@kobato/sanitize/sanitize-html.ts'
 import { type RefObject, useEffect } from 'react'
 
-// Hovering or focusing an exported footnote reference (`sup > a[href="#user-content-fn-N"]`)
-// floats the target note's body above it (below when the viewport top is in the way), with an
-// arrow pointing back at the trigger. One shared popover, positioned `fixed` from the
-// trigger's bounding rect.
-//
 // `bodyHtml` is the effect's re-scan key (rationale in useMusicPlayers): without it,
 // new footnote refs never bind.
 const GAP = 8

@@ -235,7 +235,6 @@ async function buildSingleParagraph(
   })
 }
 
-// Caret inside the search node so the session focuses the at-link.
 async function buildAtLinkParagraph(editor: LexicalEditor, searchText = 'abc') {
   await drainEnqueuedUpdates(editor, () => {
     const root = $getRoot()
@@ -299,9 +298,6 @@ describe('at-link behaviour (headless registrations)', () => {
       }
     })
     rootElement.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: '@' }))
-    // Clear the DOM selection before the commit microtask runs so later
-    // update cycles don't read a stale DOM selection back (see harness
-    // notes above).
     window.getSelection()?.removeAllRanges()
     await tick()
   }
@@ -314,7 +310,7 @@ describe('at-link behaviour (headless registrations)', () => {
     document.body.appendChild(rootElement)
     editor.setRootElement(rootElement)
     editor.setEditable(false)
-    // same registration order as the React adapter's effects
+
     registerAtLinkInsertion(editor)
     registerAtLinkSession(editor, { onSessionChange: (snapshot) => sessionSnapshots.push(snapshot) })
     registerAtLinkGuards(editor)
@@ -398,9 +394,7 @@ describe('at-link behaviour (headless registrations)', () => {
 
   describe('native input fallback path', () => {
     it('(a) converts a "@" typed into an empty paragraph, matching the controlled path', async () => {
-      // what the browser produces after typing '@' into an empty paragraph
       await buildSingleParagraph(editor, [{ text: '@' }], { segment: 0, anchorOffset: 1 })
-
       await dispatchNativeAt()
 
       expect(editor.getEditorState().toJSON()).toEqual(editorStateJSON(paragraphJSON([atLinkNodeJSON(0)])))
@@ -473,7 +467,6 @@ describe('at-link behaviour (headless registrations)', () => {
 
       expect(await dispatchCommand(editor, KEY_ESCAPE_COMMAND, new KeyboardEvent('keydown'))).toBe(true)
 
-      // the reverted text merges with the preceding bold text node (same format)
       expect(editor.getEditorState().toJSON()).toEqual(
         editorStateJSON(paragraphJSON([textNodeJSON('hello @abc', 1)], 1)),
       )
@@ -661,7 +654,6 @@ describe('at-link behaviour (headless registrations)', () => {
         }
       })
 
-      // the selection moved out, but the at-link survives the composing bail
       expect(editor.getEditorState().toJSON()).toEqual(
         editorStateJSON(paragraphJSON([textNodeJSON('hello '), atLinkNodeJSON(0)])),
       )
@@ -677,7 +669,6 @@ describe('at-link behaviour (headless registrations)', () => {
         }
       })
 
-      // the reverted '@' merges with the preceding same-format text node
       expect(editor.getEditorState().toJSON()).toEqual(editorStateJSON(paragraphJSON([textNodeJSON('hello!@')])))
       expect(lastSession()).toEqual({ focusedNode: null, query: '' })
     })
@@ -707,11 +698,7 @@ describe('at-link behaviour (headless registrations)', () => {
       await buildSingleParagraph(editor, [], 'element')
       expect(await dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, '@')).toBe(true)
 
-      // keep the DOM selection's anchorOffset away from 0 so the ZWNJ
-      // normalization cannot move the caret into the search node first —
-      // this isolates the listener's empty-search removal branch
       window.getSelection()?.setBaseAndExtent(document.body, 1, document.body, 1)
-
       await drainEnqueuedUpdates(editor, () => {
         const zwnjNode = $nodesOfType(AtLinkNode)[0].getFirstChild()
         if (zwnjNode instanceof ZWNJNode) {
@@ -800,7 +787,7 @@ describe('at-link behaviour (headless registrations)', () => {
         anchor: { nodeType: 'text', offset: 1 },
         focus: { nodeType: 'text', offset: 2 },
       })
-      // the at-link survives as a unit — a range deletion removes it whole
+
       expect(editor.getEditorState().toJSON()).toEqual(
         editorStateJSON(paragraphJSON([textNodeJSON('hello '), atLinkNodeJSON(null, 'abc'), textNodeJSON(' world')])),
       )

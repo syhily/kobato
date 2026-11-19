@@ -28,7 +28,6 @@ describe('useKeyboardListSelection', () => {
     pressArrowDown()
     rerender({ items: ['a', 'b', 'c'] })
 
-    // the highlight must land on the first item without another ArrowDown
     expect(result.current.selectedIndex).toBe(0)
     expect(result.current.selectedIndex).toBeLessThan(3)
   })

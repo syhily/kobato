@@ -6,9 +6,6 @@ import {
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import React from 'react'
 
-// The drop policies (claim flow, cursor suppression, html fallback, the
-// DRAG_DROP_PASTE bus) live in @kobato/inkling-internal/plugins/behaviour/file-drop; this
-// plugin keeps only the uploader context and mounts the registrations.
 function DragDropPastePlugin() {
   const [editor] = useLexicalComposerContext()
   const { fileUploader } = useInklingHostEssentials()

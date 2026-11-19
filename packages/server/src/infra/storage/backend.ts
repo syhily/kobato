@@ -34,7 +34,6 @@ export interface PutStreamInput {
   visibility?: ObjectVisibility
 }
 
-/** Result of `getStreamWithMeta` — the body plus the headers a verbatim copy needs. */
 export interface StreamWithMeta {
   body: Readable
   contentType?: string | undefined
@@ -48,14 +47,11 @@ export interface StreamWithMeta {
  */
 export interface StorageBackend {
   readonly driver: StorageDriver
-  /** Whether this backend is usable for new uploads under the current config. */
   isAvailable(): boolean
   put(input: PutObjectInput): Promise<StoredObjectMeta>
   /** Streaming put for large/unknown-length bodies (backups). `size` in the result is the exact stored byte count. */
   putStream(input: PutStreamInput): Promise<StoredObjectMeta>
-  /** Read the whole object into a buffer (capped at `MAX_OBJECT_BUFFER_SIZE`). */
   get(key: string): Promise<Buffer>
-  /** Stream an object without buffering (large backups). */
   getStream(key: string): Promise<Readable>
   /** Streams an object with its stored Content-Type / Cache-Control headers so a
    *  backend-to-backend migration can copy them verbatim; omitted by backends with no
@@ -64,7 +60,6 @@ export interface StorageBackend {
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>
   deleteMany(keys: string[]): Promise<void>
-  /** Delete every object under `prefix` including the prefix directory itself. */
   deletePrefix(prefix: string): Promise<void>
   /**
    * List objects under `prefix` in lexicographic key order. `startAfter`

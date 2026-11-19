@@ -21,7 +21,6 @@ function toPosix(path: string): string {
   return path.split(sep).join('/')
 }
 
-/** Resolve a `@kobato/*` package or in-package relative specifier to a repo-relative source file. */
 const PACKAGE_SRC_ROOTS: Record<string, string> = {
   server: 'packages/server/src',
   contracts: 'packages/shared/contracts/src',
@@ -53,7 +52,6 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
   return null
 }
 
-/** Every repo-local module reachable from `entry` through static imports. */
 function importClosure(entry: string): Set<string> {
   const seen = new Set<string>()
   const queue = [entry]
@@ -78,8 +76,6 @@ describe('server/infra/sea/self-update-gate — zero-side-effect import contract
   it('never reaches the config, translator or error-descriptor modules', () => {
     const closure = importClosure(ENTRY)
 
-    // Guard the walker itself: an empty/under-resolved closure would make the
-    // banned-module assertion vacuously green.
     expect(closure.size).toBeGreaterThan(3)
     expect(closure.has(ENTRY)).toBe(true)
     expect(closure.has('packages/server/src/infra/sea/sea.ts')).toBe(true)

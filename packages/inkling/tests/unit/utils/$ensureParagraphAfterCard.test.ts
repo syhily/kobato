@@ -12,8 +12,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// One card type is enough to exercise the policy in jsdom (the same approach
-// as the card-adjacency and snippet-insertion tests).
 const TEST_NODES = [ImageNode]
 
 function createTestEditor(): LexicalEditor {
@@ -40,7 +38,7 @@ describe('$ensureParagraphAfterCard', () => {
       expect(paragraph).toBeDefined()
       expect($isParagraphNode(card.getNextSibling())).toBe(true)
       expect(card.getNextSibling()?.is(paragraph)).toBe(true)
-      // no selection requested — the policy leaves the selection alone
+
       expect($getSelection()).toBeNull()
     })
   })
@@ -78,8 +76,6 @@ describe('$ensureParagraphAfterCard', () => {
   })
 
   it('returns undefined instead of throwing for a detached node', () => {
-    // no mutation happens here, so this update never fires onUpdate — assert
-    // synchronously inside the update instead of awaiting a commit
     editor.update(() => {
       const card = $createImageNode({ src: '/image.png' })
       expect($ensureParagraphAfterCard(card)).toBeUndefined()

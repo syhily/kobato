@@ -23,7 +23,6 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
  */
 export const STORAGE_REDIRECT_CACHE_CONTROL = 'public, max-age=300'
 
-/** Positive-integer query param within `max` (malformed / out-of-range → null). */
 function parseTransformParam(value: string | null, max: number): number | null {
   if (value === null || !/^\d+$/.test(value)) {
     return null
@@ -75,7 +74,6 @@ function buildRedirectLocation(objectUrl: string, search: string, settings: Blog
   return location
 }
 
-/** The configured template from the request-pinned bundle, or `''` when unset / not hydrated. */
 function readUrlTemplate(settings: BlogSettingsBundle | null): string {
   try {
     return requireBlogSettingsSection('assets', settings).storage.urlTemplate.trim()

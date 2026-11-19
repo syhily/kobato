@@ -39,11 +39,6 @@ interface AtLinkPluginProps {
   siteUrl?: LinkingSettings['siteUrl']
 }
 
-// At-link search adapter: subscribes to the headless session in
-// ./behaviour/at-link (insertion, shape transform, command guards, and the
-// focused-node/query synchronization policy), renders the search results
-// popup for the emitted snapshots, and delegates commits. Analytics stays
-// here — it is product glue, not tree policy.
 export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps) => {
   const [editor] = useLexicalComposerContext()
   const labels = useInklingLabels()
@@ -57,17 +52,13 @@ export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps)
   )
   const { isSearching, listOptions } = useSearchLinks(query, searchLinks, searchOptions)
 
-  // Convert a typed '@' into an at-link node (headless lifecycle module).
   React.useEffect(() => registerAtLinkInsertion(editor), [editor])
 
-  // Subscribe to the headless search session (focused at-link node + query).
   React.useEffect(() => registerAtLinkSession(editor, { onSessionChange: setSession }), [editor])
 
   React.useEffect(() => registerAtLinkGuards(editor), [editor])
-
   React.useEffect(() => registerAtLinkNodeTransform(editor), [editor])
 
-  // the analytics are the product-glue half of the commit
   const onItemSelect = React.useCallback(
     (item?: ListOptionItem) => {
       editor.update(() => {
@@ -119,12 +110,9 @@ export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps)
   )
 }
 
-// Wrapper ensures all dependencies exist before InklingAtLinkPlugin renders,
-// keeping conditionals out of the plugin itself.
 export const AtLinkPlugin = () => {
   const { searchLinks, siteUrl } = useInklingLinkingSettings()
   const [editor] = useLexicalComposerContext()
-
   if (typeof searchLinks !== 'function') {
     return null
   }

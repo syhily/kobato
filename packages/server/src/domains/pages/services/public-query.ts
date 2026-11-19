@@ -13,15 +13,8 @@ import { and, desc, eq } from 'drizzle-orm'
 
 const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 
-/**
- * Slug-keyed lookup excluding soft-deleted rows; the timestamp gate is applied by the catalog layer.
- */
 export const findPublicPageMetaBySlug = crud.findPublicMetaBySlug
 
-/**
- * Slim live-by-slug lookup — id + title only, gated by `livePageWhere`,
- * for cross-domain consumers that must resolve a live slug.
- */
 export async function findLivePageBySlug(db: Database, slug: string): Promise<{ id: number; title: string } | null> {
   const rows = await db
     .select({ id: pageMetaTable.id, title: pageMetaTable.title })
@@ -31,16 +24,12 @@ export async function findLivePageBySlug(db: Database, slug: string): Promise<{ 
   return rows[0] ?? null
 }
 
-/**
- * Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`.
- */
 interface SitemapPageRow {
   slug: string
   firstPublishedAt: Date | null
   publishedAt: Date
 }
 
-/** Live-gated sitemap projection — sitemap columns only, no revision join or image hydration. */
 export async function listSitemapPages(db: Database, now = new Date()): Promise<SitemapPageRow[]> {
   return db
     .select({

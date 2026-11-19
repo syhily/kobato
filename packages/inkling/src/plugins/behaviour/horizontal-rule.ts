@@ -13,45 +13,23 @@ import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-nod
 import { getRegisteredNodeMap } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $getSelection, $isParagraphNode, $isRangeSelection, COMMAND_PRIORITY_EDITOR } from 'lexical'
 
-// Horizontal rule behaviour — the insert surgery and the divider scan's
-// guard half, headless (the HorizontalRulePlugin keeps only registration).
-// The divider's declaration declares no insert spec, so the command
-// registers here beside the policy rather than through CardInsertPlugin's
-// derived view.
-
-/**
- * The HR insert surgery: insert the rule before the current paragraph's
- * top-level element, splitting off a fresh blank paragraph first when the
- * current one has content — the caret stays on a blank paragraph either
- * way. Returns false when there is no range selection to insert at. Must
- * run inside editor.update() (the command dispatch already provides it).
- */
 export function $insertHorizontalRule(): boolean {
   const selection = $getSelection()
 
   if (!$isRangeSelection(selection)) {
     return false
   }
-
   const horizontalRuleNode = $createHorizontalRuleNode()
-
   const selectedNode = selection.focus.getNode()
   if ($isParagraphNode(selectedNode) && selectedNode.getTextContent() !== '') {
     selection.insertParagraph()
   }
 
-  // the rule goes before the paragraph so the caret stays on the blank line
   selection.focus.getNode().getTopLevelElementOrThrow().insertBefore(horizontalRuleNode)
 
   return true
 }
 
-/**
- * The divider scan's guard half: the paragraph node to transform, or null
- * when the scan must not fire — a non-collapsed selection, a non-'---'
- * paragraph, or a native caret that isn't a text node inside the editor
- * (compare the footnote caret trigger's guards in behaviour/footnotes.ts).
- */
 export function resolveDividerScanTarget(editor: LexicalEditor): ParagraphNode | null {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -62,7 +40,6 @@ export function resolveDividerScanTarget(editor: LexicalEditor): ParagraphNode |
   if (!node || !$isParagraphNode(node) || !DIVIDER_REGEXP.test(node.getTextContent())) {
     return null
   }
-
   const nativeSelection = window.getSelection()
   if (!nativeSelection) {
     return null
@@ -77,26 +54,19 @@ export function resolveDividerScanTarget(editor: LexicalEditor): ParagraphNode |
   return node
 }
 
-/** Registers INSERT_HORIZONTAL_RULE_COMMAND. No-ops when the card is not registered. */
 export function registerHorizontalRuleInsert(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {
     return () => {
-      /* noop — the card is not registered */
+      /* noop */
     }
   }
   return editor.registerCommand(INSERT_HORIZONTAL_RULE_COMMAND, () => $insertHorizontalRule(), COMMAND_PRIORITY_EDITOR)
 }
 
-/**
- * Registers the divider per-update scan: the registration policy
- * (history-tag / composing / empty-dirty skips, nested scan commit) lives
- * in the update-scan seam, the trigger regex and replace-and-select in the
- * card-shortcut seam; this module owns the guard half between them.
- */
 export function registerHorizontalRuleScan(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {
     return () => {
-      /* noop — the card is not registered */
+      /* noop */
     }
   }
   return registerUpdateScan(editor, {

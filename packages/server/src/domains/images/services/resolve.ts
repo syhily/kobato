@@ -1,8 +1,5 @@
-// Single owner of the "image URL(s) → stored meta" pipeline. Meta reads go
-// straight to SQLite (an indexed `storage_path IN (...)` lookup — the remote-DB
-// cache tier was retired); unreadable settings degrade the CDN match to `null`
-// (origin-relative `/storage/…` and `/images/…` srcs still resolve) — never
-// fails the render.
+// Unreadable settings degrade the CDN match to `null` (origin-relative `/storage/…`
+// and `/images/…` srcs still resolve) — never fails the render.
 
 import type { Database } from '@kobato/db/database.ts'
 import type { ImageRow } from '@kobato/db/types.ts'
@@ -80,12 +77,11 @@ export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | nul
     }
     try {
       const pathname = new URL(src).pathname
-      // Legacy absolute form: local-served assets under `/images/<key>`.
       if (pathname.startsWith('/images/')) {
         return normalizeStoragePath(pathname.slice(1))
       }
     } catch {
-      // Malformed URL — fall through to "no match".
+      /* noop */
     }
     return null
   }
@@ -115,14 +111,9 @@ export interface ResolvedImageRef {
   width: number
   height: number
   thumbhash?: string
-  /** Absolute URL the asset is publicly served from; null when unresolvable. */
   publicUrl: string | null
 }
 
-/**
- * Batch entry. Result map is keyed by distinct URL; URLs sharing one
- * storage path (transform variants) are read once.
- */
 export async function resolveImageRefs(db: Database, urls: string[]): Promise<Map<string, ResolvedImageRef>> {
   const out = new Map<string, ResolvedImageRef>()
   if (urls.length === 0) {
@@ -180,7 +171,6 @@ function readPublicBaseUrl(): string | null {
   try {
     return getPublicBaseUrl()
   } catch {
-    // Settings unreadable — see the module header for the policy.
     return null
   }
 }

@@ -47,7 +47,6 @@ describe('backup/restore-machine', () => {
     machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     await settle()
 
-    // Slot released after the chain; the terminal report stays for one status read.
     expect(machine.tryBeginRestore()).toBe(true)
     machine.abortRestoreClaim()
   })
@@ -203,7 +202,6 @@ describe('backup/restore-machine', () => {
   })
 
   it('ignores startRestoreJob without a claimed slot', () => {
-    // No claim → rejected synchronously; nothing to settle.
     machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({ level: 'error', msg: 'startRestoreJob without a claimed slot — ignored' }),

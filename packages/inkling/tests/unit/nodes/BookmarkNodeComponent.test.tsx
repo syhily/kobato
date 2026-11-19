@@ -63,7 +63,6 @@ function EditorComposerProvider({ editor, children }: { editor: LexicalEditor; c
   return <LexicalComposerContext.Provider value={value}>{children}</LexicalComposerContext.Provider>
 }
 
-// the card is selected and not editing unless a test says otherwise
 function createSelection(
   nodeKey: NodeKey = 'bookmark-1',
   { selected = true, editing = false }: { selected?: boolean; editing?: boolean } = {},
@@ -163,7 +162,6 @@ describe('BookmarkNodeComponent', () => {
     })
 
     it('keeps the toolbar visible while the card is editing', async () => {
-      // bookmark's menu toolbar has no !isEditing factor
       const nodeKey = await addBookmarkNode(editor, 'https://example.com')
       const { container } = renderWithToolbar(
         nodeKey,
@@ -186,8 +184,6 @@ describe('BookmarkNodeComponent', () => {
     })
 
     it('hides the toolbar when createSnippet is not configured, even with a title', async () => {
-      // bookmark is the one card whose toolbar visibility itself gates on
-      // createSnippet — it exists solely to offer snippet creation
       const nodeKey = await addBookmarkNode(editor, 'https://example.com')
       const { container } = renderWithToolbar(nodeKey, { selected: true })
 
@@ -250,8 +246,7 @@ describe('BookmarkNodeComponent', () => {
           </CardSelectionStoreProvider>
         </InklingHostIntegrationProvider>
       )
-      // UrlInputPlugin reads the real composer context (not the mocked hook)
-      // to register its editor-level Enter handler
+
       if (withComposer) {
         return render(<EditorComposerProvider editor={editor}>{component}</EditorComposerProvider>)
       }
@@ -277,7 +272,6 @@ describe('BookmarkNodeComponent', () => {
       expect(fetchEmbed).toHaveBeenCalledWith('https://example.com/page', { type: 'bookmark' })
 
       await waitFor(() => {
-        // the submit path applies the submitted href, not the response's canonical url
         expect(readAppliedBookmark(nodeKey)).toEqual({ title: 'Fetched title', url: 'https://example.com/page' })
       })
     })
@@ -311,9 +305,8 @@ describe('BookmarkNodeComponent', () => {
       await waitFor(() => {
         expect(screen.getByTestId('bookmark-url-listOption')).toBeTruthy()
       })
-      // keyboard-select the suggestion: InputList forwards the option's type
-      fireEvent.keyDown(input, { key: 'Enter' })
 
+      fireEvent.keyDown(input, { key: 'Enter' })
       await waitFor(() => {
         expect(fetchEmbed).toHaveBeenCalledWith('https://example.com/about', { type: 'bookmark' })
       })

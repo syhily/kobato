@@ -15,12 +15,6 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Focus-mode DOM bookkeeping, pinned against
-// a rendered editor: the mode class on the root, the active attribute
-// tracking the native selection's top-level block (including the
-// nested-editor/card-interior and node-selection shapes), and cleanup on
-// unregister.
-
 function isFocused(element: Element): boolean {
   return element.hasAttribute(FOCUS_ACTIVE_ATTRIBUTE)
 }
@@ -137,11 +131,10 @@ describe('registerFocusMode', () => {
     expect(isFocused(block(1))).toBe(true)
 
     cleanup()
-    // the afterEach cleanup runs again — unregistering twice must be safe
+
     expect(rootElement.classList.contains(FOCUS_MODE_CLASS)).toBe(false)
     expect(rootElement.querySelector(`[${FOCUS_ACTIVE_ATTRIBUTE}]`)).toBeNull()
   })
-
   it('stops tracking after unregister', async () => {
     cleanup()
     await updateEditor(editor, () => {

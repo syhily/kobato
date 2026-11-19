@@ -19,7 +19,6 @@ describe('snapshot: LoginForm', () => {
     expect(html).toContain('邮箱')
     expect(html).toContain('登陆')
     expect(html).toContain('?action=identify')
-    // Password field only appears after the identify round-trip.
     expect(html).not.toContain('name="password"')
     expect(html).not.toContain('忘记')
   })
@@ -34,14 +33,12 @@ describe('snapshot: LoginForm', () => {
 
   it('renders the passkey step after identify answers method=passkey', () => {
     const html = stableHtml(renderInRouter(<LoginForm isSubmitting={false} actionData={{ method: 'passkey' }} />))
-    // The identify form stays in place: locked input + passkey notice.
     expect(html).toContain('此账号已启用 Passkey 验证，请点击上方按钮完成登陆。')
     expect(html).toContain('disabled')
     // Ceremony launches from the button click (user gesture), not on mount.
     expect(html).toContain('使用 Passkey 登陆')
     expect(html).toContain('?action=passkey')
     expect(html).toContain('更换邮箱')
-    // Account recovery escape hatch.
     expect(html).toContain('?action=lostpassword')
   })
 

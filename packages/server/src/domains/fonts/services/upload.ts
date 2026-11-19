@@ -10,9 +10,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { createHash } from 'node:crypto'
 
-// Upload runs synchronously within the request, so a font row exists only once
-// inserted — there is no `processing`/`failed` state.
-
 /** Max accepted upload size for a source TTF/OTF. Matches the Canvas font route. */
 export const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
 
@@ -30,7 +27,6 @@ export function detectFontKind(buffer: Uint8Array): 'ttf' | 'otf' | null {
   return null
 }
 
-/** Reject fonts whose table directory references data beyond EOF. Throws `DomainError('BAD_REQUEST', …)`. */
 export function validateFontTableBounds(buffer: Uint8Array): void {
   if (buffer.length < 12) {
     throw new DomainError('BAD_REQUEST', descriptorFor('fonts.error.tableDirectory'))
@@ -67,9 +63,7 @@ function sha256Hex(buffer: Uint8Array): string {
 
 export interface UploadFontInput {
   buffer: Uint8Array
-  /** Original upload filename, recorded for audit. */
   sourceName: string
-  /** CSS font-family name to inject into every @font-face rule. */
   familyName: string
 }
 
@@ -99,7 +93,6 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
     return toAdminFontDto(existing)
   }
 
-  // Throws on wasm contract drift or core panic; the controller maps it to a 500.
   const sliced = await sliceFont(Buffer.from(buffer), { fontFamily: trimmedFamily })
 
   const files: FontPackageFile[] = [

@@ -1,11 +1,6 @@
 import { createMenuNavigator } from '@kobato/inkling-internal/hooks/card-menu-navigation'
 import { describe, expect, it, vi } from 'vitest'
 
-// The slash menu's keyboard-selection matrix as a synchronous table — the
-// state machine behind SlashCardMenuPlugin's command registrations. The
-// plugin-level wiring (arrow keys move the rendered selection, query changes
-// reset it) is pinned in tests/inkling/unit/plugins/SlashCardMenuPlugin.test.tsx.
-
 describe('createMenuNavigator', () => {
   it('starts on the first item with no scroll request', () => {
     const menuNavigator = createMenuNavigator()
@@ -50,9 +45,6 @@ describe('createMenuNavigator', () => {
   })
 
   it('keeps the selection on index 0 on an empty menu (maxItemIndex -1)', () => {
-    // an empty menu has no selectable item: both directions are no-ops instead
-    // of letting the index transiently leave the list (-1 from moveUp, 1 from
-    // moveDown), and Enter resolution still finds no item
     const menuNavigator = createMenuNavigator()
     menuNavigator.moveDown(-1)
     expect(menuNavigator.getSnapshot()).toEqual({ selectedItemIndex: 0, scrollToSelectedItem: false })
@@ -121,7 +113,6 @@ describe('createMenuNavigator', () => {
     menuNavigator.moveDown(2)
     expect(menuNavigator.selectedItem(items)).toBe('b')
 
-    // a reset-on-rebuild points Enter back at the first item of the new list
     menuNavigator.reset()
     expect(menuNavigator.selectedItem(['x', 'y'])).toBe('x')
   })

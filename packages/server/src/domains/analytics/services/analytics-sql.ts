@@ -7,8 +7,6 @@ import { withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { recordDbOperation } from '@kobato/server/infra/trace/metrics.ts'
 
 /**
- * The server-owned half of the analytics SQL boundary: the span + metric wrap
- * around `@kobato/db`'s execution core (`db/duckdb/query.ts`). The trace facade
  * may not cross into `@kobato/db`, so the composition root installs THIS
  * executor through `wireAnalyticsQueryTelemetry` — every dashboard query then
  * carries the `db.duckdb.query` boundary with its stable operation name only
@@ -40,7 +38,6 @@ export async function runAnalyticsQuery(
   }
 }
 
-/** Composition-root wiring: route `@kobato/db` dashboard queries through the traced executor. */
 export function wireAnalyticsQueryTelemetry(): void {
   setAnalyticsQueryExecutor(runAnalyticsQuery)
 }

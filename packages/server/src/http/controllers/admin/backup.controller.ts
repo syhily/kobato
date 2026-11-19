@@ -31,10 +31,6 @@ import { rmSync } from 'node:fs'
 
 const log = getLogger('backup.controller')
 
-// Contract-first: method/path/input/output live in
-// `@kobato/api/admin/backup.ts`; this controller only implements the
-// procedures (admin base). Business logic (restore ordering, crash recovery,
-// the upload flow) is unchanged — see `domains/backup/AGENTS.md`.
 const impl = implementAdmin(adminBackupContract)
 
 const status = impl.status.handler(async () => {

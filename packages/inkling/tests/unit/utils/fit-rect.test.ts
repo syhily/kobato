@@ -22,7 +22,6 @@ describe('fitRectWithin — clamp', () => {
   })
 
   it('pulls a bottom-offscreen rect up to the bottom inset', () => {
-    // bottom edge 850 > 790 → top = 790 - 200
     expect(clamp(rect(650, 100, 200, 200))).toEqual({ top: 590, left: 100, flipped: false })
   })
 
@@ -31,7 +30,6 @@ describe('fitRectWithin — clamp', () => {
   })
 
   it('pulls a right-offscreen rect left to the right inset', () => {
-    // right edge 850 + 200 = 1050 > 990 → left = 990 - 200
     expect(clamp(rect(100, 850, 200, 100))).toEqual({ top: 100, left: 790, flipped: false })
   })
 
@@ -40,7 +38,6 @@ describe('fitRectWithin — clamp', () => {
   })
 
   it('lets the left edge win when both horizontal edges overflow, judged on the proposed position', () => {
-    // width 1200 overflows both edges and the proposed left 5 is left-offscreen → the left clamp overrides the right one
     expect(clamp(rect(100, 5, 1200, 100))).toEqual({ top: 100, left: 10, flipped: false })
   })
 
@@ -50,7 +47,6 @@ describe('fitRectWithin — clamp', () => {
   })
 
   it('treats a negative gap as an expanded bound (deliberate offscreen placement)', () => {
-    // top gap -50: a rect at top -50 is exactly on the inset edge → untouched
     expect(clamp(rect(-50, 100, 200, 100), { top: -50 })).toEqual({ top: -50, left: 100, flipped: false })
   })
 })
@@ -60,7 +56,6 @@ describe('fitRectWithin — flip-below-above', () => {
   const size = { width: 0, height: 200 }
 
   it('places the rect below the anchor with the below gap when it fits', () => {
-    // below top 720 + 10 = 730, 730 + 50 = 780 ≤ 800 fits
     const fitted = fitRectWithin({
       bounds,
       rect: anchor,
@@ -72,7 +67,6 @@ describe('fitRectWithin — flip-below-above', () => {
   })
 
   it('flips above the anchor with the above gap when the below placement overflows', () => {
-    // below top 730 + height 200 = 930 > 800 → top = 700 - 200 - 55
     const fitted = fitRectWithin({
       bounds,
       rect: anchor,
@@ -84,7 +78,6 @@ describe('fitRectWithin — flip-below-above', () => {
   })
 
   it('stays below when the placement fits exactly (strict overflow)', () => {
-    // below top 600 + height 200 = 800 fits exactly
     const fitted = fitRectWithin({
       bounds,
       rect: rect(580, 20, 100, 20),
@@ -96,7 +89,6 @@ describe('fitRectWithin — flip-below-above', () => {
   })
 
   it('judges the overflow with the reserved budget rather than the placed height', () => {
-    // below top 630 + placed 100 fits (730 ≤ 800), but the 300 budget overflows (930 > 800)
     const fitted = fitRectWithin({
       bounds,
       rect: rect(610, 20, 100, 20),
@@ -109,7 +101,6 @@ describe('fitRectWithin — flip-below-above', () => {
   })
 
   it('requireFitAbove keeps the rect below when the flipped placement does not fit', () => {
-    // below overflows (120 + 300 = 420 > 400) but above would be 100 - 300 < 0
     const fitted = fitRectWithin({
       bounds: { top: 0, left: 0, right: 1000, bottom: 400 },
       rect: rect(100, 0, 100, 20),
@@ -123,7 +114,6 @@ describe('fitRectWithin — flip-below-above', () => {
 
 describe('fitRectWithin — clamp-above', () => {
   it('places the rect above the anchor with the gap, horizontally centered', () => {
-    // top = 100 - 10 - 10 = 80; left = 100 + 25 - 20 = 105
     const fitted = fitRectWithin({
       bounds,
       rect: rect(100, 100, 50, 20),
@@ -135,7 +125,6 @@ describe('fitRectWithin — clamp-above', () => {
   })
 
   it('clamps the left edge into the bounds', () => {
-    // centered left = 10 + 25 - 50 = -15 < 50 → clamped to the bounds left
     const fitted = fitRectWithin({
       bounds: { top: 0, left: 50, right: 550, bottom: 0 },
       rect: rect(100, 10, 50, 20),
@@ -147,8 +136,6 @@ describe('fitRectWithin — clamp-above', () => {
   })
 
   it('clamps the right edge into the bounds (winning over the left clamp)', () => {
-    // centered left = 500 + 25 - 50 = 475 < 550 → left clamp gives 550,
-    // then 550 + 100 = 650 > 600 → right clamp wins: left = 600 - 100
     const fitted = fitRectWithin({
       bounds: { top: 0, left: 550, right: 600, bottom: 0 },
       rect: rect(100, 500, 50, 20),

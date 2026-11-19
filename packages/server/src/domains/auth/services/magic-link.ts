@@ -1,4 +1,3 @@
-// Magic-link signin: send the one-time link (identify step) and consume it (confirm
 // step). Only the POST consumes the token, so mail-client prefetchers never burn it.
 
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
@@ -80,7 +79,6 @@ export async function handleMagicLinkConsume(
     return authFlowError('auth.magicLink.error.invalidLink')
   }
 
-  // Cheap IP throttle before the token lookup — guards DB hammering only.
   const limit = await tryRateLimit(clientAddress)
   if (limit.exceeded) {
     return authFlowError('auth.signin.error.tooFrequent')

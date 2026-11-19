@@ -1,6 +1,3 @@
-// One implementation behind both: trailing-edge debounce by default, throttle as
-// leading+trailing via maxWait.
-
 export interface DebounceOptions {
   leading?: boolean
   trailing?: boolean
@@ -92,7 +89,6 @@ function debounceInternal<A extends unknown[], R>(
         return leadingEdge(time)
       }
       if (maxing) {
-        // Handle invocations in a tight loop.
         clearTimeout(timerId)
         timerId = setTimeout(timerExpired, wait)
         return invokeFunc(time)

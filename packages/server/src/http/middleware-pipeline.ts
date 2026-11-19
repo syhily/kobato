@@ -201,13 +201,10 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', maxmindRouter)
   app.route('/', musicProxyRouter)
 
-  // API (oRPC at /rpc/*)
   app.route('/', createApiApp())
 
-  // Stale-chunk guard
   app.all('/assets/*', (c) => c.body(null, 404))
 
-  // Public resource routes
   app.route('/', assetsRouter)
   app.route('/', analyticsEventsRouter)
   app.route('/', feedRouter)
@@ -218,7 +215,6 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', fontsEmbeddedRouter)
   app.route('/', sitemapRouter)
   app.route('/', redirectsRouter)
-  // W3C Webmention receive endpoint — unauthenticated, rate-limited.
   app.route('/', webmentionRouter)
 
   app.route('/', brandingRouter)

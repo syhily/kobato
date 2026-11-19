@@ -36,11 +36,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const db = rc.db
   await ensureNoAdminOrRedirect(db)
 
-  // Re-surface the setup token in the server console on every wizard visit (covers restarts, log rotation).
   try {
     await getSetupToken(db)
   } catch {
-    // DB temporarily unreachable; the token is lazily created on the next call.
+    /* noop */
   }
 
   const { session } = rc
@@ -53,15 +52,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
-  // Same gate as the loader; the redirect is a UX courtesy — a racing POST is
-  // still caught by `signUpInitialAdminWithSession`'s own `hasAdmin()` (409).
   await ensureNoAdminOrRedirect(db)
 
   const { session, clientAddress } = rc
   const formData = await request.formData()
   const intent = formData.get('intent')
 
-  // Server translates, client displays: resolve the descriptor for this locale, carry the key for stable branching.
   const failFlow = (flow: AuthFlowError, status?: number) => {
     const payload: {
       error: string
@@ -96,18 +92,16 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     session.set('setupTokenVerified', true)
-    // Same-session mutation: the request-context middleware emits Set-Cookie after the response resolves.
+
     rc.markSessionDirty()
     return data({ setupTokenVerified: true })
   }
 
-  // Intent: install; a null intent is treated as install.
   if (intent === 'install' || intent === null) {
     if (session.get('setupTokenVerified') !== true) {
       return fail('auth.setup.error.tokenNotVerified')
     }
 
-    // Defense in depth: a stale session flag must not bypass an expired or invalidated token.
     if (!(await isSetupTokenActive(db))) {
       return fail('auth.setup.error.tokenExpired')
     }
@@ -124,8 +118,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     const parsed = signUpAdminSchema.safeParse(values)
     if (!parsed.success) {
-      // Field rules carry typed catalog ids, so the first failing field's own copy reaches the user; only
-      // non-field failures (e.g. a tampered locale enum) fall back to the generic incomplete-form notice.
       return failFlow(authFlowValidationError('auth.setup.error.formIncomplete', parsed.error.issues))
     }
 
@@ -148,7 +140,6 @@ export async function action({ request, context }: Route.ActionArgs) {
       return redirect(result.to, { headers })
     }
 
-    // signUpInitialAdminWithSession never returns 'success'; this is defensive.
     return fail('auth.setup.error.unknown')
   }
 
@@ -177,7 +168,6 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
 
       <SetupLocaleSelect value={locale} onValueChange={setLocale} disabled={isSubmitting} />
 
-      {/* Only the install form's action error — SetupTokenVerifyForm renders its own. */}
       {loaderData.setupTokenVerified && actionData && 'error' in actionData && actionData.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
           {actionData.error}

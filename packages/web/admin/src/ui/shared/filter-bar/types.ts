@@ -13,7 +13,6 @@ export interface FilterOptionItem {
   label: string
 }
 
-/** Custom row renderer for option dropdowns (audit actor keeps icon + truncated labels). */
 export type FilterOptionRenderer = (option: FilterOptionItem, selected: boolean) => ReactNode
 
 /** Partial list-query patch from one filter: `undefined` entries are dropped by the merge. */
@@ -25,7 +24,6 @@ interface FilterFieldBase<K extends string> {
   icon: FilterFieldIcon
 }
 
-/** Static option list (comments status, audit action / resourceType / actor). */
 export interface OptionsFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'options'
   options: readonly FilterOptionItem[]
@@ -42,7 +40,6 @@ export interface SearchFilterField<K extends string> extends FilterFieldBase<K> 
   // `any`s keep the spec closed over heterogeneous procedure data.
   queryOptions: (query: string) => UseQueryOptions<any, Error, any, any>
   select: (data: any) => FilterOptionItem[]
-  /** Fallback items while no search query is active (loader-provided lists). */
   initialItems?: readonly FilterOptionItem[]
   resolveOptions?: (value: string) => UseQueryOptions<any, Error, any, any>
   renderOption?: FilterOptionRenderer
@@ -52,31 +49,25 @@ export interface SearchFilterField<K extends string> extends FilterFieldBase<K> 
   toQuery: (value: string) => FilterQueryPatch
 }
 
-/** Operator dropdown + free text, committed on blur / Enter (comments text filter). */
 export interface TextFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'text'
   operators: readonly TextFilterOperatorOption[]
-  /** Accessible name for the free-text input; defaults to the field label. */
   inputAria?: string
-  /** Placeholder for the free-text input; defaults to the field label. */
   inputPlaceholder?: string
   toQuery: (value: TextFilterValue) => FilterQueryPatch
 }
 
-/** Bare blur-commit input (audit IP). */
 export interface FreetextFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'freetext'
   placeholder: string
   toQuery: (value: string) => FilterQueryPatch
 }
 
-/** Single date + operator (comments date filter). */
 export interface DateSingleFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'date-single'
   toQuery: (value: SingleDateFilterValue) => FilterQueryPatch
 }
 
-/** From/to range picker (audit date range). */
 export interface DateRangeFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'date-range'
   toQuery: (value: DateFilterValue) => FilterQueryPatch
@@ -97,7 +88,6 @@ export interface SearchFieldState {
   setQuery: (query: string) => void
 }
 
-/** Everything `<FilterPillBar>` needs — assembled by `useFilterPills`. */
 export interface FilterPillBarProps<K extends string> {
   fields: readonly FilterFieldSpec<K>[]
   filters: ActiveFilter<K>[]

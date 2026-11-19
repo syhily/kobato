@@ -70,7 +70,6 @@ describe('audit/service', () => {
     })
 
     it('swallows errors and logs them without throwing', async () => {
-      // Batcher not initialized: requireBatcher throws, the catch swallows it.
       expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
       // The real logger, observed through the capture ring.

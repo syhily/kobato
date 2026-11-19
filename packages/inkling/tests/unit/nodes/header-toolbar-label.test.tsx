@@ -97,11 +97,9 @@ describe('card toolbar labels as a derived view over the declarations', () => {
       </CollaborationContext.Provider>,
     )
 
-    // the menu toolbar carries the contract value
     expect(container.querySelectorAll('[data-inkling-card-toolbar="header"]')).toHaveLength(1)
     expect(container.querySelector('[data-inkling-card-toolbar="signup"]')).toBeNull()
 
-    // and so does the snippet-creation toolbar that replaces it
     fireEvent.click(screen.getByTestId('create-snippet'))
     const toolbars = container.querySelectorAll('[data-inkling-card-toolbar="header"]')
     expect(toolbars).toHaveLength(1)

@@ -1,8 +1,3 @@
-// Narrow coercions for values that arrive loosely typed: query parameters and
-// config strings that must parse as integers, and unknown JSON (e.g. persisted
-// SQLite rows) that should degrade to a plain string array. Pure predicates —
-// callers own the failure behavior.
-
 export function safeBigInt(value: string): number | null {
   try {
     const parsed = Number(value)

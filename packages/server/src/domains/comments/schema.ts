@@ -1,10 +1,5 @@
 import { z } from 'zod'
 
-// The public comment wire schemas (`commentReplySchema` / `commentRidSchema` /
-// `commentEditInputSchema` / the list/token/own-edit family) live in
-// `@kobato/contracts/comments.ts` — the single Zod source the `@kobato/api`
-// comments contract composes. This module keeps the server-side-only inputs.
-
 export const loadAllCommentsSchema = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),

@@ -39,8 +39,6 @@ describe('registerPasteHandler', () => {
     document.body.appendChild(input)
     const cleanup = registerPasteHandler(editor, {})
 
-    // without a root element the editor is not the paste target, so the
-    // guard branch runs and consumes events from form inputs
     const event = { target: input } as unknown as ClipboardEvent
     expect(editor.dispatchCommand(PASTE_COMMAND, event)).toBe(true)
 

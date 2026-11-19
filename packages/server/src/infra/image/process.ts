@@ -7,10 +7,6 @@ import { processImageInWorker, WorkerDomainError } from '@kobato/server/infra/im
 import { startSpan } from '@kobato/server/infra/trace/facade.ts'
 import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics.ts'
 
-/**
- * Decode / resize / re-encode an uploaded image (worker pool in prod,
- * inline in dev); inline `WorkerDomainError`s come back as `DomainError`s.
- */
 export async function processImageBuffer(
   input: ProcessImageInput,
   operation: ImageOperation = 'unspecified',
@@ -44,9 +40,6 @@ export async function processImageBuffer(
   return pool.process(input, operation)
 }
 
-/**
- * Re-hydrate a `WorkerDomainError` into a real `DomainError`; others pass through.
- */
 function rehydrateDomainError(err: unknown): unknown {
   if (err instanceof WorkerDomainError) {
     return domainErrorFromWire(err) ?? err

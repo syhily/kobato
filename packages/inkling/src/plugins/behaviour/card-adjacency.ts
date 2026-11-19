@@ -22,23 +22,17 @@ export const RANGE_TO_ELEMENT_BOUNDARY_THRESHOLD_PX = 10
 // Two adjacency notions: visual (caret geometry, arrow keys) and logical
 // (anchor offset, backspace/delete); they deliberately do not share a derivation.
 
-/**
- * Geometry seam for the adjacency queries: the default implementation does the
- * real DOM reads, tests inject a fake. Exported for tests only.
- */
 export interface CardAdjacencyGeometry {
-  /** Whether a native window selection exists at all (arrow down bails out before its shortcuts when it doesn't). */
   hasNativeSelection(): boolean
-  /** Client rects of the caret's native range; empty when the caret has no rendered rect (e.g. empty paragraphs). */
+
   getCaretClientRects(): ArrayLike<DOMRect>
-  /** Bounding rect of the top-level block element containing the caret. */
+
   getTopLevelBlockRect(): DOMRect | null
-  /** Whether the caret sits on the first visual line of its block. */
+
   isCaretAtBlockTop(): boolean
-  /** Whether the native caret sits at the end of its top-level block element. */
+
   isCaretAtBlockEnd(): boolean
 }
-
 const defaultCardAdjacencyGeometry: CardAdjacencyGeometry = {
   hasNativeSelection() {
     return window.getSelection() !== null
@@ -76,12 +70,6 @@ const defaultCardAdjacencyGeometry: CardAdjacencyGeometry = {
   },
 }
 
-/**
- * Visual adjacency: the card rendered immediately above ('up') or below
- * ('down') the caret, when the caret is visually at the boundary of its
- * top-level block. Includes the arrow keys' empty-paragraph/offset shortcuts
- * (an empty paragraph has no caret rect).
- */
 export function $getVisuallyAdjacentCard(
   direction: 'up' | 'down',
   geometry: CardAdjacencyGeometry = defaultCardAdjacencyGeometry,
@@ -129,12 +117,6 @@ export function $getVisuallyAdjacentCard(
   return Math.abs(rangeRect.bottom - elemRect.bottom) < RANGE_TO_ELEMENT_BOUNDARY_THRESHOLD_PX ? sibling : null
 }
 
-/**
- * Logical adjacency: the card immediately before ('previous') or after ('next')
- * a reference point in document order. Without `from` the reference is the
- * collapsed range selection, gated on the anchor sitting at the boundary of its
- * top-level element; with `from` the sibling lookup is ungated.
- */
 export function $getLogicallyAdjacentCard(
   direction: 'previous' | 'next',
   from?: LexicalNode,
@@ -171,13 +153,6 @@ function getCardSibling(node: LexicalNode, direction: 'previous' | 'next'): Deco
   return $isDecoratorNode(sibling) ? sibling : null
 }
 
-/**
- * The "key eats the adjacent card, the caret stays put" surgery: remove the card
- * logically before ('previous', backspace) or after ('next', forward delete) the
- * collapsed caret. 'previous' needs two extra guards: the anchor's parent must BE
- * the top-level element (lists) and the anchor must be its first child
- * (LinkNode/HorizontalRule children). Returns true when a card was removed.
- */
 export function $removeLogicallyAdjacentCard(direction: 'previous' | 'next'): boolean {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -195,7 +170,6 @@ export function $removeLogicallyAdjacentCard(direction: 'previous' | 'next'): bo
       return false
     }
   }
-
   const card = $getLogicallyAdjacentCard(direction)
   if (!card) {
     return false
@@ -214,7 +188,6 @@ export function $removeLogicallyAdjacentCard(direction: 'previous' | 'next'): bo
  */
 export type EmptyBlockCheck = 'paragraph-is-empty' | 'from-mode-blank'
 
-/** Removes the caret's top-level block when `check` judges it empty and selects the adjacent card. */
 export function $removeEmptyBlockAndSelectCard(direction: 'previous' | 'next', check: EmptyBlockCheck): boolean {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -233,7 +206,6 @@ export function $removeEmptyBlockAndSelectCard(direction: 'previous' | 'next', c
   if (!isEmpty) {
     return false
   }
-
   const card = $getLogicallyAdjacentCard(direction, topLevelElement)
   if (!card) {
     return false
@@ -243,22 +215,14 @@ export function $removeEmptyBlockAndSelectCard(direction: 'previous' | 'next', c
   return true
 }
 
-/** First-visual-line verdict through the geometry seam (delete-line's isFirstLine check). */
 export function $isCaretAtBlockTop(geometry: CardAdjacencyGeometry = defaultCardAdjacencyGeometry): boolean {
   return geometry.isCaretAtBlockTop()
 }
 
-/** Shared "editor root has focus" guard for the behaviour handlers. */
 export function editorOwnsFocus(editor: LexicalEditor): boolean {
   return document.activeElement === editor.getRootElement()
 }
 
-/**
- * The "selected card eats the destructive key" gate shared by the
- * backspace/delete/delete-line handlers: while the editor owns focus and a
- * top-level card is selected, the key deletes the card. Each handler keeps its
- * own focus-swallow policy. Returns true when the key was claimed.
- */
 export function dispatchSelectedCardDeletion(
   editor: LexicalEditor,
   store: CardSelectionStore,
@@ -307,7 +271,6 @@ export function $selectCard(
   }
 }
 
-// Remove empty cards on deselect; cards without isEmpty are never auto-removed.
 export function $deselectCard(editor: LexicalEditor, nodeKey: string) {
   const cardNode = $getNodeByKey(nodeKey)
   if (cardNode && $isInklingCard(cardNode) && cardNode.isEmpty?.()) {

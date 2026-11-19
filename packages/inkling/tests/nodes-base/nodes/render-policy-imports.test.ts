@@ -23,7 +23,6 @@ function listSourceFiles(dir: string): string[] {
     .filter((name) => /\.tsx?$/.test(name))
 }
 
-/** Static, side-effect, and dynamic import specifiers of a source file. */
 function importSpecifiers(source: string): string[] {
   const statics = source.matchAll(/(?:^|\s)from\s+['"]([^'"]+)['"]/g)
   const sideEffects = source.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)
@@ -31,7 +30,6 @@ function importSpecifiers(source: string): string[] {
   return [...statics, ...sideEffects, ...dynamics].map((match) => match[1])
 }
 
-/** The policy modules (by specifier basename) a source file imports directly. */
 function policyImportsOf(file: string): string[] {
   const basenames = importSpecifiers(readFileSync(file, 'utf8')).map((specifier) => specifier.split('/').pop()!)
   return [...new Set(basenames.filter((basename) => POLICY_MODULES.has(basename)))].sort()

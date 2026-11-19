@@ -10,7 +10,6 @@ import { describe, expect, it } from 'vitest'
  * `LazyCardEditor` instead of the plain editor.
  */
 
-/** Static, side-effect, and dynamic import specifiers of a source file. */
 function importSpecifiers(source: string): string[] {
   const statics = source.matchAll(/(?:^|\s)from\s+['"]([^'"]+)['"]/g)
   const sideEffects = source.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)

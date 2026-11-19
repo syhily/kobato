@@ -20,7 +20,6 @@ export function ArchivesBody({ resolvedPosts, listingNowIso }: ArchivesBodyProps
   // dates), so SSR and hydration always agree on the group keys.
   const groupedPosts = Object.groupBy(resolvedPosts, (post) => {
     const parts = localDateParts(new Date(post.date), locale, timeZone)
-    // Month heading in the site locale, derived from the same zoned bucket parts.
     return formatDate(new Date(Date.UTC(parts.year, parts.month - 1, 1)), {
       locale,
       timeZone: 'UTC',

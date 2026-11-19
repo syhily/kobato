@@ -78,22 +78,16 @@ describe('snapshot: AuditLogView', () => {
   })
 
   it('renders the page shell under SSR (header, filter trigger, export button)', () => {
-    // Empty branch — assert the always-on chrome instead.
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
-    // Title + retention description render synchronously off the props.
     expect(html).toContain('审计日志')
     expect(html).toContain('90')
 
-    // No active filters → bare "筛选" trigger, not "添加筛选".
     expect(html).toContain('筛选')
 
-    // Export affordance is a real button surfaced to AT users.
     expect(html).toContain('导出 CSV')
     expect(html).toMatch(/<button[^>]*>/)
 
-    // No fetched rows and no active filter → the empty branch renders the
-    // placeholder copy.
     expect(html).toContain('暂无审计日志记录')
   })
 })
@@ -103,16 +97,12 @@ describe('snapshot: AuditLogRow', () => {
     const row = makeRow({})
     const html = stableHtml(renderToHtml(<AuditLogRow row={row} />))
 
-    // Action badge resolves through ACTION_OPTIONS; "login" → "登录".
     expect(html).toContain('登录')
 
-    // Actor name renders verbatim when present.
     expect(html).toContain('雨帆')
 
-    // Actor role badge resolves through roleLabel; "admin" → 管理员.
     expect(html).toContain('管理员')
 
-    // Localised timestamp (Asia/Shanghai = UTC+8 → 10:30:00).
     expect(html).toContain('2024-01-15 10:30:00')
 
     // SSR emits `<!-- -->` between literal prefix and dynamic value — assert each segment separately.
@@ -176,11 +166,8 @@ describe('snapshot: AuditLogFilterPill', () => {
         />,
       ),
     )
-    // Field label comes from the field specs; the value label resolves via
-    // ACTION_OPTIONS.
     expect(html).toContain('操作类型')
     expect(html).toContain('登录')
-    // The remove (x) button is always emitted.
     expect(html).toMatch(/<button[^>]*>/)
   })
 
@@ -234,11 +221,8 @@ describe('snapshot: AuditLogFilterAddButton', () => {
         />,
       ),
     )
-    // Empty-state label is "筛选" — "添加筛选" only appears once a
-    // filter is active.
     expect(html).toContain('筛选')
     expect(html).not.toContain('添加筛选')
-    // Trigger is a real button.
     expect(html).toMatch(/<button[^>]*>/)
   })
 

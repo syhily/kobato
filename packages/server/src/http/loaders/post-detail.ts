@@ -11,7 +11,6 @@ import { redirectPermanent } from '@kobato/server/infra/http/redirects.ts'
 import { notFound } from '@kobato/server/infra/http/status.ts'
 
 export interface PostPreviewResult {
-  /** The full post row — the controller needs `bodyHtml`/`bodyState` and the published revision. */
   sourcePost: Post
   post: DetailPostShell
   /** `draft` means the controller must NOT carry or honour a published ETag:
@@ -33,7 +32,6 @@ export async function loadPostPreview({
 }: {
   db: Database
   slug: string
-  /** Viewer identity for the draft-preview gate (`undefined`/`null` = anonymous). */
   viewer: ViewerIdentity | null | undefined
 }): Promise<PostPreviewResult> {
   let sourcePost = (await findPostBySlug(db, slug)) ?? undefined

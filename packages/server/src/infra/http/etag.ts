@@ -93,11 +93,9 @@ function stableStringify(value: unknown, skipKeys?: ReadonlySet<string>): string
 }
 
 export interface DetailEtagInput {
-  /** The entity row id (`post.id` / `page.id`). */
   id: string | number
   /** The published revision — republishing without a new `published_at` still changes the tag. */
   publishedRevisionId: string | number | null
-  /** Catalog `published_at` (the "last modified" instant the shell renders). */
   publishedAt: Date | undefined
   representation: RepresentationFingerprint
   /**
@@ -126,7 +124,6 @@ export function postEtag(input: DetailEtagInput): string {
   return weakEtag(['post', ...detailParts(input)])
 }
 
-/** Page-detail ETag — same full-payload contract as `postEtag`. */
 export function pageEtag(input: DetailEtagInput): string {
   return weakEtag(['page', ...detailParts(input)])
 }
@@ -169,7 +166,6 @@ export interface ListingEtagInput {
   calendarDay: string
 }
 
-/** Listing-document ETag (home, page N, search, tag/category, archives, categories). */
 export function listingEtag({ representation, payload, calendarDay }: ListingEtagInput): string {
   return weakEtag([
     'listing',

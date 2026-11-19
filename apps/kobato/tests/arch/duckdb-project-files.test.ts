@@ -19,8 +19,6 @@ const ENGINE_MARKERS = [
   'initAnalyticsDatabase(',
 ]
 
-// The test trees the dedicated `duckdb` project draws from (see
-// tools/test/src/duckdb-files.ts).
 const TEST_TREES = [
   'apps/kobato/tests/it',
   'apps/kobato/tests/unit',
@@ -65,7 +63,7 @@ describe('duckdb project membership', () => {
         }
       }
     }
-    // Mismatch? Update tools/test/src/duckdb-files.ts.
+
     expect(actual.sort()).toEqual([...DUCKDB_TEST_FILES].sort())
   })
 

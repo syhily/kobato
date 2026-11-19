@@ -113,10 +113,8 @@ describe('uploadBrandingAsset', () => {
 
     await expect(uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)).rejects.toThrow('sharp failed')
 
-    // The primary SVG put has already happened — rollback must remove it.
     expect(mem.deletedKeys).toContain('branding/favicon.svg')
     expect(mem.store.has('branding/favicon.svg')).toBe(false)
-    // No settings write: the row carries no branding section at all.
     expect(readBranding()).toEqual({})
   })
 
@@ -141,7 +139,6 @@ describe('clearBrandingAsset', () => {
 
     await clearBrandingAsset(db, 'appleTouchIcon')
 
-    // Deletes both the current key and the legacy (extensionless) key.
     expect(mem.deletedKeys).toHaveLength(2)
     expect(mem.deletedKeys).toContain('branding/apple-touch-icon.png')
     expect(mem.deletedKeys).toContain('branding/apple-touch-icon')

@@ -94,7 +94,6 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
 async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Date): Promise<number> {
   const key = `${S3_ARCHIVE_PREFIX}${day}.jsonl.gz`
 
-  // Stream pages through gzip to avoid loading everything into memory.
   const gzip = createGzip()
   const chunks: Buffer[] = []
 
@@ -126,7 +125,6 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
       break
     }
 
-    // Plain JSON-lines; `toJsonSafe` renders Dates as epoch ms.
     const lines = rows.map((row) =>
       JSON.stringify(
         toJsonSafe({
@@ -162,7 +160,6 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
 
   const buffer = Buffer.concat(chunks)
 
-  // Idempotency: don't overwrite an existing archive with empty data.
   if (totalRows === 0 || buffer.length === 0) {
     log.info('Skipping empty archive upload', { day, totalRows })
     return 0
@@ -174,7 +171,6 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
   return deleteArchivedRows(db, archivedIds)
 }
 
-/** Batch deletes by id (test seam: production uses DELETE_BATCH_SIZE). */
 export async function deleteArchivedRows(
   db: Database,
   ids: readonly number[],

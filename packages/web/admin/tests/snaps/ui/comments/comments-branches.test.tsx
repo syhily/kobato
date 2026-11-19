@@ -154,9 +154,7 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments()
     expect(html).toContain('Alice')
-    // Page-title affordance proves the render reached the row body.
     expect(html).toContain('Hello World')
-    // End-of-list sentinel runs (comments.length > 0 && !hasMore).
     expect(html).toContain('已加载全部评论')
   })
 
@@ -195,10 +193,8 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.total = 1
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
-    // The field label "文章" for the page filter renders in the pill prefix.
     expect(html).toContain('文章')
     expect(html).toContain('Eve')
-    // The clear-filters affordance only appears when filters are active.
     expect(html).toContain('清除')
   })
 
@@ -217,7 +213,6 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.total = 1
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
-    // Author field label "评论人" renders in the pill prefix.
     expect(html).toContain('评论人')
     expect(html).toContain('Frank')
     expect(html).toContain('清除')
@@ -241,7 +236,6 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.isFetchingNextPage = true
     const html = renderComments()
     expect(html).toContain('Paging')
-    // The fetching-next-page branch replaces the end-of-list copy.
     expect(html).toContain('加载中…')
     expect(html).not.toContain('已加载全部评论')
   })

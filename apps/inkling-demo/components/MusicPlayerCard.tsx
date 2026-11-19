@@ -24,8 +24,6 @@ function MusicPlayerCard() {
   )
 }
 
-// Host card (CONTEXT.md: "host card") via the public seam: one defineCard call registers the node class, slash
-// menu entry, insert command, decorate render, and toolbar label. Must run before the composer mounts.
 export const musicPlayer = defineCard({
   nodeType: 'musicPlayer',
   baseNode: BaseMusicPlayerNode,

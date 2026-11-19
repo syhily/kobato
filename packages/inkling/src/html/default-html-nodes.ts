@@ -17,7 +17,6 @@ import { HeadingNode, QuoteNode } from '@lexical/rich-text'
  * no replacement descriptors, so nothing it follows can shadow it.
  */
 export const DEFAULT_HTML_NODES = [
-  // basic HTML nodes
   HeadingNode,
   LinkNode,
   // typed-URL autolinks serialize as type 'autolink'; parse needs the class
@@ -27,9 +26,7 @@ export const DEFAULT_HTML_NODES = [
   ListNode,
   QuoteNode,
 
-  // Inkling nodes
   ...DEFAULT_BASE_NODES,
 
-  // table element family (not cards)
   ...INKLING_TABLE_NODES,
 ] satisfies NonNullable<CreateEditorArgs['nodes']>

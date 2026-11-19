@@ -5,13 +5,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 import { randomBytes } from 'node:crypto'
 import { rmSync } from 'node:fs'
 
-/**
- * Encrypted uploads parked between the two restore calls: `upload-restore`
- * stages the raw bytes and parks the temp dir here; `upload-restore/decrypt`
- * resolves the entry by token. Dirs use RESTORE_TEMP_PREFIX so a crash leaves
- * them to the boot-time sweep.
- */
-
 const log = getLogger('backup.pending-uploads')
 
 const TTL_MS = 10 * 60 * 1000
@@ -139,7 +132,6 @@ export function releaseEncryptedUpload(token: string): void {
   dropEntry(token)
 }
 
-/** Test seam: drop every parked upload (and its dir) between cases. */
 export function resetPendingEncryptedUploads(): void {
   for (const token of pending.keys()) {
     releaseEncryptedUpload(token)

@@ -5,10 +5,8 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { GeneratedOgPreview, ImageField } from '@kobato/web-admin/ui/editor-meta/ImageField.tsx'
 
 export interface CoverOgCardProps {
-  /** Field ids (`post-cover` / `page-cover`, …) — keep the label htmlFor wiring stable. */
   coverId: string
   ogId: string
-  /** Display-noun message id used in the pre-save OG hint (`admin.editor.entity.*`). */
   entityLabelId: UiMessageId
   cover: string
   onCoverChange: (value: string) => void

@@ -32,7 +32,6 @@ export interface CalloutNodeComponentProps {
   nodeKey: NodeKey
   calloutEmoji?: string
   backgroundColor?: string
-  // non-null: the decorate mapper guards the headless round-trip null state
   calloutTextEditor: LexicalEditor
   calloutTextEditorInitialState?: EditorState | undefined
 }
@@ -103,10 +102,6 @@ export function CalloutNodeComponent({
   )
 }
 
-/**
- * Callout's decorate render — the React-bearing half of its decorate-target,
- * paired with the declaration by `@kobato/inkling-internal/nodes/cards/card-decorate`.
- */
 export function renderCalloutCard(node: CalloutNode) {
   // Null only inside the headless markdown round-trip editor (the card
   // transformers null the nested editors after plain-text import), which

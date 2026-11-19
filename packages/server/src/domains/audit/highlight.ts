@@ -1,7 +1,6 @@
 import { SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/lexical/shiki.ts'
 import { createPromiseMemo } from '@kobato/utils/memo.ts'
 
-// Process-level singleton; single-flight, retries on failure.
 const getHighlighter = createPromiseMemo(() => createShikiHighlighter())
 
 export async function highlightAuditLogDetails(details: Record<string, unknown> | null): Promise<string | null> {

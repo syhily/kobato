@@ -18,10 +18,6 @@ const CARD_DECLARATIONS_BY_TYPE = new Map<string, BuiltinCardDeclaration>(
   CARD_DECLARATIONS.map((declaration) => [declaration.nodeType, declaration]),
 )
 
-/**
- * Resolves one card's facts by node type: the built-in declaration when one matches,
- * the host registry record otherwise, `undefined` when neither knows the type.
- */
 export function resolveCardFacts(nodeType: string): CardFacts | undefined {
   const declaration = CARD_DECLARATIONS_BY_TYPE.get(nodeType)
   if (declaration !== undefined) {
@@ -47,10 +43,6 @@ export function resolveAllCardFacts(): CardFacts[] {
   ]
 }
 
-/**
- * The card's `data-inkling-card-toolbar` toolbar label, resolved by node type over the
- * same merge (see `CardDeclaration['toolbarLabel']`).
- */
 export function getCardToolbarLabel(nodeType: string | undefined | null): string | undefined {
   // unknown is a first-class input, not a smuggled '' sentinel
   if (!nodeType) {

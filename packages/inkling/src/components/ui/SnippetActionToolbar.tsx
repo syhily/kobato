@@ -16,13 +16,9 @@ export function SnippetActionToolbar({ onClose }: SnippetActionToolbarProps) {
 
   const handleClose = React.useCallback(() => {
     onClose?.()
-    // return focus to the editor so subsequent keyboard actions (e.g. typing
-    // a slash command) work without an explicit click
     focusEditorRoot(editor)
   }, [editor, onClose])
 
-  // the guard and the value derivation live in the headless snippet-creation
-  // module; a guard failure keeps the toolbar open
   const handleSnippetCreation = React.useCallback(
     (snippetName: string) => {
       if (createSnippetFromSource(editor, { kind: 'selection' }, snippetName, createSnippet)) {

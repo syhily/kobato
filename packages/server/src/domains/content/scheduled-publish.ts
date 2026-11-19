@@ -81,10 +81,6 @@ registerJob({
   run: runScheduledPublish,
 })
 
-/**
- * Nudge from every content write path that can move the next scheduled row;
- * no-op until the composition root starts the job.
- */
 export function rescheduleScheduledPublish(): void {
   nudgeRegisteredJob('content.scheduled-publish')
 }

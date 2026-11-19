@@ -1,5 +1,3 @@
-// Session-revocation policy: the single owner of "who may revoke whose session".
-
 import type { Database } from '@kobato/db/database.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 
@@ -9,7 +7,6 @@ import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/se
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
-/** Session owner, or null when the meta was already gone (no-op). */
 export interface SessionRevocation {
   targetUserId: number | null
 }

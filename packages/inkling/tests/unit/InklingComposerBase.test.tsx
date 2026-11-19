@@ -11,9 +11,6 @@ import { render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'
 
-// The core composer variant: boots with the card-free MINIMAL_NODES
-// set and serializes back out — the composition the `./core` entry exports.
-
 function EditorTree() {
   return (
     <RichTextPlugin contentEditable={<ContentEditable />} ErrorBoundary={InklingErrorBoundary} placeholder={null} />

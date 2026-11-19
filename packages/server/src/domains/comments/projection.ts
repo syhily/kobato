@@ -1,6 +1,5 @@
-// Wire-projection helpers for comment payloads. Drizzle types bigint ids
-// and Date timestamps, which JSON.stringify mangles; the DTOs declare the
-// wire shape (string ids, ISO timestamps). Helpers are idempotent.
+// Drizzle types bigint ids and Date timestamps, which JSON.stringify mangles;
+// the DTOs declare the wire shape (string ids, ISO timestamps).
 
 import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments.ts'
 import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared.ts'
@@ -103,7 +102,6 @@ export function asCommentItemWire(comment: CommentItem | CommentAndUser): Commen
   if (item.children !== undefined) {
     wire.children = item.children.map((c) => asCommentItemWire(c))
   }
-  // Thread-cap markers set by `parseComments` ride the wire verbatim.
   if (item.childrenTruncated !== undefined) {
     wire.childrenTruncated = item.childrenTruncated
   }

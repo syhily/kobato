@@ -1,19 +1,3 @@
-// The inkling composer skeleton both kobato editor surfaces (the page/article
-// body editor and the comment composer) share.
-//
-// - `useEditorSurface` — the `registerAPI` → editor-instance dance and the
-//   body mount-snapshot/reseed wiring (`use-editor-body-reset`), parameterized
-//   by the surface's body type and optional seed shaping (`prepareSeed` — the
-//   comment surface's legacy math-fence downgrade).
-// - `EditorSurfaceComposer` — the InklingComposer shell with the host
-//   constants applied (the active locale's labels, theme-driven `darkMode`,
-//   the locale as the word-count language); every other prop passes straight
-//   through, and `nodes` stays required so a surface can never silently mount
-//   the full card set.
-//
-// Host components keep the shell chrome, the surface element itself
-// (InklingEditor vs InklingSurface), and the Ctrl+Q capture on the shell div.
-
 import type {
   ExternalControlAPI,
   InklingComposerProps,
@@ -32,9 +16,7 @@ import { useCallback, useState } from 'react'
 export interface UseEditorSurfaceArgs<TBody extends SerializedEditorState> {
   /** Initial body. Only read on first mount + when `bodyKey` changes. */
   initialBody: TBody
-  /** Identity of the body source — a change reseeds the editor content from `initialBody`. */
   bodyKey: string
-  /** Fired on every editor update with the freshly-serialized body. */
   onBodyChange: (body: TBody) => void
   /** Shapes the seed before the composer parses it (the comment surface's
    *  unparseable-seed fallback + math-fence downgrade); the page surface seeds as-is. */
@@ -42,13 +24,10 @@ export interface UseEditorSurfaceArgs<TBody extends SerializedEditorState> {
 }
 
 export interface EditorSurfaceHandle<TBody extends SerializedEditorState> {
-  /** The live Lexical instance — null until the composer registers its API. */
   editorInstance: LexicalEditor | null
-  /** The composer's ExternalControlAPI sink — pass to the surface element. */
   registerAPI: (api: ExternalControlAPI | null) => void
   /** The mount-pinned seed — the only valid `initialEditorState` for the paired composer. */
   mountedInitialState: TBody
-  /** The stable per-keystroke change emitter — pass to the surface element's `onChange`. */
   handleChange: (state: SerializedEditorState) => void
 }
 

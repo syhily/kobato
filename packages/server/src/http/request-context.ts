@@ -9,15 +9,10 @@ import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
 import { createContext } from 'react-router'
 
-/**
- * The canonical per-request fact base — the CONTRACT module: type, React Router
- * context key, route-side accessors. Derived once by `requestContextMiddleware`.
- */
 export interface RequestContext {
   session: BlogSession
   viewer: SessionUser | null
   clientAddress: string
-  /** Normalized document URL (never carries `.data` / `_routes` / `index`). */
   url: URL
   requestFacts: RequestFacts
   db: Database
@@ -55,10 +50,6 @@ export function getRequestContext(args: AnyRouteArgs): RequestContext {
   return context.get(requestContext)
 }
 
-/**
- * Guard-only loader factory for admin/editor routes whose loader exists solely to gate
- * the route behind a minimum role (data loads client-side via oRPC).
- */
 export function guardOnlyLoader(min: Role) {
   return async (args: AnyRouteArgs): Promise<null> => {
     const rc = getRequestContext(args)

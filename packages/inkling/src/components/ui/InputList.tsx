@@ -71,7 +71,6 @@ export function InputListItem<T extends InputListItemData = InputListItemData>({
   // Capture phase for mousedown: a bubble-phase handler would run after the
   // input's blur removed the list, so the click would never land
   const handleMouseDown = (event: React.MouseEvent) => {
-    // Prevent losing focus when clicking an option
     event.preventDefault()
     onClick(item)
   }
@@ -119,10 +118,8 @@ export function InputListGroup({
   )
 }
 
-// a flat option list is one degenerate group with no header
 const renderEmptyGroup = () => <></>
 
-// The onChange handler receives the input's value directly, not the change event.
 export function InputList<T extends InputListItemData = InputListItemData>({
   autoFocus,
   className,
@@ -173,7 +170,6 @@ export function InputList<T extends InputListItemData = InputListItemData>({
   }
 
   const onSelectEvent = (item: T) => {
-    // null-valued options are non-interactive placeholders ("no results")
     if (item.value === null) {
       return
     }

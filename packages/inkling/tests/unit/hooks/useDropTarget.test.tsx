@@ -60,7 +60,6 @@ function renderDropTarget({
   )
 }
 
-/** The handlers the hook registered on the drag-drop container. */
 function registeredHandlers(): ContainerDragHandlers {
   const call = registerContainer.mock.calls.at(-1)
   if (!call) {
@@ -77,11 +76,7 @@ describe('useDropTarget', () => {
   })
 
   it('never calls registerContainer when the handle has no handler', async () => {
-    // the silent no-op when drag reorder is disabled: the plugin that installs
-    // the handler never mounts, so the hook does nothing for the editor's
-    // lifetime
     const { result } = renderDropTarget({ withHandler: false })
-
     await act(async () => {
       result.current.setRef(document.createElement('div'))
     })
@@ -136,8 +131,6 @@ describe('useDropTarget', () => {
     expect(mockContainer.enableDrag).toHaveBeenCalledTimes(1)
     expect(mockContainer.disableDrag).toHaveBeenCalledTimes(1)
 
-    // enabled toggles flow through the enable/disable pair only — the
-    // container is never destroyed and re-registered
     expect(registerContainer).toHaveBeenCalledTimes(1)
     expect(mockContainer.destroy).not.toHaveBeenCalled()
   })
@@ -239,7 +232,6 @@ describe('useDropTarget', () => {
     })
     expect(mockContainer.enableDrag).toHaveBeenCalledTimes(1)
 
-    // ref-forwarding: the fresh predicate reaches the registered container
     rerender({ canDrop: () => false })
     await act(async () => {
       registeredHandlers().lifecycle?.onDragStart?.(draggableInfo)

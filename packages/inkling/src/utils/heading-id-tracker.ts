@@ -3,7 +3,6 @@
 // dialect aligns to it. Each render pass builds a fresh tracker, so dedup state never
 // leaks across renders.
 
-/** One per-render heading-id tracker: base id on first use, `<base>-<n>` on repeats. */
 export function createHeadingIdTracker(): (base: string) => string {
   const usedIdAttributes: Record<string, number> = {}
   return (base) => {

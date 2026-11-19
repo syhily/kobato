@@ -89,7 +89,6 @@ describe('snapshot: MailForm', () => {
     // SelectContent is a portal — SSR emits only the trigger's selected-value label.
     expect(html).toContain('邮件服务提供商')
     expect(html).toContain('id="mail-transport"')
-    // Sender card (shared across transports).
     expect(html).toContain('发件人邮箱')
     expect(html).toContain('id="mail-sender"')
     expect(html).toContain('SMTP 配置')
@@ -100,7 +99,6 @@ describe('snapshot: MailForm', () => {
     expect(html).toContain('id="mail-smtp-secure"')
     expect(html).toContain('id="mail-smtp-require-tls"')
     expect(html).toContain('id="mail-smtp-reject-unauthorized"')
-    // SMTP password is configured → the mask hint shows.
     expect(html).toContain('当前已配置（结尾 …••••pass）')
     expect(html).toContain('启用 TLS（SSL）')
     expect(html).toContain('强制 TLS（requireTLS）')
@@ -117,16 +115,13 @@ describe('snapshot: MailForm', () => {
     expect(html).toContain('id="mail-mailgun-domain"')
     expect(html).toContain('id="mail-mailgun-api-key"')
     expect(html).toContain('仅支持美国（US）区域')
-    // Mailgun API key is configured → mask hint shows.
     expect(html).toContain('当前已配置（结尾 …••••mgkey）')
     expect(html).not.toContain('SMTP 配置')
   })
 
   it('renders the empty (never-configured) state and disables test-send', () => {
     const html = stableHtml(renderToHtml(<MailForm mail={emptyMail} />))
-    // No SMTP password → the per-transport "尚未配置" hint.
     expect(html).toContain('尚未配置')
-    // configured=false → button disabled + missing-config hint via button title.
     expect(html).toContain('disabled=""')
     expect(html).toContain('请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱')
   })
@@ -135,7 +130,6 @@ describe('snapshot: MailForm', () => {
     queryMocks.mutation.isPending = true
     try {
       const html = stableHtml(renderToHtml(<MailForm mail={smtpPopulated} />))
-      // Pending mutation → button label swaps to "发送中…" and stays disabled.
       expect(html).toContain('发送中…')
       expect(html).toContain('disabled=""')
     } finally {

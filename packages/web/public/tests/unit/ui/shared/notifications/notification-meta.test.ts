@@ -55,7 +55,6 @@ describe('ui/shared/notifications/notification-meta', () => {
     expect(formatNotificationTime('2025-12-31T23:00:00.000Z', { locale: 'zh-CN', timeZone: TIME_ZONE, now })).toBe(
       '今天',
     )
-    // The number overload accepts `Date.now()`-style milliseconds.
     expect(
       formatNotificationTime('2025-12-31T23:57:00.000Z', {
         locale: 'zh-CN',

@@ -2,11 +2,7 @@ import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-d
 import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdown-paste'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-// The headless leg of the paste markdown dialect: markdown text in, sanitized
-// HTML out — no composer, no DataTransfer. The Lexical HTML import that
-// consumes this output is pinned in MarkdownPastePlugin.test.tsx.
 describe('markdownToSanitizedHtml', () => {
-  // the engine rides the lazy port; the sync API reads the loaded cache
   beforeAll(() => loadPasteDialect())
   it('renders markdown through the shared markdown-it engine', () => {
     expect(markdownToSanitizedHtml('# Title', { allowBr: false })).toBe('<h1>Title</h1>\n')
@@ -25,7 +21,6 @@ describe('markdownToSanitizedHtml', () => {
   })
 
   it('strips <br> tags when allowBr is false', () => {
-    // two trailing spaces are a markdown hard break, rendered as <br>
     expect(markdownToSanitizedHtml('a  \nb', { allowBr: false })).not.toContain('<br')
   })
 

@@ -12,10 +12,6 @@ function clickedOnGuard(target: Element): boolean {
   return GUARD_ATTRIBUTES.some((attr) => target.closest(`[${attr}]`) !== null || target.hasAttribute(attr))
 }
 
-/**
- * Clicking below the editor canvas focuses the editor with the caret at the document end (adding a trailing
- * paragraph when the document ends in a card); decorator/slash-menu/portal gestures are left alone.
- */
 export function useFocusBelowCanvas({
   editorAPI,
   containerRef,
@@ -49,7 +45,6 @@ export function useFocusBelowCanvas({
         ) {
           event.preventDefault()
 
-          // Always leave a visible cursor at the bottom: add an empty paragraph when the last section is a card.
           let addLastParagraph = false
 
           editorAPI.editorInstance.getEditorState().read(() => {

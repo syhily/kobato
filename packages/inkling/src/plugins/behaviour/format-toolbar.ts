@@ -1,16 +1,3 @@
-/**
- * The block-format policy behind `FormatToolbar` (the React adapter renders
- * ToolbarMenuItems from this module's snapshot and dispatches its
- * surgeries): the selection classifier (text formats + top-level block
- * type), the block-format surgeries (paragraph / heading / the
- * quote→aside→paragraph cycle), and the visibility gates — all headless, so
- * the matrix is a synchronous test table instead of e2e-only. Deliberately
- * NOT unified with the toolbar session's selection sync
- * (link-editing.ts): that classifier feeds the floating toolbar's
- * hidden|text|link|snippet state machine — a different policy for a
- * different consumer.
- */
-
 import { $createAsideNode } from '@kobato/inkling-internal/nodes/AsideNode'
 import { getSelectedNode } from '@kobato/inkling-internal/utils/get-selected-node'
 import { isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
@@ -36,7 +23,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 
-/** The block types the toolbar tracks — only membership is read, so this is a Set, not a label map. */
 export const FORMAT_BLOCK_TYPES: ReadonlySet<string> = new Set([
   'bullet',
   'check',
@@ -58,17 +44,10 @@ export interface FormatToolbarState {
   isBold: boolean
   isItalic: boolean
   blockType: string
-  /** The anchor block's element format (text-align); '' means no explicit alignment. */
+
   elementFormat: ElementFormatType | ''
 }
 
-/**
- * The selection classifier as a feed: publishes the text formats on every
- * relevant update and the block type only when it resolves (an unknown
- * element type keeps the previous block type). The composing guard keeps the
- * toolbar from popping during IME input. Publishes the default snapshot at
- * registration, then per update.
- */
 export function registerFormatToolbarState(
   editor: LexicalEditor,
   publish: (state: FormatToolbarState) => void,
@@ -77,11 +56,9 @@ export function registerFormatToolbarState(
 
   const update = () => {
     editor.getEditorState().read(() => {
-      // Should not pop up the floating toolbar when using IME input
       if (editor.isComposing()) {
         return
       }
-
       const selection = $getSelection()
       if (!$isRangeSelection(selection)) {
         return
@@ -97,8 +74,6 @@ export function registerFormatToolbarState(
       const element = anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow()
 
       if (editor.getElementByKey(element.getKey()) !== null) {
-        // getTopLevelElementOrThrow's return type includes TextNode; the
-        // element format only exists on ElementNode
         next.elementFormat = $isElementNode(element) ? element.getFormatType() : ''
         if ($isListNode(element)) {
           const parentList = $getNearestNodeOfType(anchorNode, ListNode)
@@ -115,13 +90,11 @@ export function registerFormatToolbarState(
       publish(state)
     })
   }
-
   publish(state)
   update()
   return editor.registerUpdateListener(update)
 }
 
-/** Sets every selected block to a paragraph (no-op without a range selection). */
 export function $formatBlocksToParagraph(editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection()
@@ -131,7 +104,6 @@ export function $formatBlocksToParagraph(editor: LexicalEditor): void {
   })
 }
 
-/** Sets every selected block to the given heading tag. */
 export function $formatBlocksToHeading(editor: LexicalEditor, headingSize: HeadingTagType): void {
   editor.update(() => {
     const selection = $getSelection()
@@ -141,11 +113,6 @@ export function $formatBlocksToHeading(editor: LexicalEditor, headingSize: Headi
   })
 }
 
-/**
- * The quote cycle: quote → aside → paragraph → quote. The current block
- * type arrives as data (the feed's snapshot), so the cycle is a pure
- * three-way policy, not a component branch.
- */
 export function $cycleQuoteBlock(editor: LexicalEditor, blockType: string): void {
   editor.update(() => {
     const selection = $getSelection()
@@ -162,16 +129,7 @@ export function $cycleQuoteBlock(editor: LexicalEditor, blockType: string): void
   })
 }
 
-/**
- * The alignment surgery (tiptap `TextAlign.configure({ types: ['heading',
- * 'paragraph', 'blockquote'] })` parity): sets element `format` on every
- * selected top-level paragraph/heading/quote — the extended replacements are
- * subclasses, so the three upstream guards cover them — and leaves every
- * other block (lists, code, …) untouched. 'left' is an explicit format, not
- * a reset; the default stays '' (no alignment).
- */
 export type BlockAlignment = 'left' | 'center' | 'right'
-
 export function $setBlocksAlignment(editor: LexicalEditor, alignment: BlockAlignment): void {
   editor.update(() => {
     const selection = $getSelection()
@@ -191,7 +149,6 @@ export function $setBlocksAlignment(editor: LexicalEditor, alignment: BlockAlign
     }
   })
 }
-
 export interface FormatToolbarVisibility {
   hideHeading: boolean
   hideQuotes: boolean
@@ -200,14 +157,6 @@ export interface FormatToolbarVisibility {
   hideAlignment: boolean
 }
 
-/**
- * The visibility gates: headings/quotes hide when the surface didn't
- * compose their nodes; snippets hide when disabled, when the host can't
- * create them, or inside a nested editor; bold hides when the surface
- * declares it in `hiddenFormats`; the alignment group hides unless the
- * surface opted into keeping element `format` (its `alignment` prop — the
- * same flag that keeps the default transforms from stripping it).
- */
 /** The formats a surface can hide from the toolbar — 'bold' is the only honored value; any other string is a silent no-op. */
 export type HiddenFormat = 'bold'
 

@@ -9,10 +9,6 @@ import { adminSession, authorSession, regularSession } from '@kobato/test/sessio
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// post.detail draft-preview contract: `status=draft` posts are 404 for anonymous/regular users;
-// admin and author see the draft. The loader serves the saved `body_html` projection and never
-// parses the Lexical row.
-
 const db = getTestDb()
 
 const publishedBody = lexicalBodyWith([lexicalParagraph('Published body.')])
@@ -146,9 +142,7 @@ describe('routes/post.detail draft visibility', () => {
   })
 
   it('shows 【草稿】 for an admin viewing another author’s draft', async () => {
-    // Admin id is 1; the draft belongs to author 99 — admins preview anyone's.
     await seedDraftPost({ slug: 'secret', title: 'Secret', authorId: 99 })
-
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
 
     expect(result.post.title).toBe('Secret')
@@ -157,9 +151,7 @@ describe('routes/post.detail draft visibility', () => {
   })
 
   it('shows 【草稿】 for an author viewing their own draft', async () => {
-    // authorSession() is author id 3.
     await seedDraftPost({ slug: 'secret', title: 'Secret', authorId: 3 })
-
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', authorSession()))
 
     expect(result.bodyHtml).toBe('<p>Draft body.</p>')
@@ -184,7 +176,7 @@ describe('routes/post.detail draft visibility', () => {
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
 
     expect(result.draftMarker).toBe('draft')
-    // The real headless projection renders the seeded paragraph.
+
     expect(result.bodyHtml).toContain('Draft body.')
   })
 

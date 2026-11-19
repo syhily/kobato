@@ -139,7 +139,6 @@ describe('MarkdownPastePlugin', () => {
   })
 
   it('strips <br> tags from converted markdown when allowBr is false', async () => {
-    // two trailing spaces are a markdown hard break, rendered as <br>
     await pasteMarkdown(editor, 'a  \nb', false)
 
     editor.getEditorState().read(() => {
@@ -159,10 +158,6 @@ describe('MarkdownPastePlugin', () => {
     })
   })
 
-  // The paste dialect (markdown-it + plugins → sanitizeHtml → Lexical HTML
-  // import) speaks ==mark==, ~sub~, ^sup^, and footnotes, but has no card-fence
-  // grammar: a fence becomes a code block. The card-aware round-trip dialect is
-  // pinned in tests/markdown/round-trip.test.ts.
   describe('paste dialect coverage', () => {
     it('turns a pasted inkling:* card fence into a code block card, not the named card', async () => {
       const json = '{"url":"https://example.com","title":"Example"}'
@@ -192,8 +187,6 @@ describe('MarkdownPastePlugin', () => {
         const paragraph = $getRoot().getFirstChild()
         expect($isParagraphNode(paragraph)).toBe(true)
 
-        // markdown-it-mark renders <mark>, which Lexical's HTML import maps
-        // to the highlight text format.
         const text = $isParagraphNode(paragraph) ? paragraph.getFirstChild() : null
         expect($isTextNode(text)).toBe(true)
         if ($isTextNode(text)) {
@@ -213,8 +206,6 @@ describe('MarkdownPastePlugin', () => {
           return
         }
 
-        // markdown-it-sub/sup render <sub>/<sup>, which Lexical's HTML import
-        // maps to the subscript/superscript text formats.
         const [sub, between, sup] = paragraph.getChildren()
         expect($isTextNode(sub) && sub.hasFormat('subscript')).toBe(true)
         expect($isTextNode(between) && between.getTextContent()).toBe(' and ')
@@ -229,9 +220,6 @@ describe('MarkdownPastePlugin', () => {
         const children = $getRoot().getChildren()
         expect(children).toHaveLength(3)
 
-        // markdown-it-footnote renders <sup class="footnote-ref"><a href="#fn1">[1]</a></sup>;
-        // the href fails sanitizeHtml's ALLOWED_URI_REGEXP, so the ref becomes
-        // superscript text without a link.
         const lead = children[0]
         expect($isParagraphNode(lead)).toBe(true)
         if ($isParagraphNode(lead)) {
@@ -241,12 +229,8 @@ describe('MarkdownPastePlugin', () => {
           expect($isTextNode(ref) && ref.hasFormat('superscript')).toBe(true)
         }
 
-        // The <hr class="footnotes-sep"> separator imports as a horizontal
-        // rule card, same as in the real editor.
         expect($isHorizontalRuleNode(children[1])).toBe(true)
 
-        // The footnote body unwraps out of <section>/<ol>/<li> (unregistered
-        // here) into plain text; the ↩︎ backlink loses its href too.
         const body = children[2]
         expect($isParagraphNode(body)).toBe(true)
         if ($isParagraphNode(body)) {

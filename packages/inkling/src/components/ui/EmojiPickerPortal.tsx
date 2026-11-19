@@ -43,15 +43,13 @@ const EmojiPickerPortal = ({
   const [position, setPosition] = React.useState<PickerPosition | null>(null)
   const { darkMode } = React.useContext(InklingUiPrefsContext)
 
-  // lifts the picker above the trigger when it would sit at the viewport bottom
   const shiftPixels = 35
   const handleScroll = React.useCallback(() => {
     if (positionRef.current) {
       const rect = positionRef.current.getBoundingClientRect()
       const windowHeight = window.innerHeight
-      const pickerHeight = 352 // Approximate height of the emoji picker, adjust if needed
+      const pickerHeight = 352
 
-      // position: fixed uses viewport coordinates, so use rect values directly
       let adjustedTop = rect.top
 
       if (adjustedTop + pickerHeight > windowHeight) {
@@ -64,7 +62,7 @@ const EmojiPickerPortal = ({
 
   React.useEffect(() => {
     handleScroll()
-    document.addEventListener('scroll', handleScroll, true) // Use true for capture phase
+    document.addEventListener('scroll', handleScroll, true)
     return () => {
       document.removeEventListener('scroll', handleScroll, true)
     }
@@ -85,7 +83,6 @@ const EmojiPickerPortal = ({
     position: 'fixed',
   }
 
-  // https://github.com/missive/emoji-mart#options--props
   const defaultPickerProps: Omit<EmojiMartPickerOptions, 'data' | 'onEmojiSelect'> = {
     theme: darkMode ? 'dark' : 'light',
     autoFocus,
@@ -117,11 +114,7 @@ const EmojiPickerPortal = ({
         onClick={handleClick}
       >
         <div className="">
-          <Picker // https://github.com/missive/emoji-mart#-picker
-            data={data}
-            onEmojiSelect={onEmojiClick}
-            {...defaultPickerProps}
-          />
+          <Picker data={data} onEmojiSelect={onEmojiClick} {...defaultPickerProps} />
         </div>
       </div>
     </Portal>

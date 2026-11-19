@@ -47,8 +47,6 @@ async function checkRow(db: Database, row: WebmentionRow): Promise<VerifyOutcome
   }
 }
 
-/** One row's daily outcome: success refreshes metadata and resets the streak;
- *  failure bumps it and hides the row (approved or pending) once the budget is spent. */
 async function applyDailyOutcome(db: Database, row: WebmentionRow, outcome: VerifyOutcome): Promise<void> {
   if (outcome.ok) {
     await applyWebmentionReverifySuccess(db, row.id, { ...outcome.meta, type: outcome.type })

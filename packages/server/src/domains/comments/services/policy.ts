@@ -1,4 +1,3 @@
-// Pure comment-policy decisions — no I/O, no clock; services pass facts in.
 // Each gate returns `null` to allow or a `GateFailure`. The failure carries a
 // typed descriptor (never prose): the transports localize it per request.
 
@@ -28,10 +27,6 @@ export const MAX_COMMENT_LENGTH = 10_000
 export const DEDUPE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 export const DEDUPE_SAMPLE_LIMIT = 20
 
-/**
- * Registered-account fence (before commenter-row insert): an anonymous
- * submission under an already-registered email must log in first.
- */
 export function decideEmailGate(
   loginUser: { email: string } | undefined,
   emailRegistered: boolean,

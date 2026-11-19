@@ -78,26 +78,21 @@ export interface SafeFetchFailure {
   /** The URL that triggered the failure — the initial URL, the redirect
    *  target that was rejected, or the hop whose fetch failed. */
   url: string
-  /** Upstream status; set only for `http-error`. */
   status: number | null
-  /** The thrown error; set only for `dns-failure` / `fetch-failed` / `timeout`. */
   error: unknown
 }
 
 export interface SafeFetchSuccess {
   ok: true
-  /** Final URL after any redirects. */
   url: string
   /** The final response. Its body has already been buffered into `body`,
    *  so read the bytes from there, not from the response. */
   response: Response
-  /** Buffered body — already size-checked when `maxBytes` was given. */
   body: ArrayBuffer
 }
 
 export interface SafeFetchStreamSuccess {
   ok: true
-  /** Final URL after any redirects. */
   url: string
   /** The final response with its body still live (NOT buffered); with `maxBytes` the body errors mid-stream past the cap. */
   response: Response

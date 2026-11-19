@@ -18,7 +18,6 @@ const OG_LOCALE: Record<Locale, string> = {
   'zh-CN': 'zh_CN',
 }
 
-/** Catalog literals rendered by BaseLayout / ErrorView on every public page. */
 const UI_COPY: Record<
   Locale,
   { skipToContent: string; themeToDark: string; notFoundTitle: string; notFoundDescription: string }
@@ -49,7 +48,6 @@ const UI_COPY: Record<
   },
 }
 
-// Fixed date in the supported window; the URL contract is unchanged by i18n.
 const CALENDAR_PATH = '/images/calendar/2026/0102.png'
 const MISSING_PATH = '/i18n-e2e-missing-page'
 
@@ -63,7 +61,6 @@ async function setLocale(admin: E2eClient, csrfToken: string, locale: Locale): P
   expect(result.status).toBe(200)
 }
 
-/** RFC weak comparison: a compressed 200 carries `W/"…"`, its 304 does not. */
 function opaqueTag(tag: string | null): string | null {
   return tag === null ? null : tag.replace(/^W\//, '')
 }
@@ -73,15 +70,9 @@ function expectHtmlLanguage(html: string, locale: Locale): void {
   expect(html).toMatch(new RegExp(`<meta[^>]*property="og:locale"[^>]*content="${OG_LOCALE[locale]}"`))
 }
 
-/**
- * Count pixels that actually differ between two rendered calendars. This is
- * the locale-dependent visible output: en-US drops the lunar line and the 宜
- * line and writes Latin month/weekday names, so the two PNGs cannot coincide.
- */
 async function countDifferingPixels(left: Uint8Array, right: Uint8Array): Promise<number> {
   const [leftImage, rightImage] = await Promise.all([loadImage(Buffer.from(left)), loadImage(Buffer.from(right))])
   expect([rightImage.width, rightImage.height]).toEqual([leftImage.width, leftImage.height])
-
   const read = (image: Awaited<ReturnType<typeof loadImage>>) => {
     const canvas = createCanvas(image.width, image.height)
     const ctx = canvas.getContext('2d')
@@ -112,26 +103,22 @@ describe('four-locale public representations (HTTP e2e)', () => {
     const csrfToken = await getAdminCsrfToken(admin)
 
     const anon = new E2eClient(env.baseUrl)
-    // The pre-switch (seeded zh-CN) feed tag: the first conditional probe uses it.
+
     const before = await anon.get('/feed')
     expect(before.status).toBe(200)
     let previousTag = before.headers.get('etag')
     expect(previousTag).toBeTruthy()
     await before.text()
 
-    // zh-HK and zh-TW share the hand-reviewed traditional copy, so their
-    // calendar bytes may legitimately match; English must differ.
     const calendarTags = new Map<Locale, string>()
     const calendarPngs = new Map<Locale, Uint8Array>()
     const feedTags = new Map<Locale, string>()
     const manifestTags = new Map<Locale, string>()
-
     try {
       for (const locale of LOCALES) {
         await setLocale(admin, csrfToken, locale)
         const copy = UI_COPY[locale]
 
-        // Real chrome copy rendered through the UI catalog, never a fallback.
         const home = await anon.get('/')
         expect(home.status).toBe(200)
         expect(home.headers.get('content-language')).toBe(locale)
@@ -146,21 +133,16 @@ describe('four-locale public representations (HTTP e2e)', () => {
         expect(missingHtml).toContain(copy.notFoundTitle)
         expect(missingHtml).toContain(copy.notFoundDescription)
 
-        // `<language>` is the feed's locale-bearing field; titles/descriptions
-        // are site-authored content and deliberately never translated.
         const feed = await anon.get('/feed')
         expect(feed.status).toBe(200)
         expect(feed.headers.get('content-language')).toBe(locale)
         const feedBody = await feed.text()
         expect(feedBody).toContain(`<language>${locale}</language>`)
         const currentTag = feed.headers.get('etag')
-        // The compression middleware weakens an entity tag on a compressed
-        // response (`W/"…"`); the bytes are still what the server hashed.
+
         expect(currentTag).toMatch(/^(?:W\/)?"[0-9a-f]{32}"$/)
         feedTags.set(locale, currentTag!)
 
-        // A tag from the PREVIOUS locale must be a miss (200 + current
-        // language), the current tag a 304 that still advertises it.
         const stale = await anon.get('/feed', { headers: { 'if-none-match': previousTag! } })
         expect(stale.status).toBe(200)
         expect(stale.headers.get('content-language')).toBe(locale)
@@ -168,7 +150,6 @@ describe('four-locale public representations (HTTP e2e)', () => {
 
         const fresh = await anon.get('/feed', { headers: { 'if-none-match': currentTag! } })
         expect(fresh.status).toBe(304)
-        // The 304 has no body to compress and carries the strong form.
         expect(opaqueTag(fresh.headers.get('etag'))).toBe(opaqueTag(currentTag))
         expect(fresh.headers.get('content-language')).toBe(locale)
         await fresh.text()
@@ -179,8 +160,6 @@ describe('four-locale public representations (HTTP e2e)', () => {
         expect(atom.headers.get('content-language')).toBe(locale)
         expect(await atom.text()).toContain(`xml:lang="${locale}"`)
 
-        // `lang` is the manifest's locale-bearing field; name/short_name stay
-        // the site's authored title.
         const manifest = await anon.get('/manifest.webmanifest')
         expect(manifest.status).toBe(200)
         expect(manifest.headers.get('content-language')).toBe(locale)
@@ -205,18 +184,13 @@ describe('four-locale public representations (HTTP e2e)', () => {
         calendarPngs.set(locale, png)
       }
 
-      // Each body changes with the language: four distinct representation tags.
       expect(new Set(feedTags.values()).size).toBe(LOCALES.length)
       expect(new Set(manifestTags.values()).size).toBe(LOCALES.length)
       expect(calendarTags.get('en-US')).not.toBe(calendarTags.get('zh-CN'))
 
-      // The calendar paint itself is localized, not just its headers. Font
-      // availability and rasterization determine the differing pixel count,
-      // so only require a visible difference, not a platform-specific area.
       const differing = await countDifferingPixels(calendarPngs.get('en-US')!, calendarPngs.get('zh-CN')!)
       expect(differing).toBeGreaterThan(0)
     } finally {
-      // Never leak another language into the shared instance's other journeys.
       await setLocale(admin, csrfToken, 'zh-CN')
     }
 

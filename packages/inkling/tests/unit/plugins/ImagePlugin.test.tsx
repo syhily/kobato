@@ -88,7 +88,6 @@ describe('Image insert commands (CardInsertPlugin)', () => {
       Reflect.apply(editor.dispatchCommand.bind(editor), editor, [INSERT_IMAGE_COMMAND, 'not-an-object'])
     })
 
-    // Only the original INSERT_IMAGE_COMMAND should have been dispatched
     expect(dispatchCommandSpy).toHaveBeenCalledTimes(1)
   })
 })
