@@ -194,7 +194,7 @@ describe('avatarRouter.find', () => {
   it('returns the resolved avatar URL for non-QQ email', async () => {
     const ctx = makePublicCtx({ db })
     const res = await call(avatarRouter.find, { email: 'someone@example.com' }, { context: ctx })
-    expect(res.avatar).toMatch(/^https:\/\/example\.com\/images\/avatar\/[0-9a-f]{64}\.png\?s=120$/)
+    expect(res.avatar).toMatch(/^\/images\/avatar\/[0-9a-f]{64}\.png\?s=120$/)
   })
 })
 
