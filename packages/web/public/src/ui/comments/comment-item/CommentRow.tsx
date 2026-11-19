@@ -1,6 +1,12 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
+import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import {
+  getCommentFlashServerSnapshot,
+  getCommentFlashSnapshot,
+  subscribeCommentFlash,
+} from '@kobato/web-client/lib/comment-flash.ts'
 import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags.ts'
 import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions.tsx'
 import { CommentAuthorLine, CommentAvatar } from '@kobato/web-public/ui/comments/comment-item/CommentAuthorLine.tsx'
@@ -18,7 +24,7 @@ import {
 import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml.tsx'
 import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context.ts'
 import { XIcon } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useState, type ReactNode, useSyncExternalStore } from 'react'
 
 interface CommentRowProps {
   comment: CommentItemType
@@ -34,13 +40,18 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
   const actions = useCommentsActions('CommentRow')
   const flags = commentFlags(comment, identity)
   const isPending = pending ?? comment.isPending ?? false
+  // The flash id arrives from use-focus-hash after the scroll settles — never
+  // during SSR or hydration (server snapshot is null), so the `active` class
+  // can never mismatch the streamed HTML.
+  const flashedId = useSyncExternalStore(subscribeCommentFlash, getCommentFlashSnapshot, getCommentFlashServerSnapshot)
+  const isFlashed = flashedId !== null && flashedId === String(comment.id)
   return (
     <li
       id={`user-comment-${comment.id}`}
       className={depth === 1 ? rootCommentLiClass() : nestedCommentLiClass()}
       data-depth={depth}
     >
-      <article id={`div-comment-${comment.id}`} className={commentBodyClass}>
+      <article id={`div-comment-${comment.id}`} className={cn(commentBodyClass, isFlashed && 'active')}>
         <CommentAvatar comment={comment} depth={depth} />
         <div className={depth === 1 ? commentInnerClass : nestedCommentInnerClass()}>
           <CommentAuthorLine comment={comment} />

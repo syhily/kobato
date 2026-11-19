@@ -1,3 +1,4 @@
+import { flashCommentTarget } from '@kobato/web-client/lib/comment-flash.ts'
 import { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
@@ -46,7 +47,7 @@ export function useFocusHash(): void {
       const fire = () => {
         clearScrollListeners()
         if (isCommentHash) {
-          flashComment(target)
+          flashCommentTarget(hash.slice('#user-comment-'.length))
         }
       }
 
@@ -86,16 +87,4 @@ export function useFocusHash(): void {
       clearScrollListeners()
     }
   }, [hash])
-}
-
-function flashComment(target: HTMLElement): void {
-  for (const node of document.querySelectorAll<HTMLElement>('article.comment-body')) {
-    node.classList.remove('active')
-  }
-  const article = target.querySelector<HTMLElement>('article.comment-body')
-  if (article === null) {
-    return
-  }
-  void article.offsetWidth
-  article.classList.add('active')
 }
