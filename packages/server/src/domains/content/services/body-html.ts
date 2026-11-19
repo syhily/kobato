@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'

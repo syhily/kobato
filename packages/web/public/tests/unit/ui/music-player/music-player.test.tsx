@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { CardRenderContext } from '@kobato/lexical/cards/card-html.ts'
+import type { CardRenderContext } from '@kobato/inkling/headless/cards/card-html.ts'
 
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import {
@@ -8,11 +8,11 @@ import {
   type MusicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
-} from '@kobato/lexical/cards/music-player.ts'
+} from '@kobato/inkling/headless/cards/music-player.ts'
 import { diffHtmlStructures, structureFromHtml } from '@kobato/test/dom-structure.ts'
+import { MusicPlayerCard } from '@kobato/ui/components/music-player/music-player.tsx'
+import { __resetProgrammaticVolumeSupportForTests } from '@kobato/ui/lib/use-music-playback.ts'
 import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
-import { MusicPlayerCard } from '@kobato/web-public/ui/music-player/music-player.tsx'
-import { __resetProgrammaticVolumeSupportForTests } from '@kobato/web-public/ui/music-player/use-music-playback.ts'
 import { fireEvent, render } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it, vi } from 'vitest'

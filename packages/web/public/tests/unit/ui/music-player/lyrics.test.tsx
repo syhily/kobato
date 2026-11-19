@@ -1,5 +1,5 @@
-import { LyricsPanel } from '@kobato/web-public/ui/music-player/lyrics.tsx'
-import { parseLrc } from '@kobato/web-public/ui/shared/music/lrc.ts'
+import { parseLrc } from '@kobato/ui/components/music-player/lrc.ts'
+import { LyricsPanel } from '@kobato/ui/components/music-player/lyrics.tsx'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 

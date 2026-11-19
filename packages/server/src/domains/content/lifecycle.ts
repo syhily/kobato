@@ -2,7 +2,7 @@ import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ContentRow } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type {
   ContentType,
@@ -11,8 +11,8 @@ import type {
 } from '@kobato/server/domains/content/schemas/revision.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
 
-import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/lexical/collect.ts'
-import { compactLexicalEditorState } from '@kobato/lexical/dialect.ts'
+import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/inkling/headless/collect.ts'
+import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect.ts'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
 import {
   isEquivalentToPublishedLatest,

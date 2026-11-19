@@ -1,8 +1,8 @@
 import type { Database } from '@kobato/db/database.ts'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
-import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
 import { entityCommentUrl } from '@kobato/server/domains/content/urls.ts'
 import { wirePostPublishHook } from '@kobato/server/domains/posts/publish-hooks.ts'
 import { rescheduleWebmentionOutbox } from '@kobato/server/domains/webmentions/outbox-scheduler.ts'

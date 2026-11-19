@@ -1,4 +1,4 @@
-import type { MusicPlayerCardProps } from '@kobato/web-public/ui/music-player/music-player.tsx'
+import type { MusicPlayerCardProps } from '@kobato/ui/components/music-player/music-player.tsx'
 
 import { I18nProvider, type I18nMessages, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { isHttpUrl } from '@kobato/utils/safe-url.ts'
@@ -40,7 +40,7 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
     let cancelled = false
     const roots: Root[] = []
 
-    void import('@kobato/web-public/ui/music-player/music-player.tsx').then(({ MusicPlayerCard }) => {
+    void import('@kobato/ui/components/music-player/music-player.tsx').then(({ MusicPlayerCard }) => {
       if (cancelled) {
         return
       }

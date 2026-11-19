@@ -3,7 +3,7 @@ import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/d
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import {

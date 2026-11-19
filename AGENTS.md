@@ -5,7 +5,7 @@
 pnpm monorepo with four top-level roots; nothing else is created at the root:
 
 - `apps/` — deployable apps: `kobato` (React Router 8 Framework Mode, SSR, React 19 TSX/TS, `appDirectory: 'src'`) and `inkling-demo` (standalone Inkling playground, `pnpm demo`).
-- `packages/` — product code that ships: `@kobato/server` (backend domains, HTTP, SSR, infra), `@kobato/db` (SQLite node:sqlite/Drizzle + DuckDB persistence), `@kobato/api` (oRPC contract-first layer over `@kobato/contracts`), `@kobato/ui` (design system), `@kobato/inkling` (self-contained Lexical editor island), `packages/web/*` (`web-client` the browser platform leaf, `web-public` the public frontend, `web-admin` the admin frontend), and thirteen isomorphic React-free leaves under `packages/shared/*`: utils, auth, i18n, cache, catalog, settings, assets, lexical, sanitize, contracts, telemetry, distribution, seo.
+- `packages/` — product code that ships: `@kobato/server` (backend domains, HTTP, SSR, infra), `@kobato/db` (SQLite node:sqlite/Drizzle + DuckDB persistence), `@kobato/api` (oRPC contract-first layer over `@kobato/contracts`), `@kobato/ui` (design system), `@kobato/inkling` (kobato's Lexical editor: React editor runtime, the React-free document model under `src/headless/`, and the kobato host-card assemblies under `src/host-cards/`), `packages/web/*` (`web-client` the browser platform leaf, `web-public` the public frontend, `web-admin` the admin frontend), and twelve isomorphic React-free leaves under `packages/shared/*`: utils, auth, i18n, cache, catalog, settings, assets, sanitize, contracts, telemetry, distribution, seo.
 - `tools/` — dev-support packages (`toolchain`, `test`, `harness`, `browser`, `email`, `i18n-tools`, `trace`, `pack`); nothing here ships in the product binary, and product `src/` never imports a tools package.
 - `scripts/` — standalone ops scripts importing no project module (shell / Node builtins only); anything needing project modules belongs in `tools/`.
 
@@ -31,7 +31,7 @@ All imports are absolute. The single workspace path table is `@kobato/toolchain/
 
 - App source: `@/...` → `apps/kobato/src/...`; app test helpers: `@tests/...` → `apps/kobato/tests/...` (app tests only).
 - Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; package-local test helpers use `@kobato/<package>/tests/...` only from that package's own tests.
-- Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus its one white-box parity test. Public consumers use `@kobato/inkling` or `@kobato/inkling/headless`; the demo uses `@kobato/inkling-demo/...`.
+- Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus its one white-box parity test. Public consumers use `@kobato/inkling`, `@kobato/inkling/headless*` (entry or per-file), `@kobato/inkling/host-cards`, or `@kobato/inkling/styles/*`; the demo uses `@kobato/inkling-demo/...`.
 
 No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry (`tools/pack/src/sea/server-entry.ts`) and generated probe JavaScript, and import-scanner tests quoting specifiers as fixtures. Build-time configs import through package specifiers like everything else (e.g. `@kobato/pack/sea/*`, `@kobato/test/*`). `apps/kobato/tests/arch/package-dag.test.ts` enforces the single path table, alias confinement, and the no-relative rule.
 
@@ -39,12 +39,12 @@ No relative specifiers in source or tests. Exceptions: React Router generated `.
 
 Dependency declarations are the physical enforcement. `apps/kobato/tests/arch/package-dag.test.ts` pins the full SRC DAG and exceptions, `web-direction.test.ts` the web seams, `server-layers.test.ts` the internal server graph.
 
-- `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/contracts` (contracts imports settings). `@kobato/lexical` reaches Inkling only through `@kobato/inkling/headless`.
+- `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/contracts` (contracts imports settings). `@kobato/catalog` and `@kobato/contracts` reach the Lexical document model through `@kobato/inkling/headless` (catalog type-only).
 - `@kobato/api` → `@kobato/contracts` only; metadata-only (`method`/`path`/`input`/`output`). The server implements contracts through the `implement{Public,Authed,Author,Admin}` bases in `packages/server/src/http/orpc-base.ts`.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
-- `@kobato/db` → `settings`, `lexical`, `utils`; owns its local row/query models, never wire shapes.
+- `@kobato/db` → `settings`, `utils`, and inkling headless (the comment document schema); owns its local row/query models, never wire shapes.
 - Web direction is one-way: `web-admin` → `web-public` / `web-client`, `web-public` → `web-client`; never the reverse. Web leaves never import `@kobato/server` (admin allows it only as a tests-only fixture dependency). The browser oRPC client is typed exclusively through `@kobato/api`.
-- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` imports no `@kobato/*` package in `src/`.
+- `@kobato/ui` → `settings`, `i18n`, `utils`; it also owns the product-level `components/music-player/` family (public-site hydration + editor preview). `@kobato/inkling` → `ui`, `sanitize`, `assets`, `utils` — the editor fully serves kobato (no external-reuse island invariant); the document model it owns ships React-free under `/headless`, and consumers reach the editor only via the barrel, `@kobato/inkling/headless*`, `@kobato/inkling/host-cards`, or `/styles/*`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render — no DB imports or business logic inline. Cross-domain imports under `packages/server/src/domains/` stay acyclic.
 - Refactor from architectural correctness, not minimal diff size.
 

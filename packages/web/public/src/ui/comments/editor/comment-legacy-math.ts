@@ -5,10 +5,10 @@
 // — so the seed parses through the trimmed node set and the next save persists
 // the fence form. Pure state → state; the input is never mutated.
 
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
-import type { LexicalNodeJson } from '@kobato/lexical/schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { LexicalNodeJson } from '@kobato/inkling/headless/schema.ts'
 
-import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 type MutableNode = Record<string, unknown> & { type: string; children?: LexicalNodeJson[] }

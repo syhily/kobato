@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@kobato/catalog": "workspace:*",
-    "@kobato/lexical": "workspace:*",
+    "@kobato/inkling": "workspace:*",
     "react-router": "catalog:",
     "vitest": "catalog:"
   }

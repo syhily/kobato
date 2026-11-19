@@ -134,7 +134,7 @@ Two embedded engines, zero services:
 
 - `post` → `/posts/:slug`; `page` → `/:slug`. Both render the revision's saved `bodyHtml` projection; a NULL column falls back to an on-the-fly headless projection (`domains/content/services/body-html.ts::resolveBodyHtml`). `visible=false` posts are excluded from home/random widgets but stay in archives, tags, search, sitemap, feeds.
 - **Draft gate**: a post is public-invisible when `status=draft` OR `publishedRevisionId=null` — all public queries MUST check both. The "live" gate is defined once in `domains/content/schemas/live-gate.ts` (`isLive` in-memory, `liveContentWhere` SQL). Never hand-assemble the struct.
-- **Body projections**: the save pipeline (`domains/content/lifecycle.ts`) computes `bodyHtml` / `bodyText` / `bodyHtmlFeed` via `infra/lexical/lexical-projection.ts`; the feed downgrade is a state-copy transform in `@kobato/lexical/projection-state.ts`. Projection failure is best-effort (warn + NULL columns). The dashboard「重建文章缓存」button re-derives the three columns corpus-wide, writing only drifted rows.
+- **Body projections**: the save pipeline (`domains/content/lifecycle.ts`) computes `bodyHtml` / `bodyText` / `bodyHtmlFeed` via `infra/lexical/lexical-projection.ts`; the feed downgrade is a state-copy transform in `infra/lexical/projection-state.ts`. Projection failure is best-effort (warn + NULL columns). The dashboard「重建文章缓存」button re-derives the three columns corpus-wide, writing only drifted rows.
 - **Projection consumers**: feeds render `bodyHtmlFeed`; search stores `bodyText`; webmention link extraction walks the Lexical state directly, never the HTML; comment emails render the saved degraded-HTML snapshot, sanitized at the email boundary.
 
 ### Slug derivation

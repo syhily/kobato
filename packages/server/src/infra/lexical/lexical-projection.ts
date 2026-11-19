@@ -1,8 +1,8 @@
 import type { LexicalStateToHtmlOptions } from '@kobato/inkling/headless'
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema.ts'
 
 import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@kobato/inkling/headless'
-import { FEED_VARIANT_META_KIND } from '@kobato/lexical/cards/card-html.ts'
+import { FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html.ts'
 import {
   IMAGE_RENDER_ENV_META_KIND,
   type KobatoImageRenderEnv,
@@ -10,26 +10,26 @@ import {
   kobatoImageImportSpec,
   kobatoImageTextContent,
   renderKobatoImageNode,
-} from '@kobato/lexical/cards/kobato-image.ts'
-import { MUSIC_PLAYER_CARD_PROPERTIES, renderMusicPlayerCard } from '@kobato/lexical/cards/music-player.ts'
+} from '@kobato/inkling/headless/cards/kobato-image.ts'
+import { MUSIC_PLAYER_CARD_PROPERTIES, renderMusicPlayerCard } from '@kobato/inkling/headless/cards/music-player.ts'
 import {
   renderSolutionCard,
   SOLUTION_CARD_PROPERTIES,
   solutionCardTextContent,
-} from '@kobato/lexical/cards/solution.ts'
+} from '@kobato/inkling/headless/cards/solution.ts'
 import {
   renderTwoColumnCard,
   TWO_COLUMN_CARD_PROPERTIES,
   twoColumnCardTextContent,
-} from '@kobato/lexical/cards/two-column.ts'
+} from '@kobato/inkling/headless/cards/two-column.ts'
 import {
   KOBATO_HOST_CARD_NODE_TYPES,
   MUSIC_PLAYER_NODE_TYPE,
   SOLUTION_NODE_TYPE,
   TWO_COLUMN_NODE_TYPE,
-} from '@kobato/lexical/node-whitelist.ts'
-import { toProjectionState } from '@kobato/lexical/projection-state.ts'
+} from '@kobato/inkling/headless/node-whitelist.ts'
 import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
+import { toProjectionState } from '@kobato/server/infra/lexical/projection-state.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { resolveFootnotesSectionTitle } from '@kobato/settings/presentation.ts'

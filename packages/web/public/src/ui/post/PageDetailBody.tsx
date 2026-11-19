@@ -1,6 +1,6 @@
 import type { CommentFormUser, DetailPageShell, DraftMarker } from '@kobato/catalog/model.ts'
 import type { DetailPageComments } from '@kobato/contracts/comments.ts'
-import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
 
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { Footer } from '@kobato/web-public/ui/chrome/Footer.tsx'

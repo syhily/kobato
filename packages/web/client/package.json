@@ -12,7 +12,6 @@
     "@kobato/distribution": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
-    "@kobato/lexical": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",

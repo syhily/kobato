@@ -1,6 +1,5 @@
 @source '../ui/shared';
 @source '../ui/lib';
-@source '../ui/music-player';
 @source '../ui/chrome';
 @source '../ui/comments/*.{ts,tsx}';
 @source '../ui/widgets';

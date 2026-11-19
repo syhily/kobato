@@ -655,9 +655,6 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../packages/inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: link:../../packages/shared/lexical
       '@kobato/toolchain':
         specifier: workspace:*
         version: link:../../tools/toolchain
@@ -742,9 +739,9 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../packages/shared/i18n
-      '@kobato/lexical':
+      '@kobato/inkling':
         specifier: workspace:*
-        version: link:../../packages/shared/lexical
+        version: link:../../packages/inkling
       '@kobato/pack':
         specifier: workspace:*
         version: link:../../tools/pack
@@ -895,9 +892,9 @@ importers:
       '@kobato/db':
         specifier: workspace:*
         version: 'link:'
-      '@kobato/lexical':
+      '@kobato/inkling':
         specifier: workspace:*
-        version: link:../shared/lexical
+        version: link:../inkling
       '@kobato/settings':
         specifier: workspace:*
         version: link:../shared/settings
@@ -952,15 +949,27 @@ importers:
       '@emoji-mart/data':
         specifier: 'catalog:'
         version: 1.2.1
+      '@kobato/assets':
+        specifier: workspace:*
+        version: link:../shared/assets
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../shared/i18n
       '@kobato/inkling':
         specifier: workspace:*
         version: 'link:'
+      '@kobato/sanitize':
+        specifier: workspace:*
+        version: link:../shared/sanitize
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
+      '@kobato/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@kobato/utils':
+        specifier: workspace:*
+        version: link:../shared/utils
       '@lexical/clipboard':
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -1051,6 +1060,9 @@ importers:
       lexical:
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.76.0(@types/react@19.3.0)(react@19.3.1)
       markdown-it:
         specifier: 'catalog:'
         version: 15.0.3
@@ -1096,6 +1108,9 @@ importers:
       yjs:
         specifier: 'catalog:'
         version: 13.6.33
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
 
   packages/server:
     devDependencies:
@@ -1150,9 +1165,6 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: link:../shared/lexical
       '@kobato/sanitize':
         specifier: workspace:*
         version: link:../shared/sanitize
@@ -1360,9 +1372,9 @@ importers:
       '@kobato/catalog':
         specifier: workspace:*
         version: 'link:'
-      '@kobato/lexical':
+      '@kobato/inkling':
         specifier: workspace:*
-        version: link:../lexical
+        version: link:../../inkling
       react-router:
         specifier: 'catalog:'
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1390,9 +1402,9 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@kobato/lexical':
+      '@kobato/inkling':
         specifier: workspace:*
-        version: link:../lexical
+        version: link:../../inkling
       '@kobato/settings':
         specifier: workspace:*
         version: link:../settings
@@ -1441,36 +1453,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
-
-  packages/shared/lexical:
-    devDependencies:
-      '@kobato/assets':
-        specifier: workspace:*
-        version: link:../assets
-      '@kobato/inkling':
-        specifier: workspace:*
-        version: link:../../inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: 'link:'
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../sanitize
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@lexical/headless':
-        specifier: 'catalog:'
-        version: 0.53.0(typescript@7.0.2)
-      jsdom:
-        specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
-      vitest:
-        specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
 
   packages/shared/sanitize:
     devDependencies:
@@ -1708,9 +1690,6 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: link:../../shared/lexical
       '@kobato/sanitize':
         specifier: workspace:*
         version: link:../../shared/sanitize
@@ -1843,9 +1822,6 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: link:../../shared/lexical
       '@kobato/settings':
         specifier: workspace:*
         version: link:../../shared/settings
@@ -1927,9 +1903,6 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: link:../../shared/lexical
       '@kobato/sanitize':
         specifier: workspace:*
         version: link:../../shared/sanitize
@@ -2020,9 +1993,6 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../inkling
-      '@kobato/lexical':
-        specifier: workspace:*
-        version: link:../../shared/lexical
       '@kobato/settings':
         specifier: workspace:*
         version: link:../../shared/settings
@@ -2237,9 +2207,9 @@ importers:
       '@kobato/harness':
         specifier: workspace:*
         version: link:../harness
-      '@kobato/lexical':
+      '@kobato/inkling':
         specifier: workspace:*
-        version: link:../../packages/shared/lexical
+        version: link:../../packages/inkling
       '@kobato/pack':
         specifier: workspace:*
         version: link:../pack

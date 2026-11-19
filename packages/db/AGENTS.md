@@ -1,6 +1,6 @@
 # Database module conventions
 
-`@kobato/db` owns the content database's SQLite/Drizzle implementation AND the DuckDB analytics sidecar's persistence layer: connection primitives, schema, row types, query operations, migrations, SQLite error classification, and the DuckDB DDL/appender/query modules. It depends on `@kobato/settings`, `@kobato/lexical`, `@kobato/utils`, never on `@kobato/contracts` (the wire), `@kobato/server`, `@kobato/web-admin`, or `@kobato/ui`.
+`@kobato/db` owns the content database's SQLite/Drizzle implementation AND the DuckDB analytics sidecar's persistence layer: connection primitives, schema, row types, query operations, migrations, SQLite error classification, and the DuckDB DDL/appender/query modules. It depends on `@kobato/settings`, `@kobato/inkling` (headless — the comment document schema), `@kobato/utils`, never on `@kobato/contracts` (the wire), `@kobato/server`, `@kobato/web-admin`, or `@kobato/ui`.
 
 - Callers import source modules directly as `@kobato/db/<path>.ts`; there is no barrel. Imports within this package also use the package root.
 - Engine planes: `src/` root, `schema/`, and `operations/` are the SQLite/Drizzle plane; `duckdb/` is the analytics plane. A module belongs to exactly one plane, with `database.ts` (the shared `:memory:` path sentinels) the only crossing.

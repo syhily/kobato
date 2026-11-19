@@ -1,4 +1,4 @@
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot.ts'
 import {
   lexicalBodyWith,

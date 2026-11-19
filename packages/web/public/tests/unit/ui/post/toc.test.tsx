@@ -1,4 +1,4 @@
-import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
 
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { setBlogSettingsBundleForTests } from '@kobato/web-public/tests/utils/blog-settings.ts'

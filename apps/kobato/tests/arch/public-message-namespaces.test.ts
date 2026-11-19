@@ -16,7 +16,6 @@ const PACKAGE_SRC: Record<string, string> = {
   '@kobato/ui': 'packages/ui/src',
   '@kobato/contracts': 'packages/shared/contracts/src',
   '@kobato/seo': 'packages/shared/seo/src',
-  '@kobato/lexical': 'packages/shared/lexical/src',
   '@kobato/utils': 'packages/shared/utils/src',
   '@kobato/i18n': 'packages/shared/i18n/src',
   '@kobato/cache': 'packages/shared/cache/src',

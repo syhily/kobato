@@ -2,7 +2,7 @@ import { comment } from '@kobato/db/schema/comment.ts'
 import { metric } from '@kobato/db/schema/metric.ts'
 import { post } from '@kobato/db/schema/post.ts'
 import { user } from '@kobato/db/schema/user.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/lexical/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
 import {
   countAllComments,
   countAdminComments,

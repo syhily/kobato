@@ -1,10 +1,10 @@
 import '@kobato/inkling/styles/index.css'
 import '@kobato/web-public/styles/inkling-comment-editor.css'
 import type { InklingLabelsInput } from '@kobato/inkling'
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 
 import { InklingSurface, ListPlugin } from '@kobato/inkling'
-import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { blockQuoteAsideCycle } from '@kobato/web-client/editor/block-quote-aside-cycle.ts'
 import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-client/editor/editor-surface.tsx'

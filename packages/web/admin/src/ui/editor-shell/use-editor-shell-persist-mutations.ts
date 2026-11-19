@@ -1,5 +1,5 @@
 import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type {
   EditorShellStatus,
   EntityLike,

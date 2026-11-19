@@ -85,11 +85,6 @@ export function registerHostCard(record: HostCardRecord): void {
 const CARD_PICKER_OVERRIDES = new Map<string, HostCardPickerSpec>()
 
 export function registerCardPicker(nodeType: string, picker: HostCardPickerSpec): void {
-  if (picker.autoOpenOnInsert === true) {
-    throw new Error(
-      `[registerCardPicker] '${nodeType}': autoOpenOnInsert is host-spec-only — variant inserts ride the built-in insert registration, which never projects the flag. Dispatch the insert with openPicker: true from the host's own intent command instead (the OPEN_IMAGE_LIBRARY_COMMAND idiom)`,
-    )
-  }
   if (CARD_PICKER_OVERRIDES.has(nodeType) || getHostCard(nodeType)?.spec.picker !== undefined) {
     throw new Error(`[registerCardPicker] '${nodeType}': a picker is already registered for this nodeType`)
   }

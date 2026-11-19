@@ -7,8 +7,8 @@ import {
   type LexicalEditor,
   OPEN_IMAGE_LIBRARY_COMMAND,
 } from '@kobato/inkling'
+import { KobatoImageNode } from '@kobato/inkling/host-cards'
 import { registerKobatoImageInsertCommands } from '@kobato/web-admin/ui/editor/image-insert-override.ts'
-import { KobatoImageNode } from '@kobato/web-admin/ui/editor/kobato-image-node.ts'
 import { JSDOM } from 'jsdom'
 import { COMMAND_PRIORITY_CRITICAL } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'

@@ -1,6 +1,6 @@
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema.ts'
 
-import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
 import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
 import {
   SHIKI_SUPPORTED_LANGUAGES,

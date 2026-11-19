@@ -1,5 +1,5 @@
 import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'

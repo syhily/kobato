@@ -1,8 +1,8 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
-import { SERVER_FILLED_NODE_FIELDS } from '@kobato/lexical/artifacts.ts'
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
-import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling/headless/artifacts.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
 import { extractZodIssues } from '@kobato/server/domains/content/services/lexical/zod-issues.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'

@@ -1,7 +1,7 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/lexical/equivalence.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence.ts'
 import { useLocalDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
 import { useCallback, useState } from 'react'
 

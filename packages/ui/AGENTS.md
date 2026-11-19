@@ -4,6 +4,7 @@
 
 - `styles/` owns generic token, typeset, and dark-variant partials plus `ui.css`, which compiles and scans only UI sources.
 - `components/` contains reusable primitives, not product screens or domain orchestration. A component file never defines or exports a hook — a context/hook pair lives in `lib/` (`lib/sidebar-context.ts`, imported by `components/sidebar.tsx`).
+- `components/music-player/` is the one sanctioned product-component family (the music player card, lyrics, scrub bar, playback hook, LRC parser, duration format): two real consumers — web-public's projected-body hydration (`use-music-players.tsx`) and inkling's host-card preview — share it, so it sits at this seam. Its behavior/parity tests stay consumer-side (web-public).
 - `icons/` contains static icon exports; use named imports, never runtime name lookups.
 - `lib/` is flat and role-prefixed: `use-*.ts` is a hook, `*Provider.tsx` is a provider, `*.ts` is a pure helper (including `logger.ts`, the pino-backed client logger with a pluggable sink). It contains generic presentation utilities and providers: `cn` (token-namespace merge groups), the
   `computePageWindow` pagination-window algorithm shared by the public site and the admin shell,

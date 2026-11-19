@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'

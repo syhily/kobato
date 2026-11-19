@@ -9,12 +9,11 @@ const SOURCE_ROOTS = [
   { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
   { packageRoot: 'packages/web/admin', sourceRoot: 'packages/web/admin/src' },
   { packageRoot: 'packages/web/public', sourceRoot: 'packages/web/public/src' },
-  { packageRoot: 'packages/shared/lexical', sourceRoot: 'packages/shared/lexical/src' },
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
 
 const SOURCE_PARTIALS = [
-  { file: 'packages/shared/lexical/src/styles/cards.css', specifier: '@kobato/lexical/styles/cards.css' },
+  { file: 'packages/inkling/src/styles/cards.css', specifier: '@kobato/inkling/styles/cards.css' },
   { file: 'packages/web/public/src/styles/public.css', specifier: '@kobato/web-public/styles/public.css' },
   { file: 'packages/web/public/src/styles/admin-subset.css', specifier: '@kobato/web-public/styles/admin-subset.css' },
   { file: 'packages/web/admin/src/styles/admin.css', specifier: '@kobato/web-admin/styles/admin.css' },
@@ -25,7 +24,6 @@ const WEB_PARTIAL_REQUIRED_SOURCES = {
   'packages/web/public/src/styles/admin-subset.css': [
     '../ui/shared',
     '../ui/lib',
-    '../ui/music-player',
     '../ui/chrome',
     '../ui/comments/*.{ts,tsx}',
     '../ui/widgets',
@@ -74,7 +72,7 @@ describe('Tailwind source ownership', () => {
         'packages/web/public/src/styles/public.css',
         'packages/web/public/src/styles/admin-subset.css',
         'packages/web/admin/src/styles/admin.css',
-        'packages/shared/lexical/src/styles/cards.css',
+        'packages/inkling/src/styles/cards.css',
         'packages/inkling/src/styles/index.css',
       ]),
     )
@@ -125,7 +123,7 @@ describe('Tailwind source ownership', () => {
     }
   })
   it('pins shared card compile tokens to the UI runtime contract', () => {
-    const shared = readFileSync('packages/shared/lexical/src/styles/cards.css', 'utf8')
+    const shared = readFileSync('packages/inkling/src/styles/cards.css', 'utf8')
     const ui = readFileSync('packages/ui/src/styles/tailwind.css', 'utf8')
     for (const match of shared.matchAll(/^\s*(--color-[\w-]+:\s*var\(--[\w-]+\));/gm)) {
       expect(ui).toContain(match[1])

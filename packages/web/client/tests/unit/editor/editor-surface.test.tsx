@@ -2,7 +2,7 @@
 
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { InklingComposerProps } from '@kobato/inkling'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'

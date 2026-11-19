@@ -1,5 +1,5 @@
 import { idString, isoDateTime, markdownHeadingDto, safeBoolean } from '@kobato/contracts/primitives.ts'
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { z } from 'zod'
 
 export const adminRevisionDto = z.object({

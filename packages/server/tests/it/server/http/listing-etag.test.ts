@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 

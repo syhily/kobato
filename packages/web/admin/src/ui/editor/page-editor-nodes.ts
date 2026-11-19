@@ -1,6 +1,4 @@
-import '@kobato/web-admin/ui/editor/cards/music-player.tsx'
-import '@kobato/web-admin/ui/editor/cards/solution.tsx'
-import '@kobato/web-admin/ui/editor/cards/two-column.tsx'
+import '@kobato/web-admin/ui/editor/music-card-picker.tsx'
 import '@kobato/web-admin/ui/editor/image-library-pick.tsx'
 import {
   CodeBlockNode,
@@ -12,7 +10,7 @@ import {
   MathInlineNode,
   MathNode,
 } from '@kobato/inkling'
-import { KobatoImageNode } from '@kobato/web-admin/ui/editor/kobato-image-node.ts'
+import { KobatoImageNode } from '@kobato/inkling/host-cards'
 import { excludeBaseNodes } from '@kobato/web-client/editor/base-node-filter.ts'
 
 const EDITOR_BASE_WITHOUT_ASIDE = excludeBaseNodes(EDITOR_BASE_NODES, new Set(['aside']))

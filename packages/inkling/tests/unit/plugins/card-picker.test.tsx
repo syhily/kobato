@@ -34,7 +34,7 @@ import {
   type LexicalNode,
   type NodeKey,
 } from 'lexical'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { useMemo, type ContextType, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -376,12 +376,10 @@ describe('the variant picker channel (registerCardPicker)', () => {
     expect(audioPickerRender).toHaveBeenCalledWith({ editor, nodeKey, close: expect.any(Function), fromInsert: false })
   })
 
-  it('rejects autoOpenOnInsert on the variant channel — dispatch the insert with openPicker instead', () => {
-    expect(() => registerCardPicker('audioAutoOpenVariant', { render: () => null, autoOpenOnInsert: true })).toThrow(
-      /autoOpenOnInsert/,
-    )
+  it('accepts autoOpenOnInsert on the variant channel — the flag rides the insert registration', () => {
+    registerCardPicker('audioAutoOpenVariant', { render: () => null, autoOpenOnInsert: true })
 
-    expect(resolveCardPicker('audioAutoOpenVariant')).toBeUndefined()
+    expect(resolveCardPicker('audioAutoOpenVariant')?.autoOpenOnInsert).toBe(true)
   })
   it('writes the pick request when INSERT_CARD_COMMAND carries openPicker: true', async () => {
     const editor = createTestEditor({ nodes: FIXTURE_NODES })
@@ -544,7 +542,14 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
 
 describe('headless purity', () => {
   it('the headless surface never references the pick seam', () => {
-    const headless = readFileSync('packages/inkling/src/headless.ts', 'utf8')
-    expect(headless).not.toMatch(/useCardPicker|CardPickerHostPlugin|cardPickerStore|CardPickerStoreContext/)
+    const headlessFiles = readdirSync('packages/inkling/src/headless', { recursive: true })
+      .filter((entry): entry is string => typeof entry === 'string' && entry.endsWith('.ts'))
+      .map((entry) => `packages/inkling/src/headless/${entry}`)
+    expect(headlessFiles.length).toBeGreaterThan(0)
+    for (const file of headlessFiles) {
+      expect(readFileSync(file, 'utf8'), file).not.toMatch(
+        /useCardPicker|CardPickerHostPlugin|cardPickerStore|CardPickerStoreContext/,
+      )
+    }
   })
 })

@@ -13,7 +13,6 @@ const SHARED_SRC_ROOTS = [
   'packages/shared/cache/src',
   'packages/shared/settings/src',
   'packages/shared/assets/src',
-  'packages/shared/lexical/src',
   'packages/shared/sanitize/src',
   'packages/shared/contracts/src',
   'packages/shared/seo/src',

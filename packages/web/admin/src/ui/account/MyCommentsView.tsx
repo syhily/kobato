@@ -3,7 +3,7 @@ import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/share
 import type { ReactNode } from 'react'
 
 import { avatarImageUrl } from '@kobato/assets/avatar.ts'
-import { commentEditorStateSchema } from '@kobato/lexical/comment-schema.ts'
+import { commentEditorStateSchema } from '@kobato/inkling/headless/comment-schema.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
 import { Badge } from '@kobato/ui/components/badge.tsx'
 import { Button } from '@kobato/ui/components/button.tsx'

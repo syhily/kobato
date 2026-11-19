@@ -1,6 +1,6 @@
-import type { MarkdownHeading, TocOpts } from '@kobato/lexical/toc.ts'
+import type { MarkdownHeading, TocOpts } from '@kobato/inkling/headless/toc.ts'
 
-import { generateToC } from '@kobato/lexical/toc.ts'
+import { generateToC } from '@kobato/inkling/headless/toc.ts'
 import {
   LazyAnimatePresence,
   LazyMotionButton,

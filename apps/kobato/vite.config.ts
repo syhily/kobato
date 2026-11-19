@@ -60,7 +60,6 @@ for (const dir of [
   'packages/shared/cache',
   'packages/shared/settings',
   'packages/shared/assets',
-  'packages/shared/lexical',
   'packages/shared/sanitize',
   'packages/shared/contracts',
   'packages/shared/seo',

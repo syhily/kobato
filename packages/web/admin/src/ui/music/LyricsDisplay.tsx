@@ -1,6 +1,6 @@
+import { parseLrc } from '@kobato/ui/components/music-player/lrc.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { parseLrc } from '@kobato/web-public/ui/shared/music/lrc.ts'
 import { useMemo, useRef, useEffect } from 'react'
 
 export interface LyricsDisplayProps {

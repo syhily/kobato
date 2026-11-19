@@ -1,4 +1,4 @@
-import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
 
 import { renderToHtml } from '@kobato/web-public/tests/utils/render.tsx'
 import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents.tsx'

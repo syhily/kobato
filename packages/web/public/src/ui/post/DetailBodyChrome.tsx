@@ -1,7 +1,7 @@
 import type { CommentFormUser, DraftMarker } from '@kobato/catalog/model.ts'
 import type { DetailPageComments } from '@kobato/contracts/comments.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
 import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
 
 import { sanitizeHtml } from '@kobato/sanitize/sanitize-html.ts'

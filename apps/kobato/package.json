@@ -41,7 +41,7 @@
     "@kobato/distribution": "workspace:*",
     "@kobato/harness": "workspace:*",
     "@kobato/i18n": "workspace:*",
-    "@kobato/lexical": "workspace:*",
+    "@kobato/inkling": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/seo": "workspace:*",
     "@kobato/server": "workspace:*",

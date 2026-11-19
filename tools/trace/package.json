@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@kobato/harness": "workspace:*",
-    "@kobato/lexical": "workspace:*",
+    "@kobato/inkling": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",

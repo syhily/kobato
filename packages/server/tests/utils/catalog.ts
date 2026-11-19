@@ -7,7 +7,7 @@ import type { AdminPageDto } from '@kobato/contracts/pages.ts'
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { afterEach } from 'vitest'

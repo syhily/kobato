@@ -13,11 +13,10 @@ export default defineConfig({
     alias: {
       '@kobato/inkling-demo': resolve(import.meta.dirname, '.'),
       '@kobato/inkling-internal': resolve(import.meta.dirname, '../../packages/inkling/src'),
-      '@kobato/inkling/headless': resolve(import.meta.dirname, '../../packages/inkling/src/headless.ts'),
+      '@kobato/inkling/headless$': resolve(import.meta.dirname, '../../packages/inkling/src/headless/index.ts'),
       '@kobato/inkling': resolve(import.meta.dirname, '../../packages/inkling/src'),
       '@kobato/web-public': resolve(import.meta.dirname, '../../packages/web/public/src'),
       '@kobato/ui': resolve(import.meta.dirname, '../../packages/ui/src'),
-      '@kobato/lexical': resolve(import.meta.dirname, '../../packages/shared/lexical/src'),
       // Prevents double-bundling of yjs due to cjs/esm mismatch
       // (see https://github.com/facebook/lexical/issues/2153).
       yjs: require.resolve('yjs/src/index.js'),

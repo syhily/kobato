@@ -5,10 +5,10 @@ import type {
   ReplyCommentInput,
   ReplyCommentOutput,
 } from '@kobato/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 
 import { avatarImageUrl } from '@kobato/assets/avatar.ts'
-import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/lexical/comment-schema.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema.ts'
 import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Input } from '@kobato/ui/components/input.tsx'

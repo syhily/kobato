@@ -1,4 +1,4 @@
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { escapeCdataPayload, sanitizeFeedHtml } from '@kobato/server/render/feed/generator.tsx'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'

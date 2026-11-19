@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./headless": "./src/headless.ts",
+    "./headless": "./src/headless/index.ts",
+    "./headless/*": "./src/headless/*",
+    "./host-cards": "./src/host-cards/index.ts",
     "./styles/*": "./src/styles/*"
   },
   "devDependencies": {
@@ -17,9 +19,13 @@
     "@codemirror/language": "catalog:",
     "@codemirror/view": "catalog:",
     "@emoji-mart/data": "catalog:",
+    "@kobato/assets": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
+    "@kobato/sanitize": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/ui": "workspace:*",
+    "@kobato/utils": "workspace:*",
     "@lexical/clipboard": "catalog:",
     "@lexical/headless": "catalog:",
     "@lexical/html": "catalog:",
@@ -50,6 +56,7 @@
     "html-minifier-terser": "catalog:",
     "jsdom": "catalog:",
     "lexical": "catalog:",
+    "lucide-react": "catalog:",
     "markdown-it": "catalog:",
     "markdown-it-footnote": "catalog:",
     "markdown-it-lazy-headers": "catalog:",
@@ -64,6 +71,7 @@
     "vite-plugin-svgr": "catalog:",
     "vitest": "catalog:",
     "y-websocket": "catalog:",
-    "yjs": "catalog:"
+    "yjs": "catalog:",
+    "zod": "catalog:"
   }
 }

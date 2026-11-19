@@ -1,5 +1,5 @@
 import { honeypotField, idString, isoDateTime, successDto } from '@kobato/contracts/primitives.ts'
-import { commentEditorStateSchema, type CommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import { commentEditorStateSchema, type CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 

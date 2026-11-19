@@ -6,7 +6,7 @@ import type {
 } from '@kobato/contracts/pages.ts'
 import type { NavigateFunction } from 'react-router'
 
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { EditorScreen } from '@kobato/web-admin/ui/editor-shell/EditorScreen.tsx'
 import { type EditorAdapterConfig, makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter.ts'
 import { buildPageUpsertPayload } from '@kobato/web-admin/ui/pages/build-page-upsert-payload.ts'

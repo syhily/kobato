@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { ScrubBar } from '@kobato/web-public/ui/music-player/scrub-bar.tsx'
+import { ScrubBar } from '@kobato/ui/components/music-player/scrub-bar.tsx'
 import { fireEvent, render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

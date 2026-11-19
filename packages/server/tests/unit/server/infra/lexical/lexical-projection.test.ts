@@ -1,4 +1,4 @@
-import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import {
   computeBodyProjections,
   computeCommentContentProjection,

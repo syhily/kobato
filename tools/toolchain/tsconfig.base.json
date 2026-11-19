@@ -54,8 +54,6 @@
       "@kobato/settings/tests/*": ["../../packages/shared/settings/tests/*"],
       "@kobato/assets/*": ["../../packages/shared/assets/src/*"],
       "@kobato/assets/tests/*": ["../../packages/shared/assets/tests/*"],
-      "@kobato/lexical/*": ["../../packages/shared/lexical/src/*"],
-      "@kobato/lexical/tests/*": ["../../packages/shared/lexical/tests/*"],
       "@kobato/sanitize/*": ["../../packages/shared/sanitize/src/*"],
       "@kobato/sanitize/tests/*": ["../../packages/shared/sanitize/tests/*"],
       "@kobato/contracts/*": ["../../packages/shared/contracts/src/*"],

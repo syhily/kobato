@@ -7,7 +7,7 @@ import {
   INSERT_IMAGE_COMMAND,
   OPEN_IMAGE_LIBRARY_COMMAND,
 } from '@kobato/inkling'
-import { KobatoImageNode } from '@kobato/web-admin/ui/editor/kobato-image-node.ts'
+import { KobatoImageNode } from '@kobato/inkling/host-cards'
 
 export function toSiteOwnedImageSrc(publicUrl: string): string {
   try {

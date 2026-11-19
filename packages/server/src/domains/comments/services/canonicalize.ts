@@ -1,14 +1,14 @@
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 
 import { lexicalStateToPlainText } from '@kobato/inkling/headless'
-import { SERVER_FILLED_NODE_FIELDS } from '@kobato/lexical/artifacts.ts'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling/headless/artifacts.ts'
 import {
   commentEditorStateSchema,
   commentEditorStateTextLength,
   isCommentEditorStateBlank,
-} from '@kobato/lexical/comment-schema.ts'
-import { compactLexicalEditorState } from '@kobato/lexical/dialect.ts'
-import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
+} from '@kobato/inkling/headless/comment-schema.ts'
+import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
 import { decideContentLengthGate } from '@kobato/server/domains/comments/services/policy.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'

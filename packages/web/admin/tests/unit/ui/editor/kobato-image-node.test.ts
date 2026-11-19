@@ -17,14 +17,14 @@
 // host these classes.
 
 import { $isImageNode, createHeadlessEditor, ImageNode, type LexicalEditor } from '@kobato/inkling'
-import { FEED_VARIANT_META_KIND } from '@kobato/lexical/cards/card-html.ts'
+import { FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html.ts'
 import {
   IMAGE_RENDER_ENV_META_KIND,
   KOBATO_IMAGE_IMG_CLASS,
   KOBATO_IMAGE_PROPERTIES,
   normalizeKobatoImageLayout,
-} from '@kobato/lexical/cards/kobato-image.ts'
-import { KobatoImageNode } from '@kobato/web-admin/ui/editor/kobato-image-node.ts'
+} from '@kobato/inkling/headless/cards/kobato-image.ts'
+import { KobatoImageNode } from '@kobato/inkling/host-cards'
 import { DARK_IMAGE_DIM_CLASS } from '@kobato/web-public/ui/widgets/Image.tsx'
 import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it } from 'vitest'

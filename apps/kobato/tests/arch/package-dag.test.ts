@@ -32,7 +32,6 @@ const SHARED_SPLIT = [
   '@kobato/telemetry',
   '@kobato/settings',
   '@kobato/assets',
-  '@kobato/lexical',
   '@kobato/sanitize',
   '@kobato/contracts',
   '@kobato/seo',
@@ -50,7 +49,6 @@ const REPO_PACKAGES = [
   { name: '@kobato/cache', dir: 'packages/shared/cache' },
   { name: '@kobato/settings', dir: 'packages/shared/settings' },
   { name: '@kobato/assets', dir: 'packages/shared/assets' },
-  { name: '@kobato/lexical', dir: 'packages/shared/lexical' },
   { name: '@kobato/sanitize', dir: 'packages/shared/sanitize' },
   { name: '@kobato/contracts', dir: 'packages/shared/contracts' },
   { name: '@kobato/seo', dir: 'packages/shared/seo' },
@@ -77,11 +75,19 @@ const REPO_PACKAGES = [
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/i18n', '@kobato/test'],
+  '@kobato/inkling': [
+    '@kobato/inkling',
+    '@kobato/i18n',
+    '@kobato/sanitize',
+    '@kobato/assets',
+    '@kobato/utils',
+    '@kobato/ui',
+    '@kobato/test',
+  ],
 
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n', '@kobato/test'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n', '@kobato/test'],
-  '@kobato/catalog': ['@kobato/catalog', '@kobato/lexical', '@kobato/test'],
+  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/test'],
   '@kobato/distribution': ['@kobato/distribution', '@kobato/test'],
   '@kobato/telemetry': ['@kobato/telemetry', '@kobato/settings', '@kobato/test'],
   '@kobato/i18n': ['@kobato/i18n', '@kobato/test'],
@@ -97,14 +103,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   ],
   '@kobato/assets': ['@kobato/assets', '@kobato/test'],
 
-  '@kobato/lexical': [
-    '@kobato/lexical',
-    '@kobato/inkling',
-    '@kobato/sanitize',
-    '@kobato/assets',
-    '@kobato/utils',
-    '@kobato/test',
-  ],
   '@kobato/sanitize': ['@kobato/sanitize', '@kobato/test'],
   '@kobato/contracts': [
     '@kobato/contracts',
@@ -113,7 +111,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/utils',
-    '@kobato/lexical',
+    '@kobato/inkling',
     '@kobato/assets',
     '@kobato/cache',
     '@kobato/test',
@@ -121,7 +119,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/api': ['@kobato/api', '@kobato/contracts', '@kobato/test'],
-  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/test', '@kobato/utils'],
+  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
 
   '@kobato/server': [
     '@kobato/server',
@@ -152,7 +150,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/telemetry',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
@@ -168,7 +165,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/telemetry',
     '@kobato/distribution',
     '@kobato/contracts',
-    '@kobato/lexical',
     '@kobato/test',
   ],
   '@kobato/web-public': [
@@ -182,7 +178,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/catalog',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
     '@kobato/test',
@@ -192,7 +187,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/contracts',
     '@kobato/i18n',
     '@kobato/inkling',
-    '@kobato/lexical',
     '@kobato/settings',
     '@kobato/test',
     '@kobato/ui',
@@ -219,17 +213,16 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
-  '@kobato/inkling': [],
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
-  '@kobato/catalog': ['@kobato/catalog', '@kobato/lexical'],
+  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling'],
   '@kobato/distribution': ['@kobato/distribution'],
   '@kobato/telemetry': ['@kobato/telemetry', '@kobato/settings'],
   '@kobato/i18n': ['@kobato/i18n'],
   '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils'],
   '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils'],
   '@kobato/assets': ['@kobato/assets'],
-  '@kobato/lexical': ['@kobato/lexical', '@kobato/inkling', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
   '@kobato/sanitize': ['@kobato/sanitize'],
   '@kobato/contracts': [
     '@kobato/contracts',
@@ -238,14 +231,14 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/i18n',
     '@kobato/utils',
-    '@kobato/lexical',
+    '@kobato/inkling',
     '@kobato/assets',
     '@kobato/cache',
   ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
 
   '@kobato/api': ['@kobato/api', '@kobato/contracts'],
-  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/utils'],
+  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/utils'],
   '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
 
@@ -265,7 +258,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/telemetry',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
@@ -294,7 +286,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/catalog',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/lexical',
     '@kobato/sanitize',
     '@kobato/contracts',
   ],
@@ -698,7 +689,12 @@ describe('package DAG', () => {
         if (!specifier.startsWith('@kobato/inkling/')) {
           continue
         }
-        if (specifier !== '@kobato/inkling/headless' && !specifier.startsWith('@kobato/inkling/styles/')) {
+        if (
+          specifier !== '@kobato/inkling/headless' &&
+          !specifier.startsWith('@kobato/inkling/headless/') &&
+          specifier !== '@kobato/inkling/host-cards' &&
+          !specifier.startsWith('@kobato/inkling/styles/')
+        ) {
           offenders.push(`${file}: ${specifier} (deep import past the entry surfaces)`)
         }
       }
@@ -706,12 +702,12 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
-  it('server and lexical never reach the React inkling barrel', () => {
+  it('server never reaches the React inkling barrel', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('packages/server/src', 'packages/shared/lexical/src')) {
+    for (const file of sourceFiles('packages/server/src')) {
       for (const specifier of importSpecifiers(readSource(file))) {
         if (specifier === '@kobato/inkling') {
-          offenders.push(`${file}: ${specifier} (server/lexical must use @kobato/inkling/headless)`)
+          offenders.push(`${file}: ${specifier} (server must use @kobato/inkling/headless)`)
         }
       }
     }

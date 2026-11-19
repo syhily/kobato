@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog.tsx'

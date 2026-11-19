@@ -18,7 +18,7 @@ export default defineConfig({
     maxWorkers: 4,
     environment: 'node',
     include: [
-      'packages/shared/{utils,i18n,cache,auth,catalog,settings,assets,lexical,sanitize,contracts,telemetry,distribution,seo}/tests/snaps/**/*.test.{ts,tsx}',
+      'packages/shared/{utils,i18n,cache,auth,catalog,settings,assets,sanitize,contracts,telemetry,distribution,seo}/tests/snaps/**/*.test.{ts,tsx}',
     ],
     setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/snaps.ts')],
     testTimeout: 10_000,

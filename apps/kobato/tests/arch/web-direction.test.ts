@@ -11,7 +11,6 @@ const ADMIN_PUBLIC_IMPORTS = [
   '@kobato/web-public/ui/comments/CommentContentHtml.tsx',
   '@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx',
   '@kobato/web-public/ui/comments/comment-body-helpers.ts',
-  '@kobato/web-public/ui/music-player/music-player.tsx',
   '@kobato/web-public/ui/widgets/Image.tsx',
 ] as const
 

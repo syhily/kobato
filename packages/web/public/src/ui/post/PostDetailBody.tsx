@@ -1,6 +1,6 @@
 import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker } from '@kobato/catalog/model.ts'
 import type { DetailPageComments } from '@kobato/contracts/comments.ts'
-import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
 
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { LikeShare } from '@kobato/web-public/ui/LikeActions.tsx'

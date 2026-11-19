@@ -6,7 +6,7 @@ import { act } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-public/ui/music-player/music-player.tsx', () => ({
+vi.mock('@kobato/ui/components/music-player/music-player.tsx', () => ({
   MusicPlayerCard: ({ url, name, cover, lrc }: { url: string; name?: string; cover?: string; lrc?: string }) => (
     <div data-stub-player="" data-url={url} data-cover={cover ?? ''} data-lrc={lrc ?? ''}>
       {name}

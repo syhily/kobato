@@ -1,5 +1,5 @@
 import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html.ts'
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'

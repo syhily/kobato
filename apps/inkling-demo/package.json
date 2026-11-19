@@ -5,7 +5,6 @@
   "type": "module",
   "devDependencies": {
     "@kobato/inkling": "workspace:*",
-    "@kobato/lexical": "workspace:*",
     "@kobato/toolchain": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/web-public": "workspace:*",

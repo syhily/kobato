@@ -1,0 +1,12 @@
+@theme inline {
+  --color-brand: var(--brand);
+  --color-canvas: var(--canvas);
+  --color-surface-dim: var(--surface-dim);
+  --color-line-muted: var(--line-muted);
+  --color-ink-1: var(--ink-1);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+}
+
+@source '../headless/cards'
+@source '../host-cards';

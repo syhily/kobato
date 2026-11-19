@@ -1,8 +1,8 @@
 import type { ContentRow } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
-import type { MarkdownHeading } from '@kobato/lexical/toc.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
 
-import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { readStringArray } from '@kobato/server/infra/coerce.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 

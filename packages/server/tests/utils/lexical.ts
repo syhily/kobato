@@ -1,5 +1,5 @@
 import type { PublicMusicMeta } from '@kobato/contracts/music.ts'
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {

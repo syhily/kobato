@@ -1,8 +1,8 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
 
-import { collectLexicalMusicPlayerIds } from '@kobato/lexical/collect.ts'
-import { visitLexicalNodes } from '@kobato/lexical/walk.ts'
+import { collectLexicalMusicPlayerIds } from '@kobato/inkling/headless/collect.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { parseAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 

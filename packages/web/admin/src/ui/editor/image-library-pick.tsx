@@ -1,8 +1,8 @@
 import type { AdminImageDto } from '@kobato/contracts/images.ts'
 
 import { type CardPickerRenderProps, registerCardPicker, useCardChrome } from '@kobato/inkling'
+import { isKobatoImageNode, type KobatoImageNode } from '@kobato/inkling/host-cards'
 import { toSiteOwnedImageSrc } from '@kobato/web-admin/ui/editor/image-insert-override.ts'
-import { isKobatoImageNode, type KobatoImageNode } from '@kobato/web-admin/ui/editor/kobato-image-node.ts'
 import { ImageLibraryPicker } from '@kobato/web-admin/ui/editor/pickers/ImageLibraryPicker.tsx'
 
 export function imageLibraryPickDataset(image: AdminImageDto): {

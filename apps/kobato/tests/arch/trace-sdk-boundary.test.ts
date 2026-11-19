@@ -15,7 +15,6 @@ const SOURCE_DIRS = [
   'packages/shared/telemetry/src',
   'packages/shared/distribution/src',
   'packages/shared/seo/src',
-  'packages/shared/lexical/src',
   'packages/shared/utils/src',
   'packages/shared/i18n/src',
   'packages/shared/cache/src',

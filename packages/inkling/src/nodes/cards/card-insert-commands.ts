@@ -5,6 +5,7 @@ import { assembleCardNodeOnce } from '@kobato/inkling-internal/nodes/assemble-ca
 import { resolveCardInsertCommand } from '@kobato/inkling-internal/nodes/cards/card-commands'
 import { resolveAllCardFacts } from '@kobato/inkling-internal/nodes/cards/card-facts'
 import { CARD_WRAPPER_NODES } from '@kobato/inkling-internal/nodes/cards/card-wrappers'
+import { resolveCardPicker } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 
 export interface CardInsertRegistration {
   nodeType: string
@@ -48,7 +49,7 @@ export function getCardInsertRegistrations(): CardInsertRegistration[] {
         node: assembleCardNodeOnce<LexicalNode>(facts.host.spec),
         command: resolveCardInsertCommand(facts.nodeType),
         insert,
-        pickerAutoOpen: facts.host.spec.picker?.autoOpenOnInsert === true,
+        pickerAutoOpen: resolveCardPicker(facts.nodeType)?.autoOpenOnInsert === true,
       },
     ]
   })

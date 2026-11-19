@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 

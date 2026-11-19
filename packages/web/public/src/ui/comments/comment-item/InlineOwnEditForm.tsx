@@ -1,7 +1,7 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/lexical/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
 
-import { isCommentEditorStateBlank } from '@kobato/lexical/comment-schema.ts'
+import { isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema.ts'
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'

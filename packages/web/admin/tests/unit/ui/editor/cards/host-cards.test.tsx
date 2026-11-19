@@ -7,8 +7,8 @@ import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { createHeadlessEditor } from '@kobato/inkling'
 import { lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels.ts'
 import { getHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry.ts'
-import { MUSIC_PLAYER_META_KEYS } from '@kobato/lexical/artifacts.ts'
-import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/lexical/cards/card-html.ts'
+import { MUSIC_PLAYER_META_KEYS } from '@kobato/inkling/headless/artifacts.ts'
+import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html.ts'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   MUSIC_PLAYER_CARD_PROPERTIES,
@@ -16,38 +16,41 @@ import {
   musicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
-} from '@kobato/lexical/cards/music-player.ts'
+} from '@kobato/inkling/headless/cards/music-player.ts'
 import {
   renderSolutionCard,
   SOLUTION_CARD_CLASSES,
   SOLUTION_CARD_PROPERTIES,
   SOLUTION_NESTED_EDITOR,
-} from '@kobato/lexical/cards/solution.ts'
+} from '@kobato/inkling/headless/cards/solution.ts'
 import {
   renderTwoColumnCard,
   TWO_COLUMN_CARD_CLASSES,
   TWO_COLUMN_CARD_PROPERTIES,
   TWO_COLUMN_NESTED_EDITORS,
-} from '@kobato/lexical/cards/two-column.ts'
-import { MUSIC_PLAYER_NODE_TYPE, SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@kobato/lexical/node-whitelist.ts'
+} from '@kobato/inkling/headless/cards/two-column.ts'
+import {
+  MUSIC_PLAYER_NODE_TYPE,
+  SOLUTION_NODE_TYPE,
+  TWO_COLUMN_NODE_TYPE,
+} from '@kobato/inkling/headless/node-whitelist.ts'
+import {
+  BaseMusicPlayerNode,
+  BaseSolutionNode,
+  BaseTwoColumnNode,
+  musicCardToolbarItems,
+  MusicPlayerCardComponent,
+  musicPlayerCard,
+  solutionCard,
+  SolutionCardView,
+  twoColumnCard,
+  TwoColumnCardView,
+  TwoColumnPaneView,
+} from '@kobato/inkling/host-cards'
 import { makeAdminMusic } from '@kobato/web-admin/tests/utils/catalog.ts'
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { tZhCN, makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
-import {
-  BaseMusicPlayerNode,
-  MusicCardPicker,
-  musicCardToolbarItems,
-  MusicPlayerCardComponent,
-  musicPickMeta,
-  musicPlayerCard,
-} from '@kobato/web-admin/ui/editor/cards/music-player.tsx'
-import { BaseSolutionNode, SolutionCardView, solutionCard } from '@kobato/web-admin/ui/editor/cards/solution.tsx'
-import {
-  BaseTwoColumnNode,
-  TwoColumnCardView,
-  TwoColumnPaneView,
-  twoColumnCard,
-} from '@kobato/web-admin/ui/editor/cards/two-column.tsx'
+import { MusicCardPicker, musicPickMeta } from '@kobato/web-admin/ui/editor/music-card-picker.tsx'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render } from '@testing-library/react'
 import { JSDOM } from 'jsdom'

@@ -27,7 +27,7 @@ _Avoid_: post draft service / page draft service (dual tracks)
 **Scheduled**: published with a future `publishedAt` — not live, 404 until its time.
 _Avoid_: future-dated, timed
 
-**Lexical**: the storage format for post/page/comment bodies (`packages/shared/lexical/src/`); public
+**Lexical**: the storage format for post/page/comment bodies (`packages/inkling/src/headless/`); public
 bodies render the saved `bodyHtml` projection.
 _Avoid_: MDX, Portable Text, PT, InklingDocument (vendor experiment, not the shipping store)
 
