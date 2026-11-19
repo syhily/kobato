@@ -8,5 +8,5 @@
   --color-ink-4: var(--ink-4);
 }
 
-@source '../headless/cards'
+@source '../headless/cards';
 @source '../host-cards';

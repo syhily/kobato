@@ -102,6 +102,25 @@ describe('Tailwind source ownership', () => {
     expect(files.map((file) => relative(REPO_ROOT, file))).toEqual(['apps/kobato/src/root.tsx'])
   })
 
+  it('terminates every directive at-rule (an unterminated prelude silently swallows the next directive)', () => {
+    for (const { sourceRoot } of SOURCE_ROOTS) {
+      for (const file of collectFiles(resolve(REPO_ROOT, sourceRoot), (name) => name.endsWith('.css'))) {
+        const lines = readFileSync(file, 'utf8').split('\n')
+        lines.forEach((line, index) => {
+          const trimmed = line.trim()
+          if (!/^@(?:source|import|custom-variant|plugin)\b/.test(trimmed)) {
+            return
+          }
+          const terminated = trimmed.endsWith(';') || trimmed.endsWith('{')
+          expect(
+            terminated,
+            `${relative(REPO_ROOT, file)}:${index + 1} unterminated directive "${trimmed}" — its prelude swallows the next directive at scan time`,
+          ).toBe(true)
+        })
+      }
+    }
+  })
+
   it('keeps source partials free of their own Tailwind compile', () => {
     for (const { file } of SOURCE_PARTIALS) {
       const source = readFileSync(file, 'utf8')
