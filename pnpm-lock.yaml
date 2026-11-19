@@ -667,6 +667,9 @@ importers:
       '@kobato/lexical':
         specifier: workspace:*
         version: link:../../packages/shared/lexical
+      '@kobato/toolchain':
+        specifier: workspace:*
+        version: link:../../tools/toolchain
       '@kobato/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -2291,12 +2294,6 @@ importers:
       oxc-transform-react:
         specifier: 'catalog:'
         version: 0.158.0
-      oxfmt:
-        specifier: 'catalog:'
-        version: 0.79.0
-      oxlint:
-        specifier: 'catalog:'
-        version: 1.94.0(oxlint-tsgolint@7.0.2007)
       vite:
         specifier: 'catalog:'
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)

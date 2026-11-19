@@ -2,7 +2,7 @@
 
 `tools/` is the top-level umbrella for development-support workspace packages — nothing under it ships in the product (no SEA bundle, no client/server graph, no runtime import from the deployed binary). Each directory is a workspace package (`tools/<name>` ↔ `@kobato/<specifier>`):
 
-- `toolchain` ↔ `@kobato/toolchain` — the shared TypeScript (`tsconfig.base.json`) / oxlint / oxfmt configuration, consumed by the root config wrappers and `tsconfig.json` via its exports map, plus the app's build-time Vite plugins (`src/vite/`: the React Compiler pass and the route-warmup tierer). See `toolchain/AGENTS.md`.
+- `toolchain` ↔ `@kobato/toolchain` — the shared TypeScript configuration (`tsconfig.base.json`, consumed by `tsconfig.json` and the app tsconfigs through its exports map) plus the app's build-time Vite plugins (`src/vite/`: the React Compiler pass and the route-warmup tierer). See `toolchain/AGENTS.md`.
 - `test` ↔ `@kobato/test` — in-process Vitest fixtures/doubles only (see `test/AGENTS.md`).
 - `harness` ↔ `@kobato/harness` — the out-of-process instance harness (see `harness/AGENTS.md`).
 - `trace` ↔ `@kobato/trace` — OpenObserve DEV container tooling (see `trace/README.md`); it consumes `pack/sea/paths.ts` for the shared observability-asset location and `@kobato/telemetry` for protocol names.

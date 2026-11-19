@@ -5,8 +5,6 @@
   "type": "module",
   "exports": {
     "./tsconfig.base.json": "./tsconfig.base.json",
-    "./oxlint.config.ts": "./oxlint.config.ts",
-    "./oxfmt.config.ts": "./oxfmt.config.ts",
     "./src/*": "./src/*"
   },
   "dependencies": {
@@ -15,8 +13,6 @@
   },
   "devDependencies": {
     "oxc-transform-react": "catalog:",
-    "oxfmt": "catalog:",
-    "oxlint": "catalog:",
     "vite": "catalog:"
   }
 }
