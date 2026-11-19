@@ -32,7 +32,7 @@ One closed public surface (`src/index.ts`) and one react-free surface (`src/head
 - `hooks/` at the source root is the React-hooks layer (all `use-*`).
 - `nodes/base/nodes/<card>/` mirrors the upstream Lexical layout (base class + parser + renderer + declaration); the doubled `nodes/` is intentional.
 - `$`-prefixed helpers are Lexical idioms; `.declaration.ts` is the card-declaration suffix; non-component modules are `kebab-case.ts`, components `PascalCase.tsx`.
-- Six internal `index.ts` alias seams (`nodes/base`, `nodes/base/nodes/at-link`, `transforms`, `markdown`, `html/html-to-lexical`, `html/clean-basic-html`) are load-bearing module entries, NOT barrels — keep them and import through them.
+- Nine internal `index.ts` alias seams (`nodes/base`, `nodes/base/nodes/at-link`, `nodes/cards`, `transforms`, `markdown`, `html/html-to-lexical`, `html/clean-basic-html`, `html/renderer/transformers`, `utils`) are load-bearing module entries, NOT barrels — keep them and import through them.
 - `transforms/` is flat (one file per transform); `utils/` holds pure helpers plus `utils/draggable/` only; `services/` is the state-machine layer (gif/library/pintura/collaboration request machines).
 
 ### Public-barrel export policy (deliberate, do NOT prune)

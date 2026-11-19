@@ -17,7 +17,7 @@ The direction is strictly `@kobato/web-admin` → `@kobato/web-public` → `@kob
 
 ## Source layout and naming (all three leaves)
 
-- `src/` holds exactly one of the documented roots (`ui/`, `hooks/`, `lib/`, `api/`, `editor/`, `settings/`, `chat/`-style feature dirs, `styles/`); a new root directory needs a line here first.
+- `src/` holds exactly one of the documented roots (`ui/`, `hooks/`, `lib/`, `api/`, `editor/`, `settings/`, `route-warmup/`, `chat/`-style feature dirs, `styles/`); a new root directory needs a line here first.
 - Component files are `PascalCase.tsx`; hooks are `use-kebab-case.ts(x)`; contexts are `kebab-case-context.tsx`; every other module is `kebab-case.ts`; a module that renders JSX uses `.tsx`. No `index.ts`.
 - A feature directory groups everything its surface needs (view, subcomponents, controllers/hooks, pure helpers); only a family of three or more sibling files earns a nested directory.
 - Tests mirror the source tree one-for-one under `<leaf>/tests/{unit,snaps}/` — the test file for `ui/posts/page-meta.ts` is `tests/unit/ui/posts/page-meta.test.ts`.

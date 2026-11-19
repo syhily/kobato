@@ -8,7 +8,8 @@
     "./headless": "./src/headless/index.ts",
     "./headless/*": "./src/headless/*",
     "./host-cards": "./src/host-cards/index.ts",
-    "./styles/*": "./src/styles/*"
+    "./styles/*": "./src/styles/*",
+    "./assets/*": "./src/assets/*"
   },
   "devDependencies": {
     "@codemirror/autocomplete": "catalog:",
