@@ -134,7 +134,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
-      assets?: { asset?: { host?: string } | null } | null
+      assets?: { asset?: { host?: string; scheme?: 'http' | 'https' } | null } | null
       siteIdentity?: { locale?: string } | null
       webmentions?: { webmention?: { receiveEnabled?: boolean } } | null
     } | null
@@ -150,7 +150,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     i18n?: ContentBootstrapI18n | null
   }>('root')
   const theme = rootData?.theme ?? null
-  const assetHost = rootData?.blogSettings?.assets?.asset?.host
+  const asset = rootData?.blogSettings?.assets?.asset
   const fonts = rootData?.fonts
   const globalFonts = fonts?.global ?? []
   const postFonts = fonts?.post ?? []
@@ -161,26 +161,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const activePostFonts = wantsPostFonts ? postFonts : []
   const activeCodeFonts = wantsPostFonts ? codeFonts : []
 
-  const fontHosts = new Set<string>()
+  // Hint origins carry the source's own scheme — an https-prefixed hint for an
+  // http origin (local dev, embedded self-hosted fonts) is a dead connection.
+  const fontOrigins = new Set<string>()
   for (const f of [...globalFonts, ...activePostFonts, ...activeCodeFonts]) {
     if (!f.href) {
       continue
     }
     try {
-      const host = new URL(f.href).host
-      if (host) {
-        fontHosts.add(host)
+      const origin = new URL(f.href).origin
+      if (origin) {
+        fontOrigins.add(origin)
       }
     } catch {}
   }
 
-  if (assetHost) {
-    fontHosts.add(assetHost)
-    preconnect(`https://${assetHost}`, { crossOrigin: 'anonymous' })
+  const assetOrigin = asset?.host ? `${asset.scheme ?? 'https'}://${asset.host}` : null
+  if (assetOrigin !== null) {
+    fontOrigins.add(assetOrigin)
+    preconnect(assetOrigin, { crossOrigin: 'anonymous' })
   }
-  for (const host of fontHosts) {
-    preconnect(`https://${host}`)
-    prefetchDNS(`https://${host}`)
+  for (const origin of fontOrigins) {
+    preconnect(origin)
+    prefetchDNS(origin)
   }
 
   const criticalLinks = rootData?.criticalLinks ?? []

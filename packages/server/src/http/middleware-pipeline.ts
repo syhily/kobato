@@ -57,8 +57,9 @@ export const ACCEPT_CH_HEADER =
 
 export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const origins = new Set<string>()
-  if (bundle?.assets?.asset?.host) {
-    origins.add(`https://${bundle.assets.asset.host}`)
+  const asset = bundle?.assets?.asset
+  if (asset?.host) {
+    origins.add(`${asset.scheme ?? 'https'}://${asset.host}`)
   }
   const extra = origins.size > 0 ? ' ' + [...origins].join(' ') : ''
   const website = bundle?.siteIdentity?.website
@@ -69,7 +70,7 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   // Dev: Vite's client may create blob workers — `worker-src` needs blob:.
   const workerSrc = isDev ? "worker-src 'self' blob:" : "worker-src 'self'"
   const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
-  return [
+  const directives = [
     "default-src 'self'",
     scriptSrc,
     workerSrc,
@@ -82,8 +83,19 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
-    'upgrade-insecure-requests',
-  ].join('; ')
+  ]
+  // UIR is https-only: on an http-configured site it would upgrade the site's
+  // own origin — including 302 targets carrying absolute http Locations (the
+  // avatar fallback), which Chrome rewrites to https and then fails to load.
+  if (siteUsesHttps(bundle)) {
+    directives.push('upgrade-insecure-requests')
+  }
+  return directives.join('; ')
+}
+
+/** The configured website origin is https — HSTS / upgrade hints are appropriate. */
+export function siteUsesHttps(bundle: BlogSettingsBundle | null): boolean {
+  return URL.parse(bundle?.siteIdentity?.website ?? '')?.protocol === 'https:'
 }
 
 export function configureMiddleware(app: Hono<Env>): void {
@@ -110,6 +122,12 @@ export function configureMiddleware(app: Hono<Env>): void {
     const isDev = import.meta.env.DEV
     const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev })
     c.res.headers.set('Content-Security-Policy', csp)
+    // HSTS only makes sense for an https-configured site: sent from an http
+    // deployment it would (once any TLS front-end passes it through) pin the
+    // host to a scheme the operator explicitly did not choose.
+    if (siteUsesHttps(bundle)) {
+      c.res.headers.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains')
+    }
     // UA-CH recovers device model / OS detail erased by Chrome's UA reduction
     // (first-party, so no Permissions-Policy delegation is needed).
     c.res.headers.set('Accept-CH', ACCEPT_CH_HEADER)
@@ -121,6 +139,9 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   app.use(
     secureHeaders({
+      // HSTS is set per-response by the dynamic middleware above — only for an
+      // https-configured site, never unconditionally.
+      strictTransportSecurity: false,
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
         // Dev: Vite / React Router tooling injects un-nonced inline scripts. This
@@ -135,7 +156,6 @@ export function configureMiddleware(app: Hono<Env>): void {
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
-        upgradeInsecureRequests: [],
       },
     }),
   )

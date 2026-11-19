@@ -57,6 +57,14 @@ describe('buildCspHeader', () => {
     expect(csp).toContain("media-src 'self'  https://cdn.example.com https://example.com")
   })
 
+  it('honors an http asset scheme instead of forcing https', () => {
+    const bundle = bundleWith({ host: 'cdn.example.com' })
+    bundle.assets!.asset.scheme = 'http'
+    const csp = buildCspHeader({ bundle, nonce: NONCE, isDev: false })
+    expect(csp).toContain('http://cdn.example.com')
+    expect(csp).not.toContain('https://cdn.example.com')
+  })
+
   it('allows any https image/media source in dev only (prod-shaped database copies carry baked absolute URLs)', () => {
     const devCsp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: true })
     expect(devCsp).toContain("img-src 'self' data: blob:  https:")
@@ -102,7 +110,21 @@ describe('buildCspHeader', () => {
       expect(csp).toContain("frame-ancestors 'none'")
       expect(csp).toContain("form-action 'self'")
       expect(csp).toContain("base-uri 'self'")
-      expect(csp).toContain('upgrade-insecure-requests')
+      // No configured site (install gate) → no transport upgrade directives.
+      expect(csp).not.toContain('upgrade-insecure-requests')
     }
+  })
+
+  it('emits upgrade-insecure-requests only for an https-configured website', () => {
+    const httpsBundle = bundleWith({ host: null })
+    expect(httpsBundle.siteIdentity?.website).toMatch(/^https:/)
+    expect(buildCspHeader({ bundle: httpsBundle, nonce: NONCE, isDev: false })).toContain('upgrade-insecure-requests')
+
+    const httpBundle = bundleWith({ host: null })
+    httpBundle.siteIdentity = { ...httpBundle.siteIdentity!, website: 'http://localhost:4321' }
+    expect(buildCspHeader({ bundle: httpBundle, nonce: NONCE, isDev: false })).not.toContain(
+      'upgrade-insecure-requests',
+    )
+    expect(buildCspHeader({ bundle: httpBundle, nonce: NONCE, isDev: true })).not.toContain('upgrade-insecure-requests')
   })
 })
