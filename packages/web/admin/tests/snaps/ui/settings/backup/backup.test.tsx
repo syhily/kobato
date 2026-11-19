@@ -24,8 +24,6 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-// Status query is stubbed via a hoisted singleton so cases flip pending/resolved; useMutation keeps real pending flags.
-
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -33,8 +31,6 @@ vi.mock('react-router', async () => {
     useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
   }
 })
-
-// The inert settings-mutation stub (setup.ts) keeps these forms network-free.
 
 const scheduledBackup: BackupLoaderShape = {
   scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },
@@ -52,7 +48,6 @@ const dailyBackup: BackupLoaderShape = {
 
 describe('snapshot: BackupView', () => {
   beforeEach(() => {
-    // Default stays pending so the loading test stays deterministic.
     queryMocks.query = { data: undefined, isPending: true, error: null }
     queryMocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
   })
@@ -162,7 +157,6 @@ describe('snapshot: BackupFileList', () => {
     expect(html).toContain('操作')
     expect(html).toContain('2024-01-15.sql.gz')
     expect(html).toContain('2024-01-14.sql.gz.enc')
-    // Long hex/`.enc` tails must wrap anywhere — otherwise the row overflows the card.
     expect(html).toContain('<span class="break-all">2024-01-14.sql.gz.enc</span>')
     expect(html).toContain('已加密')
     expect(html).toContain('下载')

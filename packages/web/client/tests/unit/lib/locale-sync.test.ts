@@ -11,10 +11,6 @@ import {
 } from '@kobato/web-client/lib/locale-sync.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `FakeBroadcastChannel` delivers synchronously to every OTHER channel with the
-// same name, mirroring the one property the design leans on: a posting object
-// never receives its own message, but another channel in the same realm does.
-
 function collect() {
   const received: LocaleChangeAnnouncement[] = []
   const unsubscribe = subscribeLocaleChange('listener', (announcement) => received.push(announcement))

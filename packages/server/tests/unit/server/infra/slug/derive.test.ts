@@ -2,8 +2,6 @@ import { deriveSlug } from '@kobato/server/infra/slug/derive.ts'
 import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pins the pinyin-pro -> github-slugger pipeline: a swap of either
-// dependency must not silently change URL shapes.
 describe('deriveSlug', () => {
   it('romanises Han text to lowercase pinyin syllables joined by `-`', () => {
     expect(deriveSlug('编程')).toBe('bian-cheng')
@@ -24,20 +22,17 @@ describe('deriveSlug', () => {
   it('collapses consecutive separators and strips leading / trailing dashes', () => {
     expect(deriveSlug('  hello   world  ')).toBe('hello-world')
     expect(deriveSlug('--foo--bar--')).toBe('foo-bar')
-    // github-slugger strips most punctuation — don't assume it becomes `-`.
     expect(deriveSlug('a.b.c')).toBe('abc')
     expect(deriveSlug('node.js v20')).toBe('nodejs-v20')
   })
 
   it('returns an empty string when the input has no slug-eligible characters', () => {
-    // Call sites map '' to a 400 — it must stay distinguishable.
     expect(deriveSlug('💯')).toBe('')
     expect(deriveSlug('!!!')).toBe('')
     expect(deriveSlug('   ')).toBe('')
   })
 
   it('produces stateless output (no cross-call dedup)', () => {
-    // Stateless: a shared GithubSlugger would dedup repeats into `foo-1`.
     expect(deriveSlug('react')).toBe('react')
     expect(deriveSlug('react')).toBe('react')
   })

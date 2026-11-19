@@ -46,10 +46,6 @@ export default function useGalleryReorder({
       return false
     }
 
-    // insertIndex was derived by getIndicatorPosition (resolveReorder) and
-    // arrives as the resolution argument; an empty gallery has no droppables
-    // to derive one from (the drop is container-level, resolution null) —
-    // the gallery-drop module lands the first image at slot 0
     const insertIndex: number = dropResolution?.insertIndex ?? 0
 
     const resolution = resolveDrop(
@@ -72,7 +68,6 @@ export default function useGalleryReorder({
     updateImages(updatedImages)
     container.refresh()
 
-    // this gallery consumed the drop itself — onDropEnd must not remove it
     return { success: true, sourceHandled: true }
   }
 
@@ -81,9 +76,6 @@ export default function useGalleryReorder({
       return
     }
 
-    // positional lookup, same ordinal as the drop path: the dragged element's
-    // slot among the gallery's droppables (a src-value find would grab the
-    // wrong instance on duplicate or still-undefined preview srcs)
     const droppables = createReorderGeometry(containerElement, '[data-image]').getDroppables()
     const draggableIndex = draggableInfo.element ? droppables.indexOf(draggableInfo.element) : -1
     const updatedImages = resolveGallerySourceRemoval(images, draggableIndex)

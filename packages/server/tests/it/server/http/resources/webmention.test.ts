@@ -17,13 +17,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
-// The endpoint must NEVER fetch the source (verification lives in the inbox worker); the mock
-// surfaces any regression that reaches for globalThis.fetch in `calls`.
 const mockFetch = installFetch()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // The rate limiter is a process-level Map — reset it or earlier tests exhaust the window.
   __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
@@ -35,7 +32,6 @@ function buildApp(clientAddress = '203.0.113.10') {
   app.onError(onErrorHandler)
   app.use('*', async (c, next) => {
     c.set('requestId', 'test-request')
-    // The surface reads only `.db` and `.clientAddress` off the context.
     c.set('requestContext', makeRequestContext({ clientAddress, db }))
     await next()
   })
@@ -78,7 +74,6 @@ describe('integration / POST /webmention (async enqueue)', () => {
     const body = (await res.json()) as { status: string }
     expect(body.status).toBe('pending')
 
-    // No fetch, no mention row — the pair sits in the inbox, source normalized, target canonicalized.
     expect(mockFetch.calls).toHaveLength(0)
     expect(await db.select().from(webmention)).toHaveLength(0)
     const queued = await db.select().from(webmentionInbox)
@@ -134,13 +129,9 @@ describe('integration / POST /webmention (async enqueue)', () => {
     await seedLivePost('wm-target')
 
     const app = buildApp()
-    // Unknown slug.
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/no-such-post' })).status).toBe(404)
-    // Foreign origin.
     expect((await formPost(app, { source: SOURCE, target: 'https://other.example/posts/wm-target' })).status).toBe(404)
-    // Single-segment paths resolve as pages; `archives` is not a page slug.
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/archives' })).status).toBe(404)
-    // Unresolvable targets never reach the queue either.
     expect(mockFetch.calls).toHaveLength(0)
     expect(await db.select().from(webmentionInbox)).toHaveLength(0)
   })
@@ -159,7 +150,6 @@ describe('integration / POST /webmention (async enqueue)', () => {
   })
 
   it('rejects a chunked request without content-length whose body exceeds the 16KB form cap', async () => {
-    // Chunked bodies carry no content-length — the cap must still apply.
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(new TextEncoder().encode('x'.repeat(20 * 1024)))
@@ -188,7 +178,6 @@ describe('integration / POST /webmention (async enqueue)', () => {
     await seedLivePost('wm-target')
     const app = buildApp()
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
-    // Second mention from the same IP within the window is throttled.
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(429)
   })
 })

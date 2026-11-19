@@ -5,10 +5,6 @@ import { render, screen } from '@testing-library/react'
 import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The hook owns a `useEffect`, so tests need effects to run (happy-dom +
-// the @testing-library/react renderer), unlike the SSR `#/_helpers/hook`
-// runner. IntersectionObserver is stubbed with a fake that records every
-// instance so tests can inspect the init options and fire entries by hand.
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = []
 
@@ -77,10 +73,6 @@ function RootedHarness({ tailKey = 1, ...props }: HarnessProps) {
   )
 }
 
-// Mirrors JustifiedImageGrid: a skeleton renders until a layout effect
-// reports the container width, so the ref-carrying fragment mounts one
-// commit AFTER hasNextPage/tailKey settle. Regression guard for the images
-// grid never arming its observer (infinite scroll dead on arrival).
 function GatedHarness({ tailKey = 1, ...props }: HarnessProps) {
   const [width, setWidth] = useState(0)
   useLayoutEffect(() => {

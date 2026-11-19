@@ -121,13 +121,6 @@ import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@k
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
-/**
- * The deployed wire surface for every migrated non-admin domain — drift in a
- * method or path is a breaking URL change, and an input/output schema that is
- * not the very `@kobato/contracts` object means a copy has crept into
- * `@kobato/api`.
- */
-
 interface RouteSpec {
   method: 'GET' | 'POST'
   path: string

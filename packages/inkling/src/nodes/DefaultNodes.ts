@@ -24,15 +24,10 @@ export const EDITOR_BASE_NODES = [
   ListItemNode,
   AsideNode,
   LinkNode,
-  // AutoLinkNode powers the default autolink plugin (typed URLs become
-  // links); it extends LinkNode without replacing it — imported `<a>` markup
-  // still lands as plain LinkNode.
   AutoLinkNode,
   ...INKLING_TABLE_NODES,
 ]
 
-// Every card class is assembled via `assembleCardNode`, which runs this same
-// own-method pass at assembly time; only AsideNode needs it here.
 ensureLexicalNodeOwnMethods(AsideNode)
 
 const DEFAULT_NODES = [...EDITOR_BASE_NODES, ...CARDS.map((card) => card.node), ...ENTITY_TAIL_NODES]

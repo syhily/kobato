@@ -68,14 +68,11 @@ describe('maxmindRouter', () => {
     })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ size: 4 })
-    // Atomic swap: staged to a temp file, validated, then renamed into place.
     expect(fsMocks.writeFile).toHaveBeenCalledWith('/tmp/maxmind/GeoLite2-City.mmdb.upload', expect.any(Buffer))
     expect(fsMocks.rename).toHaveBeenCalledWith(
       '/tmp/maxmind/GeoLite2-City.mmdb.upload',
       '/tmp/maxmind/GeoLite2-City.mmdb',
     )
-    // Provenance sidecar: marks the database as a manual upload so the
-    // daily auto-update never replaces it silently.
     expect(fsMocks.writeFile).toHaveBeenCalledWith(
       '/tmp/maxmind/GeoLite2-City.meta.json',
       expect.stringContaining('"source":"upload"'),
@@ -158,8 +155,6 @@ describe('maxmindRouter', () => {
       body: form,
     })
     expect(res.status).toBe(400)
-    // Only the staged temp file is cleaned up — the live database is
-    // never written before validation passes.
     expect(unlink).toHaveBeenCalledWith('/tmp/maxmind/GeoLite2-City.mmdb.upload')
   })
 

@@ -2,10 +2,6 @@ import { CONFIG_TABLE } from '@kobato/server/infra/config.ts'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Contract: `kobato.config.example.json`'s flattened dot-path key set must
-// exactly equal CONFIG_TABLE's. Legacy keys live only in migrateLegacyKeys
-// (so old files keep booting) and must never appear in the example.
-
 function flattenKeys(value: unknown, prefix: string, out: string[]): void {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     out.push(prefix)

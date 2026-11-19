@@ -45,7 +45,6 @@ describe('zeabur mail cleanup', () => {
     expect(notify.mock.calls[0]![0]).toMatchObject({ source: 'zeabur-mail-cleanup', actionUrl: '/admin/settings' })
     expect(findSettingByScope(db, 'system.zeabur-mail-cleanup')).not.toBeNull()
 
-    // Flagged: a second boot is a no-op, even for the notification.
     await runZeaburMailCleanupAtBoot(db, notify)
     expect(notify).toHaveBeenCalledTimes(1)
   })
@@ -65,8 +64,6 @@ describe('zeabur mail cleanup', () => {
   })
 
   it('leaves a working smtp config carrying the legacy zeabur defaults untouched', async () => {
-    // Every pre-cleanup install seeded host/apiKey from the old defaults —
-    // their presence must not trigger a disable.
     await db.insert(setting).values({
       scope: 'blog.mail',
       data: {

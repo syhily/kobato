@@ -33,7 +33,6 @@ describe('job registry', () => {
   })
 
   it('throws when a job evaluates before the handle getter is wired', () => {
-    // A fresh import graph would be unwired; this file wired nothing yet.
     expect(() => jobHandle()).toThrow('background job evaluated before the database handle was wired')
     expect(() => jobDb()).toThrow('background job evaluated before the database handle was wired')
   })
@@ -45,7 +44,6 @@ describe('job registry', () => {
     setJobHandleGetter({ getDatabaseHandle: () => current as never })
 
     expect(jobDb()).toBe(dbA)
-    // Re-read on every call — a reopened handle is picked up.
     current = { db: dbB }
     expect(jobDb()).toBe(dbB)
   })
@@ -60,7 +58,6 @@ describe('job registry', () => {
     startAllRegisteredJobs()
     expect(vi.getTimerCount()).toBe(2)
 
-    // Idempotent start: no duplicate timers.
     startAllRegisteredJobs()
     expect(vi.getTimerCount()).toBe(2)
 
@@ -76,7 +73,6 @@ describe('job registry', () => {
     nudgeRegisteredJob('test.nudged')
     expect(vi.getTimerCount()).toBe(0)
 
-    // …but reschedules once armed.
     scheduleRegisteredJob('test.nudged')
     expect(vi.getTimerCount()).toBe(1)
   })
@@ -90,7 +86,6 @@ describe('job registry', () => {
     scheduleRegisteredJob('test.single')
     expect(vi.getTimerCount()).toBe(1)
 
-    // Unknown names are ignored — the owning module was never imported.
     expect(() => scheduleRegisteredJob('test.never-registered')).not.toThrow()
     expect(vi.getTimerCount()).toBe(1)
   })
@@ -103,11 +98,9 @@ describe('job registry', () => {
     registerJob({ name: 'test.replaced', nextDelayMs: () => 10_000, run: runV1 })
 
     startAllRegisteredJobs()
-    // Replacement stops the old instance's pending fire…
     registerJob({ name: 'test.replaced', nextDelayMs: () => 1_000, run: runV2 })
     expect(vi.getTimerCount()).toBe(0)
 
-    // …and the new policy takes over.
     startAllRegisteredJobs()
     vi.advanceTimersByTime(1_000)
     expect(runV1).not.toHaveBeenCalled()

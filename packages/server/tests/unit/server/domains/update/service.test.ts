@@ -97,8 +97,6 @@ describe('update/service', () => {
       reasons: descriptors.map((descriptor) => descriptor.fallbackMessage),
       reasonDescriptors: descriptors,
     })
-    // No locale-flavored punctuation is assembled here: the summary is one
-    // typed message and the reasons ride `issues` for the transport to fold.
     await expect(applyUpdate()).rejects.toMatchObject({
       code: 'FORBIDDEN',
       message: 'This deployment cannot self-update.',

@@ -19,9 +19,6 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-// BackupView render-path branches `backup.test.tsx` does not reach, notably
-// `backup ?? FALLBACK_BACKUP`; effect-gated file-list branches stay in the parent file.
-
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -63,8 +60,6 @@ describe('snapshot: BackupView branches', () => {
   })
 
   it('renders the enabled schedule form when the status query resolves', () => {
-    // File-based backups need no external tooling; `primaryDriver` only
-    // drives the info banner.
     queryMocks.query = {
       data: { primaryDriver: 's3' },
       isPending: false,
@@ -86,7 +81,6 @@ describe('snapshot: BackupView branches', () => {
   })
 
   it('renders the manual-restore section in its default (no-file-selected) state', () => {
-    // `selectedFile` only changes via the file-input onChange (event-gated) — the no-file branch is all SSR can render.
     queryMocks.query = { data: undefined, isPending: true, error: null }
 
     const html = stableHtml(

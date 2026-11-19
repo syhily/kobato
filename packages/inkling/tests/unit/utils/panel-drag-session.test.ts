@@ -7,9 +7,6 @@ import {
 } from '@kobato/inkling-internal/utils/panel-drag-session'
 import { describe, expect, it, vi } from 'vitest'
 
-// the choreography is exercised synchronously through the ports: fake path
-// elements stand in for the composed DOM path, the listenActive port captures
-// the drag-lifetime listeners, and spies record the effect resolutions
 function setup() {
   const panel = { name: 'panel' }
   const input = { name: 'input' }

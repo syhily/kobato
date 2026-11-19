@@ -9,13 +9,6 @@ import { redactSecretsFromBundle } from '@kobato/server/domains/settings/service
 import { implementPublic } from '@kobato/server/http/orpc-base.ts'
 import { parseThemeCookie } from '@kobato/utils/theme-cookie.ts'
 
-/**
- * The document-scope settings projection: redacted secrets, and the
- * admin-only `observability` section dropped. A public document has no reason
- * to ship the OpenObserve endpoint/organization/username or the two
- * verification fingerprints to every anonymous visitor; the admin settings
- * page reads its own `admin.settings.bootstrap` payload.
- */
 function projectSettingsForDocument(bundle: BlogSettingsBundle): BlogSettingsBundle {
   return { ...redactSecretsFromBundle(bundle), observability: null }
 }
@@ -28,29 +21,13 @@ export const contentBootstrap = implementPublic(contentBootstrapContract).bootst
   }
   const currentUser = context.viewer && role ? { id: context.viewer.id, name: context.viewer.name, role } : null
 
-  // The request's PINNED bundle — the same capture that produced
-  // `context.localization`, so the shipped locale and the settings payload
-  // can never come from two different snapshots.
   const rawBundle = context.settings
   const blogSettings = rawBundle ? projectSettingsForDocument(rawBundle) : null
 
-  // Resolve the configured font-id slots into browser-ready {family, href}
-  // lists so `<head>` can emit one self-hosted `<link>` per font without a
-  // second round-trip. `context.db` is read lazily so a missing bundle
-  // never touches the request db.
   const fonts = blogSettings?.fonts ? await resolveFontsForRender(context.db, blogSettings.fonts, true) : null
 
   const theme = parseThemeCookie(context.requestFacts.cookie)
 
-  // The UI catalog is resolved HERE (server side) and shipped as data; the
-  // root layout and the editor composer must never value-import the catalog
-  // module (that is what would pull all four locales into the browser). The
-  // scope comes from the document pathname: public pages get the allowlisted
-  // public namespaces, workspace pages the complete catalog. The Inkling
-  // label table is EDITOR chrome: only a signed-in workspace document gets
-  // it. `/admin/signin` + `/admin/setup` need the full catalog (auth copy)
-  // but have no editor and no session yet, and public documents load the
-  // active locale's chunk on demand.
   const { locale, revision } = context.localization
   const scope = catalogScopeForPathname(context.requestFacts.path)
   const i18n = {

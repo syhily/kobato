@@ -10,7 +10,6 @@ export interface ActionBannerProps {
   onClose: () => void
 }
 
-// Post-save banner — manually dismissed; a follow-up successful action replaces it in place.
 export function ActionBanner({ kind, slug, basePath, onClose }: ActionBannerProps) {
   const { t } = useI18n()
   const href = kind === 'draft' ? `${basePath}/${slug}?draft=true` : `${basePath}/${slug}`

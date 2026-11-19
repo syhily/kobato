@@ -7,9 +7,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Only the storage registry is substituted: the real fetchBrandingObject
-// runs end-to-end (buffer cache, not-found fallback, legacy-key migration)
-// against the in-memory 's3' backend.
 const mem = makeMemoryBackend()
 
 beforeEach(() => {

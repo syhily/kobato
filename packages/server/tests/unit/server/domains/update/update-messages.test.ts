@@ -7,7 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// The status boundary localizes the stored descriptor; the dialog never prints a key.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

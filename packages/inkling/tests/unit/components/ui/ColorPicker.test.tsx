@@ -286,7 +286,6 @@ describe('ColorIndicator', () => {
       />,
     )
 
-    // random keys would remount the swatches, breaking reconciliation
     expect(screen.getByTitle('Red')).toBe(swatchBefore)
   })
 })

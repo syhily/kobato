@@ -22,7 +22,6 @@ describe('integration / admin pages restore', () => {
     const deleteRes = await callRpc('/admin/pages/delete', { id: a.page.id }, ctx)
     expect(deleteRes.status).toBe(200)
 
-    // The page-level unique constraint forbids a duplicate page row — insert the registry claim directly.
     await db.insert(slugRegistry).values({
       slug: 'shared-slug',
       entityType: 'page',
@@ -82,7 +81,6 @@ describe('integration / admin pages restore', () => {
     const deleteRes = await callRpc('/admin/pages/delete', { id: page.page.id }, ctx)
     expect(deleteRes.status).toBe(200)
 
-    // Cross-entity slug reuse is allowed.
     const createPost = await callRpc(
       '/admin/posts/upsertMeta',
       { title: 'Post B', slug: 'cross-slug', summary: '', tags: [] },

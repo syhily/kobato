@@ -12,8 +12,6 @@ vi.mock('@kobato/inkling-internal/utils/get-accent-color', () => ({
 }))
 
 vi.mock('fast-average-color', () => ({
-  // `new FastAverageColor()` — the mock must be constructable, so a plain
-  // function (arrow functions are not constructors)
   FastAverageColor: vi.fn().mockImplementation(function () {
     return {
       getColorAsync: async (src: string) => {

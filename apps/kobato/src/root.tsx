@@ -36,10 +36,6 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
-// UI's design tokens, base styles and primitive utilities are the document's FIRST stylesheet: React Router
-// emits the root route's links ahead of every nested route sheet, so generic UI utilities can never outrun
-// the product sheets (cards / web / app) that deliberately override them. Eager — root is SSR-critical and
-// must not lazy its CSS. Never re-import ui.css at route level; the single entry lives here.
 import '@kobato/ui/styles/ui.css'
 
 const PublicErrorLayout = lazy(() =>
@@ -81,8 +77,6 @@ function collectTier2Chunks(
 
 export const middleware: MiddlewareFunction<Response>[] = [traceRouteMiddleware]
 
-// Root is the nearest error boundary for loader-thrown 304s; this passes the
-// thrown Response's representation headers through RR's header rebuild.
 export const headers = documentHeaders
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
@@ -98,8 +92,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const boot = await caller.content.bootstrap()
 
-  // The browser bootstrap exists only once the settings projection and the runtime's OpenObserve pipeline
-  // verification pass; otherwise the key is omitted entirely and the server authorization header never reaches it.
   const rum = activeFrontendRum()
 
   const warmupManifest = getWarmupManifest()
@@ -107,7 +99,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
   const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, boot.admin, new Set(criticalLinks)) : []
 
-  // Server clock for public chrome: loader data keeps SSR and hydration on the same instant.
   const nowIso = new Date().toISOString()
 
   return {
@@ -126,10 +117,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-/**
- * Revalidate when a navigation crosses the document-scope message catalog boundary (`public` vs `workspace`);
- * otherwise client-side navigation keeps the previous scope's catalog and renders missing admin messages.
- */
 export function shouldRevalidate({
   currentUrl,
   nextUrl,
@@ -184,9 +171,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (host) {
         fontHosts.add(host)
       }
-    } catch {
-      /* noop */
-    }
+    } catch {}
   }
 
   if (assetHost) {

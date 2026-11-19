@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The listen socket closes before spawning, then shutdown is requested.
-// Spawn failures arrive via the child's 'error' event, not a synchronous throw; the restart
-// must listen, fail the job, and release the slot.
-
 const calls = vi.hoisted(() => ({ order: [] as string[] }))
 
 const childRef = vi.hoisted(() => ({
@@ -57,7 +53,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
 
   it('closes the listen socket before spawning the replacement process', async () => {
     const job = await loadJob()
-    // The real `scheduleSelfRestart` drives the mocked seams.
     job.startUpdateJob('v9.9.9')
 
     await vi.waitFor(
@@ -72,7 +67,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       detached: true,
       stdio: 'inherit',
     })
-    // The happy path must still arm the async failure listener.
     expect(childRef.errorListener).toBeDefined()
   })
 
@@ -102,7 +96,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       error: 'spawn ENOENT',
       targetVersion: 'v9.9.9',
     })
-    // The slot is released: a follow-up apply must not 409.
     expect(() => job.startUpdateJob('v9.9.10')).not.toThrow()
   })
 
@@ -122,7 +115,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       { timeout: 2_000 },
     )
 
-    // The process must stay up after a failed spawn, not exit into a dead deployment.
     expect(calls.order).toEqual(['close', 'spawn'])
     expect(lifecycleMocks.requestShutdown).not.toHaveBeenCalled()
     expect(job.getUpdateJobStatus()).toMatchObject({
@@ -130,7 +122,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       error: 'spawn ENOENT',
       targetVersion: 'v9.9.9',
     })
-    // The slot is released: a follow-up apply must not 409.
     expect(() => job.startUpdateJob('v9.9.10')).not.toThrow()
   })
 

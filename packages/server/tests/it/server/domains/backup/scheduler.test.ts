@@ -32,17 +32,12 @@ const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/serv
 const { rescheduleBackup } = await import('@kobato/server/domains/backup/scheduler.ts')
 const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
 
-// Dynamic import: a static one would evaluate the db-lifecycle graph before the mock consts initialize.
 const { getTestDb } = await import('@kobato/test/integration-db.ts')
 const testDb = getTestDb()
-// The registry owns the shared db getter; a bare handle shape suffices —
-// the job reads only `.db` at fire time.
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: testDb }) as never })
 
-// The stop-all hook registers once at module import — capture before beforeEach clears the mocks.
 const sharedJobStopHook = registerShutdownHook.mock.calls[0]?.[0] as (() => void | Promise<void>) | undefined
 
-// Real in-memory DB; the backup service stays mocked as the S3-backed seam.
 function bundleWith(backup: Record<string, unknown>): typeof TEST_BLOG_SETTINGS_BUNDLE {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -71,7 +66,6 @@ describe('backup scheduler', () => {
   it('never runs the backup while settings are not hydrated', async () => {
     setBlogSettingsBundleForTests(undefined)
     scheduleRegisteredJob('backup.scheduler')
-    // Suspended: only the re-evaluation retry arms — a backup fire on this tick is a bug.
     await vi.advanceTimersByTimeAsync(10 * 60_000)
     expect(createBackup).not.toHaveBeenCalled()
   })
@@ -118,7 +112,6 @@ describe('backup scheduler', () => {
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } }),
     )
     scheduleRegisteredJob('backup.scheduler')
-    // Other periodic jobs stay armed in it; this pins that a past next-run does not throw.
   })
 
   it('resets retry attempt and reschedules on settings change', () => {

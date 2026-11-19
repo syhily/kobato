@@ -4,17 +4,8 @@
 // build-time `includes()` guard fails loudly on drift.
 export const CHUNKS_SENTINEL = '__ROUTE_WARMUP_CHUNKS__'
 
-// Chunk-name patterns never eagerly preloaded — heavy lazy-only widgets
-// / native libraries, kept out of both the critical and idle batches.
-export const WARMUP_GLOBAL_EXCLUDED_PATTERNS = [
-  '^canvas-', // @napi-rs/canvas native library chunks
-  '^ImageEditorCanvas-', // lazy image editor dialog
-  '^qrcode', // qrcode.react dynamic chunk
-  '^music-player-', // lazy audio player (music-player card)
-]
+export const WARMUP_GLOBAL_EXCLUDED_PATTERNS = ['^canvas-', '^ImageEditorCanvas-', '^qrcode', '^music-player-']
 
-// Shared shape of the React Router client manifest that the route-warmup
-// plugin writes and the SSR runtime reads back to match request URLs.
 export interface RouteManifestEntry {
   module: string
   imports: string[]

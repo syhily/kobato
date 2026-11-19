@@ -33,11 +33,6 @@ export async function hasApprovedComments(db: Database, userId: number): Promise
   return countApprovedCommentsByUser(db, userId) >= 1
 }
 
-/**
- * The latest-comments digest for the sidebar. `settings` is the request-pinned
- * snapshot (the caller's `context.settings`) — this function never reads the
- * process snapshot.
- */
 export async function latestComments(db: Database, settings: BlogSettingsBundle | null): Promise<LatestComment[]> {
   const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar', settings), 'recentComments')
   const ids = await adminUserIds(db)
@@ -46,10 +41,6 @@ export async function latestComments(db: Database, settings: BlogSettingsBundle 
   return rows.map(toLatestComment)
 }
 
-/** Stable digest of the target's public comment representation. Detail pages
- *  fold it into their ETag so comment edits cannot be hidden behind a 304.
- *  Truncated to 32 hex chars: the value ships inside public documents, which
- *  must stay free of 64-hex strings (the anonymous CSRF token's shape). */
 export async function commentThreadFingerprint(db: Database, target: EntityTarget): Promise<string> {
   const rows = await commentFingerprintRows(db, target)
   const hash = createHash('sha256')
@@ -102,12 +93,8 @@ export async function loadComments(
 
 const MAX_RID_WALK = 256
 
-/** Reply-thread cap: truncated threads keep the earliest replies and are
- *  flagged `childrenTruncated`/`childrenTotal` (wire contract). */
 export const MAX_THREAD_CHILDREN = 100
 
-/** Walk the `rid` chain to the nearest visible ancestor; soft-deleted
- *  parents are transparent. Returns 0 at the root or a broken chain. */
 function resolveVisibleParentRid(commentId: number, rid: number | null, byId: Map<string, CommentAndUser>): number {
   if (rid === 0 || rid === null || rid === undefined) {
     return 0
@@ -185,8 +172,6 @@ function threadChildCount(comment: CommentItem): number {
   return children.reduce((sum, child) => sum + 1 + threadChildCount(child), 0)
 }
 
-/** Keep the first `budget.remaining` descendants in pre-order (the order
- *  the reply query returned them), dropping the rest of the thread. */
 function trimThreadChildren(comment: CommentItem, budget: { remaining: number }): CommentItem {
   if (comment.children === undefined) {
     return comment

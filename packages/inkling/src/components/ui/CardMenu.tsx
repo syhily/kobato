@@ -13,12 +13,6 @@ import React from 'react'
 export type CardMenuItemData = ResolvedMenuItem
 export type CardMenuSectionData = MenuSection
 
-// The shared item chrome of the card menu's flat-index contract (live with
-// the menu navigator and e2e): the idx/selected stamping, the
-// scroll-on-selected effect, and the mousedown policy — browsers move focus
-// on mousedown, and stealing it from the editor breaks key commands after
-// insertion (the snippet item also keeps the menu from closing before
-// insertion). The two items keep their distinct markups.
 function useCardMenuItemChrome<T extends HTMLElement>({
   index,
   isSelected,
@@ -253,9 +247,7 @@ export interface CardMenuProps {
 
 export const CardMenu = ({
   sections = [],
-  insert = () => {
-    /* noop */
-  },
+  insert = () => undefined,
   selectedItemIndex = 0,
   scrollToSelectedItem = false,
   closeMenu,

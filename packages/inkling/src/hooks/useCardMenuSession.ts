@@ -47,8 +47,6 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     [saveCursor, restoreCursor],
   )
 
-  // Closing releases the cursor lease: resetCursor restores first (Escape),
-  // every other close leaves the cursor where the user put it.
   const closeMenu = React.useCallback(
     ({ resetCursor = false }: CloseMenuOptions = {}) => {
       if (resetCursor) {
@@ -68,8 +66,6 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     [closeMenu],
   )
 
-  // Escape closes and restores the cursor — it always blurs the
-  // contenteditable, which the menu never wants.
   React.useEffect(() => {
     if (!isOpen) {
       return

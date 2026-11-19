@@ -24,9 +24,7 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
     try {
       await clipboard.writeText(text)
       return true
-    } catch {
-      // Some in-app/webview browsers deny all programmatic clipboard writes.
-    }
+    } catch {}
   }
 
   return false
@@ -103,7 +101,6 @@ export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>, 
       if (pre === null || raw === null) {
         continue
       }
-      // Idempotency: a re-run (same-route navigation) must not double-wrap.
       if (pre.parentElement?.classList.contains('code-block-wrapper') === true) {
         continue
       }

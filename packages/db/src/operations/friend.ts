@@ -6,8 +6,6 @@ import { applyPage, assembleWhere } from '@kobato/db/operations/admin-list.ts'
 import { friend } from '@kobato/db/schema/friend.ts'
 import { count, desc, eq, or, type SQL } from 'drizzle-orm'
 
-// Stable id order so thumbhash hydration resolves deterministically; the
-// `<Friends />` block's shuffle owns the renderer-visible order.
 export async function listPublicFriendRows(db: Database): Promise<FriendRow[]> {
   return db.select().from(friend).where(eq(friend.visible, true)).orderBy(friend.id)
 }
@@ -26,7 +24,6 @@ export interface AdminFriendsListFilters {
   limit?: number
 }
 
-// Shared by the listing and its counter so both filter on the same predicate.
 function buildAdminFriendConditions(filters: AdminFriendsListFilters): SQL[] {
   const conditions: SQL[] = []
   if (filters.visible !== undefined) {
@@ -44,7 +41,6 @@ function buildAdminFriendConditions(filters: AdminFriendsListFilters): SQL[] {
   return conditions
 }
 
-// Admin list view; newest first; `includeHidden` admits `visible=false` rows.
 export async function listAdminFriendRows(db: Database, filters: AdminFriendsListFilters = {}): Promise<FriendRow[]> {
   const where = assembleWhere(buildAdminFriendConditions(filters))
   const q = where

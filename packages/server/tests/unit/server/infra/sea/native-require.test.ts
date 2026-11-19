@@ -10,10 +10,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Unit tests for `nativeRequire` — the runtime half of the SEA native redirect.
-// With `KOBATO_NATIVES_DIR` set, addon loads root at the flat natives dir and
-// metadata probes read embedded assets; otherwise everything passes through to requireExternal.
-
 const seaMock = vi.hoisted(() => ({
   requireExternal: vi.fn<(name: string) => unknown>((name) => ({ passthrough: name })),
   getEmbeddedAsset: vi.fn<(key: string) => Buffer | null>(() => null),
@@ -24,7 +20,6 @@ vi.mock('@kobato/server/infra/sea/sea.ts', () => ({
   getEmbeddedAsset: seaMock.getEmbeddedAsset,
 }))
 
-// Computed from the runtime host, exactly as the module under test does.
 function isMuslLinux(): boolean {
   const getReport = process.report?.getReport
   if (typeof getReport !== 'function') {
@@ -139,7 +134,6 @@ describe('infra/sea/native-require — under SEA (KOBATO_NATIVES_DIR set)', () =
     expect(() => nativeRequire('@img/sharp-wasm32/versions')).toThrow(/unresolvable specifier/)
     expect(() => nativeRequire('@img/sharp-libvips-dev/include')).toThrow(/unresolvable specifier/)
     expect(() => nativeRequire(`@img/sharp-libvips-dev-${SHARP_PLATFORM}/lib`)).toThrow(/unresolvable specifier/)
-    // Other platforms' triples are never ours to answer either.
     const other = SHARP_PLATFORM === 'darwin-x64' ? 'linux-x64' : 'darwin-x64'
     expect(() => nativeRequire(`@img/sharp-${other}/sharp.node`)).toThrow(/unresolvable specifier/)
   })

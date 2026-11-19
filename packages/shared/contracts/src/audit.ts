@@ -12,7 +12,7 @@ export const auditLogItemDto = z.object({
   detailsHtml: z.string().nullable(),
   ipAddressMasked: z.string().nullable(),
   userAgentMasked: z.string().nullable(),
-  createdAt: z.string(), // ISO-8601
+  createdAt: z.string(),
 })
 export type AuditLogItemDto = z.infer<typeof auditLogItemDto>
 

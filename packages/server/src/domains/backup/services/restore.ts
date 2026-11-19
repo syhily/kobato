@@ -40,7 +40,6 @@ import { createGunzip } from 'node:zlib'
 
 const log = getLogger('backup.service')
 
-// Cap on the DECOMPRESSED payload.
 export const MAX_BACKUP_FILE_SIZE = 500 * 1024 * 1024
 
 const SQLITE_MAGIC = Buffer.from('SQLite format 3\0', 'latin1')
@@ -53,7 +52,6 @@ const GZIP_MAGIC_1 = 0x1f
 const GZIP_MAGIC_2 = 0x8b
 const HEAD_BYTES = 600
 
-/** mkdtemp prefix staged-restore temp dirs carry — the boot-time sweep keys on it (and nothing else may). */
 export const RESTORE_TEMP_PREFIX = 'kobato-restore-'
 
 export function hasSqliteMagic(buffer: Buffer): boolean {
@@ -82,9 +80,6 @@ export function assertDuckdbBackup(buffer: Buffer): void {
   }
 }
 
-/** The upload is encrypted and no password was supplied — the perimeter maps
- *  this to a "password required" response and parks the staged dir for the
- *  follow-up decrypt call (deliberately NOT swept on this throw). */
 export class EncryptedBackupPasswordRequired extends Error {
   constructor(
     readonly dir: string,
@@ -146,10 +141,6 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
   })
 }
 
-/** The staged config must pass the SAME checks the next boot applies — it
- *  overwrites the live `kobato.config.json` verbatim and a config the boot
- *  parse rejects would exit the process AFTER the databases were swapped.
- *  Reuses `parseRestorableConfigJson` so "bootable config" has one definition. */
 async function assertConfigBackup(configPath: string): Promise<void> {
   try {
     parseRestorableConfigJson(await readFile(configPath, 'utf8'))
@@ -283,8 +274,6 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
     await copyFile(rawPath, contentPath)
     return { dir, content: contentPath, analytics: null, config: null }
   } catch (error) {
-    // The password-required path hands the staged dir to the perimeter's
-    // pending-decrypt table — sweeping it here would orphan the upload.
     if (!(error instanceof EncryptedBackupPasswordRequired)) {
       rmSync(dir, { recursive: true, force: true })
     }
@@ -318,7 +307,6 @@ export async function sweepStaleRestoreDirs(): Promise<void> {
   }
 }
 
-/** The backup must contain an admin row, or restoring it soft-locks the instance behind the install gate. */
 export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Promise<void> {
   if (staged.content === null) {
     throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
@@ -362,18 +350,11 @@ async function swapStagedFile(sourcePath: string, targetPath: string): Promise<v
 const PRE_RESTORE_SUFFIX = '.pre-restore'
 const RESTORE_STAGING_SUFFIX = '.restore-staging'
 
-/** Unlike the engine swap this has NO missing-target window — the config is
- *  read at module load, before `recoverPreRestoreFiles` can run, so a
- *  momentarily absent file would be auto-created with defaults and the
- *  sibling then dropped as "stale". */
 async function swapStagedConfig(sourcePath: string, targetPath: string): Promise<void> {
   const stagingPath = `${targetPath}${RESTORE_STAGING_SUFFIX}`
   const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
   try {
     await copyFile(sourcePath, stagingPath)
-    // The config carries `security.*` secrets — keep the 0600 mode the
-    // boot-time write produces. A chmod failure aborts BEFORE the rename,
-    // so the live file stays untouched.
     await chmod(stagingPath, 0o600)
     await copyFile(targetPath, preRestorePath).catch((error: unknown) => {
       if (!isMissingFileError(error)) {
@@ -422,12 +403,6 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-/** Boot-time crash recovery for the swap window — MUST run before the engines
- *  open (openDatabase would create an empty file that masquerades as a healthy
- *  target). The two renames of a swap are not atomic: target missing +
- *  `.pre-restore` present = died mid-swap, rename the sibling (last good copy)
- *  back; target present = stale sibling, safe to drop; `.restore-staging`
- *  orphans are always dropped. Best-effort per file with loud logs. */
 export async function recoverPreRestoreFiles(): Promise<void> {
   for (const target of restoreTargets()) {
     const preRestorePath = `${target}${PRE_RESTORE_SUFFIX}`
@@ -461,7 +436,6 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
     try {
       await access(backupPath)
     } catch {
-      // No sibling — nothing to roll back; never touch the live file.
       continue
     }
     try {
@@ -484,9 +458,6 @@ export async function cleanupPreRestoreFiles(): Promise<void> {
   }
 }
 
-/** Pre-restore sweep of swap leftovers — STRICT: the rollback path keys on
- *  the mere existence of a `.pre-restore` sibling, so an undeletable leftover
- *  would roll a later failure back to a ghost database. */
 async function discardSwapLeftovers(): Promise<void> {
   for (const target of restoreTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true })
@@ -503,9 +474,6 @@ export interface RestoreResult {
   configApplied: boolean
 }
 
-/** Swap the staged payloads IN ORDER — content DB, analytics sidecar, config
- * file — then clean the temp dir. A config write failure is warn-only and
- * never rolls back the completed engine swaps. */
 export async function restoreFromStagedBackup(
   staged: StagedBackup,
   fileName: string,
@@ -519,9 +487,6 @@ export async function restoreFromStagedBackup(
     hasConfig: staged.config !== null,
     withAnalytics,
   })
-  // Re-validate before the point of no return: a caller may hand over a
-  // StagedBackup directly, and a config the next boot rejects is fatal after
-  // the swap.
   if (staged.config !== null) {
     await assertConfigBackup(staged.config)
   }

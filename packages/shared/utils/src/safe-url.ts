@@ -1,10 +1,3 @@
-// Pure URL formatting and navigation helpers. Security policy (SSRF/private
-// hosts, passkey RP rules) lives in `@kobato/auth/network`; Zod URL contracts
-// live in `@kobato/utils/url-schema`. Keep this module dependency-free.
-
-// Control characters in a redirect target are never legitimate: the URL
-// parser silently strips some (tab/newline) and percent-encodes others, so
-// reject the raw value before either can reshape the path.
 function hasControlChar(value: string): boolean {
   for (const char of value) {
     const code = char.codePointAt(0)
@@ -41,10 +34,6 @@ export function safeRedirectPath(value: string | null | undefined, fallback: str
     if (url.origin !== base.origin) {
       return fallback
     }
-    // Dot-segment normalization can rewrite a single-slash input into a
-    // network-path reference (`/..//evil.com` → `//evil.com`), which the
-    // browser resolves as a cross-origin URL. Only a single-slash path is
-    // same-origin.
     if (!url.pathname.startsWith('/') || url.pathname.startsWith('//')) {
       return fallback
     }
@@ -72,9 +61,6 @@ export function tryParseUrl(raw: string): URL | null {
   }
 }
 
-/** URL shape safe for logs: origin + pathname only. Userinfo, query, and
- *  fragment are dropped — signed CDN URLs carry credentials in the query
- *  string that must never reach a log line. */
 export function redactUrlForLog(raw: string): string {
   const parsed = tryParseUrl(raw)
   if (parsed === null) {

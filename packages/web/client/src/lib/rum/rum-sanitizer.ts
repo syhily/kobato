@@ -1,14 +1,3 @@
-// Frontend RUM event privacy boundary: every SDK event passes through this
-// synchronous allowlist; unknown shapes/types/URLs and any thrown error fail
-// closed. The projection builds a NEW object; the caller replaces the event
-// in place.
-//
-// SDK 0.4.3: `limitModification` copies back ONLY its declared modifiable
-// fields and ignores `false` for `view` events. So view free fields are
-// overwritten with trusted values before any risky work, every other event
-// type is dropped on failure, and non-modifiable fields can only be removed
-// by the OpenObserve ingest allowlist (the second boundary).
-
 import type { RumBudgetStore } from '@kobato/web-client/lib/rum/rum-budget.ts'
 import type { RumRouteContext } from '@kobato/web-client/lib/rum/rum-route.ts'
 import type { RumBeforeSend, RumEvent, RumEventDomainContext } from '@openobserve/browser-rum-slim'
@@ -146,7 +135,6 @@ const VIEW_NUMERIC_KEYS = [
 ] as const
 const VIEW_COUNT_KEYS = ['action', 'error', 'crash', 'long_task', 'resource', 'frozen_frame'] as const
 
-/** Event types this policy can project; everything else is dropped. */
 const ALLOWED_EVENT_TYPES: ReadonlySet<string> = new Set(['view', 'view_update', 'resource', 'error', 'long_task'])
 
 const SIZE_BUCKETS = [0, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864] as const
@@ -412,9 +400,6 @@ function projectPerformance(raw: unknown): Projected | undefined {
 
   const lcp = recordField(performance, 'lcp')
   if (lcp !== null) {
-    // The path must exist in the clone even when the timestamp is missing:
-    // otherwise `limitModification` cannot reach (and clear) the original
-    // `resource_url`.
     const entry: Projected = { resource_url: '' }
     const timestamp = numberField(lcp, 'timestamp')
     if (timestamp !== null) {
@@ -532,9 +517,6 @@ function projectResourceDetails(raw: unknown, scope: RumEventScope): Projected |
   if (protocol !== undefined) {
     projected.protocol = protocol
   }
-  // `limitModification` can only reach declared paths. Keep empty objects on
-  // the clone so the SDK clears request/response headers, and clear the
-  // GraphQL variables free-form string.
   if (isRecord(resource.request)) {
     projected.request = {}
   }
@@ -560,8 +542,6 @@ function projectErrorDetails(raw: unknown, scope: RumEventScope, codeHint: strin
   const projected: Projected = {
     type: rawType !== undefined && SAFE_ERROR_TYPES.has(rawType) ? rawType : 'Error',
     source,
-    // The free-form SDK message can carry slugs, titles, SQL, and response
-    // bodies. Only a fixed category leaves the browser.
     message: `${source}_error`,
   }
   const handling = closedString(error.handling, ERROR_HANDLING)
@@ -586,8 +566,6 @@ function projectErrorDetails(raw: unknown, scope: RumEventScope, codeHint: strin
       projectedResource.status_code = status
       statusCode = status
     }
-    // Always overwrite the URL: `limitModification` copies only a string
-    // value back, so leaving it undefined would preserve the raw URL.
     projectedResource.url = sanitizeResourceUrl(resource.url, scope.origin) ?? ''
     if (Object.keys(projectedResource).length > 0) {
       projected.resource = projectedResource
@@ -595,8 +573,6 @@ function projectErrorDetails(raw: unknown, scope: RumEventScope, codeHint: strin
   }
 
   const stack = sanitizeStack(error.stack)
-  // Always overwrite the stack: leaving it undefined would keep the original
-  // string, whose first line is the free-form error message.
   projected.stack = stack ?? ''
   projected.handling_stack = ''
   projected.fingerprint = ''
@@ -629,9 +605,6 @@ function projectLongTaskDetails(raw: unknown): Projected | null {
   if (typeof longTask.is_frozen_frame === 'boolean') {
     projected.is_frozen_frame = longTask.is_frozen_frame
   }
-  // The SDK copies only source_url/invoker inside each script entry. Keep a
-  // same-length placeholder array so both are cleared; other script fields are
-  // non-modifiable and belong to the O2 allowlist.
   if (Array.isArray(longTask.scripts)) {
     projected.scripts = longTask.scripts.map(() => ({ source_url: '', invoker: '' }))
   }
@@ -675,14 +648,10 @@ function projectCommon(event: JsonRecord, type: string, scope: RumEventScope, al
       id: viewId,
       name: scope.route.id,
       url: `${scope.origin}${scope.route.template}`,
-      // `view.referrer` is modifiable; an empty string clears the original.
       referrer: '',
     },
   }
 
-  // Modifiable strings must be a string in the clone, otherwise the SDK leaves
-  // the original value untouched. When the event carries the field, emit a
-  // safe string (possibly empty).
   if ('service' in event) {
     projected.service = optionalString(event.service, TAG_VALUE_PATTERN) ?? ''
   }
@@ -704,10 +673,6 @@ function projectCommon(event: JsonRecord, type: string, scope: RumEventScope, al
   return projected
 }
 
-/**
- * Pure projection: returns a fresh allowlisted event object, or `null` when
- * the event must be dropped. Never returns the input object.
- */
 export function projectRumEvent(event: unknown, scope: RumEventScope, codeHint: string | null = null): RumEvent | null {
   if (!isRecord(event) || !isSafeOrigin(scope.origin)) {
     return null
@@ -725,8 +690,6 @@ export function projectRumEvent(event: unknown, scope: RumEventScope, codeHint: 
     return null
   }
 
-  // Normalize the trusted origin once (a trailing slash or host casing must
-  // never produce `//` in the emitted URL).
   const normalizedScope: RumEventScope = { origin: new URL(scope.origin).origin, route: scope.route }
   const common = projectCommon(event, type, normalizedScope, type === 'resource' || type === 'error')
   if (common === null) {
@@ -768,10 +731,6 @@ export function projectRumEvent(event: unknown, scope: RumEventScope, codeHint: 
   return toRumEvent(common)
 }
 
-/**
- * Single cast point: the projected object is structurally a RUM event after
- * the allowlist above, but the SDK's readonly union cannot be built piecewise.
- */
 function toRumEvent(value: Projected): RumEvent {
   return unsafeCast<RumEvent>(value)
 }
@@ -813,10 +772,6 @@ interface TrustedViewTarget {
 
 const UNKNOWN_VIEW_TARGET: TrustedViewTarget = { name: 'unknown', url: '/unknown' }
 
-/**
- * Resolve the only trusted view identity available to `beforeSend`. Any scope
- * failure (missing, hostile, invalid) collapses to the fixed safe fallback.
- */
 function trustedViewTarget(getScope: () => RumEventScope | null): TrustedViewTarget {
   try {
     const scope = getScope()
@@ -841,9 +796,7 @@ function trustedViewTarget(getScope: () => RumEventScope | null): TrustedViewTar
 function safeSet(record: JsonRecord, key: string, value: unknown): void {
   try {
     Reflect.set(record, key, value)
-  } catch {
-    // Frozen/hostile object: the remaining best-effort writes still run.
-  }
+  } catch {}
 }
 
 function safeGet(value: unknown, key: string): unknown {
@@ -865,12 +818,6 @@ function readRecordOrNull(value: unknown): JsonRecord | null {
   }
 }
 
-/**
- * Overwrite every SDK-declared modifiable free field before any operation
- * that can throw. This is the only view guarantee: SDK 0.4.3 ignores
- * `beforeSend`'s `false` for views, so a later projection failure must still
- * leave safe URL/name/referrer/context values on the clone for copy-back.
- */
 function sanitizeModifiableFields(event: unknown, options: RumEventPolicyOptions): void {
   if (!isRecord(event)) {
     return
@@ -915,11 +862,6 @@ export interface RumEventPolicy {
   reset: () => void
 }
 
-/**
- * Build the SDK `beforeSend` policy. Counters are per browser session (the SDK
- * session id); an id change resets them. Excess resource/error events are
- * dropped, never queued.
- */
 export function createRumEventPolicy(options: RumEventPolicyOptions): RumEventPolicy {
   const budget = createRumSessionBudget({
     maxResourcesPerSession: options.maxResourcesPerSession,
@@ -928,8 +870,6 @@ export function createRumEventPolicy(options: RumEventPolicyOptions): RumEventPo
   })
 
   const beforeSend: RumBeforeSend = (event, context) => {
-    // FIRST: overwrite the SDK's modifiable free fields. For views this is the
-    // only guarantee, because the SDK ignores `false` and still sends them.
     sanitizeModifiableFields(event, options)
 
     let type: string | null = null
@@ -938,7 +878,6 @@ export function createRumEventPolicy(options: RumEventPolicyOptions): RumEventPo
     } catch {
       return false
     }
-    // A view cannot be dropped by beforeSend; everything else can.
     const viewFallback = type === 'view'
 
     try {
@@ -961,8 +900,6 @@ export function createRumEventPolicy(options: RumEventPolicyOptions): RumEventPo
       budget.commit(eventSession, type)
       return true
     } catch {
-      // Unknown shapes, hostile getters, and sanitizer bugs fail closed for
-      // droppable events. Views keep the safe fields written above.
       return viewFallback
     }
   }

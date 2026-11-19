@@ -8,10 +8,6 @@ import { getHiddenRouterContract } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { describe, expect, it } from 'vitest'
 
-// The controller is contract-first: every method/path/schema the wire exposes
-// must come from `@kobato/api` — this suite pins that the implemented router
-// carries exactly the contract, with no drift of its own.
-
 interface ImplementedDef {
   route: { method?: string; path?: string }
   inputSchema: unknown
@@ -44,17 +40,12 @@ describe('likesRouter ⇄ likesContract parity', () => {
   })
 
   it('mounts the public base middleware exactly once per procedure', () => {
-    // The implementer base contributes domainErrorGuard; `.router()` re-applies
-    // the implementer middlewares but dedupes the leading run — a second copy
-    // would double-translate errors, so the stack must stay length 1.
     for (const procedure of Object.values(likesRouter)) {
       expect(def(procedure).middlewares).toHaveLength(1)
     }
   })
 })
 
-// Wire-level proof through the same RPCHandler mount app.ts uses: the router
-// keys resolve, and the CONTRACT's input schemas run before any handler work.
 const handler = new RPCHandler<HandlerContext>(
   { likes: likesRouter },
   {

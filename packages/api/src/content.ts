@@ -19,17 +19,10 @@ import {
 } from '@kobato/contracts/content.ts'
 import { oc } from '@orpc/contract'
 
-// The content RPC contract — the Ghost-Content-API-style read-only group every
-// public SSR loader consumes. Split by controller surface the same way the
-// server splits its controllers; `contentContract` composes the nested
-// `apiRouter.content` tree. Route paths are the deployed surface.
-
-// `controllers/content-bootstrap.controller.ts` — the root loader's data segment.
 export const contentBootstrapContract = {
   bootstrap: oc.route({ method: 'GET', path: '/content/bootstrap' }).output(contentBootstrapOutputSchema),
 }
 
-// `controllers/content-listings.controller.ts` — every paginated listing.
 export const contentListingsContract = {
   home: oc
     .route({ method: 'GET', path: '/content/home' })
@@ -53,7 +46,6 @@ export const contentListingsContract = {
     .output(contentArchivesOutputSchema),
 }
 
-// `controllers/content-detail.controller.ts` — post/page detail documents.
 export const contentDetailContract = {
   postBySlug: oc
     .route({ method: 'GET', path: '/content/posts/bySlug' })
@@ -65,7 +57,6 @@ export const contentDetailContract = {
     .output(contentPageBySlugOutputSchema),
 }
 
-// `controllers/content-comments.controller.ts` — the streamed comment thread.
 export const contentCommentsContract = {
   byKey: oc
     .route({ method: 'GET', path: '/content/comments/byKey' })

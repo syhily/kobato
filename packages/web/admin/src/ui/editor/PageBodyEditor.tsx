@@ -32,8 +32,6 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
   const { t } = useI18n()
   const hydrated = useHydrated()
   if (!hydrated) {
-    // SSR/hydration placeholder: same shell + scroll container as the hydrated
-    // tree so the header (title/slug strip) renders identically on the server.
     return (
       <div className="kobato-page-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col">
         <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
@@ -62,9 +60,6 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
     onBodyChange,
   })
 
-  // The stock image handlers mount on the shared 'image' type but would
-  // build the stock class / mount inkling's selector overlay — intercept at
-  // HIGH for the editor's lifetime.
   useEffect(() => {
     if (editorInstance === null) {
       return

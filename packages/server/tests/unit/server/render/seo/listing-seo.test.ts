@@ -5,10 +5,6 @@ import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// Listing pagination copy is system copy: it must come from the REQUEST
-// locale's server translator, not a hardcoded zh-CN template. URLs, canonical,
-// prev/next and noindex semantics stay byte-identical across locales.
-
 type MetaEntry = MetaDescriptor & Record<string, unknown>
 
 function findByProperty(meta: MetaEntry[], property: string) {
@@ -48,7 +44,6 @@ describe('listingSeo — pagination titles follow the request locale', () => {
 
       expect(title).toContain(PAGE_TOKEN[locale])
       expect(findByProperty(meta, 'og:title')?.content).toBe(title)
-      // Hardcoded Simplified Chinese must never leak into another locale.
       if (locale !== 'zh-CN') {
         expect(title).not.toContain('第 2 页')
       }

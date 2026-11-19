@@ -62,13 +62,6 @@ import {
 } from '@kobato/db/schema/webmention.ts'
 import { describe, expect, it } from 'vitest'
 
-// `@kobato/db` owns its persistence vocabulary outright — no contracts import,
-// so the wire enums in `@kobato/contracts` are DUPLICATED lists, not shared
-// ones. This suite is the pin that keeps the twins from drifting: every
-// duplicated enum must stay value- and order-identical (the db side generates
-// SQL CHECK literals from its arrays; the wire side validates HTTP I/O), and
-// the copied pure time primitives must stay behavior-identical.
-
 describe('db ↔ contracts wire parity', () => {
   it('webmention persistence enums match the wire enums', () => {
     expect([...WEBMENTION_STATUSES]).toEqual([...WIRE_STATUSES])
@@ -87,7 +80,6 @@ describe('db ↔ contracts wire parity', () => {
   it('storage-migration persisted vocabulary matches the wire phase/direction enums', () => {
     expect([...STORAGE_MIGRATION_DIRECTIONS]).toEqual([...storageMigrationDirectionDto.options])
     expect([...STORAGE_MIGRATION_PERSISTED_PHASES]).toEqual([...WIRE_PERSISTED_PHASES])
-    // The wire phase enum is the persisted list plus the derived idle/interrupted bookends.
     expect([...storageMigrationPhaseDto.options]).toEqual([
       'idle',
       ...STORAGE_MIGRATION_PERSISTED_PHASES,
@@ -102,14 +94,11 @@ describe('db ↔ contracts wire parity', () => {
   })
 
   it('analytics time primitives behave identically to the wire twins', () => {
-    // Fixed clock: the local-day presets (`today`/`yesterday`) must resolve
-    // through both copies of the same local-midnight arithmetic.
     const now = new Date('2026-11-18T15:42:11Z')
     for (const preset of PRESET_KEYS) {
       expect(computeDateRange(preset, now)).toEqual(wireComputeDateRange(preset, now))
     }
 
-    // Bucket-unit boundaries (≤1h minute, ≤1d hour, else day), both edges included.
     for (const span of [0, 1, 3600, 3601, 86_399, 86_400, 86_401, 30 * 86_400]) {
       const range = { startAt: 0, endAt: span }
       expect(pickTimeUnit(range)).toBe(wirePickTimeUnit(range))
@@ -117,10 +106,6 @@ describe('db ↔ contracts wire parity', () => {
   })
 })
 
-// Compile-time shape pins. The JSON endpoints are covered by the oRPC output
-// schemas typing against these same DTOs; the asserts below additionally pin
-// the SSE realtime feed (no zod output schema) and make the intended
-// structural identity explicit at the one place both vocabularies meet.
 type _countersShape = Assert<Equals<CountersSummary, CountersDto>>
 type _viewsPointShape = Assert<Equals<ViewsPoint, WireViewsPoint>>
 type _viewsSeriesShape = Assert<Equals<ViewsSeries, ViewsDto>>

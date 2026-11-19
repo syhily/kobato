@@ -6,16 +6,11 @@ export const adminTagDto = z.object({
   name: z.string(),
   slug: z.string(),
   ogImage: z.string(),
-  // Live post count; mirrors the delete-block guard (postCount > 0 → 409).
-  // Computed by the service, not persisted.
   postCount: z.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
 })
 export type AdminTagDto = z.infer<typeof adminTagDto>
-
-// Admin tags wire — the single Zod source the `@kobato/api` tags contract
-// composes and the server validates against.
 
 export const adminTagsListInput = z.object({
   q: z.string().optional(),

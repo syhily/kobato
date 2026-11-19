@@ -26,8 +26,6 @@ import { Link } from 'react-router'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
-// Structural view of an `admin.users.list` page — the controller declares the
-// output schema inline, so there is no exported wire type to import.
 type UsersListPage = { users: AdminUserDto[]; total: number; hasMore: boolean }
 
 export interface UserDetailViewProps {
@@ -45,8 +43,6 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
 
   const userQuery = useQuery({
     ...orpcQuery.admin.users.get.queryOptions({ input: { id: userId } }),
-    // Seed from any cached users-list page so the hero card (and its shared-element
-    // transition partner in UsersTable) renders inside the navigation transition.
     placeholderData: () => {
       for (const [, data] of queryClient.getQueriesData<InfiniteData<UsersListPage, number>>({
         queryKey: orpcQuery.admin.users.list.key(),

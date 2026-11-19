@@ -15,7 +15,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
-/** A sidebar section with the recent-posts widget at `count`. */
 function sidebarWithRecentPosts(count: number): SidebarSettings {
   const sidebar = TEST_BLOG_SETTINGS_BUNDLE.sidebar!
   return {
@@ -28,7 +27,6 @@ function sidebarWithRecentPosts(count: number): SidebarSettings {
   }
 }
 
-/** The seeded selection the controller builds from (scope, day, revision). */
 function sidebarSelection(seed = 'post:1|2026-11-08|1', count = 5): SidebarSelection {
   return { settings: sidebarWithRecentPosts(count), seed }
 }
@@ -119,7 +117,6 @@ describe('posts/services/admin-query — getPostDetailForAdmin', () => {
     await expect(getPostDetailForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
   it('returns the post with revision + tags', async () => {
-    // Admin revision DTOs are Lexical-bodied; seed a Lexical state.
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     const pid = await seedPost({ slug: 'det', publishedRevisionId: revId })
     const { getPostDetailForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
@@ -615,7 +612,6 @@ describe('posts/services/featured — selectSidebarPosts', () => {
   })
 
   it('re-picks when the candidate set changes (same day/scope/revision)', async () => {
-    // Six candidates → a fifth post enters the pool between the two calls.
     for (let i = 0; i < 6; i++) {
       await seedPost({ slug: `c-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }
@@ -629,7 +625,6 @@ describe('posts/services/featured — selectSidebarPosts', () => {
   })
 
   it('reads the post table a constant number of times regardless of count', async () => {
-    // The pick is computed in JS and fetched in ONE batched query.
     for (let i = 0; i < 10; i++) {
       await seedPost({ slug: `q-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }
@@ -645,7 +640,6 @@ describe('posts/services/featured — selectSidebarPosts', () => {
 
     expect(rows).toHaveLength(5)
     expect(new Set(rows.map((r) => r.slug)).size).toBe(5)
-    // One id scan + one batched row fetch — hydration hits other tables.
     const postTableQueries = queries.filter((q) => q.includes('"post"'))
     expect(postTableQueries).toHaveLength(2)
   })

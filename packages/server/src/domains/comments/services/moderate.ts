@@ -52,7 +52,6 @@ export async function bulkApprovePendingByUser(db: Database, userId: number): Pr
 }
 
 export async function bulkSoftDeleteCommentsByUser(db: Database, userId: number): Promise<number> {
-  // Soft-delete, not hard DELETE — moderation stays recoverable and like-counts consistent.
   const updated = await db
     .update(comment)
     .set({ deletedAt: new Date() })
@@ -160,7 +159,6 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
   const { body, content } = await canonicalizeCommentBody(newBody)
   const decision = decideOwnEdit(existing, Date.now())
 
-  // Optimistic lock: a 0-row update means a concurrent edit — reject for retry.
   const graceUpdatedAt = existing.updatedAt ?? existing.createAt
   const affected =
     decision === 'silent-edit'
@@ -187,13 +185,6 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
   return withCommentBadgeTextColor(r)
 }
 
-/**
- * Own-edit policy shared by every owner-authorized edit route: the
- * delete-request fence, the approved-replies lock, then the grace-window
- * mutation. Callers own the ownership check (session identity or comment
- * token) and the audit event. Never use this for moderator edits — those
- * go through {@link updateComment} so they never re-queue.
- */
 export async function applyOwnCommentEdit(db: Database, rid: string, newBody: CommentEditorState) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
@@ -203,7 +194,6 @@ export async function applyOwnCommentEdit(db: Database, rid: string, newBody: Co
   if (existing.deleteRequestedAt !== null) {
     throw new DomainError('CONFLICT', descriptorFor('comments.error.deleteRequested'))
   }
-  // Edit lock: approved replies make the parent's context immutable.
   const replyCount = await countApprovedRepliesOfComment(db, id)
   if (replyCount > 0) {
     throw new DomainError('CONFLICT', descriptorFor('comments.error.hasReplies'))
@@ -247,7 +237,6 @@ export async function requestOwnCommentDeletion(
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   if (existing.deleteRequestedAt !== null) {
-    // Idempotent no-op: flag already set — return the current row untouched.
     return existing
   }
   await requestDeleteComment(db, id, idFromString(viewer.id))
@@ -284,9 +273,6 @@ export async function cancelOwnCommentDeletion(db: Database, rid: string, viewer
   }
   return updated
 }
-
-// comments repos stay internal to the comments domain — cross-domain
-// callers (users admin) go through these named services.
 
 export async function bulkApproveCommentsByUser(db: Database, userId: number): Promise<{ approved: number }> {
   const approved = await bulkApprovePendingByUser(db, userId)

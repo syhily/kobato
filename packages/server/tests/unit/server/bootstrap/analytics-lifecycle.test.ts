@@ -19,10 +19,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// snapshotAnalyticsTo against a real temp-file DuckDB sidecar and the real
-// AccessLogBatcher: the pause → CHECKPOINT → copyFile → resume window runs for real;
-// only the staging directory is test-owned.
-
 let analyticsHandle: AnalyticsHandle
 let stagingDir: string
 
@@ -99,7 +95,6 @@ describe('snapshotAnalyticsTo', () => {
   })
 
   it('loses no appends across the window: an event pushed during CHECKPOINT lands after resume', async () => {
-    // The decorated writer pushes the event when the snapshot issues CHECKPOINT.
     const realWriter = analyticsHandle.writer
     const decorated = Object.create(realWriter) as AnalyticsHandle['writer']
     decorated.run = async (sql: string) => {
@@ -114,13 +109,11 @@ describe('snapshotAnalyticsTo', () => {
     pushAccessEvent({ event: makeEvent({ path: '/before' }), envServer: null })
     expect(await snapshotAnalyticsTo(join(stagingDir, 'analytics.duckdb'))).toBe(true)
 
-    // resume() fired an immediate flush — join it through the singleflight.
     await flushAccessLog()
     expect(await accessLogPaths(analyticsHandle)).toEqual(['/before', '/during'])
   })
 
   it('resumes the batcher even when the copy fails', async () => {
-    // The finally must release the pause even when copyFile rejects.
     const stagingPath = join(stagingDir, 'missing-dir', 'analytics.duckdb')
     await expect(snapshotAnalyticsTo(stagingPath)).rejects.toThrow()
 
@@ -131,7 +124,6 @@ describe('snapshotAnalyticsTo', () => {
   })
 
   it('holds the retention DELETE out of a concurrent snapshot window (mutation lock)', async () => {
-    // makeEvent's default ts is past the window — stamp the fresh row explicitly.
     pushAccessEvent({
       event: makeEvent({ path: '/old', ts: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000) }),
       envServer: null,
@@ -139,7 +131,6 @@ describe('snapshotAnalyticsTo', () => {
     pushAccessEvent({ event: makeEvent({ path: '/new', ts: new Date() }), envServer: null })
     await flushAccessLog()
 
-    // The decorated writer blocks the snapshot's CHECKPOINT until released.
     const realWriter = analyticsHandle.writer
     const decorated = Object.create(realWriter) as AnalyticsHandle['writer']
     let checkpointEntered!: () => void
@@ -159,7 +150,6 @@ describe('snapshotAnalyticsTo', () => {
     }
     // Prototype delegation fails on DuckDB (private-field receivers) — forward explicitly.
     decorated.runAndReadAll = (sql: string, params?: never) => realWriter.runAndReadAll(sql, params)
-    // Record the maintenance job's reader statements — the negative pin is deterministic.
     const realReader = analyticsHandle.reader
     const decoratedReader = Object.create(realReader) as AnalyticsHandle['reader']
     const maintenanceStatements: string[] = []
@@ -171,7 +161,7 @@ describe('snapshotAnalyticsTo', () => {
     __adoptAnalyticsHandleForTests({ ...analyticsHandle, writer: decorated, reader: decoratedReader })
 
     const snapshot = snapshotAnalyticsTo(join(stagingDir, 'analytics.duckdb'))
-    await entered // the snapshot now holds the mutation lock
+    await entered
 
     let maintenanceDone = false
     const maintenance = runAnalyticsMaintenance().then(() => {

@@ -5,10 +5,6 @@ import {
 } from '@kobato/pack/sea/check-bundle.ts'
 import { describe, expect, it } from 'vitest'
 
-// An `__APP_*__`/`__SEA_*__` identifier missing from the bundle's define
-// table would boot into a bare ReferenceError inside the binary — pin the
-// real table and flag any future global added without a define row.
-
 describe('scanBundleText: undefined build-time globals', () => {
   it('passes a bundle with no __APP_/__SEA_ identifiers', () => {
     const text = ['const version = "6.7.1"', 'console.log(version)'].join('\n')

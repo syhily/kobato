@@ -1,9 +1,3 @@
-/**
- * Test files that spin up the real DuckDB native engine, pinned by
- * `apps/kobato/tests/arch/duckdb-project-files.test.ts`. They run in the dedicated `duckdb`
- * project (`apps/kobato/tests/vitest.duckdb.config.ts`): sequential files, one fresh fork each, so a
- * native crash stays contained to its own worker. Paths are relative to the repository root.
- */
 export const DUCKDB_TEST_FILES: readonly string[] = [
   'apps/kobato/tests/it/routes/admin/dashboard.test.ts',
   'apps/kobato/tests/it/routes/post-analytics-parity.test.ts',
@@ -26,11 +20,6 @@ export const DUCKDB_TEST_FILES: readonly string[] = [
   'packages/server/tests/unit/server/domains/analytics/services/env-beacon.test.ts',
 ]
 
-/**
- * The subset living under one tests tree, relative to that tree's PROJECT ROOTS
- * (`tests/it` and `tests/unit` — vitest patterns match relative to the project
- * root, not the tree), for those projects' `exclude`.
- */
 export function duckdbTestFilesUnder(
   testsRoot: 'apps/kobato/tests' | 'packages/db/tests' | 'packages/server/tests',
 ): string[] {

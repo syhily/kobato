@@ -5,7 +5,6 @@ import type { ReactElement } from 'react'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
@@ -15,8 +14,6 @@ import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The upload choreography is pinned by use-file-upload.test.tsx; this spec
-// pins only the FontsForm wiring.
 const hookMock = vi.hoisted(() => ({
   calls: [] as UseFileUploadOptions[],
   upload: vi.fn(),

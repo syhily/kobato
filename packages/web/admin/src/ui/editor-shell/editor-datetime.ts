@@ -1,7 +1,3 @@
-// Single owner of the editor's datetime-local ↔ ISO contract: picker value
-// is `YYYY-MM-DDTHH:mm`, wire is ISO. Empty AND unparseable input map to
-// the no-value sentinel (`null` for parsers, `''` for formatters).
-
 import { format } from 'date-fns'
 
 function formatLocalInputValue(d: Date): string {
@@ -34,7 +30,6 @@ export function localInputValueToIso(localValue: string): string | null {
   return new Date(ms).toISOString()
 }
 
-/** Keep only future instants of the server's `publishedAt`; a past date is a fact, not a schedule — render blank. */
 export function futureLocalInputValueOrEmpty(iso: string): string {
   const ms = Date.parse(iso)
   if (Number.isNaN(ms) || ms <= Date.now()) {

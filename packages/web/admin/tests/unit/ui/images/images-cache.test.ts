@@ -8,14 +8,10 @@ function makeQueryClient(): QueryClient {
   })
 }
 
-// One procedure (admin.images.list), two operation types — infinite grid
-// and plain picker query — so two distinct cache entries. The options
-// builders return the exact key under `.queryKey`.
 function seedBothListVariants(qc: QueryClient) {
   const gridKey = orpcQuery.admin.images.list.infiniteOptions({
     input: (pageParam: number) => ({ q: undefined, kind: undefined, offset: pageParam, limit: 60 }),
     initialPageParam: 0,
-    // Type-required no-op: the key derives from `input(initialPageParam)` only.
     getNextPageParam: () => undefined,
   }).queryKey
   const pickerKey = orpcQuery.admin.images.list.queryOptions({
@@ -31,7 +27,6 @@ describe('ui/admin/images list cache — key grammar premise', () => {
     const qc = makeQueryClient()
     const { gridKey, pickerKey } = seedBothListVariants(qc)
 
-    // TanStack's prefix matcher bails on the first element-type mismatch (string vs nested path array), so a flat key never matches.
     void qc.invalidateQueries({ queryKey: ['admin', 'images', 'list'] })
 
     expect(qc.getQueryState(gridKey)?.isInvalidated).toBe(false)

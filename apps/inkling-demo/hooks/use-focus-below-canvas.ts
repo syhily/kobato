@@ -4,8 +4,6 @@ import type { MouseEvent as ReactMouseEvent } from 'react'
 import { $getRoot, $isDecoratorNode } from 'lexical'
 import React from 'react'
 
-// Focus-below-canvas guard attributes: a gesture that starts on any of these must not be followed by a re-focus on
-// mouseup (a mousedown can select a node which deselects another, so the mouseup lands somewhere unintended).
 const GUARD_ATTRIBUTES = ['data-lexical-decorator', 'data-inkling-slash-menu', 'data-inkling-portal']
 
 function clickedOnGuard(target: Element): boolean {

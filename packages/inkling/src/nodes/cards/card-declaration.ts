@@ -137,15 +137,6 @@ export type AnyCardDeclaration = Omit<CardDeclaration, 'menu'> & {
   menu?: readonly CardMenuEntrySpec[]
 }
 
-/**
- * The exact `insertParams` key check shared by `checkedCardDeclaration` and
- * `defineCard`: every written key must exist in the construction dataset, else its
- * value type is `never`. Function forms are checked through their return type —
- * TypeScript does not excess-property-check object literals returned from
- * contextually typed arrows. Already-widened inputs (a string index signature, a
- * pre-widened `insertParams`/`baseNode`) are intentional erasure boundaries and are
- * accepted as-is.
- */
 type CardMenuExactInsertParams<InsertParams, Dataset> = InsertParams extends (...args: infer Args) => infer Result
   ? string extends keyof Result
     ? (...args: Args) => Result

@@ -11,8 +11,6 @@ vi.mock('@kobato/server/http/request-context.ts', async () => {
   return createRequestContextMockModule()
 })
 
-// Only mock: the install service — its real behavior is covered by
-// setup-flow.test.ts against the same route.
 vi.mock('@kobato/server/domains/auth/services/setup.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/auth/services/setup.ts')>(
     '@kobato/server/domains/auth/services/setup.ts',
@@ -33,7 +31,6 @@ const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@kobato/s
 const { action, loader } = await import('@/routes/auth/setup/index.tsx')
 
 beforeAll(() => {
-  // Overlay the real db handle so the gate / token / CSRF code hits the integration db.
   const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
   vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
     ...fromProvider!(args),
@@ -145,7 +142,6 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        // Anonymous session — the session table's user_id FK rejects the helper's fake user.
         context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
@@ -202,7 +198,6 @@ describe('routes/setup', () => {
     })
 
     it('returns 429 when rate limited', async () => {
-      // Ten seeded hits trip the setup-verify bucket (10/hour/IP) before the action's own hit.
       for (let i = 0; i < 10; i += 1) {
         await tryKeyedRateLimit('rate-limit:setup-verify:127.0.0.1', { windowSeconds: 3600, maxAttempts: 10 })
       }

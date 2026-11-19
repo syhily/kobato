@@ -25,8 +25,6 @@ export function useBookmarkMetadata({
   nodeKey,
   fetchEmbed,
 }: UseBookmarkMetadataOptions): UseBookmarkMetadataResult {
-  // a recreated flow supersedes the old one's in-flight fetches, so a late
-  // response from the stale instance no-ops instead of patching the node
   const flow = useDisposableStore(
     () => createBookmarkEmbedFlow({ editor, nodeKey, fetchEmbed }),
     [editor, nodeKey, fetchEmbed],

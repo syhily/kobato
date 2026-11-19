@@ -3,8 +3,6 @@ import type { StorageDriver } from '@kobato/settings/types.ts'
 import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
 import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
 
-// Owns the `fonts/<hash>/` key layout — nothing else reconstructs it.
-
 export function fontPrefix(hash: string): string {
   return `fonts/${hash}/`
 }
@@ -23,7 +21,6 @@ export interface PutFontResult {
   driver: StorageDriver
 }
 
-/** Write a font package to the active backend under `fonts/<hash>/`. Idempotent (same hash = same bytes); files are public + immutable. */
 export async function putFont(hash: string, files: FontPackageFile[]): Promise<PutFontResult> {
   const { backend, driver } = activeBackend()
   await Promise.all(

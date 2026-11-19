@@ -1,7 +1,3 @@
-// SSR-safe double for `@/ui/components/dialog` — the real one portals
-// into document.body, which renderToStaticMarkup never runs. Only the
-// exports the admin views consume are stubbed.
-
 import type { ReactNode } from 'react'
 
 export function Dialog({ open, children }: { open?: boolean; children?: ReactNode }) {

@@ -20,8 +20,6 @@ import { setHttpServer, setRestartApp, setServerPhase } from '@kobato/server/inf
 import { root } from '@kobato/server/infra/logger.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
-// Load-bearing: each job module self-registers on the registry at import time; `startAllRegisteredJobs()` below
-// arms them. Registration order is irrelevant — each job computes its own delay.
 import '@kobato/server/domains/analytics/geoip/scheduler.ts'
 import '@kobato/server/domains/audit/services/scheduler.ts'
 import '@kobato/server/domains/auth/token-purge-scheduler.ts'
@@ -57,8 +55,6 @@ const app = await createHonoServer<Env>({
 wrapFetchWithLeakedResponseHandler(app)
 
 setRestartApp(app)
-
-// Migrations and settings hydration must finish before schedulers start — else the "Settings not hydrated" race. Block is HMR-safe via `secretsMigrated`.
 
 if (!hmr?.secretsMigrated) {
   await migrateSecretsEncryption(getDb())

@@ -74,8 +74,6 @@ const exportCsv = impl.exportCsv.handler(async ({ input, context }) => {
   return buildAuditLogCsv(rows, actorMap, { includeFullIp: input.includeFullIp })
 })
 
-// Actors (distinct users with audit log entries)
-
 const actors = impl.actors.handler(async ({ context }) => {
   const { db } = context
   const users = await fetchAuditLogActors(db)

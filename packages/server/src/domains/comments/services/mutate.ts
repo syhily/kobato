@@ -61,7 +61,6 @@ async function validateSubmission(
     throw new DomainError('NOT_FOUND', descriptorFor('comments.error.targetPageMissing'))
   }
 
-  // Registered-account fence: anonymous-only, must run before `insertCommentUser`.
   const loginUser = userSession(session)
   const emailRegistered = loginUser === undefined ? await hasRegisteredAccount(db, commentReq.email) : false
   const emailFailure = decideEmailGate(loginUser, emailRegistered)
@@ -82,7 +81,6 @@ async function validateSubmission(
   const { body: canonicalBody, content: contentSnapshot } = await canonicalizeCommentBody(commentReq.body)
   const contentHash = hashContent(contentSnapshot)
 
-  // Admins skip dedupe; drop null hashes (they never equal a submitted hash).
   const recentRows =
     u.role === 'admin'
       ? []
@@ -117,8 +115,6 @@ async function persistComment(
   ua: string | null,
   ip: string,
 ): Promise<CommentAndUser> {
-  // Transactional, sync (node:sqlite): the transaction serialises the
-  // read+write, so two concurrent first comments can't both bypass moderation.
   return db.transaction((tx) => {
     const approvedCount = countApprovedCommentsByUser(tx, sub.user.id)
     const isPending = approvedCount === 0

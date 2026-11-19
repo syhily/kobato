@@ -2,10 +2,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { randomBytes } from 'node:crypto'
 
-// S3 object key generator. Generic keys are unique per upload (always
-// insert); category/friend keys are state keys — re-upload with the same
-// slug/host overwrites.
-
 export type ImageKindSpec =
   | { kind: 'generic'; now: Date }
   | { kind: 'category'; slug: string }
@@ -15,10 +11,6 @@ const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
 
 type SafeSegmentKind = 'categorySlug' | 'friendHost'
 
-/**
- * Whitelist guard for state-key path segments; rejects `/` (path
- * traversal) and any non-ASCII byte.
- */
 function assertSafePathSegment(value: string, segment: SafeSegmentKind): string {
   if (!SAFE_PATH_SEGMENT.test(value)) {
     throw new DomainError('BAD_REQUEST', descriptorFor('images.error.unsafeSegment', { segment }), [
@@ -42,8 +34,6 @@ export function buildObjectKey(spec: ImageKindSpec): string {
       const HH = String(spec.now.getUTCHours()).padStart(2, '0')
       const mm = String(spec.now.getUTCMinutes()).padStart(2, '0')
       const ss = String(spec.now.getUTCSeconds()).padStart(2, '0')
-      // `% 100` of ms kept for name sortability; the random suffix kills
-      // the 10ms-bucket collision (same-key overwrite between same-window uploads).
       const nn = String(spec.now.getUTCMilliseconds() % 100).padStart(2, '0')
       return `images/${yyyy}/${MM}/${yyyy}${MM}${dd}${HH}${mm}${ss}${nn}-${randomBytes(4).toString('hex')}.jpg`
     }

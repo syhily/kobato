@@ -1,7 +1,3 @@
-// Derived cache-bucket views: the id unions, the tunable fallbacks, and
-// the reserved (read-only) bucket metadata all derive from
-// `@kobato/cache/registry` — no second hand-synced enumeration exists.
-
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { CACHE_DECLARATIONS } from '@kobato/cache/registry.ts'
@@ -9,8 +5,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 export type CacheBucketId = (typeof CACHE_DECLARATIONS)[number]['id']
 
-// Non-empty tuple so `z.enum` accepts it directly; the declaration
-// table guarantees at least one entry, so the cast is sound.
 export const CACHE_BUCKET_IDS = unsafeCast<readonly [CacheBucketId, ...CacheBucketId[]]>(
   CACHE_DECLARATIONS.map((entry) => entry.id),
 )
@@ -41,9 +35,6 @@ export interface CacheBucketSlot {
   ttlSeconds: number
 }
 
-/** Declared prefix + TTL per tunable bucket — the pre-hydration fallback. */
-// The cast is sound: the filter writes every tunable id, but TS can't prove a
-// runtime-built Record complete.
 export const CACHE_BUCKET_FALLBACKS = unsafeCast<Record<TunableCacheBucketId, CacheBucketSlot>>(
   Object.fromEntries(
     CACHE_DECLARATIONS.filter((entry) => entry.tunable).map((entry) => [
@@ -53,9 +44,6 @@ export const CACHE_BUCKET_FALLBACKS = unsafeCast<Record<TunableCacheBucketId, Ca
   ),
 )
 
-// Read-only surfaces (no rename, no clear): clearing sessions logs
-// everyone out; clearing rate-limit counters unblocks throttled
-// abusers. Both live outside the file cache (DB table / process memory).
 export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {

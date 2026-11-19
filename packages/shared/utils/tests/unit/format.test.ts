@@ -34,16 +34,13 @@ describe('utils/format — date and time', () => {
   it('is explicit about the zone: the same instant renders differently per time zone', () => {
     expect(formatDateTime(INSTANT, { locale: 'zh-CN', timeZone: SHANGHAI })).toBe('2024/3/5 14:07')
     expect(formatDateTime(INSTANT, { locale: 'zh-CN', timeZone: NEW_YORK })).toBe('2024/3/5 01:07')
-    // …and per locale, never the runtime default.
     expect(formatDate(INSTANT, { locale: 'zh-CN', timeZone: 'UTC' })).toBe('2024/3/5')
     expect(formatDate(INSTANT, { locale: 'en-US', timeZone: 'UTC' })).toBe('3/5/24')
   })
 
   it('handles DST transitions in the configured zone', () => {
-    // Spring forward: 2024-03-10 06:30Z is 01:30 EST, 07:30Z is 03:30 EDT.
     expect(formatDateTime('2024-03-10T06:30:00Z', { locale: 'zh-CN', timeZone: NEW_YORK })).toBe('2024/3/10 01:30')
     expect(formatDateTime('2024-03-10T07:30:00Z', { locale: 'zh-CN', timeZone: NEW_YORK })).toBe('2024/3/10 03:30')
-    // Fall back: both 05:30Z and 06:30Z render as 01:30.
     expect(formatDateTime('2024-11-03T05:30:00Z', { locale: 'zh-CN', timeZone: NEW_YORK })).toBe('2024/11/3 01:30')
     expect(formatDateTime('2024-11-03T06:30:00Z', { locale: 'zh-CN', timeZone: NEW_YORK })).toBe('2024/11/3 01:30')
   })
@@ -61,7 +58,6 @@ describe('utils/format — relative time', () => {
     expect(formatRelativeTime('2024-06-15T01:00:00+08:00', options)).toBe('今天')
     expect(formatRelativeTime('2024-06-14T01:00:00+08:00', options)).toBe('昨天')
     expect(formatRelativeTime('2024-06-12T01:00:00+08:00', options)).toBe('3天前')
-    // numeric:auto keeps the idiomatic short forms for 2 days.
     expect(formatRelativeTime('2024-06-13T01:00:00+08:00', options)).toBe('前天')
   })
 
@@ -79,22 +75,16 @@ describe('utils/format — relative time', () => {
   })
 
   it('counts whole months only after the day-of-month is reached', () => {
-    // 30 days, unaligned: one whole month, not the raw two-month difference.
     expect(formatRelativeTime('2026-01-30T12:00:00+08:00', { ...options, now: '2026-03-01T12:00:00+08:00' })).toBe(
       '上个月',
     )
-    // Month-end clamps: Jan 31 + 3 months is Apr 30 (April has no 31st).
     expect(formatRelativeTime('2026-01-31T12:00:00+08:00', { ...options, now: '2026-04-30T12:00:00+08:00' })).toBe(
       '3个月前',
     )
-    // A 30-day gap that has not completed a calendar month is still "last
-    // month", never numeric-auto's "this month".
     expect(formatRelativeTime('2024-05-16T12:00:00+08:00', options)).toBe('上个月')
-    // …while a gap inside ONE calendar month keeps numeric-auto's "this month".
     expect(formatRelativeTime('2026-01-01T12:00:00+08:00', { ...options, now: '2026-01-31T12:00:00+08:00' })).toBe(
       '本月',
     )
-    // The same day alignment applies forward.
     expect(formatRelativeTime('2024-07-30T12:00:00+08:00', options)).toBe('下个月')
   })
 
@@ -102,18 +92,15 @@ describe('utils/format — relative time', () => {
     expect(formatRelativeValue(-3, 'week', 'zh-CN')).toBe('3周前')
     expect(formatRelativeValue(0, 'day', 'en-US', { numeric: 'auto' })).toBe('today')
     expect(formatRelativeTime('2024-06-18T12:00:00+08:00', { ...options, unit: 'day' })).toBe('3天后')
-    // Hour granularity only on request — the default is calendar-day based.
     expect(formatRelativeTime('2024-06-15T01:00:00+08:00', { ...options, unit: 'hour' })).toBe('11小时前')
   })
 
   it('normalizes plural unit spellings and formats quarters', () => {
     const daysAgo = '2024-06-12T12:00:00+08:00'
-    // `days` must read the SAME calendar-day value as `day`, not seconds.
     expect(formatRelativeTime(daysAgo, { ...options, unit: 'days' })).toBe('3天前')
     expect(formatRelativeTime(daysAgo, { ...options, unit: 'day' })).toBe('3天前')
     expect(formatRelativeTime(daysAgo, { ...options, locale: 'en-US', unit: 'days' })).toBe('3 days ago')
 
-    // ~6 months → 2 quarters.
     expect(formatRelativeTime('2023-12-15T12:00:00+08:00', { ...options, locale: 'en-US', unit: 'quarter' })).toBe(
       '2 quarters ago',
     )
@@ -124,12 +111,10 @@ describe('utils/format — relative time', () => {
   it('uses the passed reference instant, so SSR and hydration agree', () => {
     const value = '2024-06-10T12:00:00+08:00'
     expect(formatRelativeTime(value, { ...options, now: '2024-06-12T12:00:00+08:00' })).toBe('前天')
-    // 10 calendar days lands in the week bucket (`numeric:auto` → 上周).
     expect(formatRelativeTime(value, { ...options, now: '2024-06-20T12:00:00+08:00' })).toBe('上周')
   })
 
   it('does calendar-day math in the SITE zone, not the host zone', () => {
-    // 2024-06-14T23:30Z is already 2024-06-15 07:30 in Shanghai (today).
     expect(formatRelativeTime('2024-06-14T23:30:00Z', options)).toBe('今天')
     expect(formatRelativeTime('2024-06-14T23:30:00Z', { ...options, timeZone: 'UTC' })).toBe('昨天')
   })
@@ -157,28 +142,21 @@ describe('utils/format — recent-date labels', () => {
   it('switches to calendar months at 30 days and stops at 210', () => {
     expect(formatRecentDate(daysAgo(30), options)).toBe('1个月前')
     expect(formatRecentDate(daysAgo(209), options)).toBe('6个月前')
-    // Past the window the facade returns null — the caller owns the fallback.
     expect(formatRecentDate(daysAgo(210), options)).toBeNull()
     expect(formatRecentDate(daysAgo(2 * 365), options)).toBeNull()
   })
 
   it('counts whole months only once the day-of-month is reached', () => {
     const at = (now: string) => ({ ...options, now })
-    // 30 days, but March 30 has not arrived on March 1 → ONE month, not two.
     expect(formatRecentDate('2026-01-30T12:00:00+08:00', at('2026-03-01T12:00:00+08:00'))).toBe('1个月前')
-    // The same rule across a year boundary.
     expect(formatRecentDate('2025-12-31T12:00:00+08:00', at('2026-03-01T12:00:00+08:00'))).toBe('2个月前')
-    // Month-end clamping: Jan 31 + 3 months is Apr 30 (no 31st in April).
     expect(formatRecentDate('2026-01-31T12:00:00+08:00', at('2026-04-30T12:00:00+08:00'))).toBe('3个月前')
-    // Exactly 30 days with an unaligned day-of-month still reads as one month.
     expect(formatRecentDate('2024-05-16T12:00:00+08:00', at('2024-06-15T12:00:00+08:00'))).toBe('1个月前')
-    // …and the month bucket never reads "0 months" inside a single 31-day month.
     expect(formatRecentDate('2026-01-01T12:00:00+08:00', at('2026-01-31T12:00:00+08:00'))).toBe('1个月前')
   })
 
   it('labels future (scheduled) dates with forward relative semantics', () => {
     expect(formatRecentDate(daysAhead(0), options)).toBe('今天')
-    // Later the SAME calendar day stays today — no hour/minute drift.
     expect(formatRecentDate('2024-06-15T20:00:00+08:00', options)).toBe('今天')
     expect(formatRecentDate('2024-06-15T12:30:00+08:00', options)).toBe('今天')
     expect(formatRecentDate(daysAhead(1), options)).toBe('明天')
@@ -187,11 +165,9 @@ describe('utils/format — recent-date labels', () => {
     expect(formatRecentDate(daysAhead(14), options)).toBe('2周后')
     expect(formatRecentDate(daysAhead(45), options)).toBe('下个月')
     expect(formatRecentDate(daysAhead(70), options)).toBe('2个月后')
-    // Forward month alignment: Jan 30 → Mar 1 is one month, not two.
     expect(formatRecentDate('2026-03-01T12:00:00+08:00', { ...options, now: '2026-01-30T12:00:00+08:00' })).toBe(
       '下个月',
     )
-    // Cross-year forward month math.
     expect(formatRecentDate('2025-01-30T12:00:00+08:00', { ...options, now: '2024-12-15T12:00:00+08:00' })).toBe(
       '下个月',
     )
@@ -205,7 +181,6 @@ describe('utils/format — recent-date labels', () => {
   })
 
   it('does calendar-day math in the site zone, not the host zone', () => {
-    // 2024-06-14T23:30Z is already 2024-06-15 07:30 in Shanghai (today).
     expect(formatRecentDate('2024-06-14T23:30:00Z', options)).toBe('今天')
     expect(formatRecentDate('2024-06-14T23:30:00Z', { ...options, timeZone: 'UTC' })).toBe('昨天')
   })
@@ -253,7 +228,6 @@ describe('utils/format — numbers, bytes, durations', () => {
     expect(formatDuration(1200, { locale: 'zh-CN' })).toBe('1.2秒钟')
     expect(formatDuration(300, { locale: 'en-US' })).toBe('300 milliseconds')
     expect(formatDuration(125_000, { locale: 'zh-CN' })).toBe('2分钟5秒钟')
-    // 119.5s must never round up to a "1 分 60 秒" shape.
     expect(formatDuration(119_500, { locale: 'zh-CN' })).toBe('1分钟59秒钟')
   })
 })
@@ -270,7 +244,6 @@ describe('utils/format — display names and collation', () => {
     // Structurally valid but unassigned region: Intl's localized "unknown" name.
     expect(formatDisplayName('region', 'ZZ', { locale: 'zh-CN' })).toBe('未知地区')
     expect(formatDisplayName('region', 'ZZ', { locale: 'en-US' })).toBe('Unknown Region')
-    // Malformed codes return the raw code instead of crashing a render.
     expect(formatDisplayName('region', 'not-a-region', { locale: 'zh-CN' })).toBe('not-a-region')
   })
 
@@ -285,7 +258,6 @@ describe('utils/format — display names and collation', () => {
     expect(dateFnsLocaleFor('zh-HK').code).toBe('zh-HK')
     expect(dateFnsLocaleFor('zh-TW').code).toBe('zh-TW')
     expect(dateFnsLocaleFor('en-US').code).toBe('en-US')
-    // Unknown tags fall back to English rather than throwing.
     expect(dateFnsLocaleFor('fr-FR').code).toBe('en-US')
   })
 })

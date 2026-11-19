@@ -63,7 +63,6 @@ export async function listAdminWebmentions(
   }
 }
 
-// Outbound send log — read-only: a retry is a republish, not an admin mutation.
 export async function listAdminWebmentionOutbox(
   db: Database,
   input: { offset: number; limit: number; status?: 'all' | 'pending' | 'sent' | 'no-endpoint' | 'failed' },
@@ -86,8 +85,6 @@ export async function listPublicWebmentions(db: Database, target: EntityTarget):
   return asPublicWebmentionsWire(await listApprovedWebmentionsForTarget(db, target))
 }
 
-/** Per-entity display switch: one PK read; a missing row answers false.
- *  Single gate shared by the detail loader and `public.webmentions.list`. */
 async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
   if (target.type === 'post') {
     const rows = await db
@@ -105,8 +102,6 @@ async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): P
   return rows[0]?.enabled ?? false
 }
 
-/** Public feed with both switches applied (global + per-entity), each to an
- *  honest empty list; single gate for SSR and the headless API. */
 export async function loadPublicWebmentionsForTarget(
   db: Database,
   target: EntityTarget,
@@ -125,14 +120,12 @@ async function moderate(db: Database, id: string, status: WebmentionStatus): Pro
   if (row === null) {
     throw new DomainError('NOT_FOUND', descriptorFor('webmentions.error.notFound'))
   }
-  // A hidden mention returns to the public page only via successful re-verification.
   if (status === 'approved' && row.status === 'hidden') {
     throw new DomainError('BAD_REQUEST', descriptorFor('webmentions.error.hidden'))
   }
   await setWebmentionStatus(db, row.id, status)
 }
 
-// Idempotent transitions, so a double-click never errors.
 export async function approveWebmention(db: Database, id: string): Promise<void> {
   await moderate(db, id, 'approved')
 }

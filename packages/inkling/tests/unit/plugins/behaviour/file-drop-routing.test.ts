@@ -10,10 +10,6 @@ import {
 import { createEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// The pure legs take hand-written card-node entries: `getEditorCardNodes`
-// reads the card declarations (not class statics), so a fake node class could
-// never register an `uploadType` — data literals are the honest fake. The
-// editor-reading leg is exercised with real registered card nodes instead.
 const imageEntry: [string, EditorCardNode] = ['image', { cardMenu: undefined, uploadType: 'image' }]
 const videoEntry: [string, EditorCardNode] = ['video', { cardMenu: undefined, uploadType: 'video' }]
 const bookmarkEntry: [string, EditorCardNode] = ['bookmark', { cardMenu: undefined }]

@@ -56,7 +56,6 @@ const DEVICE_TYPE_MAP: Record<string, string> = {
   peripheral: 'embedded',
 }
 
-/** node-device-detector client.type → the historical browserType vocabulary. */
 function browserTypeOf(clientType: string | null): string | null {
   if (clientType === null) {
     return null
@@ -186,8 +185,6 @@ function toRawHints(hints: UaClientHints): Record<string, string> {
 
 const EMPTY_RESULT: ParsedUaFields = { os: null, browser: null, browserType: null, device: null, deviceType: null }
 
-// UA strings repeat heavily (~2.2k distinct values in production) and the
-// detector runs thousands of regexes per parse, so a small LRU pays off.
 const CACHE_CAP = 5000
 const cache = new Map<string, ParsedUaFields>()
 
@@ -204,8 +201,6 @@ export function parseUaFields(ua: string, hints?: UaClientHints): ParsedUaFields
 
   const parsedHints = withHints ? hintsParser.parse(toRawHints(withHints), {}) : {}
   const result = detector.detect(ua, parsedHints)
-  // Bot classification lives in a separate parser (`detect()` never merges it);
-  // its category maps onto the historical crawler/fetcher vocabulary.
   const bot = detector.parseBot(ua, {}) as { name?: string; category?: string }
 
   const osName = result.os?.name || null

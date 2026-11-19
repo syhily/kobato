@@ -1,8 +1,5 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Friend links for the public grid (`<Friends />`, `show_friends` on pages).
-// No `slug`/`sortOrder`: the renderer keys on `homepage` and shuffles order.
-// `homepage` soft-uniqueness is enforced at the service layer, not a DB UNIQUE.
 export const friend = sqliteTable(
   'friend',
   {

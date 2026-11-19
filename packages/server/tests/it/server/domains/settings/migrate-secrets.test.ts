@@ -6,8 +6,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Flip ONLY the isVitest() gate — real config and secret-encryption
-// stay in place. The gate defaults to `true`, like an unmocked boot.
 const gate = vi.hoisted(() => ({ vitest: true }))
 
 vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => {
@@ -19,8 +17,6 @@ const { migrateSecretsEncryption } = await import('@kobato/server/domains/settin
 
 const db = getTestDb()
 
-// Legacy v1: AES-256-GCM with the SHA-256 of the configured key —
-// verified, never re-encrypted.
 function encryptLegacy(plaintext: string, key: string): string {
   const derived = createHash('sha256').update(key).digest()
   const iv = randomBytes(12)

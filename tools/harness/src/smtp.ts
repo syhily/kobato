@@ -98,7 +98,6 @@ export class SmtpCapture {
         buffer = buffer.slice(eol + 2)
 
         if (inData) {
-          // A lone dot terminates DATA (dot-stuffing not exercised).
           if (line === '.') {
             inData = false
             this.deliver({ from: mailFrom, to: mailTo, raw: dataLines.join('\r\n') })
@@ -152,7 +151,6 @@ export function decodeMail(raw: string): string {
     for (let i = 0; i < body.length; i++) {
       const ch = body[i]
       if (ch === '=') {
-        // Soft line break.
         if (body[i + 1] === '\r' && body[i + 2] === '\n') {
           i += 2
           continue
@@ -164,7 +162,6 @@ export function decodeMail(raw: string): string {
           continue
         }
       }
-      // Non-ASCII travels as =XX octets — a latin1 read of the remainder is exact.
       bytes.push(ch.charCodeAt(0))
     }
     return Buffer.from(bytes).toString('utf8')
@@ -172,15 +169,12 @@ export function decodeMail(raw: string): string {
   return body
 }
 
-/** The 6-digit sign-in code from a SignInOtp mail. */
 export function extractOtpCode(mail: CapturedMail): string {
   const text = decodeMail(mail.raw)
-  // The template renders `你的登录验证码是 <code>，` in the preview span.
   const preview = /验证码是\s*(\d{6})/.exec(text)
   if (preview !== null) {
     return preview[1]!
   }
-  // Fallback: the code also stands alone inside the big display div.
   const standalone = />\s*(\d{6})\s*</.exec(text)
   if (standalone !== null) {
     return standalone[1]!
@@ -188,7 +182,6 @@ export function extractOtpCode(mail: CapturedMail): string {
   throw new Error('no 6-digit OTP code found in the captured mail')
 }
 
-/** The full signin URL (path + query) from a SignInLink mail. */
 export function extractMagicLinkPath(mail: CapturedMail): string {
   const text = decodeMail(mail.raw)
   const href = /href="([^"]*action=magiclink[^"]*)"/.exec(text)

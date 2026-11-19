@@ -23,8 +23,6 @@ const CONFIG: ServerTraceRuntimeConfig = {
   logs: null,
 }
 
-/** Forwards the real OTLP exporter's temporality/aggregation selectors into the SDK reader and
- * captures the collected batches, exercising the real `PeriodicExportingMetricReader` path. */
 class RecordingExporter implements PushMetricExporter {
   readonly batches: ResourceMetrics[] = []
 

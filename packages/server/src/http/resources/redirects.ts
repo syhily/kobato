@@ -2,8 +2,6 @@ import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { Hono } from 'hono'
 
-// 301 collapses for legacy entry points (`/tags` → `/`, `/search` → the
-// path-style search endpoint) so inbound links and bookmarks keep resolving.
 export const redirectsRouter = new Hono<Env>()
 
 redirectsRouter.get('/tags', (c) => {

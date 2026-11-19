@@ -1,7 +1,3 @@
-// The owned revision-race slice of the persist module: the expected
-// client-revision token plus the latest/published revisions advance ONLY through
-// `updateAfterSave`; the `server` autosave freeze rides the same race.
-
 import type {
   EditorShellDetail,
   EntityLike,
@@ -17,12 +13,8 @@ export function useEditorShellPersistRace<TEntity extends EntityLike>(detail: Ed
   )
   const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(detail?.latestRevision ?? null)
   const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(detail?.publishedRevision ?? null)
-  // The `server` leg of the autosave freeze — set on a revision conflict,
-  // cleared by the next clean body save (`updateAfterSave`).
   const [serverConflicted, setServerConflicted] = useState(false)
 
-  // The one advance of the owned revision race: token + latest/published,
-  // and a clean body save also clears the `server` freeze leg.
   const updateAfterSave = useCallback((revision: RevisionLike) => {
     setServerConflicted(false)
     setExpectedToken(revision.clientRevisionToken)

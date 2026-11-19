@@ -16,8 +16,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The recorder is wired to the lifecycle-global :memory: db at import time
-// (db-lifecycle), so these tests exercise the real write path.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -109,11 +107,9 @@ describe('job-run-recorder — failure notifier', () => {
     finishJobRun(startJobRun('backup', 'scheduled'), 'failed', 'two')
     expect(notify).toHaveBeenCalledTimes(1)
 
-    // A different task key notifies independently.
     finishJobRun(startJobRun('geoip', 'scheduled'), 'failed', 'three')
     expect(notify).toHaveBeenCalledTimes(2)
 
-    // Past the window the same key notifies again.
     vi.setSystemTime(Date.now() + JOB_FAILURE_NOTIFY_DEDUPE_MS + 1)
     finishJobRun(startJobRun('backup', 'scheduled'), 'failed', 'four')
     expect(notify).toHaveBeenCalledTimes(3)
@@ -200,7 +196,6 @@ describe('job-run-recorder — pruneJobRuns', () => {
     expect(listJobRuns({ taskKey: 'backup', offset: 0, limit: 100 }).total).toBe(1)
     const swept = listJobRuns({ taskKey: 'kv-sweep', offset: 0, limit: 300 })
     expect(swept.total).toBe(JOB_RUN_KEEP_PER_TASK)
-    // The trim keeps the NEWEST rows.
     expect(
       swept.items.every((row) => row.startedAt.getTime() >= now.getTime() - (JOB_RUN_KEEP_PER_TASK - 1) * 1000),
     ).toBe(true)

@@ -8,8 +8,6 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({ orpc: { admin: { renders: {
 
 const { makeRenderMath, resolveMathError } = await import('@kobato/web-admin/ui/editor/render-math.ts')
 
-// The editor's math channel receives a wire descriptor (never a hardcoded
-// server sentence); the adapter resolves it with the caller's active locale.
 const RENDER_FAILED: ErrorMessageDescriptor = {
   messageKey: 'admin.editor.math.renderFailed',
   fallbackMessage: 'Could not render the formula',
@@ -54,8 +52,6 @@ describe('ui/admin/editor/render-math — resolveMathError', () => {
   })
 
   it('uses fallbackMessage when the localizer does not know the key', () => {
-    // `localizeMessage` passes an unknown id through unchanged; the editor must
-    // show the server's English fallback, never the raw catalog key.
     const localizeMessage = (value: string) => value
     expect(resolveMathError(RENDER_FAILED, localizeMessage)).toBe('Could not render the formula')
   })

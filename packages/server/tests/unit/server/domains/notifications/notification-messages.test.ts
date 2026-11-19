@@ -6,10 +6,6 @@ import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US.ts'
 import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// `notification.*` keys are persisted in notification rows, so the set is append-only:
-// adding a type appends a key here; renaming or deleting one would leave an old row
-// without its translation. This test freezes the set and pins every locale's copy.
-
 const RELEASED_NOTIFICATION_KEYS = [
   'notification.job.failed.body',
   'notification.job.failed.title',
@@ -111,7 +107,6 @@ describe('server notification messages — four locales', () => {
     const catalogKeys = (Object.keys(serverMessagesEnUS) as ServerMessageId[]).filter((key) =>
       key.startsWith('notification.'),
     )
-    // The set may GROW; it must never shrink or rename an existing entry.
     expect(catalogKeys).toEqual(expect.arrayContaining([...RELEASED_NOTIFICATION_KEYS]))
     for (const key of RELEASED_NOTIFICATION_KEYS) {
       expect(isServerMessageId(key)).toBe(true)

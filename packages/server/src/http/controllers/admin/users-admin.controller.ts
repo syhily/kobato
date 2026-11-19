@@ -51,8 +51,6 @@ const inviteAuthor = impl.inviteAuthor.handler(async ({ input, context }) => {
   }
 
   const origin = resolveSiteOrigin(context.request)
-  // No display name on the account: the invite email greets the recipient in
-  // the request locale instead of a hardcoded Chinese literal.
   const inviterName =
     context.viewer.name ??
     createServerTranslator(context.localization.locale).format('email.authorInvite.defaultInviter')
@@ -86,9 +84,6 @@ const sendPasswordReset = impl.sendPasswordReset.handler(async ({ input, context
   return { success: true }
 })
 
-// The passkey gate rides AFTER the base guard chain (role gate → domain-error
-// translation).
-// translation), matching the pre-contract `.use(passkeyGuard)` order.
 const clearPasskeys = impl.clearPasskeys.use(passkeyGuard).handler(async ({ input, context }) => {
   const targetId = idFromString(input.id)
   await deleteAllCredentials(context.db, targetId)

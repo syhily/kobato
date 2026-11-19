@@ -42,7 +42,6 @@ function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
       try {
         bucket[field] = decryptIfNeeded(value)
       } catch (error) {
-        // Name the failing field — the bare crypto error gives no hint where to look.
         throw new Error(`Failed to decrypt secret setting '${bundleKey}.${path}.${field}'`, { cause: error })
       }
     }
@@ -111,8 +110,6 @@ function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: Database
 }
 
 export async function hydrateBlogSettings(db: Database): Promise<BlogSettingsBundle | null> {
-  // Hydration single-flight; on failure the flight is dropped so the next call retries —
-  // the last good snapshot is never overwritten.
   const pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
   if (pending) {
     return pending
@@ -120,8 +117,6 @@ export async function hydrateBlogSettings(db: Database): Promise<BlogSettingsBun
 
   const newPending = (async () => {
     try {
-      // Before the snapshot is built: canonicalize a legacy `siteIdentity.locale`; the read
-      // schema normalizes the same aliases, so a failure here still hydrates.
       try {
         migrateLegacySiteIdentityLocale(db)
       } catch (error) {
@@ -144,10 +139,6 @@ export async function refreshBlogSettings(db: Database): Promise<BlogSettingsBun
   return hydrateBlogSettings(db)
 }
 
-/**
- * Admin shell's eager backfill: write registry defaults for missing sections into a
- * COPY of the bundle (the hydrated snapshot is shared cache — never mutate it), best-effort per row.
- */
 export async function backfillSettingsSections(
   db: Database,
   bundle: BlogSettingsBundle,
@@ -156,7 +147,6 @@ export async function backfillSettingsSections(
   for (const [key, value] of Object.entries(bundle)) {
     mutable[key] = value
   }
-  // `meta.key` (never SECTION_TO_BUNDLE_KEY) — the registry parity assert proves the maps agree.
   for (const section of SETTINGS_SECTIONS) {
     const meta = SECTION_REGISTRY[section]
     const key = meta.key
@@ -169,9 +159,7 @@ export async function backfillSettingsSections(
     try {
       upsertSetting(db, meta.defaults, null, meta.scope)
       mutable[key] = meta.defaults
-    } catch {
-      /* noop */
-    }
+    } catch {}
   }
   return mutable
 }

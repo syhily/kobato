@@ -32,7 +32,6 @@ const STATUS_META: Record<AdminWebmentionWire['status'], { labelId: UiMessageId;
   hidden: { labelId: 'admin.webmentions.status.hidden', variant: 'outline' },
 }
 
-// Response-type labels (mf2 classification — presentational only).
 const TYPE_META: Record<AdminWebmentionWire['type'], { labelId: UiMessageId }> = {
   mention: { labelId: 'admin.webmentions.type.mention' },
   reply: { labelId: 'admin.webmentions.type.reply' },
@@ -47,8 +46,6 @@ function isStatusFilter(value: unknown): value is StatusFilter {
 export type AdminWebmentionsPage = Awaited<ReturnType<typeof orpc.admin.webmentions.loadAll>>
 export type AdminWebmentionsData = InfiniteData<AdminWebmentionsPage, number>
 
-/** Local cache patch after a moderation mutation: the row takes its new
- *  terminal status; under a non-`all` filter it leaves the visible list. */
 export function moderateMentionInPages(
   data: AdminWebmentionsData,
   id: string,
@@ -81,8 +78,6 @@ export function moderateMentionInPages(
   }
 }
 
-/** Local cache patch after re-verification: the server row is authoritative;
- *  a `hidden` row restored to `approved` leaves the hidden filter. */
 export function applyReverifyToPages(
   data: AdminWebmentionsData,
   row: AdminWebmentionWire,
@@ -115,8 +110,6 @@ export function applyReverifyToPages(
   }
 }
 
-/** Author line falls back to the source hostname when no author metadata
- *  was extracted. */
 function authorLabel(mention: AdminWebmentionWire): string {
   if (mention.authorName !== null && mention.authorName !== '') {
     return mention.authorName
@@ -124,8 +117,6 @@ function authorLabel(mention: AdminWebmentionWire): string {
   return tryParseUrl(mention.sourceUrl)?.hostname ?? mention.sourceUrl
 }
 
-/** Verification badge: verified for a clean check; failed with the last
- *  failure message (+ consecutive-day count) on hover. */
 function VerificationBadge({ mention }: { mention: AdminWebmentionWire }) {
   const { t } = useI18n()
   if (mention.verificationStatus === 'verified') {
@@ -165,8 +156,6 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
   const config = useSiteIdentity()
   const meta = STATUS_META[mention.status]
   const busy = isBusy(mention)
-  // Re-verification is the only recovery path for a hidden row, and a failed
-  // verification can always be re-checked; rejected rows are terminal.
   const showReverify =
     mention.status !== 'rejected' && (mention.status === 'hidden' || mention.verificationStatus === 'failed')
   return (
@@ -220,9 +209,6 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
   )
 }
 
-// The moderation queue: mentions land as `pending` after source verification
-// and only reach the public page once approved; rejection is kept (audit trail);
-// 7 consecutive daily verification failures flip an approved row to `hidden`.
 export function WebmentionInboxView() {
   const { t } = useI18n()
   const [status, setStatus] = useState<StatusFilter>('all')

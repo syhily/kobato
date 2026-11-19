@@ -22,7 +22,6 @@ export const fileDeclaration = checkedCardDeclaration({
   ],
   insert: {},
   uploadType: 'file',
-  // Live e2e selector contract ("file-upload"), deliberately not a transform of "file"
   toolbarLabel: 'file-upload',
   markdown: { kind: 'fence' },
 } satisfies CardDeclaration<'file', typeof BaseFileNode, typeof fileTransientProps, readonly []>)

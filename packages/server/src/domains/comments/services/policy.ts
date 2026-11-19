@@ -1,6 +1,3 @@
-// Each gate returns `null` to allow or a `GateFailure`. The failure carries a
-// typed descriptor (never prose): the transports localize it per request.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { DomainErrorCode } from '@kobato/server/infra/http/errors.ts'
 
@@ -17,8 +14,6 @@ export const OWN_EDIT_GRACE_MS = 30 * 60 * 1000
 
 export type OwnEditDecision = 'silent-edit' | 're-pend'
 
-/** In-grace edits rewrite in place (moderation state untouched, admin not
- *  notified); outside the window the comment re-enters the queue. */
 export function decideOwnEdit(existing: { createAt: Date }, now: number): OwnEditDecision {
   return now - existing.createAt.getTime() < OWN_EDIT_GRACE_MS ? 'silent-edit' : 're-pend'
 }
@@ -67,11 +62,6 @@ export function decideCommenterGate(
   return null
 }
 
-/**
- * Length cap for everyone. Shared by the cheap pre-render text walk
- * (`canonicalizeCommentBody`) and the authoritative rendered-content gate
- * below, so both reject with the same code and message.
- */
 export function decideContentLengthGate(contentLength: number): GateFailure | null {
   if (contentLength > MAX_COMMENT_LENGTH) {
     return failure('BAD_REQUEST', {
@@ -83,8 +73,6 @@ export function decideContentLengthGate(contentLength: number): GateFailure | nu
   return null
 }
 
-/** Length cap for everyone; dedupe (same hash within DEDUPE_WINDOW_MS) skips
- *  admins. Length is checked first, so over-long duplicates report the length error. */
 export function decideContentGate(input: {
   role: string | null
   contentLength: number

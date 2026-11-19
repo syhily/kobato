@@ -14,24 +14,16 @@ export function backendFor(driver: StorageDriver): StorageBackend {
   return backends[driver]
 }
 
-/** Backend for new uploads: S3 when enabled and fully configured, local otherwise
- *  (the always-on fallback). */
 export function activeBackend(): { backend: StorageBackend; driver: StorageDriver } {
   try {
-    // Via the registry (not the import) so the test seam can substitute a backend.
     if (backends.s3.isAvailable()) {
       return { backend: backends.s3, driver: 's3' }
     }
-  } catch {
-    // Settings snapshot not hydrated yet (early boot, install gate) — fall back to local.
-  }
+  } catch {}
   return { backend: backends.local, driver: 'local' }
 }
 
-/** Every registered backend in stable order (s3 first), for operations spanning all
- *  backends (backup reconcile); on key collisions the earlier driver wins. */
 export function allBackends(): { driver: StorageDriver; backend: StorageBackend }[] {
-  // `Object.entries` widens keys to `string`; they are `StorageDriver` by construction.
   return Object.entries(backends).map(([driver, backend]) => ({
     driver: unsafeCast<StorageDriver>(driver),
     backend,

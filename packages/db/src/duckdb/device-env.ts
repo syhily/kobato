@@ -38,13 +38,6 @@ CREATE TABLE IF NOT EXISTS device_env_server (
 )
 `
 
-/**
- * `device_env_client` — the beacon-reported half: one row per received beacon,
- * keyed by the same event id. Static fields (screen / touch / locale / hardware)
- * are reported once per browser session (`has_static = true`); dynamic fields
- * ride every page view. Numeric dimensions store raw values — panels bucket at
- * query time. NULL means the client did not report that field.
- */
 export const DEVICE_ENV_CLIENT_DDL = `
 CREATE TABLE IF NOT EXISTS device_env_client (
   event_id UUID PRIMARY KEY,
@@ -74,7 +67,6 @@ CREATE TABLE IF NOT EXISTS device_env_client (
 )
 `
 
-/** One `device_env_server` row. `timestamp` matches the main event's instant (retention cutoff). */
 export interface DeviceEnvServerRow {
   eventId: string
   timestamp: Date
@@ -94,7 +86,6 @@ export interface DeviceEnvServerRow {
   acceptLanguage: string
 }
 
-/** One `device_env_client` row. NULL = the beacon did not report that field. */
 export interface DeviceEnvClientRow {
   eventId: string
   timestamp: Date
@@ -132,7 +123,6 @@ const uuidToUint128 = (uuid: string): bigint => BigInt(`0x${uuid.replaceAll('-',
 const timestampMicros = (timestamp: Date): DuckDBTimestampTZValue =>
   new DuckDBTimestampTZValue(BigInt(timestamp.getTime()) * 1000n)
 
-/** Column types in DDL order — data chunks are created from this. */
 const DEVICE_ENV_SERVER_CHUNK_TYPES: DuckDBType[] = [
   UUID,
   TIMESTAMPTZ,
@@ -175,7 +165,6 @@ const DEVICE_ENV_CLIENT_CHUNK_TYPES: DuckDBType[] = [
   BOOLEAN,
 ]
 
-/** Pivot a batch of device_env_server rows into column arrays (DDL order). */
 function deviceEnvServerColumns(rows: DeviceEnvServerRow[]): DuckDBValue[][] {
   return [
     rows.map((row) => DuckDBUUIDValue.fromUint128(uuidToUint128(row.eventId))),
@@ -193,7 +182,6 @@ function deviceEnvServerColumns(rows: DeviceEnvServerRow[]): DuckDBValue[][] {
   ]
 }
 
-/** Pivot a batch of device_env_client rows into column arrays (DDL order). */
 function deviceEnvClientColumns(rows: DeviceEnvClientRow[]): DuckDBValue[][] {
   return [
     rows.map((row) => DuckDBUUIDValue.fromUint128(uuidToUint128(row.eventId))),
@@ -223,11 +211,6 @@ function deviceEnvClientColumns(rows: DeviceEnvClientRow[]): DuckDBValue[][] {
   ]
 }
 
-/**
- * Append a batch as data chunks — one `setColumns` + `appendDataChunk` per
- * ≤2048-row slice instead of an appender call per cell. At-least-once: a
- * mid-batch failure leaves flushed chunks visible while the batch dead-letters.
- */
 async function appendRows(
   writer: DuckDBConnection,
   table: 'device_env_server' | 'device_env_client',
@@ -256,11 +239,6 @@ export async function appendDeviceEnvClientRows(writer: DuckDBConnection, rows: 
   await appendRows(writer, 'device_env_client', DEVICE_ENV_CLIENT_CHUNK_TYPES, deviceEnvClientColumns(rows))
 }
 
-/**
- * The subset of `eventIds` that already has a `device_env_client` row. Ids are
- * probed in bounded `IN` chunks (a full batcher buffer holds 10k rows) and
- * returned as VARCHAR to match the wire-minted UUID strings.
- */
 export async function existingDeviceEnvEventIds(writer: DuckDBConnection, eventIds: string[]): Promise<Set<string>> {
   const found = new Set<string>()
   for (let offset = 0; offset < eventIds.length; offset += 2048) {

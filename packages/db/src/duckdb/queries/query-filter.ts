@@ -11,20 +11,6 @@ import {
 } from '@kobato/db/duckdb/queries/types.ts'
 import { sql } from 'kysely'
 
-/**
- * The shared analytics WHERE builder: every dashboard query filters
- * `is_bot = FALSE`, the resolved [startAt, endAt) range (unix seconds,
- * bound through `to_timestamp(?)`), optional entity scoping (`index1`)
- * and per-dimension equality filters (comma-separated → `IN (...)`).
- * Geo-unknown events (country `blob7 = ''`) are excluded unless the query
- * opts in via `includeUnknown` — writes always keep them. User values
- * travel as bound parameters only.
- *
- * Base columns are qualified with `access_events.` so the builder is also
- * valid on the env-dimension metric query, which INNER JOINs
- * `device_env_client` (both share `event_id`/`timestamp`).
- */
-
 export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<boolean> {
   const filters: RawBuilder<boolean>[] = [
     sql<boolean>`${sql.ref('access_events.is_bot')} = FALSE`,
@@ -54,7 +40,6 @@ export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<
   return sql<boolean>`${sql.join(filters, sql` and `)}`
 }
 
-/** Range resolution: an explicit valid [startAt, endAt) pair wins; otherwise the preset (default last-7d). */
 export function resolveAnalyticsRange(query: AnalyticsRangeInput): DateRange {
   if (query.startAt !== undefined && query.endAt !== undefined && query.endAt > query.startAt) {
     return { startAt: query.startAt, endAt: query.endAt }

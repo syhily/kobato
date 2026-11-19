@@ -7,10 +7,6 @@ import { latestComments } from '@kobato/server/domains/comments/services/public-
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
 
-/**
- * `settings` is the request-pinned snapshot (HandlerContext.settings) —
- * required, never the global snapshot.
- */
 export async function loadSidebarData(db: Database, session: BlogSession, settings: BlogSettingsBundle | null) {
   const admin = userSession(session)?.role === 'admin'
   const sidebar = requireBlogSettingsSection('sidebar', settings)

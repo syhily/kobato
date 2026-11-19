@@ -39,10 +39,6 @@ function writeJson(path: string, data: Record<string, unknown>): void {
 
 function workspacePackagePaths(): string[] {
   const paths: string[] = []
-  // A workspace package is any directory holding a package.json under apps/,
-  // tools/, or packages/. Umbrella directories with no package.json of their
-  // own (packages/shared today, any future split) expose their leaf packages
-  // one level below.
   const collect = (base: string, nest: number): void => {
     for (const entry of readdirSync(resolve(ROOT, base), { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name === 'node_modules') {
@@ -159,8 +155,6 @@ function cmdTag(args: string[]): void {
   run(`git push origin "${version}"`)
   process.stdout.write(`Pushed tag ${version}\n`)
 
-  // DRAFT: sea.yml publishes it after every SEA asset is attached — users
-  // must never see a release with missing assets.
   run(`gh release create "${version}" --draft --title "Kobato ${version}" ${notesFlag} ${prerelease}`)
   process.stdout.write(
     `GitHub draft release created: https://github.com/syhily/kobato/releases/tag/${version}\n` +

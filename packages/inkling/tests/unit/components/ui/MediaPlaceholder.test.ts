@@ -7,8 +7,6 @@ describe('isPlaceholderIconName', () => {
   })
 
   it('rejects prototype-chain keys that an `in` guard would let through', () => {
-    // 'constructor'/'toString' resolve via Object.prototype with `in`, and
-    // rendering them crashes React ("element type is invalid")
     expect(isPlaceholderIconName('constructor')).toBe(false)
     expect(isPlaceholderIconName('toString')).toBe(false)
   })

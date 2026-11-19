@@ -5,30 +5,6 @@ import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type Klass, type LexicalEditor, type LexicalNode } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Drift guard tying the card markdown transformers' field vocabulary to each
- * card's declared `properties` (the fence payloads themselves are pinned
- * byte-for-byte by `round-trip-cards.test.ts`):
- *
- * - exhaustiveness: every markdown-eligible card carries a transformer or
- *   names its exemption (`markdown: { kind: 'exempt' }`).
- * - export: every node field a transformer's `getData` reads must be a
- *   declared property. A typo'd read (`node.titel`) would otherwise export
- *   `undefined` silently.
- * - import: every fence payload field must survive `createNode` into the
- *   created node's `exportJSON` — the generated constructor silently drops a
- *   write to an undeclared property. The created node must also hold no live
- *   `__*Editor` nested-editor instance; detachment is by construction
- *   (`$detachNestedEditorsForRoundTrip`), driven by the class's
- *   `nestedEditors` spec.
- *
- * Fence keys need NOT be property names — renames (audio's `caption` →
- * `title`, callout's `text` → `calloutText`, bookmark's `metadata` remap) are
- * part of the markdown vocabulary; the guard checks the node-side fields.
- */
-
-// Lexical machinery a generated property getter touches on the proxied node —
-// everything else the export leg records must be a declared card property
 const LEXICAL_INTERNALS = new Set(['getLatest'])
 
 type WrapperClass = (new () => LexicalNode) & { getPropertyDefaults(): Record<string, unknown> }

@@ -32,11 +32,6 @@ import { createHeadlessEditor } from '@lexical/headless'
 import { createCommand } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Constructs every registered card class with an empty dataset inside one
- * headless-editor update (node construction requires an active editor) and
- * collects one value per card, keyed by node type.
- */
 function collectFromConstructedCards<T>(
   collect: (node: InstanceType<(typeof CARD_WRAPPER_NODES)[number]['node']>) => T,
 ): Map<string, T> {
@@ -146,10 +141,6 @@ describe('card declarations as the single source of truth', () => {
   })
 
   it('registers the same assembled class each shim exports', () => {
-    // one class object per card: every shim re-exports the memoized
-    // `assembleCardNodeOnce` product, so the registry entries and the
-    // shim-exported classes are identical and importDOM/clone identity is
-    // coherent across every consumer
     const SHIM_CLASSES = {
       audio: AudioNode,
       bookmark: BookmarkNode,

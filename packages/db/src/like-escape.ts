@@ -2,7 +2,6 @@ import type { SQL, SQLWrapper } from 'drizzle-orm'
 
 import { sql } from 'drizzle-orm'
 
-/** Escapes LIKE wildcard characters (`%`, `_`) and the escape character (`\`) so user input is treated as literal text. */
 export function escapeLikePattern(input: string): string {
   return input.replace(/[%_\\]/g, '\\$&')
 }

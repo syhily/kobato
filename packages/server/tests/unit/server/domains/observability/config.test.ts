@@ -81,8 +81,6 @@ describe('observability runtime fingerprint', () => {
       'frontend.sessionSampleRate',
       { frontend: { enabled: false, sessionSampleRate: 50, clientIdentity: 'anonymous' } },
     ],
-    // Identity forwarding changes the relay behavior and the browser bootstrap,
-    // so it must hot-restart the runtime.
     ['frontend.clientIdentity', { frontend: { enabled: true, sessionSampleRate: 100, clientIdentity: 'forward' } }],
   ])('changes when the pipeline setting %s changes', (_label, patch) => {
     expect(observabilityRuntimeFingerprint({ ...BASE, ...patch })).not.toBe(observabilityRuntimeFingerprint(BASE))
@@ -93,8 +91,6 @@ describe('observability runtime fingerprint', () => {
     expect(observabilityRuntimeFingerprint({ ...BASE, rumClientToken: 'rotated-token' })).toBe(
       observabilityRuntimeFingerprint(BASE),
     )
-    // Retention is a data policy reconciled by its own sync — it must not
-    // restart the providers.
     expect(observabilityRuntimeFingerprint({ ...BASE, retentionDays: 30 })).toBe(observabilityRuntimeFingerprint(BASE))
   })
 })

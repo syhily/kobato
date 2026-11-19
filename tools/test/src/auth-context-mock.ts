@@ -4,8 +4,6 @@ import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { emptySession } from '@kobato/test/session.ts'
 import { vi } from 'vitest'
 
-/** Factory for `vi.mock('@kobato/server/http/request-context.ts', ...)`: returns the
- *  canonical RequestContext; falls back to an empty-session stub otherwise. */
 export async function createRequestContextMockModule() {
   const actual = await vi.importActual<typeof import('@kobato/server/http/request-context.ts')>(
     '@kobato/server/http/request-context.ts',

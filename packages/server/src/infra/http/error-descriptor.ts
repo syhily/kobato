@@ -1,14 +1,3 @@
-// Descriptor construction + the one runtime message-id check the server needs.
-//
-// A producer that knows a catalog key builds the descriptor here; the Hono/oRPC
-// boundaries only translate descriptors (see `translate-domain-error.ts`). The
-// English `fallbackMessage` is rendered eagerly — params included — so logs, old
-// clients and diagnostics read a finished sentence instead of a template.
-//
-// Raw technical text (a domain's own prose, Zod's English issue text) is wrapped
-// in the `error.api.rawMessage` passthrough key: every locale formats it as
-// `{message}`, so the wire shape is uniform while the text renders unchanged.
-
 import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
@@ -56,21 +45,10 @@ export function descriptorFor(messageKey: UiMessageId, params?: ErrorMessagePara
   }
 }
 
-/** Descriptor for a value that MAY be a catalog id: customs Zod messages carry
- * ids, while Zod's own default prose stays raw English (documented fallback —
- * standard schema prose is not translated).
- */
 export function messageDescriptor(message: string, params?: ErrorMessageParams): ErrorMessageDescriptor {
   return isUiMessageId(message) ? descriptorFor(message, params) : rawMessageDescriptor(message)
 }
 
-/**
- * Resolve a descriptor's display text for one request. An absent translator
- * (domain-internal construction) answers the English `fallbackMessage`; a
- * translator answers the request-locale sentence. A key the running catalog
- * does not know (an old descriptor on a newer build) also falls back — the
- * message id itself must never reach the wire or the UI.
- */
 export function descriptorMessage(descriptor: ErrorMessageDescriptor, translator?: ServerTranslator): string {
   if (translator === undefined || !Object.hasOwn(translator.messages, descriptor.messageKey)) {
     return descriptor.fallbackMessage
@@ -78,12 +56,6 @@ export function descriptorMessage(descriptor: ErrorMessageDescriptor, translator
   return translator.format(descriptor.messageKey, descriptor.params)
 }
 
-/**
- * One Zod issue → the wire issue (localized text + descriptor + producer code
- * + field path). The ICU params (numeric bounds merged with a custom issue's
- * `params` bag) come from the shared `zodIssueParams`, the same extractor the
- * client form hook uses.
- */
 export function zodIssueToWire(issue: z.core.$ZodIssue, translator?: ServerTranslator): ErrorIssueWire {
   const path = issue.path.map(String)
   const descriptor = messageDescriptor(issue.message, zodIssueParams(issue))

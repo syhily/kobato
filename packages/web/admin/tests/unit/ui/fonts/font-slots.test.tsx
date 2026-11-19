@@ -7,8 +7,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Hoisted singletons let each test swap the loader snapshot and the
-// mutation outcome; the orpcQuery key grammar is pinned by fonts-cache.test.ts.
 const routerState = vi.hoisted(() => ({
   fonts: undefined as FontsSettings | undefined,
   revalidate: vi.fn(),
@@ -165,7 +163,6 @@ describe('useFontSlotsController', () => {
     })
     expect(result.current.slots.global).toEqual(['a', 'x'])
 
-    // Mid-flight loader data must not clobber the optimistic state.
     routerState.fonts = makeFonts({ global: ['a'] })
     rerender()
     expect(result.current.slots.global).toEqual(['a', 'x'])
@@ -216,7 +213,6 @@ describe('useFontSlotsController', () => {
     routerState.fonts = makeFonts({ global: ['a', 'b', 'c'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
 
-    // Two rapid drag-ends fire from the latest optimistic state.
     await act(async () => {
       result.current.reorder('global', 0, 2)
     })
@@ -226,10 +222,8 @@ describe('useFontSlotsController', () => {
     })
     expect(result.current.slots.global).toEqual(['c', 'b', 'a'])
 
-    // No second POST while the first persist is in flight.
     expect(calls).toEqual([{ slot: 'global', fontIds: ['b', 'c', 'a'] }])
 
-    // Once the first settles, the queued second fires — the last drag wins.
     await act(async () => {
       resolvers[0]!()
     })

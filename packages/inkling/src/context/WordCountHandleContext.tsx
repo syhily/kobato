@@ -4,7 +4,6 @@ import {
   type WordCountHandleState,
 } from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 
-// Per-composer word-count handle; nested composers share the top-level one.
 export const {
   Context: WordCountHandleContext,
   useHandle: useWordCountHandle,

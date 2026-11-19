@@ -15,9 +15,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
-// Wire the audit batcher so establishLoginSession's fire-and-forget
-// events land; flushAuditLog() before assertions and teardown so no
-// pending event references a row the next clearAllTables truncates.
 beforeEach(() => {
   initAllBatchers(getDatabaseHandle())
 })
@@ -67,7 +64,6 @@ describe('establishLoginSession', () => {
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.1')
 
-    // Written through the process-level session-storage pool.
     const row = await findSessionRow(result.sid)
     expect(row).toBeDefined()
     expect(row!.userId).toBe(userId)
@@ -107,7 +103,6 @@ describe('establishLoginSession', () => {
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.3')
 
-    // recordAuditEvent is fire-and-forget — flush before querying.
     await flushAuditLog()
 
     const events = await db.select().from(auditLog).where(eq(auditLog.resourceId, result.sid)).limit(1)

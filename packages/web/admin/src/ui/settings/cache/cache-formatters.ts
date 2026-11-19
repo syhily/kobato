@@ -21,7 +21,6 @@ export function formatTtl(seconds: number, options: { locale: AppLocale }): stri
   return formatNumber(totalHours, { locale, style: 'unit', unit: 'hour', unitDisplay: 'long' })
 }
 
-/** Format an absolute instant in the SITE time zone + active locale (explicit on both axes). */
 export function formatTimestamp(iso: string, options: { locale: AppLocale; timeZone: string }): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) {

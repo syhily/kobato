@@ -37,7 +37,7 @@ describe('editableHint — pending/non-pending branch coverage', () => {
   })
 
   it('treats exactly 1 remaining minute as the seconds branch', () => {
-    const expiresAt = Date.now() + 500 // ceil → 1 second, ceil-mins → 1
+    const expiresAt = Date.now() + 500
     const out = editableHint(expiresAt, false, tZhCN, 'zh-CN')
     expect(out).toMatch(/秒内编辑此消息。$/)
   })
@@ -51,7 +51,6 @@ describe('editableHint — pending/non-pending branch coverage', () => {
 describe('commentAvatarClass / commentContentClass — depth boundaries', () => {
   it('uses the larger avatar size only at exactly depth 1', () => {
     expect(commentAvatarClass(1)).toContain('size-10')
-    // Any non-1 depth uses the smaller size, including depth 0.
     expect(commentAvatarClass(0)).toContain('size-[30px]')
     expect(commentAvatarClass(2)).toContain('size-[30px]')
     expect(commentAvatarClass(5)).toContain('size-[30px]')

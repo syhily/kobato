@@ -29,8 +29,6 @@ const runtimeMock = vi.hoisted(() => ({
 
 vi.mock('@kobato/server/infra/trace/runtime.ts', () => runtimeMock)
 
-// The client reaches O2 through safeFetch → global fetch. Keep DNS public and
-// answer every management call locally.
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
@@ -189,7 +187,6 @@ describe('admin.observability.testConnection', () => {
     expect(site?.provisionedFingerprint).not.toBe('')
     expect(runtimeMock.startTraceRuntime).toHaveBeenCalled()
 
-    // Secrets are encrypted on the write path, not just hidden in the bundle.
     const stored = await storedObservability()
     expect(stored.rumClientToken).toMatch(/^enc2:/)
     expect(stored.verifiedFingerprint).toBe(site?.verifiedFingerprint)
@@ -216,7 +213,6 @@ describe('admin.observability.testConnection', () => {
       descriptor: { messageKey: 'admin.settings.observability.error.upstream' },
     })
 
-    // The connection itself is verified and persisted; only the asset sync failed.
     expect(savedSite()?.verifiedFingerprint).toBe(observabilityConnectionFingerprint({ ...SITE }))
     expect(runtimeMock.startTraceRuntime).toHaveBeenCalled()
 
@@ -226,7 +222,6 @@ describe('admin.observability.testConnection', () => {
     expect(tested[0]?.details).toMatchObject({ provision: 'failed' })
     const failed = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_provisioning_failed'))
     expect(failed).toHaveLength(1)
-    // A failed auto-provision never masquerades as a successful asset event.
     const provisioned = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_assets_provisioned'))
     expect(provisioned).toHaveLength(0)
   })

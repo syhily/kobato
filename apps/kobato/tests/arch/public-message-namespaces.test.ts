@@ -2,20 +2,6 @@ import { PUBLIC_MESSAGE_PREFIXES, isPublicMessageKey } from '@kobato/i18n/catalo
 import { uiMessagesForScope } from '@kobato/i18n/catalog.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-/**
- * Public message-namespace architecture guard.
- *
- * The public bootstrap ships an explicit allowlist (`PUBLIC_MESSAGE_PREFIXES`),
- * not "everything except `admin.*`". This scan is the other half of that
- * contract: every message id the PUBLIC module graph can resolve must be in the
- * allowlist, so a public component cannot start depending on a workspace-only
- * namespace and silently render a missing message at runtime.
- *
- * The graph is walked from the real public entry points (the public route tree
- * + the root document) through static AND dynamic imports, stopping at
- * server-only modules and packages — the same shape the client bundler follows.
- * Admin/editor route trees are deliberately absent: they get the full catalog.
- */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'

@@ -12,11 +12,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Adapter tests: the navigation machine itself is covered by the pure
-// transition table in gif-browser.test.ts. This file pins the DOM wiring —
-// snapshot rendering, DOM events translated to intents, and the returned
-// effects (prevent-default, focus, insert) executed against the DOM.
-
 const CONFIG = {
   provider: 'tenor',
   apiUrl: 'https://tenor.googleapis.com',
@@ -103,7 +98,6 @@ function setScrollProps(element: HTMLDivElement, scrollTop: number, clientHeight
 }
 
 afterEach(() => {
-  // jsdom does not implement elementFromPoint; tests stub it per-case
   delete (document as Partial<Document>).elementFromPoint
 })
 

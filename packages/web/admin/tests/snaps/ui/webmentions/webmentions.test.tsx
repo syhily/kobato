@@ -82,18 +82,15 @@ describe('snapshot: WebmentionInboxView', () => {
     expect(html).toContain('待审核')
     expect(html).toContain('已批准')
     expect(html).toContain('已拒绝')
-    // Rejected rows carry no 重新验证 action (rejected is terminal).
     expect(html.match(/已验证/g)).toHaveLength(2)
     expect(html.match(/验证失败/g)).toHaveLength(1)
     expect(html).not.toContain('重新验证')
-    // Response-type badges ride alongside the status badges.
     expect(html).toContain('喜欢')
     expect(html).toContain('回应')
     expect(html).toContain('Jane Doe')
     expect(html).toContain('提及了你的文章')
     expect(html).toContain('一段摘要。')
     expect(html).toContain('https://example.com/posts/wm-target/')
-    // One pending row → each label appears 3× (tab trigger + badge + action).
     expect(html.match(/批准/g)).toHaveLength(3)
     expect(html.match(/拒绝/g)).toHaveLength(3)
   })
@@ -118,9 +115,7 @@ describe('snapshot: WebmentionInboxView', () => {
     const html = stableHtml(renderInRouter(<WebmentionInboxView />, '/admin/webmentions'))
     expect(html).toContain('已隐藏')
     expect(html).toContain('验证失败')
-    // 重新验证: action only; the lastError tooltip mounts on hover, not in static HTML.
     expect(html).toContain('重新验证')
-    // 批准 only in the tab trigger; 拒绝 = trigger + action button.
     expect(html.match(/批准/g)).toHaveLength(1)
     expect(html.match(/拒绝/g)).toHaveLength(2)
   })

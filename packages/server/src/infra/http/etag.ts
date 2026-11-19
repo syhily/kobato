@@ -5,13 +5,6 @@ import { CACHE_PROFILES } from '@kobato/server/infra/http/headers.ts'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { createHash } from 'node:crypto'
 
-/**
- * Everything that changes the HTML REPRESENTATION of a detail page without
- * changing the content row. `version` is the app release (translations and
- * renderers ship with it); `revision` is the DETAIL scope's representation
- * generation (`localization.revisions.detail`) — never the boot token.
- * `timeFormat` is normalised — `auto` when the site follows the locale default.
- */
 export interface RepresentationFingerprint {
   version: string
   locale: AppLocalization['locale']
@@ -20,19 +13,12 @@ export interface RepresentationFingerprint {
   revision: string
 }
 
-/**
- * Derive the representation fingerprint from the REQUEST's pinned localization
- * (locale + site zone + display format + settings revision). Every surface that
- * builds an ETag takes it from here — never from the global snapshot — so the
- * tag and the body it protects always describe one representation.
- */
 export function representationFromLocalization(localization: AppLocalization): RepresentationFingerprint {
   return {
     version: APP_VERSION,
     locale: localization.locale,
     timeZone: localization.timeZone,
     timeFormat: localization.timeFormat ?? 'auto',
-    // The DETAIL/page-shell generation: only sections the page renders move it.
     revision: localization.revisions.detail,
   }
 }
@@ -67,11 +53,6 @@ export function weakEtag(parts: ReadonlyArray<string | number | Date | null | un
   return `W/"${hash}"`
 }
 
-// Canonical JSON: keys sorted, `undefined` members dropped, Dates as ISO
-// strings. The payload is assembled from DB reads whose object key order is an
-// implementation detail, so the fingerprint must not depend on it. `skipKeys`
-// drops contract fields that are per-request rendering aids (the listing
-// `listingNowIso` instant) from the representation fingerprint.
 function stableStringify(value: unknown, skipKeys?: ReadonlySet<string>): string {
   if (value === null || value === undefined) {
     return 'null'
@@ -116,10 +97,6 @@ function detailParts(input: DetailEtagInput): ReadonlyArray<string | number | Da
   ]
 }
 
-/**
- * Post-detail ETag. Computed AFTER the full payload is assembled, so any change
- * the response renders — sidebar, tags, likes — changes the tag.
- */
 export function postEtag(input: DetailEtagInput): string {
   return weakEtag(['post', ...detailParts(input)])
 }
@@ -128,13 +105,6 @@ export function pageEtag(input: DetailEtagInput): string {
   return weakEtag(['page', ...detailParts(input)])
 }
 
-/**
- * Listing representation fingerprint: locale + site zone + display format +
- * the LISTING generation + APP_VERSION. The listing generation is hashed from
- * exactly the settings sections the listing shell renders (see
- * `@kobato/settings/representation-scopes`), so an unrelated settings save never
- * invalidates a listing ETag.
- */
 export function listingRepresentation(localization: AppLocalization): RepresentationFingerprint {
   return {
     ...representationFromLocalization(localization),
@@ -142,11 +112,6 @@ export function listingRepresentation(localization: AppLocalization): Representa
   }
 }
 
-/**
- * Contract fields excluded from the listing fingerprint. `listingNowIso` is the
- * per-request clock used to keep SSR/hydration date labels in step; the
- * calendar day already captures everything it can change.
- */
 const LISTING_VOLATILE_KEYS: ReadonlySet<string> = new Set(['listingNowIso'])
 
 export interface ListingEtagInput {
@@ -175,12 +140,6 @@ export function listingEtag({ representation, payload, calendarDay }: ListingEta
   ])
 }
 
-/**
- * The instant a listing payload rendered its relative dates from. Reading the
- * payload's own `listingNowIso` keeps the calendar-day bucket and the body in
- * step even when the request crosses the site-time-zone midnight between
- * payload assembly and ETag computation.
- */
 function listingInstant(payload: unknown): Date {
   if (typeof payload === 'object' && payload !== null && !Array.isArray(payload)) {
     const entries: [string, unknown][] = Object.entries(payload)
@@ -195,22 +154,10 @@ function listingInstant(payload: unknown): Date {
   return new Date()
 }
 
-/**
- * The site calendar day the listing is bucketed by — derived from the payload's
- * OWN `listingNowIso` (the instant its SSR labels were rendered from), not from
- * a second clock read. Payloads without an instant (categories) fall back to
- * now. Explicit tokens override the site's display format.
- */
 export function listingCalendarDay(payload: unknown, localization: AppLocalization): string {
   return formatLocalDate(listingInstant(payload), 'yyyy-MM-dd', localization)
 }
 
-/**
- * Strong ETag over the exact response bytes. Used by representations whose
- * body is generated (feed XML, calendar PNG, manifest JSON): hashing the bytes
- * that are actually served keeps the tag stable across a cache hit even when
- * the renderer embeds a timestamp, and changes whenever the output does.
- */
 export function contentEtag(content: string | Uint8Array): string {
   const hash = createHash('sha1')
   hash.update(content)
@@ -239,15 +186,6 @@ function weakComparable(tag: string): string {
   return tag.startsWith('W/') ? tag.slice(2) : tag
 }
 
-/**
- * A loader-thrown 304 goes through React Router's document-header reducer
- * (never `entry.server.tsx`), so it must carry the full current representation
- * metadata itself: ETag, Content-Language and the detail/listing Cache-Control
- * profile. The localization is the REQUEST's projection — the same one that
- * produced the ETag — so a document never mixes one locale's tag with another's
- * language. The root route's `headers` export passes these through
- * `errorHeaders`.
- */
 export function notModifiedResponse(
   etag: string,
   localization: AppLocalization,

@@ -40,9 +40,6 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const fields = useMemo(() => buildAuditFilterFields(actors, t), [actors, t])
   const pills = useFilterPills({ fields })
 
-  // The actors query only feeds the actor filter options — a failure leaves the
-  // list usable but the filter empty, so surface it via toast (the list query's
-  // error renders inline below instead).
   const actorsError = actorsQuery.error
   useEffect(() => {
     if (actorsError) {
@@ -58,7 +55,6 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     pageSize: PAGE_SIZE,
     buildInput: (offset) => ({ offset, limit: PAGE_SIZE, ...pills.queryInput<AuditFilterQuery>() }),
     selectRows: (page) => page.items,
-    // No `noun` — the error renders inline below, not as a toast.
   })
 
   const exportMutation = useMutation(orpcQuery.admin.auditLog.exportCsv.mutationOptions())
@@ -88,7 +84,6 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
       URL.revokeObjectURL(url)
       setExportOpen(false)
     } catch (error) {
-      // mutateAsync rejects — surface the failure; the dialog stays open for a retry.
       toastApiError(error, 'admin.toast.auditExportFailed', t)
     }
   }, [queryInput, exportMutation, includeFullIp, t])

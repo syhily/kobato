@@ -35,15 +35,10 @@ function metaFromStat(key: string, st: { size: number; mtimeMs: number; mtime: D
   return { key, size: st.size, etag: `${st.size}-${Math.floor(st.mtimeMs)}`, lastModified: st.mtime }
 }
 
-/**
- * Resolve a backend key to an absolute path inside `STORAGE_DIR`, rejecting
- * escapes (absolute keys, `..`, control chars). Shared by `/storage/*` and migration.
- */
 export function resolveLocalPath(key: string): string {
   if (key === '' || key.startsWith('/') || UNSAFE_KEY_CHARS.test(key)) {
     throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
-  // `path.resolve` normalises `..` — hence the `isPathInside` re-check.
   const abs = path.resolve(STORAGE_DIR, key)
   if (!isPathInside(abs, STORAGE_DIR)) {
     throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
@@ -51,9 +46,6 @@ export function resolveLocalPath(key: string): string {
   return abs
 }
 
-// Private namespaces (backup/, branding/, audit-log/ — DB dumps, originals) are
-// owner-only on disk so a shared host or readable volume cannot expose them through
-// default 0644/0755 permissions. Public objects keep the process defaults.
 const PRIVATE_FILE_MODE = 0o600
 const PRIVATE_DIR_MODE = 0o700
 
@@ -61,11 +53,6 @@ function isPrivate(visibility: PutObjectInput['visibility']): boolean {
   return visibility === 'private'
 }
 
-/**
- * Write via a sibling temp file + atomic rename, so readers never see a partial file.
- * The temp lives in the same directory to keep the rename on one filesystem. A private
- * object's directory is created 0700 (existing dirs keep their mode) and the file 0600.
- */
 async function atomicWrite(
   abs: string,
   visibility: PutObjectInput['visibility'],
@@ -83,7 +70,6 @@ async function atomicWrite(
   }
 }
 
-/** Recursive directory walk returning `StoredObjectMeta` with `/`-joined keys relative to `base`. */
 async function walk(dir: string, base: string): Promise<StoredObjectMeta[]> {
   let entries: import('node:fs').Dirent[]
   try {
@@ -105,10 +91,6 @@ async function walk(dir: string, base: string): Promise<StoredObjectMeta[]> {
   return out
 }
 
-/**
- * Local-filesystem backend under `$DATA_PATH/storage/<key>`, same key namespace
- * as S3 (migration is a verbatim copy). Always available — the S3 fallback.
- */
 export const localBackend: StorageBackend = {
   driver: 'local',
 
@@ -136,7 +118,6 @@ export const localBackend: StorageBackend = {
     } catch (error) {
       throw errnoCode(error) === 'ENOENT' ? new StorageObjectNotFound(key) : error
     }
-    // A directory key is not a readable object — surface the seam's not-found instead of EISDIR.
     if (!st.isFile()) {
       throw new StorageObjectNotFound(key)
     }
@@ -173,7 +154,6 @@ export const localBackend: StorageBackend = {
   },
 
   async delete(key: string): Promise<void> {
-    // Best-effort: a missing object is not an error (matches the S3 delete contract).
     try {
       await unlink(resolveLocalPath(key))
     } catch (error) {
@@ -184,7 +164,6 @@ export const localBackend: StorageBackend = {
   },
 
   async deleteMany(keys: string[]): Promise<void> {
-    // Reference the object directly: `this` is lost when the method is destructured.
     await Promise.all(keys.map((key) => localBackend.delete(key)))
   },
 
@@ -205,8 +184,6 @@ export const localBackend: StorageBackend = {
     if (!isPathInside(base, STORAGE_DIR)) {
       return []
     }
-    // Sort before slicing so `maxKeys` is a deterministic prefix (matches S3's lexicographic order).
-    // Code-unit order on purpose — a locale collation would reorder object keys.
     const walked = await walk(base, STORAGE_DIR)
     let items = walked.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
     if (opts?.startAfter !== undefined) {

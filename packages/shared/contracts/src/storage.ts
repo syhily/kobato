@@ -6,15 +6,9 @@ import {
 } from '@kobato/settings/sections/assets.ts'
 import { z } from 'zod'
 
-// Storage migration wire contract: the single source for the status DTO shared
-// by the domain state machine, the admin controller and the admin UI.
-
-/** Phases during which a migration run owns the storage config (persisted on the row). */
 export const STORAGE_MIGRATION_IN_FLIGHT_PHASES = ['copying', 'switching', 'catching-up'] as const
 export type StorageMigrationInFlightPhase = (typeof STORAGE_MIGRATION_IN_FLIGHT_PHASES)[number]
 
-/** Every phase the singleton row can persist; the wire adds the derived `idle` / `interrupted`.
- *  Persistence twin: `@kobato/db/schema/storage-migration.ts` (parity pinned server-side). */
 export const STORAGE_MIGRATION_PERSISTED_PHASES = [
   ...STORAGE_MIGRATION_IN_FLIGHT_PHASES,
   'completed',
@@ -33,13 +27,11 @@ export type StorageMigrationPhase = z.infer<typeof storageMigrationPhaseDto>
 export const storageMigrationDirectionDto = z.enum(['local-to-s3', 's3-to-local', 's3-to-s3'])
 export type StorageMigrationDirection = z.infer<typeof storageMigrationDirectionDto>
 
-/** Final source/target consistency check recorded when a run completes. */
 export const storageMigrationVerificationDto = z.object({
   sourceCount: z.number(),
   sourceBytes: z.number(),
   targetCount: z.number(),
   targetBytes: z.number(),
-  /** Target covers the source (it may hold pre-existing extras). */
   matches: z.boolean(),
   checkedAt: z.string(),
 })
@@ -60,9 +52,6 @@ export const storageMigrationStatusDto = z.object({
 })
 export type StorageMigrationStatus = z.infer<typeof storageMigrationStatusDto>
 
-// Admin storage wire — the single Zod source the `@kobato/api` storage
-// contract composes and the server validates against.
-
 export const adminStorageStatsOutputDto = z.object({
   s3Primary: z.boolean(),
   images: z.number(),
@@ -82,8 +71,6 @@ export const adminStorageS3TargetConfigInput = z
     forcePathStyle: z.boolean(),
     urlTemplate: z.string().trim().max(500),
   })
-  // The same write-path URL rules as the settings section — a migration
-  // target must not persist a plaintext endpoint or an open-redirect template.
   .superRefine((value, ctx) => {
     if (!isSafeStorageEndpoint(value.endpoint)) {
       ctx.addIssue({ code: 'custom', path: ['endpoint'], message: STORAGE_ENDPOINT_HTTPS_MESSAGE })

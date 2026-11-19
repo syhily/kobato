@@ -1,15 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Plain-code-editor import guard (same idiom as the jsdom import guard): the
- * code block card's plain edit surface exists so minimal hosts (kobato's
- * comment composer) never fetch the codemirror chunk. That property breaks if
- * `CodeBlockPlainEditor` imports the CodeMirror family or the lazy boundary
- * that carries it, or if `CodeBlockCard`'s plain branch routes through
- * `LazyCardEditor` instead of the plain editor.
- */
-
 function importSpecifiers(source: string): string[] {
   const statics = source.matchAll(/(?:^|\s)from\s+['"]([^'"]+)['"]/g)
   const sideEffects = source.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)

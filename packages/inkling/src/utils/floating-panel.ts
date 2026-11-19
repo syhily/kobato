@@ -58,11 +58,6 @@ export interface ClampInput {
   lastSpacing?: PanelSpacing | null
 }
 
-/**
- * Clamps a panel position so the panel keeps the given spacing from the viewport edges. A
- * previous spacing tighter than the requested one is kept, so a panel the user deliberately
- * pushed offscreen is not dragged back.
- */
 export function clampWithinSpacing({
   x,
   y,
@@ -146,7 +141,6 @@ export function resolveInitialPanelPosition({
   return clampOnResize({ x, y, panelSize, viewport, origin })
 }
 
-/** Empirical origin offset applied when a card goes wide: the wide-card transform shifts the card's rect by a couple of px, and without the fudge the panel visibly bounces on the transition. */
 export const WIDE_CARD_ORIGIN_OFFSET: PanelPosition = { x: 2, y: 1 }
 
 export interface CardWidthTransitionInput {
@@ -168,13 +162,6 @@ export interface CardWidthTransition {
   cardOrigin: PanelPosition
 }
 
-/**
- * The wide-card origin-shift policy: the panel positions in window coordinates normally,
- * but against the card's rect while the card is wide (its transform makes it the coordinate
- * origin — see `resolveCardOrigin`). Entering wide re-bases the position from window to
- * card origin; leaving wide re-bases it back through the remembered origin. Returns null
- * when no wide transition happened, so the caller leaves its bookkeeping untouched.
- */
 export function resolveCardWidthTransition({
   position,
   previousOrigin,

@@ -8,18 +8,6 @@ import { lookup } from 'node:dns/promises'
 import { isIP, type LookupFunction } from 'node:net'
 import { Agent } from 'undici'
 
-// SSRF-guarded outbound-fetch for all server-side downloads. Failures
-// return a typed union; callers map them to their own error modes.
-//
-// Two layers, and the second one is the authoritative guard:
-//  1. `guardTarget` pre-checks protocol / host / resolved addresses so a
-//     blocked target fails deterministically before a socket is opened.
-//  2. every call dials through a per-call undici `Agent` whose `lookup`
-//     re-resolves the hostname AT CONNECT TIME and fails closed. The socket
-//     can only ever reach an address that this lookup validated, so an
-//     authoritative DNS server cannot answer the pre-check with a public
-//     address and the dial with 127.0.0.1 (DNS rebinding / TOCTOU).
-
 export const SAFE_FETCH_DEFAULT_TIMEOUT_MS = 10_000
 export const SAFE_FETCH_DEFAULT_MAX_REDIRECTS = 5
 
@@ -115,7 +103,6 @@ function isTimeoutError(error: unknown): boolean {
   return error instanceof Error && error.name === 'TimeoutError'
 }
 
-/** Bracketed IPv6 literals (`[::1]`) → the bare address `dns.lookup` wants. */
 function bareHostname(hostname: string): string {
   return hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
 }
@@ -128,8 +115,6 @@ function blockedAddressError(host: string, address: string): Error {
   return new Error(`safeFetch: ${host} resolves to a blocked address (${address})`)
 }
 
-/** `dns.LookupOptions.family` accepts the `'IPv4'`/`'IPv6'` string forms
- *  since Node 22; the numeric form is what this resolver forwards. */
 function familyNumber(family: LookupOptions['family']): number {
   if (family === 'IPv4') {
     return 4
@@ -140,10 +125,6 @@ function familyNumber(family: LookupOptions['family']): number {
   return family ?? 0
 }
 
-/** Resolve + validate one dial. Throws on a resolution failure or an empty
- *  answer; with `validate` EVERY resolved address must pass the blocklist, so
- *  the socket never sees a peer the guard would reject. A trusted fixed
- *  endpoint skips only the blocklist, never the resolution itself. */
 async function resolveForDial(
   host: string,
   family: number,
@@ -164,15 +145,6 @@ async function resolveForDial(
   return addresses
 }
 
-/** The single resolution a dial is allowed to use: every address is
- *  validated at connect time and only validated addresses are handed to
- *  the socket. Failures abort the connection (fail closed). Exported so
- *  the dial-time rebinding invariant can be tested directly — safeFetch's
- *  own port allowlist rejects the ephemeral ports a test server binds.
- *
- *  `allowPrivateHostnames` is the connect-time half of `trustedOrigin`: a
- *  fixed admin-validated endpoint may intentionally resolve to a loopback /
- *  private address, so only that exact hostname skips the blocklist. */
 export function createDialLookup(allowPrivateHostnames?: ReadonlySet<string>): LookupFunction {
   return (hostname, options, callback) => {
     const bare = bareHostname(hostname)
@@ -206,9 +178,6 @@ export function createDialLookup(allowPrivateHostnames?: ReadonlySet<string>): L
   }
 }
 
-/** Validate one target against the protocol/port allowlist, SSRF guard,
- *  and DNS: a lookup failure (or a host that resolves to nothing) is a
- *  failure, and every resolved address must pass the blocklist. */
 async function guardTarget(
   parsed: URL,
   url: string,
@@ -218,24 +187,15 @@ async function guardTarget(
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     return failure('bad-protocol', url)
   }
-  // The fixed, admin-validated endpoint (e.g. self-hosted OpenObserve) may
-  // use any port and resolve to a private address. The match is the EXACT
-  // origin; a redirect to another origin still runs the full guard below.
   if (trustedOrigin !== undefined && parsed.origin === trustedOrigin) {
     return null
   }
-  // Only the standard web ports: a URL parser normalizes the default port
-  // away (`:443` on https reads as ''), so any explicit remainder is
-  // non-standard — an outbound fetch must never dial an arbitrary
-  // high-port service on a public host.
   if (!allowNonStandardPort && parsed.port !== '' && parsed.port !== '80' && parsed.port !== '443') {
     return failure('bad-port', url)
   }
   if (isBlockedFetchHost(parsed.hostname)) {
     return failure('blocked-host', url)
   }
-  // IP literals are fully validated by isBlockedFetchHost — skip the DNS lookup.
-  // (undici does not call `lookup` for a literal either; the pre-check is the guard there.)
   const bare = bareHostname(parsed.hostname)
   if (isIP(bare) !== 0) {
     return null
@@ -257,10 +217,6 @@ async function guardTarget(
   return null
 }
 
-/** Body stream that enforces `maxBytes` as bytes arrive AND releases the
- *  per-call agent once the consumer is done with it (flush, cancel, or a
- *  cap trip). Stream mode returns a live body, so the agent cannot be
- *  destroyed when `safeFetch` returns — ownership rides the stream. */
 function guardStream(
   source: ReadableStream<Uint8Array>,
   maxBytes: number | undefined,
@@ -305,9 +261,6 @@ function guardStream(
   })
 }
 
-/** Read a response body chunk by chunk, enforcing `maxBytes` as the
- *  bytes arrive (cancel the reader the moment the cap trips) instead of
- *  buffering the whole body first. */
 async function readCappedBody(
   response: Response,
   maxBytes: number | undefined,
@@ -370,27 +323,20 @@ async function performSafeFetch(
     return initialRejection
   }
 
-  // Connect-time half of the trusted-origin exemption: only that hostname may
-  // dial a private address. Every other hop keeps the rebinding guard.
   const trustedHostname =
     trustedOrigin === undefined ? undefined : new Set([bareHostname(new URL(trustedOrigin).hostname).toLowerCase()])
 
-  // One agent per call: every hop — including redirect targets — dials
-  // through the same validating lookup. A fresh agent never reuses a
-  // connection validated by a previous call.
   const agent = new Agent({ connect: { lookup: createDialLookup(trustedHostname) } })
   let agentOwnedByStream = false
 
   try {
     let currentUrl = url
-    // Per-hop request shape — a redirect may rewrite method/body and drop content headers.
     let hopMethod = method
     let hopBody = body
     let hopHeaders = headers
     let response: Response
     for (let hop = 0; ; hop++) {
       try {
-        // `dispatcher` is undici's Agent hook (the global fetch is undici-backed).
         const init: RequestInit & { dispatcher: Agent } = {
           redirect: 'manual',
           signal: AbortSignal.timeout(timeoutMs),
@@ -419,7 +365,6 @@ async function performSafeFetch(
       } catch {
         return failure('invalid-url', location)
       }
-      // Re-validate every hop: a remote server can 302 toward an internal address.
       const hopRejection = await guardTarget(nextUrl, nextUrl.toString(), allowNonStandardPort, trustedOrigin)
       if (hopRejection !== null) {
         return hopRejection
@@ -434,12 +379,8 @@ async function performSafeFetch(
         hopMethod = 'GET'
         hopBody = undefined
       }
-      // Credentials never cross an origin boundary: a 302 from a trusted
-      // host to an attacker host must not leak the caller's Referer (music
-      // providers require one) or any Authorization/Cookie header.
       const crossOrigin = nextUrl.origin !== new URL(currentUrl).origin
       if ((becomesGet || crossOrigin) && hopHeaders !== undefined) {
-        // Header names are case-insensitive — match the caller's casing.
         hopHeaders = Object.fromEntries(
           Object.entries(hopHeaders).filter(([name]) => {
             const lower = name.toLowerCase()
@@ -482,7 +423,6 @@ async function performSafeFetch(
           }),
         }
       }
-      // The body outlives this call — the stream releases the agent.
       agentOwnedByStream = true
       return {
         ok: true,
@@ -507,13 +447,6 @@ async function performSafeFetch(
   }
 }
 
-/**
- * Telemetry wrapper around the SSRF-guarded fetch. The span only
- * carries the caller's closed operation name, the request method, and (when
- * known) the upstream status — never the URL, host, path, or query. Fetch,
- * redirect, streaming, and SSRF semantics are entirely owned by
- * `performSafeFetch`; this wrapper only observes the result.
- */
 export function safeFetch(url: string, options: SafeFetchOptions & { stream: true }): Promise<SafeFetchStreamResult>
 export function safeFetch(url: string, options?: SafeFetchOptions): Promise<SafeFetchResult>
 export async function safeFetch(

@@ -9,8 +9,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const control = mockTanstackQuery()
 
-// The drawer reads `useI18n()`; the provider is mounted as a render wrapper
-// (a wrapper, not inline JSX, so `rerender` keeps the locale mounted).
 function render(ui: ReactElement) {
   return rtlRender(ui, {
     wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
@@ -40,8 +38,6 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
   })
 
   it('mounts the drawer on first open and keeps it mounted after close', async () => {
-    // Resolve the chunk the lazy boundary imports, so the assertions never
-    // race module loading when the full suite saturates the machine.
     await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx')
 
     const { rerender } = render(
@@ -49,7 +45,6 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
     )
     rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
 
-    // The everOpened latch + lazy boundary resolve on a later tick.
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50))
     })

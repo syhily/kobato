@@ -49,7 +49,6 @@ describe('rateLimitByIp middleware', () => {
     expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:203.0.113.7'])
   })
 
-  // Bucket key must follow the `port:<n>` per-connection discriminator.
   it('keys the bucket on the per-connection port when the peer IP is unknown', async () => {
     const res = await buildAppWithAddress('port:43210', 'feed', 'resource').request('/ping')
 
@@ -71,8 +70,6 @@ describe('rateLimitByIp middleware', () => {
 
     const res = await app.request('/ping')
 
-    // No perimeter onError here → Hono's default handler renders the
-    // exception's English fallback as plain text.
     expect(res.status).toBe(429)
     await expect(res.text()).resolves.toBe('Too many requests. Please try again later.')
   })

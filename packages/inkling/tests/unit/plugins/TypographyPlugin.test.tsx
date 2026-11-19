@@ -109,11 +109,6 @@ describe('TypographyPlugin', () => {
     expect(getEditorText(editor)).toBe('"')
   })
 
-  // IME composition protection: editor.isComposing() is not reachable
-  // through jsdom composition events — spy it like the at-link/link-editing
-  // specs do. While composing, the update-scan seam skips every commit, so
-  // quote/ellipsis sequences land verbatim; once composition ends the next
-  // keystroke's commit fires the scan and the text converts.
   it('does not rewrite text typed during IME composition', async () => {
     const composing = vi.spyOn(editor, 'isComposing').mockReturnValue(true)
 

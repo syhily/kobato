@@ -102,7 +102,6 @@ function assertSafeRelativePath(path: string): void {
   }
 }
 
-/** Write `bytes` unless `path` already matches `expectedSha256`; temp file + atomic rename, re-verified after. */
 function ensureFile(path: string, bytes: Buffer, expectedSha256: string): 'reused' | 'written' {
   if (readFileSha256(path) === expectedSha256) {
     return 'reused'
@@ -125,7 +124,6 @@ function ensureFile(path: string, bytes: Buffer, expectedSha256: string): 'reuse
   return 'written'
 }
 
-/** Delete stale sibling `natives-*` dirs; best-effort — failures only log at debug. */
 function gcStaleNativesDirs(cacheDir: string, currentDirName: string, logger: Pick<Logger, 'info' | 'debug'>): void {
   try {
     for (const entry of readdirSync(cacheDir)) {
@@ -149,7 +147,6 @@ function gcStaleNativesDirs(cacheDir: string, currentDirName: string, logger: Pi
   }
 }
 
-/** Content-hashed extraction dir — unchanged manifests reuse the cache dir. */
 function nativesDirName(manifestRaw: Buffer): string {
   return `natives-${sha256(manifestRaw).slice(0, 16)}`
 }
@@ -171,7 +168,6 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
   let extracted = 0
   let reused = 0
   for (const file of manifest.files) {
-    // FLAT layout: extract only `natives/` assets, stripping the prefix from the path.
     if (!file.key.startsWith(SEA_NATIVE_ASSET_PREFIX)) {
       continue
     }

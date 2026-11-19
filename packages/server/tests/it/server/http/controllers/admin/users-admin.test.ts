@@ -14,8 +14,6 @@ import { parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// users-admin router against the real engine; only double: `installFetch` at the
-// Mailgun HTTP boundary (invite / password-reset delivery).
 const { RPCHandler } = await import('@orpc/server/fetch')
 const { adminUsersAdminRouter } = await import('@kobato/server/http/controllers/admin/users-admin.controller.ts')
 const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit.ts')
@@ -35,7 +33,6 @@ afterEach(async () => {
   resetAllBatchers()
 })
 
-// audit_log.actor_id is a real FK: the acting admin must be a seeded row.
 async function seedViewer(): Promise<number> {
   return seedUser({ name: 'Test User', email: 'test@example.com', role: 'admin' })
 }
@@ -79,7 +76,6 @@ async function auditRowsFor(action: string) {
   return db.select().from(auditLog).where(eq(auditLog.action, action))
 }
 
-/** Flip the mail section on with a Mailgun config that routes through `installFetch`. */
 function withMailEnabled(bundle: BlogSettingsBundle = TEST_BLOG_SETTINGS_BUNDLE): void {
   setBlogSettingsBundleForTests({
     ...bundle,
@@ -147,7 +143,6 @@ describe('admin users-admin controller', () => {
     const rows = await auditRowsFor('user_role_changed')
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceId).toBe(String(id))
-    // The audit `from` is the role BEFORE the write, not the new role.
     expect(rows[0]!.details).toMatchObject({ from: 'author', to: 'visitor' })
   })
 
@@ -182,7 +177,6 @@ describe('admin users-admin controller', () => {
   })
 
   it('rejects an invite when rate limited', async () => {
-    // invite: 1 — the second invite exhausts the shared bucket and gets a 429.
     withMailEnabled({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -258,7 +252,6 @@ describe('admin users-admin controller', () => {
   })
 
   it('rejects clearPasskeys when the passkey switch is off', async () => {
-    // TEST_BLOG_SETTINGS_BUNDLE ships security.passkey.enabled = false.
     const id = await seedUser({ role: 'author' })
 
     const viewerId = await seedViewer()

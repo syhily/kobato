@@ -18,7 +18,6 @@ export const POST_STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [
   { value: 'deleted', labelId: 'admin.content.status.deleted' },
 ]
 
-// The posts leg set — includes the `visible` leg that pages lack (no `visible` column on pages).
 const POST_STATUS_FIELDS: Record<Exclude<PostStatusFilter, 'deleted'>, { published?: boolean; visible?: boolean }> = {
   all: {},
   published: { published: true, visible: true },
@@ -26,7 +25,6 @@ const POST_STATUS_FIELDS: Record<Exclude<PostStatusFilter, 'deleted'>, { publish
   unlisted: { published: true, visible: false },
 }
 
-/** Map the status filter onto the list API's deleted/published/visible flags. */
 export function deriveStatusFields(status: PostStatusFilter): {
   deletedStatus: 'all' | 'deleted' | 'normal'
   published?: boolean
@@ -61,7 +59,6 @@ export function buildPostFilterFields(
       icon: ListChecksIcon,
       kind: 'options',
       options: POST_STATUS_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) })),
-      // The status projection carries booleans; the string-typed patch is the common case and merges verbatim — the cast is exact.
       toQuery: (value) => unsafeCast<FilterQueryPatch>(deriveStatusFields(unsafeCast<PostStatusFilter>(value))),
     },
     {
@@ -94,16 +91,12 @@ export function buildPostFilterFields(
   ]
 }
 
-// URL-backed fields in seed order — the author pill is UI-local.
 const URL_FILTER_FIELDS = ['status', 'category', 'tag'] as const
 
-/** Seed pills from the URL (dashboard / sidebar / tag / category deep links);
- *  unknown or `all` statuses seed nothing — absence IS the unfiltered state. */
 export function postFiltersFromSearch(search: string, t: I18nValue['t']): ActiveFilter<PostFilterFieldKey>[] {
   const params = new URLSearchParams(search)
   const pills: ActiveFilter<PostFilterFieldKey>[] = []
   const status = params.get('status')
-  // Deep links bookmarked with the old `hidden` status value map to `unlisted`.
   const normalizedStatus = status === 'hidden' ? 'unlisted' : status
   if (
     normalizedStatus === 'published' ||
@@ -122,7 +115,6 @@ export function postFiltersFromSearch(search: string, t: I18nValue['t']): Active
   }
   const category = params.get('category')
   if (category) {
-    // The human label resolves once the category options load — until then the pill editor falls back to the raw id.
     pills.push({ field: 'category', value: category, label: category })
   }
   const tag = params.get('tag')
@@ -132,9 +124,6 @@ export function postFiltersFromSearch(search: string, t: I18nValue['t']): Active
   return pills
 }
 
-/** Reflect the URL-backed pills into the location search so the sidebar's
- *  status links track in-view filter edits; returns the next search string,
- *  or null when the URL already matches the pills. */
 export function postFiltersToSearch(filters: ActiveFilter<PostFilterFieldKey>[], currentSearch: string): string | null {
   const params = new URLSearchParams(currentSearch)
   let changed = false
@@ -156,8 +145,6 @@ export function postFiltersToSearch(filters: ActiveFilter<PostFilterFieldKey>[],
   return serialized ? `?${serialized}` : ''
 }
 
-/** Reconcile the URL-backed pills after a navigation while already on the
- *  posts list — user-added pills (author) survive. */
 export function syncPostFiltersFromUrl(
   filters: ActiveFilter<PostFilterFieldKey>[],
   dispatch: (action: FilterPillsAction<PostFilterFieldKey>) => void,

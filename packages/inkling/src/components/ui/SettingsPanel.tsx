@@ -40,8 +40,6 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
     if (!tabs) {
       return []
     }
-    // the tab id IS the label — TabView capitalizes it in CSS; host tab ids
-    // are arbitrary strings, so no labels-table key can cover them
     return Object.keys(tabContent).map((key) => ({ id: key, label: key }))
   }, [tabs, tabContent])
 
@@ -103,8 +101,6 @@ interface ToggleSettingProps {
 
 export function ToggleSetting({ label, description, isChecked, onChange, dataTestId }: ToggleSettingProps) {
   return (
-    // the outer <label> is load-bearing: clicking anywhere in the row
-    // (including the label text) activates the Toggle inside
     <label className="cursor-pointer">
       <SettingRow description={description} label={label}>
         <Toggle dataTestId={dataTestId} isChecked={isChecked} onChange={onChange} />
@@ -165,8 +161,6 @@ export function InputUrlSetting({ dataTestId, label, value, onChange }: InputUrl
       let cancelled = false
       fetchAutocompleteLinks()
         .then((links) => {
-          // the component unmounted or the linking settings changed before
-          // the request resolved — don't update state with stale results
           if (cancelled) {
             return
           }
@@ -357,24 +351,9 @@ export function ColorPickerSetting({
           showChildren={showChildren}
           swatches={swatches ?? []}
           value={value}
-          onChange={
-            onPickerChange ??
-            (() => {
-              /* noop */
-            })
-          }
-          onSwatchChange={
-            onSwatchChange ??
-            (() => {
-              /* noop */
-            })
-          }
-          onTogglePicker={
-            onTogglePicker ??
-            (() => {
-              /* noop */
-            })
-          }
+          onChange={onPickerChange ?? (() => undefined)}
+          onSwatchChange={onSwatchChange ?? (() => undefined)}
+          onTogglePicker={onTogglePicker ?? (() => undefined)}
         >
           {children}
         </ColorIndicator>

@@ -17,7 +17,6 @@ export interface UseEditorDeleteRestoreArgs {
   navigate: NavigateFunction
 }
 
-/** Shared soft-delete / restore flow; callers render the returned `confirm` state. */
 export function useEditorDeleteRestore({
   entity,
   entityLabelId,
@@ -54,7 +53,7 @@ export function useEditorDeleteRestore({
     onSuccess: () => {
       toast.success(t('admin.editor.delete.restored', { entity: entityLabel }))
       invalidateList()
-      void navigate(0) // full reload to refetch
+      void navigate(0)
     },
     onError: (error) => {
       setConfirm({

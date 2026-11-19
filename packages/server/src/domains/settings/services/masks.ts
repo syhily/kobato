@@ -2,10 +2,6 @@ import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
 
 import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 
-/**
- * Last-4 mask of every configured secret, `null` when unset. The explicit initializer
- * keeps the output total — a new SECRET_FIELDS entry fails type-checking until its slot is added.
- */
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
   const masks: SecretMasks = {
     mailSmtpPassMask: null,
@@ -23,10 +19,6 @@ export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
   return masks
 }
 
-/**
- * Copy the bundle with every configured secret blanked, for admin-facing payloads.
- * Sections without secrets keep their reference; the input is never mutated.
- */
 export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {
   let redacted: BlogSettingsBundle = { ...bundle }
   for (const config of SECRET_FIELDS) {

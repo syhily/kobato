@@ -10,9 +10,6 @@ function isWebmentionTab(value: unknown): value is WebmentionTab {
   return value === 'inbox' || value === 'outbox'
 }
 
-// One page, both directions: the moderation queue (inbox) and the read-only
-// outbound send log (outbox). Pure-props: the route owns the tab state and
-// mirrors it into `?tab=` so a switched tab survives reload/share.
 export function WebmentionsView({
   tab,
   onTabChange,

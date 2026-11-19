@@ -64,7 +64,6 @@ export function makeEntityMutations<
     const now = new Date()
     try {
       const row = syncTransaction(db, (tx) => {
-        // Check + insert in one transaction; writers serialise on the single connection.
         reserveSlugInTransaction(tx, descriptor.entityType, slug, undefined, {
           findOwnMetaBySlugForUpdate: repos.findMetaBySlugForUpdate,
         })
@@ -124,9 +123,7 @@ export function makeEntityMutations<
           webmentionsEnabled: input.webmentionsEnabled ?? existing.webmentionsEnabled,
           showToc: input.showToc ?? existing.showToc,
           showUpdated: input.showUpdated ?? existing.showUpdated,
-          // `null` clears it; omitted keeps whatever the row carries.
           contentLanguage: contentLanguage === undefined ? existing.contentLanguage : contentLanguage,
-          // `null` cancels the schedule — drop the timestamp, flip back to unpublished.
           publishedAt: input.publishedAt === undefined ? existing.publishedAt : (input.publishedAt ?? now),
           ...(input.publishedAt === null ? { published: false } : {}),
           ...mutations.updateExtras(input, existing),
@@ -146,7 +143,6 @@ export function makeEntityMutations<
         )
       }
       await mutations.afterMutation?.(db, updated, 'update')
-      // `publishedAt` may have been set/moved/cancelled — re-arm the timer (no-op until started).
       rescheduleScheduledPublish()
       const extras = await mutations.mutationExtras?.(db, updated, { kind: 'upsert', input })
       return descriptor.adminDto.project(updated, extras)
@@ -181,7 +177,6 @@ export function makeEntityMutations<
     const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
 
-    // Gather post-commit needs inside the tx so a failed restore never touches external state.
     const { restored, slugWarning, ctx } = db.transaction((tx) => {
       const ok = repos.restoreMeta(tx, id)
       let slugConflict: ErrorMessageDescriptor | undefined

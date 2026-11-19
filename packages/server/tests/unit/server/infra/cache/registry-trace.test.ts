@@ -126,7 +126,6 @@ describe('cache registry trace — lookup boundary', () => {
     expect(lookups).toHaveLength(2)
     expect(lookups.map((span) => span.attributes['cache.result'])).toEqual(['miss', 'miss'])
     expect(lookups.map((span) => span.attributes['cache.coalesced'])).toEqual([false, true])
-    // One shared read: the second lookup joined the first inflight promise.
     expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
     expect(loader).not.toHaveBeenCalled()
   })
@@ -141,7 +140,6 @@ describe('cache registry trace — lookup boundary', () => {
       const value = await through('sitemap', { settingsRevision: 'secret-revision' }, async () => 'secret-payload')
       expect(value).toBe('secret-payload')
 
-      // Let the rejected write settle inside writeEntry's catch.
       await new Promise((resolve) => setImmediate(resolve))
       await handle.forceFlush()
     } finally {
@@ -162,7 +160,6 @@ describe('cache registry trace — lookup boundary', () => {
     expect(serialized).not.toContain('sitemap:xml')
     expect(serialized).not.toContain('secret-payload')
 
-    // The write path adds no second metric sample.
     const metrics = await reader.collectResourceMetrics()
     expect(dataPointsOf(metrics, METRIC.cacheLookupCount)).toHaveLength(1)
   })

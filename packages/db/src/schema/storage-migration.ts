@@ -1,16 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Persistence-canonical storage-migration vocabulary — the `$type` unions of
-// the singleton row's `direction`/`phase` columns. The wire twins (zod enums
-// + the status DTO with the derived `idle`/`interrupted` phases) live in
-// `@kobato/contracts/storage`; the lists stay value- and order-identical,
-// pinned by `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`.
-
 export const STORAGE_MIGRATION_DIRECTIONS = ['local-to-s3', 's3-to-local', 's3-to-s3'] as const
 export type StorageMigrationDirection = (typeof STORAGE_MIGRATION_DIRECTIONS)[number]
 
-/** Every phase the singleton row can persist; the wire adds the derived `idle` / `interrupted`. */
 export const STORAGE_MIGRATION_PERSISTED_PHASES = [
   'copying',
   'switching',
@@ -21,16 +14,6 @@ export const STORAGE_MIGRATION_PERSISTED_PHASES = [
 ] as const
 export type StorageMigrationPersistedPhase = (typeof STORAGE_MIGRATION_PERSISTED_PHASES)[number]
 
-// Storage migration state — a single-row table (id is pinned to 1) tracking
-// the current/last storage migration task. `target_storage` holds the S3
-// target config as JSON with `secretAccessKey` encrypted via
-// `infra/crypto/secret-encryption` (null for s3→local); `source_storage` is
-// the pre-flip S3 config snapshot (null when the source is local) so catch-up
-// / verification / resume still read the OLD bucket after the flip. `cursor`
-// is the last successfully processed source key; a resume re-lists from it.
-// Phases: copying → switching → catching-up → completed, with failed /
-// cancelled as terminal states and interrupted reported lazily (row says
-// in-flight but no in-memory task is running).
 export const storageMigration = sqliteTable(
   'storage_migration',
   {
@@ -44,7 +27,6 @@ export const storageMigration = sqliteTable(
     copiedBytes: integer('copied_bytes').notNull().default(0),
     skippedObjects: integer('skipped_objects').notNull().default(0),
     error: text('error'),
-    // Final source/target consistency check (JSON of StorageMigrationVerification), set on completion.
     verification: text('verification'),
     startedAt: integer('started_at', { mode: 'timestamp_ms' })
       .notNull()

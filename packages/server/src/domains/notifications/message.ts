@@ -1,17 +1,3 @@
-// A SYSTEM notification persists an English fallback in `title`/`body` plus a
-// nullable descriptor (`titleKey`/`titleParams`, `bodyKey`/`bodyParams`). Read
-// paths translate the descriptor with the reader's locale; a missing or
-// malformed descriptor falls back to the stored English text with ONE warning
-// per key per process. User-authored kinds (direct/broadcast) never carry a
-// descriptor and keep their original text.
-//
-// `notification.*` keys are append-only: a row may outlive the code that wrote
-// it, so a renamed/deleted key is treated exactly like a missing one.
-//
-// Param values are plain text/JSON, not markup: an error message such as
-// `Unexpected token '<'` is legitimate data. Every read path escapes it at
-// render time; write-time validation only enforces JSON semantics.
-
 import type { NotificationRow } from '@kobato/db/types.ts'
 import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
 import type { MessageParams, ServerTranslator } from '@kobato/server/infra/i18n.ts'
@@ -23,14 +9,8 @@ import { isRecord } from '@kobato/utils/type-guards.ts'
 
 const log = getLogger('notifications.message')
 
-/** Every persisted `notification.*` key starts with this prefix (append-only namespace). */
 export const NOTIFICATION_KEY_PREFIX = 'notification.'
 
-/**
- * JSON-serializable ICU argument values. A string is PLAIN TEXT: the reader
- * (inbox, thread, email) renders it as text, so HTML-shaped content such as
- * `Unexpected token '<'` or `<script>` is legitimate data, never markup.
- */
 export type NotificationParamValue =
   | string
   | number
@@ -69,8 +49,6 @@ function toMessageParams(params: Record<string, unknown> | undefined): MessagePa
   const scalar: MessageParams = {}
   for (const [key, value] of Object.entries(params)) {
     if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      // `defineProperty` keeps an own `__proto__` key a data property instead
-      // of running the prototype setter.
       Object.defineProperty(scalar, key, { value, enumerable: true, configurable: true, writable: true })
     }
   }
@@ -82,12 +60,6 @@ function isPlainJsonObject(value: object): boolean {
   return prototype === Object.prototype || prototype === null
 }
 
-/**
- * Enforce JSON semantics only — the values themselves stay opaque text.
- * Rejects non-finite numbers, `undefined`/functions/symbols/bigints, class
- * instances (a `Date`/`Map` would not survive the JSON round-trip) and
- * circular structures (which would otherwise overflow the stack).
- */
 function assertParamValue(value: unknown, path: string, seen: WeakSet<object>): void {
   if (value === null || typeof value === 'boolean' || typeof value === 'string') {
     return
@@ -114,8 +86,6 @@ function assertParamValue(value: unknown, path: string, seen: WeakSet<object>): 
   } else {
     throw new TypeError(`Notification param ${path} is not a plain JSON object`)
   }
-  // Shared (non-circular) references are legal JSON output — only active
-  // ancestors count as a cycle.
   seen.delete(value)
 }
 
@@ -134,18 +104,12 @@ function encodeParams(params: NotificationParams | undefined, field: string): st
   }
   assertParamValue(params, field, new WeakSet())
   const encoded = JSON.stringify(params)
-  // Defensive: a round-trip proves serializability (and never stores `undefined`).
   if (typeof encoded !== 'string') {
     throw new TypeError(`Notification ${field} params are not serializable`)
   }
   return encoded
 }
 
-/**
- * Validate a producer's descriptor and compute the English fallback persisted
- * with the row. The fallback is what logs, old clients and a missing-key read
- * see — the same sentence the English translator would render.
- */
 export function encodeNotificationDescriptor(message: NotificationDescriptor): EncodedNotificationDescriptor {
   assertNotificationKey(message.titleKey, 'title')
   assertNotificationKey(message.bodyKey, 'body')
@@ -162,8 +126,6 @@ export function encodeNotificationDescriptor(message: NotificationDescriptor): E
   }
 }
 
-// One warning per key per process: a renamed/deleted key must not spam the log
-// on every inbox read.
 const warnedKeys = new Set<string>()
 
 function warnOnce(key: string, reason: string): void {
@@ -216,11 +178,6 @@ export interface ResolvedNotificationMessage {
   body: string
 }
 
-/**
- * Translate a notification row for one reader locale. The FULL result feeds
- * both the detail view and (truncated) the inbox preview, so the two can never
- * disagree. Rows without a descriptor return their stored text unchanged.
- */
 export function resolveNotificationMessage(row: NotificationRow, t: ServerTranslator): ResolvedNotificationMessage {
   return {
     title: resolveField('title', row, t),

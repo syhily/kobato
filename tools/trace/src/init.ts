@@ -1,14 +1,3 @@
-// `pnpm run trace:init` — finish the development OpenObserve container setup
-// and print the values an admin enters in Settings → Observability.
-// The server owns asset provisioning: saving the section and pressing "Test
-// connection" verifies the credentials AND installs the RUM token, the privacy
-// pipeline/function, and the four versioned dashboards (idempotently). The dev
-// tooling therefore keeps only the container-only policy — 1-day retention — and
-// must never print a credential: the settings password column is encrypted with a
-// key derived inside the SERVER process, so printing the non-secret values (and
-// pointing at the 0600 state file for the password) cannot corrupt an encrypted
-// row.
-
 import {
   fail,
   log,

@@ -14,15 +14,6 @@ export interface TKHandle extends ComposerHandle<TKHandleState> {
 export function createTKHandle(): TKHandle {
   const handle = createComposerHandle<TKHandleState>({ tkNodeMap: {}, tkCount: 0 })
 
-  // Map(
-  //   editorKey: Map(
-  //     tkNodeKey: {topLevelNodeKey}
-  //   )
-  // )
-  //
-  // Stored under the editor key because a top-level node (i.e. a decorator)
-  // may contain multiple nested editors; the plugin in each editor only knows
-  // its own nodes.
   const editorTkNodeMap = new Map<string, Map<string, { topLevelNodeKey: string }>>()
 
   const updateTkNodeMap = throttle(

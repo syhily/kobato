@@ -4,9 +4,6 @@ import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/life
 import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pin for the draft-preview access rule (CONTEXT.md: pages allow admin
-// only), against the real adapter.
-
 const meta = { authorId: null } as PageMetaRow
 
 describe('pageLifecycleAdapter.canPreviewDraft', () => {

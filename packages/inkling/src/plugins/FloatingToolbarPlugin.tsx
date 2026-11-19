@@ -96,8 +96,6 @@ function useFloatingFormatToolbar(
     return registerToolbarCommands(editor, session)
   }, [editor, session])
 
-  // use native mousedown event so the toolbar can close when something is
-  // clicked outside of the editor and the selection is lost
   React.useEffect(() => {
     const handleMousedown = (event: MouseEvent) => {
       if (!(event.target instanceof Node) || !anchorElem.contains(event.target)) {

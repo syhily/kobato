@@ -35,8 +35,6 @@ describe('sitemapRouter', () => {
     vi.unstubAllGlobals()
   })
 
-  // The first cold import of the module graph can exceed the default 10s
-  // timeout when the whole suite saturates the transform queue (pre-commit).
   it('returns cached sitemap when available', { timeout: 30_000 }, async () => {
     const cached = '<urlset></urlset>'
     vi.doMock('@kobato/server/infra/cache/registry.ts', () => ({
@@ -54,7 +52,6 @@ describe('sitemapRouter', () => {
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
-    // Revalidated, not max-age: a domain change must not be shadowed.
     expect(res.headers.get('Cache-Control')).toBe('public, no-cache')
     expect(res.headers.get('ETag')).toMatch(/^"[0-9a-f]{32}"$/)
     await expect(res.text()).resolves.toBe(cached)

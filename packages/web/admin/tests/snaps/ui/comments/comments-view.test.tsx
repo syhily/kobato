@@ -34,7 +34,6 @@ queryMocks.infinite = {
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// Stub IntersectionObserver to silence its SSR warning (expected in this environment).
 vi.stubGlobal(
   'IntersectionObserver',
   class {
@@ -43,10 +42,6 @@ vi.stubGlobal(
     disconnect() {}
   },
 )
-
-// Queries never fetch under SSR, so the controller is stubbed with a
-// hoisted singleton (same pattern as tags/musics-view specs) to cover the
-// data-loaded render path.
 
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],
@@ -57,7 +52,6 @@ const controllerState = vi.hoisted(() => ({
   isFetchingNextPage: false,
 }))
 
-// Presentational row: all affordances flow through `actions`; hoisted no-ops for the mock factory.
 const stubActions = vi.hoisted((): CommentActions => {
   const noop = () => {}
   return {
@@ -99,9 +93,6 @@ vi.mock('@kobato/web-admin/ui/comments/use-comments-controller.ts', async () => 
   }
 })
 
-// The real `useFilterPills` still queries for autocomplete lookups — inert
-// defaults keep the chrome network-free.
-
 const rowProps = {
   parentLookup: new Map<string, AdminComment>(),
   actions: stubActions,
@@ -109,7 +100,6 @@ const rowProps = {
 
 describe('snapshot: CommentsView', () => {
   beforeEach(() => {
-    // Reset the hoisted controller state per case.
     controllerState.comments = []
     controllerState.total = 0
     controllerState.statusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
@@ -277,16 +267,12 @@ describe('snapshot: AdminCommentRow', () => {
   })
 })
 
-// Date/text filter editors are covered in shared/filter-bar.test.tsx.
-
 describe('snapshot: EditUserDialog', () => {
   it('renders nothing user-visible in the closed state', () => {
     const html = stableHtml(renderInRouter(<EditUserDialog comment={null} onClose={() => {}} onSaved={() => {}} />))
     expect(html).not.toContain('编辑评论用户')
   })
 
-  // Open dialog mounts via a portal Base UI doesn't emit under SSR; keep
-  // the render call so a synchronous throw is caught.
   it('does not throw when rendered with an open comment target', () => {
     const comment = makeAdminComment({ name: 'Alice', email: 'alice@example.com' })
     expect(() =>

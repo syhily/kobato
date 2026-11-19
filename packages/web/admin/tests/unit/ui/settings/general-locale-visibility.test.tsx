@@ -8,10 +8,6 @@ import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/Setti
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The released surface. The real flag is ON — this file never mocks
-// it — so the General card exposes the language selector and all four options
-// exactly as an admin sees it.
-
 vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
     commit: vi.fn(async () => ({ ok: true, section: {} })),
@@ -40,7 +36,6 @@ describe('General locale selector — released surface', () => {
 
     const trigger = document.getElementById('general-locale')
     expect(trigger).not.toBeNull()
-    // The trigger shows the CURRENT locale's endonym.
     expect(trigger!.textContent).toContain(LOCALE_DISPLAY_NAMES[siteIdentity.locale])
 
     fireEvent.click(trigger!)

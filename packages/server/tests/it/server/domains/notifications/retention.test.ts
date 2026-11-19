@@ -18,9 +18,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
-// Fixed clock: the prune takes `now`, so the window never depends on when the
-// suite runs. Backdating is a raw UPDATE — the send path has no created-at
-// override (same idiom as the job-run retention test).
 const NOW = new Date('2026-11-07T00:00:00.000Z')
 const DAY_MS = 86_400_000
 const OLD_DAYS = NOTIFICATION_RETENTION_DAYS + 20
@@ -104,7 +101,6 @@ describe('notifications / retention prune', () => {
     const visitorId = await seedUser('visitor', 'visitor')
     const row = sendDirectMessage(db, adminId, visitorId, { title: '旧消息', body: '很久之后才读' })
     backdateMessage(row.id, OLD_DAYS + 60)
-    // readAt is "now" in real time — recent by every measure; the message is not.
     markRead(db, visitorId, [row.id])
 
     expect(pruneNotifications(db, NOW)).toEqual({ recipientsPruned: 1, notificationsPruned: 1 })
@@ -136,7 +132,6 @@ describe('notifications / retention prune', () => {
   it('keeps a root that still has any recipient row', async () => {
     const adminId = await seedUser('admin', 'admin')
     const visitorId = await seedUser('visitor', 'visitor')
-    // The broadcast author's self-row is pre-marked read; the visitor's is not.
     const row = sendBroadcast(db, adminId, { title: '公告', body: '一半已读', replyable: false })
     backdateMessage(row.id, OLD_DAYS)
 
@@ -160,8 +155,6 @@ describe('notifications / retention prune', () => {
     const messagesBefore = messageTableCount()
     const counts = pruneNotifications(db, NOW)
 
-    // agedRead: recipient + root; broadcast: the author's read self-row only
-    // (the visitor's unread row keeps the root alive); agedUnread: nothing.
     expect(counts).toEqual({ recipientsPruned: 2, notificationsPruned: 1 })
     expect(recipientTableCount()).toBe(recipientsBefore - counts.recipientsPruned)
     expect(messageTableCount()).toBe(messagesBefore - counts.notificationsPruned)

@@ -2,8 +2,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Cache-Control on derived assets (OG images, sitemaps) is public surface — search
-// engines, social previewers, and CDNs key on it.
 function read(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), 'utf8')
 }
@@ -19,7 +17,6 @@ describe('contract: cache-control on derived assets', () => {
     const source = read('packages/server/src/http/resources/sitemap.ts')
     expect(source).toContain("'public, no-cache'")
     expect(source).not.toContain('public, max-age=3600')
-    // Strong ETag over the exact XML keeps conditional 304s.
     expect(source).toContain('contentEtag')
     expect(source).toContain('etagHeaderMatches')
   })

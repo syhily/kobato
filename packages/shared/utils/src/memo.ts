@@ -1,8 +1,3 @@
-// Process-local memoization primitives (no React, no Node APIs).
-// "Share-in-flight" = concurrent callers await the same promise; failure
-// policy: retry | keep-stale | no-cache.
-
-/** Failure-resetting async memo: concurrent callers share the in-flight promise; a rejection is dropped and the next call retries. */
 export function createPromiseMemo<T>(loader: () => Promise<T>): () => Promise<T> {
   let pending: Promise<T> | null = null
   return () => {
@@ -25,7 +20,6 @@ export interface BoundedMap<K, V> {
   keys: () => IterableIterator<K>
 }
 
-/** FIFO-evict bounded map: a NEW key at capacity evicts the oldest; re-setting an existing key never evicts. */
 export function createBoundedMap<K, V>(cap: number): BoundedMap<K, V> {
   const map = new Map<K, V>()
   return {

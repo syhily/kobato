@@ -4,23 +4,11 @@ import {
   type TableRowNode,
 } from '@kobato/inkling-internal/nodes/table/TableNodes'
 
-// Table header facts — the one owner of the table family's "header row
-// only, never a header column" invariant as export policy (the insert
-// command owns the construction default: 3×3 with header row). The two
-// export directions diverge BY DECLARATION here instead of by coincidence:
-//
-// - HTML export reads the cells' header state (a header cell is a <th>) —
-//   a headerless table stays headerless.
-// - GFM markdown export FORGES row 0 as the header — GFM has no headerless
-//   tables, so a headerless table gains a header through markdown.
-
 export function getTableCellTag(cell: TableCellNode): 'th' | 'td' {
   return cell.hasHeader() ? 'th' : 'td'
 }
 
 export function resolveGfmPipeTableLines(rows: TableRowNode[], cellText: (cell: TableCellNode) => string): string[] {
-  // a rowless table has no pipe-table shape — Math.max over zero rows would
-  // be -Infinity and lines[0] undefined
   if (rows.length === 0) {
     return []
   }

@@ -4,8 +4,6 @@ import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/Adm
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-// Capture the seam call instead of rendering/sending: these tests pin the data mapping
-// (application → layout props + subject suffix); layout and seam have their own suites.
 vi.mock('@kobato/server/infra/email/admin-notification.ts', () => ({
   sendAdminNotification: vi.fn(async () => ({ ok: true })),
 }))
@@ -43,7 +41,6 @@ describe('friends/email — sendNewFriendApplication', () => {
       { label: '简介：', value: '记录前端与生活' },
       { label: 'RSS：', value: 'https://blog.example.com/feed.xml' },
     ])
-    // `https://example.com` is the test settings fixture's site URL.
     expect(props.cta).toEqual({ label: '前往审核', href: 'https://example.com/admin/taxonomy/friends' })
   })
 

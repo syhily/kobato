@@ -7,5 +7,4 @@
 
 export const USER_ROLES = ['admin', 'author', 'visitor'] as const
 
-// Newsletter double-opt-in lifecycle. `unsubscribed` rows are kept so a re-subscribe is a state transition on the same row.
 export const NEWSLETTER_SUBSCRIBER_STATUSES = ['pending', 'confirmed', 'unsubscribed'] as const

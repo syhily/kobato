@@ -30,10 +30,6 @@ queryMocks.filters = [] as ActiveFilter<PageFilterFieldKey>[]
 
 queryMocks.dispatch = vi.fn()
 
-// PagesView's list/authors queries are hoisted singletons so each test swaps resolved
-// data and the loading flag; only the pill hook is mocked, so the real FilterPillBar
-// renders.
-
 vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')>(
     '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts',
@@ -60,8 +56,6 @@ vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () =
   }
 })
 
-// Local fixture defaults deliberately differ from the shared catalog factory, which
-// derives slug/title from a generated numeric id.
 const aboutPage: Partial<AdminPageDto> = {
   id: '1000001',
   slug: 'about',

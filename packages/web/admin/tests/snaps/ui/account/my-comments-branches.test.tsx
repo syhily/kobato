@@ -33,10 +33,6 @@ queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// `MyCommentsView` reads its list via useInfiniteQuery and its entity picker via the
-// pill hook's useQueries, both stubbed through mock-react-query. Covers pills,
-// sentinels, badges.
-
 vi.stubGlobal(
   'IntersectionObserver',
   class {
@@ -111,7 +107,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('暂无评论')
-    // The count is split across a <span>: `共 <span>0</span> 条评论`.
     expect(html).toMatch(/共\s*<span[^>]*>\s*0\s*<\/span>\s*条评论/u)
     expect(html).not.toContain('已加载全部评论')
   })
@@ -296,14 +291,12 @@ describe('snapshot: MyCommentsView render branches', () => {
     queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '12' })], total: 1, hasMore: false }],
     }
-    // Pass multiple entityOptions so the hook's items derivation runs over them.
     const html = renderMy({
       entityOptions: [
         { value: 'post:1', label: 'Alpha' },
         { value: 'post:2', label: 'Beta' },
       ],
     })
-    // Header chrome + row rendered, proving the memo didn't throw.
     expect(html).toContain('我的评论')
     expect(html).toContain('data-slot="my-comment-row"')
   })
@@ -313,7 +306,6 @@ describe('snapshot: MyCommentsView render branches', () => {
       pages: [{ items: [makeItem({ id: '13' })], total: 1, hasMore: false }],
     }
     const html = renderMy({
-      // Pinned entity absent from options — the hook prepends a synthetic entry.
       entity: 'post:missing',
       entityOptions: [{ value: 'post:1', label: 'Known Post' }],
     })

@@ -8,7 +8,6 @@ import {
 import { voidOutput } from '@kobato/contracts/primitives.ts'
 import { oc } from '@orpc/contract'
 
-// Admin friends RPC contract — admin base on the server.
 export const adminFriendsContract = {
   list: oc
     .route({ method: 'GET', path: '/admin/friends/list' })

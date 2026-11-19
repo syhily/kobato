@@ -16,7 +16,6 @@ describe('server/domains/settings/site-origin — resolveSiteOrigin', () => {
   it('falls back to the request origin when no website is configured', () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
-      // Null website exercises the unconfigured fallback; the section type is string.
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: null as unknown as string },
     })
     const request = new Request('http://internal:3000/rpc/admin/users/mute')

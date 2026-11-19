@@ -16,8 +16,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// recalculateImageThumbhash stays mocked (sharp is a native external pinned
-// at the domain seam); deleteImage and updateImageNote run real.
 vi.mock('@kobato/server/domains/images/services/admin-mutate.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/server/domains/images/services/admin-mutate.ts')>()
   return {
@@ -26,7 +24,6 @@ vi.mock('@kobato/server/domains/images/services/admin-mutate.ts', async (importO
   }
 })
 
-// uploadImage stays mocked (pinned at the domain seam); assertImageUploadAllowed runs real.
 vi.mock('@kobato/server/domains/images/services/upload.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/server/domains/images/services/upload.ts')>()
   return {
@@ -37,7 +34,6 @@ vi.mock('@kobato/server/domains/images/services/upload.ts', async (importOrigina
 
 const db = getTestDb()
 
-// Seeded images carry storageDriver 's3', matching this backend's driver.
 const memory = makeMemoryBackend({ driver: 's3' })
 
 beforeEach(async () => {
@@ -50,14 +46,12 @@ beforeEach(async () => {
 afterEach(async () => {
   __resetStorageBackendsForTests()
   memory.reset()
-  // Flush BEFORE dropping the batcher: an armed flush timer leaks stale events into the next test.
   await flushAuditLog()
   resetAllBatchers()
 })
 
 let seq = 0
 
-// audit_log.actor_id references user.id: the admin caller must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -86,7 +80,6 @@ function adminCtx(userId: number) {
   return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
 }
 
-// Full adminImageDto-shaped return for the mocked service boundaries.
 function imageDto(overrides: Record<string, unknown> = {}) {
   return {
     id: '1',
@@ -187,7 +180,6 @@ describe('adminImagesRouter.recalculateThumbhash', () => {
 })
 
 describe('adminImagesRouter.upload — orchestration only', () => {
-  // Validation rules live at the domain seam; here: controller wiring + real cap enforcement.
   beforeEach(() => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -214,7 +206,6 @@ describe('adminImagesRouter.upload — orchestration only', () => {
         note: null,
         maxBytes: 1024,
         jpegQuality: 80,
-        // Session stub carries only id + role; the domain maps undefined to null.
         uploader: { id: admin, name: undefined },
       }),
     )

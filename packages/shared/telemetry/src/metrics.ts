@@ -1,7 +1,3 @@
-// Pure metric names and OpenObserve-derived stream prefixes shared by the
-// server catalog and the local trace tooling. This module must stay free of
-// serverConfig/logger imports so `tools/trace/src/*` can load it directly.
-
 export const TRACE_METRIC_NAMES = {
   httpServerDuration: 'http.server.duration',
   httpServerRequests: 'http.server.requests',
@@ -17,11 +13,6 @@ export const TRACE_METRIC_NAMES = {
   rumRelayOutcomes: 'rum.relay.outcomes',
 } as const
 
-/**
- * O2 stores an OTLP metric `a.b.c` as a stream named `a_b_c`; histograms add
- * `_count`, `_sum`, and `_bucket` siblings. These prefixes identify the
- * Kobato-owned metric streams without duplicating the catalog in scripts.
- */
 export const TRACE_METRIC_STREAM_PREFIXES = [
   'http_server_',
   'ssr_',

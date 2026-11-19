@@ -34,9 +34,7 @@ export async function syncLibraryImageBlocks(db: Database, state: LexicalEditorS
     }
     try {
       idTargets.push({ id: idFromString(target.imageId), target })
-    } catch {
-      /* noop */
-    }
+    } catch {}
   }
   if (idTargets.length === 0) {
     return
@@ -59,8 +57,6 @@ export async function syncLibraryImageBlocks(db: Database, state: LexicalEditorS
     if (row.thumbhash !== null && row.thumbhash !== undefined && row.thumbhash !== '') {
       target.thumbhash = row.thumbhash
     }
-    // Site-owned form: content stores the origin-relative `/storage/<key>` so a
-    // backend/CDN switch never breaks stored bodies; renderers absolutize.
     target.src = `/storage/${row.storagePath}`
     const nextNote = target.alt.trim()
     if (nextNote !== (row.note ?? '')) {

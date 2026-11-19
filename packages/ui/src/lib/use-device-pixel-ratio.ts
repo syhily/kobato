@@ -15,7 +15,6 @@ function getServerSnapshot() {
   return 1
 }
 
-/** Reactive `window.devicePixelRatio`; `1` during SSR. */
 export function useDevicePixelRatio(): number {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

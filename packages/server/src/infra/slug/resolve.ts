@@ -6,10 +6,6 @@ import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug.ts'
 
 export type SlugEntity = 'post' | 'page' | 'taxonomy'
 
-// Explicit non-empty slug wins (validated inline); blank falls back to
-// `deriveSlug(name)`. Failures throw `BAD_REQUEST` with `issues` path
-// `['slug']`; taxonomy skips the route-prefix fence. The entity noun is the
-// machine kind — the catalog's ICU `select` localizes it.
 export function resolveSlug(
   explicit: string | undefined,
   fallbackName: string,

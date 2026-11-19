@@ -7,11 +7,8 @@ import type createDOMPurify from 'dompurify'
 
 type Purify = ReturnType<typeof createDOMPurify>
 
-// Allows http/https/mailto plus protocol-relative and relative URLs.
 const ALLOWED_URI = /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
 
-// Stricter variant for configs with `noProtocolRelative`: same shape plus a
-// leading `(?!\/\/)` lookahead.
 const ALLOWED_URI_NO_PROTOCOL_RELATIVE = /^(?!\/\/)(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
 
 function filterStyleAttribute(value: string, allowed: Readonly<Record<string, readonly RegExp[]>>): string {
@@ -38,11 +35,6 @@ function isGloballyAllowedAttribute(attrName: string, attributes: readonly (stri
   return attributes.some((attr) => (typeof attr === 'string' ? attr === attrName : attr.test(attrName)))
 }
 
-/**
- * Binds one DOMPurify instance to the strategy config. Hooks register once per
- * instance, so the active strategy's allowlists travel through closure slots
- * set around each call.
- */
 export function createPurifySanitizer(purify: Purify): (html: string, config: SanitizeStrategyConfig) => string {
   let activeStyles: Readonly<Record<string, readonly RegExp[]>> | undefined
   let activeAttributes: readonly (string | RegExp)[] | undefined
@@ -59,10 +51,6 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
       data.attrValue = filtered
       return
     }
-    // Per-tag narrowing: ALLOWED_ATTR carries the global ∪ per-tag union (a
-    // per-tag attribute must be in ALLOWED_ATTR to reach this hook at all), so
-    // attributes allowed only via `tagAttributes` are dropped here on every
-    // tag but their own.
     if (activeTagAttributes === undefined || activeAttributes === undefined) {
       return
     }
@@ -76,7 +64,6 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
   })
 
   purify.addHook('afterSanitizeAttributes', (node) => {
-    // Overwrites the whole rel value rather than appending to it.
     if (activeNoopenerOnBlankTarget && node.tagName === 'A' && node.getAttribute('target') === '_blank') {
       node.setAttribute('rel', 'noopener noreferrer nofollow')
     }

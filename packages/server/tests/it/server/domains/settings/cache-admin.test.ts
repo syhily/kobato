@@ -16,7 +16,6 @@ async function seedEntry(bucket: string, key: string, opts: { expired?: boolean 
   await setItem(bucket, key, { seeded: key }, opts.expired ? { ttlSeconds: -1 } : { ttlSeconds: 3600 })
 }
 
-/** Actual shard-file sizes — the same population `byteSize` is defined over. */
 async function entryFileSizes(bucket: string): Promise<number[]> {
   const bucketDir = path.join(resolveCacheRoot(), bucket)
   const sizes: number[] = []
@@ -48,8 +47,6 @@ async function entryFileSizes(bucket: string): Promise<number[]> {
 
 describe('service: cache admin', () => {
   beforeEach(async () => {
-    // Wipe the content DB and the filesystem cache so leftovers from other
-    // tests cannot pollute the bucket counts.
     await clearAllTables(db)
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
@@ -60,7 +57,6 @@ describe('service: cache admin', () => {
     await seedEntry('avatar', 'avatar:abc')
     await seedEntry('calendar', 'calendar:2026-04-30')
     await seedEntry('feed', 'feed:xml:all')
-    // Out-of-bucket noise — must NOT show up.
     await seedEntry('misc', 'legacy:misc')
 
     const stats = await getAdminCacheStats(db)
@@ -112,7 +108,6 @@ describe('service: cache admin', () => {
   })
 
   it('drops the L1 memory tier as part of the admin clear', async () => {
-    // `set` writes the file and mirrors L1, so this read never touches disk.
     await set('sitemap', { settingsRevision: 'rev' }, '<urlset/>')
     expect(await get('sitemap', { settingsRevision: 'rev' })).toBe('<urlset/>')
     expect(await countEntryFiles('sitemap')).toBe(1)
@@ -121,7 +116,6 @@ describe('service: cache admin', () => {
 
     expect(result.total).toBe(1)
     expect(await countEntryFiles('sitemap')).toBe(0)
-    // L1 went cold with the clear — the value cannot be resurrected from memory.
     expect(await get('sitemap', { settingsRevision: 'rev' })).toBeNull()
   })
 
@@ -153,7 +147,6 @@ describe('service: cache admin', () => {
     expect(await countEntryFiles('og')).toBe(0)
     expect(await countEntryFiles('avatar')).toBe(0)
     expect(await countEntryFiles('calendar')).toBe(0)
-    // Sessions are a reserved bucket: never cleared, still reported.
     expect(result.refreshedStats.reserved.find((bucket) => bucket.id === 'session')?.keyCount).toBe(1)
   })
 
@@ -188,8 +181,6 @@ describe('service: cache admin', () => {
       release()
       await pending
 
-      // The parked loader's fire-and-forget write lands under the OLD
-      // generation — proof the race is real, and that it stays unreachable.
       await vi.waitFor(async () => {
         expect(await get('searchResult', lateParams)).toEqual(['late-value'])
       })
@@ -244,13 +235,11 @@ describe('service: cache admin', () => {
     })
 
     await seedEntry('og', 'opengraph:fresh-deadbeef')
-    await seedEntry('og', 'og:stale-deadbeef') // legacy key under the old prefix, same bucket directory
+    await seedEntry('og', 'og:stale-deadbeef')
     await seedEntry('avatar', 'avatar:abc')
 
     const stats = await getAdminCacheStats(db)
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph:*')
-    // Both entries live in the `og` directory — counting follows the bucket,
-    // not the key prefix, so a renamed key still counts here.
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(2)
 
     const cleared = await clearAdminCache(db, 'og')

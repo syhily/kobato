@@ -35,11 +35,6 @@ export function authFlowError(messageKey: UiMessageId, params?: ErrorMessagePara
   return { type: 'error', message: descriptor.fallbackMessage, descriptor }
 }
 
-/**
- * Schema-parse failure → flow error: the first issue carrying a typed catalog id
- * (the custom rule messages in `domains/auth/schema.ts`) wins so the user sees the
- * actual condition; standard Zod prose keeps the caller's generic key.
- */
 export function authFlowValidationError(fallbackKey: UiMessageId, issues: readonly z.core.$ZodIssue[]): AuthFlowError {
   const typed = issues.find((issue) => isUiMessageId(issue.message))
   if (typed === undefined) {
@@ -54,11 +49,6 @@ export function authFlowSuccess(messageKey: UiMessageId, params?: ErrorMessagePa
   return { type: 'success', message: descriptor.fallbackMessage, descriptor }
 }
 
-/**
- * The slice of the canonical request context the signin flows need. Same-session
- * mutations call `markSessionDirty()`; `AuthFlowResult.setCookie` is reserved for
- * sid-rotating results, never for same-session commits.
- */
 export interface SigninFlowContext {
   db: Database
   session: BlogSession

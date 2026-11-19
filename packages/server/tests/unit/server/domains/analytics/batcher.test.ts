@@ -1,7 +1,5 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
 
-// Mock fs/promises for dead-letter file I/O; the DuckDB sidecar is real
-// and adopted into the lifecycle engine.
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
@@ -62,7 +60,6 @@ afterAll(async () => {
 
 beforeEach(() => {
   ingestShouldFail = false
-  // Decorated handle: createAppender carries the failure gate; the rest is the real sidecar.
   __resetAnalyticsEngineForTests()
   __adoptAnalyticsHandleForTests({
     ...analyticsHandle,
@@ -78,7 +75,6 @@ beforeEach(() => {
 })
 
 describe('replayDeadLetter', () => {
-  // initAllBatchers must run before replay; the db stub is inert — writes go through the analytics handle.
   const dbStub = {}
   initAllBatchers({ db: dbStub, client: {}, path: ':memory:', inMemory: true, closed: false } as never)
 
@@ -106,7 +102,7 @@ describe('replayDeadLetter', () => {
 
     const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
     expect(result.replayed).toBe(0)
-    expect(result.failed).toBe(3) // 1 parse + 2 copy failures
+    expect(result.failed).toBe(3)
   })
 
   it('counts mixed parse and ingest failures correctly', async () => {
@@ -116,6 +112,6 @@ describe('replayDeadLetter', () => {
 
     const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
     expect(result.replayed).toBe(0)
-    expect(result.failed).toBe(4) // 2 parse + 2 copy failures
+    expect(result.failed).toBe(4)
   })
 })

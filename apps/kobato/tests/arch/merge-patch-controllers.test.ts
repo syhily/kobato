@@ -2,14 +2,6 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Multi-column field-update procedures must use the shared merge-patch
-// contract (`mergePatchInput` / `splitMergePatch` from
-// `@kobato/contracts/merge-patch`) — see `packages/server/AGENTS.md`
-// → Adding an endpoint. The hand-rolled conditional spread `...(x !== undefined && { x })`
-// is the pre-contract signature: it re-implements the "absent = untouched"
-// projection by hand, cannot express "null = clear" consistently, and is what
-// let the user-edit clear bug ship. This scan keeps controllers off it.
-
 const PROJECT_ROOT = process.cwd()
 const CONTROLLERS_DIR = join(PROJECT_ROOT, 'packages/server/src/http/controllers')
 

@@ -16,7 +16,6 @@ interface Props {
 }
 
 export function ApprovedComment({ t, receiver, postTitle, postLink, commentContent, commentLink }: Props) {
-  // Anonymous commenters claim their account via the lostpassword reset; built off `siteIdentity.website` to stay in sync.
   const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/admin/signin?action=lostpassword`
 
   return (

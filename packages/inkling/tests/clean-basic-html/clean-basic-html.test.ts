@@ -14,7 +14,6 @@ describe('cleanBasicHtml', function () {
   })
 
   it('errors in Node.js env without a `createDocument` option', function () {
-    // simulate a non-browser environment: no DOMParser on the global scope
     vi.stubGlobal('DOMParser', undefined)
     vi.stubGlobal('window', undefined)
     try {

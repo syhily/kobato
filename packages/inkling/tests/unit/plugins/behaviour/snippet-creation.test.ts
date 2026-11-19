@@ -16,8 +16,6 @@ interface SnippetValue {
   nodes: Array<Record<string, unknown>>
 }
 
-// the honest-boundary idiom for JSON.parse output (any): narrow through a
-// type predicate instead of asserting
 function isSnippetValue(value: unknown): value is SnippetValue {
   return typeof value === 'object' && value !== null && 'nodes' in value && Array.isArray(value.nodes)
 }

@@ -34,8 +34,6 @@ async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}
 
 describe('imageRouter.resolveThumbhash', () => {
   it('throws TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
-    // Shrink the resource bucket so one seeded hit exhausts it; the
-    // controller's own hit is the one that exceeds.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {

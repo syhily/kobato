@@ -2,14 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Headless-DOM-port import guard: `packages/inkling/src/html/headless-dom.ts` is the only
- * module in the package that may reference jsdom (static or dynamic import).
- * Every other conversion module resolves its DOM through the port's
- * `resolveHeadlessDom`, so the optional jsdom peer stays out of the browser
- * bundle and out of every load path except the lazy one.
- */
-
 const ALLOWED_JSDOM_IMPORTERS = ['packages/inkling/src/html/headless-dom.ts']
 
 function listSourceFiles(dir: string): string[] {
@@ -42,10 +34,6 @@ describe('jsdom import guard', () => {
   })
 
   it('the React barrel never re-exports the headless conversion modules', () => {
-    // The barrel ships to the browser; headless-html reaches jsdom through
-    // headless-dom, so a value (or even type) re-export here drags jsdom and
-    // its undici chain into the client module graph. The converters live on
-    // `@kobato/inkling-internal/headless` only.
     const HEADLESS_MODULES = /headless-(html|dom|editor)/
     for (const barrel of ['packages/inkling/src/index.ts', 'packages/inkling/src/shared-exports.ts']) {
       const specifiers = importSpecifiers(readFileSync(barrel, 'utf8'))

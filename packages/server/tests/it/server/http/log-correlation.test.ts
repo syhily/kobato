@@ -49,7 +49,6 @@ function resolution(): TraceConfigResolution {
   return { status: 'active', server: CONFIG, frontend: null, frontendRelay: null, diagnostics: [] }
 }
 
-/** Both in-memory exporters plus durable snapshots (their own shutdown clears the buffers). */
 function createSpanHarness(): { exporter: SpanExporter; spans: ReadableSpan[] } {
   const inner = new InMemorySpanExporter()
   const spans: ReadableSpan[] = []
@@ -82,7 +81,6 @@ function createLogHarness(): { exporter: LogRecordExporter; records: ReadableLog
   }
 }
 
-/** Production middleware order: requestId → trace span → hono-pino. */
 function buildApp(): Hono<Env> {
   const app = new Hono<Env>()
   app.use(requestId())
@@ -116,10 +114,7 @@ let stdoutSpy: MockInstance<typeof process.stdout.write> | undefined
 beforeEach(async () => {
   __resetTraceFacadeForTests()
   __resetLogSinkForTests()
-  // The test env pins server.loggingLevel to silent; let the real Pino root write.
   root.level = 'debug'
-  // The writable writes stdout first; keep the assertion run quiet without
-  // changing what reaches the sink.
   stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation((() => true) as typeof process.stdout.write)
 
   const spanHarness = createSpanHarness()
@@ -159,7 +154,6 @@ describe('HTTP log correlation', () => {
       },
     })
 
-    // The application result is unchanged by the telemetry pipeline.
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ ok: true })
 
@@ -175,7 +169,6 @@ describe('HTTP log correlation', () => {
     expect(responseLog!.severityNumber).toBe(9)
     expect(responseLog!.severityText).toBe('INFO')
 
-    // Same trace/span as the request span: the log came from inside runInSpan.
     expect(responseLog!.spanContext?.traceId).toBe(httpSpan!.spanContext().traceId)
     expect(responseLog!.spanContext?.spanId).toBe(httpSpan!.spanContext().spanId)
 
@@ -205,7 +198,6 @@ describe('HTTP log correlation', () => {
       expect(serialized).not.toContain(forbidden)
     }
 
-    // Spans are equally free of query strings, headers, and the request id.
     const spanText = JSON.stringify(spans.map((span) => span.attributes))
     for (const forbidden of [SECRETS.query, SECRETS.requestId, SECRETS.header, 'auth-fixture-secret']) {
       expect(spanText).not.toContain(forbidden)

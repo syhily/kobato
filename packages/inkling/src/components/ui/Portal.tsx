@@ -18,7 +18,6 @@ function Portal({
   const container = to || document.body
 
   function cancelEvents(event: React.MouseEvent) {
-    // prevent card from losing selection when interacting with element in portal
     event.stopPropagation()
   }
 

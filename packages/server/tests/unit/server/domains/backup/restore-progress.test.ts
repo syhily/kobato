@@ -35,8 +35,6 @@ describe('restore progress projection', () => {
   })
 
   it('prefers staging progress over the machine phase', () => {
-    // The machine slot is claimed (draining) while the pre-claim staging legs
-    // still report — the staging view must win or the poll would jump phases.
     wireIdleMachine()
     expect(tryBeginRestore()).toBe(true)
 
@@ -48,11 +46,9 @@ describe('restore progress projection', () => {
   it('caps percent at 99 and reports null when the total is unknown', () => {
     expect(beginStagingProgress()).toBe(true)
 
-    // doneBytes past the total (an estimate that ran over) must never round to 100.
     reportStagingProgress('decrypting', 999, 100)
     expect(peekRestoreProgress()).toEqual({ stage: 'decrypting', percent: 99 })
 
-    // Extraction has no total — percent is null, not a fabricated number.
     reportStagingProgress('extracting', 123, null)
     expect(peekRestoreProgress()).toEqual({ stage: 'extracting', percent: null })
   })

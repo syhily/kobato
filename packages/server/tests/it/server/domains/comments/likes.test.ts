@@ -17,7 +17,6 @@ import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batch
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Likes against the real in-memory engine: insert+bump, token lifecycle, purge cutoff.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -147,7 +146,6 @@ describe('services/comments/likes — queryMetadata', () => {
 
     const merged = await queryMetadata(db, [POST_A, POST_B], { likes: true, views: true, comments: false })
     expect(merged.get('post:1')?.views).toBe(102)
-    // POST_B has no metric row at all — the pending delta still surfaces.
     expect(merged.get('post:2')?.views).toBe(1)
 
     await flushPageViews()
@@ -206,7 +204,6 @@ describe('services/comments/likes — sweep timer', () => {
     vi.useFakeTimers()
     try {
       await seedStaleToken('sweep-me')
-      // A duplicate start must not replace the live timer or arm a second one.
       startLikeTokenSweep(db)
       startLikeTokenSweep(db)
 

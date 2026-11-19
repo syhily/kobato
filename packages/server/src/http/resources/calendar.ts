@@ -9,20 +9,13 @@ import { type CalendarTheme, renderCalendar } from '@kobato/server/render/calend
 import { format, isValid, parse } from 'date-fns'
 import { HTTPException } from 'hono/http-exception'
 
-/** Stored, revalidated on every reuse — a locale switch must never serve the old language. */
 export const CALENDAR_CACHE_CONTROL = 'public, no-cache'
 
 const timeRegex = /^\d{4}$/
 
-// The PNG render is expensive (main-thread canvas + level-9 encode + an
-// outbound quote fetch per miss) and each date is persisted to the cache —
-// an unbounded year (0000–9999) would open ~3.65M distinct renders. Anything
-// outside the supported window answers 404 before any work happens.
 const MIN_CALENDAR_YEAR = 1970
 const MAX_CALENDAR_YEAR = 2100
 
-// Hono-land 404: `HTTPException` is the only thrown shape `onErrorHandler`
-// maps — a raw `Response` escapes as an unhandled rejection → 500.
 function httpNotFound(): never {
   throw new HTTPException(404, { message: 'Not Found' })
 }
@@ -52,8 +45,6 @@ export async function serveCalendar(
     httpNotFound()
   }
 
-  // `time` is `MMdd`; the round-trip equality check rejects values the
-  // parser would silently roll over (month 13 → next year's January).
   const rawDate = `${year}-${time}`
   const date = parse(rawDate, 'yyyy-MMdd', new Date())
   if (!isValid(date) || format(date, 'yyyy-MMdd') !== rawDate) {
@@ -67,8 +58,6 @@ export async function serveCalendar(
     () => renderCalendar(date, theme, locale, settings),
   )
 
-  // ETag over the exact PNG bytes: a cache hit reuses the same buffer, so the
-  // tag is stable without regenerating the localized render.
   const etag = contentEtag(buffer)
   const headers = new Headers({
     'Cache-Control': CALENDAR_CACHE_CONTROL,
@@ -76,8 +65,6 @@ export async function serveCalendar(
     ETag: etag,
   })
   if (etagHeaderMatches(ifNoneMatch, etag)) {
-    // 304: the same headers advertise the representation just validated — no
-    // body, no render, no stale language.
     return new Response(null, { status: 304, headers })
   }
   return pngResponse(buffer, headers)

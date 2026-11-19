@@ -27,7 +27,6 @@ const TRIGGER_LABEL_IDS: Record<JobRunTrigger, UiMessageId> = {
   manual: 'admin.tasks.history.trigger.manual',
 }
 
-/** Pure row — exported so snapshot tests can render it without the client-only Sheet portal. */
 export function RunHistoryRow({ run }: { run: JobRunDto }) {
   const date = useFormatAdminDate()
   const { locale, t } = useI18n()
@@ -56,7 +55,6 @@ export function RunHistoryRow({ run }: { run: JobRunDto }) {
   )
 }
 
-// The list only arms while the sheet is open and polls every 10s so still-running rows refresh.
 export function RunHistorySheet({ taskKey, taskLabel }: { taskKey: JobHistoryInput['taskKey']; taskLabel: string }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)

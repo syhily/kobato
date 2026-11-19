@@ -16,15 +16,6 @@ interface MathLivePreviewProps {
   renderMath?: MathSettings['renderMath']
 }
 
-/**
- * The edit-mode preview: asks the host's server render channel for the
- * current source's artifacts and shows them sanitized. The returned artifacts
- * are preview-only — they are never written back to the node (the host's save
- * pipeline fills the stored slots; CSP keeps KaTeX out of the browser).
- * Debouncing is the host's own concern (kobato: 200ms). Without a
- * `renderMath` channel the preview falls back to the TeX source — the demo
- * host runs in that state.
- */
 function MathLivePreview({ tex, renderMath }: MathLivePreviewProps) {
   const labels = useInklingLabels()
   const [preview, setPreview] = React.useState<MathPreviewState>({ html: null, error: null })
@@ -94,11 +85,6 @@ interface MathDisplayProps {
   svg?: string
 }
 
-/**
- * The display-mode render: the stored artifacts win over the TeX source
- * (same priority as the export renderer), sanitized with the shared math
- * profile.
- */
 function MathDisplay({ tex, mathml, svg }: MathDisplayProps) {
   const artifact = resolveMathArtifact({ tex: tex ?? '', mathml: mathml ?? '', svg: svg ?? '' })
 

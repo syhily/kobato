@@ -23,10 +23,6 @@ import { sendPasswordReset } from '@kobato/server/infra/email/sender.ts'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import bcrypt from 'bcryptjs'
 
-/**
- * Cross-domain dependency wired by the caller: the claim path needs the comments
- * domain's approved-commenter check, which auth must not import.
- */
 export interface PasswordResetFlowDeps {
   hasApprovedComments(db: Database, userId: number): Promise<boolean>
 }
@@ -53,10 +49,6 @@ async function issueTokenAndEmail(
   })
 }
 
-/**
- * `lostpassword`: always appears to succeed — an unknown account and a tripped rate
- * limit yield the same message.
- */
 export async function requestPasswordReset(
   db: Database,
   clientAddress: string,
@@ -117,23 +109,17 @@ export async function resetPasswordWithToken(
 
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
   await updateUserById(db, result.userId, { password: hashed, loginMethod: 'password' })
-  // Rotating the password kills every other credential-bypass token on the account:
-  // remaining reset links, magic signin links, and pending OTPs.
   await revokeTokensFor(db, result.userId, 'password-reset')
   await revokeTokensFor(db, result.userId, 'signin-link')
   await revokeTokensFor(db, result.userId, 'signin-otp')
   try {
     await deleteAllCredentials(db, result.userId)
-  } catch {
-    // Best-effort: don't block password reset if passkey cleanup fails.
-  }
+  } catch {}
 
   const dbUser = await findUserById(db, result.userId)
   if (!dbUser?.role || dbUser.deletedAt) {
     return authFlowError('auth.signin.error.accountCannotSignIn')
   }
-  // Use the returned `setCookie`: a later `commitSession` would mint a second sid and
-  // orphan the one just written.
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
     revokeOtherSessions: true,
   })

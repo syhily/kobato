@@ -6,10 +6,6 @@ import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
 import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
 import type { AdminListEngagement } from '@kobato/server/domains/content/services/admin-list.ts'
 
-/**
- * The 17 columns `post` and `page` meta tables declare identically; entity
- * extras attach through `mutations.insertExtras` / `updateExtras`.
- */
 export interface MetaRowBase {
   id: number
   createdAt: Date
@@ -50,7 +46,6 @@ export interface UpsertMetaInputBase {
   publishedAt?: Date | null
 }
 
-// Sync returns (node:sqlite): these run inside entity transactions.
 export interface MetaCrud<TMeta extends MetaRowBase, TNew> {
   findMetaById: (db: Database, id: number) => TMeta | null
   findMetaBySlug: (db: Database, slug: string) => TMeta | null
@@ -81,10 +76,6 @@ export interface MetaEntityDescriptor<
 
   access: {
     assertAccess: (meta: TMeta | null, viewer?: ViewerIdentity) => asserts meta is TMeta
-    /**
-     * Draft-preview access rule: posts require author+ AND ownership (admins
-     * preview anyone's), pages admin only. Row-aware for the ownership leg.
-     */
     canPreviewDraft: (viewer: ViewerIdentity | undefined, meta: TMeta) => boolean
     scopeListFilters?: <TFilters>(filters: TFilters, viewer: ViewerIdentity) => TFilters
   }
@@ -114,7 +105,6 @@ export interface MetaEntityDescriptor<
   }
 
   mutations: {
-    /** Create-time author override — posts pin non-admin viewers to themselves. */
     resolveAuthorId?: (authorId: number | null, viewer?: ViewerIdentity) => number | null
     preflightUpsert?: (db: Database, input: TInput) => Promise<void>
     insertExtras: (input: TInput) => Partial<TNew>

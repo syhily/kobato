@@ -34,11 +34,8 @@ import {
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 
-// Content-addressed generations for the fixture settings — stable across runs.
 const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)
 
-// devBypass caches (og / calendar) skip reads outside production, so pin
-// PROD on by default and flip it off only in the devBypass tests.
 const originalProd = import.meta.env.PROD
 
 beforeEach(() => {
@@ -49,7 +46,6 @@ beforeEach(() => {
   fileStoreMock.getItemWithExpiry.mockResolvedValue(null)
   fileStoreMock.getItemRawWithExpiry.mockResolvedValue(null)
   fileStoreMock.removeItem.mockResolvedValue(undefined)
-  // The real store returns the text it wrote; the registry parses it for L1.
   fileStoreMock.setItem.mockImplementation(async (_bucket, _key, value) => JSON.stringify(value))
   fileStoreMock.setItemRaw.mockResolvedValue(undefined)
   fileStoreMock.readGeneration.mockResolvedValue(0)
@@ -67,7 +63,6 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-/** Pin `Date.now` so a write's derived deadline is assertable by exact value. */
 function mockNow(iso: string): number {
   const now = Date.parse(iso)
   vi.spyOn(Date, 'now').mockReturnValue(now)
@@ -123,7 +118,6 @@ describe('cache registry — through', () => {
 
     const first = through('sitemap', { settingsRevision: 'rev' }, loader)
     const second = through('sitemap', { settingsRevision: 'rev' }, loader)
-    // The loader starts after the async read path — wait for it, then release.
     await vi.waitFor(() => {
       expect(loader).toHaveBeenCalledTimes(1)
     })
@@ -162,7 +156,6 @@ describe('cache registry — through', () => {
 
     await expect(through('sitemap', { settingsRevision: 'rev' }, loader)).resolves.toEqual(['c1'])
     expect(fileStoreMock.setItem).toHaveBeenCalledTimes(1)
-    // Proven by the still-pending write: the loader value already reached the caller.
     releaseWrite('["c1"]')
   })
 
@@ -175,7 +168,6 @@ describe('cache registry — through', () => {
       const loader = vi.fn().mockResolvedValue(['c1'])
       const value = await through('sitemap', { settingsRevision: 'rev' }, loader)
       expect(value).toEqual(['c1'])
-      // Let the rejected fire-and-forget write settle inside writeEntry's catch.
       await new Promise((resolve) => setImmediate(resolve))
     } finally {
       process.off('unhandledRejection', onUnhandled)
@@ -260,7 +252,6 @@ describe('cache registry — key shapes', () => {
     expect(key.startsWith(`og:${REVISIONS.og}:post-x-`)).toBe(true)
     expect(key.slice(`og:${REVISIONS.og}:post-x-`.length)).toMatch(/^[0-9a-f]{16}$/)
 
-    // A settings save (or any input edit) must move the key.
     await set('og', { ...params, title: 'T2' }, Buffer.from('png'))
     const otherKey = fileStoreMock.setItemRaw.mock.calls[1]?.[1] as string
     expect(otherKey).not.toBe(key)
@@ -333,9 +324,6 @@ describe('cache registry — avatar sentinel codec', () => {
   })
 
   it('treats a HAVE_AVATAR entry with a null buffer as the negative sentinel', async () => {
-    // The codec refuses to write a payload-less positive entry — a corrupt
-    // in-memory shape degrades to the negative sentinel instead of an
-    // undecodable blob.
     await set('avatar', { size: 80, email: 'a@b.c' }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
 
     const blob = fileStoreMock.setItemRaw.mock.calls[0]?.[2] as Buffer
@@ -432,7 +420,6 @@ describe('cache registry — counters', () => {
     expect(bumpCounter('searchResult')).toBe(8)
     expect(fileStoreMock.bumpGeneration).toHaveBeenCalledWith('searchResult')
     await expect(getCounter('searchResult')).resolves.toBe(8)
-    // The bump publishes the new value into the memo; no second file read.
     expect(fileStoreMock.readGeneration).toHaveBeenCalledTimes(1)
   })
 
@@ -488,8 +475,6 @@ describe('cache registry — L1 memory tier', () => {
   })
 
   it('mirrors the decoded binary shape, not the raw write value', async () => {
-    // encodeAvatar normalizes a payload-less positive to the NO_AVATAR sentinel;
-    // L1 must publish the decoded shape a disk read would produce.
     await set('avatar', { size: 80, email: 'a@b.c' }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
 
     await expect(get('avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
@@ -516,8 +501,6 @@ describe('cache registry — L1 memory tier', () => {
       nested: Record<string, unknown>
     }
 
-    // A memory hit must be observationally identical to a disk hit: NaN → null,
-    // Date → ISO string, undefined fields dropped.
     expect(cached.count).toBeNull()
     expect(cached.at).toBe('2026-01-01T00:00:00.000Z')
     expect(cached.nested).toEqual({ kept: 1 })
@@ -533,7 +516,6 @@ describe('cache registry — L1 memory tier', () => {
       const options = fileStoreMock.setItem.mock.calls[0]?.[3] as { expiresAtMs: number }
       expect(options.expiresAtMs).toBe(Date.now() + 300_000)
 
-      // At the shared deadline both planes miss; a fresh L1 deadline would serve it.
       vi.setSystemTime(new Date(options.expiresAtMs))
       await expect(get('sitemap', { settingsRevision: 'rev' })).resolves.toBeNull()
       expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(1)
@@ -552,8 +534,6 @@ describe('cache registry — L1 memory tier', () => {
 
       await expect(get('sitemap', { settingsRevision: 'rev' })).resolves.toBe('v')
       vi.setSystemTime(new Date('2026-01-01T00:00:01.000Z'))
-      // A fresh deadline would serve the value from L1; the envelope's own
-      // deadline expired, so the read falls through to disk (a miss).
       await expect(get('sitemap', { settingsRevision: 'rev' })).resolves.toBeNull()
 
       expect(fileStoreMock.getItemWithExpiry).toHaveBeenCalledTimes(2)
@@ -608,8 +588,6 @@ describe('cache registry — L1 memory tier', () => {
 
     clearLocalizedOutputs()
 
-    // Every bucket's memory tier is gone: each read has to reach the disk plane
-    // (whose mock answers null), so nothing is served from L1.
     await expect(get('feed', feed)).resolves.toBeNull()
     await expect(get('calendar', calendar)).resolves.toBeNull()
     await expect(get('og', og)).resolves.toBeNull()

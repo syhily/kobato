@@ -4,12 +4,6 @@ import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/lexical/walk.
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
-// Restricted Lexical state for comment bodies — the server perimeter validates
-// every incoming body. Capability set: multi-paragraph, blockquote, nested
-// lists, code block, math block, link, math-inline (node whitelist in
-// node-whitelist.ts).
-
-/** List nesting cap: counts `list` nodes on the ancestor chain. */
 export const COMMENT_LIST_MAX_DEPTH = 4
 
 export const commentEditorStateSchema = buildLexicalEditorStateSchema({
@@ -19,9 +13,6 @@ export const commentEditorStateSchema = buildLexicalEditorStateSchema({
 
 export type CommentEditorState = z.infer<typeof commentEditorStateSchema>
 
-/** The comment form's reset/empty value: a single empty paragraph, valid for
- * both the schema parse and the composer's canonical blank. The cast bridges
- * the erased `LexicalNodeJson` child type (type + version only). */
 export const EMPTY_COMMENT_EDITOR_STATE: CommentEditorState = unsafeCast<CommentEditorState>({
   root: {
     type: 'root',
@@ -43,12 +34,6 @@ export function safeValidateCommentEditorState(
   return { ok: false, error: result.error }
 }
 
-/**
- * Cheap pre-render length bound for the server perimeter: counts only text
- * that survives into the degraded-HTML projection, so exceeding the cap here
- * guarantees exceeding it on the rendered side — one tree walk instead of a
- * jsdom render of a body the 10 MB perimeter limit allows.
- */
 export function commentEditorStateTextLength(state: CommentEditorState): number {
   let total = 0
   visitLexicalNodes(state, (node) => {
@@ -72,11 +57,6 @@ export function commentEditorStateTextLength(state: CommentEditorState): number 
   return total
 }
 
-/**
- * Blank check (submit gating on both the comment form and the server
- * perimeter): a comment is blank when no text content survives trimming and
- * every codeblock `code` / math `tex` payload is empty.
- */
 export function isCommentEditorStateBlank(state: CommentEditorState): boolean {
   let blank = true
   visitLexicalNodes(state, (node) => {

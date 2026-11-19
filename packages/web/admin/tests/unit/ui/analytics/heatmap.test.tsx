@@ -10,11 +10,6 @@ import { Heatmap } from '@kobato/web-admin/ui/analytics/Heatmap.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Keyboard navigation contract for the 7×24 heatmap grid: roving tabindex
-// with arrow-key movement (Slite's Heatmap.vue behavior). react-query is
-// mocked so the component renders straight from the fixture cells; the URL
-// state arrives via the provider, as the route module would supply it.
-
 const control = mockTanstackQuery()
 
 const CELLS: HeatmapCell[] = [

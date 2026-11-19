@@ -20,12 +20,6 @@ export const SUPERSCRIPT = {
 
 export const CUSTOM_TEXT_FORMAT_TRANSFORMERS = [SUBSCRIPT, SUPERSCRIPT]
 
-/**
- * The smallest safe set: text-format transformers act on TextNode only, and
- * the text-match set needs LinkNode (MINIMAL_NODES includes it). No element
- * transformers — heading/list/quote shortcuts require the corresponding
- * registered nodes, which a minimal composition does not have.
- */
 export const MINIMAL_TRANSFORMERS: Transformer[] = [
   ...TEXT_FORMAT_TRANSFORMERS,
   ...CUSTOM_TEXT_FORMAT_TRANSFORMERS,

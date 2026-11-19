@@ -13,12 +13,6 @@ import {
   type LexicalNodeConfig,
 } from 'lexical'
 
-// Selection-editor harness shared by the word-count and keyboard specs: one
-// rooted/rootless editor factory, the content/seed write, and the range
-// writes the tests repeat. Specialized editor construction (rich-text
-// registration, parent links, card nodes) stays local to each spec — this
-// module owns only the operations that were duplicated verbatim.
-
 const SELECTION_EDITOR_ROOT_ATTRIBUTE = 'data-test-selection-editor'
 
 export interface SelectionEditorOptions {

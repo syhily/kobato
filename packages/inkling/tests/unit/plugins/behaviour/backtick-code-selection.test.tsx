@@ -31,12 +31,6 @@ import {
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Typing an unmodified backtick over a range selection formats it as inline
-// code through the same FORMAT_TEXT_COMMAND path as ctrl+shift+K. These are
-// real-editor specs: FormatText is
-// wired by registerRichText, undo by the real HistoryPlugin, and the nested
-// mount goes through the production registerKeyboardNavigation seam.
-
 interface CreatedEditor {
   editor: LexicalEditor
   root: HTMLDivElement

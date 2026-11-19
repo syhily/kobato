@@ -9,7 +9,6 @@ describe('admin posts (HTTP e2e)', () => {
     const client = new E2eClient(env.baseUrl)
     const { res } = await loginAdmin(client, env)
     expect(res.status).toBe(302)
-    // Login rotates the session — the CSRF token must be re-read.
     const csrfToken = await getAdminCsrfToken(client)
 
     const created = await callE2eRpc<{ post: { id: string | number; slug: string } }>(

@@ -25,7 +25,6 @@ export function useIsActiveLink(path?: string, activeOnSubpath = false, end = fa
     return true
   }
 
-  // Exact-match links without search params stay inactive when a more specific (search-parameterised) sibling matches.
   if (end && currentSearch) {
     return false
   }

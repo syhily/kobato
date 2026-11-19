@@ -12,10 +12,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Guard policy branches against the real session/user tables; the
-// admin-scope happy paths live in ./auth-coverage.test.ts. This file
-// owns own-scope, bulk-scope, non-admin actor, and soft-deleted admin.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -30,8 +26,6 @@ async function seedUser(role: 'admin' | 'visitor' = 'admin', email: string, opts
   return u!
 }
 
-/** Seed a session row the way production does: bare row at commit time,
- * then `recordSessionLogin` stamps the login meta (it is UPDATE-only). */
 async function seedLiveSession(sid: string, userId: number) {
   await db.insert(sessionTable).values({
     id: sid,

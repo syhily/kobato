@@ -134,8 +134,6 @@ describe('SlashCardMenuPlugin', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
     vi.restoreAllMocks()
-    // jsdom does not implement scrollIntoView; CardMenuItem calls it when the
-    // keyboard selection moves with a latched scroll request
     Element.prototype.scrollIntoView = vi.fn()
   })
 

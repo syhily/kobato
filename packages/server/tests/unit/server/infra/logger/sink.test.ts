@@ -8,8 +8,6 @@ import {
 } from '@kobato/server/infra/logger/sink.ts'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
 
-// The test env pins `server.loggingLevel: 'silent'`; raise the live pino level
-// for the duration of each case so lines actually reach the writable.
 const originalRootLevel = root.level
 
 let stdoutSpy: MockInstance<typeof process.stdout.write> | undefined
@@ -49,7 +47,6 @@ describe('log sink slot', () => {
 
     expect(clearLogSink(second)).toBe(false)
     expect(clearLogSink(first)).toBe(true)
-    // The cleared slot can be filled again.
     expect(setLogSink(second)).toBe(true)
   })
 
@@ -135,10 +132,8 @@ describe('logger writable forwarding', () => {
 
     expect(received).toHaveLength(1)
     expect(received[0]).toContain('"msg":"outer"')
-    // The re-entrant line still reaches stdout; only its sink hop is dropped.
     expect(stdoutText().match(/"msg":"re-entrant"/g)).toHaveLength(1)
 
-    // The fence is released, so the next top-level line is forwarded again.
     logger.info('after re-entry')
     expect(received).toHaveLength(2)
     expect(received[1]).toContain('"msg":"after re-entry"')

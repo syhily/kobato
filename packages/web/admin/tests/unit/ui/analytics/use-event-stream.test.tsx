@@ -6,10 +6,6 @@ import { useEventStream } from '@kobato/web-admin/ui/analytics/use-event-stream.
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The hook subscribes through the native EventSource; the fake records
-// every instance so tests can drive 'events' by hand, including the
-// stale-`since` reconnect resend.
-
 class FakeEventSource {
   static instances: FakeEventSource[] = []
 
@@ -35,7 +31,6 @@ class FakeEventSource {
     this.closed = true
   }
 
-  /** Deliver an `events` SSE message exactly like the server would. */
   emit(payload: unknown): void {
     const event = new MessageEvent('events', { data: JSON.stringify(payload) })
     for (const listener of this.listeners.get('events') ?? []) {
@@ -67,7 +62,6 @@ describe('useEventStream', () => {
     act(() => source.emit([e1, e2]))
     expect(result.current.events).toEqual([e1, e2])
 
-    // A stale-since reconnect resends the tail; the buffer must not duplicate it.
     const e3 = makeEvent('2026-08-01T00:00:03.000Z', '/c')
     act(() => source.emit([e2, e3]))
     expect(result.current.events).toEqual([e1, e2, e3])
@@ -90,7 +84,6 @@ describe('useEventStream', () => {
     const first = FakeEventSource.instances[0]!
     expect(first.url).not.toContain('since=')
 
-    // The watermark must advance past resent events to the newest ts reported.
     act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a')]))
     act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a'), makeEvent('2026-08-01T00:00:02.000Z', '/b')]))
 

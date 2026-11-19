@@ -2,11 +2,6 @@ import type { PublicMusicMeta } from '@kobato/contracts/music.ts'
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
 
-// Lexical editor-state fixtures pinning the storage wire format the inkling composer
-// produces: element nodes always carry children/direction/format/indent, text nodes
-// detail/format/mode/style/text (lexical 0.53 exporters). Mirrored from
-// packages/shared/lexical/tests/unit/schema.test.ts — keep both in sync.
-
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
 }
@@ -24,8 +19,6 @@ export function lexicalBodyWith(children: unknown[]): LexicalEditorState {
 }
 
 export function lexicalParagraph(value: string) {
-  // the 0.53 full-dialect exporter writes textFormat/textStyle even at their
-  // defaults on paragraphs (the schema heal refills them — dialect.ts)
   return element('paragraph', [text(value)], { textFormat: 0, textStyle: '' })
 }
 
@@ -54,7 +47,6 @@ export function lexicalMusicPlayer(playerId: string, extra: Record<string, unkno
   return { type: 'music-player', version: 1, playerId, ...extra }
 }
 
-/** Stub `MusicEmbedResolver` for saveBody inputs — resolves nothing by default. */
 export function stubMusicResolver(metas: Record<string, PublicMusicMeta> = {}): MusicEmbedResolver {
   return async (playerIds) => {
     const map = new Map<string, PublicMusicMeta>()

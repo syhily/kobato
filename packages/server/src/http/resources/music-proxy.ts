@@ -18,12 +18,9 @@ const SOURCE_REFERERS: Record<MetingSource, string> = {
 
 const VALID_SOURCES = new Set<string>(['netease', 'tencent'])
 
-/** Upstream payload cap: a proxied track/cover never exceeds 50 MB. */
 const MAX_PROXY_BYTES = 50 * 1024 * 1024
 
 async function proxyUpstream(targetUrl: string, referer: string): Promise<Response> {
-  // Upstream-provided URLs are schema-checked strings only — route through the
-  // SSRF-guarded fetch and cap the streamed body.
   const result = await safeFetch(targetUrl, {
     stream: true,
     timeoutMs: 30000,
@@ -44,9 +41,6 @@ async function proxyUpstream(targetUrl: string, referer: string): Promise<Respon
   }
 
   const headers = new Headers()
-  // The payload renders in the admin browser — forward only image/audio
-  // types. Anything else (a hostile upstream answering text/html would run
-  // as first-party script) becomes an opaque download.
   const contentType = result.response.headers.get('content-type')
   if (contentType !== null && (contentType.startsWith('image/') || contentType.startsWith('audio/'))) {
     headers.set('Content-Type', contentType)

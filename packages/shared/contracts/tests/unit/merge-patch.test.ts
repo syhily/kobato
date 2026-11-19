@@ -3,9 +3,6 @@ import { optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-// The merge-patch input contract every field-update procedure builds on:
-// the identity key is required and never updatable; per patch field, absent
-// = untouched, null = clear, value = set.
 const input = mergePatchInput({
   name: z.string().min(1).optional(),
   link: clearable(optionalHttpUrlSchema),

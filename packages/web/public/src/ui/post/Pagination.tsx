@@ -25,7 +25,6 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
     >
       <ul data-slot="pagination-content" className="flex flex-row flex-wrap items-center justify-center gap-2">
         {items.map((item, i) => {
-          // Key ellipsis slots by neighbouring page numbers so the key is stable across list lengths.
           const prev = items[i - 1]
           const next = items[i + 1]
           const ellipsisKey = `ellipsis-${prev ?? 'start'}-${next ?? 'end'}`

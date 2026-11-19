@@ -3,10 +3,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Catalog pin: every task registered on the scheduler chain (or via startJobRun) exists in
-// TASK_CATALOG, and every catalog entry has a registration site — adding one without the
-// other fails here.
-
 const SRC_SERVER = resolve(process.cwd(), 'packages/server/src')
 
 function walk(dir: string, out: string[]): void {

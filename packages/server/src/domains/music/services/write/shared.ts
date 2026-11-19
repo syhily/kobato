@@ -11,7 +11,6 @@ import { randomBytes } from 'node:crypto'
 
 const log = getLogger('music.service')
 
-// `[a-z0-9]{16}` ≈ 80 bits of entropy; collisions are retried anyway.
 const PLAYER_ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
 function generatePlayerId(): string {
   const bytes = randomBytes(16)
@@ -28,7 +27,6 @@ export const MAX_COVER_BYTES = 5 * 1024 * 1024
 export const COVER_SIZE = 300
 export const COVER_JPEG_QUALITY = 85
 
-// Spoof a browser UA — providers blacklist Node's default for CDN downloads.
 const MUSIC_DOWNLOAD_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
@@ -44,7 +42,6 @@ export async function generateUniquePlayerId(db: Database): Promise<string> {
   throw new DomainError('INTERNAL', descriptorFor('music.error.playerIdConflict'))
 }
 
-// Map the safe-fetch failure union onto the pinned DomainError variants (codes/keys covered by the write tests).
 function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'audio' | 'cover'): DomainError {
   switch (result.reason) {
     case 'invalid-url':

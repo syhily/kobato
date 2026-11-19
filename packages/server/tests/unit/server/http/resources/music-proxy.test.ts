@@ -5,8 +5,6 @@ import { adminSession, emptySession, regularSession } from '@kobato/test/session
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The proxy route resolves upstream hostnames through safe-fetch's DNS
-// guard — pin it to a public address so tests stay hermetic.
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
@@ -107,8 +105,6 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
   })
 
   it('serves an unexpected upstream content type as an opaque download', async () => {
-    // A hostile upstream answering text/html must never render as
-    // first-party markup in the admin browser.
     const resolveUrl = vi.fn(async () => `https://up.example.com/${route}`)
     vi.doMock('@kobato/server/domains/music/providers/registry.ts', () => ({
       getProvider: () => ({

@@ -1,10 +1,3 @@
-// Privacy consent banner for RUM request-identity forwarding.
-//
-// Rendered only when the site runs `observability.frontend.clientIdentity: forward` and the
-// visitor has not decided yet; the root `App` owns the visibility/mount logic and the persisted
-// decision. Accepting starts browser RUM (forwarding the coarse identity the VRL reduces to
-// country and browser/OS/device family); declining permanently opts this browser out.
-
 import { Button } from '@kobato/ui/components/button.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 

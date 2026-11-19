@@ -10,9 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// One fake observability server behind the REAL react-query hooks: the orpc
-// query/mutation surface is the only mocked boundary, while the card wiring
-// (status gating, flush-before-test, invalidation) runs for real.
 const api = vi.hoisted(() => ({
   status: undefined as ObservabilityStatusOutput | undefined,
   testConnection: vi.fn(),
@@ -145,7 +142,6 @@ describe('ui/admin/settings/observability/ObservabilityForm', () => {
     expect(screen.getByText('监控面板')).toBeTruthy()
 
     expect(endpointInput()).toHaveValue(INITIAL.observability.endpoint)
-    // Password hint and the read-only RUM token both show the loader mask.
     expect(screen.getByText(/p4ss/)).toBeTruthy()
     expect(screen.getByText(/tok3/)).toBeTruthy()
     expect(await screen.findByText('连接已验证')).toBeTruthy()
@@ -159,11 +155,9 @@ describe('ui/admin/settings/observability/ObservabilityForm', () => {
     const switches = screen.getAllByRole('switch')
     expect(switches).toHaveLength(4)
     for (const toggle of switches) {
-      // Base UI's switch root is a span: the disabled state rides `aria-disabled`.
       expect(toggle.getAttribute('aria-disabled')).toBe('true')
     }
     expect(screen.getByRole('button', { name: '重新同步' })).toBeDisabled()
-    // The switches keep showing the stored values — gating never rewrites them.
     expect(switches.map((toggle) => toggle.getAttribute('aria-checked'))).toEqual(['false', 'false', 'false', 'false'])
   })
 
@@ -176,7 +170,6 @@ describe('ui/admin/settings/observability/ObservabilityForm', () => {
     fireEvent.click(testButton())
 
     expect(await screen.findByText('连接测试通过')).toBeTruthy()
-    // The test only sees saved settings: the sparse patch lands first.
     expect(payloads).toEqual([{ observability: { endpoint: 'https://obs.example.com' } }])
     expect(calls).toEqual(['commit', 'test'])
     expect(server.observability.endpoint).toBe('https://obs.example.com')

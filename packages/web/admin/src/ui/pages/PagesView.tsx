@@ -25,7 +25,6 @@ export function PagesView() {
 
   const fields = useMemo(() => buildPageFilterFields(usersData?.users ?? [], t), [usersData, t])
 
-  // The pills own the filter surface: reducer state + merged query input the list query spreads.
   const pills = useFilterPills({ fields })
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
@@ -49,7 +48,6 @@ export function PagesView() {
           }
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* Header slot only when no filters are active — the body slot below takes over otherwise. */}
             {!pills.hasFilters && filterBar}
 
             <Button type="button" size="sm" render={<Link to="/editor/page/new" />}>

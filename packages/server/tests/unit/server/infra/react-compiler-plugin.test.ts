@@ -1,9 +1,6 @@
 import { reactCompilerPlugin } from '@kobato/toolchain/src/vite/react-compiler-plugin.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-// The plugin's transform handler is invoked directly with a mock Vite
-// hook context — no dev server needed for these assertions.
-
 function makeContext(consumer: 'client' | 'server' | undefined) {
   return {
     environment: consumer === undefined ? undefined : { config: { consumer } },
@@ -16,7 +13,6 @@ function makeContext(consumer: 'client' | 'server' | undefined) {
 
 async function runTransform(code: string, id: string, consumer: 'client' | 'server' | undefined = 'client') {
   const plugin = reactCompilerPlugin()
-  // The object form of the transform hook stores the handler under `.handler`.
   const hooks = typeof plugin.transform === 'object' ? plugin.transform.handler : plugin.transform
   return (hooks as (this: never, code: string, id: string) => Promise<unknown>).call(
     makeContext(consumer) as never,

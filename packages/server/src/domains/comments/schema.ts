@@ -13,9 +13,6 @@ export const loadAllCommentsSchema = z.object({
 })
 export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
 
-// Server-side autocomplete inputs for the moderation Combobox filters.
-// `ids` rehydrates a selection from `?userId=` (comma-separated); `key` is
-// the single-value page-key equivalent (page keys may contain `,`).
 export const filterAutocompleteSchema = z.object({
   q: z.string().trim().max(100).optional(),
   limit: z.coerce.number().min(1).max(50).default(20),

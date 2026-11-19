@@ -74,9 +74,6 @@ describe('securitySchema', () => {
   })
 
   it('rejects /api as an exempt path (P1-16)', () => {
-    // `/api` fronts the Hono API surface behind csrfGuard
-    // (upload/restore/branding/maxmind) — exempting the prefix silently
-    // disables CSRF on state-changing routes.
     const result = securitySchema.safeParse({
       csrf: { enabled: true, exemptPaths: ['/api'] },
     })

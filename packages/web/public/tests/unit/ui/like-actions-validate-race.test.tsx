@@ -6,8 +6,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Behavioral pins for the LikeButton validate race: a slow background
-// token validation must not overwrite a newer like/unlike interaction.
 const api = vi.hoisted(() => ({
   validate: vi.fn(),
   increase: vi.fn(),
@@ -24,7 +22,6 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({
   },
 }))
 
-// NumberFlow is presentation-only here.
 vi.mock('@number-flow/react', () => ({
   default: ({ value }: { value: number }) => <span>{value}</span>,
 }))

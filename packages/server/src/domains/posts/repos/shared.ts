@@ -73,7 +73,6 @@ function defaultOpenGraphSuffix(): string {
   return brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.openGraph)
 }
 
-/** Public `date` is first publication time; falls back to `published_at` before the first publish. */
 export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = [], categoryName = ''): ClientPost {
   const date = meta.firstPublishedAt ?? meta.publishedAt
   return {

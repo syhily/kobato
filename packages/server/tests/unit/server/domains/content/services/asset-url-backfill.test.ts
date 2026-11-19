@@ -115,7 +115,6 @@ describe('rewriteLexicalBodyAssetUrls', () => {
       right?: string
     }[]
     expect(solution.content).toContain('src="/storage/images/a.jpg"')
-    // Truly external markup stays untouched.
     expect(solution.content).toContain('src="https://external.example/x.jpg"')
     expect(twoColumn.left).toContain('src="/storage/images/b.jpg"')
     expect(twoColumn.right).toContain('src="/storage/images/c.jpg"')

@@ -8,10 +8,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
 
-// Validate the incoming editor state, strip every server-owned artifact slot
-// the client may have forged (stored-XSS / stale-snapshot guard — the editor
-// never writes these back), then recompute the KaTeX/Shiki slots.
-
 export async function canonicalizeLexicalEditorState(input: unknown): Promise<LexicalEditorState> {
   try {
     const state = lexicalEditorStateSchema.parse(input)
@@ -32,13 +28,8 @@ function stripServerFilledFields(state: LexicalEditorState): void {
     const record = node as Record<string, unknown>
     for (const key of keys) {
       if (node.type === 'music-player') {
-        // The meta snapshot is resolved and embedded later in the save
-        // pipeline; absent means "not snapshotted".
         delete record[key]
       } else {
-        // codeblock / math / math-inline: the schema declares the artifact
-        // slots as required strings, so they reset to empty rather than
-        // being deleted.
         record[key] = ''
       }
     }

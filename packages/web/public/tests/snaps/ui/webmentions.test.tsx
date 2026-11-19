@@ -31,7 +31,6 @@ describe('snapshot: WebmentionList (public)', () => {
     expect(html).toContain('Jane Doe')
     expect(html).toContain('提及了你的文章')
     expect(html).toContain('一段摘要。')
-    // External links always open off-site without opener access.
     expect(html).toContain('href="https://sender.example/mentioning-post"')
     expect(html).toContain('target="_blank"')
     expect(html).toContain('rel="noreferrer"')

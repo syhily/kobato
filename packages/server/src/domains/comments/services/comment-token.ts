@@ -27,16 +27,12 @@ export function parseCommentTokensCookie(cookieHeader: string | null): CommentTo
     const raw = decodeURIComponent(match.slice(`${COMMENT_TOKEN_COOKIE_NAME}=`.length))
     const parsed: unknown = JSON.parse(raw)
     return commentTokenCookieSchema.parse(parsed)
-  } catch {
-    /* noop */
-  }
+  } catch {}
   return {}
 }
 
 function cookieAttributes(maxAge: number): string {
   const parts = ['Path=/', 'SameSite=Lax', 'HttpOnly']
-  // `Secure` only in production — over plain HTTP browsers refuse to
-  // store Secure cookies (matches the session/visitor cookie pattern).
   if (import.meta.env.PROD) {
     parts.push('Secure')
   }

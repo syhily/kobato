@@ -53,7 +53,6 @@ export function PostsView() {
     [categoriesData, tagsData, usersData, t],
   )
 
-  // The pills own the filter surface: reducer state + merged query input; the URL seeds them and re-syncs on navigation.
   const { search } = useLocation()
   const [initialFilters] = useState(() => postFiltersFromSearch(search, t))
   const pills = useFilterPills({ fields, initial: initialFilters })
@@ -61,15 +60,12 @@ export function PostsView() {
   const [sortBy, setSortBy] = useState<'publishedAt' | 'updatedAt'>('publishedAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  // URL → pills sync via the "adjust state during render" pattern (sidebar / dashboard deep links).
   const [lastSearch, setLastSearch] = useState(search)
   if (search !== lastSearch) {
     setLastSearch(search)
     syncPostFiltersFromUrl(pills.filters, pills.dispatch, search, t)
   }
 
-  // Pills → URL sync: in-view filter edits flow back into `?status/category/tag` (replace, no history
-  // entries) so the sidebar's posts status submenu tracks the active filters.
   const navigate = useNavigate()
   useEffect(() => {
     const nextSearch = postFiltersToSearch(pills.filters, search)
@@ -107,7 +103,6 @@ export function PostsView() {
           }
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* Header slot only when no filters are active — the body slot below takes over otherwise. */}
             {!pills.hasFilters && filterBar}
 
             <Select

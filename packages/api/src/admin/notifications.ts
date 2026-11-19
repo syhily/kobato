@@ -7,7 +7,6 @@ import {
 } from '@kobato/contracts/notifications.ts'
 import { oc } from '@orpc/contract'
 
-// Admin notifications RPC contract — admin base on the server.
 export const adminNotificationsContract = {
   sendDirect: oc
     .route({ method: 'POST', path: '/admin/notifications/send-direct' })

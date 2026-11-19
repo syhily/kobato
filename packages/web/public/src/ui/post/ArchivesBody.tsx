@@ -38,7 +38,6 @@ export function ArchivesBody({ resolvedPosts, listingNowIso }: ArchivesBodyProps
         </div>
       </div>
       {Object.entries(groupedPosts).map(([key, posts]) => {
-        // Object.groupBy only emits keys that have at least one item.
         if (posts === undefined) {
           return null
         }

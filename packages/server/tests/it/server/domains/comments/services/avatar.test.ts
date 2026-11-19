@@ -20,7 +20,6 @@ import {
 } from '@kobato/server/domains/comments/services/avatar.ts'
 import { type AvatarEntry, AvatarStatus, get, set } from '@kobato/server/infra/cache/registry.ts'
 import { imageWidth } from '@kobato/server/infra/image/compress.ts'
-// Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
@@ -30,7 +29,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
-// Stand-in for sha256 hashes; the mirror branch rejects non-hex digests.
 const GRAVATAR_HASH = 'abcdef0123456789'.repeat(4)
 
 beforeEach(async () => {
@@ -44,7 +42,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** A real square PNG decoded by real sharp. */
 async function pngOfSize(width: number): Promise<Buffer> {
   return sharp({ create: { width, height: width, channels: 3, background: { r: 32, g: 128, b: 200 } } })
     .png()
@@ -230,7 +227,6 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
     ])
 
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
-    // fetch ran (the SSRF guard + DNS passed) and the size cap is what stopped it.
     expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 
@@ -445,7 +441,6 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl', () => 
 
     const dataUrl = await fetchGithubAvatarDataUrl()
 
-    // PNG magic bytes → 'iVBORw==' in base64.
     expect(dataUrl).toBe('data:image/png;base64,iVBORw==')
   })
 
@@ -481,8 +476,6 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl', () => 
   })
 
   it('caches a failure briefly — a repeat call is served from the cache without refetching', async () => {
-    // A GitHub outage must not turn every call into a 30s-timeout upstream
-    // fetch; the failure rides a short TTL instead of the bucket default.
     vi.useFakeTimers({ toFake: ['Date'] })
     const start = new Date('2026-07-19T00:00:00Z')
     vi.setSystemTime(start)
@@ -495,12 +488,10 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl', () => 
     expect(await fetchGithubAvatarDataUrl()).toBe('')
     expect(fetchFn).toHaveBeenCalledTimes(1)
 
-    // Still cached just inside the 5-minute failure window.
     vi.setSystemTime(new Date(start.getTime() + 4 * 60 * 1000))
     expect(await fetchGithubAvatarDataUrl()).toBe('')
     expect(fetchFn).toHaveBeenCalledTimes(1)
 
-    // Past the failure window the entry regenerates on the next call.
     vi.setSystemTime(new Date(start.getTime() + 6 * 60 * 1000))
     expect(await fetchGithubAvatarDataUrl()).toBe('')
     expect(fetchFn).toHaveBeenCalledTimes(2)
@@ -522,12 +513,10 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl', () => 
       expect(await get('githubAvatar', {})).toBe('data:image/png;base64,iVBORw==')
     })
 
-    // Past the failure window (5 min) but inside the full bucket TTL.
     vi.setSystemTime(new Date(start.getTime() + 6 * 60 * 1000))
     expect(await fetchGithubAvatarDataUrl()).toBe('data:image/png;base64,iVBORw==')
     expect(fetchFn).toHaveBeenCalledTimes(1)
 
-    // Past the 15-minute bucket TTL the entry regenerates.
     vi.setSystemTime(new Date(start.getTime() + 16 * 60 * 1000))
     expect(await fetchGithubAvatarDataUrl()).toBe('data:image/png;base64,iVBORw==')
     expect(fetchFn).toHaveBeenCalledTimes(2)
@@ -678,7 +667,6 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    // No user row: the attacker-chosen param must not grow the avatar cache.
     const result = await serveAvatar(db, '42', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
@@ -731,7 +719,6 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const id = await seedUser({ email: '12345@qq.com' })
     const fetchFn = mockFetch([new Response(null, { status: 404 })])
 
-    // Pin the chain to qq-only so the fetch budget measures the QQ branch.
     const first = await withAvatarSources(['qq'], () => serveAvatar(db, String(id), 120))
     const second = await serveAvatar(db, String(id), 120)
 
@@ -849,8 +836,6 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
 
 describe('domains/comments/services/avatar — probeAvatarMirrors', () => {
   it('reports every preset, marking 2xx and 404 reachable and network failures unreachable', async () => {
-    // URL-aware stub: loli.net answers 200, webp.se answers 404 (the d=404
-    // "no avatar" signal — still proof of connectivity), the rest refuse.
     const fetchFn = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.startsWith('https://gravatar.loli.net/')) {

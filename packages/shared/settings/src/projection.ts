@@ -3,13 +3,7 @@ import type { BackupSettings, CommentsSettings, MailSettings } from '@kobato/set
 import { AVATAR_SOURCES } from '@kobato/assets/avatar.ts'
 import { z } from 'zod'
 
-// Per-slot status surfaced to the admin form. `etag` drives cache-busting and the
-// "is configured?" check; only the hash is sent, never the bytes.
 export type BrandingSlotStatus = z.infer<typeof brandingSlotStatusSchema>
-
-// Zod twins of the two masked loader shapes — the runtime gate of the settings save
-// response (see `projectSectionForAdmin`): the save round-trip must produce exactly
-// the shape the loader serves.
 
 const brandingSlotStatusSchema = z.object({ etag: z.string() })
 
@@ -91,13 +85,8 @@ export const backupLoaderShapeSchema = z.object({
 
 export type AssetsLoaderShape = z.infer<typeof assetsLoaderShapeSchema>
 
-// Mirrors `MailSettings` with the two secrets swapped for their masks; the outer
-// `mail:` wrapper matches `mailSchema` so card patches validate without translation.
 export type MailLoaderShape = z.infer<typeof mailLoaderShapeSchema>
 
-// Mirrors `CommentsSettings` with the GitHub token swapped for its mask; the outer
-// `comments:` wrapper matches `commentsSchema` so card patches validate without
-// translation.
 export type CommentsLoaderShape = z.infer<typeof commentsLoaderShapeSchema>
 
 interface RawBrandingRef {
@@ -108,7 +97,6 @@ function statusOf(ref: RawBrandingRef | undefined | null): BrandingSlotStatus {
   return { etag: typeof ref?.etag === 'string' ? ref.etag : '' }
 }
 
-/** Project raw `AssetsSettings` into the shape `<AssetsForm>` expects (secret masking, defaulted upload limits). */
 export function projectAssetsForAdmin(
   assets: {
     asset: { host: string; scheme: 'http' | 'https' }
@@ -181,7 +169,6 @@ export function projectAssetsForAdmin(
   }
 }
 
-/** Project raw `MailSettings` into the shape `<MailForm>` expects: secrets swapped for masks, TLS flags forwarded. */
 export function projectMailForAdmin(
   mail: MailSettings,
   masks?: {
@@ -209,7 +196,6 @@ export function projectMailForAdmin(
   }
 }
 
-/** Project raw `CommentsSettings` into the shape `<CommentsForm>` expects: GitHub token swapped for its mask. */
 export function projectCommentsForAdmin(
   comments: CommentsSettings,
   githubTokenMask?: string | null,
@@ -228,12 +214,8 @@ export function projectCommentsForAdmin(
   }
 }
 
-// Mirrors `BackupSettings` plus the password mask slot; the redacted
-// `encryption.password` ('') rides along so card patches keep validating against
-// the section schema.
 export type BackupLoaderShape = z.infer<typeof backupLoaderShapeSchema>
 
-/** Project raw `BackupSettings` into the shape `<BackupView>` expects: encryption password masking. */
 export function projectBackupForAdmin(backup: BackupSettings, passwordMask?: string | null): BackupLoaderShape {
   const password = typeof backup.encryption.password === 'string' ? backup.encryption.password : ''
   return {

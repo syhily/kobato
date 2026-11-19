@@ -6,9 +6,6 @@ import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The SQLite half of the daily DB maintenance job. The DuckDB retention half
-// lives in packages/db/tests/it/duckdb/maintenance.test.ts.
-
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
   const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
   const value = row === undefined ? undefined : Object.values(row)[0]
@@ -25,7 +22,6 @@ beforeEach(() => {
 
 describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
   it('drains the freelist and logs page stats before and after', () => {
-    // auto_vacuum=INCREMENTAL leaves freed pages on the freelist; only incremental_vacuum reclaims them.
     handle.client.exec('CREATE TABLE maintenance_probe (id INTEGER PRIMARY KEY, payload TEXT)')
     const payload = 'x'.repeat(4096)
     const insert = handle.client.prepare('INSERT INTO maintenance_probe (payload) VALUES (?)')

@@ -1,7 +1,3 @@
-/**
- * Architectural invariant: DI must NOT store state on globalThis.
- * Browser API usages (crypto, location, document, navigator) are exempt.
- */
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

@@ -15,10 +15,6 @@ export const footnotesSectionPostProcessor: HtmlPostProcessor = {
       return
     }
 
-    // The run's outputs are the contiguous tail of `output` from the first
-    // definition's mapped index on (the map already accounts for null
-    // exports and the trailing-paragraph suppression). A -1 here violates
-    // the seam's invariant — bail instead of splicing by assumption.
     const firstOutputIndex = outputIndexByChild[firstDefinitionIndex]
     if (firstOutputIndex < 0) {
       return

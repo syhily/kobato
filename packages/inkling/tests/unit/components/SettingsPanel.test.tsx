@@ -35,7 +35,6 @@ function createListOptionItem(): ListOptionItem {
   }
 }
 
-// Mock the host-integration linking channel used by InputUrlSetting
 vi.mock('@kobato/inkling-internal/context/InklingHostIntegrationContext', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/inkling-internal/context/InklingHostIntegrationContext')>()
   return { ...actual, useInklingLinkingSettings: () => mocks.contextValue.cardConfig }
@@ -181,8 +180,6 @@ describe('SettingsPanel', function () {
         throw new Error('Expected autocomplete request to create a resolver')
       }
       resolveLinks([createListOptionItem()])
-      // the late resolution must not trigger a state update on the unmounted
-      // component — act() flushes the microtask without errors or warnings
       await act(async () => {})
     })
   })

@@ -29,7 +29,6 @@ vi.mock('@kobato/server/domains/settings/services/hydrate.ts', () => ({
   hydrateBlogSettings: vi.fn(async () => ({})),
 }))
 
-// db-lifecycle migrates a database at module-import time — keep it mocked.
 vi.mock('@kobato/server/bootstrap/db-lifecycle.ts', () => ({
   getDb: vi.fn(() => ({})),
 }))
@@ -58,13 +57,8 @@ describe('glue contract / middleware pipeline order', () => {
 
     configureMiddleware(app as never)
 
-    // Registration order is semantics: the trust-proxy scheme fix must land
-    // before anything reads the request URL; context derives before its
-    // consumers, decoys short-circuit first.
     expect(uses).toHaveLength(13)
     expect(uses[0][0]).toBe(trustProxy)
-    // The request span mounts after trust-proxy/requestId and before compression, so it
-    // covers the complete application pipeline.
     expect(uses[2][0]).toBeInstanceOf(Function)
     expect(uses[8][0]).toBe(trailingSlashNormaliser)
     expect(uses[9][0]).toBe(honoWpDecoyMiddleware)

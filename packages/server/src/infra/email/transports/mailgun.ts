@@ -1,7 +1,3 @@
-// Direct Mailgun v3 `fetch` + `FormData` client (no SDK dependency), sharing the
-// other transports' skip/error vocabulary. US region only — endpoint is hardcoded
-// to `https://api.mailgun.net`; the admin UI has no region selector.
-
 import type {
   EmailMessage,
   MailTransport,

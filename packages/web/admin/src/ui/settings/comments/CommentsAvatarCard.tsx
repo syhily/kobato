@@ -48,9 +48,6 @@ export function CommentsAvatarCard({ comments }: CommentsFormProps) {
 
   const sensors = useSortableSensors()
 
-  // Connectivity probe: fires on every dropdown open (never on SSR / first
-  // paint), one concurrent round per open. Stale results stay on screen
-  // while a re-probe is in flight.
   const probe = useQuery({
     ...orpcQuery.admin.comments.probeAvatarMirrors.queryOptions(),
     enabled: false,
@@ -70,9 +67,6 @@ export function CommentsAvatarCard({ comments }: CommentsFormProps) {
     return <span className="text-xs text-green-600">{result.latencyMs} ms</span>
   }
 
-  // A configured mirror outside the presets stays selectable — never strand
-  // an existing (allowlisted but non-preset) value on an unreadable option;
-  // its only label is the URL itself.
   const current = comments.comments.avatar.mirror
   const options: ReadonlyArray<{ value: string; labelKey?: UiMessageId }> = GRAVATAR_MIRROR_PRESETS.some(
     (option) => option.value === current,

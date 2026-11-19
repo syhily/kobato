@@ -19,7 +19,6 @@ import { LogOutIcon, MonitorIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-/** tRich chunks renderer for the active-session count badge (module scope — stable). */
 function renderCountBadge(chunks: ReactNode[]): ReactNode {
   return <Badge variant="secondary">{chunks}</Badge>
 }

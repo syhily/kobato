@@ -4,17 +4,12 @@ import { useActionBanner } from '@kobato/web-admin/ui/editor-shell/use-action-ba
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-// The banner protocol: persist arms a countdown (`begin`), each successful
-// mutation leg decrements it (`noteLeg`), and the preview-link banner appears
-// only when every leg landed. Conflict / error paths `cancel`. These tests
-// mount the hook in a real DOM environment so state updates commit.
 describe('ui/admin/editor-shell/useActionBanner', () => {
   it('shows the banner with the slug only after every armed leg lands', () => {
     const { result } = renderHook(() => useActionBanner())
 
     act(() => result.current.begin('draft', 2))
     act(() => result.current.noteLeg('hello-world'))
-    // One leg still outstanding — nothing visible yet.
     expect(result.current.banner).toBeNull()
 
     act(() => result.current.noteLeg('hello-world'))
@@ -35,7 +30,6 @@ describe('ui/admin/editor-shell/useActionBanner', () => {
     act(() => result.current.begin('draft', 2))
     act(() => result.current.noteLeg('hello-world'))
     act(() => result.current.cancel())
-    // A late success after cancel must not surface a stale link.
     act(() => result.current.noteLeg('hello-world'))
     expect(result.current.banner).toBeNull()
   })

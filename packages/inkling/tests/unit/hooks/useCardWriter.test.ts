@@ -25,8 +25,6 @@ function addHtmlNode(editor: LexicalEditor): Promise<NodeKey> {
   })
 }
 
-// a root-less editor commits its update on a microtask, so flush before
-// reading the state back
 async function flushCommit() {
   await act(async () => {})
 }

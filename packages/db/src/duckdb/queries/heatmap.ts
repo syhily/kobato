@@ -10,7 +10,6 @@ export async function queryHeatmap(reader: AnalyticsReader, input: ResolvedAnaly
   const clientTimezone = getSafeTimezone(input.clientTimezone ?? 'Etc/UTC')
   const tzTimestamp = sql`timezone(${clientTimezone}, ${sql.ref('timestamp')})`
 
-  // `isodow`: 1 = Monday … 7 = Sunday, in the client timezone.
   const rows = await runAnalyticsQuery(
     reader,
     createAnalyticsQuery()

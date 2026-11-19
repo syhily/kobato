@@ -8,13 +8,8 @@ import { getCounter, through } from '@kobato/server/infra/cache/registry.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { and, desc, eq, or, sql } from 'drizzle-orm'
 
-/**
- * The single definition of which post text is searchable; the LIKE
- * disjuncts map over this list.
- */
 const corpusFields = [post.title, post.summary, sql`COALESCE(${postSearchIndex.plainText}, '')`]
 
-// Hidden posts are searchable; scheduled posts stay dev-only for authoring checks.
 export function searchPostOptions(): { includeHidden: boolean; includeScheduled: boolean } {
   return { includeHidden: true, includeScheduled: import.meta.env.DEV }
 }
@@ -40,20 +35,10 @@ async function runLikeSearch(db: Database, baseWhere: SQL, query: string): Promi
   return rows.map((r) => r.slug)
 }
 
-// Only the query changes a LIKE result set.
 export function likeCacheKeyParts(query: string): string[] {
   return [query]
 }
 
-// Search-result cache: the full ordered slug list per query, so pagination
-// never re-runs the DB query. Key = generation + query; empty result sets
-// are never cached (cacheWhen on the declaration).
-
-/**
- * Full ordered slug list for a query. The visibility gate is supplied by the
- * caller (`livePostWhere()` in the search loader) — this module owns the
- * searchable corpus, never the visibility policy.
- */
 export async function searchPosts(
   db: Database,
   baseWhere: SQL,

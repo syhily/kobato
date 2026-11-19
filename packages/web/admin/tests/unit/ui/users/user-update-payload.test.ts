@@ -48,8 +48,6 @@ describe('buildUserUpdatePayload', () => {
   })
 
   it('sends badgeTextColor as null when the text-color override is off', () => {
-    // Even with a picked color present, the null tells the server to clear
-    // the override and use automatic black/white contrast.
     const payload = buildUserUpdatePayload(makeFields({ useTextOverride: false, badgeTextColor: '#123456' }))
     expect(payload.badgeTextColor).toBeNull()
   })

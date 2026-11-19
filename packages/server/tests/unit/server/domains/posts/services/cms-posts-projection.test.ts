@@ -2,9 +2,6 @@ import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
 
 import { describe, expect, it } from 'vitest'
 
-// A blank `cover` column must project to `/images/open-graph.png`, or listings render
-// `<Image src="" />` and OG generation fails.
-
 const { toCmsPost } = await import('@kobato/server/domains/posts/projection.ts')
 const { toClientPostFromMeta } = await import('@kobato/server/domains/posts/repos/shared.ts')
 

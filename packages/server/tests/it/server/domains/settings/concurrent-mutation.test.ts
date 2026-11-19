@@ -7,8 +7,6 @@ import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Section-change dispatch is covered by the unit tests; keep the
-// backup/audit schedulers out of these persistence-focused cases.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -16,7 +14,6 @@ beforeEach(async () => {
   await clearAllTables(db)
   resetBlogSettingsForTests()
 
-  // Seed baseline rows so hydrateBlogSettings sees an installed deployment
   await db.insert(setting).values([
     {
       scope: 'blog.general',
@@ -72,7 +69,6 @@ describe('integration / concurrent settings edits', () => {
     )
     expect(limitsRes.status).toBe(200)
 
-    // The general section requires all fields, hence the full payload.
     const generalRes = await callRpc(
       '/admin/settings/update',
       {

@@ -1,9 +1,6 @@
 import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// `listingSeo` (owned by the HTTP slice) renders paginated listing titles from
-// these two keys. They are reserved here so the four locales stay in step:
-// en-US says "Page {page}", the Chinese catalogs say "第 {page} 页/頁".
 describe('i18n — meta.listing keys', () => {
   it('formats the bare page title in every locale', () => {
     expect(makeTranslator('en-US')('meta.listing.page', { page: 3 })).toBe('Page 3')

@@ -9,10 +9,6 @@ import { loadAllComments } from '@kobato/server/domains/comments/services/admin-
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// `loadAllComments` against the real engine: filter propagation is pinned
-// by real query results — a filter dropped from `extraFilters` shows up as
-// status counts disagreeing with the list.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -123,7 +119,6 @@ describe('loadAllComments — text filter propagation', () => {
   })
 
   it('stacks the `match` filter on top of the status filter so the count breakdown stays consistent', async () => {
-    // Pins `match` in `extraFilters`: counts must stay consistent with the list.
     const uid = await seedUser()
     const pid = await seedPost('p4')
     const fooPending = await seedComment({ userId: uid, ownerId: pid, content: 'foo pending', isPending: true })
@@ -247,7 +242,6 @@ describe('loadAllComments — options object shape', () => {
       filterPublicId: 'nonexistent',
     })
 
-    // A seeded row exists, so the empty result proves the early return fired.
     expect(result.comments).toEqual([])
     expect(result.total).toBe(0)
     expect(result.hasMore).toBe(false)

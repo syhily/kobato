@@ -13,7 +13,6 @@ import {
 import { voidOutput } from '@kobato/contracts/primitives.ts'
 import { oc } from '@orpc/contract'
 
-// Admin pages RPC contract — admin base on the server.
 export const adminPagesContract = {
   list: oc.route({ method: 'GET', path: '/admin/pages/list' }).input(listPagesSchema).output(listPagesOutputDto),
   get: oc.route({ method: 'GET', path: '/admin/pages/get' }).input(adminPageIdInput).output(adminPageDetailDto),

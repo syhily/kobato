@@ -38,8 +38,6 @@ function createMockDb(rows: ResultRow[] = []) {
   return dbProxy as unknown as Database
 }
 
-// A stand-in for the Drizzle select tail that records the pagination
-// calls `applyPage` makes, and resolves `rows` when awaited.
 function createFakeQuery(rows: unknown[]) {
   const calls: Array<[string, number]> = []
   const query = {

@@ -24,15 +24,11 @@ describe('server/domains/settings/sections/registry', () => {
     const seeded = SETTINGS_SECTIONS.filter((section) => SECTION_REGISTRY[section].defaults !== null)
 
     expect(payloads.map(({ section }) => section)).toEqual(seeded)
-    // general / assets ship no seed — their setup-time first write must
-    // arrive complete.
     expect(payloads.some(({ section }) => section === 'general')).toBe(false)
     expect(payloads.some(({ section }) => section === 'assets')).toBe(false)
   })
 
   it('rejects a corrupt section default through the same validator on both paths', () => {
-    // Corrupt one section's seed: the backfill builder and the validator the write path's
-    // merge base calls must reject with the identical message.
     const mutableRegistry = SECTION_REGISTRY as unknown as Record<string, { defaults: unknown }>
     const original = SECTION_REGISTRY.limits
     mutableRegistry.limits = { ...original, defaults: { maxRequestBodySize: 'ten' } }

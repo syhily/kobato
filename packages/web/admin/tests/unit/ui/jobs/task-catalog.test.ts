@@ -4,9 +4,6 @@ import { makeTranslator } from '@kobato/test/i18n.ts'
 import { TASK_CAPABILITIES } from '@kobato/web-admin/ui/jobs/meta.ts'
 import { describe, expect, it } from 'vitest'
 
-// The task catalog is a NEUTRAL registry: every user-facing field is a UI
-// message id, so the admin task center can render all four locales. A copy
-// regression (a label reverted to prose) fails here and in the Han-literal scan.
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
 const MESSAGE_FIELDS = ['label', 'description', 'scheduleHint'] as const

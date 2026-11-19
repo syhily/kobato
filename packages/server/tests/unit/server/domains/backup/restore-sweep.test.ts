@@ -3,8 +3,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The sweep reads the real temp dir — the surface a crashed process leaks into. Only the
-// logger is silenced; infra seams this path never touches are mocked away.
 vi.mock('@kobato/server/infra/db/paths.ts', () => ({
   resolveDatabasePath: () => ':memory:',
   resolveAnalyticsPath: () => ':memory:',
@@ -17,7 +15,6 @@ vi.mock('@kobato/server/infra/logger.ts', () => ({
 
 import { RESTORE_TEMP_PREFIX, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore.ts'
 
-// Anything this test creates in the shared temp dir, tracked for teardown.
 const created: string[] = []
 
 beforeEach(() => {
@@ -41,7 +38,6 @@ async function exists(path: string): Promise<boolean> {
 
 describe('services/restore — sweepStaleRestoreDirs', () => {
   it('removes only kobato-restore-* directories and leaves everything else', async () => {
-    // mkdtemp guarantees the exact production prefix shape.
     const staleA = await mkdtemp(join(tmpdir(), RESTORE_TEMP_PREFIX))
     const staleB = await mkdtemp(join(tmpdir(), RESTORE_TEMP_PREFIX))
     await writeFile(join(staleA, 'payload'), 'orphaned')
@@ -59,7 +55,6 @@ describe('services/restore — sweepStaleRestoreDirs', () => {
   })
 
   it('does not touch a directory that merely resembles the prefix', async () => {
-    // Missing the trailing dash / different casing must survive the sweep.
     const lookalike = join(tmpdir(), `kobato-restorex-${process.pid}`)
     await mkdir(lookalike)
     created.push(lookalike)

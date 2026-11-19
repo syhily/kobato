@@ -1,7 +1,3 @@
-// `kobato rollback` — swaps the `<binary>.bak` sibling back into place.
-// Runs from the SEA CLI before any bootstrap: no side effects; only node
-// builtins + `@kobato/distribution/app`.
-
 import { APP_VERSION } from '@kobato/distribution/app.ts'
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -53,7 +49,6 @@ export async function rollbackBinary(options: RollbackOptions = {}): Promise<Rol
 }
 
 function defaultReadBackupVersion(bakPath: string): string | null {
-  // `<bak> --version` is a zero-side-effect, immediate proof the backup is an intact kobato binary.
   const res = spawnSync(bakPath, ['--version'], { timeout: BAK_VERSION_TIMEOUT_MS, encoding: 'utf-8' })
   if (res.error !== undefined || res.status !== 0) {
     return null

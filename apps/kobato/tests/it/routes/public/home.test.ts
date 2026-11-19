@@ -27,8 +27,6 @@ async function seedTag(name: string, slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-// Tail-merge guard: a tail smaller than `pageSize - 2` folds into the
-// previous page; the fixture pins pageSize 6 → threshold 4.
 async function seedPost(opts: {
   slug: string
   title?: string

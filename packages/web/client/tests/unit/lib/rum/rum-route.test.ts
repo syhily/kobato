@@ -98,8 +98,6 @@ describe('rumRouteContextFromMatches', () => {
     const context = rumRouteContextFromMatches([
       { id: 'routes/public/post/detail', pathname: '/posts/a%2Fb', params: { slug: 'a/b' } },
     ])
-    // The value spans a segment boundary, so the template falls back instead
-    // of leaking it.
     expect(context.id).toBe('routes/public/post/detail')
     expect(context.template).not.toContain('a/b')
     expect(context.template).not.toContain('a%2Fb')

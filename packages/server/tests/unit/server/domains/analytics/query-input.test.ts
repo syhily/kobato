@@ -1,10 +1,6 @@
 import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pure URL-grammar coverage: field extraction, lenient fallbacks, and the
-// poisonous-dimension drop. The SQL side of the resolved query is pinned by
-// the DuckDB integration suites in packages/db/tests.
-
 describe('analytics/query-input — parseAnalyticsSearch', () => {
   it('parses explicit startAt/endAt as unix seconds', () => {
     const input = parseAnalyticsSearch(new URLSearchParams({ startAt: '1000', endAt: '2000' }))

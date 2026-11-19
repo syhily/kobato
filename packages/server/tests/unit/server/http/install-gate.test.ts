@@ -40,9 +40,6 @@ describe('honoInstallGateMiddleware', () => {
   async function makeApp() {
     const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
     const app = new Hono<Env>()
-    // Stub the canonical per-request context — the gate reads
-    // `requestContext.url` (already normalized upstream: `.data` stripped)
-    // and `requestContext.db`.
     app.use('*', async (c, next) => {
       c.set('requestContext', {
         url: normalizeDocumentUrl(new URL(c.req.url)),
@@ -64,7 +61,6 @@ describe('honoInstallGateMiddleware', () => {
         try {
           const app = await makeApp()
           const res = await app.request(path)
-          // Exempt paths pass through — the blocked-path redirect (303 → /admin/setup) must never fire.
           expect(res.status).not.toBe(302)
           expect(res.headers.get('location')).not.toBe('/admin/setup')
         } finally {

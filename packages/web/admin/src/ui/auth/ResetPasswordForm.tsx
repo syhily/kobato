@@ -10,7 +10,6 @@ import { ArrowRightIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Form } from 'react-router'
 
-// Covers both resetpassword and accept-invite.
 export interface ResetPasswordFormProps {
   action?: string
   token: string

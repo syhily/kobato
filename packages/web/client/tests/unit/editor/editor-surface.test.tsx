@@ -1,11 +1,3 @@
-// Delta-wiring tests for the shared composer skeleton: EditorSurfaceComposer
-// must apply the host constants (the active locale's labels, the locale as the
-// word-count language, theme-driven darkMode) while forwarding every surface
-// delta verbatim, and useEditorSurface must own the registerAPI →
-// editor-instance dance plus the body mount-snapshot/change wiring. The
-// inkling barrel is mocked — the composer is the observable boundary; the body
-// lifecycle itself is pinned by use-editor-body-reset's own suite.
-
 // @vitest-environment happy-dom
 
 import type { AppLocale } from '@kobato/i18n/locales.ts'
@@ -29,7 +21,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const composerProps: { current: InklingComposerProps | null } = { current: null }
 
 vi.mock('@kobato/inkling', () => ({
-  // The composer is the observable boundary; the real editor island stays out.
   InklingComposer: vi.fn((props: InklingComposerProps) => {
     composerProps.current = props
     return props.children
@@ -60,7 +51,6 @@ function renderComposer(deltas: ComposerDeltas = {}, locale: AppLocale = 'zh-CN'
       ),
     },
   ]
-  // The labels ride the root loader's i18n payload (one locale, as data).
   const router = createMemoryRouter(routes, {
     hydrationData: { loaderData: { root: { i18n: { locale, inklingLabels: inklingLabelsFor(locale) } } } },
   })
@@ -88,8 +78,6 @@ describe('client/editor/EditorSurfaceComposer — host constants', () => {
   })
 
   it('flips darkMode with the resolved theme', () => {
-    // The provider re-resolves after mount: a stored preference beats the
-    // SSR seed, so pin 'dark' through storage rather than initialResolved.
     localStorage.setItem(THEME_COOKIE, 'dark')
     renderComposer()
     expect(composerProps.current?.darkMode).toBe(true)

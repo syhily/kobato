@@ -8,9 +8,6 @@ import {
 } from '@kobato/server/domains/comments/projection.ts'
 import { describe, expect, it } from 'vitest'
 
-// Wire helpers bridge `CommentAndUser` (number ids, Date timestamps) to
-// `CommentItemWire` (string ids, ISO timestamps).
-
 function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {
   return {
     id: 7,

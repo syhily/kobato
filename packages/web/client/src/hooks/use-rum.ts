@@ -1,12 +1,3 @@
-// Root-mounted browser RUM activation.
-//
-// The hook renders nothing, runs only in effects after hydration, and checks
-// DNT/GPC BEFORE any dynamic import — a denied browser never downloads the SDK
-// chunk, and neither does a visitor whose root loader omitted the bootstrap.
-// With `clientIdentity: forward`, the strict consent gate applies on top: no
-// import, session, or intake batch until the persisted decision is `accepted`,
-// and a later `declined` fully stops a running SDK.
-
 import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
 
@@ -32,13 +23,6 @@ function cancelPendingStop(): void {
   }
 }
 
-/**
- * Cleanup runs on a route change, StrictMode's double effect, and a real
- * unmount. Defer the full stop one task so the next effect can cancel it:
- * a valid route change restarts polling; bootstrap=null suspends; DNT/GPC or
- * an invalid bootstrap fully stops; with no following effect (real unmount)
- * the deferred stop runs.
- */
 function schedulePendingStop(): void {
   cancelPendingStop()
   pendingStopTimer = setTimeout(() => {
@@ -46,11 +30,7 @@ function schedulePendingStop(): void {
     if (rumModulePromise === null) {
       return
     }
-    void rumModulePromise
-      .then((module) => module.stopRum())
-      .catch(() => {
-        // The module was requested but failed to load; there is nothing to stop.
-      })
+    void rumModulePromise.then((module) => module.stopRum()).catch(() => undefined)
   }, 0)
 }
 
@@ -61,26 +41,18 @@ function applyModuleAction(action: 'suspend' | 'stop'): void {
   cancelPendingStop()
   void rumModulePromise
     .then((module) => (action === 'suspend' ? module.suspendRum() : module.stopRum()))
-    .catch(() => {
-      // The module was requested but failed to load; there is nothing to stop.
-    })
+    .catch(() => undefined)
 }
 
-/** Test seam: forget the cached dynamic-import promise and any pending revoke. */
 export function __resetRumHookForTests(): void {
   cancelPendingStop()
   rumModulePromise = null
 }
 
-/** Test seam: `true` once the SDK chunk import has been requested. */
 export function __isRumModuleRequestedForTests(): boolean {
   return rumModulePromise !== null
 }
 
-/**
- * DNT=`1` and GPC=`true` both suppress the SDK download. The checks are
- * browser-only and read defensively: a missing Navigator/policy is allowed.
- */
 export function isRumDenied(nav: Navigator | undefined = globalThis.navigator): boolean {
   if (nav === undefined) {
     return false
@@ -91,17 +63,6 @@ export function isRumDenied(nav: Navigator | undefined = globalThis.navigator): 
   return Reflect.get(nav, 'globalPrivacyControl') === true
 }
 
-/**
- * Mount once at the root. `bootstrap` is the narrow root-loader projection,
- * absent when observability is disabled or the O2 pipeline gate withheld it.
- * An initial `null` is a no-op (no import, no DOM). After an active bootstrap,
- * `null` suspends: consent revoked, but the SDK handle, route, and status poll
- * stay alive for a later gate recovery in the same document. DNT/GPC, an
- * invalid bootstrap, and a real unmount fully stop instead.
- *
- * `consent` only gates a `clientIdentity: forward` bootstrap; anything but an
- * explicit `accepted` keeps the SDK chunk undownloaded.
- */
 export function useRum(bootstrap: FrontendRumBootstrap | null, consent: RumConsent | null = null): void {
   const route = rumRouteContextFromMatches(useMatches())
   const routeId = route.id
@@ -109,25 +70,15 @@ export function useRum(bootstrap: FrontendRumBootstrap | null, consent: RumConse
   const denied = isRumDenied()
 
   useEffect(() => {
-    // Build-time constant: the SSR bundle must never pull the browser RUM
-    // chunk. Folding this to `true` removes the dynamic import edge, so the
-    // server graph (and the SEA binary) carries no `@openobserve` code.
     if (import.meta.env.SSR) {
       return
     }
     if (denied) {
-      // DNT/GPC is a terminal user decision: stop the SDK and its poll. An
-      // initial denial has no module request and therefore no import.
       applyModuleAction('stop')
       return
     }
     if (bootstrap === null) {
-      // The O2 gate can temporarily withhold the bootstrap. Keep the retained
-      // SDK handle, route, and status poll so a later gate recovery can
-      // `startView` in this document. An initial disabled load never imports.
       applyModuleAction('suspend')
-      // A real unmount while suspended must still fully stop; a following
-      // active effect (bootstrap returns) cancels this deferred stop.
       return () => schedulePendingStop()
     }
     const parsed = frontendRumBootstrapSchema.safeParse(bootstrap)
@@ -136,16 +87,10 @@ export function useRum(bootstrap: FrontendRumBootstrap | null, consent: RumConse
       return
     }
     if (parsed.data.clientIdentity === 'forward' && consent !== 'accepted') {
-      // Strict consent gate: forwarding request identity is personal-data
-      // processing, so nothing starts — not even the SDK download — before an
-      // explicit accept, and a withdrawal stops a running SDK outright.
       applyModuleAction('stop')
       return
     }
 
-    // This effect is valid: cancel a revoke scheduled by a route-change or
-    // StrictMode cleanup. The SDK stays initialized and only its view/poller
-    // is refreshed by `startRum`.
     cancelPendingStop()
 
     let cancelled = false
@@ -156,16 +101,10 @@ export function useRum(bootstrap: FrontendRumBootstrap | null, consent: RumConse
         }
         return undefined
       })
-      .catch(() => {
-        // Best effort: the site never reacts to telemetry failures.
-      })
+      .catch(() => undefined)
 
     return () => {
       cancelled = true
-      // The old poller must not stack across route changes. A following
-      // bootstrap=null effect cancels this and suspends; DNT/invalid effects
-      // cancel and fully stop; a real unmount leaves no following effect, so
-      // this deferred full stop runs.
       schedulePendingStop()
     }
   }, [bootstrap, consent, denied, routeId, routeTemplate])

@@ -2,9 +2,6 @@ import type { AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytic
 
 import { createContext, type ReactNode, use } from 'react'
 
-// The ROUTE module owns the `useSearchParams` read (`useAnalyticsState`) and
-// passes the state down; deep panels subscribe here instead of re-reading the
-// URL, so no ui/ component hides a route-param read.
 const AnalyticsStateContext = createContext<AnalyticsState | null>(null)
 
 export function AnalyticsStateProvider({ state, children }: { state: AnalyticsState; children: ReactNode }) {

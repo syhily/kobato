@@ -5,24 +5,12 @@ import { storageMigrationStatusDto } from '@kobato/contracts/storage.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
-// Jobs wire contract — the single source for the background-task catalog
-// (server aggregation + admin UI), the `job_run` trigger/status wire enums and
-// the list/history DTOs. The persistence twins (columns + SQL CHECK literals)
-// live in `@kobato/db/schema/job-run.ts`, pinned value-identical by the
-// server's db-wire parity test.
-
-/** `job_run.trigger` values — zod enum and SQL CHECK share this array. */
 export const JOB_RUN_TRIGGERS = ['scheduled', 'manual'] as const
 export type JobRunTrigger = (typeof JOB_RUN_TRIGGERS)[number]
 
-/** `job_run.status` values — zod enum and SQL CHECK share this array. */
 export const JOB_RUN_STATUSES = ['running', 'success', 'failed', 'cancelled'] as const
 export type JobRunStatus = (typeof JOB_RUN_STATUSES)[number]
 
-// Stable machine codes persisted in `job_run.error` for system-generated
-// failures. The UI maps a known code to a catalog label; every other value is
-// a stored technical message (old Chinese/English rows included) and renders
-// verbatim, so this list is append-only.
 export const JOB_RUN_ERROR_PROCESS_RESTART = 'process-restart'
 export const JOB_RUN_ERROR_CODES = [JOB_RUN_ERROR_PROCESS_RESTART] as const
 export type JobRunErrorCode = (typeof JOB_RUN_ERROR_CODES)[number]
@@ -140,7 +128,6 @@ export const TASK_CATALOG: readonly TaskCatalogEntry[] = [
   },
 ]
 
-// Safe: TASK_CATALOG is a static non-empty literal — the tuple head exists.
 const TASK_KEYS = unsafeCast<[string, ...string[]]>(TASK_CATALOG.map((task) => task.key))
 
 export const jobRunDto = z.object({
@@ -155,7 +142,6 @@ export const jobRunDto = z.object({
 })
 export type JobRunDto = z.infer<typeof jobRunDto>
 
-/** Live scheduler state — null for tasks with no timer (on-demand). */
 export const taskLiveStateDto = z.object({
   suspended: z.boolean(),
   nextRunAt: isoDateTime.nullable(),
@@ -163,7 +149,6 @@ export const taskLiveStateDto = z.object({
 })
 export type TaskLiveStateDto = z.infer<typeof taskLiveStateDto>
 
-/** Queue-depth stats for the webmention queue tasks; null elsewhere. */
 export const queueTaskStatsDto = z.object({
   depth: z.number().int(),
   nextDueAt: isoDateTime.nullable(),
@@ -172,9 +157,7 @@ export const queueTaskStatsDto = z.object({
 export type QueueTaskStatsDto = z.infer<typeof queueTaskStatsDto>
 
 export const jobSummaryDto = z.object({
-  // Same enum as `jobHistoryInput.taskKey` — a summary key is always a catalog key.
   taskKey: z.enum(TASK_KEYS),
-  // Message ids (not copy): the admin task center resolves them per locale.
   label: z.custom<UiMessageId>(),
   description: z.custom<UiMessageId>(),
   kind: z.enum(['scheduled', 'queue', 'on-demand']),

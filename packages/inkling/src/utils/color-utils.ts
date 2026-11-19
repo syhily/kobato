@@ -1,6 +1,3 @@
-// Drop-in replacement for the `color` library's call signature: uppercase hex serialization
-// and the Lab b-channel `b()` its consumers read. Pinned byte-for-byte by tests/unit/utils/color-utils.test.ts.
-
 export interface ColorInstance {
   hex(): string
   red(): number

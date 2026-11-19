@@ -23,12 +23,10 @@ import { toast } from 'sonner'
 
 const PAGE_SIZE = 30
 
-// A single bounded page is enough for the pending-review bucket.
 const PENDING_LIMIT = 50
 
 type EditTarget = AdminFriendDto | null | undefined
 
-// `admin.friends.delete` wire input.
 interface DeleteFriendInput {
   id: string
 }
@@ -41,7 +39,6 @@ export function FriendsView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  // Pending bucket: applications arrive as `visible: false` and surface on top for one-click review.
   const pendingQuery = useQuery(
     orpcQuery.admin.friends.list.queryOptions({ input: { visible: false, limit: PENDING_LIMIT } }),
   )
@@ -61,7 +58,6 @@ export function FriendsView() {
   })
 
   const invalidateList = useCallback(() => {
-    // One procedure key covers both buckets — `.key()` partial-matches every cached input across both operation types.
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.friends.list.key() })
   }, [queryClient])
 
@@ -74,7 +70,6 @@ export function FriendsView() {
     onError: onMutationError('admin.toast.friendDeleteFailed', t),
   })
 
-  // One-click approve flips `visible` via the existing upsert path; rows without a poster can't pass the schema.
   const approveMutation = useMutation({
     mutationFn: (friend: AdminFriendDto) =>
       orpc.admin.friends.upsert({

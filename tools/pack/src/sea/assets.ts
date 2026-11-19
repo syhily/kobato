@@ -1,7 +1,3 @@
-// SEA asset collection: build the embedded-asset map for `--build-sea` (see
-// blob.ts) and write manifest.json, the codec/integrity registry the runtime
-// reads. Asset keys come from `packages/shared/distribution/src/sea-assets.ts` — never hardcode one.
-
 import {
   SEA_CLIENT_ASSET_PREFIX,
   SEA_DRIZZLE_ASSET_PREFIX,
@@ -52,7 +48,6 @@ export function shouldPackAsset(key: string): boolean {
   return key.startsWith(SEA_NATIVE_ASSET_PREFIX)
 }
 
-/** Assets below this stay uncompressed — framing + decode outweigh the savings. */
 export const SEA_COMPRESSION_MIN_BYTES = 1024
 
 /**
@@ -61,16 +56,13 @@ export const SEA_COMPRESSION_MIN_BYTES = 1024
  */
 const ZSTD_PACK_WORKERS = Math.min(availableParallelism(), 8)
 
-/** Below this the thread-pool spin-up (~10 ms per call × ~250 small assets) outweighs the savings. */
 const ZSTD_MULTITHREAD_MIN_BYTES = 4 * 1024 * 1024
 
 interface ManifestFileEntry {
   key: string
   path: string
-  /** sha256 of the RAW (uncompressed) bytes — runtime verification is codec-agnostic. */
   sha256: string
   codec: SeaAssetCodec
-  /** Raw byte length; the packed blob payload may be smaller. */
   size: number
 }
 
@@ -105,10 +97,6 @@ export function packAssetBytes(raw: Buffer): { codec: SeaAssetCodec; bytes: Buff
   return { codec: 'zstd', bytes: zstdCompressSync(raw, { params }) }
 }
 
-/**
- * Plain ASCII key comparison — the manifest bytes must be reproducible
- * everywhere (the runtime natives dir is named after the manifest's sha256).
- */
 export function sortManifestFiles<T extends { key: string }>(files: T[]): T[] {
   return files.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
 }
@@ -117,10 +105,6 @@ function toPosixPath(path: string) {
   return path.split('\\').join('/')
 }
 
-/**
- * drizzle-kit snapshot artifacts — the embedded migrator only consumes
- * `migration.sql` keys, so snapshots never need to ride the blob.
- */
 export function isDrizzleSnapshotArtifact(posixRelativePath: string): boolean {
   return (
     posixRelativePath === 'snapshot.json' ||
@@ -133,7 +117,6 @@ async function readJson(path: string): Promise<PackageJsonShape> {
   return JSON.parse(await readFile(path, 'utf-8'))
 }
 
-/** Recursive file listing of `root`, following symlinked files/dirs. */
 async function listFiles(root: string) {
   const files: string[] = []
 
@@ -162,11 +145,6 @@ async function listFiles(root: string) {
   return files
 }
 
-/**
- * Real path of an installed package's root: `pkg/package.json` first, the
- * top-level node_modules symlink (sharp hides it via exports), or a
- * transitive pnpm package resolved from within a dependent (`resolveVia`).
- */
 function resolvePackageRoot(name: string, resolveVia?: string) {
   try {
     return realpathSync(dirname(requireFromRepo.resolve(`${name}/package.json`)))
@@ -202,7 +180,6 @@ function findPlatformPackage(
     fail(`Native package ${entryName} is not installed. Run pnpm install first.\n${reason}`)
   }
   const pkg: PackageJsonShape = JSON.parse(readFileSync(join(entryRoot, 'package.json'), 'utf-8'))
-  // Scoped package realpaths end in `node_modules/@scope/<pkg>` — two levels up.
   const storeDir = entryName.startsWith('@') ? dirname(dirname(entryRoot)) : dirname(entryRoot)
 
   const matches: InstalledPackage[] = []
@@ -241,10 +218,6 @@ async function singleFile(dir: string, pattern: RegExp, what: string): Promise<s
   return join(dir, matches[0]!)
 }
 
-/**
- * Patch a STAGED addon copy so the OS loader finds its companion libraries
- * in the same flat dir — never the node_modules originals.
- */
 function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
   if (process.platform === 'darwin') {
     for (const name of libraryFileNames) {
@@ -316,7 +289,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   await addAsset(assets, files, SEA_NATIVE_DUCKDB_ADDON_KEY, stagedDuckdbAddon, ctx)
   await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${libduckdbName}`, join(duckdbPkg.root, libduckdbName), ctx)
 
-  // Metadata the redirected probes answer from memory (ride only if present).
   await addAsset(assets, files, SEA_NATIVE_META_SHARP_PACKAGE_KEY, join(sharpPkg.root, 'package.json'), ctx)
   const sharpVersions = join(sharpPkg.root, 'versions.json')
   if (existsSync(sharpVersions)) {
@@ -375,14 +347,9 @@ async function addTree(
   }
 }
 
-/**
- * The returned map includes the manifest asset itself — never packed, the
- * runtime reader needs it first.
- */
 export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   const assets = new Map<string, string>()
   const files: ManifestFileEntry[] = []
-  // Wipe the packed dir so a rerun never leaves stale payloads.
   const ctx: PackContext = { packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
@@ -397,16 +364,12 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
     isDrizzleSnapshotArtifact,
   )
 
-  // The cn-font-split wasm core (single hashed file, pinned to a stable key).
   await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath, ctx)
 
-  // The image worker bundle, embedded as text and eval'd under SEA.
   await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
 
   await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
 
-  // Observability provisioning assets (4 dashboards + the RUM privacy VRL) ride
-  // raw — plain VFS files via `readAssetTextOrDisk`, never the packed blob channel.
   await addTree(assets, files, SEA_OBSERVABILITY_ASSET_PREFIX, observabilitySourceAssetsDir(), ctx)
 
   await addNativeAssets(assets, files, ctx)
@@ -422,7 +385,6 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   assets.set(SEA_MANIFEST_KEY, manifestPath)
 
-  // Deterministic asset order in the generated sea-config.json.
   const sorted = new Map([...assets.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
   return { assets: sorted, manifest, stats: { rawBytes: ctx.rawBytes, packedBytes: ctx.packedBytes } }
 }

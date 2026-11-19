@@ -22,17 +22,11 @@ import { Link } from 'react-router'
 interface Props {
   currentUser: HeaderCurrentUser
   logoutRedirectTo: string
-  /** Owned by BaseLayout (the public shell's one subscriber) — never re-subscribe here.
-   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpenNotifications: () => void
-  /** Mount with the menu open — set by LazyUserMenu when the activating click
-   *  already happened on its placeholder trigger. */
   defaultOpen?: boolean
 }
 
-// Public chrome's user menu. Reaches the browser only through LazyUserMenu's
-// interaction-gated lazy chunk — never import it statically from the public chrome.
 export function UserMenu({
   currentUser,
   logoutRedirectTo,
@@ -44,7 +38,6 @@ export function UserMenu({
   const { t } = useI18n()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'
-  // An unknown count renders like zero: no dot, no badge, plain aria label.
   const badgeCount = unreadCount ?? 0
   return (
     <DropdownMenu defaultOpen={defaultOpen}>

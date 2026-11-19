@@ -17,7 +17,6 @@ import { Hono, type Context } from 'hono'
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 25_000
 
-/** A beacon is < 1 KB in practice; anything past this is not a beacon. */
 const MAX_BEACON_BYTES = 4 * 1024
 
 function tooLarge(c: Context<Env>) {
@@ -56,9 +55,7 @@ export const analyticsEventsRouter = new Hono<Env>()
           c.req.raw.signal.removeEventListener('abort', close)
           try {
             controller.close()
-          } catch {
-            /* noop */
-          }
+          } catch {}
         }
         closeStream = close
 
@@ -91,7 +88,6 @@ export const analyticsEventsRouter = new Hono<Env>()
             try {
               const rows = await queryRealtimeTail(getAnalyticsReader(), lastSeen)
               if (rows.length > 0) {
-                // ES2022 lib has no toReversed — build the reversed copy by hand.
                 const ordered: RealtimeEvent[] = []
                 for (let i = rows.length - 1; i >= 0; i -= 1) {
                   ordered.push(rows[i]!)
@@ -121,8 +117,6 @@ export const analyticsEventsRouter = new Hono<Env>()
         }, HEARTBEAT_INTERVAL_MS)
       },
       cancel() {
-        // Some runtimes cancel the body instead of aborting the signal — release
-        // through the same close path or the registry slot and timers leak.
         closeStream?.()
       },
     })
@@ -134,12 +128,7 @@ export const analyticsEventsRouter = new Hono<Env>()
       'X-Accel-Buffering': 'no',
     })
   })
-  // Client device-environment beacon: anonymous, fire-and-forget
-  // (`navigator.sendBeacon`). The event id is NOT validated against the main
-  // table — a bot-gated id yields an orphan sidecar row that the queries'
-  // JOIN drops and retention clears.
   .post('/api/analytics/env', async (c) => {
-    // Check the declared length first: never read an unbounded body.
     const declared = Number(c.req.header('content-length') ?? Number.NaN)
     if (Number.isFinite(declared) && declared > MAX_BEACON_BYTES) {
       return tooLarge(c)
@@ -151,7 +140,6 @@ export const analyticsEventsRouter = new Hono<Env>()
     }
 
     const body = await c.req.text()
-    // Chunked / length-less requests get the same cap after the read.
     if (new TextEncoder().encode(body).byteLength > MAX_BEACON_BYTES) {
       return tooLarge(c)
     }

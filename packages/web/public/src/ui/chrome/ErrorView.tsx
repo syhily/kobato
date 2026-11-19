@@ -27,7 +27,6 @@ export function ErrorView({ error, isDev }: ErrorViewProps) {
   return (
     <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
       <div className="my-auto">
-        {/* The display glyph stays 404/500; the localized title carries the meaning for assistive tech. */}
         <h1 className="font-number text-empty-state-hero">
           <span className="sr-only">{title}</span>
           {isNotFound ? '404' : '500'}

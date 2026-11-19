@@ -17,8 +17,6 @@ const mockContainer = {
 const dragDropHandler = new DragDropHandler()
 const registerContainer = vi.spyOn(dragDropHandler, 'registerContainer').mockReturnValue(mockContainer)
 
-// a real handle instance carrying the mock DragDropHandler — the hook
-// subscribes to the handle, so the handler is set before render
 const dragDropHandle = createDragDropHandle()
 dragDropHandle.setState({ handler: dragDropHandler })
 
@@ -160,11 +158,6 @@ describe('useGalleryReorder', () => {
   })
 
   it('rejects an internal drop when the dragged image no longer exists', async () => {
-    // positional lookup: the source is located by the dragged
-    // element's slot among the container's droppables — so the "removed
-    // remotely" divergence is built directly: the DOM still renders two
-    // slots while the hook's images data only holds one, and slot 1
-    // resolves past the end of the data
     const { result, updateImages } = await renderGalleryHook([{ src: 'https://example.com/one.jpg' }])
     const container = createImageContainer([
       { src: 'https://example.com/one.jpg' },

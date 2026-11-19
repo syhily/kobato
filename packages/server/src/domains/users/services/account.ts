@@ -69,7 +69,6 @@ export async function updateAccountProfile(
     }
   }
 
-  // Empty patch (badge-only submits by visitors) is a graceful no-op.
   if (Object.keys(patch).length === 0) {
     return dbUser
   }
@@ -97,18 +96,11 @@ export async function updateAccountPassword(
     throw new DomainError('FORBIDDEN', descriptorFor('account.error.passwordWrong'))
   }
   const hashed = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS)
-  // A password change returns the account to password signin and evicts
-  // every registered passkey — a passkey planted on a hijacked session
-  // must not survive the owner's password rotation.
   await updateUserById(db, dbUser.id, { password: hashed, loginMethod: 'password' })
   try {
     await deleteAllCredentials(db, dbUser.id)
-  } catch {
-    // Best-effort: don't block the password change if passkey cleanup fails.
-  }
+  } catch {}
   await revokeAllSessionsOfUser(db, dbUser.id, currentSessionId)
-  // A password change also kills every outstanding credential-bypass token
-  // for the account: reset links, magic signin links, and pending OTPs.
   await revokeTokensFor(db, dbUser.id, 'password-reset')
   await revokeTokensFor(db, dbUser.id, 'signin-link')
   await revokeTokensFor(db, dbUser.id, 'signin-otp')

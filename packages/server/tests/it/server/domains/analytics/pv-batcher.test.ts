@@ -5,9 +5,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { sql } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// The page-view batcher against the real engine; flush failures are induced
-// with a real TEMP trigger, so merge-back recovery is verified end-to-end.
-
 const db = getTestDb()
 
 async function freshBatcher() {
@@ -64,7 +61,6 @@ describe('analytics/pv-batcher', () => {
 
     const flushPromise = flushPageViews()
 
-    // These go into the NEW buffer while the snapshot is in-flight
     bumpPageView({ type: 'post', ownerId: 1 })
     bumpPageView({ type: 'post', ownerId: 2 })
 
@@ -73,7 +69,6 @@ describe('analytics/pv-batcher', () => {
     expect(await pvOf('post', 1)).toBe(0)
     expect(await pvOf('post', 2)).toBe(0)
 
-    // Recovery merges snapshot (2/1) with the new buffer (1/1): 3/2.
     healMetricUpdates()
     await flushPageViews()
 

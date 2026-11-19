@@ -8,10 +8,6 @@ import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/r
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
 import { regularSession } from '@kobato/test/session.ts'
 
-// The suite's single `RequestContext` factory; never hand-roll `{ session, viewer, … }`
-// literals. Types only from `@/server/http/request-context`, so vi.mock factories stay
-// acyclic; `resolveAppLocalization` reads the shared snapshot leaf, safe inside a factory.
-/** Test-only partial projection: missing representation fields come from the lazy capture. */
 type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
   Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>
 
@@ -42,8 +38,6 @@ export function makeRequestContext({
   markSessionDirty = () => {},
 }: MakeRequestContextOptions = {}): RequestContext {
   const resolvedUser = user === undefined ? ((session?.data?.user as SessionUser | undefined) ?? null) : user
-  // Lazy by default: mirrors the real context, where the snapshot hydrates
-  // after derivation — a pre-hydration capture would mask cold-boot bugs.
   const lazySnapshot = createLazyAppSnapshot()
   return {
     session,

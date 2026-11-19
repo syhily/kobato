@@ -1,36 +1,26 @@
-// Bot detection. Two fail-soft consumers: `entry.server` (bots get
-// `onAllReady` instead of a streamed shell) and analytics enrichment (bot UAs
-// excluded from visitor stats).
-
 const BOT_TOKENS = [
-  // Generic crawler vocabulary (covers googlebot, bingbot, gptbot,
-  // claudebot, baiduspider, ahrefsbot, semrushbot, …).
   'bot',
   'crawler',
   'spider',
-  'slurp', // Yahoo
-  'mediapartners', // Google AdSense
-  // Social / chat preview fetchers without the generic tokens.
+  'slurp',
+  'mediapartners',
   'facebookexternalhit',
   'meta-externalagent',
   'whatsapp',
   'embedly',
   'pinterest',
   'quora link preview',
-  // Headless browsers / automation frameworks.
   'headlesschrome',
   'phantomjs',
   'playwright',
   'puppeteer',
   'selenium',
-  // SEO tools / uptime monitoring.
   'lighthouse',
   'pagespeed',
   'pingdom',
   'uptimerobot',
   'statuscake',
   'gtmetrix',
-  // HTTP libraries / CLI clients.
   'curl',
   'wget',
   'python-requests',
@@ -46,7 +36,6 @@ const BOT_TOKENS = [
   'scrapy',
   'postmanruntime',
   'httpie',
-  // Feed fetchers.
   'feedfetcher',
 ]
 

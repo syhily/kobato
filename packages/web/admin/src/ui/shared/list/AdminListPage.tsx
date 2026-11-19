@@ -55,10 +55,7 @@ function AdminListPagePageNavigation({ totalPages, currentPage, onChange }: Page
 }
 
 interface FilterFieldProps {
-  /** Column label rendered above the control. Stays 28px tall to align with sibling columns that show a "X clear" button. */
   label: string
-  /** Optional trailing button on the label row; when absent the row still
-   *  reserves 28px so FilterFields don't jitter as filters change. */
   action?: ReactNode
   children: ReactNode
 }

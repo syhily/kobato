@@ -1,14 +1,3 @@
-// Unit tests for the image-library pick on the pick seam:
-// `registerCardPicker('image', …)` opens `ImageLibraryPicker` for the fresh
-// empty KobatoImageNode (the override inserts it with `openPicker`), and the
-// pick writes the full library dataset onto the node through the card write
-// seam — the freshly picked card renders with the image immediately.
-//
-// The dialog is stubbed: its props (open/onOpenChange/onPick) are the seam's
-// observable boundary. The composer context is mocked with a real headless
-// editor (the barrel's createHeadlessEditor) so the write seam runs against
-// a live node.
-
 // @vitest-environment jsdom
 
 import type { AdminImageDto } from '@kobato/contracts/images.ts'
@@ -57,7 +46,6 @@ function makeImage(overrides: Partial<AdminImageDto> = {}): AdminImageDto {
   }
 }
 
-/** Inserts one empty KobatoImageNode into the shared editor; resolves its key after commit. */
 async function insertEmptyImageNode(): Promise<string> {
   let key = ''
   await new Promise<void>((resolve) => {
@@ -73,7 +61,6 @@ async function insertEmptyImageNode(): Promise<string> {
   return key
 }
 
-/** The node's picked fields, read inside an editor-state read. */
 function readImageFields(nodeKey: string) {
   return sharedEditor.getEditorState().read(() => {
     const node = $getNodeByKey(nodeKey)

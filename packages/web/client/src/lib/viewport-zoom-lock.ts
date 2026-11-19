@@ -49,7 +49,6 @@ export function acquireViewportZoomLock(): void {
   meta.setAttribute('content', LOCKED_VIEWPORT)
 }
 
-/** Drop one hold; the meta is restored only when the last holder leaves. */
 export function releaseViewportZoomLock(): void {
   if (holders === 0) {
     return

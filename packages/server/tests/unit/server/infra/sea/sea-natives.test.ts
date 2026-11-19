@@ -60,11 +60,9 @@ describe('infra/sea/sea-natives — extractNatives', () => {
     expect(result.extracted).toBe(3)
     expect(result.reused).toBe(0)
     expect(result.nativesDir).toBe(result.dir)
-    // Flat: the `natives/` prefix is stripped, no subdirectories.
     expect(readFileSync(join(result.dir, 'sharp.node'), 'utf-8')).toBe('fake-sharp-addon')
     expect(readFileSync(join(result.dir, 'libvips-cpp.8.18.3.dylib'), 'utf-8')).toBe('fake-libvips')
     expect(readFileSync(join(result.dir, 'skia.node'), 'utf-8')).toBe('fake-skia-addon')
-    // Everything else — metadata JSON included — is never written to disk.
     expect(existsSync(join(result.dir, 'natives'))).toBe(false)
     expect(existsSync(join(result.dir, 'natives-meta'))).toBe(false)
     expect(existsSync(join(result.dir, 'client/assets/app.js'))).toBe(false)

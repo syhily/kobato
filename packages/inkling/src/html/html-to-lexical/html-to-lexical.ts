@@ -14,15 +14,10 @@ export interface htmlToLexicalOptions {
 
 /* c8 ignore next -- V8 creates a phantom branch for the export */
 export function htmlToLexical(html: string, options: htmlToLexicalOptions): SerializedEditorState {
-  // `html` is typed as required, but hosts do pass null — the null-tolerance
-  // is a tested contract
   if (!html?.trim()) {
     return MINIMAL_DOCUMENT
   }
 
-  // The importer replaces the defaults wholesale when the caller passes
-  // editorConfig.nodes; the renderer uses additive semantics instead (see
-  // @kobato/inkling-internal/html/headless-editor) — do not "unify" the two.
   const editor = createHeadlessHtmlEditor({ merge: 'wholesale', editorConfig: options.editorConfig })
 
   const doc = options.dom.window.document.implementation.createHTMLDocument('')

@@ -32,7 +32,6 @@ describe('settings/app-localization', () => {
   })
 
   it('keeps locale and time zone independent', () => {
-    // A perfectly valid combination — never infer the zone from the language.
     const bundle = withIdentity('en-US', 'Asia/Shanghai')
     expect(resolveAppLocalization({ bundle, revision: 'boot-a:0000000007' })).toEqual({
       locale: 'en-US',
@@ -75,7 +74,6 @@ describe('settings/app-localization', () => {
     const pinnedRevision = first.localization.revision
     const pinnedRevisions = first.localization.revisions
 
-    // A settings save lands while the request is still running.
     setBlogSettingsBundleForTests(withIdentity('zh-TW', 'Asia/Taipei'))
 
     expect(lazy()).toBe(first)
@@ -83,13 +81,10 @@ describe('settings/app-localization', () => {
     expect(lazy().localization.revision).toBe(pinnedRevision)
     expect(lazy().localization.revisions).toBe(pinnedRevisions)
 
-    // A capture created after the save sees the new generation.
     const fresh = captureAppSnapshot()
     expect(fresh.settings?.siteIdentity?.locale).toBe('zh-TW')
     expect(fresh.localization.revision).not.toBe(pinnedRevision)
     expect(fresh.localization.revision > pinnedRevision).toBe(true)
-    // Scoped generations follow the same capture: the locale change moves feed
-    // AND calendar (siteIdentity is a dependency of both).
     expect(fresh.localization.revisions.feed).not.toBe(pinnedRevisions.feed)
     expect(fresh.localization.revisions.calendar).not.toBe(pinnedRevisions.calendar)
   })

@@ -1,7 +1,3 @@
-// Page-window algorithm shared by the public site and the admin shell —
-// the same chip ladder so `/page/3` reads identically in both.
-// Inputs / outputs are 1-based; admin callers `+1` / `-1` around calls.
-
 export const DENSE_THRESHOLD = 6
 
 export type PageWindowItem = number | 'ellipsis'

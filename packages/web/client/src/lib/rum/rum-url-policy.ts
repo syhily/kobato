@@ -1,11 +1,3 @@
-// Same-origin RUM URL policy.
-//
-// Automatic SDK URLs are inputs to this classifier, never values that leave the
-// browser unchanged. The policy keeps only app-authored/generated paths and
-// declared route/procedure families; cross-origin, signed, dynamic, and
-// unknown paths fail closed. Query strings and fragments are removed by using
-// `URL.pathname` exclusively.
-
 const SELF_TELEMETRY_PATHS: ReadonlySet<string> = new Set([
   '/api/analytics/env',
   '/api/analytics/events',
@@ -83,18 +75,9 @@ const DYNAMIC_PATH_FAMILIES: readonly (readonly [RegExp, string])[] = [
   [/^\/music\/.+$/, '/music/:asset'],
 ]
 
-// oRPC procedure identifiers are object keys in the project router
-// (`content.home`, `admin.posts.mySummary`). The HTTP transport joins the
-// segments with `/` (`toHttpPath` in @orpc/client), so both the real slash
-// form and the legacy dotted form normalize to the same dotted template.
 const RPC_SEGMENT_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,63}$/
 const RPC_MAX_SEGMENTS = 8
 
-// Vite development module sources. These are app-authored/generated module
-// paths (the same class as the allowed stack frames), never user content:
-// source modules, the Vite client entries, and optimized dependency files.
-// `/@fs`, filesystem roots, source maps, queries, and arbitrary paths are not
-// matched.
 const DEV_VITE_ENTRY_PATHS: ReadonlySet<string> = new Set(['/@vite/client', '/@vite/env', '/@react-refresh'])
 const DEV_SOURCE_MODULE_PATTERN =
   /^\/src\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.(?:ts|tsx|js|jsx|mjs|cjs|css|json|svg|png|jpe?g|webp|avif|gif|woff2?|ttf|otf|wasm)$/
@@ -131,15 +114,10 @@ export function isTraceableRumUrl(rawUrl: string, origin: string): boolean {
   return parseSameOriginRumUrl(rawUrl, origin) !== null && !isTelemetryExcludedRumUrl(rawUrl, origin)
 }
 
-/** `excludedActivityUrls`: self-telemetry never counts as page activity. */
 export function isSelfTelemetryRumUrl(rawUrl: string, origin: string): boolean {
   return isTelemetryExcludedRumUrl(rawUrl, origin)
 }
 
-/**
- * Fold one same-origin path into a stable route family. Unknown dynamic paths,
- * cross-origin URLs, credentials, and non-http(s) URLs return `null` (drop).
- */
 export function sanitizeResourceUrl(rawUrl: unknown, origin: string): string | null {
   if (typeof rawUrl !== 'string' || rawUrl.length === 0 || rawUrl.length > 2048) {
     return null
@@ -162,11 +140,6 @@ export function sanitizeResourceUrl(rawUrl: unknown, origin: string): string | n
   return classifyPath(url.pathname)
 }
 
-/**
- * The URL parser collapses `..` before we see the pathname, so inspect the raw
- * path first: a telemetry URL that needed traversal is dropped rather than
- * folded into an unrelated page family. Encoded dots count too.
- */
 function hasPathTraversal(rawUrl: string): boolean {
   const withoutOrigin = rawUrl.replace(/^[A-Za-z][A-Za-z0-9+.-]*:\/\/[^/]*/, '')
   const path = withoutOrigin.split(/[?#]/, 1)[0] ?? ''
@@ -184,10 +157,6 @@ function hasPathTraversal(rawUrl: string): boolean {
   })
 }
 
-/**
- * Normalize the HTTP procedure path to one dotted template. Both forms are
- * closed identifier-only; mixed, encoded, empty, or hyphenated segments fail.
- */
 function classifyRpcPath(pathname: string): string | null {
   if (!pathname.startsWith('/rpc/')) {
     return null
@@ -265,9 +234,6 @@ function classifyPath(pathname: string): string | null {
       return family
     }
   }
-  // A single unknown segment is the public page route (`/:slug`) when it
-  // decodes to a slug-like value. Anything deeper has no declared family and
-  // is dropped.
   if (/^\/[^/]{1,400}$/.test(pathname) && !pathname.startsWith('/_')) {
     let decoded = pathname.slice(1)
     try {

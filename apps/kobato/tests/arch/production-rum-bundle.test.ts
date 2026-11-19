@@ -1,15 +1,3 @@
-// Production-bundle proof for the released browser RUM capability:
-// - the slim RUM SDK must ship as a LAZY client chunk — physically absent from
-//   the eager entry/root graph and from the warmup manifest, so a visitor of a
-//   site without an active `observability` frontend configuration never
-//   downloads it;
-// - no browser RUM code may appear in the server bundle (the client loader is
-//   the only edge, and `import.meta.env.SSR` prunes it from the server graph);
-// - the server OTel implementation stays a released capability, so the server
-//   bundle is expected to CARRY it (reached through a dynamic import the build
-//   code-splits).
-// This test runs after `pnpm build` (CI invokes it explicitly in the build job;
-// the ordinary suite skips without build output).
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -22,12 +10,6 @@ const RUM_SDK_MARKERS = ['o2-api-key', 'x-openobserve-trace-id', 'o2-evp-origin'
 
 const RUM_LOADER_MARKER = '/api/rum/status'
 
-/**
- * Anything that would prove browser RUM code reached a server bundle.
- * `o2-api-key` is deliberately ABSENT: the server rewrites that query parameter
- * in the same-origin intake relay (`http/resources/rum-intake.ts`), so the
- * literal is server-owned.
- */
 const SERVER_FORBIDDEN_RUM_MARKERS = ['@openobserve/', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 
 const EAGER_CHUNK_PATTERNS = [/\/entry\.client-[^/]+\.js$/, /\/root-[^/]+\.js$/] as const

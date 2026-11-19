@@ -6,10 +6,6 @@ import { describe, expect, it } from 'vitest'
 const tZhCN = makeTranslator('zh-CN')
 const tEnUS = makeTranslator('en-US')
 
-// The cache registry is NEUTRAL metadata: machine ids, default prefixes and
-// TTLs stay put; labels/descriptions are message ids resolved by the consumer
-// (the server DTO fills them through the settings locale seam).
-
 describe('cache/registry — neutral metadata', () => {
   it('keeps every machine id, prefix and tunable flag', () => {
     expect(CACHE_DECLARATIONS.map((entry) => entry.id)).toContain('og')

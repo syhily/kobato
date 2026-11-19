@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react'
 
-// No-op subscription — the store's snapshot flips on its own once hydration commits.
 const emptySubscribe = () => () => undefined
 
 /**

@@ -1,6 +1,3 @@
-// `kobato doctor` report assembly — pure functions over injected probes,
-// so the whole diagnostic shape is unit-testable without a SEA binary.
-
 export interface DoctorReport {
   version: string
   platform: string
@@ -37,7 +34,6 @@ export async function collectDoctorReport(probes: DoctorProbes): Promise<DoctorR
 }
 
 export function doctorOk(report: DoctorReport): boolean {
-  // Self-update gate is advisory — healthy deployments may legitimately lack it.
   return report.natives.ok && report.config.ok
 }
 

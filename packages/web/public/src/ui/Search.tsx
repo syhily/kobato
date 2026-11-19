@@ -17,8 +17,6 @@ const sidebarSearchInputClass = cn(
   'focus:shadow-none focus:outline-0',
 )
 
-/** Read `q` off the submitted form and route to the keyword search page.
- *  Returns false (no navigation) for blank queries. */
 function navigateToSearch(navigate: NavigateFunction, form: HTMLFormElement): boolean {
   const qEntry = new FormData(form).get('q')
   const q = typeof qEntry === 'string' ? qEntry.trim() : ''

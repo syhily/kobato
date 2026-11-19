@@ -5,15 +5,11 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// A section with no SECRET_FIELDS entry never reaches the crypto module —
-// the save succeeds even with ENCRYPTION_KEY unset.
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // Evict the snapshot so the post-write refresh re-reads the database.
   resetBlogSettingsForTests()
-  // The snapshot hydrates only once siteIdentity AND assets rows exist.
   await db.insert(setting).values({
     scope: 'blog.assets',
     data: {

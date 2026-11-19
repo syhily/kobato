@@ -43,8 +43,6 @@ export const INSERT_AUDIO_COMMAND = createCommand<AudioNodeDataset>()
 export type BookmarkNodeDataset = BookmarkData &
   CardSpecNestedEditorDataset<typeof bookmarkNestedEditors> &
   CardSpecTransientDataset<typeof bookmarkTransientProps> & {
-    // AtLinkPlugin passes a top-level `title` alongside `url`; the base constructor
-    // only reads `metadata.title`, so this is a tolerated no-op field.
     title?: string
   }
 export const INSERT_BOOKMARK_COMMAND = createCommand<BookmarkNodeDataset>()
@@ -77,9 +75,6 @@ export const INSERT_HTML_COMMAND = createCommand<HtmlNodeDataset>()
 export type ImageNodeDataset = ImageData &
   CardSpecNestedEditorDataset<typeof imageNestedEditors> &
   CardSpecTransientDataset<typeof imageTransientProps> & {
-    // Drag-and-drop payload extras outside the property vocabulary: gallery drags
-    // carry the GalleryImage keys (`useGalleryReorder`), and the image→gallery
-    // merge (`@kobato/inkling-internal/plugins/behaviour/drop-surgery`) reads fileName back.
     fileName?: string
     row?: number
 
@@ -106,14 +101,6 @@ export const INSERT_VIDEO_COMMAND = createCommand<VideoNodeDataset>()
 export const OPEN_GIF_SELECTOR_COMMAND = createCommand<ImageNodeDataset>()
 export const OPEN_IMAGE_LIBRARY_COMMAND = createCommand<ImageNodeDataset>()
 
-/**
- * The per-card insert commands keyed by card node type: the table the declarations'
- * `'insert'` menu command and insert specs resolve through. Exhaustive over every
- * card node type but `footnotedefinition` (the footnote behaviour module creates
- * and orders definitions), so a declaration added without its command fails
- * typecheck. Host cards are absent: their insert command is created on demand by
- * `resolveCardInsertCommand`.
- */
 const BUILTIN_INSERT_COMMANDS = {
   audio: INSERT_AUDIO_COMMAND,
   bookmark: INSERT_BOOKMARK_COMMAND,
@@ -131,19 +118,11 @@ const BUILTIN_INSERT_COMMANDS = {
   video: INSERT_VIDEO_COMMAND,
 } satisfies Record<Exclude<CardNodeType, 'footnotedefinition'>, AnyLexicalCommand>
 
-/**
- * The named non-insert menu commands (`CardMenuCommand` minus `'insert'`): the
- * Image card's two selector entries. Exhaustive over the name union, so a new named
- * extra fails typecheck until its command joins.
- */
 const NAMED_MENU_COMMANDS: Record<Exclude<CardMenuCommand, 'insert'>, AnyLexicalCommand> = {
   openGifSelector: OPEN_GIF_SELECTOR_COMMAND,
   openImageLibrary: OPEN_IMAGE_LIBRARY_COMMAND,
 }
 
-// Host card insert commands, created on demand and memoized — Lexical's
-// `createCommand` global idiom — so menu dispatch and command registration name
-// the same object for host cards registered after module init.
 const hostInsertCommands = new Map<string, AnyLexicalCommand>()
 
 export function resolveCardInsertCommand(nodeType: string): AnyLexicalCommand {

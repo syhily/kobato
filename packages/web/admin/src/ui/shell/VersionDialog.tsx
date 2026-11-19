@@ -25,7 +25,6 @@ type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'err
 
 const IS_DEV_BUILD = APP_VERSION.includes('-dev')
 
-// Job-panel copy; no 'succeeded' state — the process exits on success.
 const JOB_STATE_COPY: Partial<Record<UpdateJobState, UiMessageId>> = {
   downloading: 'admin.shell.version.job.downloading',
   verifying: 'admin.shell.version.job.verifying',
@@ -47,8 +46,6 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
 
   const { data: avatarData } = useQuery(orpcQuery.github.avatar.queryOptions({ input: {}, staleTime: 1000 * 60 * 60 }))
 
-  // Self-update job polling: enabled once apply succeeds; the interval stops
-  // on failure, and on 'restarting' the process exits and the page reloads itself.
   const { data: jobStatus } = useQuery(
     orpcQuery.admin.update.status.queryOptions({
       input: {},

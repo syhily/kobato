@@ -18,7 +18,6 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-// audit_log.actor_id references user.id — a missing actor row dead-letters the audit insert.
 async function seedAdmin(): Promise<number> {
   const rows = await db
     .insert(user)
@@ -79,7 +78,6 @@ describe('integration / admin webmentions moderation', () => {
     expect(pendingOnly.total).toBe(1)
     expect(pendingOnly.mentions).toHaveLength(1)
     expect(pendingOnly.mentions[0]!.status).toBe('pending')
-    // Status counts always describe the whole table.
     expect(pendingOnly.statusCounts.all).toBe(3)
   })
 
@@ -116,7 +114,6 @@ describe('integration / admin webmentions approve + reject', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset — the batcher's timer can dead-letter buffered events on the actor FK.
     await flushAuditLog()
     resetAllBatchers()
   })
@@ -182,7 +179,6 @@ describe('integration / admin webmentions approve + reject', () => {
     const adminId = await seedAdmin()
     const id = await seedMention('approved')
 
-    // The source author edits and re-sends: the row demotes to pending…
     const { outcome } = await upsertWebmention(db, {
       sourceUrl: 'https://sender.example/wm-target-approved',
       targetUrl: 'https://example.com/posts/wm-target/',
@@ -196,7 +192,6 @@ describe('integration / admin webmentions approve + reject', () => {
     expect(outcome).toBe('demoted')
     expect((await db.select().from(webmention).where(eq(webmention.id, id)))[0]!.status).toBe('pending')
 
-    // …and re-approval returns it to the public page with the new content.
     const ctx = adminCtx(adminId)
     await call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: ctx })
     const rows = await db.select().from(webmention).where(eq(webmention.id, id))

@@ -24,11 +24,6 @@ interface CardDecorateModule {
   render(node: LexicalNode): ReactNode
   IndicatorIcon?: ComponentType<SVGProps<SVGSVGElement>>
 }
-/**
- * The per-card decorate modules, keyed by card node type with an exhaustive
- * `Record`, so a declaration added without its module fails typecheck. The only
- * hand-maintained pairing; everything else derives from `CARD_DECLARATIONS`.
- */
 const CARD_DECORATE_MODULES: Record<CardNodeType, CardDecorateModule> = {
   audio: { render: renderAudioCard },
   bookmark: { render: renderBookmarkCard },

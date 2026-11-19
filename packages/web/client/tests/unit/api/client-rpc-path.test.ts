@@ -1,12 +1,6 @@
 import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The RUM sanitizer must match the URL shape the project's real oRPC client
-// emits. @orpc/client's `toHttpPath` joins the procedure path with `/`, so
-// `content.posts.bySlug` becomes `/rpc/content/posts/bySlug` — not the dotted
-// form used in the router type. Capture the actual request URLs here instead
-// of trusting a hand-written fixture.
-
 const captured: string[] = []
 
 const captureFetch = vi.fn(async (request: Request) => {

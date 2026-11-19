@@ -1,8 +1,3 @@
-/* Typography (headings, paragraphs, lists, links, blockquotes, code rhythm,
-   images) is owned by the host's shadcn/typeset layer applied to the
-   contentEditable. This file keeps only card rhythm, the aside pull-quote,
-   the nested-editor chrome variants, and the accent re-scope. */
-
 .inkling-lexical {
   .inkling-prose {
     :where(aside p):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
@@ -45,7 +40,6 @@
       }
     }
 
-    /* cards can be selected by their wrapper div element */
     :where(div + aside):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
       margin: 2.8rem 0 0;
     }
@@ -202,7 +196,6 @@
 
 /* stylelint-enable at-rule-disallowed-list */
 
-/* Header and callout cards on an accent background need white links */
 .inkling-header-accent,
 .inkling-callout-accent {
   --inkling-accent-color: #fff;

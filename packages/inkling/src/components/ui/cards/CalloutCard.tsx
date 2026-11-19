@@ -8,9 +8,6 @@ import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabel
 import { lookupLabel } from '@kobato/inkling-internal/labels/inkling-labels'
 import React from 'react'
 
-// The picker (emoji-mart's Picker + @emoji-mart/data) loads behind a lazy
-// boundary on the callout icon click — it never appears in SSR markup (the
-// menu opens only from a click), so a null fallback is behavior-identical.
 const EmojiPickerPortal = React.lazy(() => import('@kobato/inkling-internal/components/ui/EmojiPickerPortal'))
 
 export type CalloutColorName = 'white' | 'grey' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple' | 'accent'
@@ -112,9 +109,7 @@ export function CalloutCard({
   setShowEmojiPicker,
   toggleEmoji,
   hasEmoji = true,
-  handleColorChange = () => {
-    /* noop */
-  },
+  handleColorChange = () => undefined,
   changeEmoji,
   calloutEmoji = '💡',
   textEditor,

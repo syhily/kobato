@@ -9,8 +9,6 @@ import { useErroredSrc } from '@kobato/web-admin/ui/shared/image-edit/use-errore
 import { ImageOffIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-// Shared cover/poster row; every image goes through the upload pipeline —
-// no manual URL pasting (keeps CSP `img-src` predictable).
 export interface CoverInputRowProps {
   label: string
   htmlFor: string
@@ -48,7 +46,6 @@ export function CoverInputRow({
     setUploadOpen(false)
   }
 
-  // No "uploads disabled" gate — the only precondition is a supplied `kind` (the slug/host it needs).
   const uploadDisabled = uploadKind === null
   const uploadTitle = uploadKind === null ? t('admin.shared.cover.uploadDisabled') : undefined
 

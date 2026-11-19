@@ -31,10 +31,6 @@ const log = getLogger('image:process-pool')
  */
 export const POOL_SIZE = Math.min(4, Math.max(1, availableParallelism()))
 
-/**
- * Upper bound for one in-flight job — messages to dead workers are dropped
- * silently, so a deadline is the only thing preventing a permanent hang.
- */
 export const JOB_TIMEOUT_MS = 60_000
 
 export interface ProcessPoolStats {
@@ -159,7 +155,6 @@ export class WorkerPool {
     recordImageQueue(job.operation, job.sizeBucket, performance.now() - job.enqueuedAt)
   }
 
-  /** End the job's telemetry exactly once; never masks the HTTP result. */
   private settleTelemetry(job: PendingJob, outcome: 'success' | 'error'): void {
     if (job.settled) {
       return
@@ -193,7 +188,6 @@ export class WorkerPool {
     worker.currentJobId = job.id
     job.dispatchedAt = performance.now()
     this.recordQueueWait(job)
-    // Unref'd so an idle pool never keeps the process alive.
     worker.jobTimer = setTimeout(() => this.onJobTimeout(worker, job.id), this.jobTimeoutMs)
     worker.jobTimer.unref()
 
@@ -214,7 +208,6 @@ export class WorkerPool {
     }
     const entry = this.pending.get(msg.id)
     if (entry === undefined) {
-      // Stale result (e.g. job already rejected during shutdown).
       return
     }
     this.pending.delete(msg.id)
@@ -224,7 +217,6 @@ export class WorkerPool {
 
     if (msg.ok) {
       const ok = msg as WorkerOkResponse
-      // Buffers arrive as `Uint8Array` across the worker boundary; re-wrap.
       const result = {
         ...ok.result,
         buffer: Buffer.isBuffer(ok.result.buffer) ? ok.result.buffer : Buffer.from(ok.result.buffer),
@@ -240,14 +232,12 @@ export class WorkerPool {
 
   private onWorkerError(worker: PoolWorker, err: unknown): void {
     log.warn('Process worker emitted an error', { err: err instanceof Error ? err.message : String(err) })
-    // An errored worker must be retired, not marked idle — it cannot be trusted.
     this.retireWorker(worker, err instanceof Error ? err : new Error(String(err)))
   }
 
   private onWorkerExit(worker: PoolWorker, code: number): void {
     const index = this.workers.indexOf(worker)
     if (index === -1) {
-      // Already retired (error/timeout path or pool stop) — nothing to do.
       return
     }
     this.workers.splice(index, 1)
@@ -261,7 +251,6 @@ export class WorkerPool {
 
   private onJobTimeout(worker: PoolWorker, jobId: number): void {
     if (worker.currentJobId !== jobId) {
-      // Job already settled; the timer just hadn't been reaped yet.
       return
     }
     log.warn('Process job timed out; recycling worker', { jobId, timeoutMs: this.jobTimeoutMs })
@@ -274,9 +263,7 @@ export class WorkerPool {
       this.workers.splice(index, 1)
     }
     this.failInFlight(worker, err)
-    void worker.worker.terminate().catch(() => {
-      // Ignore — terminating an already-exited worker is harmless.
-    })
+    void worker.worker.terminate().catch(() => undefined)
     if (!this.stopped) {
       this.replaceWorker()
     }
@@ -303,7 +290,6 @@ export class WorkerPool {
 
   async stop(): Promise<void> {
     this.stopped = true
-    // Reject queued + pending jobs first so callers see a deterministic error.
     for (const job of this.queue) {
       const entry = this.pending.get(job.id)
       if (entry !== undefined) {
@@ -323,9 +309,7 @@ export class WorkerPool {
         this.clearJobTimer(w)
         try {
           await w.worker.terminate()
-        } catch {
-          // Ignore — terminating an already-exited worker is harmless.
-        }
+        } catch {}
       }),
     )
     this.workers.length = 0
@@ -402,9 +386,6 @@ function defaultCreateWorker(): Worker {
     }
     return new Worker(code, { eval: true, execArgv: ['--input-type=module'] })
   }
-  // The worker entry is emitted by `processWorkerEntryPlugin` at a stable
-  // name into build/server/. Bundling may inline this module into the entry
-  // or into an assets/ chunk one level down, so probe the known locations.
   const candidates = [new URL('./process-worker.js', import.meta.url), new URL('../process-worker.js', import.meta.url)]
   if (process.argv[1]) {
     candidates.push(pathToFileURL(join(dirname(process.argv[1]), 'process-worker.js')))
@@ -413,5 +394,4 @@ function defaultCreateWorker(): Worker {
   return new Worker(workerUrl)
 }
 
-// Priority 0: runs after flush hooks (priority 100), alongside the DB pool close.
 registerShutdownHook(stopProcessPool, 0)

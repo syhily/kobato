@@ -16,10 +16,7 @@ export default function generateEditorState({
   editor: LexicalEditor
   initialHtml?: string
 }): EditorState {
-  // Both branches tag the update `history-merge` so undo cannot clear the seeded state.
   if (initialHtml) {
-    // No registerDefaultTransforms on this long-lived editor on purpose; see the
-    // transform-policy note in initial-document.ts.
     editor.update(
       () => {
         const nodes = _$generateNodesFromHTML(editor, initialHtml)
@@ -38,7 +35,6 @@ export default function generateEditorState({
       { discrete: true, tag: 'history-merge' },
     )
   } else {
-    // An empty initial value still needs a paragraph: a completely empty root won't accept focus.
     editor.update(
       () => {
         $appendEmptyParagraph()

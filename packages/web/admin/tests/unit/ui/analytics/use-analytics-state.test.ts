@@ -5,10 +5,6 @@ import { renderHook } from '@kobato/test/hook.tsx'
 import { buildAnalyticsInput, useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mirrors the mocking pattern in `use-session-sort.test.tsx`:
-// `useSearchParams` is stubbed so the URL the hook reads can be driven
-// without bringing up a real router history.
-
 const mock = vi.hoisted(() => ({
   setSearchParams: vi.fn(),
   useSearchParams: vi.fn(),
@@ -147,7 +143,6 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
   })
 
   it('setFilter writes the per-dimension param and drops the legacy blob', () => {
-    // Seed a legacy blob so the write path's delete can be asserted.
     withParams({ filters: JSON.stringify({ country: 'CN' }) })
     const { setFilter } = renderHook(() => useAnalyticsState())
     setFilter('browser', 'Chrome')

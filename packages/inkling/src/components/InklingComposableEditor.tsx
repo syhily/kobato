@@ -22,9 +22,6 @@ export interface InklingComposableEditorProps {
   registerAPI?: (api: ExternalControlAPI | null) => void
   cursorDidExitAtTop?: () => void
   children?: React.ReactNode
-  // ReactElement, not ReactNode: upstream RichTextPlugin's placeholder
-  // contract is Element | ((isEditable) => Element | null) — widening the
-  // prop past it would fail at that boundary instead of here
   placeholder?: React.ReactElement
   singleParagraph?: boolean
   placeholderText?: string
@@ -79,8 +76,6 @@ const InklingComposableEditor = ({
   const _onChange = React.useCallback(
     (editorState: EditorState) => {
       if (sharedOnChange) {
-        // sharedOnChange fires for nested editors too: serialize the top-level
-        // (parent) editor's state so the payload is never just a nested editor
         const primaryEditorState = (parentEditor || editor).getEditorState()
         const json = primaryEditorState.toJSON()
         sharedOnChange(json)
@@ -107,8 +102,6 @@ const InklingComposableEditor = ({
 
   const [floatingAnchorElem, setFloatingAnchorElem] = React.useState<HTMLDivElement | null>(null)
   const onContentEditableRef = (_floatingAnchorElem: HTMLDivElement | null) => {
-    // the null branch matters: without it a stale anchor survives between
-    // unmount and remount
     setFloatingAnchorElem(_floatingAnchorElem)
   }
 

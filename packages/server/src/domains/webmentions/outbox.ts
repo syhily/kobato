@@ -21,7 +21,6 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
 const log = getLogger('webmentions.outbox')
 
-// Sequential send loop: small batches ≥OUTBOX_MIN_DELAY_MS apart, so even a burst spaces its sends out.
 export const OUTBOX_BATCH_SIZE = 5
 export const OUTBOX_MAX_ATTEMPTS = 5
 
@@ -33,11 +32,7 @@ function senderUa(): string {
   return `Kobato Webmention Sender (+${website})`
 }
 
-export type SendResult =
-  | { kind: 'ok' }
-  /** 4xx — the endpoint refused permanently; retrying is pointless. */
-  | { kind: 'rejected'; status: number }
-  | { kind: 'retry'; error: string }
+export type SendResult = { kind: 'ok' } | { kind: 'rejected'; status: number } | { kind: 'retry'; error: string }
 
 export async function sendWebmention(endpoint: string, sourceUrl: string, targetUrl: string): Promise<SendResult> {
   const result = await safeFetch(endpoint, {
@@ -70,8 +65,6 @@ const REAL_HOOKS: OutboxHooks = {
   send: (endpoint, sourceUrl, targetUrl) => sendWebmention(endpoint, sourceUrl, targetUrl),
 }
 
-/** One more attempt, or the `failed` terminal state when the budget is
- *  spent — attempts count discovery and send alike. */
 async function scheduleRetry(db: Database, row: WebmentionOutboxRow, error: string): Promise<void> {
   const attempts = row.attempts + 1
   if (attempts >= OUTBOX_MAX_ATTEMPTS) {
@@ -120,8 +113,6 @@ export async function runWebmentionOutboxBatch(db: Database, hooks: OutboxHooks 
     handleRow: (row) => processWebmentionOutboxRow(db, row, hooks),
     log,
     rowThrewMessage: 'Webmention outbox row processing threw',
-    // A thrown row still counts as one retryable attempt; the recovery write
-    // itself must never take the batch down.
     onRowError: (row, error) =>
       scheduleRetry(db, row, error instanceof Error ? error.message : String(error)).catch(() => undefined),
   })

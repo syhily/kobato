@@ -12,7 +12,6 @@ function entry(token: string, expiresAt: number): CommentTokenCookieEntry {
   return { token, expiresAt }
 }
 
-/** Build a cookie with `count` entries on one page, oldest first. */
 function buildCookie(pageKey: string, count: number, startExpiresAt = 1_000): CommentTokenCookie {
   const entries: CommentTokenCookieEntry[] = []
   for (let i = 0; i < count; i++) {
@@ -63,8 +62,6 @@ describe('appendCommentToken', () => {
   })
 
   it('enforces the serialized size budget before the entry cap', () => {
-    // A long pageKey inflates each entry's share of the serialized jar so
-    // the byte budget trips well below 50 entries.
     const pageKey = `page-${'x'.repeat(1_000)}`
     let cookie: CommentTokenCookie = {}
     for (let i = 0; i < 50; i++) {
@@ -77,8 +74,6 @@ describe('appendCommentToken', () => {
   })
 
   it('never evicts the freshly-issued token', () => {
-    // A single pageKey so large the jar is over budget with one entry:
-    // eviction must stop rather than drop the new token.
     const pageKey = `page-${'x'.repeat(4_000)}`
     const next = appendCommentToken({}, pageKey, 'new-token', TTL_SECONDS)
     expect(next[pageKey]).toHaveLength(1)

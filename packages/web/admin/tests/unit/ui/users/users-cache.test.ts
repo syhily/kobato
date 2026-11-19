@@ -3,14 +3,12 @@ import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 
-// Pins `invalidateUsersCache` (used by all users mutation paths) against a real QueryClient.
 function makeQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
   })
 }
 
-// orpcQuery options builders expose the exact query key under `.queryKey`.
 function seedUsersCaches(qc: QueryClient) {
   const listKey = orpcQuery.admin.users.list.queryOptions({ input: { offset: 0, limit: 20 } }).queryKey
   const detailKey = orpcQuery.admin.users.get.queryOptions({ input: { id: 'user-1' } }).queryKey

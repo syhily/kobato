@@ -8,7 +8,6 @@ import { NavSettings } from '@kobato/web-admin/ui/shell/NavSettings.tsx'
 
 interface AppSidebarContentProps {
   role: AdminShellProps['currentUser']['role']
-  /** `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpenNotifications: () => void
   pendingCommentCount?: number

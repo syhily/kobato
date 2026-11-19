@@ -10,14 +10,6 @@ export type SerializedFootnoteRefNode = SerializedTextNode & {
   targetKey: string
 }
 
-/**
- * Inline footnote reference — a TextNode entity (TKNode precedent) whose visible
- * text IS the 1-based index; the renumber engine
- * (`@kobato/inkling-internal/plugins/behaviour/footnotes`) rewrites the text in place, so no
- * separate index field can drift from what the reader sees. `__targetKey` points
- * at the definition card it cites (kobato's `footnoteRef.targetKey`). Atomicity
- * comes from `isTextEntity()` + the `canInsertText*` pair, exactly like TKNode.
- */
 export class FootnoteRefNode extends TextNode {
   __targetKey: string
 
@@ -50,10 +42,6 @@ export class FootnoteRefNode extends TextNode {
   }
 
   static importJSON(serializedNode: SerializedFootnoteRefNode): FootnoteRefNode {
-    // Trust boundary like MathInlineNode's importJSON: a hand-crafted payload
-    // can omit targetKey, and `undefined` would violate the field's `string`
-    // type — fall back to '' so the ref lands on the renumber engine's skip
-    // path (no resolvable definition) instead of carrying a phantom key
     const targetKey = typeof serializedNode.targetKey === 'string' ? serializedNode.targetKey : ''
     return new FootnoteRefNode(serializedNode.text, targetKey).updateFromJSON(serializedNode)
   }
@@ -91,13 +79,6 @@ export class FootnoteRefNode extends TextNode {
     return { element: sup }
   }
 
-  // Two import lanes: inkling/kobato HTML carries
-  // `a[href^="#user-content-fn-"]` inside the sup; the markdown-it-footnote
-  // paste dialect emits `sup.footnote-ref` (its fragment hrefs survive the
-  // headless importer, and the anchor `id="fnrefN[:M]"` remains when the
-  // paste sanitize strips fragment hrefs). Either way the source anchor slug
-  // only correlates ref and definition — the targetKey itself is recast on
-  // import (import-is-a-new-entity, see ./footnote-keys).
   static importDOM(): DOMConversionMap {
     return {
       sup: (node: HTMLElement) => {
@@ -152,16 +133,12 @@ function parseFootnoteRefSup(node: HTMLElement): { slug: string; label: string }
   const href = anchor.getAttribute('href')
   let slug = href?.startsWith('#') ? href.slice(1) : ''
   if (!slug) {
-    // the paste sanitize strips fragment hrefs; the anchor id keeps the slug
-    // (`fnrefN`, `fnrefN:M` for repeated references to one note)
     const id = anchor.getAttribute('id') ?? ''
     slug = id.replace(/^fnref/, 'fn').split(':')[0]
   }
   if (!slug) {
     return null
   }
-  // markdown-it labels a repeated reference `[N:M]` (the Mth citation of
-  // note N) — the visible index is N in both cases
   const bracketed = /^\[(\d+)(?::\d+)?\]$/.exec(anchor.textContent ?? '')
   return { slug, label: bracketed ? bracketed[1] : (anchor.textContent ?? '') }
 }

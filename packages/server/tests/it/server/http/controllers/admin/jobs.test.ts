@@ -15,9 +15,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Read-only aggregation over the catalog × live scheduler state × job_run
-// history × webmention queue tables. The recorder is wired to the global
-// test db by db-lifecycle at import time.
 const db = getTestDb()
 const ctx = makeAuthedCtx({ role: 'admin', db })
 
@@ -39,7 +36,6 @@ describe('adminJobsRouter.list', () => {
       expect(task.label.length).toBeGreaterThan(0)
       expect(task.lastRun).toBeNull()
     }
-    // No scheduler armed in this module graph → no live state.
     expect(res.tasks.find((task) => task.taskKey === 'backup')!.liveState).toBeNull()
     expect(res.storageMigration.phase).toBe('idle')
   })
@@ -55,7 +51,6 @@ describe('adminJobsRouter.list', () => {
     expect(backup.lastRun!.trigger).toBe('manual')
     expect(backup.lastRun!.error).toBe('disk full')
     expect(backup.lastRun!.durationMs).toBeGreaterThanOrEqual(0)
-    // Untouched tasks stay null.
     expect(res.tasks.find((task) => task.taskKey === 'geoip-update')!.lastRun).toBeNull()
   })
 
@@ -86,7 +81,6 @@ describe('adminJobsRouter.list', () => {
     expect(inbox.queue).toEqual({ depth: 2, nextDueAt: expect.any(String), attentionCount: 1 })
     const reverify = res.tasks.find((task) => task.taskKey === 'webmention-reverify')!
     expect(reverify.queue).toEqual({ depth: 0, nextDueAt: null, attentionCount: null })
-    // Non-queue tasks carry no queue stats.
     expect(res.tasks.find((task) => task.taskKey === 'backup')!.queue).toBeNull()
   })
 })

@@ -6,7 +6,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { SearchIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-// Two list leaves shared by the add-button picker and the pill editors: static local filter vs async server search.
 interface SearchableOptionListProps {
   options: readonly FilterOptionItem[]
   selectedValue?: string
@@ -63,7 +62,6 @@ export function SearchableOptionList({
                 type="button"
                 className={cn(
                   'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition hover:bg-accent hover:text-accent-foreground',
-                  // Custom-rendered rows carry the selected background on the whole row; plain rows highlight the label.
                   renderOption && isSelected && 'bg-accent text-accent-foreground',
                 )}
                 onClick={() => onSelect(option)}

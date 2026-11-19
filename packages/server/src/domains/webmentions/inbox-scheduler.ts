@@ -10,8 +10,6 @@ const queue = makeQueueScheduler({
   runBatch: runWebmentionInboxBatch,
 })
 
-// Burst throttle: drained batches self-reschedule; the floor keeps a
-// burst from hammering third-party hosts back-to-back.
 export const INBOX_MIN_DELAY_MS = queue.minDelayMs
 
 export function rescheduleWebmentionInbox(): void {

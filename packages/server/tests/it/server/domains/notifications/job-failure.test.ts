@@ -6,11 +6,6 @@ import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recor
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Composition-root wiring pin: importing the lifecycle graph (through
-// `#/_helpers/integration-db` → db-lifecycle) installs the recorder AND the
-// production `wireJobFailureNotifier` callback — the test never registers its
-// own copy. The failure is driven through the real recorder API instead, so
-// dropping the wiring in db-lifecycle turns this file red.
 const db = getTestDb()
 
 let seq = 0
@@ -68,9 +63,6 @@ describe('notifications / job-failure wiring', () => {
   it('keeps an error message containing "Unexpected token \'<\'" instead of dropping the notice', async () => {
     const adminId = await seedUser('admin', 'admin')
 
-    // A parser failure is ordinary text, not markup: the descriptor encoder
-    // must accept it, otherwise the thrown TypeError is swallowed by the
-    // notifier and no inbox row exists at all.
     finishJobRun(startJobRun('audit-archive', 'scheduled'), 'failed', "Unexpected token '<'")
 
     expect(unreadCount(db, adminId)).toBe(1)

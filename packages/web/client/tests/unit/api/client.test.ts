@@ -58,7 +58,6 @@ describe('client/api/client', () => {
     const originalLocation = globalThis.location
     globalThis.location = { origin: 'https://example.com' } as Location
     try {
-      // Force a fresh module evaluation so RPCLink is constructed with the stub.
       vi.resetModules()
       await import('@kobato/web-client/api/client.ts')
       expect(lastUrlFn.current?.()).toBe('https://example.com/rpc')
@@ -76,7 +75,6 @@ describe('client/api/client — error handling', () => {
     await import('@kobato/web-client/api/client.ts')
   })
 
-  /** Run a rejection through whatever interceptors the link registers. */
   async function rejectThroughLink(error: unknown): Promise<unknown> {
     const chain = [...lastInterceptors.current]
     const run = async (index: number): Promise<unknown> => {
@@ -90,8 +88,6 @@ describe('client/api/client — error handling', () => {
   }
 
   it('installs no rejection interceptor — the server owns error copy', () => {
-    // A client-side fold would re-run per locale-less request, duplicate the
-    // server's issue summary and drop the request locale.
     expect(lastInterceptors.current).toEqual([])
   })
 

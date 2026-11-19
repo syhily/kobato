@@ -2,10 +2,6 @@ import { USER_ROLES } from '@kobato/db/schema/shared.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// Per-user signin method (`user.login_method`): `password` default,
-// `magic-link` (needs a ready mail transport), `passkey` (needs a registered
-// passkey + global switch). Wire twin: `@kobato/contracts/users` (parity
-// pinned by `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`).
 export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const
 export type LoginMethod = (typeof LOGIN_METHODS)[number]
 
@@ -27,7 +23,6 @@ export const user = sqliteTable(
     password: text('password').notNull(),
     badgeName: text('badge_name'),
     badgeColor: text('badge_color'),
-    // Manual override for the badge text colour; when `null` the renderer falls back to `commentBadgeTextColor()`'s WCAG auto-pick.
     badgeTextColor: text('badge_text_color'),
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
@@ -37,10 +32,8 @@ export const user = sqliteTable(
     loginMethod: text('login_method').$type<LoginMethod>().default('password').notNull(),
   },
   (table) => [
-    // No `idx_users_email`: a redundant non-unique index would make drizzle-kit DROP the UNIQUE constraint.
     index('idx_users_name').on(table.name),
     index('idx_users_deleted_at').on(table.deletedAt),
-    // Partial: skips anonymous placeholder rows (role IS NULL).
     index('idx_user_role')
       .on(table.role)
       .where(sql`role IS NOT NULL`),
@@ -48,8 +41,6 @@ export const user = sqliteTable(
   ],
 )
 
-// One-shot tokens for password reset and author invite. `(purpose, userId)`
-// is UNIQUE — one live token per purpose per user.
 export const verification = sqliteTable(
   'verification',
   {

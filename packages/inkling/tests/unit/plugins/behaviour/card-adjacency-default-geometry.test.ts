@@ -4,12 +4,6 @@ import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Pins the DEFAULT CardAdjacencyGeometry implementation — the module's riskiest
-// transcription (arrows.ts's `anchorNode === topLevelElement` + `children.length - 1`
-// offset math), which the jsdom characterization tests never route through. Driven
-// through $getVisuallyAdjacentCard('down') with no geometry injected and a stubbed
-// window.getSelection(); native Selection stubbing is permitted in this file (unlike
-// card-adjacency.test.ts).
 const DEFAULT_GEOMETRY_TEST_NODES = [ImageNode]
 
 function createTestEditor() {

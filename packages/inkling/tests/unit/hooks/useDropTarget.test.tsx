@@ -24,8 +24,6 @@ afterAll(() => {
 })
 
 function makeWrapper(withHandler: boolean) {
-  // a real handle instance; withHandler=false pins the silent no-op when the
-  // reorder plugin never publishes a handler
   const dragDropHandle = createDragDropHandle()
   if (withHandler) {
     dragDropHandle.setState({ handler: dragDropHandler })
@@ -34,8 +32,6 @@ function makeWrapper(withHandler: boolean) {
     React.createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
 }
 
-// stable so the registration effect does not churn between rerenders — the
-// enable/disable pair can then be observed on the live container
 const stableCanDrop = () => true
 
 function renderDropTarget({
@@ -136,8 +132,6 @@ describe('useDropTarget', () => {
   })
 
   it('registers when the handler arrives after the hook mounted', async () => {
-    // the reorder plugin can publish the handler after card hooks already
-    // mounted; they register on its arrival
     const dragDropHandle = createDragDropHandle()
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)

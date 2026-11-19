@@ -29,31 +29,6 @@ import {
   PASTE_COMMAND,
 } from 'lexical'
 
-// Headless half of the at-link plugin: node lifecycle (insertion, shape
-// transform, command guards), the search session (registerAtLinkSession, the
-// focused-node/query synchronization policy and selection clamps), and the
-// commit surgery ($commitAtLinkSelection). The React half (AtLinkPlugin.tsx)
-// is a pure adapter: it subscribes to session snapshots, renders the results
-// popup, and delegates commits.
-//
-// Both insertion paths share $insertAtLink; keep these asymmetries:
-// 1. The native before-regex (/(^|\s)@$/) includes the literal '@' because it
-//    runs AFTER the browser inserted the character; the controlled check
-//    ($shouldConvertAtLink) runs pre-insertion and must not see one.
-// 2. The native predicate ($shouldConvertInsertedAt) accepts only text anchors
-//    — the post-insertion selection is always text; the element-anchor branch
-//    (empty paragraph) exists only in the pre-insertion path.
-// 3. Both paths skip during composition (event.isComposing /
-//    editor.isComposing()).
-// 4. The paths are mutually exclusive in practice: a consumed controlled
-//    command prevents DOM insertion, so no 'input' event fires. The native
-//    listener is fallback-only; both registrations stay.
-// 5. The link's carried format is captured at different moments: the
-//    controlled path reads the anchor text node's format pre-insertion, the
-//    native path reads it post-deletion inside $insertAtLink. They can differ
-//    when the just-typed '@' was its own text node with a format unlike its
-//    neighbors (bold toggled immediately before typing '@').
-
 export function $removeAtLink(node: AtLinkNode, { focus = false } = {}) {
   if (!$isAtLinkNode(node)) {
     return
@@ -244,9 +219,7 @@ function $shouldConvertInsertedAt(): boolean {
 function registerNativeAtLinkInsertion(editor: LexicalEditor) {
   const rootElement = editor.getRootElement()
   if (!rootElement) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
 
   const handleAtInsert = (event: Event) => {
@@ -267,9 +240,6 @@ function registerNativeAtLinkInsertion(editor: LexicalEditor) {
             return
           }
 
-          // delete the '@' character — the post-deletion state equals the
-          // pre-insertion state the controlled path sees, so the shared
-          // insert's own $shouldConvertAtLink() re-check passes
           selection.deleteCharacter(true)
 
           $insertAtLink()
@@ -371,9 +341,6 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
 
     editor.registerCommand(FORMAT_TEXT_COMMAND, $skipFormatCommandIfNeeded, COMMAND_PRIORITY_HIGH),
     editor.registerCommand(FORMAT_ELEMENT_COMMAND, $skipFormatCommandIfNeeded, COMMAND_PRIORITY_HIGH),
-    // prevent paste in the search node triggering external paste handlers.
-    // COMMAND_PRIORITY_HIGH is load-bearing: it must pre-empt
-    // registerPasteHandler's COMMAND_PRIORITY_LOW PASTE_COMMAND handler.
     editor.registerCommand(
       PASTE_COMMAND,
       (clipboardEvent) => {
@@ -414,13 +381,11 @@ export function registerAtLinkGuards(editor: LexicalEditor) {
 
 export function registerAtLinkNodeTransform(editor: LexicalEditor) {
   return editor.registerNodeTransform(AtLinkNode, (atLinkNode) => {
-    // first child must always be a ZWNJ
     if (!$isZWNJNode(atLinkNode.getFirstChild())) {
       const zwnjNode = $createZWNJNode()
       $insertFirst(atLinkNode, zwnjNode)
     }
 
-    // second child must be a search node
     if (!$isAtLinkSearchNode(atLinkNode.getChildAtIndex(1))) {
       const atLinkSearchNode = $createAtLinkSearchNode('')
       atLinkNode.append(atLinkSearchNode)
@@ -479,8 +444,6 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
   let focusedNode: AtLinkNode | null = null
   let query = ''
   const emitSession = (node: AtLinkNode | null, nextQuery: string) => {
-    // key-based change guard: consumers render/track by key, so a
-    // cloned-but-equivalent node instance is not a session change
     if (node?.getKey() === focusedNode?.getKey() && nextQuery === query) {
       return
     }
@@ -492,10 +455,6 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
     if (editor.isComposing()) {
       return
     }
-    // Skip the full-tree at-link scan unless an at-link is active or the update
-    // touched nodes that could contain one — the focusedNode check keeps the
-    // removal path working, since a selection change away from an at-link has
-    // empty dirty sets.
     if (!focusedNode && dirtyLeaves.size === 0 && dirtyElements.size === 0) {
       return
     }
@@ -524,8 +483,6 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
           const searchNodeText = $isAtLinkSearchNode(searchNode) ? searchNode.getTextContent() : ''
           emitSession(selectedAtLinkNode, searchNodeText)
 
-          // normalize the selection into the search node when it lands on the ZWNJ
-          // (text backspaced to empty)
           if ($isZWNJNode(selection.focus.getNode()) && window.getSelection()?.anchorOffset === 0) {
             selectedAtLinkNode.select(1, 1)
             const rangeSelection = $getSelection()
@@ -545,11 +502,6 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
         return
       }
 
-      // A range selection must not span outside an at-link node: with one
-      // endpoint inside and the other outside, delete/format commands would
-      // operate across the node boundary and leave a broken half-node. Clamp the
-      // outside endpoint(s) to the search node's nearest edge; selections wholly
-      // inside or wholly outside one at-link node are left alone.
       const anchorAtLinkNode = $getContainingAtLinkNode(selection.anchor)
       const focusAtLinkNode = $getContainingAtLinkNode(selection.focus)
 
@@ -564,8 +516,6 @@ export function registerAtLinkSession(editor: LexicalEditor, { onSessionChange }
       }
 
       const clampToSearchEdge = (point: PointType) => {
-        // document-order approximation: a point on an ancestor element
-        // reads as "before" — either edge satisfies the invariant
         const offset = atLinkNode.isBefore(point.getNode()) ? searchNode.getTextContentSize() : 0
         point.set(searchNode.getKey(), offset, 'text')
       }

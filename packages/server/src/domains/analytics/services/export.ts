@@ -5,8 +5,6 @@ import { queryExportRows } from '@kobato/db/duckdb/queries/export.ts'
 
 const CSV_COLUMNS = ['path', 'views', 'visitors', 'referers'] as const
 
-// Spreadsheet formula triggers: a cell starting (after leading TAB/CR/space) with
-// = + - @ executes as a formula in Excel/LibreOffice — prefix it with a quote.
 const FORMULA_PREFIX = /^[\t\r ]*[=+\-@]/
 
 /** RFC 4180 cell escaping: quote values carrying a comma, quote, or newline. */

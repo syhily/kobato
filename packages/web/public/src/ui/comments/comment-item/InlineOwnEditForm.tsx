@@ -44,8 +44,6 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
         eager
         focusOnMount
         initialBody={seed}
-        // The seed is synchronous, so a static key suffices; bumping it on the first editor
-        // update would re-run the reset effect and wipe the first keystrokes.
         bodyKey={`own-edit-${comment.id}`}
         onBodyChange={setBody}
         disabled={submitting}

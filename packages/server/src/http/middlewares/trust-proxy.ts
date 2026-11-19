@@ -36,16 +36,9 @@ function readHeaderProto(c: { req: { header(name: string): string | undefined } 
   return forwarded && VALID_PROTOCOLS.has(forwarded) ? forwarded : null
 }
 
-// The bundle snapshot object is stable between settings saves — memoize the
-// gate decision on its identity instead of re-parsing the website URL per request.
 let cachedBundle: object | null = null
 let cachedGate: { host: string } | null = null
 
-/**
- * The trust gate: an https `siteIdentity.website` declares a TLS-terminating proxy in
- * front (this process only listens plain http), so proxy scheme headers may be trusted.
- * Returns the canonical host for the headerless fallback, null when untrusted.
- */
 function trustProxyGate(): { host: string } | null {
   const bundle = getBlogSettingsBundleSync()
   if (bundle === cachedBundle) {
@@ -76,8 +69,6 @@ export const trustProxy = createMiddleware<Env>(async (c, next) => {
     const proto = readHeaderProto(c) ?? (url.host === gate.host ? 'https' : null)
     if (proto !== null && url.protocol !== `${proto}:`) {
       url.protocol = `${proto}:`
-      // Rebuild via a plain init object — `new Request(request, …)` trips on
-      // foreign-realm Request instances under the vite dev server.
       const init: RequestInit & { duplex?: 'half' } = {
         method: c.req.raw.method,
         headers: c.req.raw.headers,

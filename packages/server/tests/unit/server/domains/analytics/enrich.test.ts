@@ -3,10 +3,6 @@ import type { RawAccessEvent } from '@kobato/server/domains/analytics/types.ts'
 import { buildDeviceEnvServerRow, enrichEvent } from '@kobato/server/domains/analytics/enrich.ts'
 import { describe, expect, it } from 'vitest'
 
-// The enrichment pipeline (salted IP hash, referer minimization, UA parsing,
-// bot detection) against no mocks — split from the DuckDB query coverage suite
-// that shares this file's origin.
-
 describe('analytics/enrich — enrichEvent', () => {
   it('hashes the IP, parses referer + language, and detects bots', async () => {
     const event = await enrichEvent({
@@ -46,7 +42,6 @@ describe('analytics/enrich — enrichEvent', () => {
   })
 
   it('marks crawler/fetcher browser types as bots even when the hand-rolled matcher misses them', async () => {
-    // ia_archiver trips the ua-parser crawler extension, not kobato's is-bot list.
     const event = await enrichEvent({
       eventId: '00000000-0000-4000-8000-0000000000ef',
       ts: new Date(),
@@ -108,8 +103,6 @@ describe('analytics/enrich — enrichEvent', () => {
     expect(event.isBot).toBe(false)
   })
 })
-
-// Row construction is pure: request client hints + Accept-Language map onto sidecar columns.
 
 function makeRaw(overrides: Partial<RawAccessEvent> = {}): RawAccessEvent {
   return {

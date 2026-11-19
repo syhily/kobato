@@ -97,7 +97,6 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [lastCommitted, setLastCommitted] = useState(value?.date ?? '')
-  // Sync local date when the external value changes — but only while unfocused, so in-flight edits survive.
   if ((value?.date ?? '') !== lastCommitted) {
     setLastCommitted(value?.date ?? '')
     if (!isFocused) {
@@ -124,12 +123,9 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
 
   const handleBlur = () => {
     if (!localDate) {
-      // Cleared input: commit the empty date — `parseSingleDateFilter` rejects it,
-      // so the pill's query patch drops its bounds instead of silently keeping the old date.
       setLastCommitted('')
       onChange({ date: '', op })
     } else if (!parsedDate) {
-      // Garbage input: restore the last committed value instead of inventing a date.
       setLocalDate(lastCommitted)
     } else {
       commitDate(parsedDate)

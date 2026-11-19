@@ -15,7 +15,6 @@ interface PendingFriendRowProps {
   onDelete: () => void
 }
 
-// Approve stays disabled until a valid poster exists.
 export const PendingFriendRow = memo(function PendingFriendRow({
   friend,
   disabled,

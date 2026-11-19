@@ -18,9 +18,6 @@ export const PLACEHOLDER_ICONS = {
 
 export type PlaceholderIconName = keyof typeof PLACEHOLDER_ICONS
 
-// `icon` arrives as a free string from host-driven props upstream — only the
-// declared keys have an icon to render. Object.hasOwn (not `in`) so prototype
-// keys like 'constructor' can't slip through and crash the render.
 export function isPlaceholderIconName(icon: unknown): icon is PlaceholderIconName {
   return typeof icon === 'string' && Object.hasOwn(PLACEHOLDER_ICONS, icon)
 }

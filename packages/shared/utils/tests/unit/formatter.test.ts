@@ -1,7 +1,6 @@
 import { formatLocalDate, formatShowDate } from '@kobato/utils/site-date.ts'
 import { describe, expect, it } from 'vitest'
 
-// Minimal aggregated-shaped fixture; only the locale/timeZone/timeFormat slice is read.
 const config = {
   settings: {
     locale: 'zh-CN',
@@ -39,10 +38,8 @@ describe('utils/formatter — date formatting', () => {
     expect(formatShowDate(daysAgo(1), config, now)).toBe('昨天')
     expect(formatShowDate(daysAgo(2), config, now)).toBe('2天前')
     expect(formatShowDate(daysAgo(6), config, now)).toBe('6天前')
-    // Week labels are Monday-start aligned…
     expect(formatShowDate(daysAgo(7), config, now)).toBe('1周前')
     expect(formatShowDate(daysAgo(29), config, now)).toBe('4周前')
-    // …then calendar months, until the 210-day relative window closes.
     expect(formatShowDate(daysAgo(30), config, now)).toBe('1个月前')
     expect(formatShowDate(daysAgo(209), config, now)).toBe('6个月前')
     expect(formatShowDate(daysAgo(210), config, now)).toBe('2023-11-18 12:00')
@@ -51,19 +48,15 @@ describe('utils/formatter — date formatting', () => {
   it('counts whole calendar months by day-of-month through the wrapper', () => {
     const at = (now: string) => new Date(now)
 
-    // Jan 30 → Mar 1 is 30 days but ONE whole month (March 30 has not arrived).
     expect(formatShowDate(new Date('2026-01-30T12:00:00+08:00'), config, at('2026-03-01T12:00:00+08:00'))).toBe(
       '1个月前',
     )
-    // Cross-year: Dec 31 → Mar 1 is two whole months.
     expect(formatShowDate(new Date('2025-12-31T12:00:00+08:00'), config, at('2026-03-01T12:00:00+08:00'))).toBe(
       '2个月前',
     )
-    // Month-end clamps: Jan 31 + 3 months is Apr 30.
     expect(formatShowDate(new Date('2026-01-31T12:00:00+08:00'), config, at('2026-04-30T12:00:00+08:00'))).toBe(
       '3个月前',
     )
-    // Exactly 30 days, unaligned — still one month, never zero.
     expect(formatShowDate(new Date('2024-05-16T12:00:00+08:00'), config, new Date('2024-06-15T12:00:00+08:00'))).toBe(
       '1个月前',
     )
@@ -74,7 +67,6 @@ describe('utils/formatter — date formatting', () => {
     const daysAhead = (days: number) => new Date(now.getTime() + days * 86_400_000)
 
     expect(formatShowDate(daysAhead(0), config, now)).toBe('今天')
-    // Later the same calendar day is still today.
     expect(formatShowDate(new Date('2024-06-15T20:00:00+08:00'), config, now)).toBe('今天')
     expect(formatShowDate(daysAhead(1), config, now)).toBe('明天')
     expect(formatShowDate(daysAhead(3), config, now)).toBe('3天后')

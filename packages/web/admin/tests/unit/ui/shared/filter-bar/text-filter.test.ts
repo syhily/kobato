@@ -47,8 +47,6 @@ describe('parseTextFilterValue', () => {
   })
 
   it('parses an empty value as a valid chip state', () => {
-    // A freshly added chip with the default operator and no text is a legal
-    // filter state — the parser must round-trip it instead of dropping it.
     expect(parseTextFilterValue(JSON.stringify({ op: 'contains', value: '' }), OPERATORS)).toEqual({
       op: 'contains',
       value: '',

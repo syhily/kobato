@@ -11,7 +11,6 @@ const log = getLogger('fonts.render')
 const EMPTY: ResolvedFonts = { global: [], post: [], code: [] }
 
 function etagToTimestamp(etag: string): number {
-  // First 8 hex chars of the sha256 etag → stable `?v=` cache-buster; repackaging changes it.
   return parseInt(etag.slice(0, 8), 16)
 }
 
@@ -37,13 +36,11 @@ export async function resolveFontsForRender(
     resolveSlotOrder(ids, byId).map((row) => {
       let href: string
       try {
-        // Consume the persisted `cssKey` — `route`/`stripPrefix` must stay in sync with fonts-embedded.ts.
         href = resolveAssetUrl(row.cssKey, etagToTimestamp(row.etag), {
           route: '/fonts/embedded/',
           stripPrefix: 'fonts/',
         })
       } catch (error) {
-        // Asset base URL unconfigured — drop this font rather than failing the render.
         log.warn('Failed to resolve font URL', { id: row.id, error: String(error) })
         href = ''
       }

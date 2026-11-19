@@ -80,8 +80,6 @@ describe('dateFilterLabel', () => {
   })
 })
 
-// Single-day filter mode with Ghost-style operators.
-
 describe('parseSingleDateFilter', () => {
   it('returns null for undefined or empty input', () => {
     expect(parseSingleDateFilter(undefined)).toBeNull()
@@ -142,7 +140,6 @@ describe('singleDateFilterLabel', () => {
 })
 
 describe('resolveSingleDateFilterBounds', () => {
-  // Expected bounds are built in the runner's local timezone, like the SUT.
   function expectedBounds(date: string) {
     const start = new Date(date)
     start.setHours(0, 0, 0, 0)
@@ -184,7 +181,6 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is empty (operator-only chip)', () => {
-    // Operator-first chips commit {date: '', op} — must not crash and stay a no-op until a date is typed.
     expect(resolveSingleDateFilterBounds({ date: '', op: 'is-greater' })).toEqual({
       after: undefined,
       before: undefined,
@@ -196,7 +192,6 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is unparseable', () => {
-    // `new Date('not-a-date')` is an Invalid Date whose `toISOString` throws.
     expect(resolveSingleDateFilterBounds({ date: 'not-a-date', op: 'is-less' })).toEqual({
       after: undefined,
       before: undefined,

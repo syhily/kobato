@@ -1,8 +1,3 @@
-// A dynamically-imported JS/CSS chunk failed to load: a tab still on the old
-// bundle holds hashed URLs the deploy removed. Detection is message-based
-// (isomorphic) because the throw comes from the native module loader, which
-// cannot be tagged.
-
 const MESSAGE_NEEDLES = [
   'failed to fetch dynamically imported module',
   'error loading dynamically imported module',

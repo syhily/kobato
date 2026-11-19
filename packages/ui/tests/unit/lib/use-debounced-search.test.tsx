@@ -4,7 +4,6 @@ import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search.ts'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Real timers replaced everywhere: the hook's whole contract is the trailing-edge window.
 beforeEach(() => {
   vi.useFakeTimers()
 })
@@ -36,7 +35,6 @@ describe('ui/shared/use-debounced-search', () => {
     const onChange = vi.fn()
     const { result } = renderHook(() => useDebouncedSearch({ delayMs: 300, onChange }))
 
-    // Typing before the mount leg elapses cancels it, so only the final value fires.
     act(() => {
       result.current[1]('科')
     })

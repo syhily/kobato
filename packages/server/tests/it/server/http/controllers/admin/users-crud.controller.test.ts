@@ -10,9 +10,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// The update procedure against the real engine: the patch projection,
-// the safe-URL input schema, and the audit write are all exercised
-// through seeded rows — no mocked operations layer.
 const db = getTestDb()
 
 beforeEach(async () => {

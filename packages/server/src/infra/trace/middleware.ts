@@ -1,11 +1,3 @@
-// Hono request-lifecycle span.
-//
-// Mounted after trust-proxy/request-ID and before compression, so the span
-// covers the complete application pipeline. Only W3C trace context is
-// extracted; the route template is resolved after the downstream handler has
-// run, and unknown/catch-all routes collapse to a fixed category so a raw
-// path can never become an attribute.
-
 import type { Span } from '@kobato/server/infra/trace/facade.ts'
 import type { Context, MiddlewareHandler } from 'hono'
 
@@ -15,7 +7,6 @@ import { takeRoutePattern } from '@kobato/server/infra/trace/route-registry.ts'
 import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths.ts'
 import { routePath } from 'hono/route'
 
-/** Hono's catch-all route for React Router documents/data requests. */
 const REACT_ROUTER_ROUTE = 'react_router'
 
 function isCatchAllRoute(path: string): boolean {
@@ -23,9 +14,6 @@ function isCatchAllRoute(path: string): boolean {
 }
 
 function resolveRouteTemplate(c: Context): string {
-  // Prefer the pattern React Router matched (handed over through the shared
-  // Request object); otherwise use Hono's CURRENT route index — the handler
-  // that produced the response — not the last registered match.
   const reactRouterPattern = takeRoutePattern(c.req.raw)
   if (reactRouterPattern !== undefined) {
     return reactRouterPattern
@@ -63,7 +51,6 @@ function recordThrown(span: Span, c: Context, error: unknown): RequestOutcome {
     'http.route': route,
   })
   if (error instanceof Response) {
-    // A thrown Response is control flow, not a fault.
     span.setAttribute('http.response.status_code', error.status)
     span.setStatus(error.status >= 500 ? 'error' : 'ok')
     if (error.status >= 500) {

@@ -2,8 +2,6 @@ import { downloadBinary } from '@kobato/server/domains/music/services/write/shar
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-// downloadBinary resolves hostnames through safe-fetch's DNS guard —
-// pin it to a public address so tests stay hermetic.
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
@@ -16,8 +14,6 @@ describe('downloadBinary', () => {
       vi.fn(() => {
         const r = responses[i] ?? {}
         i += 1
-        // A real Response: safe-fetch reads `.status` for the manual
-        // redirect loop and streams `.body` through a size-capped reader.
         return Promise.resolve(
           new Response(r.body ?? new Uint8Array(4), { status: r.status ?? 200, headers: r.headers }),
         )

@@ -3,8 +3,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The rollback/cleanup helpers resolve live engine paths through the infra seams, pointed
-// at a per-test temp dir; the rest of the restore module stays real.
 const paths = vi.hoisted(() => ({ db: '', analytics: '' }))
 
 vi.mock('@kobato/server/infra/db/paths.ts', () => ({
@@ -60,8 +58,6 @@ describe('services/restore — rollbackPreRestoreFiles', () => {
   })
 
   it('never touches a live file that has no pre-restore sibling', async () => {
-    // Analytics-only upload (or a target the swap skipped): the swap kept
-    // no original — the rollback must leave the live file in place.
     await writeFile(paths.db, 'corrupt-swapped')
     await writeFile(`${paths.db}.pre-restore`, 'original-db')
     await writeFile(paths.analytics, 'live-analytics')
@@ -98,8 +94,6 @@ describe('services/restore — cleanupPreRestoreFiles', () => {
 
 describe('services/restore — recoverPreRestoreFiles', () => {
   it('rolls the pre-restore sibling back when the swap target is MISSING (mid-swap crash)', async () => {
-    // Died between the two renames: the `.pre-restore` sibling is the last
-    // good copy — boot must restore it, not boot into an empty database.
     await writeFile(`${paths.db}.pre-restore`, 'original-db')
     await writeFile(`${paths.db}.restore-staging`, 'partial-new-db')
 
@@ -123,7 +117,6 @@ describe('services/restore — recoverPreRestoreFiles', () => {
   })
 
   it('handles mixed engine states independently', async () => {
-    // Content DB died mid-swap; analytics completed its swap first.
     await writeFile(`${paths.db}.pre-restore`, 'original-db')
     await writeFile(paths.analytics, 'new-analytics')
     await writeFile(`${paths.analytics}.pre-restore`, 'original-analytics')

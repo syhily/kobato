@@ -1,15 +1,11 @@
 import type { RateLimitSettings } from '@kobato/settings/types.ts'
 import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 
-// Bounds shared by the server section schema and the admin form's
-// min/max attributes: 60s ≤ window ≤ 24h, 1 ≤ maxAttempts ≤ 1000.
 export const rateLimitBounds = {
   windowSeconds: { min: 60, max: 60 * 60 * 24 },
   maxAttempts: { min: 1, max: 1000 },
 } as const
 
-// Conservative rate-limit defaults used by the install seed, the settings
-// backfill and the infra rate-limit fallback path.
 export const rateLimitDefaults = {
   signIn: { windowSeconds: 60 * 30, maxAttempts: 5 },
   otpSend: { windowSeconds: 60 * 5, maxAttempts: 3 },
@@ -24,8 +20,4 @@ export const rateLimitDefaults = {
   passkeyManage: { windowSeconds: 60 * 5, maxAttempts: 10 },
 } as const
 
-// Compile-time half of the bucket parity contract: the key set of
-// `RateLimitSettings` is pinned to these defaults, so adding a bucket without a
-// defaults entry fails the typecheck. The runtime half lives in
-// `packages/shared/tests/unit/shared/contracts/rate-limit-buckets.test.ts`.
 type _rateLimitDefaultsKeyParity = Assert<Equals<keyof typeof rateLimitDefaults, keyof RateLimitSettings>>

@@ -6,8 +6,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 
-// These forms read the UI translator and the site identity; mount both
-// providers for every RTL render.
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(<BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{ui}</BlogSettingsProvider>))
 }
@@ -18,12 +16,8 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The GeoIP rows read status / fire mutations through orpc + TanStack Query;
-// the canonical inert hook doubles keep this spec focused on the upload wiring.
 mockTanstackQuery()
 
-// The upload choreography is pinned by use-file-upload.test.tsx; this spec
-// pins only the AnalyticsForm wiring.
 const hookMock = vi.hoisted(() => ({
   options: undefined as UseFileUploadOptions | undefined,
   upload: vi.fn(),

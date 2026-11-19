@@ -8,8 +8,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Everything runs against the real engine (canonicalize pipeline); only the
-// outbound email stays mocked.
 vi.mock('@kobato/server/domains/comments/services/email.ts', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
@@ -263,7 +261,6 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   it('skips entries whose stored payload is not a payload object', async () => {
     const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
-    // The json column accepts a bare JSON string; the shape guard reads it as a miss.
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
       payload: 'not-a-payload-object',

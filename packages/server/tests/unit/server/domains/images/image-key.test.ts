@@ -5,17 +5,14 @@ import { describe, expect, it } from 'vitest'
 describe('server/images/key — buildObjectKey', () => {
   describe('kind: generic', () => {
     it('embeds yyyy/MM in the prefix and zero-pads each timestamp component', () => {
-      // The generic key is built from UTC components, keeping the test timezone-stable.
       const now = new Date(Date.UTC(2026, 0, 7, 3, 4, 5, 987))
       const key = buildObjectKey({ kind: 'generic', now })
-      // 987 ms % 100 = 87 → `87` before the random suffix.
       expect(key).toMatch(/^images\/2026\/01\/2026010703040587-[0-9a-f]{8}\.jpg$/)
     })
 
     it('zero-pads the ms-mod-100 segment when the remainder is single-digit', () => {
       const now = new Date(Date.UTC(2026, 11, 31, 23, 59, 59, 4))
       const key = buildObjectKey({ kind: 'generic', now })
-      // 4 ms % 100 = 4 → `04` after the seconds.
       expect(key).toMatch(/^images\/2026\/12\/2026123123595904-[0-9a-f]{8}\.jpg$/)
     })
 
@@ -64,7 +61,6 @@ describe('server/images/key — extractHostForFriendKey', () => {
   })
 
   it('returns punycoded host for IDN URLs (whitelist still accepts xn-- form)', () => {
-    // URL.hostname returns the punycode form, so `xn--` must pass the lowercase-ASCII whitelist.
     expect(extractHostForFriendKey('https://测试.example')).toMatch(/^xn--[a-z0-9.-]+$/)
   })
 })

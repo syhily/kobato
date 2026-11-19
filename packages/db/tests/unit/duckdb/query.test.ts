@@ -2,9 +2,6 @@ import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/q
 import { sql } from 'kysely'
 import { describe, expect, it } from 'vitest'
 
-// SQL-injection regression suite: user values must bind as parameters and
-// generated identifiers must pass the whitelist.
-
 describe('duckDB analytics SQL compiler', () => {
   it('uses the local event table and exact counts', () => {
     const compiled = compileAnalyticsQuery(createAnalyticsQuery().select(sql<number>`COUNT(*)`.as('visits')))

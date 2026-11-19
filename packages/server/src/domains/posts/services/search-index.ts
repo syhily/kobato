@@ -6,10 +6,6 @@ import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection.ts'
 import { eq } from 'drizzle-orm'
 
-// The indexed corpus is the save-time `body_text` projection: publish passes
-// the freshly canonicalized Lexical state, the revision-row readers prefer
-// the persisted column and only recompute when it is NULL.
-
 export async function indexPost(
   db: Database,
   postId: number,
@@ -52,7 +48,6 @@ export async function indexPostFromRevision(
   return true
 }
 
-// Sync (node:sqlite): called inside the delete transaction.
 export function removePostIndex(db: Database, postId: number): void {
   db.delete(postSearchIndex).where(eq(postSearchIndex.postId, postId)).run()
 }

@@ -27,10 +27,7 @@ type CacheSlice = CacheSettings['cache']
 
 interface BucketCardProps {
   bucket: CacheBucketStats
-  /** Authoritative server-side settings; `undefined` renders the card read-only. */
   settings?: { prefix: string; ttlSeconds: number }
-  /** The full cache slice — feeds the prefix-collision validation for sibling
-   *  buckets; the save posts only this card's bucket. */
   allBuckets: CacheSlice
   isClearPending: boolean
   clearStatus: ClearStatus
@@ -40,7 +37,6 @@ interface BucketCardProps {
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
   const { locale, t } = useI18n()
   const editable = settings !== undefined
-  // Non-tunable buckets fall back to the stats row — memoized for a stable identity (compared by reference below).
   const effectiveSettings = useMemo(
     () => settings ?? { prefix: bucket.prefix, ttlSeconds: bucket.ttlSeconds },
     [settings, bucket.prefix, bucket.ttlSeconds],
@@ -49,10 +45,8 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   const [snapshot, setSnapshot] = useState<BucketDraft>(() => snapshotFromSettings(effectiveSettings))
   const [draft, setDraft] = useState<BucketDraft>(snapshot)
   const submittedDraftRef = useRef<{ value: BucketDraft } | null>(null)
-  // Fire "auto-exit on save" only for THIS card's submission — a sibling's save must not close this one.
   const [savingFromHere, setSavingFromHere] = useState(false)
 
-  // Sync via the "adjust state during render" pattern, not setState-in-effect.
   const [lastSettingsRef, setLastSettingsRef] = useState<{ settings: typeof effectiveSettings; isEditing: boolean }>({
     settings: effectiveSettings,
     isEditing,
@@ -100,7 +94,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   }
 
   const otherBuckets = useMemo(() => {
-    // CacheSlice keys are exactly the tunable bucket ids.
     const all = unsafeCast<[CacheBucketId, { prefix: string; ttlSeconds: number }][]>(Object.entries(allBuckets)).map(
       ([id, slot]) => ({ id, prefix: slot.prefix }),
     )
@@ -123,7 +116,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       ttlHours: draft.ttlHours,
     }
     submittedDraftRef.current = { value: submittedDraft }
-    // Honest Section patch: only this card's bucket — sibling buckets, possibly edited in another tab, are never re-sent.
     void save({
       cache: {
         [bucket.id]: {

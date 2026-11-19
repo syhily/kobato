@@ -1,9 +1,3 @@
-/**
- * Compile-time contract fixtures for card node datasets and insert commands.
- *
- * This file is included by the root tsconfig (unlike test/unit) and is only
- * type-checked — it is never executed and contains no runtime assertions.
- */
 import type { EditorState, LexicalEditor } from 'lexical'
 
 import { type AudioNodeDataset, INSERT_AUDIO_COMMAND } from '@kobato/inkling-internal/nodes/AudioNode'

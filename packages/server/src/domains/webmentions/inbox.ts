@@ -18,22 +18,15 @@ import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/s
 
 const log = getLogger('webmentions.inbox')
 
-// Sequential single-worker verification loop: small batches, at least
-// INBOX_MIN_DELAY_MS apart, so a burst cannot hammer source hosts back-to-back.
 export const INBOX_BATCH_SIZE = 5
 export const INBOX_MAX_ATTEMPTS = 3
 
-/**
- * Verify one queued pair: success deletes the row, transient failures back
- * off; terminal failures are recorded visibly, except a vanished target (silent drop).
- */
 export async function processWebmentionInboxRow(db: Database, row: WebmentionInboxRow): Promise<void> {
   try {
     await receiveWebmention(db, { source: row.sourceUrl, target: row.targetUrl })
     await deleteWebmentionInbox(db, row.id)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
-    // Non-DomainError throws count as transient — an internal hiccup must not silently drop a mention.
     const retryable = !(error instanceof DomainError) || error.retryable === true
     const attempts = row.attempts + 1
     if (retryable && attempts < INBOX_MAX_ATTEMPTS) {
@@ -67,8 +60,6 @@ export async function processWebmentionInboxRow(db: Database, row: WebmentionInb
   }
 }
 
-/** The scheduler's batch: due rows verified strictly in sequence; with the
- *  receive switch off the whole queue drains (nothing queued can be accepted). */
 export async function runWebmentionInboxBatch(db: Database): Promise<number> {
   if (!isWebmentionReceiveEnabled(getBlogSettingsBundleSync())) {
     const dropped = await clearWebmentionInbox(db)

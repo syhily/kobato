@@ -5,11 +5,8 @@ import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web-admin/ui/sha
 
 import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 'lucide-react'
 
-// ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS double as the row badge vocabularies
-// (minus the synthetic "all" entry).
 export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
 
-/** The `admin.auditLog.list` / `exportCsv` input contributed by the active pills. */
 export interface AuditFilterQuery {
   action?: string
   resourceType?: string

@@ -8,15 +8,9 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Contract test: the platform require call sites inside the INSTALLED
-// sharp / @napi-rs/canvas / @duckdb/node-bindings packages must stay
-// exactly the set the SEA redirect machinery knows about.
-
-// One balanced nested paren pair — template-interpolated calls must be captured whole.
 const NATIVE_REQUIRE_REGEX =
   /(?<![\w$.])require\(((?:[^()]|\([^()]*\))*?(?:@img\/sharp|@napi-rs\/canvas-|@duckdb\/node-bindings-|\.node|src\/build|skia\.wasi\.cjs)(?:[^()]|\([^()]*\))*?)\)/g
 
-/** Real path of an installed package root (exports maps hide package.json on some). */
 function packageRoot(name: string): string {
   try {
     return realpathSync(join(process.cwd(), 'node_modules', name))
@@ -31,7 +25,6 @@ function packageRoot(name: string): string {
   }
 }
 
-/** `dist/*.mjs` + `dist/*.cjs` of a package (both flavors — the bundler may pick either). */
 function distFiles(root: string): string[] {
   return readdirSync(join(root, 'dist'))
     .filter((name) => name.endsWith('.mjs') || name.endsWith('.cjs'))
@@ -51,9 +44,7 @@ function normalizeArg(arg: string): string {
 
 type SpecifierClass = 'answered' | 'probe' | 'unknown'
 
-/** answered: nativeRequire resolves it; probe: nativeRequire throws and the package's try/catch absorbs it. */
 function classify(spec: string): SpecifierClass {
-  // Addon loads (answered for the current platform's instance).
   if (/^@img\/sharp-(?!libvips)[^/]+\/sharp\.node$/.test(spec)) {
     return 'answered'
   }
@@ -63,18 +54,15 @@ function classify(spec: string): SpecifierClass {
   if (/^@duckdb\/node-bindings-[^/]+\/duckdb\.node$/.test(spec)) {
     return 'answered'
   }
-  // Metadata probes nativeRequire answers from the embedded assets.
   if (/^@img\/sharp-libvips-[^/]+\/(versions|package|lib)$/.test(spec)) {
     return 'answered'
   }
   if (/^@img\/sharp-(?!libvips)[^/]+\/package$/.test(spec)) {
     return 'answered'
   }
-  // The platform package's /versions probe — throws where versions.json is absent (upstream MODULE_NOT_FOUND too).
   if (/^@img\/sharp-(?!libvips)[^/]+\/versions$/.test(spec)) {
     return 'probe'
   }
-  // Build-from-source / wasm / header probes — absorbed by the packages' own try/catch.
   if (
     spec.includes('src/build') ||
     spec.startsWith('./skia') ||
@@ -116,7 +104,6 @@ describe('contract: native platform specifiers', () => {
   const sites = enumerateCallSites()
 
   it('finds the platform require call sites in the installed packages', () => {
-    // A scanner regression must never pass vacuously.
     expect(sites.length).toBeGreaterThanOrEqual(50)
     expect(sites.some((site) => site.normalized.includes('/sharp.node'))).toBe(true)
     expect(sites.some((site) => site.normalized.startsWith('@napi-rs/canvas-'))).toBe(true)
@@ -159,11 +146,9 @@ describe('contract: native platform specifiers', () => {
         join(process.cwd(), 'packages/server/src/infra/sea/sea.ts'),
       ),
     ).toBeNull()
-    // Requires without platform markers stay for the bundler to inline.
     const canvasIndex = join(packageRoot('@napi-rs/canvas'), 'geometry.js')
     const source = readFileSync(canvasIndex, 'utf-8')
     expect(redirectNativeRequires(source, canvasIndex)).toBeNull()
-    // @img/colour is pure-JS, not a platform specifier — redirecting it would throw unguarded.
     const colourCjs = join(packageRoot('sharp'), 'dist', 'colour.cjs')
     expect(redirectNativeRequires(readFileSync(colourCjs, 'utf-8'), colourCjs)).toBeNull()
   })

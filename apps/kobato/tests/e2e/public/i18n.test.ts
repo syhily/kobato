@@ -5,9 +5,6 @@ import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
 
-// Every expected string is a literal from the catalog, never computed with
-// the same Intl call the implementation uses; a stale tag must never answer
-// 304 with an old language.
 const LOCALES = ['en-US', 'zh-HK', 'zh-TW', 'zh-CN'] as const
 type Locale = (typeof LOCALES)[number]
 

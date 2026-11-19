@@ -21,8 +21,6 @@ const USERLAND_TIMEOUT_MS = 30_000
 const SEA_BUILD_TIMEOUT_MS = 300_000
 const SEA_RUN_TIMEOUT_MS = 120_000
 
-// The VFS mount namespace is a reserved path hierarchy that never exists on
-// the real filesystem — empirically `/dev/null/vfs/<n>` on every platform.
 const MOUNT_POINT_PATTERN = /^\/dev\/null\/vfs\/\d+$/
 
 const nodeBinary = process.argv[2] ?? process.execPath
@@ -45,7 +43,6 @@ function assertEquals(actual: unknown, expected: unknown, message: string) {
   assert(actual === expected, `${message} (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)})`)
 }
 
-/** Run one named check: print the verdict immediately, record it, never throw. */
 function check(name: string, fn: () => string | undefined) {
   try {
     const detail = fn() ?? ''
@@ -67,11 +64,6 @@ function tailLines(text: string, count: number) {
   return text.trim().split('\n').slice(-count).join('\n')
 }
 
-/**
- * Spawn `<nodeBinary> --experimental-vfs --input-type=module -e <script>`.
- * The child prints one JSON object on stdout; non-zero exits fail with the
- * stderr tail. Extra args land in the child's process.argv starting at index 1.
- */
 function runUserlandProbe(script: string, args: string[] = []): Record<string, unknown> {
   const result = spawnSync(nodeBinary, ['--experimental-vfs', '--input-type=module', '-e', script, ...args], {
     cwd: repoRoot,
@@ -86,8 +78,6 @@ function runUserlandProbe(script: string, args: string[] = []): Record<string, u
   }
   return JSON.parse(result.stdout.trim())
 }
-
-// Group A — userland node:vfs probes
 
 const PROBE_MOUNT_LIFECYCLE = `
 import * as vfs from 'node:vfs'
@@ -385,9 +375,6 @@ function runUserlandGroup() {
   })
 }
 
-// Group B — mini SEA with "useVfs": true
-
-/** Find a platform package directory inside node_modules/.pnpm (e.g. /^@napi-rs\+canvas-/). */
 function findPnpmPackageDir(pattern: RegExp) {
   const pnpmDir = join(repoRoot, 'node_modules', '.pnpm')
   const entry = readdirSync(pnpmDir).find((name) => pattern.test(name))
@@ -424,7 +411,6 @@ function findLibvipsLibrary() {
   return dir === null ? null : findFileRecursive(dir, (name) => /\.(dylib|so(\..*)?|dll)$/.test(name))
 }
 
-/** The mini-SEA payload: runs every assertion itself, prints one `KEY: value` line per result. */
 function seaMainScript(options: { skia: boolean; sharp: boolean }) {
   const nativeProbes: string[] = []
   if (options.skia) {
@@ -739,12 +725,6 @@ function runSeaGroup() {
     })
 
     check('async fs.writev crashes on real files under useVfs (pinned upstream bug)', () => {
-      // Upstream: the mounted-VFS handler table (lib/internal/vfs/setup.js)
-      // implements readvSync/writevSync but not the async readv/writev that
-      // lib/fs.js calls unguarded — any buffered WriteStream flush kills the
-      // process. kobato repairs it at runtime (src/server/infra/
-      // sea-vfs-fs-patch.ts); a 'fixed' signature here means the patch can be
-      // revisited (and this check flipped to assert the healthy path).
       assertEquals(
         lines.get('writevChildSignature'),
         'crash',

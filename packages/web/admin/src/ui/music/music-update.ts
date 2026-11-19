@@ -1,6 +1,5 @@
 import type { AdminMusicDto, AdminMusicUpdateInput } from '@kobato/contracts/music.ts'
 
-// Edit draft: the single `/`-separated artist string splits back into the list shape the update expects.
 export interface MusicEditDraft {
   name: string
   artist: string
@@ -8,7 +7,6 @@ export interface MusicEditDraft {
   lyric?: string
 }
 
-/** Split the `/`-separated artist draft into trimmed, non-empty names. */
 export function splitArtistDraft(draft: string): string[] {
   return draft
     .split('/')
@@ -16,8 +14,6 @@ export function splitArtistDraft(draft: string): string[] {
     .filter((name) => name !== '')
 }
 
-/** Build the update input from the edit draft; blank name/artist/album fall
- *  back to the stored value (clearing never wipes), blank lyric → undefined. */
 export function buildMusicUpdate(
   music: Pick<AdminMusicDto, 'id' | 'name' | 'artist' | 'album'>,
   draft: MusicEditDraft,

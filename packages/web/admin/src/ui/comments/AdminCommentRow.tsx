@@ -18,7 +18,6 @@ import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, U
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
-/** tRich chunks renderer for the replied-to author name (module scope — stable). */
 function renderReplyAuthor(chunks: ReactNode[]): ReactNode {
   return <span className="underline-offset-2 hover:underline">{chunks}</span>
 }
@@ -273,7 +272,6 @@ function resolveParent(comment: AdminComment, parentLookup: Map<string, AdminCom
   return null
 }
 
-// Single-line body preview; the shared plain-text projection collapses breaks into whitespace.
 function snippet(body: AdminComment['body'], max: number): string {
   const text = commentBodyPlainText(body).replace(/\s+/g, ' ').trim()
   if (text.length <= max) {

@@ -1,9 +1,3 @@
-// Plain-SQL seeding and settings convergence for STOPPED kobato instances
-// (server stopped — no WAL contention): flip the install gate with one admin
-// row plus the `blog.general` / `blog.assets` roots settings hydration
-// requires, relax the rate-limit buckets one shared instance would trip, and
-// assert a converged config file wrote env overrides back as raw strings.
-
 import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { readFile } from 'node:fs/promises'
@@ -28,10 +22,6 @@ export interface ConvergedConfig {
   sessionSecret: string
 }
 
-/**
- * Assert a temp config file converged: env overrides were written back as
- * raw strings, never the schema-transformed shape.
- */
 export async function readConvergedConfig(configPath: string): Promise<ConvergedConfig> {
   const parsed: unknown = JSON.parse(await readFile(configPath, 'utf-8'))
   const storage = isRecord(parsed) && isRecord(parsed.storage) ? parsed.storage : null
@@ -45,12 +35,6 @@ export async function readConvergedConfig(configPath: string): Promise<Converged
   return { database: storage.database, sessionSecret: security.sessionSecret }
 }
 
-/**
- * Flip the instance to "installed" with plain SQL (server stopped — no WAL
- * contention): one minimal admin row — `hasAdmin()` is the whole install
- * gate — plus the `blog.general` / `blog.assets` roots the settings
- * hydration requires. Both payloads must pass the real section schemas.
- */
 export async function seedInstalledInstance(
   databasePath: string,
   admin: SeedAdminOptions,
@@ -113,13 +97,6 @@ export async function seedInstalledInstance(
   }
 }
 
-/**
- * Relax the rate-limit buckets the journeys would trip (one shared instance,
- * one source IP, repeated page loads). The row carries the full bucket table
- * because hydration validates it against the section schema — the relaxed
- * values spread the canonical `rateLimitDefaults` so they can never drift
- * out of the section schema.
- */
 export function relaxRateLimits(databasePath: string): void {
   const relaxed = {
     ...rateLimitDefaults,

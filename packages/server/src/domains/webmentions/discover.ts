@@ -8,7 +8,7 @@ import { isHttpUrl } from '@kobato/utils/safe-url.ts'
 // `<link>`/`<a rel="webmention">` fallback; regex-based, best-effort by
 // design (size-capped document, no HTML parser).
 
-const MAX_DISCOVERY_BYTES = 1024 * 1024 // mirrors fetchSourceHtml
+const MAX_DISCOVERY_BYTES = 1024 * 1024
 
 // `<url>; rel="webmention"`, several per header line; rel may carry multiple tokens.
 const LINK_HEADER_ENTRY_RE = /<([^>]*)>\s*;[^,]*?rel\s*=\s*"([^"]*)"/gi
@@ -23,7 +23,6 @@ function relMentionsWebmention(rel: string): boolean {
 function resolveEndpoint(href: string, finalUrl: string): string | null {
   try {
     const resolved = new URL(href, finalUrl).toString()
-    // Discovery only insists on http(s) so it never stores an unusable endpoint; the real SSRF guard runs at POST time.
     return isHttpUrl(resolved) ? resolved : null
   } catch {
     return null
@@ -64,12 +63,7 @@ export function parseWebmentionEndpoint(linkHeader: string | null, html: string,
   return null
 }
 
-export type DiscoveryResult =
-  | { kind: 'found'; endpoint: string }
-  /** The document was fetched but declares no endpoint — terminal. */
-  | { kind: 'none' }
-  /** The fetch itself failed (network, timeout, HTTP error, too large) — retryable. */
-  | { kind: 'retry'; error: string }
+export type DiscoveryResult = { kind: 'found'; endpoint: string } | { kind: 'none' } | { kind: 'retry'; error: string }
 
 export function formatFetchFailure(result: SafeFetchFailure): string {
   const status = result.status === null ? '' : ` (HTTP ${result.status})`
@@ -85,9 +79,6 @@ export async function discoverEndpoint(targetUrl: string, ua: string): Promise<D
   if (!result.ok) {
     return { kind: 'retry', error: formatFetchFailure(result) }
   }
-  // Only an HTML document may be scanned for `<link>`/`<a>`. The Link
-  // response header is media-type independent, so it is still consulted;
-  // without one a non-HTML body can never yield an endpoint.
   const html = isHtmlContentType(result.response.headers.get('content-type'))
     ? new TextDecoder('utf-8').decode(result.body)
     : ''

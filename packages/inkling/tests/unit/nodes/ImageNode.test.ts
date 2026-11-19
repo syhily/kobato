@@ -54,9 +54,6 @@ describe('ImageNode', () => {
     })
   })
 
-  // the constructor always creates and populates the nested caption editor,
-  // so export re-serializes a raw caption string into normalized caption HTML
-  // (the image spec's cleanBasicHtml keeps only the first child's inner content)
   it('re-serializes a raw caption through the nested caption editor on export', async () => {
     await updateEditor(editor, () => {
       const imageNode = $createImageNode({ src: '/image.png', caption: 'A caption' })

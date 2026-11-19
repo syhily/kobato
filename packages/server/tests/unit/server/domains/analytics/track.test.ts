@@ -5,9 +5,6 @@ import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Spy-level complement to tests/it/server/domains/analytics/track.test.ts: that suite
-// pins what lands in the engine, this one pins that a dropped bot never pays for
-// enrichment — the GeoIP lookup + salted IP hash live behind enrichEvent.
 const enrichMock = vi.hoisted(() => ({
   enrichEvent: vi.fn<(raw: RawAccessEvent) => Promise<EnrichedAccessEvent>>(),
   buildDeviceEnvServerRow: vi.fn<(raw: RawAccessEvent) => DeviceEnvServerRow>(),

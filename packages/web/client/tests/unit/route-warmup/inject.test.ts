@@ -5,7 +5,6 @@ const SENTINEL = '__ROUTE_WARMUP_CHUNKS__'
 
 describe('injectWarmupChunks', () => {
   it('injects the chunk list into a backtick-quoted sentinel (real oxc-minifier output)', () => {
-    // Shape produced by `routeWarmupPlugin`'s nested build.
     const script = `(function(){var e=\`${SENTINEL}\`;function t(e){return e.length}t(e)})();`
     const chunks = ['/assets/a.js', '/assets/b.js']
 
@@ -26,7 +25,6 @@ describe('injectWarmupChunks', () => {
   })
 
   it('does not expand `$` sequences in chunk paths (function replacement)', () => {
-    // A naive string replacement would turn `$1` into a backreference.
     const chunks = ['/a?$1=2&b=$&c']
     const out = injectWarmupChunks(`e=\`${SENTINEL}\``, chunks)
     expect(out).toBe('e=["/a?$1=2&b=$&c"]')

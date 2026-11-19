@@ -28,8 +28,6 @@ describe('pickTimeUnit', () => {
 })
 
 describe('analyticsQuerySchema dimension filters', () => {
-  // The single control-character gate — every controller input and every
-  // parseAnalyticsSearch call passes this refine before reaching SQL.
   it.each(['safe\nunsafe', 'safe\u007Funsafe'])('rejects control characters in %j', (value) => {
     expect(analyticsQuerySchema.safeParse({ path: value }).success).toBe(false)
     expect(analyticsQuerySchema.safeParse({ country: value }).success).toBe(false)

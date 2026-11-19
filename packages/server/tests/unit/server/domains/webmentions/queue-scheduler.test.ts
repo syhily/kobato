@@ -3,10 +3,6 @@ import type { Logger } from '@kobato/server/infra/logger.ts'
 import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-// The per-row error-isolation invariant shared by the outbox / inbox /
-// reverify batches, pinned directly (the integration tests observe it only
-// through end results).
-
 function stubLog(): Logger {
   return { warn: vi.fn() } as unknown as Logger
 }

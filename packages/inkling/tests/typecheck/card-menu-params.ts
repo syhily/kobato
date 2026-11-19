@@ -2,15 +2,6 @@ import type { TransientPropSpec } from '@kobato/inkling-internal/nodes/base/card
 import type { ResolvedMenuItem } from '@kobato/inkling-internal/nodes/cards/card-menu-build'
 import type { HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import type { Equal, Expect, Extends } from '@kobato/inkling/tests/utils/type-pins'
-/**
- * Compile-time pins for the card menu's construction-dataset vocabulary: a
- * declaration derives `insertParams`/`queryParams` from its base class and
- * spec arrays, `checkedCardDeclaration` applies the exact-key check, and
- * `defineCard` does the same for host cards.
- *
- * Type-checked only, never executed — the `defineCard` calls at module scope
- * would register cards if it ran.
- */
 import type { ComponentType, SVGProps } from 'react'
 
 import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
@@ -48,12 +39,6 @@ type _NeverQueryKeys = Expect<Equal<CardMenuQueryParamKey<never>, never>>
 type AudioDataset = CardMenuDataset<typeof BaseAudioNode, typeof audioTransientProps, readonly []>
 type _AudioTransientValue = Expect<Equal<AudioDataset['triggerFileDialog'], boolean | undefined>>
 
-// Durable family guard. These predicates walk the REAL `CARD_DECLARATIONS`
-// family to close two escapes the declaration-site check misses: a broad spec
-// array yields an open dataset (probe B), and `satisfies` alone misses a
-// function-return typo when `checkedCardDeclaration` is omitted (probe C).
-// Menu-less declarations are exempt.
-
 type OpenMenuDeclaration<D> = D extends { menu: readonly unknown[] }
   ? string extends keyof CardDeclarationMenuDataset<D>
     ? D
@@ -84,8 +69,6 @@ type _NoOpenMenuDatasets = Expect<Equal<OpenMenuDeclaration<(typeof CARD_DECLARA
 type _NoBadInsertKeys = Expect<Equal<BadInsertKeys<(typeof CARD_DECLARATIONS)[number]>, never>>
 type _NoBadQueryKeys = Expect<Equal<BadQueryKeys<(typeof CARD_DECLARATIONS)[number]>, never>>
 
-// Non-vacuous proof A: with the type arguments omitted, `DeclaredCardMenuDataset`
-// resolves to `never`, so the error lands on the declaration itself.
 const openFallbackProbe = {
   nodeType: 'openFallbackProbe',
   baseNode: BaseImageNode,
@@ -103,8 +86,6 @@ const openFallbackProbe = {
 } satisfies CardDeclaration<'openFallbackProbe'>
 void openFallbackProbe
 
-// A query-only menu has no insertParams to mask the failure: the same
-// un-parameterized default makes every query key invalid.
 const queryOnlyFallbackProbe = {
   nodeType: 'queryOnlyFallbackProbe',
   baseNode: BaseImageNode,
@@ -143,8 +124,6 @@ void noInsertEntry
 const noInsertExtra: NoInsertMenu = [{ label: 'x', insertParams: {} }]
 void noInsertExtra
 
-// Non-vacuous proof B: a BROAD spec array still satisfies the declaration but
-// yields an open dataset, which the family guard above reports.
 declare const broadTransientProps: readonly TransientPropSpec[]
 const broadArgsProbe = {
   nodeType: 'broadArgsProbe',
@@ -158,8 +137,6 @@ void broadArgsProbe
 // @ts-expect-error - the guard reports the open dataset (proves it is not vacuous)
 type _BroadArgsCaught = Expect<Equal<OpenMenuDeclaration<typeof broadArgsProbe>, never>>
 
-// Non-vacuous proof C: a raw declaration that omits `checkedCardDeclaration`
-// still compiles `satisfies`, but the family predicate reports the key.
 const rawFnTypoProbe = {
   nodeType: 'header',
   baseNode: BaseHeaderNode,
@@ -184,7 +161,6 @@ type _RawFnTypoReported = Expect<Equal<BadInsertKeys<typeof rawFnTypoProbe>, 've
 // @ts-expect-error - the family predicate rejects the omitted-wrapper typo
 type _RawFnTypoCaught = Expect<Equal<BadInsertKeys<typeof rawFnTypoProbe>, never>>
 
-// Non-vacuous proof D: the query predicate reports an unknown query key.
 type SyntheticBadQueryDeclaration = {
   baseNode: typeof BaseImageNode
   transientProps: typeof imageTransientProps
@@ -345,8 +321,6 @@ function hostProbeSpec(nodeType: string) {
   return {
     nodeType,
     baseNode: hostMenuProbeBaseNode,
-    // the spec arrays sit AFTER menu on purpose: the menu check must not depend
-    // on declaration order
     transientProps: hostMenuProbeTransientProps,
     toolbarLabel: nodeType,
     render: () => null,
@@ -458,8 +432,6 @@ const hostUnknownQueryKey = defineCard({
 })
 void hostUnknownQueryKey
 
-// a pre-widened queryParams array is the documented erasure boundary: the
-// literal is already gone, so the call is accepted unchecked
 const preWidenedQueryParams: readonly string[] = ['srcTypo']
 const preWidenedHost = defineCard({
   ...hostProbeSpec('preWidenedHostProbe'),
@@ -541,11 +513,6 @@ const satisfiedValidHostSpec = {
 const satisfiedValidHost = defineCard(satisfiedValidHostSpec)
 void satisfiedValidHost
 
-// `satisfies HostCardSpec` contextually widens `queryParams` elements to
-// `string`, so the key literal is unrecoverable. This is the documented
-// compatibility boundary: valid legacy specs keep compiling, with query keys
-// unchecked (an invalid key in an annotated spec is erased the same way). A
-// DIRECT defineCard call keeps the literal and is checked (see below).
 const satisfiedQuerySpec = {
   nodeType: 'satisfiedQueryProbe',
   baseNode: hostMenuProbeBaseNode,
@@ -568,10 +535,6 @@ void satisfiedQueryCard
 // @ts-expect-error - `satisfies` preserves the literal menu shape, so defineCard's exact-key check still runs
 defineCard(satisfiedHostSpec)
 
-// Explicit WIDE annotation is the only escape boundary: the `HostCardSpec`
-// annotation erases the menu literal's keys, so defineCard has nothing to
-// check. It must stay explicit.
-
 const wideHostSpec: HostCardSpec<'wideHostProbe'> = {
   nodeType: 'wideHostProbe',
   baseNode: hostMenuProbeBaseNode,
@@ -591,10 +554,6 @@ const wideHostSpec: HostCardSpec<'wideHostProbe'> = {
 }
 const wideHostCard = defineCard(wideHostSpec)
 void wideHostCard
-
-// Dead menu item fields must not come back: neither buildCardMenu nor
-// CardMenu reads name / icon / customContent / hidden / disabled, so a menu
-// literal carrying them would silently do nothing.
 
 type _DeadMenuFieldsStayOut = Expect<
   Equal<Extract<keyof ResolvedMenuItem, 'name' | 'icon' | 'customContent' | 'hidden' | 'disabled'>, never>

@@ -2,8 +2,6 @@ import { existsSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Point the local backend at a fresh temp directory per test file. The mock
-// factory runs before any import of the backend, so STORAGE_DIR is set first.
 const tmp = vi.hoisted(() => ({ root: '' }))
 
 vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
@@ -86,8 +84,6 @@ describe('storage/local — put/get round-trip', () => {
   })
 
   it('StorageObjectNotFound still maps to a 404 at the HTTP perimeter', async () => {
-    // The typed error extends ActionFailure(404) so an uncaught miss keeps
-    // the local adapter's long-standing status contract.
     await expect(localBackend.get('nope.jpg')).rejects.toMatchObject({
       status: 404,
       descriptor: { messageKey: 'storage.error.objectNotFound', params: { key: 'nope.jpg' } },
@@ -135,8 +131,6 @@ describe('storage/local — private-object permissions', () => {
   it('leaves public objects on the process defaults (umask-derived, not forced owner-only)', async () => {
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('x'), contentType: 'image/jpeg' })
 
-    // Node's default creation mode is 0666 for files / 0777 for directories, masked by
-    // the umask.
     expect(statSync(`${tmp.root}/images`).mode & 0o777).toBe(0o777 & ~process.umask())
     expect(statSync(`${tmp.root}/images/a.jpg`).mode & 0o777).toBe(0o666 & ~process.umask())
   })
@@ -175,7 +169,6 @@ describe('storage/local — delete + list', () => {
   it('list honours maxKeys by returning a sorted prefix', async () => {
     const items = await localBackend.list('images/', { maxKeys: 1 })
     expect(items).toHaveLength(1)
-    // Sorted lexicographically: 'images/a.jpg' precedes 'images/sub/b.jpg'.
     expect(items[0]?.key).toBe('images/a.jpg')
   })
 
@@ -194,7 +187,6 @@ describe('storage/local — directory keys resolve to StorageObjectNotFound, not
   })
 
   it('get() on a directory key throws StorageObjectNotFound', async () => {
-    // 'images' resolves to the images/ directory, not a file.
     await expect(localBackend.get('images')).rejects.toBeInstanceOf(StorageObjectNotFound)
   })
 

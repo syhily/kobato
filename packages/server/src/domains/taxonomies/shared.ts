@@ -3,14 +3,8 @@ import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contrac
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
-// Uniqueness checks, delete guards, and error formatting shared by categories & tags.
-// The entity noun is a MACHINE kind — the catalog's ICU `select` picks the
-// localized noun, so the domain never chooses a language or passes prose.
-
 export type TaxonomyEntityKind = 'category' | 'tag'
 
-// Static issue descriptors (no runtime translation at import): the transports
-// localize them per request from the typed key.
 const NAME_TAKEN_ISSUE = {
   messageKey: 'taxonomy.error.nameTakenIssue',
   fallbackMessage: 'Name is already taken',
@@ -82,8 +76,6 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: number }>(
   }
 }
 
-// Block-only deletion: refuses while any post references the row. Pass a titles-only
-// `listPostTitles`; it gets the whole row — categories key by `row.id`, tags by `row.name`.
 export async function deleteAdminTaxonomy<T extends { id: number; name: string }>(
   id: number,
   entity: TaxonomyEntityKind,

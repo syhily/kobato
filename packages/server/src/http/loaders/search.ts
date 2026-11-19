@@ -38,13 +38,8 @@ export async function searchLoader(
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content', settings).pagination.search
-  // Only live posts are searchable — the gate is defined once and passed
-  // down; the search module owns the corpus, never the visibility policy.
   const liveWhere = livePostWhere()
   const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
-  // The audit row persists the raw keyword — never write one for a blank or
-  // over-cap query (the contract cap makes the latter unreachable over RPC;
-  // the guard keeps this loader honest on its own).
   if (auditContext !== undefined && query.length > 0 && query.length <= SEARCH_KEYWORD_MAX_LENGTH) {
     recordAuditEventFromContext(auditContext, {
       action: 'search',

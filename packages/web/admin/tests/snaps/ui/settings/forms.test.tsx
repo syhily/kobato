@@ -29,9 +29,6 @@ cacheQueryMocks.mutation = {
   isPending: false,
 }
 
-// The inert `useSettingsMutation` stub from `@kobato/test/setup/snaps.ts` keeps forms network-free.
-
-// `FontsForm` reads a csrf token off the root loader; supply a stable one.
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -41,9 +38,6 @@ vi.mock('react-router', async () => {
   }
 })
 
-// Cache stats/clear go through the mock-react-query singleton — each test swaps the resolved data.
-
-// orpc mock stays resolvable + side-effect free; the react-query stub intercepts calls.
 vi.mock('@kobato/web-client/api/client.ts', () => ({
   orpc: {
     admin: {
@@ -73,7 +67,6 @@ const emptyFonts: FontsSettings = {
 
 describe('snapshot: FontsForm', () => {
   it('renders the canvas card with populated family names', () => {
-    // Contains a <Link> — must render inside a router context.
     const html = stableHtml(renderInRouter(<FontsForm fonts={populatedFonts} />))
     expect(html).toContain('Canvas 字体')
     expect(html).toContain('OG 图字体')
@@ -87,11 +80,9 @@ describe('snapshot: FontsForm', () => {
 
   it('renders the web-font notice card pointing to /admin/library/fonts', () => {
     const html = stableHtml(renderInRouter(<FontsForm fonts={emptyFonts} />))
-    // Browser web-font slots live at /admin/library/fonts — this card only points there.
     expect(html).toContain('网页字体')
     expect(html).toContain('/admin/library/fonts')
     expect(html).toContain('网站字体与槽位分配')
-    // Legacy globalCss/globalFamily inputs must not return.
     expect(html).not.toContain('name="globalFamily"')
     expect(html).not.toContain('name="globalCss')
     expect(html).not.toContain('全站字体')
@@ -113,17 +104,14 @@ describe('snapshot: SecurityForm', () => {
       passkey: { enabled: false },
     }
     const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
-    // Toggle labels hydrate post-render — assert structural signals instead.
     expect(html).toContain('CSRF 防护')
     expect(html).toContain('id="csrf-enabled"')
     expect(html).toContain('路径豁免')
     expect(html).toContain('name="exemptPaths.0.path"')
     expect(html).toContain('添加路径')
-    // No origin rows -> the mirror-mode hint is the empty <p> copy.
     expect(html).toContain('CORS 策略')
     expect(html).toContain('镜像模式：将自动允许所有请求来源。')
     expect(html).toContain('添加来源')
-    // Passkey card: test blog fixture has a valid https domain.
     expect(html).toContain('Passkey 登录')
     expect(html).toContain('开启后用户可在个人资料中注册 Passkey。')
   })
@@ -141,7 +129,6 @@ describe('snapshot: SecurityForm', () => {
     expect(html).toContain('无豁免路径。所有请求均需携带令牌。')
     expect(html).toContain('name="origins.0.url"')
     expect(html).toContain('name="origins.1.url"')
-    // Valid passkey domain → no invalid-domain warning.
     expect(html).not.toContain('当前站点域名不满足 Passkey 要求')
   })
 })
@@ -165,7 +152,6 @@ const socials: SocialItem[] = [{ name: 'GitHub', network: 'github', type: 'link'
 describe('snapshot: NavigationEditor', () => {
   it('renders side nav and footer nav rows with populated fixtures', () => {
     const html = stableHtml(renderToHtml(<NavigationEditor navigation={sideNavItems} socials={socials} />))
-    // Values are uncontrolled (absent in SSR) — assert row ids + field-array names.
     expect(html).toContain('侧边导航菜单')
     expect(html).toContain('id="nav-text-0"')
     expect(html).toContain('id="nav-text-1"')
@@ -173,8 +159,6 @@ describe('snapshot: NavigationEditor', () => {
     expect(html).toContain('name="sideNavRows.0.text"')
     expect(html).toContain('name="sideNavRows.1.text"')
     expect(html).toContain('添加菜单项')
-    // SelectValue labels don't run under SSR, but select ids + hidden inputs
-    // do; github is configured → no unconfigured-network warning.
     expect(html).toContain('底部导航菜单')
     expect(html).toContain('id="footer-item-type-0"')
     expect(html).toContain('id="footer-item-type-2"')

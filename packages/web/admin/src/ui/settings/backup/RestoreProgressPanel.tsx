@@ -19,13 +19,9 @@ const STEP_LABELS: Record<RestoreStep, UiMessageId> = {
 interface RestoreProgressPanelProps {
   current: RestoreStep
   percent: number | null
-  /** The decrypt row only renders for encrypted uploads. */
   hasDecrypt: boolean
 }
 
-/** Step-by-step restore progress for the upload-restore flow: real upload
- *  percent (XHR), decrypt percent (server-reported bytes), indeterminate
- *  extraction, then the swap + restart legs. */
 export function RestoreProgressPanel({ current, percent, hasDecrypt }: RestoreProgressPanelProps) {
   const { t } = useI18n()
   const steps = STEP_ORDER.filter((step) => hasDecrypt || step !== 'decrypting')

@@ -5,12 +5,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('content')
 
-/**
- * The public read path serves the saved `body_html` projection. Rows whose
- * projection was never written or failed at save time carry NULL — fall back
- * to computing the projection on read. Never throws: a body that cannot
- * project renders empty rather than 500ing the detail page.
- */
 export async function resolveBodyHtml(source: {
   bodyHtml: string | null
   bodyState: LexicalEditorState | null
@@ -30,12 +24,6 @@ export async function resolveBodyHtml(source: {
   }
 }
 
-/**
- * The feed twin of {@link resolveBodyHtml}: serves the saved `body_html_feed`
- * (rssMode-degraded) projection, computing it on read when the column is
- * NULL. Never throws — a feed entry degrades to an empty body rather than
- * 500ing the whole feed.
- */
 export async function resolveBodyHtmlFeed(source: {
   bodyHtmlFeed: string | null
   bodyState: LexicalEditorState | null

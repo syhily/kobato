@@ -10,7 +10,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// `public.webmention.list` against the real engine — same discipline as the comment-public suite.
 const db = getTestDb()
 
 const TARGET_URL = 'https://example.com/posts/wm-target/'
@@ -29,7 +28,6 @@ async function seedLivePost(overrides: Partial<typeof post.$inferInsert> = {}): 
   return rows[0]!.id
 }
 
-/** The real page_key flow: `ensureMetric` yields the public_id the client passes. */
 async function seedPageKey(type: 'post' | 'page', ownerId: number): Promise<string> {
   const row = await ensureMetric(db, { type, ownerId })
   return row.publicId
@@ -80,7 +78,6 @@ describe('integration / public.webmention.list (headless display feed)', () => {
     await seedMention('https://sender.example/two', 'approved')
     await seedMention('https://sender.example/three', 'rejected')
     await seedMention('https://sender.example/four', 'hidden')
-    // A mention of a DIFFERENT entity must not leak into this feed.
     const other = await seedLivePost({ slug: 'other-target' })
     await seedMention('https://sender.example/other', 'approved', 'post', other)
 
@@ -92,7 +89,6 @@ describe('integration / public.webmention.list (headless display feed)', () => {
 
     expect(webmentions).toHaveLength(1)
     expect(webmentions[0]!.sourceUrl).toBe('https://sender.example/two')
-    // The public DTO carries display fields only.
     expect(Object.keys(webmentions[0]!).sort()).toEqual(
       ['authorName', 'createdAt', 'id', 'sourceUrl', 'summary', 'title', 'type'].sort(),
     )
@@ -114,7 +110,7 @@ describe('integration / public.webmention.list (headless display feed)', () => {
     )
 
     expect(webmentions).toEqual([])
-    expect(await approvedIds()).toHaveLength(1) // the row itself is untouched
+    expect(await approvedIds()).toHaveLength(1)
   })
 
   it('answers an honest empty list when the entity toggle is off', async () => {

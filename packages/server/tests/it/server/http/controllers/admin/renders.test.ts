@@ -14,7 +14,6 @@ import { eq } from 'drizzle-orm'
 import katex from 'katex'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// adminRendersRouter against the real engine: real KaTeX renders and real post_search_index writes.
 const db = getTestDb()
 
 let seq = 0
@@ -31,7 +30,6 @@ function adminCtx(userId: number) {
   return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
 }
 
-// A live post (published, published revision attached) whose body mentions `plainText`.
 async function seedPublishedPost(plainText: string): Promise<number> {
   const key = ++seq
   const [meta] = await db
@@ -46,7 +44,6 @@ async function seedPublishedPost(plainText: string): Promise<number> {
       revisionNo: 1,
       status: 'published',
       body: lexicalBodyWith([lexicalParagraph(plainText)]),
-      // The indexer prefers the saved `body_text` projection column.
       bodyText: plainText,
     })
     .returning({ id: content.id })
@@ -91,8 +88,6 @@ describe('adminRendersRouter.math', () => {
 
   it('uses the typed render-failed descriptor for a non-Error throw', async () => {
     const ctx = makeAuthedCtx({ db })
-    // A non-Error throw takes the typed fallback branch. The variable keeps
-    // the intentional non-Error value out of the throw-literal lint rule.
     const nonError: unknown = { reason: 'katex blew up without an Error' }
     vi.spyOn(katex, 'renderToString').mockImplementationOnce(() => {
       throw nonError
@@ -131,7 +126,6 @@ describe('adminRendersRouter.reindexSearch', () => {
     expect(byPostId.get(first)).toContain('Alpha body text')
     expect(byPostId.get(second)).toContain('Beta body text')
 
-    // Each call records a real audit row (flushed from the batcher).
     await flushAuditLog()
     const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'search_reindexed'))
     expect(auditRows).toHaveLength(2)
@@ -180,11 +174,9 @@ describe('adminRendersRouter.reprojectBodies', () => {
       expect(row.bodyHtmlFeed).not.toBeNull()
     }
 
-    // A re-run finds no drift and rewrites nothing.
     const again = await call(adminRendersRouter.reprojectBodies, {}, { context: adminCtx(admin) })
     expect(again).toEqual({ processed: 2, failed: 0, rewritten: 0, total: 2, nextOffset: null })
 
-    // Each call records a real audit row (flushed from the batcher).
     await flushAuditLog()
     const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'body_projection_rebuilt'))
     expect(auditRows).toHaveLength(3)

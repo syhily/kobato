@@ -1,7 +1,3 @@
-// Kobato’s Inkling label overlay for zh-CN, kept byte-identical so existing editor
-// copy does not move. Sibling tables (`zh-TW` / `zh-HK`) are written independently,
-// never produced by converting this one.
-
 import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'
 
 export const kobatoInklingLabelsZhCN = {

@@ -28,9 +28,6 @@ const base = {
 const playMock = vi.fn(() => Promise.resolve())
 const pauseMock = vi.fn()
 
-// The parity surface: every class token the shared spec's constants define.
-// The hydrated card adds behavior-only classes on top of these (select-none,
-// group/scrub, relative…) — they fall out of the structural comparison.
 const SKELETON_TOKENS = [
   ...new Set(Object.values(MUSIC_PLAYER_CARD_CLASSES).flatMap((classes) => classes.split(/\s+/))),
 ]
@@ -38,8 +35,6 @@ const SKELETON_TOKENS = [
 const escapeText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-/** The render-context fields `renderMusicPlayerCard` touches, identity-style
- * (URL policy is pinned separately by the projection tests). */
 function stubContext(): CardRenderContext {
   return {
     createDocument: () => document,
@@ -161,15 +156,8 @@ describe('ui/public/music-player/music-player', () => {
     const playerHtml = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} />))
     const fallbackHtml = musicPlayerFallbackHtml(baseMeta, (value) => value)
     const diffs = diffHtmlStructures(playerHtml, fallbackHtml, {
-      // Interactive chrome only the hydrated player renders — the inert
-      // fallback omits it by design: the play/lyrics/mute buttons (with
-      // their icons and the cover image they wrap), the absolutely
-      // positioned overlay/fill/thumb, the volume slider group, and React
-      // 19's hoisted preload <link> (an SSR fetch hint, not chrome markup).
       prune: ['link', 'button', 'svg', 'img', '.absolute', '[class*="group/volume"]'],
       classTokens: SKELETON_TOKENS,
-      // No hydrator-consumed data-* lives on the card itself — the mount
-      // point carries those, pinned by the mount-point test below.
       dataAttributes: [],
       compareText: true,
     })
@@ -177,9 +165,6 @@ describe('ui/public/music-player/music-player', () => {
   })
 
   it('pins the fallback cover markup the skeleton comparison prunes away', () => {
-    // The parity pin above prunes `img` on BOTH sides, so the fallback's
-    // cover payload never gets compared — pin it directly: tag, the
-    // fallbackCover classes, and that src/alt carry the meta snapshot.
     const fallbackHtml = musicPlayerFallbackHtml(baseMeta, escapeText)
     const [fallback, ...rest] = structureFromHtml(fallbackHtml, { attributes: ['src', 'alt'] })
     expect(rest).toEqual([])
@@ -193,10 +178,6 @@ describe('ui/public/music-player/music-player', () => {
     const noCoverMeta: MusicPlayerCardMeta = { ...baseMeta, cover: '' }
     const playerHtml = renderToStaticMarkup(wrapWithI18n(<MusicPlayerCard {...base} cover={undefined} />))
     const fallbackHtml = musicPlayerFallbackHtml(noCoverMeta, escapeText)
-    // The glyph branch is not directly comparable under the chrome prune:
-    // the hydrated glyph lives inside the pruned cover button while the
-    // fallback glyph (the only aria-hidden element here) is a direct body
-    // child — prune it too so the meta/progress skeleton still diffs.
     const diffs = diffHtmlStructures(playerHtml, fallbackHtml, {
       prune: ['button', 'svg', 'img', '.absolute', '[class*="group/volume"]', '[aria-hidden]'],
       classTokens: SKELETON_TOKENS,
@@ -204,7 +185,6 @@ describe('ui/public/music-player/music-player', () => {
       compareText: true,
     })
     expect(diffs).toEqual([])
-    // …and pin the fallback's glyph branch itself.
     const [fallback] = structureFromHtml(fallbackHtml, { compareText: true })
     const glyph = fallback?.children[0]?.children[0]
     expect(glyph?.tag).toBe('span')
@@ -223,8 +203,6 @@ describe('ui/public/music-player/music-player', () => {
     const mount = wrapper?.children[0]
     expect(mount?.tag).toBe('div')
     expect(mount?.classes).toEqual(['aplayer'])
-    // useMusicPlayers reads data-url (+ name/artist/cover/lrc) off the mount
-    // point to build the hydrated card; data-id is the dataset remnant.
     expect(mount?.data).toEqual({
       id: baseMeta.playerId,
       name: baseMeta.name,
@@ -233,8 +211,6 @@ describe('ui/public/music-player/music-player', () => {
       cover: baseMeta.cover,
       lrc: baseMeta.lyric,
     })
-    // The mount point embeds exactly the static fallback the hydration swap
-    // replaces — structure and text survive the export parse unaltered.
     const mountHtml = full.element.querySelector('.aplayer')?.innerHTML ?? ''
     expect(diffHtmlStructures(mountHtml, musicPlayerFallbackHtml(baseMeta, escapeText), { compareText: true })).toEqual(
       [],

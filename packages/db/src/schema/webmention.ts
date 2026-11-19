@@ -1,21 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// Persistence-canonical webmention value lists — the single source for the
-// drizzle `text({ enum })` columns and the SQL CHECK literals below. The wire
-// twins (zod enums + DTOs) live in `@kobato/contracts/webmentions` and in
-// `domains/webmentions/schema.ts`; both sides must stay value- and
-// order-identical, pinned by
-// `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`. Order is
-// load-bearing: the CHECK literals are generated from these arrays.
-
-// Webmention moderation lifecycle: `pending` rows await admin review;
-// `rejected` rows are kept (auditable). `hidden` follows 7 consecutive
-// daily re-verification failures — only a manual re-verification restores `approved`.
 export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden'] as const
 export type WebmentionStatus = (typeof WEBMENTION_STATUSES)[number]
 
-// Webmention source verification state: `failed` carries the last failure message in `last_error`.
 export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
 export type WebmentionVerifyStatus = (typeof WEBMENTION_VERIFY_STATUSES)[number]
 
@@ -25,21 +13,11 @@ export type WebmentionVerifyStatus = (typeof WEBMENTION_VERIFY_STATUSES)[number]
 export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
 export type WebmentionType = (typeof WEBMENTION_TYPES)[number]
 
-// Webmention send lifecycle: `sent` / `no-endpoint` / `failed` are terminal and kept (the row IS the send log);
-// a republish resets `no-endpoint` / `failed` back to `pending`, but never `sent`.
 export const WEBMENTION_OUTBOX_STATUSES = ['pending', 'sent', 'no-endpoint', 'failed'] as const
 export type WebmentionOutboxStatus = (typeof WEBMENTION_OUTBOX_STATUSES)[number]
 
-// CHECK literal built from the canonical enum arrays — the generated SQL
-// is byte-identical to a hand-written `IN ('a', 'b', …)` list, so changing
-// an array regenerates the constraint instead of drifting from it.
 const sqlEnumList = (values: readonly string[]) => sql.raw(values.map((value) => `'${value}'`).join(', '))
 
-// Webmentions (W3C Webmention, receive side): rows land `pending` after
-// source verification, then moderation flips them `approved`/`rejected`;
-// 7 consecutive daily re-verification failures hide an `approved` row.
-// UNIQUE(source_url, target_url) is the dedup: a re-mention upserts —
-// `approved` demotes to `pending` for re-review, `rejected` stays.
 export const webmention = sqliteTable(
   'webmention',
   {
@@ -78,10 +56,6 @@ export const webmention = sqliteTable(
   ],
 )
 
-// Webmention outbox (W3C Webmention, SEND side): the worker discovers
-// the endpoint, POSTs the mention, and drives the row to a terminal
-// status, kept as the send log. UNIQUE(source_url, target_url) dedup: a
-// re-enqueue resets `no-endpoint`/`failed` but never `sent`.
 export const webmentionOutbox = sqliteTable(
   'webmention_outbox',
   {
@@ -109,10 +83,6 @@ export const webmentionOutbox = sqliteTable(
   ],
 )
 
-// Webmention inbox queue (receive side, async verification): the endpoint
-// enqueues and returns 202; the worker verifies and lands the mention in
-// `webmention`. No status column: success and terminal failures DELETE
-// the row, only transient fetch errors retry on `next_retry_at`.
 export const webmentionInbox = sqliteTable(
   'webmention_inbox',
   {

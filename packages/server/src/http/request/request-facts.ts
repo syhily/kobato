@@ -2,16 +2,10 @@ import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
 
 import { randomUUID } from 'node:crypto'
 
-/**
- * Normalize a request URL to its document form (`.data`/`_.data` stripped,
- * `_routes`/`index` params removed) — the single owner; consumers must not
- * hand-strip `.data` locally.
- */
 export function normalizeDocumentUrl(url: URL): URL {
   const normalized = new URL(url.href)
   const { pathname } = normalized
   if (pathname.endsWith('/_.data')) {
-    // Covers the root case too: '/_.data' → '' + '/'.
     normalized.pathname = `${pathname.slice(0, -'/_.data'.length)}/`
   } else if (pathname.endsWith('.data')) {
     normalized.pathname = pathname.slice(0, -'.data'.length)

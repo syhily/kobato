@@ -22,10 +22,6 @@ import { useState } from 'react'
 import { useWatch, type UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 
-// Client-side mirror of the server section schema, composed from the same
-// shared bucket schema: blur commits validate BEFORE the POST so an
-// out-of-range value rolls back with a named reason (red border + toast)
-// instead of a bare 400 the user cannot read.
 const rateLimitFormSchema = z.object(
   unsafeCast<Record<BucketKey, typeof rateLimitBucketSchema>>(
     Object.fromEntries(Object.keys(BUCKET_META).map((key) => [key, rateLimitBucketSchema])),
@@ -48,9 +44,6 @@ function WindowEditCell({
   const { t } = useI18n()
   const meta = BUCKET_META[bucketKey]
   const fieldName = `${bucketKey}.windowSeconds` as const
-  // useWatch, not form.watch: render-time watch() results get memoized by the
-  // React Compiler (stable form + fieldName deps), freezing the value at its
-  // initial state; the hook always re-executes.
   const currentValue = useWatch({ control: form.control, name: fieldName })
   const matchedOption = meta.quickWindowOptions.find((opt) => opt.seconds === currentValue)
   const [open, setOpen] = useState(false)
@@ -240,7 +233,6 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
     section: 'rateLimit',
     source: rateLimit,
     toState: (source) => source,
-    // This card owns the whole section, so its full state IS the honest patch.
     fromState: (state) => ({ ...state }),
     schema: rateLimitFormSchema,
   })

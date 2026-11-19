@@ -173,8 +173,6 @@ function SectionWrapper({
 }) {
   const { ref } = useScrollSpy(id)
   const { flushSection } = useSettingsFlushContext()
-  // Only flush a "left the viewport" event after the section has ever been visible; the initial mount starts
-  // off-screen below the fold.
   const hasBeenVisibleRef = useRef(false)
   const Icon = ICON_MAP[icon]
 
@@ -183,9 +181,7 @@ function SectionWrapper({
     if (!fragment) {
       return
     }
-    // Root is the content scroller: the panel is a fixed inset-0 container with its own scroll context.
     const root = document.getElementById('settings-content-scroller')
-    // observeUsing reports per first-level child: the section counts as visible while any child intersects.
     const intersecting = new Set<Element>()
     const observer = new IntersectionObserver(
       (entries) => {
@@ -284,8 +280,6 @@ function SettingsPageInner({ bundle, timeZones, masks, onClose }: SettingsWorksp
     }
   }, [onClose, flushAll])
 
-  // Flush pending edits when the page is hidden or unloaded. `pagehide` covers close-tab / back-nav where
-  // visibilitychange doesn't fire; `beforeunload` is deliberately unused (it would pop a "leave site?" dialog).
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
@@ -372,10 +366,6 @@ function SettingsPageInner({ bundle, timeZones, masks, onClose }: SettingsWorksp
   )
 }
 
-/**
- * The whole settings workspace: section registry + shell chrome + flush/scroll-spy/search providers.
- * Route modules only resolve the data and a close callback, then render this.
- */
 export function SettingsWorkspace({ bundle, timeZones, masks, onClose }: SettingsWorkspaceProps) {
   return (
     <SettingsFlushProvider>

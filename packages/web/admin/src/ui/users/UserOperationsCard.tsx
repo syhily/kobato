@@ -27,7 +27,6 @@ import { toast } from 'sonner'
 
 type Role = NonNullable<AdminUserDto['role']>
 
-// Hoisted out of the click handlers so the callbacks create no JSX during render.
 const REVOKE_SESSIONS_ICON = <LogOutIcon data-icon />
 const CLEAR_PASSKEYS_ICON = <FingerprintIcon data-icon />
 const UNMUTE_ICON = <Volume2Icon data-icon />
@@ -37,7 +36,6 @@ interface UserOperationsCardProps {
   user: AdminUserDto
   currentUserId: string
   passkeyEnabled: boolean
-  /** Called after the user is soft-deleted (the parent navigates away). */
   onDeleted: () => void
 }
 

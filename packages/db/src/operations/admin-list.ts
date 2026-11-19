@@ -4,16 +4,6 @@ import type { SelectedFields, SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqli
 import { user } from '@kobato/db/schema/user.ts'
 import { and, eq, type SQL } from 'drizzle-orm'
 
-/**
- * Shared query shapes for the admin list endpoints: WHERE assembly, the
- * pagination tail, and the `<entity> LEFT JOIN user` uploader projection,
- * so the near-identical list implementations cannot drift apart.
- */
-
-/**
- * Collapse conditions into one `WHERE` fragment — `undefined` when empty —
- * so the row listing and its counter share the same predicate.
- */
 export function assembleWhere(conditions: SQL[]): SQL | undefined {
   if (conditions.length === 0) {
     return undefined
@@ -36,7 +26,6 @@ type PageableQuery<TRow> = PromiseLike<TRow[]> & {
   offset(count: number): PromiseLike<TRow[]>
 }
 
-/** Apply the pagination tail; `offset` is only honored when strictly positive. */
 export function applyPage<TRow>(query: PageableQuery<TRow>, page: AdminListPage): Promise<TRow[]> {
   if (page.limit !== undefined) {
     if (page.offset !== undefined && page.offset > 0) {
@@ -50,16 +39,10 @@ export function applyPage<TRow>(query: PageableQuery<TRow>, page: AdminListPage)
   return Promise.resolve(query)
 }
 
-/**
- * Projection adapter for the `<entity> LEFT JOIN user` pattern: entity
- * columns verbatim (never `select(*)`, so `user.password` stays out),
- * plus `uploaderName`; owns the by-id refetch and the update-then-refetch.
- */
 export function withUploader<TColumns extends SelectedFields>(options: {
   table: SQLiteTable
   idColumn: SQLiteColumn
   uploaderIdColumn: SQLiteColumn
-  /** Entity-specific column selection, WITHOUT `uploaderName`. */
   columns: TColumns
 }) {
   const columns = { ...options.columns, uploaderName: user.name } as const
@@ -73,7 +56,6 @@ export function withUploader<TColumns extends SelectedFields>(options: {
     return rows[0] ?? null
   }
 
-  /** Update, then re-read through the joined projection so the caller gets the full DTO in one call. */
   async function updateThenRefetch<TUpdated>(
     db: Database,
     id: number,

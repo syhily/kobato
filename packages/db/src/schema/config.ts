@@ -40,7 +40,6 @@ export const auditLog = sqliteTable(
   ],
 )
 
-// Cross-table slug uniqueness guard (complements per-table UNIQUE).
 export const slugRegistry = sqliteTable(
   'slug_registry',
   {

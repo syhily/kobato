@@ -7,10 +7,6 @@ import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { GRAVATAR_MIRROR_PRESETS } from '@kobato/web-admin/ui/settings/gravatar-mirror-presets.ts'
 import { describe, expect, it } from 'vitest'
 
-// The admin mirror dropdown's options are catalog ids, not display prose:
-// `CommentsForm` renders `t(option.labelKey)`, so every locale (and any future
-// locale) gets a translated label and no raw Chinese literal ships in code.
-
 const PREFIX = 'admin.settings.comments.avatar.mirrorPreset.'
 
 const EXPECTED: Record<string, Record<AppLocale, string>> = {
@@ -120,7 +116,6 @@ describe('Gravatar mirror presets — catalog labels', () => {
       expect(Object.hasOwn(uiMessagesEnUS, preset.labelKey)).toBe(true)
       expect(EXPECTED[preset.labelKey]).toBeDefined()
     }
-    // The preset set and the hand-written table stay in lockstep.
     expect(GRAVATAR_MIRROR_PRESETS).toHaveLength(Object.keys(EXPECTED).length)
   })
 

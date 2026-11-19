@@ -1,14 +1,6 @@
-// SEA config generation: write sea-config.json for `node --build-sea`.
-// `output` is the FINAL executable path; `mainFormat: "module"` means no
-// CJS prelude — runtime bootstrap order lives in the entry's import order.
-
 import { seaConfigPath, seaServerBundlePath } from '@kobato/pack/sea/paths.ts'
 import { writeFile } from 'node:fs/promises'
 
-/**
- * @param assets asset key -> absolute file path (sorted — see assets.ts).
- *   The config records absolute source paths; only the keys end up in the blob.
- */
 export async function writeSeaConfig(assets: Map<string, string>, output: string) {
   const config = {
     main: seaServerBundlePath(),
@@ -18,8 +10,6 @@ export async function writeSeaConfig(assets: Map<string, string>, output: string
     disableExperimentalSEAWarning: true,
     useCodeCache: false,
     useSnapshot: false,
-    // Assets are mounted as a read-only VFS and the bundle runs from the
-    // mount root — `import.meta.dirname` inside the bundle addresses them.
     useVfs: true,
   }
   await writeFile(seaConfigPath(), `${JSON.stringify(config, null, 2)}\n`)

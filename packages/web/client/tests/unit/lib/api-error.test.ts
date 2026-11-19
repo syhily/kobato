@@ -25,8 +25,6 @@ describe('extractApiErrorMessage', () => {
   })
 
   it('keeps the legacy message-only response readable', () => {
-    // A pre-descriptor server answered `{ error: { code, message } }` with no
-    // issues and no descriptor; the top-level message stays the display copy.
     expect(extractApiErrorMessage({ error: { code: 'INTERNAL_SERVER_ERROR', message: '旧服务器消息' } })).toBe(
       '旧服务器消息',
     )

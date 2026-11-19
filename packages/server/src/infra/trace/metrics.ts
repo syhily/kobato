@@ -1,11 +1,3 @@
-// Closed metric catalog and the application-facing recording helpers.
-//
-// SDK-free: `runtime.ts` maps these names onto real OTel instruments, and every
-// helper here degrades to a no-op through the facade. A metric may only carry
-// the attributes declared for it below. Values are re-validated by `sanitize.ts`,
-// so a URL, a trace/session id, a slug, or an entity id is dropped before it
-// reaches an SDK.
-
 import type { CacheBucketId } from '@kobato/cache/types.ts'
 import type { MetricAttributes } from '@kobato/server/infra/trace/facade.ts'
 import type {
@@ -43,8 +35,6 @@ const RUM_RELAY_ATTRIBUTES = new Set(['rum.relay.outcome'])
 const METRIC_DEFINITIONS: Readonly<Record<MetricName, MetricDefinition>> = {
   [METRIC.httpServerDuration]: { kind: 'histogram', attributes: HTTP_ATTRIBUTES },
   [METRIC.httpServerRequests]: { kind: 'counter', attributes: HTTP_ATTRIBUTES },
-  // Method only: the route template is unknown while the request is in flight,
-  // and mixing dimension sets across the add/remove pair would invent series.
   [METRIC.httpServerActiveRequests]: { kind: 'upDownCounter', attributes: HTTP_ACTIVE_ATTRIBUTES },
   [METRIC.ssrShellDuration]: { kind: 'histogram', attributes: SSR_ATTRIBUTES },
   [METRIC.ssrStreamDuration]: { kind: 'histogram', attributes: SSR_ATTRIBUTES },
@@ -69,12 +59,6 @@ export function sanitizeMetricValue(value: number): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null
 }
 
-/**
- * Project a metric attribute bag through that metric's closed key allowlist.
- * An unknown extra key is ignored, but a DECLARED key with an invalid value
- * drops the whole measurement (return `null`): silently dropping just one
- * attribute would invent a series with a different, unintended dimension set.
- */
 export function sanitizeMetricAttributes(
   name: string,
   attributes: MetricAttributes | undefined,
@@ -97,7 +81,6 @@ export function sanitizeMetricAttributes(
   return projected
 }
 
-/** Coarse encoded-byte bucket — a fixed label, never a size or a path. */
 export function imageSizeBucket(bytes: number): ImageSizeBucket {
   if (!Number.isFinite(bytes) || bytes < 0) {
     return 'unknown'
@@ -130,7 +113,6 @@ export function recordHttpServer(method: string, route: string, status: number, 
   counter(METRIC.httpServerRequests, { description: 'HTTP server requests', unit: '{request}' }).add(1, attributes)
 }
 
-/** In-flight HTTP requests: +1 on entry, -1 on the way out (the delta pair must balance). */
 export function addHttpServerActive(method: string, delta: 1 | -1): void {
   upDownCounter(METRIC.httpServerActiveRequests, {
     description: 'HTTP server requests currently in flight',
@@ -138,7 +120,6 @@ export function addHttpServerActive(method: string, delta: 1 | -1): void {
   }).add(delta, { 'http.request.method': method })
 }
 
-/** Terminal outcome of one relayed RUM batch — the relay's only quantified health signal. */
 export function recordRumRelayOutcome(outcome: RumRelayOutcome): void {
   counter(METRIC.rumRelayOutcomes, { description: 'RUM intake relay batch outcomes', unit: '{batch}' }).add(1, {
     'rum.relay.outcome': outcome,

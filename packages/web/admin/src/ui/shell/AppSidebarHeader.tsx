@@ -32,7 +32,6 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
         return
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        // Defer to the settings search input on the settings page.
         if (isSettingsPage) {
           return
         }

@@ -2,16 +2,12 @@ import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import { InputTemplateSchema } from '@kobato/server/domains/fonts/vendor/gen/api_pb.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pins the bufbuild-generated `InputTemplate` encoder's wire bytes: a regeneration that
-// changes the byte layout fails here before the end-to-end slice test runs.
-
 describe('InputTemplate encoder (bufbuild)', () => {
   it('encodes a minimal input (just bytes) with the field-1 length-delimited tag', () => {
     const source = new Uint8Array([0x00, 0x01, 0x02, 0x03])
     const msg = create(InputTemplateSchema, { input: source })
     const bytes = toBinary(InputTemplateSchema, msg)
 
-    // Field 1, wire type 2 (length-delimited) → tag 0x0a.
     expect(bytes[0]).toBe(0x0a)
     expect(bytes[1]).toBe(source.length)
     expect(bytes.subarray(2, 2 + source.length)).toEqual(source)
@@ -22,7 +18,6 @@ describe('InputTemplate encoder (bufbuild)', () => {
     const bytes = toBinary(InputTemplateSchema, msg)
     const chunkSizeIdx = bytes.indexOf(0x48)
     expect(chunkSizeIdx).toBeGreaterThan(-1)
-    // varint(1024) = 0x80 0x08.
     expect(bytes[chunkSizeIdx + 1]).toBe(0x80)
     expect(bytes[chunkSizeIdx + 2]).toBe(0x08)
   })
@@ -30,7 +25,6 @@ describe('InputTemplate encoder (bufbuild)', () => {
   it('encodes css.fontFamily inside a nested message (field 5, tag = 0x2a)', () => {
     const msg = create(InputTemplateSchema, { input: new Uint8Array([0x00]), css: { fontFamily: 'OPPO Sans' } })
     const bytes = toBinary(InputTemplateSchema, msg)
-    // Field 5, wire type 2 (length-delimited) → tag 0x2a.
     const cssTagIdx = bytes.indexOf(0x2a)
     expect(cssTagIdx).toBeGreaterThan(-1)
     const nestedLen = bytes[cssTagIdx + 1]
@@ -42,9 +36,9 @@ describe('InputTemplate encoder (bufbuild)', () => {
   it('omits unset optional fields (proto3 default elision)', () => {
     const msg = create(InputTemplateSchema, { input: new Uint8Array([0x01]) })
     const bytes = toBinary(InputTemplateSchema, msg)
-    expect(bytes.indexOf(0x2a)).toBe(-1) // css tag absent
-    expect(bytes.indexOf(0x48)).toBe(-1) // chunk_size tag absent
-    expect(bytes.indexOf(0x40)).toBe(-1) // language_areas tag absent
+    expect(bytes.indexOf(0x2a)).toBe(-1)
+    expect(bytes.indexOf(0x48)).toBe(-1)
+    expect(bytes.indexOf(0x40)).toBe(-1)
   })
 
   it('round-trips: toBinary → fromBinary preserves the input bytes', () => {

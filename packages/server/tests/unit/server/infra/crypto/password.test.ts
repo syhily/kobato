@@ -1,10 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { describe, expect, it } from 'vitest'
 
-// There is no `hashPassword`/`verifyPassword` wrapper — bcryptjs is called inline from
-// `infra/db/operations/user.ts`. These tests pin the bcryptjs contract so a swap or
-// upgrade surfaces here, not at first failed login.
-
 describe('auth/password — bcryptjs contract we rely on', () => {
   const password = 'correct horse battery staple'
 

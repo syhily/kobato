@@ -12,18 +12,9 @@ import { requireSourceKey } from '@kobato/server/domains/webmentions/verify.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
-// The receive endpoint is unauthenticated by design, so the queue itself
-// must be bounded: a global depth cap plus a per-source-host fan-out cap.
-// Without them a flood of unique `?x=N` source variants grows the table
-// without limit and starves legitimate mentions behind hostile rows.
 export const INBOX_MAX_QUEUED = 5000
 export const INBOX_MAX_QUEUED_PER_SOURCE_HOST = 50
 
-/**
- * The receive endpoint's synchronous half: unknown targets 404 at the route;
- * verification happens in the inbox worker. A full queue backpressures with
- * RATE_LIMITED (429) instead of absorbing unboundedly.
- */
 export async function enqueueWebmention(db: Database, input: WebmentionReceiveInput): Promise<void> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)
   const sourceKey = requireSourceKey(input.source)

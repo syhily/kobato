@@ -6,7 +6,6 @@ import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, waitFor } from '@testing-library/react'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
 function renderUi(ui: ReactElement, locale: AppLocale = 'zh-CN') {
   return render(wrapWithI18n(ui, { locale }))
 }
@@ -78,8 +77,6 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     fireEvent.pointerDown(option)
     fireEvent.click(option)
 
-    // SettingsSelect fires save(name): only the trigger field's change is
-    // POSTed — sources stay out of this patch and keep their server value.
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(commit.mock.calls[0]![0]).toBe('comments')
     expect(commit.mock.calls[0]![1]).toEqual({
@@ -100,11 +97,6 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     fireEvent.change(tokenInput, { target: { value: 'ghp_new_token' } })
     fireEvent.blur(tokenInput)
 
-    // Sparse whole-card commit: the mirror and the sources order equal their
-    // acknowledged baseline, so they stay out of the patch (a full re-send would
-    // write this tab's stale copy over a peer tab's edit). A reorder still rides
-    // the next flush — pinned by tests/unit/ui/admin/settings/shell/
-    // use-settings-card-sparse.test.tsx, since drag gestures need real layout.
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(commit.mock.calls[0]![0]).toBe('comments')
     expect(commit.mock.calls[0]![1]).toEqual({
@@ -114,8 +106,6 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     })
   })
 
-  // The dropdown labels come from the catalog (`t(preset.labelKey)`), never from
-  // a Chinese literal baked into the shared Gravatar preset module.
   async function openMirrorOptions(locale: AppLocale): Promise<string[]> {
     renderCommentsForm(baseComments, locale)
     fireEvent.click(document.getElementById('comments-avatar-mirror')!)
@@ -139,7 +129,6 @@ describe('ui/admin/settings/CommentsForm — avatar card', () => {
     expect(labels.some((label) => label.includes('Gravatar official (www.gravatar.com)'))).toBe(true)
     expect(labels.some((label) => label.includes('Geekzu (sdn.geekzu.org)'))).toBe(true)
     expect(labels.some((label) => label.includes('mirrorPreset.'))).toBe(false)
-    // Hardcoded literals must not survive in an English render.
     expect(labels.join('\n')).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
   })
 })

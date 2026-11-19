@@ -28,10 +28,6 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Base UI portals mount only after the open animation (client-only), so an open dialog
-// emits no SSR HTML and the closed states are asserted directly; search queries are
-// stubbed.
-
 const noop = () => undefined
 
 describe('snapshot: UploadImageDialog', () => {
@@ -67,7 +63,6 @@ describe('snapshot: AdminSearchDialog', () => {
       refetch: vi.fn(),
     }
     const html = stableHtml(renderInRouter(<AdminSearchDialog open={true} onOpenChange={noop} />))
-    // Portal usually emits during SSR — the guard keeps the assertion a no-throw check if it doesn't.
     if (html !== '') {
       expect(html).toContain('全站搜索…')
       expect(html).toContain('输入关键词搜索文章或页面')
@@ -86,7 +81,6 @@ describe('snapshot: AdminSearchDialog', () => {
       refetch: vi.fn(),
     }
     const html = stableHtml(renderInRouter(<AdminSearchDialog open={true} onOpenChange={noop} />))
-    // Same portal caveat as above: assert only when the portal emitted.
     if (html !== '') {
       expect(html).toContain('文章')
       expect(html).toContain('页面')
@@ -94,8 +88,6 @@ describe('snapshot: AdminSearchDialog', () => {
     }
   })
 })
-
-// NavMenuItem.Link needs a router + SidebarProvider (useIsActiveLink / useSidebar).
 
 describe('snapshot: NavMenuItem', () => {
   function wrap(node: React.ReactNode, path = '/admin/posts') {
@@ -163,7 +155,6 @@ describe('snapshot: NavMenuItem', () => {
   })
 
   it('honours an explicit isActive prop override', () => {
-    // Force-active even though the router path does not match.
     const html = wrap(
       <NavMenuItem>
         <NavMenuItem.Link to="/admin/elsewhere" isActive={true}>
@@ -218,8 +209,6 @@ describe('snapshot: NavMenuItem', () => {
     expect(html).toContain('aria-expanded="false"')
   })
 })
-
-// AdminShell is heavy (music query, version dialog, nav config) — assert only the children slot + skip-link.
 
 describe('snapshot: AdminShell', () => {
   it('renders the skip-link, sidebar shell and children slot', () => {

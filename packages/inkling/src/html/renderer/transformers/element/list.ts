@@ -58,8 +58,6 @@ const exportList = function (node: ElementNode, exportChildren: ExportChildren):
 
   const listContent = exportListContent(node)
 
-  // `start` originates from serialized JSON, where a crafted string would be
-  // interpolated raw into the attribute — only emit for finite numbers.
   if (typeof start === 'number' && Number.isFinite(start) && start !== 1) {
     return `<${tag} start="${start}">${listContent}</${tag}>`
   }

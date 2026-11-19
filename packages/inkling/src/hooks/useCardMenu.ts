@@ -69,8 +69,6 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
       const dataset = { ...insertParams }
 
       for (let i = 0; i < queryParams.length; i++) {
-        // `!== undefined`, not truthiness: a typed-but-empty param ('') is a
-        // legal value and must reach the dataset
         if (commandParams[i] !== undefined) {
           const key = queryParams[i]
           const value = commandParams[i]
@@ -78,10 +76,6 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
         }
       }
 
-      // deliberate boundary: the card menu is a heterogeneous registry of
-      // command/payload pairs built from each card's declaration-derived menu
-      // data, so the specific payload type is erased here. Each plugin handler
-      // re-narrows the payload with its own dataset type guard.
       const dispatch = () => editor.dispatchCommand(insertCommand, dataset)
 
       if (!replaceTriggerParagraph) {

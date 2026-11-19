@@ -9,7 +9,6 @@ import MySessionsRouteRaw from '@/routes/admin/me/sessions.tsx'
 import AuditLogRouteRaw from '@/routes/admin/security/audit-log.tsx'
 import SessionsRouteRaw from '@/routes/admin/security/sessions.tsx'
 
-// `asRoute` widens the strict ComponentProps so tests supply only the fields each route reads.
 const MentionsRoute = asRoute(MentionsRouteRaw)
 const DashboardRoute = asRoute(DashboardRouteRaw)
 const MyProfileRoute = asRoute(MyProfileRouteRaw)

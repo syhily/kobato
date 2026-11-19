@@ -8,14 +8,6 @@ import { nextDailyMaintenanceDelayMs } from '@kobato/server/infra/scheduler-util
 
 const log = getLogger('db.maintenance')
 
-/**
- * SQLite half of the daily DB maintenance job (the DuckDB half lives in
- * `@kobato/db/duckdb/maintenance.ts`, scheduled by analytics-lifecycle):
- * incremental vacuum, optimize,
- * page stats, `job_run` history pruning, notification retention. Full VACUUM
- * is never scheduled.
- */
-
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
   const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
   const value = row === undefined ? undefined : Object.values(row)[0]
@@ -27,7 +19,6 @@ function pageStats(handle: DatabaseHandle): { pageCount: number; freelistCount: 
 }
 
 export function runDbMaintenance(handle: DatabaseHandle): void {
-  // Pragmas are no-ops inside transactions — run on the raw client.
   try {
     const before = pageStats(handle)
     handle.client.exec('PRAGMA incremental_vacuum')
@@ -48,9 +39,6 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
     log.error('database maintenance failed', { error: error instanceof Error ? error.message : String(error) })
   }
 }
-
-// The handle getter lives in the job registry and is invoked when the job
-// fires — a reopened handle (restore completion) is picked up.
 
 registerJob({
   name: 'db.maintenance',

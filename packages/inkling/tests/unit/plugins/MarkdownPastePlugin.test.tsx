@@ -19,13 +19,8 @@ import {
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// This spec creates its own editor, so it must register the decorate adapter
-// itself: the card nodes below reach decorate() during the paste round trips.
 registerCardDecorateAdapter()
 
-// jsdom does not implement DataTransfer; the plugin builds one inside its
-// command handler, so shim the minimal setData/getData surface that handler
-// and $insertDataTransferForRichText rely on.
 class MockDataTransfer {
   private readonly data = new Map<string, string>()
 
@@ -74,9 +69,6 @@ describe('MarkdownPastePlugin', () => {
   beforeEach(async () => {
     globalThis.DataTransfer = MockDataTransfer as unknown as typeof DataTransfer
 
-    // The spec dispatches PASTE_MARKDOWN_COMMAND directly and the handler reads
-    // the dialect engine from the lazy port's sync cache, so warm it here rather
-    // than relying on the plugin's mount pre-warm having landed.
     await loadPasteDialect()
 
     editor = createTestEditor()
@@ -164,10 +156,6 @@ describe('MarkdownPastePlugin', () => {
       await pasteMarkdown(editor, '```inkling:bookmark\n' + json + '\n```', false)
 
       editor.getEditorState().read(() => {
-        // markdown-it renders the fence as <pre><code class="language-inkling:bookmark">,
-        // which CodeBlockNode.importDOM claims, so the JSON body becomes the code
-        // (trailing newline included). The card-aware round-trip dialect recreates
-        // a BookmarkNode from the same string instead.
         const children = $getRoot().getChildren()
         expect(children).toHaveLength(1)
 

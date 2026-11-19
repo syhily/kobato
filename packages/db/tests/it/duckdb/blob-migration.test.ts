@@ -8,9 +8,6 @@ import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/test/analyt
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// Legacy access_log → access_events boot migration against a real temp-file
-// sidecar and the real (in-memory) content DB holding the flag row.
-
 const db = getTestDb()
 
 const LEGACY_DDL = `
@@ -95,7 +92,7 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
     const objects = rows.getRowObjects()
     expect(objects).toHaveLength(2)
 
-    const site = objects[0]! // '/'
+    const site = objects[0]!
     expect(site.index1).toBe('')
     expect(site.is_bot).toBe(true)
     expect(site.blob1).toBe('/')
@@ -104,7 +101,7 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
     expect(site.double1).toBeNull()
     expect(Number(site.ms)).toBe(1768000060000)
 
-    const post = objects[1]! // '/post/hello'
+    const post = objects[1]!
     expect(post.index1).toBe('post:42')
     expect(post.is_bot).toBe(false)
     expect(post.blob2).toBe('https://google.com/')
@@ -113,7 +110,6 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
     expect(post.blob7).toBe('US')
     expect(post.blob9).toBe('San Francisco')
     expect(post.blob12).toBe('Chrome')
-    // browserType has no legacy source; the reserved slot stays empty.
     expect(post.blob13).toBe('')
     expect(post.blob16).toBe('')
     expect(post.double1).toBe(37.77)
@@ -128,15 +124,11 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
   it('keeps live events written between a failed run and its retry', async () => {
     await seedLegacyRows()
 
-    // Force the first migration to fail inside the transaction (target table
-    // missing) — the boot wrapper warns and continues, leaving access_log
-    // intact and access_events untouched.
     await handle.writer.run('DROP TABLE access_events')
     await runAnalyticsBlobMigrationAtBoot(db, handle)
     expect(await tableExists('access_log')).toBe(true)
     expect(findSettingByScope(db, 'system.analytics-blob-migration')).toBeNull()
 
-    // The failed boot's batcher/dead-letter replay keeps writing live events.
     await handle.writer.run(ACCESS_EVENTS_DDL)
     await handle.writer.run(
       `INSERT INTO access_events (event_id, index1, timestamp, is_bot, blob1, blob5)
@@ -173,7 +165,6 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
     await seedLegacyRows()
     await runAnalyticsBlobMigrationAtBoot(db, handle)
 
-    // A new-style row lands after the migration; a re-run must not touch it.
     await handle.writer.run(
       `INSERT INTO access_events (event_id, index1, timestamp, is_bot, blob1)
        VALUES (uuid(), '', to_timestamp(1768000100), FALSE, '/after')`,

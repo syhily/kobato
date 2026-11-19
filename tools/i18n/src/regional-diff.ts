@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-// Read-only regional terminology report for reviewers: never writes files,
-// never fails on a difference — the count is a review aid, not a quality gate.
-// Representative decisions live in `docs/i18n/glossary.md`.
-// Usage:
-//   pnpm run i18n:regional-diff
-//   pnpm run i18n:regional-diff --keys
-//   pnpm run i18n:regional-diff --keys --prefix=public.comments.
 import { kobatoInklingLabelsEnUS } from '@kobato/i18n/inkling-labels/en-US.ts'
 import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
 import { kobatoInklingLabelsZhHK } from '@kobato/i18n/inkling-labels/zh-HK.ts'

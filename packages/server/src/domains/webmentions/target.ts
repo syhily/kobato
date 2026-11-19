@@ -65,7 +65,6 @@ export async function resolveWebmentionTarget(db: Database, rawTarget: string): 
   }
 }
 
-/** `resolveWebmentionTarget` as an error — null is never a silent skip here. */
 export async function resolveWebmentionTargetOrThrow(db: Database, rawTarget: string): Promise<WebmentionTarget> {
   const target = await resolveWebmentionTarget(db, rawTarget)
   if (target === null) {

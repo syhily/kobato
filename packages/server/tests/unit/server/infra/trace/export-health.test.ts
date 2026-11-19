@@ -38,7 +38,6 @@ describe('export health tracking', () => {
     recordExportOutcome(fresh, 'metrics', false, new Error('current runtime'))
     expect(lastExportFailure()).toMatchObject({ signal: 'metrics', error: 'Error' })
 
-    // A stale token must not clear the fresh slot either.
     deactivateExportHealth(stale)
     expect(lastExportFailure()).not.toBeNull()
   })

@@ -1,9 +1,3 @@
-/**
- * Single owner of the site-owned asset-URL path grammar; the forward and
- * inverse resolvers in `packages/server/src/infra/storage/public-url.ts` both compose
- * this module so the route shapes cannot drift.
- */
-
 export const STORAGE_ROUTE_PREFIX = '/storage/'
 export const EMBEDDED_FONT_ROUTE_PREFIX = '/fonts/embedded/'
 
@@ -15,10 +9,8 @@ export interface ParsedAssetUrl {
   route: AssetUrlRoute
 }
 
-// Content-addressed font packages: the hash is a lowercase sha256 hex digest.
 const EMBEDDED_FONT_HASH = /^[0-9a-f]{64}$/
 
-/** Parse a URL PATH (no query string — strip it beforehand) against the site-owned grammar; `null` for anything else. */
 export function parseAssetUrlPath(pathname: string): ParsedAssetUrl | null {
   if (pathname.startsWith(STORAGE_ROUTE_PREFIX)) {
     const key = pathname.slice(STORAGE_ROUTE_PREFIX.length)
@@ -35,8 +27,6 @@ export function parseAssetUrlPath(pathname: string): ParsedAssetUrl | null {
     if (!EMBEDDED_FONT_HASH.test(hash)) {
       return null
     }
-    // Reject empty filenames, dotfiles, and hidden segments (defence-in-depth
-    // beside resolveLocalPath).
     if (filename === '') {
       return null
     }
@@ -50,7 +40,6 @@ export function parseAssetUrlPath(pathname: string): ParsedAssetUrl | null {
   return null
 }
 
-/** Whether `url` sits exactly on `siteOrigin` (http(s) only; a trailing slash on `siteOrigin` is ignored). */
 export function isOnSiteOrigin(url: URL, siteOrigin: string): boolean {
   return (
     (url.protocol === 'https:' || url.protocol === 'http:') &&

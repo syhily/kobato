@@ -1,11 +1,3 @@
-// Root-level cross-tab locale sync over `@/client/lib/locale-sync`'s BroadcastChannel (a
-// settings-card subscription could only cover /admin/settings). The receiver never commits
-// the locale (the sender persisted it) and never re-publishes, so there is no echo loop.
-// Only a registered settings workspace reloads automatically, after every dirty card has
-// flushed; any other document may hold unsaved input this app cannot inspect and is never
-// reloaded behind the user's back — it gets a localized notice with an explicit Reload,
-// and a failed flush keeps the edits and offers Retry.
-
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { LocaleChangeAnnouncement } from '@kobato/web-client/lib/locale-sync.ts'
 import type { ReactNode } from 'react'
@@ -22,7 +14,6 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, useState }
 
 const log = getLogger('locale-sync')
 
-/** What a mounted settings workspace gives the root sync loop. */
 export interface LocaleSyncFlushHost {
   /** The settings workspace transaction host (`inert` + pending flag). */
   runTransaction: <T>(task: () => T | Promise<T>) => Promise<T>
@@ -33,13 +24,10 @@ export interface LocaleSyncFlushHost {
 }
 
 interface LocaleSyncContextValue {
-  /** Announce a locale this document just committed. Called exactly once. */
   publish: (locale: AppLocale) => void
-  /** Register the settings workspace flush host. Returns an unregister fn. */
   registerFlushHost: (host: LocaleSyncFlushHost) => () => void
 }
 
-/** Why the page has not reloaded yet. */
 type LocaleSyncNoticeKind = 'reload-required' | 'flush-failed'
 
 interface LocaleSyncNotice {
@@ -48,8 +36,6 @@ interface LocaleSyncNotice {
   revision?: string
 }
 
-// Fallback for card-level tests that render a settings card without the root
-// provider: publishing still reaches peers, there is simply no listener here.
 let fallbackOrigin: string | null = null
 function publishWithoutProvider(locale: AppLocale): void {
   fallbackOrigin ??= createLocaleSyncOrigin()
@@ -58,9 +44,7 @@ function publishWithoutProvider(locale: AppLocale): void {
 
 const LocaleSyncContext = createContext<LocaleSyncContextValue>({
   publish: publishWithoutProvider,
-  registerFlushHost: () => () => {
-    /* no workspace to register */
-  },
+  registerFlushHost: () => () => undefined,
 })
 
 export interface LocaleSyncProviderProps {
@@ -72,13 +56,10 @@ export interface LocaleSyncProviderProps {
 
 export function LocaleSyncProvider({ locale, revision, children }: LocaleSyncProviderProps) {
   const { t } = useI18n()
-  // One id per mounted provider: the publisher and its own subscriber share it,
-  // so this document ignores its own echo.
   const [origin] = useState(createLocaleSyncOrigin)
   const hostRef = useRef<LocaleSyncFlushHost | null>(null)
   const loadedLocaleRef = useRef(locale)
   const revisionRef = useRef(revision)
-  // Consumed immediately before a reload is attempted — never on failure.
   const reloadedRevisionRef = useRef<string | undefined>(undefined)
   const inFlightRef = useRef(false)
   const noticeRef = useRef<LocaleSyncNotice | null>(null)
@@ -128,9 +109,6 @@ export function LocaleSyncProvider({ locale, revision, children }: LocaleSyncPro
       try {
         const host = hostRef.current
         if (host === null) {
-          // No flush host: this document may hold editor/comment/setup input that cannot
-          // be safely persisted or inspected. Never reload it behind the user's back —
-          // offer the explicit action instead.
           showNotice({ kind: 'reload-required', ...announcement })
           return
         }
@@ -152,28 +130,20 @@ export function LocaleSyncProvider({ locale, revision, children }: LocaleSyncPro
 
   useEffect(() => {
     return subscribeLocaleChange(origin, (announcement) => {
-      // Already showing it (this document is the sender, or a peer announced a
-      // locale the page loaded after a reload).
       if (announcement.locale === loadedLocaleRef.current) {
         return
       }
-      // A generation whose reload was already attempted (the browser is on its
-      // way out; a repeat must not stack another reload).
       if (announcement.revision !== undefined && announcement.revision === reloadedRevisionRef.current) {
         return
       }
       if (inFlightRef.current) {
         return
       }
-      // One open notice per announcement: a third tab repeating it must not
-      // re-render a second alert (or restart a retry the user is reading).
       const current = noticeRef.current
       if (current !== null && current.locale === announcement.locale && current.revision === announcement.revision) {
         return
       }
       const host = hostRef.current
-      // A local settings switch (or this tab's own previous sync) owns the
-      // reload; reloading now would drop its in-flight saves.
       if (host?.isBusy()) {
         return
       }
@@ -246,12 +216,10 @@ export function LocaleSyncProvider({ locale, revision, children }: LocaleSyncPro
   )
 }
 
-/** Announce a committed locale to peer documents. */
 export function useLocaleSyncPublish(): (locale: AppLocale) => void {
   return use(LocaleSyncContext).publish
 }
 
-/** Register the settings workspace flush host with the root sync loop. */
 export function useLocaleSyncHostRegistration(): (host: LocaleSyncFlushHost) => () => void {
   return use(LocaleSyncContext).registerFlushHost
 }

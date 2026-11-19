@@ -10,9 +10,6 @@ import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminI
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// Representative business-list copy in both locales: the shared infinite-list
-// footer, the friend-link moderation row and the music search result.
-
 const HIT: MetingSearchHit = {
   source: 'netease',
   sourceId: '42',

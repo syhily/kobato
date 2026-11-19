@@ -2,8 +2,6 @@ import type { BlogSession, BlogSessionData, SessionUser } from '@kobato/server/d
 
 import { createSession } from 'react-router'
 
-// In-memory `BlogSession` doppelganger — tests only need `.get` / `.set`
-// / `.unset` semantics, not the session-table-backed storage.
 export function makeSession(data: Partial<BlogSessionData> = {}): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }

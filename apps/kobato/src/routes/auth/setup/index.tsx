@@ -38,9 +38,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   try {
     await getSetupToken(db)
-  } catch {
-    /* noop */
-  }
+  } catch {}
 
   const { session } = rc
   return data({
@@ -75,7 +73,6 @@ export async function action({ request, context }: Route.ActionArgs) {
       return fail('error.api.csrfFailed')
     }
 
-    // Rate-limit before any token comparison to slow down automated scanners.
     const { exceeded } = await tryKeyedRateLimit(`rate-limit:setup-verify:${clientAddress}`, SETUP_VERIFY_BUCKET)
     if (exceeded) {
       return fail('auth.setup.error.rateLimited', 429)

@@ -30,8 +30,6 @@ export function LyricsPanel({ lrc, currentTime, onSeek }: LyricsPanelProps) {
     if (!active) {
       return
     }
-    // Scroll ONLY the lyrics container: scrollIntoView would walk every
-    // scrollable ancestor and yank the page scroll back to the player.
     const top =
       active.getBoundingClientRect().top -
       container.getBoundingClientRect().top +

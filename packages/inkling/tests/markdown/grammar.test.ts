@@ -6,12 +6,6 @@ import { $convertFromMarkdownString } from '@lexical/markdown'
 import { $getRoot, type TextFormatType } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// The shared grammar table's projection pin: every inline delimiter the
-// table declares must be honored by BOTH markdown engines — the paste
-// dialect's markdown-it stack (HTML out) and the round-trip dialect's
-// `@lexical/markdown` transformer set (Lexical format out). A table edit
-// that outruns either engine fails here instead of drifting silently.
-
 const PASTE_TAG_BY_FORMAT: Record<(typeof INLINE_DELIMITERS)[number]['format'], string> = {
   highlight: 'mark',
   subscript: 'sub',

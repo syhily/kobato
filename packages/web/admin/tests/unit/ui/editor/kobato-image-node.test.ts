@@ -31,14 +31,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const dom = new JSDOM('')
 
-// The unit project runs in the node environment; inkling's caption pipeline
-// (populateNestedEditor, cleanBasicHtml, $generateHtmlFromNodes) binds the
-// DOM globals, so the jsdom instances are installed here.
 Object.assign(globalThis, {
   DOMParser: dom.window.DOMParser,
   document: dom.window.document,
-  // $generateHtmlFromNodes (caption re-serialization) gates on a `window`
-  // global as well as `document`.
   window: dom.window,
 })
 
@@ -63,7 +58,6 @@ const FULL_DATASET = {
   layout: 'left',
 }
 
-/** Constructs the node and reads it inside ONE update (see the header). */
 function withNode<T>(dataset: Record<string, unknown>, fn: (node: KobatoImageNode) => T): T {
   let result!: T
   editor.update(() => {
@@ -138,14 +132,9 @@ describe('KobatoImageNode — dataset persistence', () => {
   it('keeps the four keys across clone (getDataset) and normalizes garbage layout', () => {
     let copy!: KobatoImageNode
     editor.update(() => {
-      // The inherited static clone is typed on the generated base class.
       copy = KobatoImageNode.clone(new KobatoImageNode(FULL_DATASET)) as KobatoImageNode
     })
     expect(copy).toBeInstanceOf(KobatoImageNode)
-    // clone() reuses the original's key, so the getLatest()-backed getters
-    // would resolve to the ORIGINAL in this update's node map — assert the
-    // clone's own fields directly (they are what the constructor received
-    // from getDataset()).
     expect(copy.__thumbhash).toBe('th-abcd')
     expect(copy.__storagePath).toBe('objects/abcdef.png')
     expect(copy.__imageId).toBe('img_1')
@@ -205,12 +194,8 @@ describe('KobatoImageNode — exportDOM markup', () => {
   it('points data-zoom-src at the untransformed original when a responsive srcset rides along', () => {
     const html = exportHtmlFor(FULL_DATASET, false, 'https://cdn.example.com/{src}?w={width}&h={height}')
     expect(html).toContain('srcset="')
-    // medium-zoom's HD hook: a srcset-only zoom clone would cap the zoomed
-    // view at the largest breakpoint (1024w), never the original.
     expect(html).toContain('data-zoom-src="/storage/posts/cover.png"')
 
-    // Without a transform template there is no srcset, and the plain src IS
-    // the original — the attribute stays off.
     const plain = exportHtmlFor(FULL_DATASET, false)
     expect(plain).not.toContain('srcset=')
     expect(plain).not.toContain('data-zoom-src')

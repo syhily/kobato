@@ -145,8 +145,6 @@ describe('horizontal-rule behaviour', () => {
       selectInFirstParagraph(3)
       await tick()
 
-      // the guard reads the native caret — set it directly (jsdom's selection
-      // reconciliation needs a focused editor, which unit editors are not)
       const textNode = editor.getRootElement()!.querySelector('p span[data-lexical-text]')!.firstChild!
       const nativeSelection = window.getSelection()!
       nativeSelection.collapse(textNode, textNode.textContent?.length ?? 0)

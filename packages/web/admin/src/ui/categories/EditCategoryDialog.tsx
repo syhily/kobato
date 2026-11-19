@@ -35,8 +35,6 @@ const EMPTY_DRAFT = {
   description: '',
 }
 
-// `admin.categories.upsert` wire input: `id` absent → create; present → update.
-// `slug` omitted/empty → derived from `name`, matching the tag and page flows.
 interface UpsertCategoryInput {
   id?: string
   name: string
@@ -67,12 +65,10 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
 
   if (category !== lastCategory) {
     setLastCategory(category)
-    if (category === undefined) {
-      // closed — leave current draft for animation continuity
-    } else if (category === null) {
+    if (category === null) {
       setErrorMessage(null)
       setDraft(EMPTY_DRAFT)
-    } else {
+    } else if (category !== undefined) {
       setErrorMessage(null)
       setDraft({
         name: category.name,

@@ -20,10 +20,6 @@ import {
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Contract test for the SEA embedded-asset keys: writer and readers must
-// source every key from `packages/shared/distribution/src/sea-assets.ts`. A hardcoded key
-// only surfaces at `sea:smoke` time — this pins the drift in the unit suite.
-
 const SHARED_MODULE = 'packages/shared/distribution/src/sea-assets.ts'
 
 const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] = [
@@ -183,8 +179,6 @@ describe('contract: SEA embedded-asset keys', () => {
 
   it('reads raw observability assets through the VFS/disk helper, never the packed blob channel', () => {
     const source = readSource('packages/server/src/domains/observability/assets.ts')
-    // These five assets are registered as RAW (codec 'none') and mounted on the
-    // SEA VFS; `getEmbeddedAsset` is only contractual for packed natives/*.
     expect(source).toContain('readAssetTextOrDisk')
     expect(source).not.toContain('getEmbeddedAsset')
     expect(source).not.toContain("from '@kobato/server/infra/sea/sea.ts'")
@@ -192,17 +186,14 @@ describe('contract: SEA embedded-asset keys', () => {
 
   it('sea-natives no longer defines the manifest keys locally', () => {
     const source = readSource('packages/server/src/infra/sea/sea-natives.ts')
-    // A local definition would fork the contract.
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_MANIFEST_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_SMOKE_WORKER_BUNDLE_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+NATIVE_ASSET_PREFIX\s*=/)
-    // Importing from the shared distribution module makes equality by construction.
     expect(source).toMatch(/import\s*\{[^}]*SEA_MANIFEST_KEY[^}]*\}\s*from\s*'@kobato\/distribution\/sea-assets\.ts'/)
   })
 
   it('pins the asset codec union in the shared module', () => {
     const source = readSource(SHARED_MODULE)
-    // Adding a codec means touching writer + reader: a deliberate change.
     expect(source).toMatch(/export type SeaAssetCodec = 'zstd' \| 'none'/)
   })
 

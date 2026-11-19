@@ -11,7 +11,6 @@ export interface CommentItemProps {
   pending?: boolean
 }
 
-// Memoized: reference-preserving dispatches re-render only the affected leaf.
 export const CommentItem = memo(function CommentItem(props: CommentItemProps) {
   return props.depth === 1 ? <RootComment {...props} /> : <NestedComment {...props} />
 })

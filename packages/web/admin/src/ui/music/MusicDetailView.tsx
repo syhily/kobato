@@ -42,7 +42,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
 
-  // Reset editing state when navigating between different songs
   const [lastId, setLastId] = useState(id)
   if (id !== lastId) {
     setLastId(id)
@@ -56,8 +55,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       input: { id },
       enabled: id !== '',
     }),
-    // Seed from any cached music-list page so the hero (and its shared-element
-    // transition partner in AlbumCard) renders inside the navigation transition.
     placeholderData: () => {
       for (const [, data] of queryClient.getQueriesData<InfiniteData<ListMusicOutput, number>>({
         queryKey: orpcQuery.admin.music.list.key(),
@@ -85,7 +82,6 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       orpc.admin.music.update(input),
     onSuccess: (data) => {
       queryClient.setQueryData(orpcQuery.admin.music.get.key({ input: { id } }), { music: data.music })
-      // The library is cached under both operation types — the procedure-level key matches both.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
       toast.success(t('admin.musics.detail.saved'))
       setEditing(false)

@@ -35,7 +35,6 @@ describe('analytics counters from raw access_events', () => {
     await seedAccessEvents(handle, [
       { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', country: 'US' },
       { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/post/1', country: 'US' },
-      // Outside the 24-hour window.
       { ts: dateAt('2026-01-14T11:59:59.000Z'), visitorHash: 'c', path: '/', country: 'US' },
     ])
 

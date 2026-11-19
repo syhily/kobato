@@ -1,7 +1,3 @@
-// The base run mixes node classes with node-replacement pair configs
-// (`{ replace: Class, with }`); a pair carries no static getType, so its type is
-// read off the pair's `replace` class. The unsafeCast lives only in this module.
-
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 type BaseNodeEntry = { getType?: () => string; replace?: { getType?: () => string } }

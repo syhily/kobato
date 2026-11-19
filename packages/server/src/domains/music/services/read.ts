@@ -52,19 +52,12 @@ export async function findMusicDtoById(db: Database, id: number): Promise<AdminM
   return toAdminMusicDto(row, row.uploaderName)
 }
 
-/**
- * Fallback cover for tracks whose stored cover has no buildable public URL.
- */
 export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
 
 function defaultMusicCoverUrl(): string {
   return `${DEFAULT_MUSIC_COVER_URL}${brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.defaultMusicCover)}`
 }
 
-/**
- * Row → public projection, the single owner of music URL building. Returns
- * `null` when the audio URL can't be built; a missing cover falls back to the default.
- */
 function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
   const audioUrl = safeResolveAssetUrl(row.audioStoragePath)
   if (audioUrl === null) {

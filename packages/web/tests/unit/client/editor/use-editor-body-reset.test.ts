@@ -64,7 +64,6 @@ describe('useEditorBodyReset', () => {
     expect(result.current.mountedInitialState).toBe(bodyA)
     expect(setSpy).not.toHaveBeenCalled()
 
-    // An initialBody identity change alone re-runs the effect but early-outs.
     rerender({ body: commentBody('b'), bodyKey: 'k1' })
     expect(setSpy).not.toHaveBeenCalled()
     expect(result.current.mountedInitialState).toBe(bodyA)
@@ -98,8 +97,6 @@ describe('useEditorBodyReset', () => {
     rerender({ body: commentBody('b'), bodyKey: 'k2', registered: false })
     expect(editorText(editor)).toBe('')
 
-    // The editor registers (registerAPI) after the key already changed — the
-    // pending reseed fires on registration instead of being dropped.
     rerender({ body: commentBody('b'), bodyKey: 'k2', registered: true })
     expect(editorText(editor)).toBe('b')
   })

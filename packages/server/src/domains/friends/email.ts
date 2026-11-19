@@ -8,8 +8,6 @@ import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { createElement } from 'react'
 
-// Sent to the administrator on a friend-link application. Fire-and-forget —
-// a mail-pipeline hiccup must never fail the application.
 export async function sendNewFriendApplication(friend: FriendRow): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const t = emailTranslator()

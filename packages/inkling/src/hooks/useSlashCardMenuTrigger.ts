@@ -36,9 +36,6 @@ export function useSlashCardMenuTrigger(
     })
   }, [editor, enabled, closeMenu, saveCursor])
 
-  // a close the session initiated itself (Escape, outside mousedown, insert)
-  // carries no verdict — the trigger state resets on the close signal instead
-  // (adjust-state-on-render, not an effect: no cascading render)
   const [wasOpen, setWasOpen] = React.useState(isOpen)
   if (wasOpen !== isOpen) {
     setWasOpen(isOpen)

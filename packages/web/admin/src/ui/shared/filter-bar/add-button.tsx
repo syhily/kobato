@@ -10,8 +10,6 @@ import { InlineSearchList, SearchableOptionList } from '@kobato/web-admin/ui/sha
 import { ArrowLeftIcon, FunnelIcon, FunnelPlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
-// The filter / add-filter trigger — text/freetext/date kinds instant-add a default pill,
-// option/search open a picker step; global `f` opens it except on text-entry surfaces.
 interface FilterAddButtonProps<K extends string> {
   fields: readonly FilterFieldSpec<K>[]
   filters: ActiveFilter<K>[]

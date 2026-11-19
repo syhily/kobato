@@ -1,11 +1,3 @@
-// `packages/ui/src/styles/tailwind.css` applies the zh-CN chain on `:root` and overrides
-// `--font-body` / `--font-serif` through `:lang()` branches for the other
-// locales. The SAME map feeds `apps/kobato/src/root.tsx`, where a configured
-// custom family is prepended to the locale's fallback tail, so a custom font
-// keeps a locale-appropriate fallback chain instead of a hardcoded CJK one.
-// The CSS copy and this map are contract-pinned
-// (`packages/ui/tests/contract/font-stacks.test.ts`): change both or neither.
-
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 export interface LocaleFontStacks {

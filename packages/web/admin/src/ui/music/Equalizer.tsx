@@ -15,7 +15,6 @@ export function Equalizer({ color = 'var(--brand)' }: { color?: string }) {
           <LazyMotionDiv
             key={i}
             className="w-0.5 rounded-sm"
-            // Static fallback matches the reduced-motion bar heights.
             fallbackStyle={{ height: BAR_HEIGHTS[i] }}
             animate={{ height: [BAR_BASES[i], BAR_HEIGHTS[i], BAR_BASES[i]] }}
             transition={{ repeat: Infinity, duration: 0.8, ease: 'easeInOut', delay: i * 0.1 }}

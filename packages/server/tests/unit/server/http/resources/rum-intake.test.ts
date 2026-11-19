@@ -107,9 +107,6 @@ describe('rumIntakeRouter', () => {
   })
 
   it('discards the inbound organization segment and forwards to the configured one', async () => {
-    // The browser never learns the configured organization: the slim SDK
-    // builds `/rum/v1/default/rum` unless told otherwise, so the relay
-    // validates only the track shape and rewrites the upstream org.
     const res = await postBatch('/api/rum/intake/rum/v1/other-org/rum?o2-api-key=kobato-relay')
 
     expect(res.status).toBe(202)

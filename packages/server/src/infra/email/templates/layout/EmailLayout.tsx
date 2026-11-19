@@ -60,7 +60,6 @@ export function EmailLayout({ t, receiver, preview, children }: Props) {
         className="dark-bg"
       >
         <Container style={{ padding: '30px 20px' }}>
-          {/* Preheader — shown in inbox preview */}
           {preview && (
             <div
               style={{

@@ -1,8 +1,3 @@
-// Analytics ingestion types: `RawAccessEvent` (cheap, from the request) →
-// `EnrichedAccessEvent` (after geo/UA/bot enrichment, owned by
-// `@kobato/db/duckdb/access-events.ts` alongside the `blobsMap`/`doublesMap`
-// slot allocation — adding a field means assigning it a slot there).
-
 import type { EntityTarget } from '@kobato/db/target.ts'
 import type { UaClientHints } from '@kobato/server/domains/analytics/ua-parse.ts'
 

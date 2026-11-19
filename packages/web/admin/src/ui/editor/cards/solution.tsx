@@ -33,11 +33,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { inklingHostCardMatches } from '@kobato/web-admin/ui/editor/cards/menu-matches.ts'
 import { ListTreeIcon } from 'lucide-react'
 
-// The card's nested-editor spec, const-asserted so the literal name survives into
-// the derived field maps (the same array self-types the base class below and feeds
-// the defineCard spec). `nullable` mirrors the built-in cards: the base class is
-// spec-less, so a raw base instance leaves the fields unset and the guard in
-// SolutionCardComponent stays honest.
 const solutionNestedEditors = [
   { ...SOLUTION_NESTED_EDITOR, nodes: EDITOR_BASE_NODES, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
@@ -55,9 +50,6 @@ export class BaseSolutionNode extends generateDecoratorNode({
 
 export type SolutionCardNode = InstanceType<typeof BaseSolutionNode>
 
-/** The chrome shared with the export: styled blockquote + begin-text header + QED square.
- *  The children slot holds the nested editor on the canvas and the content HTML in
- *  the export — everything around it is what the parity test compares. */
 export function SolutionCardView({ children }: { children?: ReactNode }) {
   return (
     <blockquote className={SOLUTION_CARD_CLASSES.root}>
@@ -74,8 +66,6 @@ export function SolutionCardView({ children }: { children?: ReactNode }) {
 
 function SolutionCardComponent({ node }: { node: SolutionCardNode }) {
   const { t } = useI18n()
-  // Null only for a base instance without the nested-editor spec; the assembled
-  // class always has the editor (the toggle-card invariant).
   if (!node.__contentEditor) {
     return null
   }
@@ -106,7 +96,6 @@ export const solutionCard = defineCard({
   insert: { openInEditMode: true },
   menu: [
     {
-      // English fallback; the overlay localizes through `labelKey`.
       label: 'Solution block',
       labelKey: 'host.solution',
       desc: 'Q&A / hint (format-rich, same as a quote)',

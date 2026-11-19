@@ -9,10 +9,6 @@ import { canonicalizeCommentBody } from '@kobato/server/domains/comments/service
 import { MAX_COMMENT_LENGTH } from '@kobato/server/domains/comments/services/policy.ts'
 import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
 
-// The pre-render length gate: a hostile state can carry megabytes of text
-// under the global 10 MB body cap, so the plain-text walk must reject it
-// before the jsdom prerender runs (the rendered-content gate downstream
-// stays authoritative and runs after).
 describe('comments/services/canonicalize — pre-render length gate', () => {
   it('rejects an over-length state before paying for the prerender', async () => {
     vi.mocked(prerenderLexicalEditorState).mockClear()

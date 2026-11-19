@@ -10,10 +10,6 @@ import { pasteDialect } from '@kobato/inkling-internal/markdown/paste-dialect'
 import { type DefaultTransformsOptions } from '@kobato/inkling-internal/transforms'
 import { $getRoot } from 'lexical'
 
-// The markdown card's exportDOM reads the paste dialect through the lazy
-// port's sync cache (`@kobato/inkling-internal/markdown/lazy-paste-dialect`); this surface
-// holds the engine statically and seeds the port at module eval — the headless
-// export path can never await a chunk.
 registerLoadedPasteDialect({ pasteDialect })
 
 export { DEFAULT_HTML_NODES } from '@kobato/inkling-internal/html/default-html-nodes'

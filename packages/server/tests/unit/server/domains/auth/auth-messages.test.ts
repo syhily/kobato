@@ -7,9 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// Every auth-flow message exists, translated, in all four locales; the English fallback
-// is only for logs and old clients, never what a reader sees.
-
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

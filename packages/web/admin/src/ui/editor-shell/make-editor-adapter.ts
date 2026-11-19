@@ -11,13 +11,11 @@ import type { ReactNode } from 'react'
 
 type EditorMetaShape = { title: string; slug: string; published: boolean; publishedAt: string }
 
-/** Both entity detail DTOs carry the same revision pair. */
 interface DetailRevisions {
   latestRevision: AdminRevisionDto | null
   publishedRevision: AdminRevisionDto | null
 }
 
-/** The oRPC namespace surface the editor adapter consumes — `orpc.admin.posts` / `orpc.admin.pages` both satisfy it structurally. */
 export interface EditorEntityApi<TUpsertMetaInput, TWrappedEntity> {
   upsertMeta: (input: TUpsertMetaInput) => Promise<TWrappedEntity>
   saveDraft: (input: SaveBodyInput) => Promise<SaveBodyOutput>
@@ -27,10 +25,6 @@ export interface EditorEntityApi<TUpsertMetaInput, TWrappedEntity> {
   restore: (input: { id: string }) => Promise<unknown>
 }
 
-/**
- * Static entity parameterization declared once per entity — stable function
- * identities across renders, which `EditorScreen`'s memoized detail relies on.
- */
 export interface EditorAdapterConfig<
   TMeta extends EditorMetaShape,
   TEntity extends EditorScreenEntity,
@@ -66,11 +60,9 @@ export interface EditorAdapterRuntime<TMeta extends EditorMetaShape> {
   renderMetaSidebar: (props: MetaSidebarSlotProps<TMeta>) => ReactNode
 }
 
-// Module-level revision accessors — stable identities keep the screen's memoized detail object referentially stable.
 const getLatestRevision = (detail: DetailRevisions): RevisionLike | null => detail.latestRevision
 const getPublishedRevision = (detail: DetailRevisions): RevisionLike | null => detail.publishedRevision
 
-/** Assemble the `EditorScreenAdapter` for one entity; the wire wrappers (call → invalidate list → unwrap envelope) live here exactly once. */
 export function makeEditorAdapter<
   TMeta extends EditorMetaShape,
   TEntity extends EditorScreenEntity,
@@ -84,7 +76,6 @@ export function makeEditorAdapter<
   const { queryClient } = runtime
 
   const invalidateList = () => {
-    // The admin list lives in the TanStack cache — invalidate so a meta save shows up on return.
     void queryClient.invalidateQueries({ queryKey: config.listQueryKey() })
   }
 

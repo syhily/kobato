@@ -2,6 +2,4 @@ import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { startRouteWarmup } from '@kobato/web-client/route-warmup/idle-script.ts'
 
-// Bundle entry for the inline route-warmup script; `RouteWarmupScript`
-// replaces the sentinel below per request with the chunk list.
 startRouteWarmup(unsafeCast<string[]>(CHUNKS_SENTINEL))

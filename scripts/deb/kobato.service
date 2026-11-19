@@ -18,7 +18,6 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-# The process writes its config back under /etc/kobato (same-dir rename).
 ReadWritePaths=/var/lib/kobato /etc/kobato
 
 [Install]

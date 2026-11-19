@@ -17,8 +17,6 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 
-// Tail-merge guard: an orphan last page (< pageSize − 2 posts) merges into
-// its predecessor (clamped at 0 for tiny page sizes). See `listingLoader`.
 function homeMergeTailWhenLessThan(homePageSize: number): number {
   return Math.max(0, homePageSize - 2)
 }
@@ -38,9 +36,6 @@ function toFeaturePostCards(posts: ClientPost[]): ListingPostCard[] {
   }))
 }
 
-// The home listing pipeline (`/` + `/page/:num`) behind `content.home`:
-// all settings reads + the random sidebar selection. The page view is recorded
-// by the controller AFTER listing revalidation (a 304 never counts).
 export async function loadHomeData({
   db,
   session,
@@ -53,7 +48,6 @@ export async function loadHomeData({
   session: BlogSession
   num: string | undefined
   locale: AppLocale
-  /** Request-pinned settings snapshot (same capture as `locale`). */
   settings: BlogSettingsBundle | null
   revision: string
 }): Promise<ListingPageLoaderData<HomeExtra>> {
@@ -74,14 +68,11 @@ export async function loadHomeData({
     Promise.resolve(formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity', settings))),
   ])
 
-  // One seeded selection for both widgets: the random widgets rotate per site
-  // calendar day, not per render (a per-request draw churns the payload).
   const sidebarSelection = {
     settings: sidebarSettings,
     seed: sidebarSelectionSeed({ scope: 'home', date: calendarDay, revision }),
   }
 
-  // Kick off independent queries in parallel with the listing pipeline.
   const featurePromise = selectFeaturePosts(db, calendarDay)
   const sidebarPostsPromise = recentPostsEnabled ? selectSidebarPosts(db, sidebarSelection) : Promise.resolve([])
   const tagsPromise = randomTagsEnabled ? listAllTags(db) : Promise.resolve([])

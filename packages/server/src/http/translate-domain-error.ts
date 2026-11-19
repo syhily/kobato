@@ -4,8 +4,6 @@ import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { descriptorMessage, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '@kobato/server/infra/http/errors.ts'
 
-/** Single translation shared by the Hono and oRPC adapters, so status, code, message,
- *  descriptor, issues, and headers can never diverge between transports. */
 export interface TranslatedDomainError {
   status: number
   code: string
@@ -35,11 +33,6 @@ function issueToWire(issue: DomainErrorIssue, translator?: ServerTranslator): Er
   }
 }
 
-/**
- * Resolve an error's copy for one request: a descriptor is formatted against the request
- * translator, raw text rides the passthrough descriptor, and without a translator
- * (tests, diagnostics) the English fallback is used.
- */
 export function translateApiError(input: ApiErrorInput, translator?: ServerTranslator): TranslatedDomainError {
   const descriptor = typeof input.message === 'string' ? rawMessageDescriptor(input.message) : input.message
   const message = descriptorMessage(descriptor, translator)
@@ -70,11 +63,6 @@ export function translateDomainError(
   )
 }
 
-/**
- * Fold the localized issue list into the message so `ORPCError.message` names the failing
- * field without a second client-side translation. Separators are catalog messages, never
- * hardcoded punctuation: English `; ` and full-width `；` differ by locale.
- */
 export function summarizeApiError(translated: TranslatedDomainError, translator: ServerTranslator): string {
   const { issues } = translated
   if (issues === undefined || issues.length === 0) {
@@ -82,7 +70,6 @@ export function summarizeApiError(translated: TranslatedDomainError, translator:
   }
   const separator = translator.format('error.api.issueSeparator')
   const parts = issues.map((issue) => {
-    // The wire already resolved the issue text for this request locale.
     const text = issue.message
     const path = issue.path?.join('.')
     return path === undefined || path === ''

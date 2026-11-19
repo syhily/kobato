@@ -89,7 +89,6 @@ describe('frontend RUM verification gate', () => {
     expect(handle.started).toBe(true)
     expect(verifiedFrontendBootstrap()).toEqual(BOOTSTRAP)
     expect(activeFrontendRum()).toEqual(BOOTSTRAP)
-    // The relay target rides the same gate entry.
     expect(verifiedFrontendRelay()).toEqual(RELAY)
     expect(activeFrontendRelay()).toEqual(RELAY)
     await stopTraceRuntime()
@@ -112,8 +111,6 @@ describe('frontend RUM verification gate', () => {
 
     expect(verified).toBe(1)
     expect(handle.started).toBe(true)
-    // The gate is build-independent; only `resolveTraceConfig`'s environment
-    // label differs (pinned by the config tests).
     expect(activeFrontendRum()).toEqual(BOOTSTRAP)
   })
 

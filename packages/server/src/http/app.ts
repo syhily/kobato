@@ -27,8 +27,6 @@ function resolveMaxBodySize(): number {
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
-  // Hydrate before the body-limit resolver and the CSRF guard: both read settings,
-  // and a cold process would otherwise answer zh-CN with the built-in 10 MB cap.
   app.use('/rpc/*', async (c, next) => {
     await hydrateBlogSettings(c.var.requestContext.db)
     await next()
@@ -46,7 +44,6 @@ export function createApiApp(): Hono<Env> {
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
     const rc = c.var.requestContext
-    // Read-only session: `markSessionDirty` is deliberately omitted here.
     const context: HandlerContext = {
       request: c.req.raw,
       requestFacts: rc.requestFacts,
@@ -63,7 +60,6 @@ export function createApiApp(): Hono<Env> {
       await next()
       return
     }
-    // Merge per-procedure headers; multiple Set-Cookie values must append, not overwrite.
     const merged = new Headers(result.response.headers)
     responseHeaders.forEach((value, key) => {
       if (key.toLowerCase() === 'set-cookie') {

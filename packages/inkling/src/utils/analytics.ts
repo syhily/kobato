@@ -1,10 +1,5 @@
 export type TelemetryHandler = (eventName: string, props: Record<string, unknown>) => void
 
-// The telemetry channel: call sites track events through this one function and the handler
-// behind it is a port. The default adapter fans out to plausible/posthog, including the
-// window queue stub plausible expects before its script loads. Vendors are window globals,
-// so the channel is per-page, not per-composer.
-
 function defaultTelemetryHandler(eventName: string, props: Record<string, unknown>): void {
   if (window.plausible) {
     window.plausible(eventName, { props: props })
@@ -22,9 +17,6 @@ function defaultTelemetryHandler(eventName: string, props: Record<string, unknow
 
 let handler: TelemetryHandler = defaultTelemetryHandler
 
-// Every live registration, most recent last. Multiple composers can share a page, so
-// unmounting one must not clobber the others: the active handler is always the latest
-// registration that has not been torn down.
 const handlerStack: TelemetryHandler[] = []
 
 export function setTelemetryHandler(custom: TelemetryHandler | undefined): () => void {

@@ -61,7 +61,6 @@ describe('settings/getters — snapshot revision', () => {
     expect(boot(second.revision)).toBe(boot(first.revision))
     expect(seq(second.revision)).toBe(seq(first.revision) + 1)
 
-    // The pre-install snapshot has its own explicit revision too.
     BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
     const third = getBlogSettingsSnapshotSync()
     expect(third.bundle).toBeNull()
@@ -104,9 +103,6 @@ describe('settings/getters — requireBlogSettingsSection', () => {
 })
 
 describe('settings/getters — isWebmentionReceiveEnabled', () => {
-  // The core invariant the receive-side surfaces share: an unseeded
-  // section reads as the schema default ON, so discovery (`<link>` /
-  // Link header), the 410 gate, and the inbox drain can never disagree.
   it('defaults to ON for every unseeded shape', () => {
     expect(isWebmentionReceiveEnabled(undefined)).toBe(true)
     expect(isWebmentionReceiveEnabled(null)).toBe(true)

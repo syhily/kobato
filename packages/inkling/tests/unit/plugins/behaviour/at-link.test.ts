@@ -117,9 +117,6 @@ function createTestEditor() {
   })
 }
 
-// Lexical commits updates on a microtask and listener-triggered cascade
-// updates defer again — tick drains the queue so assertions see the settled
-// state.
 async function dispatchCommand(editor: LexicalEditor, ...args: Parameters<LexicalEditor['dispatchCommand']>) {
   const result = editor.dispatchCommand(...args)
   await tick()
@@ -167,8 +164,6 @@ const atLinkNodeJSON = (linkFormat: number | null, searchText = '') => ({
   version: 1,
 })
 
-// an element node with a text child does not serialize textFormat/textStyle
-// (lexical #7968), unlike the paragraph wrapper around it
 const linkNodeJSON = (text: string, url: string, format = 0) => ({
   children: [textNodeJSON(text, format)],
   direction: null,
@@ -641,8 +636,6 @@ describe('at-link behaviour (headless registrations)', () => {
       await buildSingleParagraph(editor, [{ text: 'hello ' }], { segment: 0, anchorOffset: 6 })
       expect(await dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, '@')).toBe(true)
 
-      // editor.isComposing() is not reachable through jsdom composition
-      // events — spy the bail condition directly
       const composing = vi.spyOn(editor, 'isComposing').mockReturnValue(true)
       await drainEnqueuedUpdates(editor, () => {
         const first = $getRoot().getFirstChild()
@@ -677,9 +670,6 @@ describe('at-link behaviour (headless registrations)', () => {
       await buildSingleParagraph(editor, [], 'element')
       expect(await dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, '@')).toBe(true)
 
-      // The listener gates on the DOM selection's anchorOffset being 0; place
-      // it outside the editor so jsdom's selection round-trip cannot fight
-      // the normalization (see harness notes above).
       window.getSelection()?.setBaseAndExtent(document.body, 0, document.body, 0)
 
       await drainEnqueuedUpdates(editor, () => {

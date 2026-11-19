@@ -55,13 +55,11 @@ describe('rate-limit', () => {
     })
     expect(readBucket('signIn')).toEqual(sampleBucket)
 
-    // Snapshot not hydrated → the conservative registry defaults apply.
     setBlogSettingsBundleForTests(null)
     expect(readBucket('signIn')).toEqual(rateLimitDefaults.signIn)
   })
 
   it('counts post-increment within a window and trips strictly above maxAttempts', async () => {
-    // windowSeconds: 60, maxAttempts: 3 → hits 1–3 allowed, 4th trips.
     expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 1, exceeded: false })
     expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 2, exceeded: false })
     expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 3, exceeded: false })
@@ -70,12 +68,10 @@ describe('rate-limit', () => {
 
   it('anchors the window at the first hit and starts a new window after windowSeconds', async () => {
     await tryKeyedRateLimit('key:2', sampleBucket)
-    // 30s in: same window, the counter keeps climbing.
     vi.setSystemTime(T0 + 30_000)
     expect(await tryKeyedRateLimit('key:2', sampleBucket)).toEqual({ count: 2, exceeded: false })
     vi.setSystemTime(T0 + 59_999)
     expect(await tryKeyedRateLimit('key:2', sampleBucket)).toEqual({ count: 3, exceeded: false })
-    // 60s after the FIRST hit (not the last one): new window, counter resets.
     vi.setSystemTime(T0 + 60_000)
     expect(await tryKeyedRateLimit('key:2', sampleBucket)).toEqual({ count: 1, exceeded: false })
   })
@@ -104,8 +100,6 @@ describe('rate-limit', () => {
     }
     expect(rateLimitEntryCount()).toBe(10_000)
 
-    // Every entry has expired; the next insert must reclaim them
-    // without touching the eviction path.
     vi.setSystemTime(T0 + 61_000)
     await tryKeyedRateLimit('spray:new', bucket)
     expect(rateLimitEntryCount()).toBe(1)
@@ -117,13 +111,9 @@ describe('rate-limit', () => {
     for (let i = 0; i < 10_000; i += 1) {
       await tryKeyedRateLimit(`spray:${i}`, bucket)
     }
-    // One more distinct key while every entry is still live → capacity
-    // guard evicts the oldest window (`spray:0`, stable order on equal
-    // resetAt) to make room.
     await tryKeyedRateLimit('spray:overflow', bucket)
     expect(rateLimitEntryCount()).toBe(10_000)
     expect(__logCaptureForTests().filter((e) => e.level === 'warn')).toHaveLength(1)
-    // The overflow key is tracked; the evicted key restarts at count 1.
     expect(await tryKeyedRateLimit('spray:overflow', bucket)).toEqual({ count: 2, exceeded: false })
     expect(await tryKeyedRateLimit('spray:0', bucket)).toEqual({ count: 1, exceeded: false })
   })
@@ -168,7 +158,6 @@ describe('rate-limit — rateLimitIpKey (IPv6 /64 grouping)', () => {
   it('groups addresses inside one /64 into a single key', () => {
     expect(rateLimitIpKey('2001:db8:abcd:1234::1')).toBe('2001:db8:abcd:1234::/64')
     expect(rateLimitIpKey('2001:db8:abcd:1234:ffff:ffff:ffff:ffff')).toBe('2001:db8:abcd:1234::/64')
-    // A different /64 is a different key.
     expect(rateLimitIpKey('2001:db8:abcd:1235::1')).not.toBe('2001:db8:abcd:1234::/64')
   })
 

@@ -53,7 +53,6 @@ export function ImagesView() {
     noun: 'admin.list.noun.images',
   })
 
-  // Both cache types (`infinite` grid, `query` picker) — the procedure-level key partial-matches both.
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.images.list.key() })
   }, [queryClient])

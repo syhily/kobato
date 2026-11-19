@@ -1,19 +1,3 @@
-/**
- * OpenTelemetry/OpenObserve SDK source boundary: the real SDKs may only enter
- * through the approved entry modules. Everything else — including the
- * no-op facade (`infra/trace/facade.ts`), the log projection
- * (`infra/trace/log-record.ts`), the shared resource
- * (`infra/trace/resource.ts`), and the log sink slot (`infra/logger/sink.ts`) —
- * must stay SDK-free.
- *
- * The server entries are real: the trace runtime is reached through the
- * observability domain's dynamic import (so the SDK chunk loads only when the
- * admin configured telemetry), and the log pipeline is statically constructed
- * by the trace runtime only (never a second entry). The browser RUM loader is
- * reached only through `use-rum`'s SSR-pruned dynamic import, so it exists
- * solely as a client chunk. This scan proves no other source module imports an
- * SDK.
- */
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'

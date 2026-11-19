@@ -2,9 +2,6 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { SearchBar, SearchIconButton } from '@kobato/web-public/ui/Search.tsx'
 import { describe, expect, it } from 'vitest'
 
-// SearchBar renders the sidebar form; SearchIconButton's popup is portal-based and
-// returns null under SSR.
-
 describe('snapshot: Search branches', () => {
   it('renders the sidebar search bar', () => {
     const html = stableHtml(renderInRouter(<SearchBar />, '/'))

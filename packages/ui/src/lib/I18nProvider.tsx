@@ -1,6 +1,3 @@
-// Never value-import the catalogs here: messages arrive as props, so one locale, not
-// four, reaches the browser. Pinned by tests/unit/arch/client-bundle.test.ts.
-
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ReactNode } from 'react'
@@ -69,7 +66,6 @@ export function I18nProvider({ locale, messages, children }: I18nProviderProps) 
       locale={locale}
       messages={messages}
       onError={(error) => {
-        // Missing keys degrade to the id at runtime; make the failure visible in the console log channel.
         log.warn('i18n format failure', { locale, error: error.message })
       }}
     >
@@ -78,7 +74,6 @@ export function I18nProvider({ locale, messages, children }: I18nProviderProps) 
   )
 }
 
-/** Requires the root `<I18nProvider>`; throwing keeps a missing provider a loud test failure. */
 export function useI18n(): I18nValue {
   const locale = useContext(LocaleContext)
   const intl = useContext(IntlContext)
@@ -105,7 +100,6 @@ export function useI18n(): I18nValue {
     if (typeof candidate !== 'string') {
       return value
     }
-    // No braces: skip the ICU parse (most validation messages are static sentences).
     if (!candidate.includes('{')) {
       return candidate
     }
@@ -117,9 +111,7 @@ export function useI18n(): I18nValue {
       if (typeof formatted === 'string' && formatted !== value && formatted !== candidate) {
         return formatted
       }
-    } catch {
-      /* noop */
-    }
+    } catch {}
     log.warn('localizeMessage: missing params or unformattable message; using fallback', {
       locale,
       id: value,
@@ -130,9 +122,7 @@ export function useI18n(): I18nValue {
       if (typeof generic === 'string' && generic !== LOCALIZE_FALLBACK_ID) {
         return generic
       }
-    } catch {
-      // The provider may carry only the minimal FallbackMessages subset.
-    }
+    } catch {}
     return LOCALIZE_FALLBACK_TEXT
   }
   return { locale, t, tRich, localizeMessage }

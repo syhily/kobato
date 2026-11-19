@@ -15,17 +15,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 
-// Link-editing flow — headless module owning the link apply/read/remove surgery
-// and the floating-toolbar session, so the plugin and toolbar components are
-// render/event adapters over it. The toolbar session is the one owner of
-// toolbar truth (the hidden | text | link | snippet machine plus the
-// hovered-link slot); createLinkHoverFeed and createToolbarRevealFeed keep DOM
-// behaviour out of the toolbar components, and registerToolbarSelectionSync
-// owns the selection classifier (composing skip, outside-editor close, at-link
-// suppression, textSelected/href derivation).
-//
-// The $-functions must run inside editor.read()/editor.update().
-
 export function $applyLinkToSelection(editor: LexicalEditor, url: string): void {
   editor.dispatchCommand(TOGGLE_LINK_COMMAND, url || null)
   const selection = $getSelection()
@@ -57,12 +46,6 @@ export function $getLinkHrefAtSelection(): string {
   return ''
 }
 
-/**
- * Selects the link's full text so a subsequent edit applies to the whole link.
- * The range spans the link's text children because createRectsFromDOMRange
- * misbehaves on a bare link-node selection. Returns false when the link has no
- * text children to select.
- */
 export function $selectLinkText(linkNode: LinkNode): boolean {
   const firstChild = linkNode.getFirstChild()
   const lastChild = linkNode.getLastChild()
@@ -101,19 +84,6 @@ export interface ToolbarSelectionSnapshot {
   href: string
 }
 
-/**
- * The floating-toolbar session state machine: hidden | text | link | snippet,
- * with the hovered-link slot fed alongside the selection.
- * - selection sync only acts while hidden/text — a link or snippet toolbar
- *   stays open across selection changes (its input steals the selection) and
- *   closes only through close() or an explicit open.
- * - a lost/invalid selection (syncSelection(null)) hides the text toolbar.
- * - explicit opens (cmd-K, format-toolbar buttons, edit-link) work from any state.
- * - hover sync only acts while hidden — entering any toolbar state clears the
- *   hovered link and syncHover is ignored until the session is hidden again.
- * The handle serves the React adapter's useSyncExternalStore binding; non-React
- * drivers go through the methods.
- */
 export function createToolbarSession(
   handle: ComposerHandle<ToolbarSessionState> = createComposerHandle<ToolbarSessionState>({
     type: 'hidden',
@@ -145,8 +115,6 @@ export function createToolbarSession(
         return
       }
       const current = handle.getState().hoveredLink
-      // swallow re-feeds of the same link over the same element so a debounced
-      // mousemove stream does not churn subscribers with equal states
       if (
         current &&
         hoveredLink &&

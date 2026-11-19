@@ -32,7 +32,6 @@ describe('highlightAuditLogDetails', () => {
     const result = await highlightAuditLogDetails({ user: 'alice', action: 'login' })
 
     expect(result).toBe('<pre>html</pre>')
-    // The shared factory owns language/theme registration; this pass only picks `json`.
     expect(createHighlighterMock).toHaveBeenCalledTimes(1)
     expect(createHighlighterMock).toHaveBeenCalledWith()
     expect(codeToHtmlMock).toHaveBeenCalledWith(JSON.stringify({ user: 'alice', action: 'login' }, null, 2), {

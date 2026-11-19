@@ -10,13 +10,9 @@ import {
 import { commentTokenCookie, implementPublic } from '@kobato/server/http/orpc-base.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// The
-// cookie jar attaches per procedure, after the contract's input validation —
-// exactly where the original chains placed it.
 const impl = implementPublic(commentsTokenContract)
 
 const revokeToken = impl.revokeToken.use(commentTokenCookie).handler(async ({ input, context }) => {
-  // `verifyCommentOwnership` also cleans; the matched token is the one to revoke.
   const { cleaned, token: targetToken } = await verifyCommentOwnership(
     context.db,
     context.commentTokens.cookie,

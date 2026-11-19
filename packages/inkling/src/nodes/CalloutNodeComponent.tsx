@@ -12,9 +12,6 @@ import { $isCalloutNode } from '@kobato/inkling-internal/nodes/base'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
 import React from 'react'
 
-// backgroundColor is a free string on the node — HTML import captures any
-// `inkling-callout-card-*` class word — so narrow it to the known palette at
-// the card seam, falling back to the node's own default
 function isCalloutColorName(color: string | undefined): color is CalloutColorName {
   return color !== undefined && Object.hasOwn(CALLOUT_COLORS, color)
 }
@@ -103,9 +100,6 @@ export function CalloutNodeComponent({
 }
 
 export function renderCalloutCard(node: CalloutNode) {
-  // Null only inside the headless markdown round-trip editor (the card
-  // transformers null the nested editors after plain-text import), which
-  // never reconciles decorators — guard so the field type stays honest.
   if (!node.__calloutTextEditor) {
     return null
   }

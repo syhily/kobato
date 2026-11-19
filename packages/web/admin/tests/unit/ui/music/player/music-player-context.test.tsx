@@ -9,9 +9,6 @@ import {
 } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The SSR `renderHook` harness runs a single pass with no effects, so the
-// audio-setup effect never fires and `audioRef.current` stays null.
-
 const track: AdminMusicDto = {
   id: 'm1',
   source: 'netease',
@@ -157,7 +154,6 @@ describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)
   })
 
   it('close resets state even without a mounted audio element', () => {
-    // `close` mutates state unconditionally, with no `audioRef.current` guard.
     const actions = renderHook(() => useMusicPlayerActions(), {
       wrapper: MusicPlayerProvider,
     })
@@ -175,7 +171,6 @@ describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)
 })
 
 describe('ui/admin/musics/MusicPlayerContext — HTMLAudioElement polyfill safety', () => {
-  // The module must load cleanly under node without audio/Image globals.
   afterEach(() => {
     vi.restoreAllMocks()
   })

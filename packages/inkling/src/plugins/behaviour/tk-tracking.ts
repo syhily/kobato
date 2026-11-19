@@ -6,14 +6,6 @@ import { SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/
 import { nextTkNodeKey } from '@kobato/inkling-internal/plugins/behaviour/tk-indicator'
 import { $getNodeByKey, $getSelection, $isDecoratorNode, $isRangeSelection, $isTextNode } from 'lexical'
 
-/**
- * Feeds the tk handle from the editor's TKNode mutations: a created/updated
- * TK node is filed under its top-level element (or the card's own key when
- * the listener runs on a nested card editor — its TK nodes belong to the
- * card's indicator), a destroyed one is removed. The handle's throttled
- * derivation publishes the render-time tkNodeMap. Returns the unregister
- * callback.
- */
 export function registerTkNodeTracking(
   editor: LexicalEditor,
   tkHandle: TKHandle,

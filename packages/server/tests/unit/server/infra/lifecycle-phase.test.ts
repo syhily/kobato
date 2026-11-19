@@ -6,10 +6,6 @@ import {
 } from '@kobato/server/infra/lifecycle.ts'
 import { afterEach, describe, expect, it } from 'vitest'
 
-// The lifecycle module holds module-level state and registers SIGTERM/SIGINT
-// listeners on import. The container is a singleton shared across tests, so
-// each test must reset the phase explicitly to a known starting point.
-
 function resetTo(phase: ServerPhase): void {
   const c = __getLifecycleContainer()
   c.serverPhase = phase
@@ -78,7 +74,6 @@ describe('server/infra/lifecycle — setServerPhase transition table', () => {
       setServerPhase(target)
       expect(getServerPhase()).toBe(target)
     }
-    // Recovering from failed must go through restarting.
     resetTo('failed')
     setServerPhase('running' as ServerPhase)
     expect(getServerPhase()).toBe('failed')

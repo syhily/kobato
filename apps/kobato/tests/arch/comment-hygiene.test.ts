@@ -1,16 +1,3 @@
-/**
- * Comment-hygiene guard — pins the Comments section of the root AGENTS.md.
- *
- * Code explains itself; a comment exists only to carry a constraint the code
- * cannot (an invariant with its why, an upstream workaround, an external
- * source for a magic constant). History narration is the one class that is
- * never acceptable: git owns where code came from, and a comment describing
- * a past state of the tree is stale the moment it is written.
- *
- * This guard bans the history-narration vocabulary in comments across every
- * product and tools source/test tree. Vendored or upstream-synced trees keep
- * their own conventions and are exempt.
- */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
@@ -20,7 +7,6 @@ const REPO_ROOT = process.cwd()
 const SCAN_ROOTS = ['apps', 'packages', 'tools']
 
 const EXEMPT_PREFIXES = [
-  // Upstream-mirrored / vendored trees: their comments are not ours to police.
   'packages/inkling/src/nodes/base/',
   'packages/inkling/src/utils/draggable/',
   'packages/server/src/domains/fonts/vendor/',

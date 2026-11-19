@@ -19,12 +19,6 @@ export interface PostPreviewResult {
   draftMarker: DraftMarker
 }
 
-// Post-detail pipeline for `content.posts.bySlug`: plain HTTP facts in, thrown Responses
-// out (translated by the controller). Branch order: draft fallback → 404 → alias 301.
-// Revalidation happens in the controller AFTER the payload is assembled — a slim
-// published_at probe cannot know whether the sidebar, tags or likes changed. Draft
-// previews never carry a published ETag: `published_at` survives unpublishing and is
-// null for first drafts, so it can never identify a draft representation.
 export async function loadPostPreview({
   db,
   slug,
@@ -38,8 +32,6 @@ export async function loadPostPreview({
   let draftMarker: DraftMarker = null
 
   if (sourcePost === undefined && viewer) {
-    // Ownership lives in the entity's `canPreviewDraft` rule: authors see
-    // their own drafts, admins anyone's; everyone else falls through to 404.
     const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, slug, viewer)
     if (preview !== null) {
       sourcePost = preview.preview

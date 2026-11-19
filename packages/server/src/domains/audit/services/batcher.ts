@@ -56,7 +56,6 @@ class AuditLogBatcher extends InsertBatcher<AuditEventInput> {
     db.insert(auditLog).values(events.map(toRow)).run()
   }
 
-  // Batch failure → per-row INSERT, then dead-letter; audit rows must not be lost.
   protected async onInsertFailed(events: AuditEventInput[], _error: unknown): Promise<FlushResult> {
     return insertPerRow(this.auditDb, events)
   }
@@ -90,7 +89,6 @@ async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<Fl
   return { committed: successCount, deadLettered: failedEvents.length }
 }
 
-// Self-register: the bootstrap lifecycle drives batchers through the registry.
 registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(handle.db), {
   replayDeadLetter: () => replayDeadLetterAuditLog(),
 })

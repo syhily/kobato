@@ -1,18 +1,5 @@
 import type { FileUploader } from '@kobato/inkling-internal/index'
 import type { Equal, Expect, Extends } from '@kobato/inkling/tests/utils/type-pins'
-/**
- * Compile-time pins for the upload-intent policy composition.
- *
- * The three policy unions (`preview` / `metadata` / `emptyResult`) reject
- * combinations that compile but can never take effect: a publish without a
- * lease, a timing without an extractor, an `onBail` under the patch policy,
- * pre-extracted `meta` alongside an extractor. The negative pins are the
- * regression guard; the positive pins keep every card variant and generic
- * `TNode`/`TMeta` inference ergonomic (no explicit type arguments, no casts).
- *
- * Type-checked only, never executed — the factory calls would start intents
- * if it ran.
- */
 import type { LexicalEditor, NodeKey } from 'lexical'
 
 import {
@@ -163,7 +150,6 @@ void videoFlowUploadIntent({
   onEmptyPreview: () => {},
 })
 
-// a publish without a lease — a top-level previewPatch would be silently ignored
 runUploadIntent({
   editor,
   nodeKey,
@@ -176,7 +162,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// an after-upload timing with no extractor — the timing would never be read
 runUploadIntent({
   editor,
   nodeKey,
@@ -189,7 +174,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// an onBail hook under the patch policy — the hook would never be called
 runUploadIntent({
   editor,
   nodeKey,
@@ -201,7 +185,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// an emptiness predicate under the patch policy — patch applies unconditionally
 runUploadIntent({
   editor,
   nodeKey,
@@ -213,7 +196,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// pre-extracted metadata alongside an extractor — one of the two would be ignored
 runUploadIntent({
   editor,
   nodeKey,
@@ -281,8 +263,6 @@ runUploadIntent({
   patch: () => {},
 })
 
-// the inferred meta stays `undefined` when no metadata policy is supplied,
-// so a patch cannot pretend metadata exists
 runUploadIntent({
   editor,
   nodeKey,

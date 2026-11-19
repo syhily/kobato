@@ -26,17 +26,10 @@ export function domainStatus(error: DomainError): number {
   return DOMAIN_STATUS[error.code]
 }
 
-/**
- * One structured issue: either a descriptor (transports localize it) or raw
- * text (rendered verbatim). `code`/`path` let API consumers map the issue back
- * to a field.
- */
 export type DomainErrorIssue =
   | { message: string; path?: string[]; code?: string }
   | (ErrorMessageDescriptor & { path?: string[]; code?: string })
 
-// Generic fallback descriptors: English text for logs + typed ids for the
-// transports. Per-domain errors pass their own descriptor.
 const DEFAULT_DESCRIPTORS = {
   BAD_REQUEST: { messageKey: 'error.api.badRequest', fallbackMessage: 'Invalid request parameters.' },
   UNAUTHORIZED: { messageKey: 'error.api.unauthorized', fallbackMessage: 'Sign in to continue.' },
@@ -50,11 +43,6 @@ const DEFAULT_DESCRIPTORS = {
   INTERNAL: { messageKey: 'error.api.internal', fallbackMessage: 'Internal server error' },
 } as const satisfies Record<DomainErrorCode, ErrorMessageDescriptor>
 
-/**
- * `message` stays the log/technical fallback: pass a descriptor to state the
- * user-facing copy (translated at the transport boundary), or a raw string
- * (rendered unchanged).
- */
 export class DomainError extends Error {
   readonly code: DomainErrorCode
   readonly issues?: DomainErrorIssue[]
@@ -127,11 +115,6 @@ export class ActionFailure extends Error {
   }
 }
 
-/**
- * The generic transport errors (middleware gates, strict-patch/Zod boundaries).
- * Descriptors, not prose: the Hono/oRPC boundaries localize them per request.
- * Per-domain copy belongs in its own module as a typed descriptor.
- */
 export const ErrorMessages = {
   FORBIDDEN: {
     messageKey: 'error.api.forbidden',

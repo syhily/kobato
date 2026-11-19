@@ -1,13 +1,3 @@
-/**
- * The Pintura session — the headless module owning the editor's third-party image-editor
- * lifecycle: the asset loader (dynamic import + CSS link choreography behind DOM ports, on
- * the tracked-request guard so a jsUrl change mid-load never lets the stale import flip the
- * flag for the new URL; the CSS line is callback-driven, not a promise, and keeps the
- * explicit guard), `buildPinturaOptions`, and the close gate. `usePinturaEditor` is the
- * thin adapter. `resolvePinturaImportUrl` / `bustImageCache` take a base URL so RELATIVE
- * srcs resolve instead of throwing.
- */
-
 import { createRequestTrack } from '@kobato/inkling-internal/services/request-track'
 import { runTrackedRequest } from '@kobato/inkling-internal/services/service-machine'
 import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'

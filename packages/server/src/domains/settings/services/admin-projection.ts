@@ -25,10 +25,6 @@ const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   backup: backupLoaderShapeSchema,
 }
 
-/**
- * Read a bundle slot that must be populated — a null here means the snapshot is broken,
- * surfaced as INTERNAL instead of an untyped property-access crash.
- */
 function requireBundleSection<K extends keyof BlogSettingsBundle>(
   bundle: BlogSettingsBundle,
   key: K,
@@ -40,10 +36,6 @@ function requireBundleSection<K extends keyof BlogSettingsBundle>(
   return value
 }
 
-/**
- * Project a fresh-bundle section into the admin display shape the settings cards expect;
- * the update endpoint returns this so the client adopts the save response as its baseline.
- */
 export function projectSectionForAdmin(
   section: SettingsSection,
   bundle: BlogSettingsBundle,
@@ -69,8 +61,6 @@ export function projectSectionForAdmin(
   const schema = SECTION_OUTPUT_SCHEMAS[section] ?? SECTION_REGISTRY[section].schema
   const result = schema.safeParse(projected)
   if (!result.success) {
-    // Technical invariant failure: keep the message English and resolve a
-    // typed issue message to its English fallback (never a raw catalog id).
     const first = result.error.issues[0]
     const issueText = first === undefined ? '' : messageDescriptor(first.message).fallbackMessage
     throw new DomainError(

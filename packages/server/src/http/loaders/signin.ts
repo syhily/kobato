@@ -11,8 +11,6 @@ import { getRequestContext, type RequestContext } from '@kobato/server/http/requ
 import { safeRedirectPath } from '@kobato/utils/safe-url.ts'
 import { data, redirect } from 'react-router'
 
-// Only these URL actions name a GET view; any other action is a POST
-// handler — treating those as views would unmount the login form on revalidation.
 const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])
 
 /**
@@ -50,9 +48,6 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
     throw redirect(redirectTo)
   }
 
-  // Surface token errors on the loader so the UI short-circuits before a
-  // new password is typed; `peekToken` is read-only — the action consumes it.
-  // Server translates: the descriptor resolves for this request's locale.
   const invalidToken = authFlowError('auth.signin.error.invalidToken')
   const invalidTokenText = authFlowMessage(invalidToken.message, invalidToken.descriptor, rc.localization.locale)
   let tokenError: string | null = null
@@ -72,9 +67,6 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
     }
   }
 
-  // Magic-link landing: same peek-then-confirm pattern — the GET only
-  // validates the token (mail scanners must not consume it); the POST
-  // from the confirm form consumes it.
   let magicToken: string | null = null
   if (action === 'magiclink') {
     const rawToken = url.searchParams.get('token')
@@ -92,9 +84,6 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
 
   const otpState = readLivePendingOtp(session)
   if (otpState.expired) {
-    // The expired pending entry was just cleared from the session — mark
-    // dirty and let the middleware commit, instead of carrying an explicit
-    // Set-Cookie on the redirect.
     rc.markSessionDirty()
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`)
   }

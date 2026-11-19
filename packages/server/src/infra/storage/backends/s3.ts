@@ -83,10 +83,6 @@ function fingerprintFor(storage: S3StorageConfig): string {
   })
 }
 
-/**
- * Resolve the live S3 client + bucket; throws 503 when uploads are disabled (unless
- * `requireEnabled: false`) or credentials are half-configured.
- */
 async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise<S3StorageContext> {
   const settings = requireBlogSettingsSection('assets')
   const storage = settings.storage
@@ -176,15 +172,12 @@ function parseS3Contents(contents: _Object[] | undefined): StoredObjectMeta[] {
   return objects
 }
 
-/** Normalized not-found predicate: `NoSuchKey`, `NotFound`, or a bare 404. */
 function isS3NotFoundError(error: unknown): boolean {
   const name = unsafeCast<{ name?: string }>(error).name
   const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
   return name === 'NoSuchKey' || name === 'NotFound' || statusCode === 404
 }
 
-/** `HeadObject` existence check. Any failure — 404 or transient — counts as absent:
- *  the subsequent PUT is idempotent, so a mid-migration blip is safe. */
 async function objectExists(ctx: S3StorageContext, key: string): Promise<boolean> {
   const sdk = await getAwsSdk()
   try {
@@ -208,9 +201,6 @@ async function listObjects(
   const maxKeys = opts?.maxKeys ?? 10_000
   const objects: StoredObjectMeta[] = []
   let continuationToken: string | undefined
-  // S3 caps a page at 1000 keys; `MaxKeys` is sent per page (never more than
-  // the caller's remaining budget) so `list(prefix, { maxKeys })` is honored
-  // exactly and batched callers (migration) get the page size they asked for.
   do {
     const response = await ctx.client.send(
       new sdk.ListObjectsV2Command({
@@ -244,7 +234,6 @@ async function getObjectBuffer(ctx: S3StorageContext, key: string, maxSize = MAX
   const sdk = await getAwsSdk()
   const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
   if (response.Body === undefined) {
-    // An empty body is indistinguishable from a miss — surface the seam's not-found.
     throw new StorageObjectNotFound(key)
   }
   const contentLength = response.ContentLength
@@ -318,10 +307,6 @@ function isS3ConfigComplete(storage: S3StorageConfig): boolean {
   )
 }
 
-/**
- * Backend bound to one context. Shared by the settings-driven singleton (`s3Backend`)
- * and the migration's explicit-config backend (`createS3BackendFromConfig`).
- */
 function makeS3Backend(
   resolveContext: (options?: { requireEnabled?: boolean }) => Promise<S3StorageContext>,
 ): StorageBackend {
@@ -334,7 +319,6 @@ function makeS3Backend(
     },
 
     async put(input: PutObjectInput): Promise<StoredObjectMeta> {
-      // The visibility → cache-control mapping lives in `key-policy` and nowhere else.
       const cacheControl = input.cacheControl ?? cacheControlForVisibility(input.visibility ?? 'public')
       const ctx = await resolveContext()
       await putObject(ctx, input.key, input.body, input.contentType, cacheControl)
@@ -342,7 +326,6 @@ function makeS3Backend(
     },
 
     async putStream(input: PutStreamInput): Promise<StoredObjectMeta> {
-      // A Transform meter counts bytes (backpressure-safe) — the exact size is the backup's Content-Length.
       let size = 0
       const meter = new Transform({
         transform(chunk: Buffer, _encoding, callback) {
@@ -356,8 +339,6 @@ function makeS3Backend(
         input.key,
         input.body.pipe(meter),
         input.contentType,
-        // Verbatim cache-control wins (migration copies); otherwise the
-        // visibility-derived default, private when no visibility is given.
         input.cacheControl ?? cacheControlForVisibility(input.visibility ?? 'private'),
       )
       return { key: input.key, size, lastModified: new Date() }
@@ -389,7 +370,6 @@ function makeS3Backend(
 
     async deletePrefix(prefix: string): Promise<void> {
       const ctx = await resolveContext({ requireEnabled: false })
-      // No real directories: delete every object under the prefix (paginated).
       const objects = await listObjects(ctx, prefix)
       if (objects.length > 0) {
         await deleteObjects(
@@ -397,7 +377,6 @@ function makeS3Backend(
           objects.map((o) => o.key),
         )
       }
-      // Some services persist a folder-marker object at the prefix — best-effort delete it (missing marker is not an error).
       if (prefix.endsWith('/')) {
         try {
           await deleteObject(ctx, prefix)
@@ -421,11 +400,6 @@ export const s3Backend: StorageBackend = {
   ...makeS3Backend((options) => resolveS3Context(options)),
 }
 
-/**
- * S3 backend bound to an explicit config instead of the live settings — used by the storage
- * migration to reach the TARGET bucket while settings still point at the source. Its client
- * is created once, lazily, and never touches the settings-driven cache.
- */
 export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBackend {
   let ctxPromise: Promise<S3StorageContext> | undefined
   const resolveContext = (): Promise<S3StorageContext> => {
@@ -436,8 +410,6 @@ export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBack
     return ctxPromise
   }
   const backend = makeS3Backend(resolveContext)
-  // `isAvailable` on the settings-driven singleton reads live settings; an
-  // explicit-config backend is available iff the config itself is complete.
   return {
     ...backend,
     isAvailable(): boolean {
@@ -462,7 +434,6 @@ export async function validateS3Config(storage: S3StorageConfig): Promise<S3Vali
   } catch (error) {
     const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
     if (statusCode === 403) {
-      // Some providers deny HeadBucket while ListObjects works — probe once more.
       try {
         await client.send(new sdk.ListObjectsV2Command({ Bucket: storage.bucket, MaxKeys: 1 }))
         return { ok: true }
@@ -474,13 +445,10 @@ export async function validateS3Config(storage: S3StorageConfig): Promise<S3Vali
   } finally {
     try {
       client.destroy()
-    } catch {
-      // Best-effort cleanup — a half-connected client may fail to destroy.
-    }
+    } catch {}
   }
 }
 
-/** Exported for unit tests — the error→message classification table. */
 export function classifyS3ValidationError(error: unknown): ErrorMessageDescriptor {
   const name = unsafeCast<{ name?: string }>(error).name ?? ''
   const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
@@ -508,9 +476,6 @@ export function classifyS3ValidationError(error: unknown): ErrorMessageDescripto
   ) {
     return descriptorFor('storage.error.endpointUnreachable')
   }
-  // The raw SDK error can echo the endpoint and request details — log it, answer with a fixed string.
   log.warn('S3 connectivity probe failed', { error })
   return descriptorFor('storage.error.connectivityFailed')
 }
-
-// URL resolution lives in `public-url.ts` so URL-only SSR paths never load the AWS SDK.

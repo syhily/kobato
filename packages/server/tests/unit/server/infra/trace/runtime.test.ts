@@ -91,7 +91,6 @@ async function start(
   return startTraceRuntime({
     resolution: activeResolution(overrides),
     spanExporter: harness.exporter,
-    // Keep forceFlush/shutdown off the real OTLP network in unit tests.
     metricReader: new TestMetricReader(),
   })
 }

@@ -1,10 +1,3 @@
-/**
- * Typed drag-payload factories shared by the drag/drop specs. `DraggableInfo`
- * is a closed union (`CardDraggableInfo | ImageDraggableInfo`), so fixtures
- * are built through the real branch shape instead of casting a partial object
- * into the union. Specialized variants (an image CARD payload, a specific
- * dataset) stay local to their spec and override these defaults.
- */
 import type { CardDraggableInfo, ImageDraggableInfo } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
 export function cardDrag(overrides: Partial<CardDraggableInfo> = {}): CardDraggableInfo {

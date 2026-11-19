@@ -6,10 +6,6 @@ import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-// Router-level end-to-end against the REAL settings snapshot (the it harness
-// hydrates the default bundle: S3 enabled + complete) — no module mocks of
-// the storage registry. Only the local STORAGE_DIR is redirected to a temp
-// root so the streaming branch has real bytes to serve.
 const tmp = vi.hoisted(() => ({ root: '' }))
 
 vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
@@ -23,9 +19,6 @@ vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
 
 const { localStorageRouter } = await import('@kobato/server/http/resources/local-storage.ts')
 
-// The real route reads the perimeter-derived `requestContext` (locale for the
-// 503 branch); a direct `router.request` has no middleware chain, so mirror the
-// production perimeter with the canonical stub.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', makeRequestContext({ request: c.req.raw }))
@@ -97,11 +90,9 @@ describe('storage redirect — site-owned /storage/* URLs', () => {
     const atLimit = await app.request('/storage/images/a.jpg?w=4096&h=4096')
     expect(atLimit.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg!4096x4096')
 
-    // Out of range → no transform; the query string rides along untouched.
     const overLimit = await app.request('/storage/images/a.jpg?w=4097&h=4096')
     expect(overLimit.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?w=4097&h=4096')
 
-    // Leading zeros can't smuggle a zero dimension past the floor.
     const zero = await app.request('/storage/images/a.jpg?w=0000&h=4096')
     expect(zero.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?w=0000&h=4096')
   })
@@ -134,10 +125,6 @@ describe('storage redirect — site-owned /storage/* URLs', () => {
 
   it('re-encodes reserved characters of the decoded key for the Location header', async () => {
     withStorage({ urlTemplate: '' })
-    // The route decodes before the allowlist check; `?`, `#`, and space all pass
-    // it (no empty/dot segments under an allowlisted prefix), but raw in the
-    // Location they would truncate or break the CDN object URL — send them
-    // percent-encoded.
     const question = await app.request('/storage/images/a%3Fb.jpg?v=1')
     expect(question.status).toBe(302)
     expect(question.headers.get('Location')).toBe('https://assets.example.com/images/a%3Fb.jpg?v=1')
@@ -148,7 +135,6 @@ describe('storage redirect — site-owned /storage/* URLs', () => {
     const space = await app.request('/storage/images/a%20b.jpg')
     expect(space.headers.get('Location')).toBe('https://assets.example.com/images/a%20b.jpg')
 
-    // A literal `%` (decoded from `%25`) must not become a broken escape.
     const percent = await app.request('/storage/images/100%25.png')
     expect(percent.headers.get('Location')).toBe('https://assets.example.com/images/100%25.png')
   })

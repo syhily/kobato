@@ -72,18 +72,14 @@ export function triggerChunkReload(): void {
     }
     try {
       storage.setItem(RELOAD_GUARD_KEY, String(Date.now()))
-    } catch {
-      // ignore -- proceed without the guard rather than block recovery.
-    }
+    } catch {}
   }
 
   reloadStarted = true
   for (const listener of reloadListeners) {
     try {
       listener()
-    } catch {
-      // ignore -- a subscriber failure must not block recovery.
-    }
+    } catch {}
   }
 
   const reload = () => window.location.reload()

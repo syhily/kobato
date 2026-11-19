@@ -23,7 +23,6 @@ const PRESET_LABEL_IDS: Record<PresetKey, UiMessageId> = {
 }
 
 function shortDate(unixSec: number, options: { locale: AppLocale; timeZone: string }): string {
-  // Analytics dates stay BROWSER-zoned; the formatting locale follows the UI.
   return formatDate(new Date(unixSec * 1000), {
     locale: options.locale,
     timeZone: options.timeZone,
@@ -31,7 +30,6 @@ function shortDate(unixSec: number, options: { locale: AppLocale; timeZone: stri
   })
 }
 
-/** Local midnight at the start of the given day, in unix seconds. */
 function startOfDaySec(date: Date): number {
   return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 1000)
 }
@@ -53,7 +51,6 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
   const { locale, t } = useI18n()
   const timeZone = getClientTimezone()
   const [customOpen, setCustomOpen] = useState(false)
-  // Controlled calendar: feed the start-only first click back, or the second click resets.
   const [pending, setPending] = useState<DayPickerRange | undefined>(undefined)
   const customActive = preset === null
 
@@ -101,13 +98,11 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
         <PopoverContent align="start" className="w-auto p-0">
           <Calendar
             mode="range"
-            // react-day-picker v10 otherwise completes a same-day range on the first click.
             resetOnSelect
             selected={
               pending ??
               (customActive
-                ? // `endAt` is the exclusive next-midnight — back off 1ms so the last included day highlights.
-                  { from: new Date(range.startAt * 1000), to: new Date(range.endAt * 1000 - 1) }
+                ? { from: new Date(range.startAt * 1000), to: new Date(range.endAt * 1000 - 1) }
                 : undefined)
             }
             onSelect={(selected) => {
@@ -115,12 +110,10 @@ export function DateRangePicker({ preset, range, onSelect, onSelectRange, classN
                 setPending(selected)
                 return
               }
-              // Day granularity: exclusive endAt = local midnight after the last day.
               setPending(undefined)
               onSelectRange({ startAt: startOfDaySec(selected.from), endAt: startOfNextDaySec(selected.to) })
               setCustomOpen(false)
             }}
-            // Days are midnight-valued: `> now` keeps today selectable and disables tomorrow onward.
             disabled={(date) => date.getTime() > Date.now()}
             numberOfMonths={2}
           />

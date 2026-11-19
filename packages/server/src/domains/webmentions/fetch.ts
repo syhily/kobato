@@ -7,15 +7,10 @@ import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
 
 const log = getLogger('webmentions.fetch')
 
-// Inbox verification fetch budget: safe-fetch defaults plus a strict size
-// cap that never weakens under retry.
 export const MAX_SOURCE_BYTES = 1024 * 1024
 
-// Identify the receiver honestly in the User-Agent.
 const WEBMENTION_UA = 'Kobato Webmention Receiver (+https://yufan.me/webmention)'
 
-// Maps safe-fetch failures onto the endpoint's 400 DomainErrors; transient
-// failures carry retryable so the inbox queue re-arms instead of dropping.
 function sourceFetchError(result: SafeFetchFailure): DomainError {
   switch (result.reason) {
     case 'invalid-url':
@@ -49,7 +44,6 @@ function sourceFetchError(result: SafeFetchFailure): DomainError {
   }
 }
 
-/** Fetch the source document: SSRF-guarded per hop, capped at {@link MAX_SOURCE_BYTES}. */
 export async function fetchSourceHtml(sourceUrl: string): Promise<string> {
   const result = await safeFetch(sourceUrl, {
     maxBytes: MAX_SOURCE_BYTES,
@@ -59,7 +53,6 @@ export async function fetchSourceHtml(sourceUrl: string): Promise<string> {
   if (!result.ok) {
     throw sourceFetchError(result)
   }
-  // Permanent failure: a document declared as non-HTML will not become HTML on retry.
   if (!isHtmlContentType(result.response.headers.get('content-type'))) {
     throw new DomainError('BAD_REQUEST', 'source document is not HTML')
   }

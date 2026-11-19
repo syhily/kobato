@@ -1,14 +1,3 @@
-/**
- * Client-bundle architecture guard: fails when the client layers value-import a
- * node-only specifier. Routes may import `@kobato/server/*` for loaders only;
- * keep server imports out of render paths. New node-only deps go in
- * NODE_ONLY_PACKAGES.
- *
- * The same scan enforces the i18n bundle boundary: message catalogs and the
- * server translator are SERVER-ONLY value imports. The browser receives the
- * current locale's UI catalog as root-loader data (`content.bootstrap`), and
- * `@kobato/i18n/fallback-messages` is the single synchronous exception.
- */
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
@@ -87,7 +76,6 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
     name: 'jsdom',
     reason: 'server-side DOM for the sanitize engine and inkling headless projections',
-    // Swapped client-side to the browser engine by the `sanitize-html-engine-alias` plugin (vite.config.ts).
     allowedIn: ['packages/shared/sanitize/src/engine.node.ts'],
   },
   { name: 'shiki', reason: 'server-side syntax highlighting' },
@@ -339,13 +327,6 @@ describe('i18n bundle boundary', () => {
   })
 })
 
-// The four Kobato Inkling label tables are ~22 KB together and the comment
-// composer is a PUBLIC chunk. Workspace documents get ONLY the active locale's
-// table as root-loader data (`content.bootstrap` → `i18n.inklingLabels`); a
-// public document loads one table on demand through the client resolver's
-// per-locale dynamic imports. No other module may value-import a table or the
-// locale→table aggregator (static OR dynamic), so a stray import cannot pull
-// all four locales into a chunk.
 const INKLING_LABEL_RULE: ServerOnlyImportRule = {
   label: 'server-only Inkling label module',
 

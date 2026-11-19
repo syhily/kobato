@@ -13,7 +13,6 @@ function escapeXml(s: string): string {
 export async function buildSitemapXml(db: Database, settings: BlogSettingsBundle | null): Promise<string> {
   const [posts, pages] = await Promise.all([listSitemapPosts(db), listSitemapPages(db)])
 
-  // Array join so the response starts with `<?xml ... ?>` on the first byte.
   const website = requireBlogSettingsSection('siteIdentity', settings).website
   const lines: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>',

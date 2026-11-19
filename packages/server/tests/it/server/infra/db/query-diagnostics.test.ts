@@ -27,7 +27,6 @@ afterAll(() => {
 beforeEach(() => {
   __clearLogCaptureForTests()
   messages.length = 0
-  // Each case opts in (or not) from a clean slate.
   stopQueryDiagnostics()
 })
 
@@ -58,7 +57,6 @@ describe("'sqlite.db.query' diagnostics channel", () => {
   })
 
   it('stays silent without the explicit opt-in (the boot wiring is a vitest no-op)', () => {
-    // Simulates the db-lifecycle boot call: no options under vitest.
     startQueryDiagnostics()
 
     getTestDb().all(sql`SELECT ${'should-not-be-logged'} AS v`)

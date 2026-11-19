@@ -7,10 +7,6 @@ import { SettingsCombobox } from '@kobato/web-admin/ui/settings/shell/SettingsCo
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// Same merge contract as SettingsSwitch, mirrored on the GeneralForm timezone
-// card: the upstream handler keeps its null guard and item→value mapping, and
-// `save()` fires after it.
-
 interface ZoneItem {
   value: string
   label: string

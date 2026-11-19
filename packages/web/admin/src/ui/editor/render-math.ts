@@ -1,10 +1,3 @@
-// The `cardConfig.renderMath` adapter: inkling previews block and inline math
-// through this channel while editing; the persisted mathml/svg artifacts are
-// filled by the save pipeline, never written back. `orpc.admin.renders.math`
-// (server-side KaTeX) sits behind a 200ms trailing-edge debounce keyed by
-// (tex, display) — retyping coalesces, and concurrent callers on the same
-// formula share one round-trip.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { CardConfig } from '@kobato/inkling'
 
@@ -14,18 +7,13 @@ const MATH_RENDER_DEBOUNCE_MS = 200
 
 type MathRenderResult = { mathml?: string; error?: string }
 
-/** Resolves a wire error descriptor with the caller's active locale. */
 export type MathErrorResolver = (descriptor: ErrorMessageDescriptor) => string
 
-/** The caller's `useI18n().localizeMessage` seam, kept structural so this module stays ui-free. */
 export type MathErrorLocalizer = (
   value: string,
   params?: Record<string, string | number | boolean | null | undefined>,
 ) => string
 
-// Inkling accepts only a display string. `localizeMessage` passes an id it does
-// not know through unchanged; a raw catalog key must never reach the editor, so
-// that case shows the descriptor's English `fallbackMessage` instead.
 export function resolveMathError(descriptor: ErrorMessageDescriptor, localizeMessage: MathErrorLocalizer): string {
   const localized = localizeMessage(descriptor.messageKey, descriptor.params)
   return localized === descriptor.messageKey ? descriptor.fallbackMessage : localized
@@ -33,9 +21,7 @@ export function resolveMathError(descriptor: ErrorMessageDescriptor, localizeMes
 
 interface PendingMathRender {
   timer: ReturnType<typeof setTimeout>
-  /** The first caller's translated fallback; a coalesced retry keeps it. */
   fallbackMessage: string
-  /** The first caller's descriptor resolver; a coalesced retry keeps it. */
   resolveError: MathErrorResolver
   waiters: Array<(result: MathRenderResult) => void>
 }

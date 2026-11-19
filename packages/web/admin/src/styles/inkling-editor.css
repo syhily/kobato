@@ -1,31 +1,3 @@
-/*
- * Inkling page-editor surface styles. Imported ONLY by
- * `@kobato/web-admin/ui/editor/PageBodyEditor`, so only the editor route chunk carries
- * them. The package stylesheet is forced into the `inkling` layer, pinned
- * below `utilities` and above `base` by the `@layer` statement in
- * `admin.css`: inkling's scoped preflight would otherwise beat the layered
- * Tailwind utilities the host-card chrome renders with, and below `base` the
- * host preflight's padding/margin reset would win over inkling's own
- * utilities.
- *
- * Host rules are deliberately UNLAYERED. Inkling owns and compiles its own
- * `inkling` layer and utility scan in `@kobato/inkling/styles/index.css`.
- */
-
-/* Page editor canvas: a centered column at the public article width, sharing
-   one writing column with the title/slug strip above it (PageBodyEditor's
-   `header` slot), plus a 60vh bottom runway so caret-anchored menus near the
-   document end are never clipped. The selector pins the TOP-LEVEL canvas
-   only: nested card editors render their own `.inkling-lexical` wrapper, and
-   a descendant selector would hand each the canvas padding, the zoom and the
-   max-width.
-
-   `zoom: 2/3` normalizes inkling's 10px rem root to kobato's 15px root so rem
-   rules render pixel-identical to the demo; zoom is reflected in
-   getBoundingClientRect, so fixed-mode floating chrome keeps working, and
-   card menus un-scale parent-relative offsets through the anchored-popup
-   seam's `coordinateScale` so it never applies twice. The 740px article
-   width is divided by the zoom factor to keep the effective width. */
 .kobato-page-editor [data-kobato-editor-scroll] > .inkling-lexical {
   margin-inline: auto;
   width: 100%;
@@ -34,34 +6,16 @@
   zoom: 0.666667;
 }
 
-/* Design-token bridge. inkling declares --font-sans (Inter) and --font-serif
-   (Georgia) on `.inkling-lexical` itself, so these unlayered rules punch
-   through: --font-sans maps to the CJK-capable body chain, --font-serif
-   re-inherits the article serif consumed by the typeset-post preset (a
-   same-named var(--font-serif) would be cyclic). --inkling-accent-color is
-   the package's accent hook; --brand flips to its dark value under `.dark`.
-   Header/callout cards deliberately re-scope the hook to #fff and are left
-   untouched. */
 .kobato-page-editor .inkling-lexical {
   --inkling-accent-color: var(--brand);
   --font-sans: var(--font-body);
   --font-serif: inherit;
 }
 
-/* Spacing-scale bridge. Both compiles emit the same class names (px-2,
-   gap-3…); kobato's higher `utilities` layer resolves calc(var(--spacing) *
-   N) against Tailwind's 0.25rem base, ~6% tighter than the demo. Re-declaring
-   inkling's 0.4rem base on the canvas makes both compiles agree. Text and
-   shadow scales need no bridge; host cards restore the kobato base below. */
 .kobato-page-editor .inkling-lexical {
   --spacing: 0.4rem;
 }
 
-/* Radius-tier restore. kobato flattens rounded-sm/md/lg/xl onto the single
-   --radius alias, so wherever kobato's compile emits the same class the
-   higher `utilities` layer wins with the collapsed value. Re-pointing the
-   tiers restores inkling's scale inside the canvas; the host-card restore
-   block below puts kobato's flattened value back. */
 .kobato-page-editor .inkling-lexical .rounded-sm {
   border-radius: var(--radius-sm);
 }
@@ -75,13 +29,6 @@
   border-radius: var(--radius-xl);
 }
 
-/* Border-width bridge. Tailwind's border utilities are px literals in BOTH
-   compiles, so the zoom scales every canvas border to 2/3 of its demo size.
-   Re-authoring the tiers in rem lands them back at demo size (0.1rem = 1px at
-   the canvas's effective 10px base). The :not() guards keep these unlayered
-   rules from beating the zeroing variants, but kobato's utilities-layer
-   `border-t` outranks inkling's layered `first-of-type:border-t-0`, so the
-   zero variant must ALSO be re-asserted unlayered below. */
 .kobato-page-editor .inkling-lexical .border:not([class*='border-0']) {
   border-width: 0.1rem;
 }
@@ -100,10 +47,6 @@
 .kobato-page-editor .inkling-lexical .first-of-type\:border-t-0:first-of-type {
   border-top-width: 0;
 }
-/* Non-first carriers of the zero variant still need their border-t bridged to
-   rem: the :not() guard above skips them because the class substring is
-   present. The same double-compile demotion hits first-of-type:mt-0 on
-   InputList section headers. */
 .kobato-page-editor .inkling-lexical .first-of-type\:border-t-0:not(:first-of-type) {
   border-top-width: 0.1rem;
 }
@@ -111,15 +54,6 @@
   margin-top: 0;
 }
 
-/* Host-card token restore. Host cards (KOBATO_HOST_CARD_NODE_TYPES in
-   @kobato/lexical/node-whitelist) render kobato-chrome components whose
-   utilities resolve var(--text-*) / calc(var(--spacing) * N) at RUNTIME, and
-   inkling's scoped theme re-declares that environment with 10px-root values.
-   Re-declaring the kobato scale on the card chrome restores the public page's
-   token environment; a nested .inkling-lexical inside a host card re-declares
-   inkling's own scale, so the restore cannot leak into card-internal editors.
-   Radii mirror tailwind.css's flattening onto the base --radius. Pinned by
-   tests/unit/contract/editor-host-card-tokens.test.ts. */
 .kobato-page-editor [data-inkling-card='solution'],
 .kobato-page-editor [data-inkling-card='two-column'],
 .kobato-page-editor [data-inkling-card='music-player'] {
@@ -148,39 +82,19 @@
   --text-9xl--line-height: 1;
 }
 
-/* typeset zoom compensation: `zoom: 2/3` also scales rem, so the preset's rem
-   base would land at 18px × 2/3. typeset is otherwise all-em, so re-inflating
-   this one variable keeps the canvas pixel-identical to the rendered
-   article. */
 .kobato-page-editor .typeset-post {
   --typeset-size: calc(1.125rem / 0.666667);
 }
 
-/* Card figure rhythm. The preset's figure/figcaption flow margins are correct
-   for the rendered article, but inside a card the wrapper's transparent
-   border (CardWrapper) stops margin collapse, so the margin renders as dead
-   space inside the card frame and duplicates the caption chrome's padding.
-   Card spacing is owned by inkling's prose rules, so both are zeroed inside
-   card wrappers. */
 .kobato-page-editor [data-inkling-card] :where(figure, figcaption) {
   margin-block-start: 0;
 }
 
-/* The contentEditable root hardcodes the Inter stack; real text blocks are
-   re-fonted through the bridged vars above, so this only covers text outside
-   prose coverage. letter-spacing is zeroed: the rendered article body has
-   none, and letter-spacing on a contenteditable is a known Chromium IME
-   composition-caret drift factor. */
 .kobato-page-editor .inkling-lexical > * {
   font-family: var(--font-body);
   letter-spacing: normal;
 }
 
-/* inkling's EditorPlaceholder is `absolute top-0 left-0`, ignoring the canvas
-   padding; re-anchor it to the first paragraph's text origin (the class
-   arrives via `placeholderClassName` in `PageBodyEditor`). Font metrics
-   mirror the typeset-post canvas so the placeholder sits exactly on the
-   first typed glyph. */
 .kobato-page-editor .kobato-page-placeholder {
   top: 4rem;
   left: 1.5rem;
@@ -189,11 +103,6 @@
   line-height: 1.7778;
 }
 
-/* Writing-focus mode (FocusModePlugin puts the class on the contentEditable
-   root and the attribute on the selected top-level block). Editing inside a
-   card's nested editor focuses the whole card: the plugin walks the NATIVE
-   selection up to the root child. The `:has` guard keeps the canvas undimmed
-   until a block is selected. */
 .kobato-page-editor .inkling-focus-mode > * {
   transition: opacity 150ms ease;
 }

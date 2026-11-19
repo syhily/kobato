@@ -5,8 +5,6 @@ import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// auditLogRouter against the real engine (pagination, actor join, CSV, 10k export cap);
-// only mock: the Shiki highlighter (WASM boot, covered in unit tests).
 vi.mock('@kobato/server/domains/audit/highlight.ts', () => ({
   highlightAuditLogDetails: vi.fn((details: string | null) => Promise.resolve(details)),
 }))

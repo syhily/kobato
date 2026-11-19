@@ -5,11 +5,6 @@ import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-setting
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The whole-card commit is a SPARSE diff against the last acknowledged
-// baseline: /admin/settings cards share their section with sibling cards and
-// with other open tabs, so re-sending an untouched owned field would write this
-// tab's stale copy over a value someone else has since changed.
-
 const commit = vi.hoisted(() => vi.fn())
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 
@@ -79,7 +74,6 @@ function ListHarness({ source }: { source: ListSource }) {
       <button
         type="button"
         onClick={() => {
-          // Same effect as a drag reorder's `field.onChange(next)`.
           form.setValue('keywords', ['b', 'a'])
         }}
       >
@@ -107,9 +101,6 @@ describe('useSettingsCard — sparse whole-card commit', () => {
   })
 
   it('posts nothing when the form only differs before normalization', async () => {
-    // `fromState` trims (the general identity card does): the raw edit differs,
-    // the mapped value does not — nothing to persist, and the card must still
-    // be acknowledged as clean or every flush would retry forever.
     function TrimHarness({ source }: { source: PairSource }) {
       const { form, flushOnBlur } = useSettingsCard<PairSource, PairState>({
         section: 'general',
@@ -135,8 +126,6 @@ describe('useSettingsCard — sparse whole-card commit', () => {
   })
 
   it('never adopts response values it did not submit (no write-back of another tab’s field)', async () => {
-    // The server answers with the whole section: `other` was changed by another
-    // tab, `title` reflects this card's own save.
     commit.mockResolvedValueOnce({ ok: true, section: { title: 'Persisted', other: 'from-another-tab' } })
     render(wrapWithI18n(<PairHarness source={{ title: 'Hello', other: 'keep-me' }} results={[]} />))
     const title = screen.getByRole('textbox', { name: 'title' })
@@ -147,10 +136,7 @@ describe('useSettingsCard — sparse whole-card commit', () => {
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(commit.mock.calls[0]![1]).toEqual({ title: 'Persisted' })
 
-    // The response's `other` never entered the form …
     expect(other).toHaveValue('keep-me')
-    // … nor the baseline: a follow-up flush finds nothing to post instead of
-    // pushing this tab's stale `other` back to the server.
     fireEvent.blur(other)
     await new Promise((resolve) => setImmediate(resolve))
     expect(commit).toHaveBeenCalledOnce()
@@ -172,7 +158,6 @@ describe('useSettingsCard — sparse whole-card commit', () => {
     const title = screen.getByRole('textbox', { name: 'title' })
 
     fireEvent.click(screen.getByRole('button', { name: 'reorder' }))
-    // List buttons never save directly — the next blur/flush owns the commit.
     expect(commit).not.toHaveBeenCalled()
     fireEvent.blur(title)
 

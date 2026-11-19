@@ -5,8 +5,6 @@ import { tryParseUrl } from '@kobato/utils/safe-url.ts'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 
-/** Author line falls back to the source hostname when the source page
- *  exposed no author metadata. */
 function authorLabel(mention: PublicWebmentionWire): string {
   if (mention.authorName !== null && mention.authorName !== '') {
     return mention.authorName
@@ -37,7 +35,6 @@ function WebmentionCard({ mention }: { mention: PublicWebmentionWire }) {
   )
 }
 
-/** Compact author-row group for likes / reposts — no title or summary worth a card. */
 function CompactGroup({ label, mentions }: { label: string; mentions: PublicWebmentionWire[] }) {
   if (mentions.length === 0) {
     return null
@@ -61,10 +58,6 @@ function CompactGroup({ label, mentions }: { label: string; mentions: PublicWebm
   )
 }
 
-/**
- * Approved webmentions grouped by mf2 type: replies/mentions as
- * cards, likes/reposts as compact rows. Pure props, SSR-only.
- */
 export function WebmentionList({ mentions }: { mentions: PublicWebmentionWire[] }) {
   const { t } = useI18n()
   if (mentions.length === 0) {

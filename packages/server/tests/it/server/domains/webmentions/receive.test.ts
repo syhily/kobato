@@ -6,7 +6,6 @@ import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Notification seam only: when to notify; the email mapping is covered by its unit suite.
 vi.mock('@kobato/server/domains/webmentions/email.ts', () => ({
   sendNewWebmention: vi.fn(async () => ({ ok: true })),
 }))
@@ -59,7 +58,6 @@ describe('integration / receiveWebmention — source key convergence', () => {
       expect(res.row.sourceUrl).toBe('https://sender.example/post')
     }
     expect(await db.select().from(webmention)).toHaveLength(1)
-    // Only the first (inserted) mention notifies; the rest are pending refreshes.
     expect(vi.mocked(sendNewWebmention)).toHaveBeenCalledTimes(1)
   })
 
@@ -105,7 +103,6 @@ describe('integration / receiveWebmention — response type classification', () 
     const first = await receive('https://sender.example/post')
     expect(first.row.type).toBe('mention')
 
-    // The author re-sends as a reply — same pair, new classification.
     mockFetch.enqueue(
       'https://sender.example/post',
       htmlResponse(`<html><body><a class="u-in-reply-to" href="${TARGET}">reply</a></body></html>`, {
@@ -126,7 +123,6 @@ describe('integration / receiveWebmention — notification rules', () => {
     const first = await receive('https://sender.example/post')
     expect(first.outcome).toBe('inserted')
 
-    // Approve, then the source author edits and re-sends.
     const { setWebmentionStatus } = await import('@kobato/db/operations/webmention.ts')
     await setWebmentionStatus(db, first.row.id, 'approved')
 
@@ -158,7 +154,6 @@ describe('integration / receiveWebmention — notification rules', () => {
     const rows = await db.select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('rejected')
-    // One notification total — the initial insert; the rejected re-send is silent.
     expect(vi.mocked(sendNewWebmention)).toHaveBeenCalledTimes(1)
   })
 })

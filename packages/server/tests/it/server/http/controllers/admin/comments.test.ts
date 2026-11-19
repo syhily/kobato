@@ -16,9 +16,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// De-mocked controller coverage: projection/admin-query/moderate services run real
-// against seeded rows; moderation pinned by DB state + audit rows.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -27,7 +24,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE reset: a failed test must not strand rows in a torn-down batcher.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -48,7 +44,6 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
   return rows[0]!.id
 }
 
-// audit_log.actor_id is an FK: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   return seedUser({ name: 'Admin', email: `admin-${++seq}@example.com`, role: 'admin' })
 }
@@ -388,8 +383,6 @@ describe('adminCommentsRouter.searchAuthors', () => {
 })
 
 describe('adminCommentsRouter.approveCommentDeletion', () => {
-  // The state machine is pinned at the domain seam; here only the controller's error
-  // translation and audit plumbing run.
   it('approving soft-deletes the comment and audits comment_delete_request_approved', async () => {
     const admin = await seedAdmin()
     const uid = await seedUser()
@@ -473,7 +466,6 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
       ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
 
-    // The fence fired before any write: no soft-delete, no audit event.
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_request_approved')).toHaveLength(0)

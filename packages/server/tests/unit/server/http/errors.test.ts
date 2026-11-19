@@ -37,8 +37,6 @@ async function run(
   const app = new Hono()
   app.use('*', async (c, next) => {
     c.set('requestId' as never, 'req-1' as never)
-    // The real perimeter derives this before any route runs; the early-error
-    // unit shapes set it explicitly so the locale is deterministic.
     c.set(
       'requestContext' as never,
       makeRequestContext({
@@ -65,7 +63,6 @@ async function run(
   }
 }
 
-/** A Zod failure whose issue message is a catalog id (typed validation copy). */
 function zodErrorOf(): z.ZodError {
   const schema = z.object({ windowSeconds: z.coerce.number().min(60, rateLimitBucketMessages.windowMin) })
   try {
@@ -102,7 +99,6 @@ describe('server/http/errors — onErrorHandler', () => {
       fallbackMessage: 'invalid',
       message: 'invalid',
     })
-    // The server folds the localized issues into the top-level message.
     expect(res.body.error.message).toBe('bad：invalid')
   })
 

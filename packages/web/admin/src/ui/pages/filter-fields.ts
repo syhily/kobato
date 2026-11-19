@@ -16,14 +16,12 @@ export const PAGE_STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [
   { value: 'deleted', labelId: 'admin.content.status.deleted' },
 ]
 
-// No `visible` leg — the page table has no `visible` column.
 const PAGE_STATUS_FIELDS: Record<Exclude<PageStatusFilter, 'deleted'>, { published?: boolean }> = {
   all: {},
   published: { published: true },
   draft: { published: false },
 }
 
-/** Map the status filter onto the list API's deleted/published flags. */
 export function deriveStatusFields(status: PageStatusFilter): {
   deletedStatus: 'all' | 'deleted' | 'normal'
   published?: boolean
@@ -48,7 +46,6 @@ export function buildPageFilterFields(
       icon: ListChecksIcon,
       kind: 'options',
       options: PAGE_STATUS_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelId) })),
-      // The status projection carries a boolean; the string-typed patch is the common case and merges verbatim — the cast is exact.
       toQuery: (value) => unsafeCast<FilterQueryPatch>(deriveStatusFields(unsafeCast<PageStatusFilter>(value))),
     },
     {

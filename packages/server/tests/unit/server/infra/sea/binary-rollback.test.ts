@@ -5,10 +5,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Interface test for the rollback swap: real tmpdir, real fs — only the `<bak> --version`
-// probe is injected (tests never exec a real binary). Drives preflight → park → swap →
-// cleanup through `rollbackBinary`, never its internals.
-
 const RUNNING_BINARY = 'running-binary-v2-bad'
 const BACKUP_BINARY = 'backup-binary-v1-good'
 
@@ -64,14 +60,11 @@ describe('update/rollback', () => {
   it('refuses when the backup version is unreadable', async () => {
     await expect(rollbackBinary(options({ readBackupVersion: () => null }))).rejects.toThrow('版本不可读')
 
-    // Nothing was swapped: both files keep their original content.
     await expect(readFile(execPath, 'utf-8')).resolves.toBe(RUNNING_BINARY)
     await expect(readFile(bakPath, 'utf-8')).resolves.toBe(BACKUP_BINARY)
   })
 
   it('restores the running build when the backup rename fails mid-swap', async () => {
-    // The probe deletes the backup, so the park succeeds but the swap
-    // rename hits ENOENT — the parked build must be moved back.
     await expect(
       rollbackBinary(
         options({

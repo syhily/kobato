@@ -42,16 +42,10 @@ export const assertTransform = function (
   const beforeState = editor.parseEditorState(serializedBefore)
   editor.setEditorState(beforeState)
 
-  // setEditorState does not trigger transforms as expected, so register them
-  // here; they then run as they are registered
   registerTransforms(editor)
 
-  // trigger a discrete update so the comparison sees the finalised editor
-  // state: transforms get batched and run "async"
   editor.update(() => {}, { discrete: true })
 
-  // Normalize through the persisted form: Lexical 0.51+ schema-driven export
-  // leaves undefined-valued keys on the plain object, which JSON.stringify drops.
   const afterState = JSON.parse(JSON.stringify(editor.getEditorState().toJSON())) as unknown
 
   // Compare semantics, not key-level byte shape: the expected fixture round-

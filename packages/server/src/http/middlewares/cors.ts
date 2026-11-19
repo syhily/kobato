@@ -4,8 +4,6 @@ import type { MiddlewareHandler } from 'hono'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { cors } from 'hono/cors'
 
-// CORS from `security` settings, read live. No-op when disabled or pre-install; when
-// enabled only listed origins get headers — never reflect the origin with credentials on.
 export function corsMiddleware(): MiddlewareHandler<Env> {
   const handler = cors({
     origin: (origin) => {

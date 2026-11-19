@@ -1,21 +1,3 @@
-/**
- * Directory-convention guard — pins the layout rules documented in
- * `packages/server/AGENTS.md`, `packages/web/AGENTS.md`,
- * `packages/web/admin/src/ui/AGENTS.md`, `packages/inkling/AGENTS.md`, and
- * `packages/ui/AGENTS.md`.
- *
- * These are the structural rules that a rename or a new file can silently
- * break; behavior is covered by the other arch guards. Four groups:
- *
- *  a. module naming — hooks are `use-kebab-case`, controller files end in
- *     `.controller.ts`, no doubled directory segment anywhere in `src/`;
- *  b. layer placement — UI `components/` never exports a hook, settings section
- *     directories own their view/form file, the server `http/request` trio stays
- *     the only `utils/` drawer;
- *  c. test-tree layout — `tests/utils/` holds helpers only;
- *  d. domain naming — the admin UI directory set and the `@kobato/api` admin
- *     route prefix table match the canonical domain names exactly.
- */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'

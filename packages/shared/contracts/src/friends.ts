@@ -17,11 +17,6 @@ export const adminFriendDto = z.object({
 })
 export type AdminFriendDto = z.infer<typeof adminFriendDto>
 
-// Admin friends wire inputs — the single Zod source the `@kobato/api` friends
-// contract composes and the server validates against.
-
-// Trim; blank or null → `undefined` so optional fields never store ''. Null
-// stays accepted — the admin wire forwards the DTO's nullable columns verbatim.
 const optionalText = (max: number) =>
   z
     .string()
@@ -36,7 +31,6 @@ export const listFriendsSchema = z.object({
     .union([z.boolean(), z.enum(['true', 'false']).transform((v) => v === 'true')])
     .optional()
     .default(false),
-  // Exact match; omit for the classic includeHidden behavior.
   visible: z.boolean().optional(),
   offset: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -49,7 +43,6 @@ export const friendIdSchema = z.object({
 export type FriendIdInput = z.infer<typeof friendIdSchema>
 
 export const upsertFriendSchema = z.object({
-  // Present = update, absent = create; stringified bigint matches the admin wire.
   id: z.string().min(1).optional(),
   website: z.string().trim().min(1).max(80),
   description: optionalText(999),
@@ -79,23 +72,14 @@ export type AdminFriendsListOutput = z.infer<typeof adminFriendsListOutputDto>
 export const adminFriendUpsertOutputDto = z.object({ friend: adminFriendDto })
 export type AdminFriendUpsertOutput = z.infer<typeof adminFriendUpsertOutputDto>
 
-// ---------------------------------------------------------------------------
-// Public `friends.apply` surface — the single Zod source the `@kobato/api`
-// friends contract composes.
-// ---------------------------------------------------------------------------
-
 const friendApplyHoneypot = honeypotField('contact')
 
-// Optional http(s) URL; blank → undefined, mirroring `upsertFriendSchema`.
 const optionalHttpUrl = () =>
   z
     .union([z.url().max(500).refine(isHttpUrl, { message: HTTP_URL_MESSAGE }), z.literal('')])
     .optional()
     .transform((value) => (value === undefined || value === '' ? undefined : value))
 
-// Public `friends.apply` schema. URLs must be http(s) — anonymous write, a
-// `javascript:` homepage must never reach the pending queue. Honeypot is
-// named `contact`, distinct from the comment form's `subtitle`.
 export const applyFriendSchema = z
   .object({
     website: z.string().trim().min(1).max(80),
@@ -103,7 +87,6 @@ export const applyFriendSchema = z
     description: optionalText(999),
     poster: optionalHttpUrl(),
     rssUrl: optionalHttpUrl(),
-    /** Leave blank — used for bot filtering only; stripped before `applyFriend`. */
     contact: friendApplyHoneypot.schema,
   })
   .superRefine(friendApplyHoneypot.refine)

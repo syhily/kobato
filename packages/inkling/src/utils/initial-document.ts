@@ -2,15 +2,6 @@ import type { InitialEditorStateType, SerializedEditorState, SerializedParagraph
 
 import { $createParagraphNode, $getRoot } from 'lexical'
 
-// The minimal valid Inkling document exists in two payload dialects:
-// - `MINIMAL_DOCUMENT` — the full dialect, exactly what a live editor's `editorState.toJSON()`
-//   produces for an empty document (`textFormat: 0` and `textStyle: ''` present), so an empty
-//   HTML import is indistinguishable from a real empty-editor export.
-// - `MINIMAL_DOCUMENT_LEGACY_PAYLOAD` — the legacy dialect, without `textFormat`/`textStyle`;
-//   bootstrap/repair feeds it straight into an editor.
-// `SerializedParagraphNode` declares those fields required, but `ParagraphNode.importJSON`
-// treats them as optional, so both dialects parse to equivalent editor states.
-
 const FULL_EMPTY_PARAGRAPH: SerializedParagraphNode = {
   children: [],
   direction: null,
@@ -54,13 +45,6 @@ export const MINIMAL_DOCUMENT_LEGACY_PAYLOAD = {
     version: 1,
   },
 }
-
-/*
- * The two HTML-string → editor-content paths normalize differently on purpose: the public
- * `htmlToLexical` import runs on a one-shot headless editor with `registerDefaultTransforms`,
- * while nested editors (`generateEditorState`) register none — a node transform on a
- * long-lived editor persists and would re-run on every later edit, not just the initial fill.
- */
 
 function hasRootChildren(value: unknown): value is { root: { children: unknown[] } } {
   if (typeof value !== 'object' || value === null || !('root' in value)) {

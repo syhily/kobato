@@ -70,7 +70,6 @@ describe('integration / admin posts', () => {
     )
     const created = await parseRpcJson<{ post: { id: string } }>(createRes)
 
-    // Omitted → the stored tag survives an unrelated meta save.
     const keepRes = await callRpc(
       '/admin/posts/upsertMeta',
       { id: created.post.id, title: 'Roundtrip renamed', summary: '', tags: [] },
@@ -79,7 +78,6 @@ describe('integration / admin posts', () => {
     const kept = await parseRpcJson<{ post: { contentLanguage: string | null } }>(keepRes)
     expect(kept.post.contentLanguage).toBe('ja')
 
-    // Explicit null → unset, back to inheriting the document language.
     const clearRes = await callRpc(
       '/admin/posts/upsertMeta',
       { id: created.post.id, title: 'Roundtrip renamed', summary: '', tags: [], contentLanguage: null },

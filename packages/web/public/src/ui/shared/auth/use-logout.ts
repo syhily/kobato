@@ -1,12 +1,6 @@
 import { useCallback } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
-/**
- * Logout is POST + CSRF only (a GET variant would let any cross-site <img>
- * or link prefetch silently sign the user out). POSTs the signin route's
- * `action=logout` branch with the root loader's CSRF token, then
- * hard-navigates so every client-side cache drops with the session.
- */
 export function useLogout(): (redirectTo: string) => Promise<void> {
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
   const csrfToken = rootData?.csrfToken

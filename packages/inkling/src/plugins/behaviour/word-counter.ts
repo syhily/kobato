@@ -141,15 +141,9 @@ export function createWordCounter({
 }: CreateWordCounterOptions) {
   if (onChange === undefined && onSelectionChange === undefined) {
     return {
-      attach() {
-        /* noop */
-      },
-      detach() {
-        /* noop */
-      },
-      setLanguage() {
-        /* noop */
-      },
+      attach: () => undefined,
+      detach: () => undefined,
+      setLanguage: () => undefined,
     }
   }
 
@@ -308,9 +302,6 @@ export function createWordCounter({
 
       const registrations: Array<() => void> = [
         editor.registerUpdateListener(({ dirtyElements, dirtyLeaves, prevEditorState, tags }) => {
-          // Selection-only changes commit with empty dirty maps; the
-          // selection listener must see them, so it is scheduled before the
-          // content-change guard.
           throttledSelectionCount?.()
 
           if (!throttledIncrementalCount && !throttledCount) {
@@ -325,9 +316,6 @@ export function createWordCounter({
             return
           }
 
-          // Nested editors don't receive top-level dirty maps, so fall back to a
-          // full recompute. The shared node count cache keeps subsequent top-level
-          // updates incremental.
           if (isNestedEditor(editor)) {
             pendingDirtyKeys.clear()
             throttledCount?.()

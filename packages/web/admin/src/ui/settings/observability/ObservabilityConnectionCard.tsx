@@ -30,7 +30,6 @@ interface ConnectionFormState {
 
 interface ObservabilityConnectionCardProps {
   observability: ObservabilitySettings
-  /** Last-4 mask from the loader — the stored password never reaches the form. */
   passwordMask: string | null
   status: ObservabilityStatusOutput | undefined
   onStatusInvalidated: () => void
@@ -49,14 +48,12 @@ export function ObservabilityConnectionCard({
   const { form, flush, flushOnBlur, settingGroupProps } = useSettingsCard<ObservabilitySettings, ConnectionFormState>({
     section: 'observability',
     source: observability,
-    // The stored secret never seeds the form — only the loader mask drives the display.
     toState: (source) => ({
       endpoint: source.observability.endpoint,
       organization: source.observability.organization,
       username: source.observability.username,
       password: '',
     }),
-    // Empty input omits the secret — the server keeps the stored password.
     fromState: (state) => ({
       observability: {
         endpoint: state.endpoint.trim(),
@@ -65,7 +62,6 @@ export function ObservabilityConnectionCard({
         ...secretFieldPatch(state.password, 'password'),
       },
     }),
-    // Any saved connection change can invalidate the verified fingerprint.
     onSaved: onStatusInvalidated,
   })
 
@@ -81,8 +77,6 @@ export function ObservabilityConnectionCard({
   const isTesting = testMutation.isPending
   const isBusy = isFlushing || isTesting
 
-  // The test reads SAVED settings only: flush this card first and skip the call
-  // when a dirty field cannot be committed (the failed save already surfaced).
   const runTest = useCallback(() => {
     if (isBusy) {
       return

@@ -5,10 +5,6 @@ import { act, renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The hydration twin of the inkling CodeBlock chrome: exported
-// `pre > code[data-code]` markup gets a wrapper + language label + copy
-// button injected after mount.
-
 const EXPORTED =
   '<pre><code class="language-typescript" data-language="typescript" data-code="const a = &lt;b&gt;;">' +
   '<span class="line"><span style="color:#111">const a = &lt;b&gt;;</span></span></code></pre>'
@@ -36,7 +32,6 @@ describe('useCodeCopyButtons', () => {
     expect(wrapper).not.toBeNull()
     expect(wrapper?.querySelector(':scope > .code-header')).not.toBeNull()
     expect(wrapper?.querySelector(':scope > pre')).not.toBeNull()
-    // LANGUAGE_MAP keys the shorthand ('ts'); the export's full name falls back to capitalization.
     expect(container.querySelector('.language-label')?.textContent).toBe('Typescript')
     const button = container.querySelector('button.copy-code')
     expect(button?.textContent).toBe('Copy')
@@ -106,7 +101,6 @@ describe('useCodeCopyButtons', () => {
     const { container, ref } = mountContainer(EXPORTED)
     ;(ref as { current: HTMLDivElement | null }).current = container
 
-    // The re-scan key intentionally carries no 'data-code' marker.
     renderHook(() => useCodeCopyButtons(ref, 'rescan-key'))
 
     expect(container.querySelector('.code-block-wrapper')).not.toBeNull()

@@ -4,13 +4,8 @@ import { BUCKET_META } from '@kobato/web-admin/ui/settings/rate-limit/constants.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Contract: the rate-limit bucket set stays in lock-step across defaults,
-// section schema, UI copy, and the infra limiter. Type-level parity of
-// `RateLimitSettings` is pinned at compile time in defaults.ts.
-
 function infraBucketNames(): string[] {
   const source = readFileSync('packages/server/src/infra/rate-limit.ts', 'utf8')
-  // Counter dimensions are built by the by* factories: byIp('bucket', ns) …
   const names = [...source.matchAll(/by(?:Ip|Email|UserId|AdminEmail)\('([A-Za-z]+)'/g)].map((match) => match[1])
   expect(names.length).toBeGreaterThan(0)
   return [...new Set(names)].sort()

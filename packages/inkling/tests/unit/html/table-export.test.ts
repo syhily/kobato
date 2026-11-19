@@ -1,11 +1,4 @@
 import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
-// Both HTML export paths render the table family: LIVE pins
-// `$convertToHtmlString` run against an editor configured like
-// InklingComposer (DEFAULT_NODES + defaultTheme), exactly as HtmlOutputPlugin
-// does; HEADLESS pins the headless HTML surface's default node set
-// (DEFAULT_HTML_NODES includes INKLING_TABLE_NODES) — the kobato server-side
-// rendering path. One serializer backs both, so each case pins one string
-// and asserts the two legs agree byte-exactly.
 import { describe, expect, it } from 'vitest'
 
 const text = (content: string, format = 0) => ({

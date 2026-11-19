@@ -13,9 +13,6 @@ import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-
 const API_VERSION = 'v2'
 export const GIF_SEARCH_DEBOUNCE_MS = 600
 const DEFAULT_COLUMN_COUNT = 4
-// Horizontal probing policy: the probe can hit spacing between gifs, so it
-// starts one third down the highlighted tile and keeps moving up 5px at a
-// time, giving up after ten retries to avoid an infinite loop.
 const HORIZONTAL_PROBE_STEP_PX = 5
 const HORIZONTAL_PROBE_RETRIES = 10
 
@@ -147,14 +144,6 @@ function probeHorizontalGif(
 const PREVENT_DEFAULT: GifBrowserEffect = { type: 'prevent-default' }
 const FOCUS_SEARCH: GifBrowserEffect = { type: 'focus-search' }
 
-/**
- * The keyboard-navigation machine as a pure transition: nav state plus a key
- * event (as data) in, next nav state plus effects out. Geometry is consulted
- * only for horizontal moves. The dispatch table preserves the selector's
- * behaviour exactly, including its quirks: focus-search never
- * clears the highlight, moving past the first/last valid gif does not wrap,
- * and Enter on a button is left to native activation.
- */
 export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometry: GifGeometry): GifKeyTransition {
   const { gifs, columns } = state
   const highlighted = state.highlightedId ? gifs.find((gif) => gif.id === state.highlightedId) : undefined
@@ -251,8 +240,6 @@ export function reduceGifKey(state: GifNavState, event: GifKeyEventData, geometr
       }
       return highlighted ? highlightNext() : stay()
     case 'ArrowLeft':
-      // On the search input, left/right move the text caret — the highlight
-      // (possibly hover-set) must not hijack them.
       if (event.target === 'input') {
         return stay()
       }
@@ -328,8 +315,6 @@ export function createGifBrowser({
   let isLazyLoading = false
   let error: string | null = null
 
-  // a newer search supersedes every in-flight request, so a slow response can never
-  // overwrite newer results (or resurrect cleared ones)
   const store = createSnapshotStore<GifBrowserSnapshot>({
     gifs,
     columns,
@@ -485,8 +470,6 @@ export function createGifBrowser({
 
     isLazyLoading = true
 
-    // pagination deliberately joins the current generation — a load-more is
-    // not a new search and must not supersede itself
     void runRequest(track.current(), loadedType, params)
   }
 

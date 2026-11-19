@@ -20,11 +20,6 @@ import {
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Pins the hand-rolled HR update listener, mounted with NO markdown
-// transformers so the listener is the only `---` → HR path. The
-// `editor.isComposing()` IME bail is not simulable in jsdom (no composition
-// events) and has no e2e coverage.
-
 function createTestEditor() {
   return createEditor({
     namespace: 'test',
@@ -58,11 +53,6 @@ describe('HorizontalRulePlugin shortcut listener', () => {
     document.body.innerHTML = ''
   })
 
-  // The listener bails unless the native selection anchor is a text node
-  // inside the root element; jsdom does not track the native caret, so mirror
-  // a browser by resolving the anchor from the last committed Lexical
-  // selection. Register BEFORE the plugin so the key is fresh when the
-  // plugin's listener runs on the same update.
   function trackNativeSelection() {
     let lastAnchorKey: string | null = null
     editor.registerUpdateListener(({ editorState }) => {

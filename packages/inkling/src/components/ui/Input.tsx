@@ -20,12 +20,8 @@ export function Input({
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const shouldFocusOnUpdate = React.useRef(autoFocus)
-  // keep the local state always a string so the input never switches between
-  // uncontrolled (undefined) and controlled on first edit
   const [localValue, setLocalValue] = React.useState(value ?? '')
 
-  // adjust state during render: mirror a changed controlled value prop into
-  // the local state (React re-renders immediately, before committing)
   const [prevValue, setPrevValue] = React.useState(value)
   if (prevValue !== value) {
     setPrevValue(value)
@@ -44,8 +40,6 @@ export function Input({
   )
 
   React.useEffect(() => {
-    // setting a value via state immediately after mounting results in React's
-    // autoFocus not working, so the input is focused manually
     if (shouldFocusOnUpdate.current) {
       const timeoutId = setTimeout(() => {
         if (inputRef.current) {

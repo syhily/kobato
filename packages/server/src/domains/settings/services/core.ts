@@ -64,30 +64,21 @@ export async function updateBlogSettingsSection(
   options?: SectionUpdateOptions,
 ): Promise<SectionUpdateResult> {
   const meta: SectionMeta = SECTION_REGISTRY[section]
-  // Strict key check before any DB work — unknown keys are a client bug; the
-  // assertion signature types the passing payload for the merge below.
   assertSectionPatchKeys(section, payload)
 
   if (section === 'assets' && options?.allowStorageConfigOverride !== true) {
-    // Lock + first-enable connectivity validation; async, so it runs before the sync transaction.
     await assertAssetsStoragePatchAllowed(db, payload, options?.isStorageMigrationActive)
   }
 
-  // Sync transaction; the snapshot refresh runs in the same macrotask, so no reader can interleave.
   db.transaction((tx) => {
-    // The stored row is the only honest write base; this single read also feeds
-    // the secret/branding preservation in `applySectionPatch`.
     const storedRow = findSettingByScope(tx, meta.scope) ?? null
     const base = resolveMergeBase(meta, storedRow)
     const merged = mergeSectionPatch(base, payload)
-    // The write path validates against the (optionally stricter) write
-    // schema; hydration and the merge base keep the lenient read schema.
     const parsed = sectionWriteSchema(section, meta).safeParse(merged)
     if (!parsed.success) {
       throw new DomainError('BAD_REQUEST', INVALID_SETTINGS_DESCRIPTOR, zodIssuesToWire(parsed.error.issues))
     }
     if (section === 'security') {
-      // Cannot fail — it only recovers the concrete SecuritySettings shape the generic `meta.schema` erases.
       const securityPayload = securitySection.schema.parse(parsed.data)
       if (securityPayload.passkey.enabled) {
         const current = getBlogSettingsBundleSync()
@@ -101,7 +92,6 @@ export async function updateBlogSettingsSection(
       }
     }
 
-    // Every section schema is a z.object, so the validated output IS a plain record — the generic type just cannot prove it.
     const validated = unsafeCast<Record<string, unknown>>(parsed.data)
     const nextRow = applySectionPatch(section, validated, storedRow)
 
@@ -116,7 +106,6 @@ export async function updateBlogSettingsSection(
     try {
       await handler()
     } catch (e: unknown) {
-      // The write already committed — report the handler failure as an explicit warning, not an error.
       log.error('Section change handler failed', { section, error: String(e) })
       warnings.push(descriptorFor('admin.settings.warnings.sectionChangeFailed'))
     }
@@ -125,19 +114,6 @@ export async function updateBlogSettingsSection(
   return { bundle, warnings }
 }
 
-/**
- * Guard for `assets` patches touching `storage.*`:
- * 1. A running storage migration owns the config — reject with CONFLICT
- *    (the probe is injected by the perimeter; see {@link SectionUpdateOptions}).
- * 2. Once S3 is enabled the config is locked — EXCEPT a patch that changes
- *    only `accessKeyId` / `secretAccessKey` / `urlTemplate` (credential
- *    rotation / CDN template tweaks); structural changes (endpoint, region,
- *    bucket, path-style, the toggle) go through the migration wizard
- *    (`/admin/settings` → 存储配置), not this pipeline.
- * 3. Every patch allowed through — first-time configuration / enablement AND
- *    a locked-state credential/template change — probes the merged config
- *    (HeadBucket) and rejects when it cannot connect.
- */
 async function assertAssetsStoragePatchAllowed(
   db: Database,
   payload: unknown,
@@ -165,8 +141,6 @@ async function assertAssetsStoragePatchAllowed(
     urlTemplate: typeof patch.urlTemplate === 'string' ? patch.urlTemplate : (current?.urlTemplate ?? ''),
   }
   if (current?.enabled === true) {
-    // Locked: only credentials and the URL template may move; every structural
-    // field must match the persisted config exactly.
     const structuralChange =
       merged.enabled !== current.enabled ||
       merged.endpoint !== current.endpoint ||
@@ -176,8 +150,6 @@ async function assertAssetsStoragePatchAllowed(
     if (structuralChange) {
       throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.assets.error.storageConfigLocked'))
     }
-    // An enabled config must stay complete — an exempt patch that empties a
-    // required field must not slip through unprobed.
     if (
       merged.endpoint.trim() === '' ||
       merged.bucket.trim() === '' ||
@@ -187,7 +159,6 @@ async function assertAssetsStoragePatchAllowed(
       throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.assets.error.storageConfigIncomplete'))
     }
   }
-  // Only probe a config that looks complete; incomplete patches fall through to schema validation.
   if (merged.endpoint.trim() === '' || merged.bucket.trim() === '' || merged.accessKeyId.trim() === '') {
     return
   }
@@ -203,7 +174,6 @@ function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<
     if (parsed.success && isRecord(parsed.data)) {
       return parsed.data
     }
-    // A schema-failing row is treated as absent — same leniency as hydrate.
     log.warn('Setting row failed schema validation; merging onto section defaults', { scope: meta.scope })
   }
   if (meta.defaults !== null) {

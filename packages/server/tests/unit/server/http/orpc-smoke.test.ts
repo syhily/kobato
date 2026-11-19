@@ -3,9 +3,6 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-// End-to-end smoke for the oRPC + Hono mount pattern, mirroring the
-// `os.$context<HandlerContext>().use(...)` shape of src/server/http/orpc-base.ts.
-
 interface Ctx {
   session: { get(key: 'user'): { id: string; role: 'admin' | 'author' | 'visitor' } | undefined }
 }
@@ -64,7 +61,6 @@ function makeCtx(role?: 'admin' | 'author' | 'visitor'): Ctx {
   }
 }
 
-// RPC wire format: { json: <data>, meta?: [] } envelopes, matching RPCLink's serialization.
 async function call(handler: RPCHandler<Ctx>, path: string, input: unknown, ctx: Ctx) {
   const url = `http://localhost/rpc${path}`
   const req = new Request(url, {
@@ -107,7 +103,6 @@ describe('oRPC smoke', () => {
   })
 
   it('admin procedure: 200 (RPC JSON) with z.void() output when admin', async () => {
-    // RPCHandler returns JSON envelopes even for z.void() outputs — 204 no-body is OpenAPI-only.
     const { matched, response } = await call(handler, '/admin/softDelete', { id: '5' }, makeCtx('admin'))
     expect(matched).toBe(true)
     expect(response?.status).toBe(200)

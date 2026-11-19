@@ -28,8 +28,6 @@ import { idFromString } from '@kobato/utils/id.ts'
 
 const impl = implementPublic(commentsPublicContract)
 
-// The comment body carries a whole Lexical state (≤10 MB), so the post rate
-// limit must ride the implementer — before the contract's input validation.
 const replyImpl = impl.use(commentPostRateLimit)
 
 const replyComment = replyImpl.replyComment.handler(async ({ input, context }) => {
@@ -64,7 +62,6 @@ const replyComment = replyImpl.replyComment.handler(async ({ input, context }) =
       const next = appendCommentToken(existing, input.page_key, token, ttl)
       responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
     } catch (err) {
-      // Token issuance failed — the comment is already persisted; don't fail the request.
       getLogger('comments.token').warn('comment token issuance failed', {
         commentId: comment.id,
         error: err instanceof Error ? err.message : String(err),
@@ -99,13 +96,6 @@ const getRaw = impl.getRaw.use(commentTokenCookie).handler(async ({ input, conte
   return { body: comment.body }
 })
 
-// Owner-authorized edit (comment token or session ownership). Runs the SAME
-// own-edit policy as `/comments/update-own`: in-grace edits rewrite in place,
-// out-of-grace edits re-enter the moderation queue, and the delete-request +
-// approved-replies fences apply. Moderator edits live on `/admin/comments/edit`.
-// The resource limiter rides the implementer (before input validation — the
-// body is a Lexical state); the token jar attaches after validation, exactly
-// where the original chain placed it.
 const edit = impl
   .use(resourceRateLimit)
   .edit.use(commentTokenCookie)

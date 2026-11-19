@@ -15,10 +15,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// list / update / delete run real; only true externals stay mocked:
-// search/add (provider network) and the storage registry (in-memory
-// backend; seeded rows default to driver 's3').
-
 vi.mock('@kobato/server/domains/music/services/search.ts', () => ({
   searchMusic: vi.fn(),
 }))
@@ -66,7 +62,6 @@ async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
   return row
 }
 
-// audit_log.actor_id references user.id: any audit-recording actor must be a real row.
 async function seedUser(role: 'admin' | 'author', name = 'User'): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -155,7 +150,6 @@ describe('adminMusicRouter.update', () => {
     )
     expect(res.music.name).toBe('Updated Song')
     expect(res.music.artist).toEqual(['Artist'])
-    // Omitted album/lyric fall back to '' and null in the row.
     const [row] = await db.select().from(music).where(eq(music.id, seeded.id))
     expect(row).toMatchObject({ name: 'Updated Song', artist: 'Artist', album: '', lyric: null })
 

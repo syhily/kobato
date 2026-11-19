@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-/** Response of POST /api/admin/backup/upload-restore — either the restore
- *  started, or the upload is an encrypted archive parked server-side,
- *  waiting for the follow-up decrypt call with the password. */
 export type UploadRestoreResponse = { accepted: true } | { encrypted: true; token: string }
 
 export type RestoreProgressStage =
@@ -14,8 +11,6 @@ export type RestoreProgressStage =
   | 'failed'
   | 'idle'
 
-/** GET /api/admin/backup/restore-progress payload — the merged staging +
- *  restore-machine view the UI polls while the server is still up. */
 export interface RestoreProgressDto {
   stage: RestoreProgressStage
   /** 0-100, or null when the stage total is unknown (extraction). */
@@ -23,16 +18,11 @@ export interface RestoreProgressDto {
   error?: string
 }
 
-// Admin backup wire — the single Zod source the `@kobato/api` backup contract
-// composes and the server validates against.
-
 export const backupFileDto = z.object({
   key: z.string(),
   fileName: z.string(),
   size: z.number(),
   lastModified: z.string(),
-  /** The archive is password-encrypted (`.enc` storage suffix) — restores
-   *  need the backup encryption password. */
   encrypted: z.boolean(),
 })
 export type BackupFileDto = z.infer<typeof backupFileDto>
@@ -51,9 +41,6 @@ export const adminBackupListOutputDto = z.object({
 })
 export type AdminBackupListOutput = z.infer<typeof adminBackupListOutputDto>
 
-// Optional per-backup password override; absent = the settings encryption
-// password. Same floor as the settings schema — a one-off password is never
-// stored, so a weak one only buys an unrestorable archive.
 export const adminBackupCreateInput = z
   .object({
     password: z.string().min(8, 'admin.settings.backup.error.encryptionPasswordTooShort').max(512).optional(),

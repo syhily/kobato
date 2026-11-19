@@ -1,7 +1,6 @@
 import { thumbHashToDataURL } from '@kobato/utils/thumbhash.ts'
 import { type RefObject, useEffect } from 'react'
 
-// In-process cache of decoded thumbhash data URLs — many images share decodes.
 const decodedUrlCache = new Map<string, string>()
 
 function decodeThumbhash(hash: string): string | undefined {
@@ -23,11 +22,6 @@ function decodeThumbhash(hash: string): string | undefined {
   }
 }
 
-// Exported body images carry their placeholder as a `data-thumbhash` attribute
-// (KobatoImageNode exportDOM); the hook paints the decoded blur as a background until the real
-// image loads, additive over the SSR `style="aspect-ratio:…"` placeholder.
-//
-// `bodyHtml` is the effect's re-scan key (rationale in useMusicPlayers).
 export function useThumbhashHydration(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   useEffect(() => {
     const container = containerRef.current
@@ -41,7 +35,6 @@ export function useThumbhashHydration(containerRef: RefObject<HTMLElement | null
       if (hash === null || hash === '') {
         continue
       }
-      // Already decoded from cache/network — no placeholder needed.
       if (img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0) {
         continue
       }

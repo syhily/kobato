@@ -84,7 +84,6 @@ describe('trace runtime lifecycle — event-loop observer failure', () => {
     expect(failed.enable).toHaveBeenCalledTimes(1)
     expect(failed.disable).toHaveBeenCalledTimes(1)
 
-    // Observer failure degrades to "no event-loop gauge", not "no metrics".
     counter(METRIC.httpServerRequests).add(1, {
       'http.request.method': 'GET',
       'http.route': '/',
@@ -216,7 +215,6 @@ describe('trace runtime lifecycle — stop cleanup isolation', () => {
     expect(isSqliteQueryTraceSubscribed()).toBe(false)
     expect(__getLifecycleContainer().hooks).toHaveLength(hookBaseline)
 
-    // Repeated stop/shutdown is a no-op; nothing throws into HMR disposal.
     await stopTraceRuntime()
     await handle.shutdown()
     expect(uninstall).toHaveBeenCalledTimes(1)
@@ -255,7 +253,6 @@ describe('trace runtime lifecycle — startup rollback', () => {
     expect(readerShutdown).toHaveBeenCalled()
     expect(__getLifecycleContainer().hooks).toHaveLength(hookBaseline)
 
-    // Idempotent inert handle after rollback.
     await handle.shutdown()
     await handle.forceFlush()
     expect(monitor.disable).toHaveBeenCalledTimes(1)

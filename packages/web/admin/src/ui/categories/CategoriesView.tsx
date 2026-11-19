@@ -26,10 +26,8 @@ export function CategoriesView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  // Full collection in the TanStack cache — mutations invalidate the namespace, no local mirror.
   const listOptions = orpcQuery.admin.categories.list.queryOptions({ input: {} })
   const listQuery = useQuery(listOptions)
-  // Memoized so the empty-fallback array identity is stable — `handleDragEnd` depends on `rows`.
   const rows = useMemo(() => listQuery.data?.categories ?? [], [listQuery.data?.categories])
   const total = listQuery.data?.total ?? 0
 
@@ -64,7 +62,6 @@ export function CategoriesView() {
   const reorderMutation = useMutation({
     ...orpcQuery.admin.categories.reorder.mutationOptions(),
     onMutate: ({ orderedIds }) => {
-      // Optimistic reorder rewrites each row's `sortOrder`; the mutation settles by invalidating the list.
       const byId = new Map(rows.map((row) => [row.id, row]))
       const categories: AdminCategoryDto[] = []
       for (const [index, id] of orderedIds.entries()) {

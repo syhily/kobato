@@ -16,8 +16,6 @@ import {
 import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared.ts'
 import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
 
-// Project through `CommentFormUser` — the reply form only needs the
-// admin/non-admin split, keeping future session fields out of the SSR DOM.
 function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | undefined {
   if (user === undefined) {
     return undefined

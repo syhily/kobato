@@ -32,23 +32,17 @@ function semanticJson(value: unknown): Json {
     }
     return out
   }
-  // Post-zod states carry only JSON primitives at the leaves.
   return unsafeCast<Json>(value)
 }
 
-/** Stable semantics-only fingerprint of a validated editor state. */
 export function lexicalEditorStateFingerprint(state: LexicalEditorState): string {
   return JSON.stringify(semanticJson(state))
 }
 
-/** Per-node variant for the body diff's LCS anchors: two nodes with the same
- * fingerprint render as 'unchanged' rows. Same normalization rules as the
- * whole-state fingerprint. */
 export function lexicalNodeFingerprint(node: LexicalNodeJson): string {
   return JSON.stringify(semanticJson(node))
 }
 
-/** Semantic equality for conflict/dirty checks over validated states. */
 export function areLexicalEditorStatesEquivalent(left: LexicalEditorState, right: LexicalEditorState): boolean {
   return lexicalEditorStateFingerprint(left) === lexicalEditorStateFingerprint(right)
 }

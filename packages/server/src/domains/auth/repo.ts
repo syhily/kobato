@@ -44,10 +44,6 @@ function truncateUserAgent(ua: string | null): string {
   return ua.length > USER_AGENT_MAX_LENGTH ? ua.slice(0, USER_AGENT_MAX_LENGTH) : ua
 }
 
-/**
- * Stamp login metadata on a session row; must run AFTER the row is committed
- * (the UPDATE is a no-op when the row is gone).
- */
 export async function recordSessionLogin(db: Database, input: RecordLoginInput): Promise<void> {
   const now = input.loginAt ?? new Date()
   await db
@@ -62,7 +58,6 @@ export async function recordSessionLogin(db: Database, input: RecordLoginInput):
     .where(eq(sessionTable.id, input.sid))
 }
 
-/** Fire-and-forget bump of `last_active_at`/`expires_at`; must stay off the request path. */
 export function recordSessionActivity(db: Database, sid: string): void {
   const now = new Date()
   const expiresAt = new Date(now.getTime() + resolveSessionMaxAge() * 1000)

@@ -1,7 +1,3 @@
-// The closed list of "branded" social network identifiers used by the `socials[]`
-// settings array (fixed header icons + admin editor menu). Shared: the server Zod
-// schema and the admin editor need the same list.
-
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 export const SOCIAL_NETWORKS = ['github', 'x', 'wechat', 'weibo', 'qq'] as const
@@ -9,15 +5,6 @@ export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number]
 
 export type SocialDisplayType = 'link' | 'qrcode'
 
-// Canonical per-platform metadata for the admin editor: menu label + fixed
-// display type, URL vs QR-code input choice, and the seeded user-visible name.
-// `linkPlaceholder` is a hint, not validation.
-//
-// Display chrome is UI MESSAGE IDS (`labelId`, `linkLabelId`) so the editor and
-// the navigation picker follow the admin locale. `brandName` is a proper noun for
-// server interpolations. `defaultName` is SEED CONTENT: it keeps the pre-i18n
-// strings verbatim so an existing row's stored name never changes with the UI
-// locale.
 export interface SocialNetworkMeta {
   network: SocialNetwork
   /** Editor/navigation label message id. */

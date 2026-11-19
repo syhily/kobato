@@ -1,9 +1,6 @@
 import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
 import { describe, expect, it } from 'vitest'
 
-// The single extraction point for transport facts: header names and the
-// per-request analytics event id live here, never at consumer call sites.
-
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 function request(headers: Record<string, string> = {}, url = 'https://example.com/posts/x'): Request {

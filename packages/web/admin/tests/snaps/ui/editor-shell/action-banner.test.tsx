@@ -2,93 +2,37 @@ import { renderInRouter } from '@kobato/test/render.tsx'
 import { ActionBanner } from '@kobato/web-admin/ui/editor-shell/ActionBanner.tsx'
 import { describe, expect, it } from 'vitest'
 
-// Post-save preview link; href must use the base path (/posts for posts, empty for pages).
-
 describe('ActionBanner', () => {
   it('renders /posts/slug?draft=true for a post draft', () => {
-    const html = renderInRouter(
-      <ActionBanner
-        kind="draft"
-        slug="hello"
-        basePath="/posts"
-        onClose={() => {
-          /* noop */
-        }}
-      />,
-    )
+    const html = renderInRouter(<ActionBanner kind="draft" slug="hello" basePath="/posts" onClose={() => {}} />)
     expect(html).toContain('href="/posts/hello?draft=true"')
   })
 
   it('renders /posts/slug for a published post', () => {
-    const html = renderInRouter(
-      <ActionBanner
-        kind="published"
-        slug="hello"
-        basePath="/posts"
-        onClose={() => {
-          /* noop */
-        }}
-      />,
-    )
+    const html = renderInRouter(<ActionBanner kind="published" slug="hello" basePath="/posts" onClose={() => {}} />)
     expect(html).toContain('href="/posts/hello"')
     expect(html).not.toContain('?draft=true')
   })
 
   it('renders /slug?draft=true for a page draft', () => {
-    const html = renderInRouter(
-      <ActionBanner
-        kind="draft"
-        slug="about"
-        basePath=""
-        onClose={() => {
-          /* noop */
-        }}
-      />,
-    )
+    const html = renderInRouter(<ActionBanner kind="draft" slug="about" basePath="" onClose={() => {}} />)
     expect(html).toContain('href="/about?draft=true"')
   })
 
   it('renders /slug for a published page', () => {
-    const html = renderInRouter(
-      <ActionBanner
-        kind="published"
-        slug="about"
-        basePath=""
-        onClose={() => {
-          /* noop */
-        }}
-      />,
-    )
+    const html = renderInRouter(<ActionBanner kind="published" slug="about" basePath="" onClose={() => {}} />)
     expect(html).toContain('href="/about"')
     expect(html).not.toContain('?draft=true')
   })
 
   it('shows draft-specific message and styling', () => {
-    const html = renderInRouter(
-      <ActionBanner
-        kind="draft"
-        slug="hello"
-        basePath="/posts"
-        onClose={() => {
-          /* noop */
-        }}
-      />,
-    )
+    const html = renderInRouter(<ActionBanner kind="draft" slug="hello" basePath="/posts" onClose={() => {}} />)
     expect(html).toContain('草稿已保存')
     expect(html).toContain('bg-status-warn-bg')
   })
 
   it('shows published-specific message and styling', () => {
-    const html = renderInRouter(
-      <ActionBanner
-        kind="published"
-        slug="hello"
-        basePath="/posts"
-        onClose={() => {
-          /* noop */
-        }}
-      />,
-    )
+    const html = renderInRouter(<ActionBanner kind="published" slug="hello" basePath="/posts" onClose={() => {}} />)
     expect(html).toContain('草稿已发布')
     expect(html).toContain('bg-status-success-bg')
   })

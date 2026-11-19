@@ -36,16 +36,6 @@ function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
   }
 }
 
-/**
- * The core composer variant: `nodes` is REQUIRED — the host names its node set
- * (MINIMAL_NODES, a subset over EDITOR_BASE_NODES, or its own composition instead
- * of defaulting to the full card set). `InklingComposer` wraps this one with
- * `nodes = [...DEFAULT_NODES]`.
- *
- * Keeping `nodes` mandatory is what lets the base stay free of the `DefaultNodes`
- * import — the static chain that drags every card's decorate tree into any
- * consumer of the composer.
- */
 export interface InklingComposerProps {
   initialEditorState?: InklingInitialEditorState
   nodes: CreateEditorArgs['nodes']
@@ -152,7 +142,6 @@ const InklingComposerBase = ({
         <InklingCollaborationContext.Provider value={collaborationValue}>
           <InklingUiPrefsContext.Provider value={uiPrefsValue}>
             <LexicalCollaboration>
-              {/* contentEditable={null}: the RichTextPlugin core entry owns the editable element. */}
               <LexicalExtensionComposer extension={rootExtension} contentEditable={null}>
                 {enableMultiplayer && createWebsocketProvider ? (
                   <CollaborationPlugin

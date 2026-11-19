@@ -1,6 +1,3 @@
-// Unreadable settings degrade the CDN match to `null` (origin-relative `/storage/…`
-// and `/images/…` srcs still resolve) — never fails the render.
-
 import type { Database } from '@kobato/db/database.ts'
 import type { ImageRow } from '@kobato/db/types.ts'
 import type { StorageDriver } from '@kobato/settings/types.ts'
@@ -54,13 +51,6 @@ export async function readManyMeta(db: Database, storagePaths: string[]): Promis
   return out
 }
 
-/**
- * Image src → storage key. The site-owned core (`/storage/<key>`, relative or
- * absolute) is `parseAssetUrl`; this matcher deliberately accepts MORE legacy
- * width around it: CDN-base-absolute keys, the bare `images/…`/`storage/…`
- * and `/images/…` forms, `!` transform suffixes, and any-origin absolutes
- * (domain moves). Embedded-font URLs never resolve to image rows.
- */
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (src.startsWith('http://') || src.startsWith('https://')) {
     if (publicBaseUrl !== null) {
@@ -80,9 +70,7 @@ export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | nul
       if (pathname.startsWith('/images/')) {
         return normalizeStoragePath(pathname.slice(1))
       }
-    } catch {
-      /* noop */
-    }
+    } catch {}
     return null
   }
   const parsed = parseAssetUrl(src)

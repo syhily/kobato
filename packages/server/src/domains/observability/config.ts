@@ -5,25 +5,9 @@ import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
 
 export type ObservabilitySettingsSlice = ObservabilitySettings['observability']
 
-/**
- * Bump when a fingerprinted field set changes: stored `verifiedFingerprint`
- * values then stop matching and the admin must re-test the connection.
- */
 const FINGERPRINT_VERSION = 'obs2'
 const FINGERPRINT_PURPOSE = 'observability'
 
-/**
- * CONNECTION fingerprint: exactly the parameters a connection test proves
- * (endpoint / organization / username / password). `verifiedFingerprint` stores
- * it and activation compares against it, so enabling tracing, log export, or
- * browser RUM — or changing a sampling rate — must NOT invalidate an
- * already-verified connection.
- *
- * Keyed with the deployment key (HMAC) because the value is exposed to the
- * admin UI: a plain sha256 over the password would be offline-guessable.
- * Rotating `security.encryptionKey` therefore invalidates stored verifications,
- * and the admin re-tests.
- */
 export function observabilityConnectionFingerprint(site: ObservabilitySettingsSlice): string {
   return fingerprint('connection', {
     endpoint: site.endpoint,
@@ -33,17 +17,6 @@ export function observabilityConnectionFingerprint(site: ObservabilitySettingsSl
   })
 }
 
-/**
- * RUNTIME fingerprint: every setting that changes the server or browser
- * pipeline. Used only for restart detection, so flipping a switch after
- * verification restarts the providers without losing the verification.
- *
- * `enabled` is excluded (the master switch is a separate gate; toggling it back
- * on must not force a re-test), `rumClientToken` because it only affects the
- * browser bootstrap, which re-reads the settings on the next document, and
- * `retentionDays` because it is a data policy reconciled by `retention.ts`, not
- * a pipeline change — it must not restart the providers.
- */
 export function observabilityRuntimeFingerprint(site: ObservabilitySettingsSlice): string {
   return fingerprint('runtime', {
     endpoint: site.endpoint,
@@ -56,8 +29,6 @@ export function observabilityRuntimeFingerprint(site: ObservabilitySettingsSlice
     frontend: {
       enabled: site.frontend.enabled,
       sessionSampleRate: site.frontend.sessionSampleRate,
-      // `clientIdentity` changes both the relay behavior and the browser
-      // bootstrap (consent gate), so it must hot-restart the runtime.
       clientIdentity: site.frontend.clientIdentity,
     },
   })
@@ -79,8 +50,6 @@ export function toTraceRuntimeSettings(site: ObservabilitySettingsSlice): TraceR
     enabled: site.enabled,
     endpoint: site.endpoint,
     organization: site.organization,
-    // Incomplete credentials stay empty so the resolver reports one invalid
-    // field instead of composing a header out of half a pair.
     authorizationHeader: basicAuthorizationHeader(site.username, site.password ?? '') ?? '',
     sampleRate: site.sampleRate,
     includeRedactedSql: site.includeRedactedSql,

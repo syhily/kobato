@@ -14,11 +14,6 @@ const MESSAGES = {
   'zh-TW': uiMessagesZhTW,
 }
 
-/**
- * A root `matches` slice carrying the loader's i18n payload. Route `meta()`
- * resolves static titles and section labels from HERE (never the settings
- * snapshot), so meta tests pass this instead of an empty matches array.
- */
 export function rootMatchesWithI18n(locale: AppLocale = 'zh-CN'): { id: string; loaderData: unknown }[] {
   return [{ id: 'root', loaderData: { i18n: { locale, messages: MESSAGES[locale] } } }]
 }
@@ -26,7 +21,6 @@ export function rootMatchesWithI18n(locale: AppLocale = 'zh-CN'): { id: string; 
 const intlCache = createIntlCache()
 const translators = new Map<AppLocale, I18nValue['t']>()
 
-/** Real ICU translator for component/unit tests (plural and select included). */
 export function makeTranslator(locale: AppLocale = 'zh-CN'): I18nValue['t'] {
   const cached = translators.get(locale)
   if (cached !== undefined) {

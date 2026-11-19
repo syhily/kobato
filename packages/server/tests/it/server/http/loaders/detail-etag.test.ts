@@ -22,17 +22,11 @@ import { and, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Detail representation ETags through the real oRPC read path: the tag fingerprints the COMPLETE
-// payload (post/page shell, body html, tags, sidebar, interaction critical) plus the published
-// revision and the request's localization/settings revision. Only an identical representation may
-// answer not-modified.
-
 const db = getTestDb()
 
 beforeEach(async () => {
-  // Fake ONLY the clock: the sidebar rotation bucket is the site calendar day.
   vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date('2026-11-08T04:00:00.000Z')) // 12:00 Asia/Shanghai
+  vi.setSystemTime(new Date('2026-11-08T04:00:00.000Z'))
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
@@ -217,7 +211,6 @@ describe('detail representation ETags', () => {
     }
 
     const first = await readPost('etag-post')
-    // The pool (7) overflows the widget count (5): the pick is a real sample.
     expect(first.payload?.sidebarPosts).toHaveLength(5)
 
     const repeated = await readPost('etag-post', { ifNoneMatch: first.etag! })
@@ -232,7 +225,7 @@ describe('detail representation ETags', () => {
     }
 
     const morning = await readPost('etag-post')
-    vi.setSystemTime(new Date('2026-11-08T13:00:00.000Z')) // still 11-08 in Shanghai
+    vi.setSystemTime(new Date('2026-11-08T13:00:00.000Z'))
     const evening = await readPost('etag-post')
     expect(sidebarPostSlugs(evening)).toEqual(sidebarPostSlugs(morning))
 
@@ -241,7 +234,6 @@ describe('detail representation ETags', () => {
       vi.setSystemTime(new Date(`2026-11-${day}T04:00:00.000Z`))
       rotations.add(sidebarPostSlugs(await readPost('etag-post')).join(','))
     }
-    // A new site calendar day is a new rotation bucket — and therefore a new ETag.
     expect(rotations.size).toBeGreaterThan(1)
   })
 
@@ -291,8 +283,6 @@ describe('detail representation ETags', () => {
     const tagRows = await db.insert(tagTable).values({ name: 'pinned', slug: 'pinned' }).returning({ id: tagTable.id })
     await db.insert(postTag).values({ postId, tagId: tagRows[0]!.id })
 
-    // Global settings keep recentPosts=5 / randomTags=10; the pinned bundle
-    // disables both — the payload must follow the pinned capture.
     const pinned = sidebarBundle({ recentPosts: 0, randomTags: 0 })
     const res = await callRpc(
       '/content/posts/bySlug',
@@ -327,13 +317,11 @@ describe('detail representation ETags', () => {
     const postId = await seedPost('etag-post')
     const base = await readPost('etag-post')
 
-    // Sidebar candidates are read by the controller on every request.
     await seedPost('sidebar-filler')
     const withSidebar = await readPost('etag-post', { ifNoneMatch: base.etag! })
     expect(withSidebar.kind).toBe('ok')
     expect(withSidebar.etag).not.toBe(base.etag)
 
-    // Interaction critical: likes + the opaque comment page key.
     const metricWhere = and(eq(metricTable.type, 'post'), eq(metricTable.ownerId, postId))
     await db.update(metricTable).set({ voteUp: 4 }).where(metricWhere)
     const withLikes = await readPost('etag-post', { ifNoneMatch: withSidebar.etag! })
@@ -400,12 +388,9 @@ describe('detail representation ETags', () => {
 
   it('post: a real settings save (new snapshot revision) invalidates the old ETag', async () => {
     await seedPost('etag-post')
-    // Both reads use the real lazy request capture, not an explicit projection.
     const first = await callRpc('/content/posts/bySlug', { slug: 'etag-post' }, makePublicCtx({ db }))
     const base = await parseRpcJson<DetailResult>(first)
 
-    // Site-name style settings never appear in the detail payload — the
-    // snapshot revision is what makes their change invalidate the tag.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Renamed site' },
@@ -446,8 +431,6 @@ describe('detail representation ETags', () => {
     expect(first.etag).toBeNull()
     expect(first.payload.draftMarker).toBe('draft')
 
-    // A draft body may differ from the published representation: any stored
-    // published tag must be ignored, and no new tag is stamped.
     const repeated = await readDraft('W/"stale"')
     expect(repeated.kind).toBe('ok')
     expect(repeated.etag).toBeNull()

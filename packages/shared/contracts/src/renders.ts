@@ -2,10 +2,6 @@ import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
 import { z } from 'zod'
 
-// Admin renders wire — the single Zod source the `@kobato/api` renders
-// contract composes and the server validates against. `math` is the editor's
-// KaTeX preview; the two batch cursors drive the dashboard rebuild buttons.
-
 export const adminRenderMathInput = z.object({
   tex: z.string().max(10_000),
   display: z.boolean().optional(),

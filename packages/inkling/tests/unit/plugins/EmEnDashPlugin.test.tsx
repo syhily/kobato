@@ -33,7 +33,6 @@ async function typeText(editor: ReturnType<typeof createTestEditor>, text: strin
     await act(async () => {
       editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, char)
     })
-    // Flush the listener-enqueued scan commit before the next keystroke.
     await tick()
   }
 }

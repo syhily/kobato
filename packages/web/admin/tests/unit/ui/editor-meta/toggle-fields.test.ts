@@ -5,9 +5,6 @@ import { PAGE_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/pages/page-meta.ts
 import { POST_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/posts/post-meta.ts'
 import { describe, expect, it } from 'vitest'
 
-// The editor toggle rows are neutral registries: ToggleOptionsCard resolves
-// `labelId` / `descriptionId` through `useI18n()`. Keeping ids here (instead of
-// Chinese prose) is what lets the same sidebar render four locales.
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
 const FIELDS = [...POST_META_TOGGLE_FIELDS, ...PAGE_META_TOGGLE_FIELDS]

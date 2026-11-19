@@ -40,11 +40,6 @@ export interface StreamWithMeta {
   cacheControl?: string | undefined
 }
 
-/**
- * Pluggable storage backend: S3 (`backends/s3.ts`) or local (`DATA_PATH/storage/`).
- * Dispatchers resolve one through the registry, never importing a backend directly.
- * Absent-object reads reject with `StorageObjectNotFound`; deletes are idempotent.
- */
 export interface StorageBackend {
   readonly driver: StorageDriver
   isAvailable(): boolean
@@ -68,10 +63,6 @@ export interface StorageBackend {
   list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]>
 }
 
-/**
- * The seam's typed not-found, thrown by both adapters when an object is absent.
- * Extends `ActionFailure(404)` so an escaped miss still maps to a 404.
- */
 export class StorageObjectNotFound extends ActionFailure {
   constructor(readonly key: string) {
     super(404, descriptorFor('storage.error.objectNotFound', { key }))
@@ -79,5 +70,4 @@ export class StorageObjectNotFound extends ActionFailure {
   }
 }
 
-/** Hard cap for buffered reads (images / music / branding). Backups stream past it. */
-export const MAX_OBJECT_BUFFER_SIZE = 100 * 1024 * 1024 // 100 MB
+export const MAX_OBJECT_BUFFER_SIZE = 100 * 1024 * 1024

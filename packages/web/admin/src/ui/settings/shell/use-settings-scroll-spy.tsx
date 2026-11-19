@@ -27,16 +27,10 @@ interface ScrollSpyContextData {
 }
 
 const ScrollSpyContext = createContext<ScrollSpyContextData>({
-  updateSection: () => {
-    /* noop */
-  },
-  updateNav: () => {
-    /* noop */
-  },
+  updateSection: () => undefined,
+  updateNav: () => undefined,
   currentSection: null,
-  scrollToSection: () => {
-    /* noop */
-  },
+  scrollToSection: () => undefined,
 })
 
 const SCROLL_MARGIN = 140

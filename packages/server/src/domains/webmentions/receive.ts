@@ -38,11 +38,6 @@ export async function verifyWebmentionSource(sourceUrl: string, targetCanonicalU
   return { meta: extractSourceMetadata(html), type: classifyWebmentionType(html, sourceUrl, targetCanonicalUrl) }
 }
 
-/**
- * Verify + store one mention as `pending` and notify: the dedupe key is the
- * normalized source from `requireSourceKey`; notification fires only on
- * `inserted`/`demoted`.
- */
 export async function receiveWebmention(db: Database, input: WebmentionReceiveInput): Promise<ReceiveWebmentionResult> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)
 

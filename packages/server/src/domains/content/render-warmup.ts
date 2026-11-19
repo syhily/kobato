@@ -1,7 +1,3 @@
-/**
- * OG render inputs folded into the request path's cache key; a warm target must
- * carry exactly what the OG route passes to `through()`.
- */
 export interface OgWarmTarget {
   slug: string
   title: string
@@ -9,11 +5,6 @@ export interface OgWarmTarget {
   cover: string
 }
 
-/**
- * Render-cache warmup seam: the content domain owns the WHEN, the render layer
- * the HOW. Wired at import time by `@/server/render/warmup/content-cache`, keeping
- * the layer graph one-way (infra → domains → render → http).
- */
 export type ContentRenderWarmup = (og: OgWarmTarget) => void
 
 let impl: ContentRenderWarmup = () => undefined

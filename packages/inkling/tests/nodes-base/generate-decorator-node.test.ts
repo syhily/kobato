@@ -141,11 +141,6 @@ describe('Utils: generateDecoratorNode', function () {
   })
 
   describe('spec adoption (nested editors and transient props)', function () {
-    // A synthetic card pinning the spec contract the per-card tests cover only
-    // incidentally: the generated base class runs no spec behaviour on its
-    // own; a subclass adopting the specs via statics gets the full
-    // constructor/getDataset/exportJSON treatment — the same shape
-    // `assembleCardNode` produces for the real cards.
     const specNestedEditors: readonly NestedEditorSpec[] = [
       { name: 'captionEditor', serializedKey: 'caption', nodes: MINIMAL_NODES },
       { name: 'bodyEditor', serializedKey: 'body', nodes: MINIMAL_NODES, exposeInitialStateInDataset: false },
@@ -186,8 +181,6 @@ describe('Utils: generateDecoratorNode', function () {
 
     it(
       'runs no spec behaviour on the spec-less generated class',
-      // a separate editor: the shared one registers the subclass, and Lexical
-      // rejects constructing an unregistered class with the same node type
       editorTestWithNodes(
         () => [SpeclessNode] as const,
         function (_testEditor, [RegisteredSpeclessNode]) {
@@ -301,8 +294,6 @@ describe('Utils: generateDecoratorNode', function () {
         () => editor,
         function () {
           const node = new SpecAdoptingNode({})
-          // fill the editor the way the constructor does (discrete updates) —
-          // manual root surgery inside an outer update never commits
           node.__captionEditor = createHeadlessEditor({ nodes: [SpecAdoptingNode] })
           populateNestedEditor(node.__captionEditor, '<p>Updated caption</p>')
 
@@ -326,11 +317,6 @@ describe('Utils: generateDecoratorNode', function () {
   })
 
   describe('artifact-slot invalidation spec', function () {
-    // The spec-level pins for `invalidates`: the rejection cases below are
-    // about class creation (a typo must not reach a setter), and the one
-    // generic positive pin covers the dimensions the real card suites
-    // (codeblock, math) do not — several declared slots plus a sibling whose
-    // edits must not clear any.
     const ArtifactNode = generateDecoratorNode({
       nodeType: 'artifact-slot-test',
       properties: [

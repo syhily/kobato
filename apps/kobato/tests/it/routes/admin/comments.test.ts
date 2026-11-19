@@ -87,7 +87,6 @@ describe('parseCommentFiltersFromSearchParams — date', () => {
   })
 
   it('falls back to DEFAULT_SINGLE_DATE_OPERATOR (is-or-less) when only `date` is set', () => {
-    // Bare `date` must fall back to is-or-less (includes the day), not the day-exclusive form.
     const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('date=2026-06-01'))
     const value = JSON.parse(filters[0]!.value) as { date: string; op: string }
     expect(value.op).toBe('is-or-less')

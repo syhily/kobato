@@ -6,10 +6,6 @@ import { deleteSessionsOfUser, listLiveSessions, listLiveSessionsByUser } from '
 
 const MAX_SESSIONS_LISTED = 10_000
 
-/**
- * Revoke every session of a user after a password change or role downgrade so stale
- * cookies cannot be reused; `exceptSessionId` keeps the tab that just saved alive.
- */
 export async function revokeAllSessionsOfUser(db: Database, userId: number, exceptSessionId?: string): Promise<number> {
   return deleteSessionsOfUser(db, userId, exceptSessionId)
 }

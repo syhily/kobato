@@ -46,8 +46,6 @@ export function useSelectionAnchoredPopup({
       }
 
       if (positioning === 'fixed') {
-        // Span the container first so the popup height is measured at its final
-        // width (wrapping changes with width), then resolve below/flip.
         popupElement.style.left = `${container.left}px`
         popupElement.style.width = `${container.right - container.left}px`
       }

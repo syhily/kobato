@@ -1,5 +1,4 @@
 import { image } from '@kobato/db/schema/media.ts'
-// Real in-memory SQLite + storage registry; only sharp stays mocked.
 import { buildObjectKey } from '@kobato/server/domains/images/key.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
@@ -12,7 +11,6 @@ const processImageBufferMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@kobato/server/infra/image/process.ts', () => ({ processImageBuffer: processImageBufferMock }))
 
-// Wrap-don't-replace: the wrappers only inject one-shot DB failures.
 vi.mock('@kobato/db/operations/image.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/db/operations/image.ts')>()
   return {
@@ -22,8 +20,6 @@ vi.mock('@kobato/db/operations/image.ts', async (importOriginal) => {
   }
 })
 
-// Same wrap-don't-replace: one test pins the generic key's random suffix
-// so a frozen clock can still force a duplicate key.
 vi.mock('node:crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:crypto')>()
   return { ...actual, randomBytes: vi.fn(actual.randomBytes) }
@@ -32,7 +28,6 @@ vi.mock('node:crypto', async (importOriginal) => {
 const randomBytesMock = vi.mocked(randomBytes)
 const passthroughRandomBytes = randomBytesMock.getMockImplementation()!
 
-// isAvailable() === true makes the mem backend S3-active, so uploads record driver 's3'.
 const mem = makeMemoryBackend()
 
 const { checkImageUpload, uploadImage } = await import('@kobato/server/domains/images/services/upload.ts')
@@ -46,7 +41,6 @@ beforeEach(async () => {
   __setStorageBackendForTests('s3', mem.backend)
   await clearAllTables(db)
   vi.clearAllMocks()
-  // Echo the input: processed size must match the sniffed size.
   processImageBufferMock.mockImplementation(async ({ buffer }: { buffer: Buffer }) => ({
     buffer,
     width: 100,
@@ -61,9 +55,7 @@ afterEach(() => {
   mem.reset()
 })
 
-// Magic bytes matter: uploadImage rejects buffers whose first 12 bytes match no known signature.
 function jpeg(extra: number[] = []): Buffer {
-  // >= 12 bytes (3 magic + filler) so the sniff check passes.
   const filler = extra.length >= 9 ? extra : [...extra, ...Array.from({ length: 9 - extra.length }, () => 0)]
   return Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...filler])
 }
@@ -74,11 +66,9 @@ function gif(): Buffer {
   return Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 1, 2, 3, 4, 5, 6])
 }
 function webp(): Buffer {
-  // RIFF....WEBP
   return Buffer.from([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50])
 }
 function avif(brand = 'avif'): Buffer {
-  // ftyp box at offset 4: bytes 4-7 = 'ftyp', bytes 8-11 = brand
   const buf = Buffer.alloc(16)
   buf.write('ftyp', 4, 'ascii')
   buf.write(brand, 8, 'ascii')
@@ -118,7 +108,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
     })
 
     it('throws when the AVIF ftyp brand is neither avif nor avis', async () => {
-      // ftyp + 'mif1' — recognised box but not an allowed brand.
       const buf = avif('mif1')
       await expect(
         uploadImage(db, {
@@ -132,7 +121,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
     })
 
     it('throws when ftyp appears but is too close to the buffer end', async () => {
-      // ftyp at the very end (index 8), brand would be out of range.
       const buf = Buffer.alloc(12)
       buf.write('ftyp', 8, 'ascii')
       await expect(
@@ -225,8 +213,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
     })
 
     it('swallows a duplicate-key insert failure into a friendly DomainError', async () => {
-      // Freeze the clock AND the random suffix, then occupy the key: the
-      // second insert hits the UNIQUE constraint.
       vi.useFakeTimers()
       randomBytesMock.mockImplementation(((size: number) => Buffer.alloc(size, 0xde)) as typeof randomBytes)
       try {
@@ -250,7 +236,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
           }),
         ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.metadataWriteFailed' } })
         expect(await allImageRows()).toHaveLength(1)
-        // The pre-existing row claims the key, so the rollback must NOT delete the uploaded object.
         expect(mem.putKeys).toContain(key)
         expect(mem.deletedKeys).not.toContain(key)
         expect(mem.store.has(key)).toBe(true)
@@ -261,7 +246,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
     })
 
     it('deletes the orphaned object when the failed insert left no claiming row', async () => {
-      // No row claims the key: the orphaned object must be rolled back.
       insertImageMock.mockRejectedValueOnce(new Error('db gone'))
       await expect(
         uploadImage(db, {
@@ -290,7 +274,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
         }),
       ).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.metadataWriteFailed' } })
       const key = 'images/categories/rollback.jpg'
-      // The put landed before the failure, so the rollback deletes it again.
       expect(mem.putKeys).toContain(key)
       expect(mem.deletedKeys).toContain(key)
       expect(mem.store.has(key)).toBe(false)
@@ -417,8 +400,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
 })
 
 describe('checkImageUpload — declared-envelope validation', () => {
-  // The controller raises the rejection as a localized ORPCError: 400 for a bad
-  // declared type, 413 for an over-size envelope.
   it('rejects a declared MIME type outside the allowlist with BAD_REQUEST', () => {
     expect(checkImageUpload({ type: 'image/tiff', size: 10 }, 1000)).toMatchObject({
       code: 'BAD_REQUEST',

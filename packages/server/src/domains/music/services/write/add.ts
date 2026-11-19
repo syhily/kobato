@@ -23,7 +23,6 @@ import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry
 
 const log = getLogger('music.service')
 
-// Delete only when no row claims the paths — an orphaned object is recoverable, an orphaned live row is not.
 async function deleteRestoredObjectsUnlessClaimed(
   db: Database,
   rowId: number,
@@ -54,10 +53,6 @@ export interface AddMusicPrefill {
   lyric?: string | null
 }
 
-/**
- * Adds a song to the library (admin dialog + import CLI). Idempotent on
- * `(source, sourceId)`; re-adding a soft-deleted row restores it in place.
- */
 export async function addMusic(db: Database, input: AddMusicInputs): Promise<AdminMusicDto> {
   const existing = await findMusicBySourceAndId(db, input.source, input.sourceId)
   if (existing?.deletedAt === null) {
@@ -75,9 +70,6 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
   const metadata = mergeMetadata(track, input.prefill)
 
   const playerId = restoring?.playerId ?? (await generateUniquePlayerId(db))
-  // A restored row's persisted storage keys ride inside the (craftable)
-  // backup archive — always re-derive them from the row's playerId so a
-  // crafted row can never aim a put/delete outside `musics/<playerId>.*`.
   const audioStoragePath = `musics/${playerId}.mp3`
   const coverStoragePath = `musics/${playerId}.jpg`
 
@@ -108,7 +100,6 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
     throw error
   }
 
-  // Both assets land on one backend; a restore re-uses the row's persisted driver (rollback deletes target it).
   const { backend, driver } = restoring
     ? { backend: backendFor(restoring.storageDriver), driver: restoring.storageDriver }
     : activeBackend()

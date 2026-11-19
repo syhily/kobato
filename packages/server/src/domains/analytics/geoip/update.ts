@@ -25,15 +25,12 @@ const GEOIP_PACKAGE = 'geolite2-city'
 const GEOIP_VERSION_URL = `https://cdn.jsdelivr.net/npm/${GEOIP_PACKAGE}/package.json`
 const VERSION_TIMEOUT_MS = 15_000
 const DOWNLOAD_TIMEOUT_MS = 5 * 60_000
-// Same ceiling as the manual upload endpoint (100 MiB), measured on DECOMPRESSED bytes.
 const MAX_DB_BYTES = 100 * 1024 * 1024
 
 function geoipDownloadUrl(version: string): string {
   return `https://cdn.jsdelivr.net/npm/${GEOIP_PACKAGE}@${version}/GeoLite2-City.mmdb.gz`
 }
 
-// Both writers of the database/meta pair (remote install + upload endpoint)
-// serialize here so the file and its sidecar never describe different installs.
 let writeChain: Promise<void> = Promise.resolve()
 
 export function withGeoipWriteLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -149,8 +146,6 @@ async function installRemoteDb(version: string): Promise<void> {
         for await (const chunk of source) {
           received += chunk.byteLength
           if (received > MAX_DB_BYTES) {
-            // DomainError, not a bare Error — the oRPC guard would
-            // otherwise surface a generic 500 instead of the size message.
             throw new DomainError(
               'INTERNAL',
               descriptorFor('analytics.error.geoipTooLarge', { max: `${MAX_DB_BYTES / (1024 * 1024)} MB` }),
@@ -161,7 +156,6 @@ async function installRemoteDb(version: string): Promise<void> {
       },
       createWriteStream(tmpPath),
     )
-    // Validate before the swap — a corrupt download must never replace a working database.
     try {
       await Reader.open(tmpPath)
     } catch {
@@ -171,8 +165,6 @@ async function installRemoteDb(version: string): Promise<void> {
   } catch (err) {
     await rm(tmpPath, { force: true }).catch(() => undefined)
     if (isTimeoutError(err)) {
-      // An abort mid-stream rejects `pipeline()` instead of the fetch
-      // await — same TimeoutError, translated here.
       throw new DomainError('INTERNAL', descriptorFor('analytics.error.geoipDownloadTimeout'))
     }
     throw err
@@ -216,11 +208,6 @@ export function runRemoteGeoipUpdate(): Promise<GeoipUpdateResult> {
   return inflight
 }
 
-/**
- * Scheduled auto-update: maintains databases it installed itself (and
- * installs one when none exists), never replaces a manual upload.
- * The provenance check runs INSIDE the write lock.
- */
 export async function runScheduledGeoipUpdate(): Promise<void> {
   await withGeoipWriteLock(async () => {
     if (existsSync(MAXMIND_DB_PATH)) {

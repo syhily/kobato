@@ -5,19 +5,13 @@ import { describe, expect, it } from 'vitest'
 
 const CSS_PATH = resolve(process.cwd(), 'packages/ui/src/styles/tailwind.css')
 
-/** Namespaces that are Tailwind builtins and do not need registration in cn.ts. */
 const BUILTIN_NAMESPACES = new Set(['breakpoint', 'container'])
 
-/** Namespaces inside `@theme inline` that are NOT standard Tailwind theme
- *  keys but are still valid (e.g. `@keyframes` blocks, CSS variable prefixes
- *  that Tailwind v4 recognises natively). */
 const ALLOWED_UNREGISTERED_NAMESPACES = new Set([
   // `@keyframes` declarations live inside `@theme inline` in Tailwind v4
   'keyframes',
 ])
 
-/** Known @theme inline namespaces used in this project (ordered by length desc for
- *  precise matching). */
 const KNOWN_THEME_NAMESPACES = [
   'spacing',
   'container',

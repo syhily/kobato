@@ -37,7 +37,6 @@ describe('audit batcher', () => {
     resetAllBatchers()
     handle = getDatabaseHandle()
     await clearAllTables(handle.db)
-    // audit_log.actorId FK → user.id: seed the actor.
     handle.db.insert(user).values({ name: 'Admin', email: 'admin@test.dev', password: 'x', role: 'admin' }).run()
     initAllBatchers(handle)
   })
@@ -71,8 +70,6 @@ describe('audit batcher', () => {
   })
 
   it('falls back to per-row inserts when the batch fails (bad row dead-letters, good row commits)', async () => {
-    // One NOT NULL violation (action): the multi-row insert fails wholesale, then the
-    // per-row fallback commits the good event and dead-letters the bad one.
     pushAuditEvent(makeEvent({ action: 'good.action' }))
     pushAuditEvent(makeEvent({ action: null as never }))
 

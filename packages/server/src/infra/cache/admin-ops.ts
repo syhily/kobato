@@ -33,7 +33,6 @@ export async function clearAdminCache(db: Database, target: ClearCacheTarget): P
 
   const bucket = getBucket(target)
   if (!bucket) {
-    // Belt-and-braces guard for callers that bypass the API-surface Zod schema.
     throw new DomainError('BAD_REQUEST', descriptorFor('admin.cache.error.unknownGroup', { target }))
   }
   const removed = await clearBucket(bucket)

@@ -19,9 +19,6 @@ export function cleanBasicHtml(html: string = '', options: CleanBasicHtmlOptions
   }
 
   if (!resolvedOptions.createDocument) {
-    // The typeof guards go through ternaries (not `window?.DOMParser`):
-    // optional chaining does not protect an UNDECLARED global — in a
-    // windowless realm `window?.x` is a ReferenceError, not undefined.
     const Parser =
       (typeof DOMParser === 'undefined' ? undefined : DOMParser) ??
       (typeof window === 'undefined' ? undefined : window.DOMParser)

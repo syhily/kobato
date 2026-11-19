@@ -75,7 +75,6 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        // top-[12vh] positions the dialog 12% from the viewport top — no design-token equivalent for vh units.
         className="top-[12vh] -translate-y-0 overflow-hidden rounded-xl border-0 p-0 shadow-2xl sm:max-w-[var(--container-popup-md)]"
         onKeyDown={(event) => {
           if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') {

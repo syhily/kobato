@@ -48,8 +48,6 @@ describe('client: safe-url utilities', () => {
     })
 
     it('returns fallback for dot-segment paths that normalize to a network-path reference', () => {
-      // `new URL('/..//evil.com', origin)` normalizes to pathname `//evil.com`
-      // — a single-slash input must never yield a cross-origin redirect.
       expect(safeRedirectPath('/..//evil.com', '/home', origin)).toBe('/home')
       expect(safeRedirectPath('/.//evil.com', '/home', origin)).toBe('/home')
       expect(safeRedirectPath('/%2e%2e//evil.com', '/home', origin)).toBe('/home')

@@ -6,7 +6,6 @@ import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { describe, expect, it } from 'vitest'
 
-// Stand-ins for `meta.defaults` in the sections that ship none (`defaults: null`).
 const FULL_GENERAL = {
   title: '雨帆',
   description: '记录与思考',
@@ -42,8 +41,6 @@ function fullPayload(section: SettingsSection): Record<string, unknown> {
   return section === 'general' ? FULL_GENERAL : FULL_ASSETS
 }
 
-// One object-valued key per section for the depth ≥ 1 sweep. `security.cors`
-// sits behind a `.default(...)` wrapper, pinning the unwrap logic.
 const NESTED_OBJECT_KEY: Partial<Record<SettingsSection, string>> = {
   general: 'author',
   assets: 'storage',
@@ -146,7 +143,6 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
     expect(error).toBeInstanceOf(DomainError)
     const issues = (error as DomainError).issues ?? []
     expect(issues).toHaveLength(2)
-    // One issue per offending key; each carries the full key list and its own path.
     for (const issue of issues) {
       expect(issue).toMatchObject({
         messageKey: 'admin.settings.errors.unrecognizedKeys',
@@ -165,7 +161,6 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
   })
 
   it('treats arrays as leaves — element values are the merged validation’s job', () => {
-    // Arrays replace wholesale — the walker must not recurse into elements.
     expect(() =>
       assertSectionPatchKeys('sidebar', {
         sidebar: { widgets: [{ type: 'search', enabled: true, bogus: 1 }] },

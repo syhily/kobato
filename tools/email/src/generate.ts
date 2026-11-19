@@ -3,18 +3,11 @@ import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-// Renders every email template to a standalone HTML file under
-// `tools/email/emails/<locale>/` for browser preview (`pnpm run emails:generate`).
-// The snapshot data is entirely fake — no real addresses or secrets.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// The server modules below load the validated config table on import. Point it
-// at a THROWAWAY file outside the repo and satisfy the two required secrets
-// with in-memory placeholders: rendering a template never sends or persists
-// anything, and no real credential exists in this process.
 const CONFIG_PATH = join(tmpdir(), `kobato-emails-preview-${process.pid}.json`)
 process.argv.push('--config', CONFIG_PATH)
 process.env.security__sessionSecret = 'email-preview-only-session-secret-000000'
@@ -96,7 +89,6 @@ function templates(t: ServerTranslator) {
           link: 'https://example.com/admin/invite?token=abcdef',
         }),
     },
-    // Admin notification layouts — one entry per notification type's data.
     {
       name: 'NewComment',
       make: () =>

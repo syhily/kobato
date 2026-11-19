@@ -7,8 +7,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock the oRPC client so no fetch ever fires. The mock captures every
-// search call and lets each test program canned pages by offset.
 const searchMock = vi.hoisted(() =>
   vi.fn<(input: { source?: string; keyword: string; limit?: number; offset?: number }) => Promise<SearchMusicOutput>>(),
 )
@@ -26,9 +24,6 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { dedupeSearchHits, useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search.ts'
 
-// The hook owns a `useInfiniteQuery` + `useQueryClient`, so tests need a real
-// QueryClient above the hook. Effects must run (happy-dom + the
-// @testing-library/react runner), unlike the SSR `#/_helpers/hook` runner.
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },

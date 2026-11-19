@@ -8,9 +8,6 @@ import {
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// `canonicalPostPath` drives alias-slug 301s; `searchRootPath` is the only query encoder.
-// Pin the edge cases that caused prod incidents (double-encoded CJK slugs, redirect loops).
-
 describe('server/domains/content/urls — canonicalPostPath', () => {
   it('returns the canonical /posts/<slug> when alias differs', () => {
     expect(canonicalPostPath('legacy-2014', 'hello-world')).toBe('/posts/hello-world')
@@ -29,7 +26,6 @@ describe('server/domains/content/urls — canonicalPostPath', () => {
   })
 
   it('treats Chinese-character canonicals as identity (no double-encoding)', () => {
-    // Canonical is interpolated literally — router segments arrive URL-decoded.
     expect(canonicalPostPath('foo', '你好-世界')).toBe('/posts/你好-世界')
   })
 
@@ -56,7 +52,6 @@ describe('server/domains/content/urls — searchRootPath', () => {
   })
 })
 
-// Pins the `/posts/<slug>` vs `/<slug>` split that webmention resolution and comment emails parse back apart.
 describe('server/domains/content/urls — entityPermalink', () => {
   it('prefixes posts with /posts/', () => {
     expect(entityPermalink('post', 'hello-world')).toBe('/posts/hello-world')

@@ -5,7 +5,6 @@ import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-bas
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { ORPCError } from '@orpc/server'
 
-// The limiter attaches per procedure
 const impl = implementPublic(githubContract)
 
 const avatar = impl.avatar.use(resourceRateLimit).handler(async () => {
@@ -13,7 +12,6 @@ const avatar = impl.avatar.use(resourceRateLimit).handler(async () => {
 })
 
 const release = impl.release.use(resourceRateLimit).handler(async () => {
-  // Fetch/validate lives in the update domain; the wire shape stays byte-identical.
   try {
     return await fetchLatestRelease()
   } catch (err) {

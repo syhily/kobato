@@ -8,9 +8,6 @@ import {
 } from '@kobato/server/infra/db/job-run-recorder.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Unwired recorder (unit project: no db bootstrap, `wireJobRunRecorder`
-// never ran) — every function is a silent no-op. Wired behavior, the
-// orphan sweep, and truncation are covered by the integration tests.
 describe('infra/db/job-run-recorder — unwired', () => {
   afterEach(() => {
     resetJobFailureNotifier()

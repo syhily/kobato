@@ -1,10 +1,6 @@
 import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events.ts'
 import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from '@kobato/db/duckdb/device-env.ts'
 
-/**
- * Every DuckDB table, in creation order — the single source both the DDL list
- * and the table-name list derive from.
- */
 const ANALYTICS_SCHEMA = [
   { name: 'access_events', ddl: ACCESS_EVENTS_DDL },
   { name: 'device_env_server', ddl: DEVICE_ENV_SERVER_DDL },

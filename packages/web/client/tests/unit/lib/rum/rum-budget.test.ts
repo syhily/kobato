@@ -36,7 +36,6 @@ describe('RumSessionBudget', () => {
       budget.commit(SESSION, 'error')
     }
     expect(budget.canAccept(SESSION, 'error')).toBe(false)
-    // Non-budgeted event types are always accepted.
     expect(budget.canAccept(SESSION, 'long_task')).toBe(true)
   })
 
@@ -68,8 +67,6 @@ describe('RumSessionBudget', () => {
     expect(budget.canAccept(SESSION, 'resource')).toBe(false)
 
     budget.reset()
-    // The persisted snapshot still owns the SAME session; a new session starts
-    // from zero and overwrites the entry on commit.
     expect(budget.canAccept(SESSION, 'resource')).toBe(false)
     expect(budget.canAccept(NEXT_SESSION, 'resource')).toBe(true)
     expect(store.snapshot).toEqual({ sessionId: SESSION, resources: 500, errors: 100 })

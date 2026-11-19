@@ -5,18 +5,6 @@ import type {
 } from '@kobato/inkling-internal/nodes/base/card-specs'
 import type { HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import type { Expect, Equal, Extends } from '@kobato/inkling/tests/utils/type-pins'
-/**
- * Compile-time pins for the card spec field vocabulary.
- *
- * The spec arrays in the base node modules are const-asserted, so literal
- * names and value types survive. Two derivations read them: `CardSpecFieldMap`
- * folds the map into the assembled class's instance type (what the shims
- * re-export), and `CardSpecFieldMapFor` self-types the base class by interface
- * merging — one source, so a spec rename or retype is a compile error at every
- * consumer. The pins cover the derivation and its arrival on a base class.
- *
- * Type-checked only, never executed.
- */
 import type { EditorState, LexicalEditor } from 'lexical'
 
 import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'

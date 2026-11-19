@@ -26,7 +26,6 @@ class CustomBlockNode extends ParagraphNode {
   }
 }
 
-// Replaces the default image card when registered after the defaults
 class CustomImageNode extends BaseImageNode {
   exportDOM(_editor: LexicalEditor, options: ExportDOMOptions = {}) {
     const element = options.dom!.window.document.createElement('div')

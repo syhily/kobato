@@ -16,11 +16,6 @@ import {
 } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
 
-// Characterization pins for registerCardSelection. The setter spies stand in
-// for the React mirror by observing store notifications; assertions stay on
-// shape-invariant observables (editor selection, setter call arguments) and
-// deliberately avoid pinning mirror artifacts.
-
 function createTestEditor() {
   return createEditor({
     namespace: 'test',
@@ -29,9 +24,6 @@ function createTestEditor() {
   })
 }
 
-// The one place CardSelectionDeps are constructed. Every store notification
-// mirrors both current values into the setter spies, so assertions on setter
-// call arguments observe the store's writes.
 function createSelectionHarness(
   editor: LexicalEditor,
   initial: { selectedCardKey?: string | null; isNested?: boolean } = {},
@@ -49,11 +41,6 @@ function createSelectionHarness(
   const dispose = registerCardSelection(editor, { store, isNested: initial.isNested })
   return { setSelectedCardKey, setIsEditingCard, store, dispose }
 }
-
-// editor.update resolves its onUpdate before updates scheduled from inside
-// update listeners (the history-merge bookkeeping updates) have committed, so
-// the harness's drainEnqueuedUpdates settles one macrotask to let the nested
-// passes land.
 
 async function setupEditorWithCard() {
   const editor = createTestEditor()

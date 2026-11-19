@@ -17,10 +17,6 @@ interface RenderOptions {
   inklingVersion?: string
 }
 
-// The per-render heading-id tracker carried on the markdown-it env: the
-// shared dedup policy (`@kobato/inkling-internal/utils/heading-id-tracker`) — base id on first
-// use, `<base>-<n>` on repeats, the same numbering the HTML renderer's
-// `trackIdAttribute` emits.
 function isHeadingIdTracker(value: unknown): value is (base: string) => string {
   return typeof value === 'function'
 }
@@ -29,7 +25,6 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
   return function (md: MarkdownItInstance) {
     const originalHeadingOpen = md.renderer.rules.heading_open
 
-    // Adapted from markdown-it-named-headers to avoid its string.js dependency.
     md.renderer.rules.heading_open = function (
       tokens: Token[],
       idx: number,
@@ -70,8 +65,6 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
   }
 }
 
-// Hand-rolled: the image-loading plugin that did this pulled Node built-ins
-// into the browser bundle.
 function lazyLoadingImages(md: MarkdownItInstance): void {
   const defaultImageRenderer = md.renderer.rules.image
   md.renderer.rules.image = function (tokens, idx, options, env, self) {
@@ -83,8 +76,6 @@ function lazyLoadingImages(md: MarkdownItInstance): void {
 }
 
 const selectRenderer = function (options: RenderOptions): MarkdownItInstance {
-  // The slug policy is fixed by the version, so one cached engine per policy;
-  // `namedHeaders(options)` closes over the per-version slug behaviour.
   const key = isLegacyVersion(options.inklingVersion || DEFAULT_INKLING_VERSION) ? '<4.x' : 'latest'
   if (renderers[key]) {
     return renderers[key]

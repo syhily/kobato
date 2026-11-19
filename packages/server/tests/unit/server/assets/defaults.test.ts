@@ -33,7 +33,6 @@ describe('generateFaviconPack', () => {
   it('produces a valid ICO buffer', async () => {
     const pack = await generateFaviconPack(DEFAULT_SVG.faviconSvg)
 
-    // ICO header: reserved (0x0000), type (0x0001 = ICO), count
     expect(pack.faviconIco[0]).toBe(0x00)
     expect(pack.faviconIco[1]).toBe(0x00)
     expect(pack.faviconIco[2]).toBe(0x01)

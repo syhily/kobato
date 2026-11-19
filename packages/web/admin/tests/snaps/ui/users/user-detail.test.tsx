@@ -10,9 +10,6 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { mutate: vi.fn(), isPending: false, error: null as { message: string } | null }
 
-// The cards own their TanStack mutations now. Stub `useMutation` with a
-// shared fixture so the update-error branch can be driven from the test.
-
 beforeEach(() => {
   queryMocks.mutation = { mutate: vi.fn(), isPending: false, error: null }
 })

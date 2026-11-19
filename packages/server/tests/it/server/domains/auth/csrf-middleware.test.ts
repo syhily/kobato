@@ -5,9 +5,6 @@ import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobat
 import { createSession } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-// csrfGuard runs for real; the exempt-path cases seed the settings
-// bundle instead of mocking the module.
-
 function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
@@ -31,7 +28,6 @@ describe('csrfGuard middleware', () => {
     const { Hono } = await import('hono')
     const { csrfGuard } = await import('@kobato/server/http/middlewares/csrf.ts')
     const app = new Hono<Env>()
-    // Minimal requestContext stub on c.var — csrfGuard only reads .session
     app.use('*', async (c, next) => {
       c.set('requestContext', {
         session: makeSession({ csrfToken: 'valid-token' }),

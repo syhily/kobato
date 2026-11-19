@@ -21,7 +21,6 @@ interface ShutdownHook {
 type RefreshSettingsFn = (db: Database) => Promise<unknown>
 type GetDbFn = () => Database
 
-// Typed DI container — explicit shape lets contract tests assert no state leaks to globalThis.
 export interface LifecycleContainer {
   serverPhase: ServerPhase
   httpServer: ServerType | null
@@ -55,7 +54,6 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
     return
   }
   const nodeServer = container.httpServer
-  // Detach up front: close must be idempotent (self-update closes before spawning the replacement).
   container.httpServer = null
   nodeServer.closeIdleConnections?.()
 
@@ -76,7 +74,6 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
   })
 }
 
-/** Register a shutdown hook; higher priority runs first (flush hooks 100, connection-close 0). */
 export function registerShutdownHook(hook: () => Promise<void>, priority = 0): void {
   if (container.serverPhase === 'shutting-down') {
     log.warn('Shutdown hook registered after shutdown started; ignoring')
@@ -86,7 +83,6 @@ export function registerShutdownHook(hook: () => Promise<void>, priority = 0): v
   container.hooks.sort((a, b) => b.priority - a.priority)
 }
 
-/** Remove a hook by identity — batchers dispose theirs on every database reopen so the list can't grow unboundedly. */
 export function unregisterShutdownHook(hook: () => Promise<void>): void {
   const index = container.hooks.findIndex((entry) => entry.fn === hook)
   if (index !== -1) {
@@ -132,9 +128,6 @@ process.once('SIGINT', () => requestShutdown('SIGINT'))
 process.once('SIGHUP', () => requestShutdown('SIGHUP'))
 process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
 
-// Un-awaited streamed loader promises have no rejection listener until
-// turbo-stream serializes them — the default 'throw' mode would kill the
-// process. Do NOT remove while any loader returns one.
 export function handleUnhandledRejection(error: unknown): void {
   log.error('Unhandled promise rejection', { err: error instanceof Error ? error.message : String(error) })
 }
@@ -224,25 +217,18 @@ export async function restartServer(): Promise<void> {
       restartLog.error('Graceful restart failed', {
         err: err instanceof Error ? err.message : String(err),
       })
-      // Old server is closed and the new one failed — no recovery; flag failed so health checks report 503.
       setServerPhase('failed')
       throw err
     }
   })()
 
-  // In-flight dedup: concurrent restarts coalesce onto this one promise.
-  // Known edge: a restart requested inside the `.finally` microtask window
-  // below (before restartPromise flips back to null) coalesces into the
-  // just-finished restart's completion rather than queueing a new one.
   container.restartPromise = queued
 
   queued
     .finally(() => {
       container.restartPromise = null
     })
-    .catch(() => {
-      /* swallow — caller receives error via returned queued promise */
-    })
+    .catch(() => undefined)
 
   return queued
 }

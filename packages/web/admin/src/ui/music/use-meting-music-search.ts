@@ -4,7 +4,6 @@ import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { useCallback, useMemo, useState } from 'react'
 
-// Flatten pages into one hit list, first occurrence winning on `source:sourceId` — pure for direct unit tests.
 export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] {
   const seen = new Set<string>()
   return pages
@@ -19,8 +18,6 @@ export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] 
     })
 }
 
-// Search-pagination machine on the shared infinite-list scaffold; the search
-// endpoint reports only `hasMore`.
 export function useMetingMusicSearch({ limit }: { limit: number }) {
   const [submitted, setSubmitted] = useState<{ source: MetingSource; keyword: string } | null>(null)
 
@@ -35,10 +32,8 @@ export function useMetingMusicSearch({ limit }: { limit: number }) {
   } = useAdminInfiniteList({
     namespace: orpcQuery.admin.music.search,
     pageSize: limit,
-    // `enabled` gates on submitted !== null, so the ''-keyword branch is only ever embedded in the disabled key — never sent.
     buildInput: (offset) => ({ ...submitted, keyword: submitted?.keyword ?? '', limit, offset }),
     selectRows: (page) => page.results,
-    // No `noun`: the dialog/view renders the error inline instead of a toast.
     enabled: submitted !== null,
   })
 
@@ -49,7 +44,6 @@ export function useMetingMusicSearch({ limit }: { limit: number }) {
     if (trimmed === '') {
       return
     }
-    // A changed submitted value changes the query key, which resets pages.
     setSubmitted({ source, keyword: trimmed })
   }, [])
 

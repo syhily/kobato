@@ -10,16 +10,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const control = mockTanstackQuery()
 
-// The dialog reads `useI18n()`; the provider is mounted as a render wrapper.
 function render(ui: ReactElement) {
   return rtlRender(ui, {
     wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
   })
 }
 
-// The recipient search contract: the typed keyword must reach the query input
-// after the debounce window. The oRPC query-utils module is mocked to capture
-// the exact input objects (react-query keeps the canonical mock).
 const captured = vi.hoisted(() => ({
   queryInputs: [] as { q?: string; limit: number; offset: number }[],
   onDirectSuccess: [] as (() => void)[],

@@ -40,7 +40,6 @@ export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/images/default-music-cover.png': { kind: 'binary', slot: 'defaultMusicCover' },
 }
 
-// Every BinarySlot must have exactly one route here — else a slot becomes unreachable.
 if (NODE_ENV !== 'production') {
   const slots = new Set<string>(BINARY_SLOTS)
   for (const route of Object.values(ASSET_ROUTES)) {

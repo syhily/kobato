@@ -9,8 +9,6 @@ describe('Utils: generateEditorState', () => {
     { nodes = DEFAULT_NODES }: { nodes?: NonNullable<CreateEditorArgs['nodes']> } = {},
   ) {
     const editor = createEditor({
-      // lexical swallows errors inside updates by default,
-      // so we need to throw them to fail the test
       onError: (error) => {
         throw error
       },

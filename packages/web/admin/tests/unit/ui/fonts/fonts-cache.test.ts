@@ -8,7 +8,6 @@ function makeQueryClient(): QueryClient {
   })
 }
 
-// FontsView invalidates through the procedure-level orpcQuery key (queryOptions().queryKey).
 function seedFontsList(qc: QueryClient) {
   const listKey = orpcQuery.admin.fonts.list.queryOptions({ input: {} }).queryKey
   qc.setQueryData(listKey, { fonts: [] })
@@ -20,7 +19,6 @@ describe('ui/admin/fonts list cache — key grammar premise', () => {
     const qc = makeQueryClient()
     const { listKey } = seedFontsList(qc)
 
-    // A flat [admin, fonts, list] key never matches the nested-path grammar and silently invalidates nothing.
     void qc.invalidateQueries({ queryKey: ['admin', 'fonts', 'list'] })
 
     expect(qc.getQueryState(listKey)?.isInvalidated).toBe(false)

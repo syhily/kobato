@@ -12,9 +12,6 @@ import type { Route } from './+types/layout'
 
 import '@/styles/public.css'
 
-// This app-owned entry statically imports `public.css`, so SSR emits it for every public URL while
-// the admin SPA stays outside this layout and never pulls `public.css` into admin chunks.
-
 interface RootChromeData {
   currentUser?: { id: string; name: string; role: 'admin' | 'author' | 'visitor' } | null
 }
@@ -54,12 +51,8 @@ export default function PublicLayoutRoute() {
   )
 }
 
-// Nearest error boundary for public routes: RR hands loader-thrown 304 headers here as `errorHeaders`, so without
-// this export the document 304 loses ETag/Content-Language/Cache-Control (entry.server never runs for no-body).
 export const headers = documentHeaders
 
-// `ErrorBoundary` lives here so 404s render inside `<BaseLayout>` synchronously; the root boundary would need a
-// lazy chunk and reintroduce FOUC.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   useReloadOnChunkError(error)
 

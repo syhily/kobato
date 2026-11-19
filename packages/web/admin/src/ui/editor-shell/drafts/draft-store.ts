@@ -5,7 +5,6 @@ const DB_NAME = 'kobato-drafts'
 const DB_VERSION = 1
 const STORE_NAME = 'drafts'
 
-/** Bump when the persisted draft shape changes; stale records are purged on load. */
 export const DRAFT_STORAGE_VERSION = 2
 
 export type DraftType = 'post-edit' | 'page-edit' | 'post-create' | 'page-create'
@@ -32,7 +31,6 @@ interface DraftsDB extends DBSchema {
 
 let dbPromise: Promise<IDBPDatabase<DraftsDB>> | null = null
 
-/** @internal Resets the cached DB promise so tests can start with a fresh database. */
 export function __resetDbForTests(): void {
   dbPromise = null
 }
@@ -91,7 +89,6 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
       if (record.version !== DRAFT_STORAGE_VERSION) {
         continue
       }
-      // Lexical editor state: `{ root: { type: 'root', children: [...] } }`.
       if (!isRecord(record.body) || !isRecord(record.body.root)) {
         continue
       }
@@ -111,9 +108,7 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
       })
 
       window.localStorage.removeItem(key)
-    } catch {
-      // Skip corrupt entries.
-    }
+    } catch {}
   }
 
   await tx.done
@@ -156,30 +151,20 @@ export async function setDraft(key: string, record: DraftRecord): Promise<void> 
   try {
     const db = await getDb()
     await db.put(STORE_NAME, record)
-  } catch {
-    // Silently ignore quota / private-mode errors.
-  }
+  } catch {}
 }
 
 export async function removeDraft(key: string): Promise<void> {
   try {
     const db = await getDb()
     await db.delete(STORE_NAME, key)
-  } catch {
-    // Silently ignore.
-  }
+  } catch {}
 }
 
-/**
- * Remove every draft whose key starts with `prefix`. Edit keys embed the
- * rotating token (`<prefix><entityId>:<token>`), so a per-key clear would
- * orphan rotated predecessors.
- */
 export async function removeDraftsByPrefix(prefix: string): Promise<void> {
   try {
     const db = await getDb()
     const keys = await db.getAllKeys(STORE_NAME, IDBKeyRange.bound(prefix, `${prefix}\uffff`))
-    // U+FFFF range end pads the prefix so every matching key falls inside the bound.
     if (keys.length === 0) {
       return
     }
@@ -188,7 +173,5 @@ export async function removeDraftsByPrefix(prefix: string): Promise<void> {
       void tx.store.delete(key)
     }
     await tx.done
-  } catch {
-    // Silently ignore.
-  }
+  } catch {}
 }

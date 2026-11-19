@@ -23,7 +23,6 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isComposingRef = useRef(false)
-  // Server-side search on demand — the tag catalogue is unbounded.
   const suggestionsQuery = useQuery(
     orpcQuery.admin.tags.list.queryOptions({
       input: { q: input.trim(), limit: 20 },
@@ -44,7 +43,6 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       setOpen(false)
       setHighlighted(0)
       isComposingRef.current = false
-      // Mobile CJK IMEs may keep a composition session after adding — blur+focus resets it.
       const el = inputRef.current
       if (el && document.activeElement === el) {
         el.blur()
@@ -61,7 +59,6 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
     [values, onChange],
   )
 
-  // One targeted server search per entered name keeps the warning correct; react-query caches per name.
   const existenceQueries = useQueries({
     queries: values.map((name) =>
       orpcQuery.admin.tags.list.queryOptions({
@@ -171,7 +168,6 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
                   type="button"
                   onMouseEnter={() => setHighlighted(index)}
                   onMouseDown={(e) => {
-                    // Keep focus until the click is processed, or the list closes prematurely.
                     e.preventDefault()
                     addTag(tag.name)
                   }}

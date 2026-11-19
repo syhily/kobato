@@ -23,7 +23,6 @@ const mockContext = await import('@kobato/server/http/request-context.ts')
 const { action, loader } = await import('@/routes/auth/setup/index.tsx')
 
 beforeAll(() => {
-  // Overlay real db/pool handles so the install flow hits the integration database.
   const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
   vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
     ...fromProvider!(args),

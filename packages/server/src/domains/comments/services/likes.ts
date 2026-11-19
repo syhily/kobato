@@ -22,15 +22,11 @@ const log = getLogger('comments.likes')
 export async function increaseLikes(db: Database, target: EntityTarget): Promise<{ likes: number; token: string }> {
   // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
   const token = makeToken(64)
-  // Transactional: a concurrent decrement can't race between insert and count.
   const likes = await recordLikeAndCount(db, token, target)
   return { likes, token }
 }
 
-/** Consume a like token and decrement; `true` when the token was live.
- *  `false` — unknown, consumed, or purged — leaves the count untouched. */
 export async function decreaseLikes(db: Database, target: EntityTarget, token: string): Promise<boolean> {
-  // Transactional: consume + decrement atomically (no inflated count after a crash).
   return db.transaction((tx) => {
     const consumed = consumeActiveLikeToken(tx, target, token)
     if (consumed) {

@@ -52,7 +52,6 @@ function mapTree(items: CommentItemType[], fn: (item: CommentItemType) => Commen
 function filterTree(items: CommentItemType[], predicate: (item: CommentItemType) => boolean): CommentItemType[] {
   return items.filter(predicate).map((item) => {
     if (item.children && item.children.length > 0) {
-      // Fresh target keeps the copy-on-write semantics — comment items are state.
       return Object.assign({}, item, { children: filterTree(item.children, predicate) })
     }
     return item
@@ -100,7 +99,6 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
         if (asKey(item.id) !== id) {
           return item
         }
-        // Preserve children — the edit endpoint returns the comment without descendants.
         const children = item.children
         return { ...action.comment, children }
       })
@@ -132,7 +130,6 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
         const replacement = action.comments.find((c) => asKey(c.id) === asKey(item.id))!
         return { ...replacement, children: item.children }
       })
-      // New roots pin to the top so pending posts are visible; children stay under parent.
       const newRoots: CommentItemType[] = []
       const newChildren: CommentItemType[] = []
       for (const c of action.comments) {
@@ -155,7 +152,6 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
           return { ...item, children: [...children, c] }
         })
       }
-      // Ownership folds into the same dispatch so the tree and map land atomically.
       const myComments = new Map(state.myComments)
       for (const c of action.comments) {
         const key = asKey(c.id)
@@ -267,7 +263,6 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'insertReply', comment, rid })
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
-  // Load the viewer's own comments (incl. pending) via the token cookie; one dispatch folds in both.
   const myComments = useMutation({
     ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {

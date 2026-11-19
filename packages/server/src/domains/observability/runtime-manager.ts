@@ -1,9 +1,3 @@
-//
-// The settings section is the single source of truth: this module maps it onto
-// the infra trace input, decides whether the configuration may activate, and
-// hot-applies fingerprint changes. Every failure stays contained here —
-// telemetry must never affect the site's availability.
-
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
 import type { ExportFailure } from '@kobato/server/infra/trace/export-health.ts'
@@ -52,11 +46,6 @@ function errorName(error: unknown): string {
   return error instanceof Error ? error.name : typeof error
 }
 
-/**
- * HMR forgets this module's state while the (separately disposed) infra runtime
- * may still be installed. `import.meta.hot.data` survives the reload, so the
- * next instance knows a stop is needed before re-applying.
- */
 function hmrStarted(): boolean {
   return isRecord(import.meta.hot?.data) && import.meta.hot.data.observabilityStarted === true
 }
@@ -77,12 +66,6 @@ export function getObservabilityRuntimeStatus(): ObservabilityRuntimeStatus {
   }
 }
 
-/**
- * Streams are created lazily by first ingest, which only happens AFTER the
- * runtime starts — the boot/save retention passes cannot see them yet. One
- * delayed pass after entering `running` picks those streams up; the retention
- * sync itself is a no-op unless a positive `retentionDays` is configured.
- */
 const POST_START_RETENTION_SYNC_DELAY_MS = 60_000
 let postStartRetentionTimer: NodeJS.Timeout | null = null
 
@@ -118,7 +101,6 @@ async function stopRuntime(): Promise<void> {
     state = {
       ...state,
       started: false,
-      // A stale `running` phase must not survive a failed stop.
       phase: state.phase === 'running' ? 'disabled' : state.phase,
     }
     markHmrStarted(false)
@@ -156,7 +138,6 @@ async function startRuntime(site: ObservabilitySettingsSlice, fingerprint: strin
     markHmrStarted(true)
     schedulePostStartRetentionSync()
   } catch (error) {
-    // SDK chunk load / provider construction failure: the site keeps running.
     state = { phase: 'failed', fingerprint, lastError: `trace-start-failed: ${errorName(error)}`, started: false }
     markHmrStarted(false)
     log.warn('OpenObserve telemetry could not start; the site continues without it', {
@@ -177,9 +158,6 @@ async function apply(): Promise<void> {
     return
   }
 
-  // Connection fingerprint gates activation (`verifiedFingerprint`); the runtime
-  // fingerprint drives restart detection, so a toggled switch restarts the
-  // providers without touching the verification.
   const fingerprint = observabilityRuntimeFingerprint(site)
   if (!site.enabled) {
     await stopRuntime()
@@ -188,8 +166,6 @@ async function apply(): Promise<void> {
   }
 
   if (site.verifiedFingerprint === '' || site.verifiedFingerprint !== observabilityConnectionFingerprint(site)) {
-    // Never activate a configuration an admin has not verified; the connection
-    // test writes the fingerprint that unlocks this branch.
     if (state.phase !== 'unverified' || state.fingerprint !== fingerprint) {
       log.info('OpenObserve observability is configured but not verified; server telemetry stays off')
     }
@@ -201,12 +177,6 @@ async function apply(): Promise<void> {
   await startRuntime(site, fingerprint)
 }
 
-/**
- * Re-resolve from the current settings snapshot and reconcile the runtime.
- * Serialized: overlapping saves converge on the last snapshot. The returned
- * promise never rejects — a telemetry failure is recorded and logged, never
- * allowed to surface into the boot path or a settings save.
- */
 export function syncObservabilityRuntime(): Promise<void> {
   const guarded = queue.then(apply).catch((error: unknown) => {
     state = { ...state, phase: 'failed', lastError: `sync-failed: ${errorName(error)}` }

@@ -159,8 +159,6 @@ describe('InklingComposer', function () {
       </InklingComposer>,
     )
 
-    // the collaboration chunk loads lazily (dynamic import in an effect), so
-    // the plugin mounts one async tick after the composer
     await waitFor(() => expect(CollaborationPlugin).toHaveBeenCalled())
     const pluginProps = vi.mocked(CollaborationPlugin).mock.calls[0][0]
     expect(typeof pluginProps.initialEditorState).toBe('string')
@@ -233,9 +231,6 @@ describe('InklingComposer', function () {
       </InklingComposer>,
     )
 
-    // no collaboration chunk is loaded without enableMultiplayer: the context
-    // keeps the inert factory, and calling it is a no-op (never a network
-    // attempt, never a config error)
     expect(factory).toBe(noopWebsocketProviderFactory)
     if (!factory) {
       throw new Error('Expected InklingComposer to provide a websocket factory')

@@ -1,14 +1,8 @@
-// Experimental Network Information API — not part of lib.dom.
 interface NetworkInformationLike {
   readonly saveData?: boolean
   readonly effectiveType?: string
 }
 
-/**
- * Idle-time prefetcher for tier-2 chunks, skipped on metered/slow connections.
- * No top-level side effects: bundled by `routeWarmupPlugin` as the inline
- * route-warmup script and imported here only for the sentinel constant.
- */
 export function startRouteWarmup(chunks: string[]): void {
   const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection
   if (connection?.saveData) {

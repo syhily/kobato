@@ -681,9 +681,6 @@ describe('Denest transform', function () {
   })
 
   it('preserves the extended-heading type without the replacement patch', function () {
-    // the shipped node sets all carry extendedHeadingNodeReplacement, which
-    // masks which class the denest collector fn constructs; this editor omits
-    // it, so the pin fails if the fn ever downgrades back to plain HeadingNode
     const editor = createEditor({
       nodes: [ParagraphNode, TextNode, HeadingNode, ExtendedHeadingNode, ListNode, ListItemNode],
     })

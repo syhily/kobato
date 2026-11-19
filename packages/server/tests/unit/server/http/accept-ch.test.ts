@@ -1,9 +1,6 @@
 import { ACCEPT_CH_HEADER } from '@kobato/server/http/middleware-pipeline.ts'
 import { describe, expect, it } from 'vitest'
 
-// The response opt-in must cover every hint `device_env_server` persists —
-// a hint the browser never sends would leave the column permanently ''.
-
 describe('Accept-CH opt-in', () => {
   it('requests the full client-hint set', () => {
     const requested = ACCEPT_CH_HEADER.split(',').map((hint) => hint.trim())

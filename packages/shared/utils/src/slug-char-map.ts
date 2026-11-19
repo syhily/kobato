@@ -1,6 +1,3 @@
-// Transliteration table for `makeSlug`, kept byte-identical so re-derived slugs
-// for existing titles never change — slugs are permalinks. Do not edit entries:
-// any change alters future slug output.
 export const SLUG_CHAR_MAP: Record<string, string> = {
   $: 'dollar',
   '%': 'percent',

@@ -3,7 +3,6 @@ import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
-/** The canonical database handle; this module owns the drizzle driver choice (node:sqlite sync API). */
 export type Database = NodeSQLiteDatabase
 
 export interface DatabaseHandle {
@@ -17,12 +16,10 @@ export interface DatabaseHandle {
   closed: boolean
 }
 
-/** The single owner of the `:memory:` convention, shared by both engines. */
 export function isInMemoryPath(p: string): boolean {
   return p === ':memory:'
 }
 
-/** `:memory:` passes through for tests; '' falls back to `<dataDir>/<fallbackName>`. */
 export function resolveStoragePath(configured: string, fallbackName: string, dataDir: string): string {
   if (isInMemoryPath(configured)) {
     return configured
@@ -30,10 +27,6 @@ export function resolveStoragePath(configured: string, fallbackName: string, dat
   return path.resolve(configured === '' ? path.join(dataDir, fallbackName) : configured)
 }
 
-/**
- * Open the per-process connection. `auto_vacuum` must be set first —
- * it is ignored once WAL mode is active.
- */
 export function openDatabase(databasePath: string): DatabaseHandle {
   const inMemory = isInMemoryPath(databasePath)
   if (!inMemory) {

@@ -205,8 +205,6 @@ describe('CardPickerHostPlugin', () => {
   it('drops the request immediately when the node is already gone at registration', async () => {
     const { store, wrapper } = createCardPickerStoreWrapper()
     const nodeKey = await appendCard(editor, pickerWidget.node, { src: 'x' })
-    // the deletion commits BEFORE the host attaches its listener — the
-    // forward update listener alone would never observe it
     await updateEditor(editor, () => {
       $getNodeByKey(nodeKey)?.remove()
     })
@@ -438,9 +436,6 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
 
   async function mountHistoryAndRegistrar() {
     const harness = createCardPickerStoreWrapper({ store: pickerStore })
-    // HistoryPlugin resolves useLexicalComposerContext through the REAL module
-    // (a relative import inside @lexical/react bypasses this file's mock), so
-    // it mounts against a real provider; the inkling hooks keep the mocked one.
     const actual = await vi.importActual<typeof import('@lexical/react/LexicalComposerContext')>(
       '@lexical/react/LexicalComposerContext',
     )

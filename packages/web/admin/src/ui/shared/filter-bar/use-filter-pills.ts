@@ -36,12 +36,9 @@ export interface UseFilterPillsOptions<K extends string> {
 
 interface PillsState<K extends string> {
   filters: ActiveFilter<K>[]
-  /** The dispatch that produced `filters` — null for seeds and controlled resyncs, so `onChange` fires only for local dispatches. */
   action: FilterPillsAction<K> | null
 }
 
-/** Shared filter-pill state behind `<FilterPillBar>`: reducer, per-search-field
- *  debounced server search, label rehydration, value codecs (malformed JSON falls back to the editor default), and the `queryInput()` merge. */
 export function useFilterPills<K extends string>({ fields, initial, value, onChange }: UseFilterPillsOptions<K>) {
   const controlled = value !== undefined
   const [state, setState] = useState<PillsState<K>>({ filters: initial ?? value ?? [], action: null })
@@ -52,8 +49,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     onChangeRef.current = onChange
   })
 
-  // Controlled resync: adopt the external value when it meaningfully changes;
-  // content-equal rebuilds are ignored so transient local pills survive.
   const [lastValue, setLastValue] = useState(value)
   if (controlled && value !== lastValue && !sameFilters(value, lastValue)) {
     setLastValue(value)
@@ -67,7 +62,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     })
   }, [])
 
-  // Notify the controlled sink once per produced state — identity-guarded.
   const notifiedRef = useRef<PillsState<K> | null>(null)
   useEffect(() => {
     if (state.action && notifiedRef.current !== state) {
@@ -98,8 +92,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     }),
   })
 
-  // Label rehydration: rename a URL-restored pill to its human label once the
-  // resolve query lands; guarded on inequality so it never re-dispatches.
   useEffect(() => {
     searchFields.forEach((field, i) => {
       if (!field.resolveOptions) {
@@ -125,10 +117,8 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     searchFields.forEach((field, i) => {
       const result = searchResults[i]
       const debounced = debouncedInputs[field.key] ?? ''
-      // Active search query without results yet → empty list; no query → the spec's initial items.
       const items: FilterOptionItem[] =
         result?.data != null ? field.select(result.data) : debounced ? [] : [...(field.initialItems ?? [])]
-      // Pin the selected value into the items so the trigger always resolves its label.
       const active = filters.find((f) => f.field === field.key)
       if (active && !items.some((item) => item.value === active.value)) {
         items.unshift({ value: active.value, label: active.label })
@@ -158,7 +148,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
         }
       }
     }
-    // Per-field `toQuery` patches are key-disjoint by convention, so the merge is exactly the query-input shape.
     return unsafeCast<TQuery>(out)
   }, [fields, filters])
 
@@ -204,7 +193,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
   return { filters, hasFilters: filters.length > 0, dispatch, queryInput, text, dateSingle, dateRange, bar }
 }
 
-/** Content equality for the controlled resync guard — pill lists are small. */
 function sameFilters<K extends string>(a: ActiveFilter<K>[] | undefined, b: ActiveFilter<K>[] | undefined): boolean {
   if (a === b) {
     return true
@@ -223,7 +211,6 @@ function sameFilters<K extends string>(a: ActiveFilter<K>[] | undefined, b: Acti
   })
 }
 
-/** Decode a pill value through its field's codec onto the query patch; undecodable values contribute nothing. */
 function resolveFieldQueryPatch<K extends string>(field: FilterFieldSpec<K>, raw: string): FilterQueryPatch {
   switch (field.kind) {
     case 'text': {

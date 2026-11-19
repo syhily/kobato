@@ -3,14 +3,10 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import { coerceBoolean } from '@kobato/settings/sections/shared.ts'
 import { z } from 'zod'
 
-/** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
 export const securityValidationMessages = {
   dangerousExemptPath: 'admin.settings.security.error.dangerousExemptPath',
 } as const satisfies Record<string, UiMessageId>
 
-// Prefixes an admin must never be able to CSRF-exempt — exempting either silently
-// disables CSRF on state-changing routes. Segment-boundary aware,
-// mirroring `isPathExempt`'s match semantics in `@/server/domains/auth/csrf`.
 const DANGEROUS_EXEMPT_PREFIXES = ['/rpc', '/api'] as const
 
 function isDangerousExemptPath(path: string): boolean {

@@ -26,8 +26,6 @@ import { transform } from 'oxc-transform-react'
 
 const INCLUDE = /\.[tj]sx?$/
 const EXCLUDE = /\/node_modules\//
-// Cheap pre-parse gate copied from @vitejs/plugin-react: skip files that
-// cannot plausibly contain a component or hook.
 const CODE_GATE = /forwardRef|memo|\b(?:[A-Z]|use[A-Z0-9])/
 
 export function reactCompilerPlugin(): Plugin {
@@ -49,7 +47,6 @@ export function reactCompilerPlugin(): Plugin {
         },
       },
       async handler(code, id) {
-        // SSR/server consumers are intentionally left uncompiled (see above).
         if (this.environment?.config.consumer === 'server') {
           return null
         }

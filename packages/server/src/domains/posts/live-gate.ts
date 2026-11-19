@@ -7,10 +7,6 @@ import {
   type LiveContentOptions,
 } from '@kobato/server/domains/content/schemas/live-gate.ts'
 
-/**
- * Post-table binding of the live gate — call sites never hand-assemble
- * the column struct. See the warning on `isLive` in `content/schemas/live-gate.ts`.
- */
 export function livePostWhere(options?: LiveContentOptions): SQL {
   return liveContentWhere(
     {
@@ -23,10 +19,6 @@ export function livePostWhere(options?: LiveContentOptions): SQL {
   )
 }
 
-/**
- * Post-table binding of the promoted gate — call sites never hand-assemble
- * the column struct. See the warning on `isPromoted` in `content/schemas/live-gate.ts`.
- */
 export function promotedPostWhere(): SQL {
   return promotedContentWhere({
     published: postMetaTable.published,

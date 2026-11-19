@@ -22,8 +22,6 @@ async function seedUser(role: 'admin' | 'visitor', name: string): Promise<number
 }
 
 beforeEach(async () => {
-  // Land buffered audit events from a previous case before the wipe, so the
-  // next flush cannot repopulate the table with stale rows.
   await flushAuditLog()
   await clearAllTables(db)
   __resetRateLimitsForTests()
@@ -71,7 +69,6 @@ describe('integration / notifications controller', () => {
 
     const reply = await callJson('/notifications/reply', { threadId: items[0]!.threadId, body: '你好' }, visitorCtx)
     expect(reply.status).toBe(200)
-    // An inline direct reply stays in the thread it was sent to.
     expect((reply.json.json as { threadId: string }).threadId).toBe(items[0]!.threadId)
 
     const adminInbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
@@ -110,7 +107,6 @@ describe('integration / notifications controller', () => {
     const throttled = await callRpc('/notifications/reply', { threadId: fastThread, body: '超了' }, fastCtx)
     expect(throttled.status).toBe(429)
 
-    // A different user's bucket is untouched (both share one client address).
     const quiet = await callJson('/notifications/reply', { threadId: quietThread, body: '你好' }, quietCtx)
     expect(quiet.status).toBe(200)
   })
@@ -183,18 +179,15 @@ describe('integration / notifications controller', () => {
 
     const reply = await callJson('/notifications/reply', { threadId: broadcast.threadId, body: '赞' }, visitorCtx)
     expect(reply.status).toBe(200)
-    // The reply names its own (forked) thread, not the broadcast root.
     const replyThreadId = (reply.json.json as { threadId: string }).threadId
     expect(replyThreadId).not.toBe(broadcast.threadId)
 
-    // The replier sees their own fork thread, pre-read, under a new thread id.
     const visitorDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
     const fork = (visitorDirect.json.json as { items: Array<{ threadId: string; read: boolean }> }).items[0]!
     expect(fork.threadId).not.toBe(broadcast.threadId)
     expect(replyThreadId).toBe(fork.threadId)
     expect(fork.read).toBe(true)
 
-    // The admin sees the reply in their direct tab.
     const adminDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
     expect((adminDirect.json.json as { items: unknown[] }).items).toHaveLength(1)
   })
@@ -217,7 +210,6 @@ describe('integration / notifications controller', () => {
     expect((recalled.json.json as { id: string }).id).toBe(item.id)
     expect((recalled.json.json as { recalledAt: string }).recalledAt).toBeTruthy()
 
-    // Gone from the recipient's inbox and badge, and the thread now 404s.
     const afterInbox = await callJson('/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
     expect((afterInbox.json.json as { items: unknown[] }).items).toHaveLength(0)
     const unreadAfter = await callJson('/notifications/unreadCount', {}, visitorCtx)
@@ -225,7 +217,6 @@ describe('integration / notifications controller', () => {
     const thread = await callRpc('/notifications/thread', { threadId: item.threadId }, visitorCtx)
     expect(thread.status).toBe(404)
 
-    // Idempotent: a second call returns the same timestamp and writes no second audit row.
     const again = await callJson('/admin/notifications/recall', { id: item.id }, adminCtx)
     expect(again.status).toBe(200)
     expect((again.json.json as { recalledAt: string }).recalledAt).toBe(

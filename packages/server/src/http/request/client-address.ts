@@ -1,9 +1,3 @@
-/**
- * Proxy-aware client IP extraction: proxy headers are trusted ONLY from a loopback direct
- * peer or a configured trusted proxy (`security.trustedProxies`), else the direct IP
- * verbatim; no direct IP → 'unknown' (non-loopback, so proxy headers stay untrusted).
- */
-
 import { isValidIp, matchesTrustedProxy } from '@kobato/server/infra/ip-match.ts'
 
 function sanitizeIp(raw: string): string | null {
@@ -25,19 +19,15 @@ function isLoopback(ip: string): boolean {
 }
 
 export function getClientAddress(request: Request, directIp?: string, trustedProxies: readonly string[] = []): string {
-  // Unknown direct peer must NOT become loopback — that would trust spoofed proxy headers.
   if (directIp === undefined) {
     return 'unknown'
   }
   const base = directIp
 
-  // Only a localhost or configured trusted-proxy peer may vouch for proxy
-  // headers — any other remote client can forge them.
   if (!isLoopback(base) && !matchesTrustedProxy(base, trustedProxies)) {
     return base
   }
 
-  // 1. Cloudflare-specific header — most reliable when behind Cloudflare.
   const cfIp = request.headers.get('cf-connecting-ip')
   if (cfIp) {
     const sanitized = sanitizeIp(cfIp)
@@ -46,7 +36,6 @@ export function getClientAddress(request: Request, directIp?: string, trustedPro
     }
   }
 
-  // 2. Single-hop proxy header — typically set by nginx/caddy on localhost.
   const realIp = request.headers.get('x-real-ip')
   if (realIp) {
     const sanitized = sanitizeIp(realIp)
@@ -55,7 +44,6 @@ export function getClientAddress(request: Request, directIp?: string, trustedPro
     }
   }
 
-  // 3. X-Forwarded-For chain — rightmost hop came from the trusted localhost proxy.
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
     const hops = forwarded.split(',').map((h) => h.trim())

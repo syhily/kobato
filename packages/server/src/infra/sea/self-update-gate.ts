@@ -1,6 +1,3 @@
-// Self-update gate — each failed check appends one English technical reason
-// (doctor/log output) plus its typed admin-facing descriptor.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
@@ -38,7 +35,6 @@ function isContainerized(): boolean {
   try {
     return CONTAINER_CGROUP_PATTERN.test(readFileSync('/proc/1/cgroup', 'utf8'))
   } catch {
-    // No /proc (non-linux) or unreadable — treat as not containerized.
     return false
   }
 }
@@ -46,10 +42,6 @@ function isContainerized(): boolean {
 export function evaluateSelfUpdateGate(): SelfUpdateGateResult {
   const reasonDescriptors: ErrorMessageDescriptor[] = []
   const add = (messageKey: SelfUpdateGateReasonKey): void => {
-    // These five keys carry no ICU arguments, so the English baseline value IS
-    // the fallback. Reading the catalog directly keeps this module free of the
-    // server translator/config graph — `sea-cli --version/--help` imports the
-    // gate through `doctor` and must stay side-effect free.
     reasonDescriptors.push({ messageKey, fallbackMessage: uiMessagesEnUS[messageKey] })
   }
 

@@ -1,19 +1,3 @@
-/**
- * Hardcoded-UI-copy guard.
- *
- * Interface copy, validation messages, toast/DomainError text, hardcoded
- * locales and locale-less `toLocale*()` calls must not reach production source:
- * every one of them belongs to the message catalogs so all four locales stay
- * in step. The scanner is an AST walk (see `#/_helpers/i18n-literals`) with an
- * exact file/rule/snippet allowlist — never a blanket directory skip.
- *
- * `SCAN_ROOTS` is the FINAL scope: the whole production tree (every package's
- * `src/**`). Every exemption is an exact file/rule (+ snippet where the file
- * holds more than one finding) entry with a written reason. Whole-file data
- * libraries (the vendored quote bank, the emergency fallback catalog) are not
- * allowlisted at all — they are excluded before the parser runs.
- */
-
 import {
   applyAllowlist,
   scanI18nLiterals,
@@ -23,10 +7,6 @@ import {
 import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// The whole production source tree across the workspace packages, including
-// the shared split's leaf roots as their sources land. An allowlist
-// entry is the only way to skip a finding, and it must name the exact file,
-// rule and (usually) snippet with a written reason.
 const SCAN_ROOTS = [
   'apps/kobato/src',
   'packages/inkling/src',
@@ -52,20 +32,10 @@ const SCAN_ROOTS = [
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
-  // The locale module names every supported tag and alias by design — it IS
-  // the single source of truth the rule checks against.
-  // Endonyms are deliberately each locale's own script, never translated.
   { path: 'packages/shared/i18n/src/locales.ts', rules: ['hardcoded-locale', 'han-literal'] },
-  // The catalog aggregator keys its per-locale maps and its English fallback
-  // by tag; those literals are the catalog identity, not UI copy.
   { path: 'packages/shared/i18n/src/catalog.ts', rules: ['hardcoded-locale'] },
-  // The display facade maps app locales onto date-fns locales — same identity role.
   { path: 'packages/shared/utils/src/format.ts', rules: ['hardcoded-locale'] },
-  // Weibo's share widget takes a hardcoded `language=zh_cn` PROTOCOL parameter;
-  // it is never rendered to a reader.
   { path: 'packages/web/public/src/ui/LikeActions.tsx', rules: ['hardcoded-locale'], text: 'zh_cn' },
-  // Off-screen anti-bot honeypot fields: never visible, never localized (bots
-  // fill them; translating would change the trap).
   {
     path: 'packages/web/public/src/ui/comments/CommentReplyForm.tsx',
     rules: ['jsx-text', 'jsx-attribute'],
@@ -86,12 +56,8 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     rules: ['jsx-text', 'jsx-attribute'],
     text: 'Honeypot',
   },
-  // `&rarr;` is a decorative arrow glyph in a CTA, not copy.
   { path: 'packages/web/admin/src/ui/auth/AdminInstallForm.tsx', rules: ['jsx-text'], text: '&rarr;' },
-  // "Setup Token" names a server-console credential — a protocol term.
   { path: 'packages/web/admin/src/ui/auth/SetupTokenVerifyForm.tsx', rules: ['jsx-text'], text: 'Setup Token' },
-  // Technical tokens that are never translated — SI units, provider names,
-  // protocol paths, keyboard keys and example URLs.
   {
     path: 'packages/web/admin/src/ui/settings/comments/CommentsAvatarCard.tsx',
     rules: ['jsx-text'],
@@ -121,8 +87,6 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/web/admin/src/ui/shell/AdminSearchDialog.tsx', rules: ['jsx-text'], text: 'ESC' },
   { path: 'packages/web/admin/src/ui/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'v' },
   { path: 'packages/web/admin/src/ui/shell/VersionDialog.tsx', rules: ['jsx-text'], text: 'GitHub' },
-  // Technical tokens on the business admin surface — protocol names, URL
-  // prefixes, field identifiers, example URLs and keyboard keys.
   {
     path: 'packages/web/admin/src/ui/analytics/LocationsMap.tsx',
     rules: ['jsx-text'],
@@ -147,55 +111,30 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/web/admin/src/ui/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
   { path: 'packages/web/admin/src/ui/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
   { path: 'packages/web/admin/src/ui/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
-  // The editor slices' technical tokens. The locale→table aggregator
-  // keys its map by locale tag — the tags ARE that mapping's identity. The
-  // label tables themselves are a copy store (the editor chrome's catalog; the
-  // scanner exempts `inkling-labels/` from han-literal by design). The
-  // revision-number sigil and the image-dimension separator are glyphs, not copy.
   { path: 'packages/shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
-  // The client's dynamic `locale → label-table import` map: the tags are the
-  // mapping's identity (the counterpart of the aggregator above), not copy.
   { path: 'packages/web/client/src/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'packages/web/admin/src/ui/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
   { path: 'packages/web/admin/src/ui/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
-  // Technical/developer invariants, never user copy. These files'
-  // only DomainError literals are internal diagnostics (a missing meta row, a
-  // missing id on a developer-only entry point, registry-default drift), so the
-  // rule may be exempted per file.
   { path: 'packages/server/src/domains/content/repos/mutate.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/posts/services/mutate.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/pages/services/mutate.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/settings/sections/registry.ts', rules: ['domain-error'] },
-  // Webmention verification/fetch failures are TECHNICAL diagnostics persisted
-  // as `last_error` (never rendered to a reader) — kept raw by design.
   { path: 'packages/server/src/domains/webmentions/fetch.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/webmentions/receive.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/webmentions/target.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/webmentions/verify.ts', rules: ['domain-error'] },
-  // These maps ARE the locale identity (calendar copy / default font
-  // chains) — the exact tags are their contract, not UI copy to translate.
   { path: 'packages/server/src/render/calendar/locale.ts', rules: ['hardcoded-locale', 'han-literal'] },
   { path: 'packages/ui/src/lib/font-stacks.ts', rules: ['hardcoded-locale'] },
-  // Producer guard: both a category AND a tag filter is a programming error,
-  // never reachable from the public feed URLs. Technical diagnostic, kept raw.
   {
     path: 'packages/server/src/render/feed/generator.tsx',
     rules: ['domain-error'],
     text: 'Category and tag cannot be specified at the same time',
   },
-  // Inkling is a self-contained editor layer: its translatable chrome arrives
-  // through the label tables, and these are either glyphs or third-party
-  // protocol values.
   { path: 'packages/inkling/src/components/ui/LibrarySelector.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/inkling/src/nodes/FootnoteDefinitionNodeComponent.tsx', rules: ['jsx-text'], text: '×' },
-  // Editorial placeholder marker (TK = "to come") — a convention, not copy.
   { path: 'packages/inkling/src/plugins/TKPlugin.tsx', rules: ['jsx-text'], text: 'TK' },
   // emoji-mart's own locale id (third-party picker data), never rendered as copy.
   { path: 'packages/inkling/src/components/ui/EmojiPickerPortal.tsx', rules: ['hardcoded-locale'], text: 'en' },
-  // Developer invariants: these DomainError literals guard internal call
-  // contracts (a caller passed no role / a projection shape drifted) and never
-  // reach a reader. Pinned per SNIPPET — a new user-visible DomainError in the
-  // same file must fail this scan instead of riding a file-wide exemption.
   {
     path: 'packages/server/src/domains/auth/primitives.ts',
     rules: ['domain-error'],
@@ -211,20 +150,11 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     rules: ['domain-error'],
     text: 'admin projection shape validation failed (…): … …',
   },
-  // Transliteration table data: single letters ('Zh', 'zh', 'en', …) are
-  // slug-mapping values, not locale choices or copy.
   { path: 'packages/shared/utils/src/slug-char-map.ts', rules: ['hardcoded-locale'] },
-  // The SEA Intl probe's expectation table is KEYED by the locale identity — the
-  // tags are the probe's index and the expected ICU output is technical data.
   { path: 'packages/server/src/infra/sea/intl-probe.ts', rules: ['hardcoded-locale', 'han-literal'] },
-  // CLI stderr/doctor output: operator-facing technical diagnostics, never a
-  // browser string (the CLI's Chinese text is deliberate, not a locale bug).
   { path: 'packages/server/src/infra/config.ts', rules: ['han-literal'] },
   { path: 'packages/server/src/infra/sea/binary-rollback.ts', rules: ['han-literal'] },
-  // Slash-menu search aliases: match keys, never rendered as interface copy.
   { path: 'packages/web/admin/src/ui/editor/cards/menu-matches.ts', rules: ['han-literal'] },
-  // Default content seeds and the content projection are spec'd as
-  // untranslatable (they are stored/rendered content, not app chrome).
   { path: 'packages/shared/lexical/src/cards/solution.ts', rules: ['han-literal'], text: '解：' },
   {
     path: 'packages/shared/lexical/src/projection-state.ts',
@@ -232,8 +162,6 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     text: '🎵 此文章包含音乐播放器，请访问原文收听。',
   },
   { path: 'packages/shared/settings/src/presentation.ts', rules: ['han-literal'], text: '尾声礼记' },
-  // Social rows seed user-editable content: `brandName` holds the
-  // locale-neutral form verbatim; the translated label is `labelId`.
   { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微博' },
   { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微信' },
 ]
@@ -242,10 +170,6 @@ function rules(source: string, file = 'fixture.tsx'): string[] {
   return scanSourceForI18nLiterals(source, file).map((violation) => violation.rule)
 }
 
-// Parsing the whole tree is the expensive part; both full-tree assertions read
-// the SAME result (the second only needs `scannedFiles`). Roots whose split has
-// not started yet may not exist on disk — the scanner deliberately throws on a
-// missing root (a silent skip would mask typos), so they are filtered here.
 let productionScan: ReturnType<typeof scanI18nLiterals> | null = null
 function scanProduction(): ReturnType<typeof scanI18nLiterals> {
   productionScan ??= scanI18nLiterals({
@@ -330,9 +254,6 @@ describe('production sources', () => {
   it('excludes whole-file content libraries before reading or parsing them', () => {
     const { skippedFiles, scannedFiles } = scanProduction()
 
-    // The emergency fallback catalog is data, not chrome: it is reached under
-    // the roots but never parsed, so it needs no allowlist entry. The calendar
-    // quote bank is now a JSON data file, so its tiny typed wrapper IS scanned.
     expect(skippedFiles).toEqual(['packages/shared/i18n/src/fallback-messages.ts'])
     expect(scannedFiles).toContain('packages/server/src/render/calendar/local-quotes.ts')
     expect(scannedFiles).not.toContain('packages/shared/i18n/src/fallback-messages.ts')
@@ -540,8 +461,6 @@ describe('scanner rules', () => {
       'domain-error',
     ])
     expect(rules("export function A() { throw new DomainError('CONFLICT', reason) }")).toEqual([])
-    // English copy is copy: technical text is allowlisted per site, never
-    // exempted by the rule itself.
     expect(rules("export function A() { throw new DomainError('INTERNAL', 'row failed') }")).toEqual(['domain-error'])
     expect(rules("export function A() { throw new DomainError('INTERNAL', String(code)) }")).toEqual([])
   })
@@ -601,17 +520,11 @@ describe('scanner rules', () => {
   })
 
   it('skips a content store before the parser sees it', () => {
-    // Invalid syntax would throw in `parseAst`; a content store must never
-    // reach it, so the same text is silently (and deliberately) not scanned.
     const invalid = 'this is not valid TypeScript {{{'
     expect(() => scanSourceForI18nLiterals(invalid, 'src/not-a-content-store.ts')).toThrow()
     expect(scanSourceForI18nLiterals(invalid, 'packages/shared/i18n/src/fallback-messages.ts')).toEqual([])
   })
 
-  // No wall-clock assertion: the fixture is big enough (thousands of hits late
-  // in a multi-megabyte file) that a per-hit rescan from offset 0 would be
-  // quadratic and time out; the binary-searched line index stays linear.
-  // Correctness of every position is asserted instead.
   it('stays fast on a large file with thousands of late hits', { timeout: 60_000 }, () => {
     const lineCount = 10_000
     const padding = 'x'.repeat(180)

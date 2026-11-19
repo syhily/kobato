@@ -1,10 +1,6 @@
 import { renderHook } from '@kobato/test/hook.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-// useEditorShellState is the orchestrator that owns body / meta / revision
-// state and wires layout + persist together. The SSR renderHook harness
-// renders a single synchronous pass, so the leaf deps are mocked below.
-
 const mutate = vi.fn()
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
 
@@ -101,7 +97,6 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(toolbar.isUnpublishing).toBe(false)
     expect(toolbar.isCreating).toBe(false)
 
-    // Create-mode gating: canPublish requires isEditing, canPersistMeta a non-empty title.
     expect(toolbar.canPublish).toBe(false)
     expect(toolbar.canPersistMeta).toBe(false)
     expect(toolbar.published).toBe(false)
@@ -162,7 +157,6 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
   it('adoptLocalDraft / adoptServerVersion / adoptRevisionFromHistory short-circuit in create mode', async () => {
     const args = makeCreateArgs()
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
-    // In create mode the adoption helpers no-op, leaving body/meta untouched.
     await expect(result.dialog.adoptLocalDraft()).resolves.toBeUndefined()
     expect(() => result.dialog.adoptServerVersion()).not.toThrow()
     expect(() => result.sidebar.adoptRevisionFromHistory({ body: emptyLexicalBody(), revisionNo: 1 })).not.toThrow()

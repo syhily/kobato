@@ -8,13 +8,9 @@ import { createElement, Fragment } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-// Every system-email string (layout, subjects, bodies, labels, CTA copy) must exist,
-// translated, in all four server catalogs. Server-only on purpose: this copy never enters
-// the client UI payload.
 interface Case {
   key: ServerMessageId
   params?: Record<string, string | number>
-  /** Rich-text message: tags are rendered as their plain chunks (text comparison only). */
   rich?: boolean
   messages: Record<AppLocale, string>
 }
@@ -945,11 +941,6 @@ describe('server email messages — four locales', () => {
 })
 
 describe('English server catalog copy', () => {
-  // Catalog TEMPLATES use ASCII punctuation. User-supplied values (site titles,
-  // post titles, error text) legitimately contain any script — this scans the
-  // templates, never a formatted message, so no proper noun is forbidden.
-  // The class covers General Punctuation (em dash), arrows, CJK punctuation
-  // and fullwidth forms; `©` (U+00A9) is not in it.
   const NON_ASCII_PUNCTUATION = /[\u2010-\u206F\u2190-\u21FF\u3000-\u303F\uFE30-\uFE4F\uFF00-\uFFEF]/gu
 
   it('uses ASCII punctuation in every server template', () => {

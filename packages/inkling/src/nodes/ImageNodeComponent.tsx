@@ -38,8 +38,6 @@ export interface ImageNodeComponentProps {
   triggerFileDialog?: boolean
   previewSrc?: string | null
   href?: string
-  // resolved from the node's cardWidth by the declaration's decorateTarget
-  // width mapper, so undo/redo and collab changes arrive as a new prop
   cardWidth: CardWidth
 }
 
@@ -91,8 +89,6 @@ export function ImageNodeComponent({
 
   const imageCardDragHandler = useDropTarget({
     canDrop: (draggable) => isImageCardDropAllowed(draggable, nodeKey),
-    // the container ref is the image wrapper itself, so :scope makes the
-    // whole image card draggable/droppable for creating galleries
     draggableSelector: ':scope',
     droppableSelector: ':scope',
     onDrop: (draggable) => {
@@ -141,8 +137,6 @@ export function ImageNodeComponent({
         return
       }
 
-      // the node write is enough: decorate() re-reads cardWidth on the commit
-      // and the new width arrives as the cardWidth prop
       write((node) => {
         node.cardWidth = newWidth
       })

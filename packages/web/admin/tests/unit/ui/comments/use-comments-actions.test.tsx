@@ -11,8 +11,6 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Drives `useCommentsController` at the hook level; the plain-object
-// `orpc` mock covers loadAll and the three comment mutations.
 const api = vi.hoisted(() => ({
   loadAll: vi.fn(),
   approve: vi.fn(),
@@ -50,7 +48,6 @@ import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filte
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
-// Real effects required — unlike the controller's SSR `#/_helpers/hook` suite.
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
@@ -68,8 +65,6 @@ function makeIntents() {
   return { edit: vi.fn(), reply: vi.fn(), editUser: vi.fn() } satisfies CommentIntents
 }
 
-// Boots the controller with one loaded page and bridges a real
-// `useFilterPills` exactly as `CommentsView` does.
 async function setupController(pageComments: AdminComment[], statusCounts?: AdminCommentsPage['statusCounts']) {
   const counts = statusCounts ?? {
     all: pageComments.length,
@@ -109,7 +104,6 @@ beforeEach(() => {
   api.searchPages.mockReset()
   api.searchAuthors.mockReset()
   toastMock.error.mockClear()
-  // happy-dom lacks scrollTo; pin a no-op.
   Object.defineProperty(window, 'scrollTo', { value: vi.fn(), writable: true, configurable: true })
 })
 
@@ -127,7 +121,6 @@ describe('useCommentsController comment actions — confirm choreography', () =>
       actionLabel: '通过',
       destructive: false,
     })
-    // Nothing fires until the dialog confirms.
     expect(api.approve).not.toHaveBeenCalled()
 
     api.approve.mockResolvedValue(undefined)
@@ -244,7 +237,6 @@ describe('useCommentsController comment actions — pending gates and intents', 
     await act(async () => result.current.confirm?.onConfirm())
 
     await waitFor(() => expect(result.current.actions.isApproving(a)).toBe(true))
-    // Only the in-flight comment's row disables its button.
     expect(result.current.actions.isApproving(b)).toBe(false)
     expect(result.current.actions.isRemoving(a)).toBe(false)
 

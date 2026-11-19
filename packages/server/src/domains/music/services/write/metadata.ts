@@ -15,10 +15,6 @@ export interface UpdateMusicMetadataInputs {
   lyric: string | null
 }
 
-/**
- * Metadata-only edit for the admin UI; `artist[]` is packed to the
- * `'Artist A / Artist B'` row form. Other columns are upload-pipeline-owned.
- */
 export async function updateMusicMetadata(
   db: Database,
   input: UpdateMusicMetadataInputs,

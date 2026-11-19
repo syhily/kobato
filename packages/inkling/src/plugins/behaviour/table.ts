@@ -49,8 +49,6 @@ export function $insertTable(dataset: unknown): boolean {
     topLevel.remove()
   }
 
-  // Land the caret in the first cell. getFirstDescendant() bottoms out at the
-  // cell's (empty) paragraph — never a text node — so select the element.
   const firstDescendant = tableNode.getFirstDescendant()
   if ($isTextNode(firstDescendant)) {
     firstDescendant.select()

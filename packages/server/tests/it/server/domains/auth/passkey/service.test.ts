@@ -25,8 +25,6 @@ vi.mock('@simplewebauthn/server', () => ({
   verifyAuthenticationResponse: vi.fn((...args: unknown[]) => swaMocks.verifyAuthenticationResponse(...args)),
 }))
 
-// The passkey service reads rpName/rpID/origin and the passkey gate off
-// the real settings snapshot — seed it through the test bundle.
 function bundleWithWebsite(website: string) {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -199,8 +197,6 @@ describe('passkey — registration failure branches', () => {
       .then((r) => r[0])
     await beginRegistration(dbUser, 'reg-expired')
 
-    // Age the stored challenge past its TTL — the atomic consume treats
-    // expired rows as misses.
     await db
       .update(oneTimeToken)
       .set({ expiresAt: new Date(Date.now() - 1000) })
@@ -273,8 +269,6 @@ describe('passkey — registration failure branches', () => {
       challenge: 'reg-dup-1',
     })
 
-    // Second registration of the same credential id hits the real UNIQUE
-    // constraint on passkey_credential.credential_id.
     await beginRegistration(dbUser, 'reg-dup-2')
     await expect(
       passkeyService.verifyRegistrationResponse(db, dbUser, {

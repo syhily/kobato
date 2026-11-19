@@ -6,12 +6,8 @@ import { and, asc, count, desc, eq, inArray, isNull, lt, lte, or } from 'drizzle
 
 export type WebmentionOutboxStatus = WebmentionOutboxRow['status']
 
-/** Group-by-status row counts (`all` + one entry per send status). Wire
- *  twin: `webmentionOutboxStatusCountsSchema` in `@kobato/contracts/webmentions`. */
 export type WebmentionOutboxStatusCounts = { all: number } & { [S in WebmentionOutboxStatus]: number }
 
-/** Dedup on UNIQUE(source_url, target_url): a republish resets `no-endpoint`/`failed`
- *  rows to `pending`; `sent` rows stay untouched. Waterline raises are one-way. */
 export async function upsertWebmentionOutbox(
   db: Database,
   values: { sourceUrl: string; targetUrl: string; nextRetryAt?: Date | null },
@@ -62,8 +58,6 @@ export async function pickDueWebmentionOutbox(db: Database, now: Date, limit: nu
     .limit(limit)
 }
 
-/** The scheduler's next wake-up: earliest retry time, `'now'` when due, null when empty.
- *  Sync (node:sqlite): scheduleJob's `nextDelayMs` is synchronous. */
 export function findNextWebmentionOutboxDueAt(db: Database): Date | 'now' | null {
   const rows = db
     .select({ nextRetryAt: webmentionOutbox.nextRetryAt })
@@ -91,7 +85,6 @@ export async function markWebmentionOutboxSent(db: Database, id: number): Promis
     .where(eq(webmentionOutbox.id, id))
 }
 
-/** Non-terminal failure — bump attempts, push the waterline out. */
 export async function markWebmentionOutboxRetry(
   db: Database,
   id: number,
@@ -105,8 +98,6 @@ export async function markWebmentionOutboxRetry(
     .where(eq(webmentionOutbox.id, id))
 }
 
-/** Terminal without delivery — `no-endpoint` (never declared) or `failed` (4xx / exhausted).
- *  `attempts` is only written when the terminal state came from an attempt. */
 export async function markWebmentionOutboxTerminal(
   db: Database,
   id: number,

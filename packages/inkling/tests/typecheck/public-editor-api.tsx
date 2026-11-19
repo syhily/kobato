@@ -1,9 +1,3 @@
-/**
- * Compile-time contract fixtures for the public editor component API.
- *
- * This file is included by the root tsconfig (unlike test/unit) and is only
- * type-checked — it is never executed and contains no runtime assertions.
- */
 import type { Transformer } from '@lexical/markdown'
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
 

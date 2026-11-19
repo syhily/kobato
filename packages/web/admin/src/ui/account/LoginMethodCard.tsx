@@ -26,7 +26,6 @@ interface LoginMethodCardProps {
 export function LoginMethodCard({ loginMethod, passkeyEnabled, mailReady }: LoginMethodCardProps) {
   const { t } = useI18n()
   const revalidator = useRevalidator()
-  // Same query cache as PasskeyManagementCard — registering/deleting there immediately updates this disabled state.
   const passkeyQuery = useQuery(orpcQuery.account.passkeyList.queryOptions())
   const passkeyCount = passkeyQuery.data?.credentials.length ?? 0
 

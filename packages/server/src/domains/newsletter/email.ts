@@ -7,7 +7,6 @@ import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { createElement } from 'react'
 
-// The only mail a `pending` subscriber ever receives.
 export async function sendConfirmSubscription(
   email: string,
   confirmLink: string,

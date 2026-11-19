@@ -2,15 +2,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Nested card editors (captions, asides, toggles) render their own
-// `.inkling-lexical` wrapper and `.inkling-prose` contentEditable inside the
-// canvas, so a bare descendant selector would hand each nested editor the
-// canvas geometry (60vh padding, zoom, min-height). The page canvas pins by
-// being the scroll container's direct child; the comment canvas pins by the
-// typeset preset class, which only the top-level contentEditable carries (the
-// RichTextPlugin mounts an unclassed wrapper in between, so a child combinator
-// cannot reach it).
-
 const css = readFileSync(resolve(process.cwd(), 'packages/web/admin/src/styles/inkling-editor.css'), 'utf8')
 const commentCss = readFileSync(
   resolve(process.cwd(), 'packages/web/public/src/styles/inkling-comment-editor.css'),

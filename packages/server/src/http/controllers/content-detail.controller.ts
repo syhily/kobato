@@ -22,12 +22,6 @@ import { idFromString } from '@kobato/utils/id.ts'
 
 const impl = implementPublic(contentDetailContract)
 
-// `/posts/:slug`. The decision tree (draft fallback → 404 → canonical 301)
-// lives in `loadPostPreview`, which throws Responses translated here. The
-// detail ETag is computed AFTER the full payload is assembled — it covers the
-// post shell, body html, tags, sidebar and the interaction critical, so it can
-// only be compared once every one of those reads has settled. Draft previews
-// never carry a published ETag. Comments stream via a separate fan-out.
 const postBySlug = impl.postBySlug.handler(async ({ input, context }) => {
   const db = context.db
 
@@ -44,9 +38,6 @@ const postBySlug = impl.postBySlug.handler(async ({ input, context }) => {
 
   const target: EntityTarget = { type: 'post', ownerId: idFromString(preview.post.id) }
 
-  // ONE sidebar selection for this representation: scope (the content id) +
-  // site calendar day + settings revision. It is shared by both widgets so
-  // repeated renders pick the same sidebar and the ETag stays stable.
   const sidebar = sidebarSelection({
     settings: requireBlogSettingsSection('sidebar', context.settings),
     scope: `post:${preview.sourcePost.id}`,

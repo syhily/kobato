@@ -40,7 +40,6 @@ export interface LoadMineCommentsResult {
 const EXCERPT_LIMIT = 80
 
 function makeExcerpt(raw: string): string {
-  // `content` is degraded HTML, not markdown — strip tags before excerpting.
   const trimmed = raw
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
@@ -62,7 +61,6 @@ export async function loadMineCommentsPage(
   limit: number,
   filters: MyCommentsFilters = {},
 ): Promise<LoadMineCommentsResult> {
-  // Compute the cutoff once so the parallel list/count queries see the same visible set.
   const cutoff = mineSoftDeleteCutoff()
   const [rows, counts] = await Promise.all([
     listMyComments(db, userId, offset, limit, filters, cutoff),

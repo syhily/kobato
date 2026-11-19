@@ -16,15 +16,10 @@ export interface AdminMusicListFilters {
   includeDeleted?: boolean
 }
 
-/**
- * Admin list projection: `music` columns plus `uploaderName` via LEFT
- * JOIN `user`; null when the row has no uploader or the user was deleted.
- */
 export interface AdminMusicRowWithUploader extends MusicRow {
   uploaderName: string | null
 }
 
-// Entity-specific columns; `withUploader()` appends `uploaderName` and owns the join + refetch.
 const musicUploader = withUploader({
   table: music,
   idColumn: music.id,
@@ -112,7 +107,6 @@ export async function findMusicById(db: Database, id: number): Promise<MusicRow 
   return rows[0] ?? null
 }
 
-/** Public lookup by the `playerId` stored in `musicPlayer` editor blocks; skips soft-deleted rows. */
 export async function findMusicByPlayerId(db: Database, playerId: string): Promise<MusicRow | null> {
   const rows = await db
     .select()
@@ -122,7 +116,6 @@ export async function findMusicByPlayerId(db: Database, playerId: string): Promi
   return rows[0] ?? null
 }
 
-/** Idempotency lookup on `(source, sourceId)` — the add path's dedup key. */
 export async function findMusicBySourceAndId(db: Database, source: string, sourceId: string): Promise<MusicRow | null> {
   const rows = await db
     .select()
@@ -168,10 +161,6 @@ export async function softDeleteMusic(db: Database, id: number): Promise<MusicRo
   return rows[0] ?? null
 }
 
-/**
- * Undo a soft delete in place — the row keeps id, playerId, and storage
- * paths, so the caller re-uploads the assets to those same paths.
- */
 export async function restoreMusic(
   db: Database,
   id: number,

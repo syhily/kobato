@@ -25,16 +25,10 @@ export function registerEnterCommand(editor: LexicalEditor, deps: KeyboardNaviga
         if ($isInklingCard(cardNode) && cardNode.hasEditMode()) {
           event.preventDefault()
 
-          // Leaving edit mode must move focus back to the editor: focus left on removed
-          // elements swallows further key events.
           if (isEditingCard) {
             if (cardNode.isEmpty?.()) {
-              // Root-first focus choreography lives in card-adjacency; selecting the next
-              // block directly avoids KEY_ARROW_DOWN_COMMAND's bail-out while focus is
-              // still inside the card's nested editor.
               $removeOrReplaceNodeWithParagraph(editor, cardNode, { focus: 'root-first' })
             } else {
-              // Re-create the node selection: focusing places the cursor at the doc start.
               $selectCard(editor, selectedCardKey)
             }
 

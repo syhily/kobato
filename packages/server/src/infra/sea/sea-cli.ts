@@ -38,7 +38,6 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { Worker } from 'node:worker_threads'
 
-// Baked at build time by vite define — a single executable has no package.json.
 declare const __SEA_APP_VERSION__: string
 
 const USAGE = `kobato — self-hosted blog CMS (single executable)
@@ -138,34 +137,24 @@ async function smokeNatives(quiet = false): Promise<void> {
   }
 }
 
-/** Prove a sharp job round-trips the production worker pool — the gap
- * in-process smoke cannot cover. Requires the full server config
- * (validated, never connected). */
 async function smokeWorker(): Promise<void> {
-  // Extract natives and set KOBATO_NATIVES_DIR first — the worker evaluates bundled sharp at module scope.
   bootstrapSeaRuntime()
   const bundlePath = seaAssetPath(SEA_SMOKE_WORKER_BUNDLE_KEY)
-  // Worker threads don't inherit argv — forward it; the '[worker eval]'
-  // placeholder keeps process.argv.slice(2) aligned, or --config is dropped.
   const workerOptions = {
     argv: ['[worker eval]', ...process.argv.slice(2)],
     workerData: { kobatoSmokeWorker: true },
   }
   const worker =
     bundlePath !== null
-      ? // eval: true + --input-type=module runs the ESM bundle as a module;
-        // workers cannot start from VFS paths, so the code is read then eval'd.
-        new Worker(readFileSync(bundlePath, 'utf-8'), {
+      ? new Worker(readFileSync(bundlePath, 'utf-8'), {
           ...workerOptions,
           eval: true,
           execArgv: ['--input-type=module'],
         })
-      : // Non-SEA convenience: the sibling bundle from the same vite run.
-        new Worker(new URL('./smoke-worker.mjs', import.meta.url), {
+      : new Worker(new URL('./smoke-worker.mjs', import.meta.url), {
           argv: process.argv.slice(2),
           workerData: workerOptions.workerData,
         })
-  // Shared stdio with this process; swallow 'error' — the exit code carries the failure.
   worker.once('error', () => undefined)
   const [exitCode] = unsafeCast<[number]>(await once(worker, 'exit'))
   if (exitCode !== 0) {
@@ -197,7 +186,6 @@ async function smokeVfs(): Promise<void> {
   if (typeof manifest !== 'object' || manifest === null || !('files' in manifest)) {
     throw new Error(`SEA manifest read through the VFS is malformed: ${SEA_MANIFEST_KEY}`)
   }
-  // The mount is read-only: writes must fail with EROFS.
   try {
     writeFileSync(join(root, '.smoke-vfs-write'), 'nope')
     throw new Error('SEA VFS accepted a write — expected EROFS')
@@ -206,10 +194,6 @@ async function smokeVfs(): Promise<void> {
       throw error
     }
   }
-  // The writev repair (src/server/infra/sea/sea-vfs-fs-patch.ts): enough queued
-  // chunks force WriteStream._writev → fs.writev, which crashes an unpatched
-  // useVfs process (TypeError: h.writev is not a function) even on a REAL
-  // file. Flush 4 MB and verify the byte count.
   const tmpFile = join(mkdtempSync(join(tmpdir(), 'kobato-smoke-vfs-')), 'writev.bin')
   try {
     const chunk = Buffer.alloc(64 * 1024, 'a')
@@ -232,8 +216,6 @@ async function smokeVfs(): Promise<void> {
   process.stdout.write(`SEA VFS smoke passed: ${root}\n`)
 }
 
-/** Re-exec with --doctor-config-probe (forwarding --config): loading the
- * config graph IS the validation — exit 0 means it validates. */
 function probeConfig(): Promise<{ ok: boolean; issues: string[] }> {
   const explicit = parseConfigArg(process.argv.slice(2))
   const forward = explicit !== undefined ? ['--config', explicit] : []
@@ -294,7 +276,6 @@ async function main(args: ReadonlySet<string>): Promise<void> {
     await doctor(args.has('--json'))
   }
   if (args.has('--doctor-config-probe')) {
-    // Importing the config graph validates the configuration as a module side effect.
     await import('@kobato/server/infra/config.ts')
   }
 }
@@ -313,10 +294,6 @@ const isFlagInvocation =
   args.has('doctor') ||
   args.has('--doctor-config-probe')
 
-// The writev/readv repair must land HERE, not only in
-// sea-bootstrap: this module's top-level `await main(args)` suspends its
-// evaluation, so sibling imports (sea-bootstrap) have not run while a flag
-// path executes.
 installSeaVfsRuntimePatches()
 
 if (isFlagInvocation) {

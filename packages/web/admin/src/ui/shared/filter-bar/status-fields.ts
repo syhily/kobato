@@ -1,7 +1,5 @@
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// Shared status-filter projection: the deleted/normal split lives here
-// exactly once; caller-owned leg maps add the per-list fields.
 export type StatusQueryFields<F extends Record<string, unknown>> = {
   deletedStatus: 'all' | 'deleted' | 'normal'
 } & Partial<F>

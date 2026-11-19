@@ -1,6 +1,3 @@
-// Minimal `fetch` test double: captures every call and queues per-URL responses. Restores
-// the original `fetch` after each test so a suite that forgets `reset()` cannot leak it.
-
 import { afterEach } from 'vitest'
 
 type FetchResponder = (input: Request | URL | string, init?: RequestInit) => Promise<Response>

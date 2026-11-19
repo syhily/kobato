@@ -1,10 +1,3 @@
-// Stable React Router identity for frontend RUM.
-//
-// The SDK must never receive `location.pathname`, `location.search`, route
-// params, or content titles as a view name. The deepest matched route ID is
-// app-authored and param-free; the URL passed to the SDK is derived by
-// substituting the router's own params back with their segment placeholders.
-
 export interface RumRouteMatch {
   id?: string
   pathname: string
@@ -49,18 +42,12 @@ function isSafeTemplate(value: string): boolean {
     .every((segment) => STATIC_SEGMENT_PATTERN.test(segment) || PARAM_SEGMENT_PATTERN.test(segment))
 }
 
-/**
- * Derive the view identity from the matched chain. Params are used only as a
- * replacement map: a whole path segment equal to a param value becomes
- * `:<name>`, so the emitted template contains placeholders, never values.
- */
 export function rumRouteContextFromMatches(matches: readonly RumRouteMatch[]): RumRouteContext {
   const match = matches[matches.length - 1]
   if (match === undefined) {
     return UNKNOWN_ROUTE
   }
 
-  // Deepest params win: a layout param name may be shadowed by its child.
   const params = new Map<string, string>()
   for (let index = matches.length - 1; index >= 0; index -= 1) {
     for (const [key, value] of Object.entries(matches[index]?.params ?? {})) {
@@ -82,9 +69,6 @@ export function rumRouteContextFromMatches(matches: readonly RumRouteMatch[]): R
     const at = pathname.indexOf(suffix)
     template = at >= 0 ? `${pathname.slice(0, at)}/:*` : pathname
   } else {
-    // Match from the RIGHT: a static segment may legitimately equal a param
-    // value (e.g. `/admin/library/music/music` with `id=music`), and the
-    // router's param segment is the later occurrence.
     const segments = pathname.split('/')
     const replaced = new Map<number, string>()
     const entries = [...params.entries()]

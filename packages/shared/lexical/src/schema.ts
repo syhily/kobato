@@ -5,49 +5,22 @@ import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@kobato/lexical/node-whi
 import { isSafeUrl } from '@kobato/sanitize/sanitize-url.ts'
 import { z } from 'zod'
 
-// Zod validation for the Lexical storage format: the full editing state for
-// posts/pages; `comment-schema.ts` builds the restricted comment variant from
-// the same factory.
-//
-// Every node variant enumerates its serialized fields with plain `z.object`
-// (unknown keys are stripped, not rejected); required fields are the ones the
-// full-dialect exporters always write. Stored/POSTed payloads may arrive in the
-// COMPACT dialect (`dialect.ts`); the `normalizeLexicalDialect` preprocess
-// refills the defaults before shape validation, so the parse output is always
-// the full dialect.
-//
-// The union validates shape only; the per-surface policy (allowed subset, list
-// depth) is the iterative walk in `buildLexicalEditorStateSchema`. The
-// `SerializedEditorState` import is type-only (erased at build): no Lexical
-// runtime dependency.
-
-/** Validated node shape. Per-variant fields are enforced by the schema;
- * the recursive type only models what every node shares. */
 export type LexicalNodeJson = {
   type: string
   version: number
   children?: LexicalNodeJson[]
 }
 
-/**
- * Depth bound for `boundTreeDepth`: a hostile body could nest nodes until the
- * recursive descent blows the stack, so the iterative pre-pass rejects
- * over-deep payloads first. Real documents stay shallow (table > row > cell >
- * paragraph is 4 below root, a maximally nested article list is 12).
- */
 export const MAX_TREE_DEPTH = 24
 
-/** Article list nesting cap. Comments cap lower — see comment-schema.ts. */
 export const ARTICLE_LIST_MAX_DEPTH = 6
 
 const NODE_VERSION = z.number().int().min(1)
 
-// SerializedElementNode wire fields.
 const DIRECTION = z.enum(['ltr', 'rtl']).nullable()
 const ELEMENT_FORMAT = z.enum(['left', 'start', 'center', 'right', 'end', 'justify', ''])
 const INDENT = z.number().int().min(0)
 
-// SerializedTextNode wire fields.
 const TEXT_FIELDS = {
   detail: z.number().int(),
   format: z.number().int(),
@@ -58,10 +31,6 @@ const TEXT_FIELDS = {
 
 const SAFE_URL_MESSAGE = 'url must not use javascript:, data:, or vbscript: protocol'
 
-// The single `z.lazy` self-reference is a cycle the zod compiler refuses, so
-// these schemas permanently use the runtime parser — deliberate: compiling a
-// nested lazy schema re-parses every node at every tier, and compiled parsing
-// buys nothing for once-per-write body validation.
 const nodeSchema: z.ZodType<LexicalNodeJson> = z.lazy(() => nodeUnion)
 
 function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
@@ -94,8 +63,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       ...elementFields,
     }),
     z.object({ type: z.literal('extended-quote'), version: NODE_VERSION, ...elementFields }),
-    // Lists nest via list > listitem > list (lexical lists carry their
-    // children directly; nesting depth is counted by the policy walk).
     z.object({
       type: z.literal('list'),
       version: NODE_VERSION,
@@ -119,8 +86,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       ...linkFields,
     }),
     z.object({ type: z.literal('extended-text'), version: NODE_VERSION, ...TEXT_FIELDS }),
-    // TextNode entity whose visible text IS the 1-based citation index (the
-    // renumber engine rewrites it in place); targetKey cites the definition card.
     z.object({
       type: z.literal('footnote-ref'),
       version: NODE_VERSION,
@@ -130,7 +95,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
     z.object({
       type: z.literal('image'),
       version: NODE_VERSION,
-      // Stock inkling image dataset.
       src: z.string(),
       caption: z.string(),
       title: z.string(),
@@ -139,9 +103,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       width: z.number().int().positive().nullable(),
       height: z.number().int().positive().nullable(),
       href: z.string(),
-      // KobatoImageNode: the three pass-through keys the stock declaration
-      // silently drops, plus the float layout (`cardWidth` has no left/right
-      // equivalent).
       thumbhash: z.string().optional(),
       storagePath: z.string().optional(),
       imageId: z.string().optional(),
@@ -153,16 +114,12 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       code: z.string(),
       language: z.string(),
       caption: z.string(),
-      // Server-prerendered Shiki artifact slot — carried opaquely, filled
-      // host-side on save (base/nodes/codeblock/CodeBlockNode.ts).
       highlightedHtml: z.string(),
     }),
     z.object({
       type: z.literal('math'),
       version: NODE_VERSION,
       tex: z.string(),
-      // Server-prerendered KaTeX artifact slots (same invariant as
-      // highlightedHtml; base/nodes/math/MathNode.ts).
       mathml: z.string(),
       svg: z.string(),
     }),
@@ -176,13 +133,8 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
     z.object({
       type: z.literal('footnotedefinition'),
       version: NODE_VERSION,
-      // The nested editor's serialized HTML (not nested nodes — no
-      // recursion through this field).
       content: z.string(),
       targetKey: z.string().min(1),
-      // exportJSON derives the 1-based index from the node's rank in the
-      // doc-end definition run (base/nodes/footnotedefinition/
-      // FootnoteDefinitionNode.ts).
       index: z.number().int().min(1),
     }),
     z.object({ type: z.literal('horizontalrule'), version: NODE_VERSION }),
@@ -212,12 +164,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
       verticalAlign: z.string().optional(),
       ...elementFields,
     }),
-    // Kobato host cards: datasets owned by the spec modules in
-    // `@kobato/lexical/cards/`. solution / two-column carry nested-editor HTML
-    // strings (opaque payload — the inner surface is cleaned at save, not
-    // re-validated here). music-player's meta snapshot keys are OPTIONAL: the
-    // canonicalize strip deletes them and a failed resolve persists the
-    // meta-less shape by design (`@/server/domains/content/services/lexical/music-snapshot`).
     z.object({ type: z.literal('solution'), version: NODE_VERSION, content: z.string() }),
     z.object({
       type: z.literal('two-column'),
@@ -240,9 +186,6 @@ function buildNodeUnion(): z.ZodType<LexicalNodeJson> {
 
 const nodeUnion = buildNodeUnion()
 
-/** Iterative depth-bomb guard run before the recursive parse: rejects payloads
- * nested deeper than MAX_TREE_DEPTH along root → `children`. Shapes without an
- * object root pass through — reporting them is the shape schema's job. */
 function boundTreeDepth(value: unknown, ctx: z.RefinementCtx): unknown {
   const root = value !== null && typeof value === 'object' && 'root' in value ? value.root : undefined
   if (root === null || typeof root !== 'object') {
@@ -280,10 +223,6 @@ export interface LexicalEditorStateSchemaOptions {
   maxListDepth: number
 }
 
-/** Builds a `SerializedEditorState` schema for one surface: shape comes from
- * the shared recursive union, the depth-bomb guard from `boundTreeDepth`;
- * the surface's node subset and list-depth cap are enforced by an iterative
- * walk. */
 export function buildLexicalEditorStateSchema(options: LexicalEditorStateSchemaOptions) {
   const allowed = new Set(options.allowedTypes)
   const base = z.object({
@@ -298,8 +237,6 @@ export function buildLexicalEditorStateSchema(options: LexicalEditorStateSchemaO
   })
   return z.preprocess(
     boundTreeDepth,
-    // The dialect heal runs before shape validation so both storage dialects
-    // (full and compact, see `dialect.ts`) parse to the same full-dialect output.
     z.preprocess(
       normalizeLexicalDialect,
       base.superRefine((state, ctx) => {
@@ -351,6 +288,4 @@ export const EMPTY_LEXICAL_EDITOR_STATE: LexicalEditorState = {
   root: { type: 'root', version: 1, children: [], direction: 'ltr', format: '', indent: 0 },
 }
 
-// Compile-time guard: the validated storage shape must remain assignable
-// to Lexical's own wire type.
 export type LexicalEditorStateWireCheck = LexicalEditorState extends SerializedEditorState ? true : never

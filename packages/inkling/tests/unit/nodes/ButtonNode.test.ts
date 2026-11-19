@@ -13,8 +13,6 @@ import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The decorate() assertions below need the wrapper layer's adapter registered
-// into the injection port — production gets it from the `.` barrel.
 registerCardDecorateAdapter()
 
 const editorNodes = [ButtonNode]
@@ -50,8 +48,6 @@ describe('ButtonNode', () => {
         buttonText: 'Click me',
         buttonUrl: 'https://example.com',
         alignment: 'center',
-        // written by earlier versions of this node; no consumer remains, but
-        // existing documents must still import cleanly
         text: '<p>Click me</p>',
       })
 

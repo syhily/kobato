@@ -63,7 +63,6 @@ describe('CalloutNode', () => {
           paragraph.append($createTextNode('Callout body'))
           root.append(paragraph)
         },
-        // discrete: the exportJSON below reads the committed state synchronously (0.52+ defers non-discrete commits)
         { discrete: true },
       )
 

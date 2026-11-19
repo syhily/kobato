@@ -3,16 +3,6 @@ import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-
 import { CARD_DECLARATIONS, type AnyCardDeclaration } from '@kobato/inkling-internal/nodes/cards'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Import-spec classification invariant: every card's base node class either
- * names its DOM-import knowledge (a static `importSpec`, from which the
- * generated node machinery derives `importDOM`) or is pinned here in the
- * structural set, keeping a hand-written parser. The sets may only change
- * deliberately — shrinking the derivable set is acceptable (record the
- * why-comment on the surviving parser); growing the structural set needs
- * vocabulary the flat reads can't express.
- */
-
 const DERIVABLE_CARDS = ['audio', 'button', 'callout', 'file', 'horizontalrule', 'image', 'toggle', 'video']
 
 const STRUCTURAL_CARDS = ['bookmark', 'codeblock', 'footnotedefinition', 'gallery', 'header', 'html', 'math']

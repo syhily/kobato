@@ -14,7 +14,6 @@ import { createSession, createSessionStorage } from 'react-router'
 
 const log = getLogger('auth.session-storage')
 
-// DB handle injected by the composition root — a direct import would invert dependencies.
 let resolveDb: (() => Database) | null = null
 
 export function wireSessionStorageDb(deps: { getDb: () => Database }): void {
@@ -44,13 +43,10 @@ export interface PendingOtpUser {
 }
 
 export interface BlogSessionData {
-  // `user` present ⇒ `user.role` non-null: the only writer is `establishLoginSession`,
-  // which throws on `!dbUser.role`.
   user?: SessionUser
   pendingOtpUser?: PendingOtpUser
   otpFailCount?: number
   csrfToken?: string
-  // Absolute expiry: invalid after this timestamp regardless of cookie refreshes.
   absoluteExpiry?: number
   setupTokenVerified?: boolean
 }
@@ -118,7 +114,6 @@ const storage = createSessionStorage<BlogSessionData>({
 
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
   const db = requireDb()
-  // The json-mode column serializes the (JSON-native) payload itself.
   const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
   const userId = data.user ? idFromString(data.user.id) : null
@@ -127,7 +122,6 @@ async function writeSession(id: string, data: BlogSessionData, expires: Date | u
     .values({ id, userId, data: payload, expiresAt })
     .onConflictDoUpdate({
       target: sessionTable.id,
-      // Never touch the meta columns — owned by `repo.ts::recordSessionLogin`.
       set: { userId, data: payload, expiresAt },
     })
 }
@@ -138,10 +132,6 @@ export async function getRequestSession(request: Request): Promise<BlogSession> 
   return getSession(request.headers.get('Cookie'))
 }
 
-/**
- * Build a session with a pre-chosen sid: React Router closes over the id at creation,
- * so the login path mints it before row bookkeeping.
- */
 export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, sid)
 }

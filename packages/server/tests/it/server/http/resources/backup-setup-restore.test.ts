@@ -41,16 +41,12 @@ vi.mock('@kobato/server/http/middlewares/rate-limit.ts', () => ({
 }))
 
 vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOriginal) => {
-  // Real classes (EncryptedBackupPasswordRequired carries dir/uploadPath;
-  // BackupPasswordError keys the decrypt endpoint's retryable-vs-terminal
-  // split) — only the file-exchange seams are stubbed.
   const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/restore.ts')>()
   return {
     ...actual,
     stageBackup: (...args: unknown[]) => mockStageBackup(...args),
     restoreFromStagedBackup: (...args: unknown[]) => mockRestoreFromStagedBackup(...args),
     assertStagedBackupContainsAdmin: (...args: unknown[]) => mockAssertStagedBackupContainsAdmin(...args),
-    // db-lifecycle imports these at module scope — no-ops under the seam.
     sweepStaleRestoreDirs: vi.fn(async () => {}),
     cleanupPreRestoreFiles: vi.fn(async () => {}),
     recoverPreRestoreFiles: vi.fn(async () => {}),
@@ -60,9 +56,7 @@ vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOrigin
 vi.mock('@kobato/server/domains/backup/restore-machine.ts', () => ({
   startRestoreJob: (...args: unknown[]) => mockStartRestoreJob(...args),
   withRestoreClaim: (...args: unknown[]) => mockWithRestoreClaim(...args),
-  // db-lifecycle wires the machine at module scope — a no-op under the seam.
   wireRestoreMachine: () => undefined,
-  // The restore-progress endpoint merges these machine phases with staging progress.
   peekRestoreJobPhase: () => ({ phase: 'idle', error: null }),
   consumeRestoreJobReport: () => ({ phase: 'idle', error: null }),
 }))
@@ -79,7 +73,6 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
-// Real engine: install gate + post-restore hook; stubs: restore-machine / stageBackup (the file-swap seam).
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -123,9 +116,6 @@ async function buildAdminApp() {
   )
 }
 
-/** The staging error the parking flow keys on. The upload file must exist —
- *  the decrypt endpoint opens a real read stream on it before the (mocked)
- *  staging runs. */
 async function makePasswordRequiredError(dir: string): Promise<Error> {
   const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
   const uploadPath = join(dir, 'upload.bin')
@@ -136,7 +126,6 @@ async function makePasswordRequiredError(dir: string): Promise<Error> {
 describe('/api/admin/backup/upload-restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // The default honors the real contract: prepare → start → 'started'.
     mockWithRestoreClaim.mockImplementation(
       async (
         prepare: () => Promise<{
@@ -163,7 +152,6 @@ describe('/api/admin/backup/upload-restore', () => {
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        // The real machine passes the freshly reopened handle.
         await afterReopenFn?.(db)
       },
     )
@@ -200,8 +188,6 @@ describe('/api/admin/backup/upload-restore', () => {
   })
 
   it('returns 400 and never claims the slot when the staged backup fails the content check', async () => {
-    // A payload that passes the magic-byte check but is not a real,
-    // openable database with an admin row must be rejected pre-swap.
     mockAssertStagedBackupContainsAdmin.mockRejectedValueOnce(new Error('file is not a database'))
     const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
     const app = new Hono<Env>()
@@ -349,16 +335,11 @@ describe('/api/admin/backup/upload-restore', () => {
     const body = (await res.json()) as { encrypted: boolean; token: string }
     expect(body.encrypted).toBe(true)
     expect(typeof body.token).toBe('string')
-    // Nothing was claimed yet — the restore waits for the password.
     expect(mockWithRestoreClaim).not.toHaveBeenCalled()
 
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
       await import('@kobato/server/domains/backup/pending-uploads.ts')
     try {
-      // Wrong password: 400, and the parked upload survives for a retry. The
-      // mocked staging never reads the endpoint's real read stream — destroy
-      // it (with an error sink) or its lazy fs.open crashes the worker. Only
-      // a BackupPasswordError keeps the token; anything else releases it.
       const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
@@ -376,7 +357,6 @@ describe('/api/admin/backup/upload-restore', () => {
       expect(((await wrong.json()) as { error: { message: string } }).error.message).toBe('备份密码错误或文件已损坏')
       expect(peekEncryptedUpload(body.token)).not.toBeNull()
 
-      // Right password: staged, admin-checked, claimed, accepted; the token is released.
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
           source.on('error', () => {})
@@ -398,8 +378,6 @@ describe('/api/admin/backup/upload-restore', () => {
       expect(((await right.json()) as { accepted: boolean }).accepted).toBe(true)
       expect(peekEncryptedUpload(body.token)).toBeNull()
       expect(mockWithRestoreClaim).toHaveBeenCalledOnce()
-      // The restore audit event rides the post-reopen hook, keyed by the
-      // ORIGINAL upload file name (like the setup flow's setup_restored).
       expect(mockRecordAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'backup_restored',
@@ -442,9 +420,6 @@ describe('/api/admin/backup/upload-restore', () => {
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
       await import('@kobato/server/domains/backup/pending-uploads.ts')
     try {
-      // A structural rejection (e.g. tar missing kobato.db) — NOT a
-      // BackupPasswordError. 410 (not 400): the token is dead, the client must
-      // return to the upload step instead of retrying the password prompt.
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
           source.on('error', () => {})
@@ -484,8 +459,6 @@ describe('/api/admin/backup/upload-restore', () => {
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
       await import('@kobato/server/domains/backup/pending-uploads.ts')
     try {
-      // Staging with the password succeeds (into its OWN dir — the busy path
-      // sweeps it), but another restore owns the slot.
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
           source.on('error', () => {})
@@ -505,7 +478,6 @@ describe('/api/admin/backup/upload-restore', () => {
         body: JSON.stringify({ token: body.token, password: 'right-password' }),
       })
       expect(busy.status).toBe(409)
-      // Busy is retryable: the parked upload survives and is claimable again.
       const parked = peekEncryptedUpload(body.token)
       expect(parked).not.toBeNull()
       expect(parked!.inFlight).toBe(false)
@@ -567,7 +539,6 @@ describe('/api/admin/backup/upload-restore', () => {
 describe('/api/setup/restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // The default honors the real contract: prepare → start → 'started'.
     mockWithRestoreClaim.mockImplementation(
       async (
         prepare: () => Promise<{
@@ -594,7 +565,6 @@ describe('/api/setup/restore', () => {
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        // The shared test db has no admin rows — the warn-and-skip branch.
         await afterReopenFn?.(db)
       },
     )
@@ -667,7 +637,6 @@ describe('/api/setup/restore', () => {
   })
 
   it('returns accepted on successful restore — and applies content only (withAnalytics: false)', async () => {
-    // The post-restore hook runs against the freshly swapped file — modelled with a real file-backed db seeded with the admin.
     const restored = createTestDatabaseFile()
     const adminId = await seedAdmin(restored.db)
     mockStartRestoreJob.mockImplementation(
@@ -691,13 +660,11 @@ describe('/api/setup/restore', () => {
     const body = (await res.json()) as { accepted: boolean }
     expect(body.accepted).toBe(true)
     expect(mockStartRestoreJob).toHaveBeenCalledOnce()
-    // Setup restore applies the content database only — a fresh install never inherits old telemetry.
     expect(mockRestoreFromStagedBackup).toHaveBeenCalledWith(
       expect.objectContaining({ dir: expect.any(String) }),
       'test.db.tar.gz',
       { withAnalytics: false },
     )
-    // The admin found on the swapped file owns the audit event.
     expect(mockRecordAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'setup_restored',
@@ -710,7 +677,6 @@ describe('/api/setup/restore', () => {
   })
 
   it('still accepts when the swapped file yields no admin row — the audit event is skipped', async () => {
-    // Default seam: the hook runs against the shared empty db — the warn-and-continue branch.
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
     formData.set('file', new File(['content'], 'test.db.tar.gz'))

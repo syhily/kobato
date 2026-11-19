@@ -18,17 +18,9 @@ import { registerQuoteEnterCommand } from '@kobato/inkling-internal/plugins/beha
 import { registerTabCommand } from '@kobato/inkling-internal/plugins/behaviour/keyboard-navigation/tab'
 import { mergeRegister } from '@lexical/utils'
 
-// ORDER IS LOAD-BEARING: every handler here registers at
-// COMMAND_PRIORITY_LOW, and same-priority handlers run in registration
-// order. The key-down passthrough must stay first so it can swallow key
-// events from card inner elements before any sibling handler sees them
-// (pinned by key-down.test.ts). A mis-ordering is a visible diff in this
-// table, not a comment violation.
 const KEYBOARD_HANDLERS = [
   registerKeyDownPassthrough,
   registerEnterCommand,
-  // after enter.ts: it owns the card-selected and cmd/ctrl+enter branches,
-  // quote-enter only sees plain enters that fell through
   registerQuoteEnterCommand,
   registerArrowUpCommand,
   registerArrowDownCommand,

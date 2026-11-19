@@ -10,17 +10,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// The glossary is the human-readable regional terminology baseline. This suite
-// pins ONLY the representative terms the document explicitly commits to — never
-// all 247 natural zh-HK/zh-TW differences, and never the requirement that the
-// two locales must differ (identical wording is often correct).
-//
-// Two layers:
-//   1. A small direct assertion set: the decisions that must survive even if
-//      someone rewrites the document.
-//   2. Document parity: every row inside the glossary's machine-readable
-//      anchor tables must match the four catalogs byte-for-byte.
-
 const UI: Record<string, Record<string, string>> = {
   'en-US': uiMessagesEnUS,
   'zh-CN': uiMessagesZhCN,
@@ -52,7 +41,6 @@ function unquote(cell: string, line: string): string {
   return cell.slice(1, -1)
 }
 
-/** Rows between `<!-- glossary:<name>:start -->` and its end marker. */
 function anchorRows(name: 'ui' | 'inkling'): AnchorRow[] {
   const start = `<!-- glossary:${name}:start -->`
   const end = `<!-- glossary:${name}:end -->`
@@ -89,10 +77,6 @@ function anchorRows(name: 'ui' | 'inkling'): AnchorRow[] {
   return rows
 }
 
-/**
- * Representative decisions from `docs/i18n/glossary.md` §3–§7. Kept deliberately
- * small: the document is the contract, and the full catalog is never frozen.
- */
 const REGIONAL_PINS: Record<string, Omit<AnchorRow, 'key' | 'en-US'>> = {
   'common.action.reload': { 'zh-CN': '刷新', 'zh-HK': '重新載入', 'zh-TW': '重新整理' },
   'public.comments.email': { 'zh-CN': '邮箱', 'zh-HK': '電郵', 'zh-TW': '電子郵件' },
@@ -146,14 +130,11 @@ describe('i18n glossary — representative regional terms', () => {
   })
 
   it('keeps identical HK/TW wording legal (no forced divergence)', () => {
-    // Both of these are intentionally identical in the two Traditional
-    // catalogs. A future "differentiate the locales" cleanup must not touch them.
     expect(UI['zh-HK']['public.comments.title']).toBe(UI['zh-TW']['public.comments.title'])
     expect(INKLING['zh-HK']['toolbar.bold']).toBe(INKLING['zh-TW']['toolbar.bold'])
   })
 
   it('does not freeze the full natural-difference set', () => {
-    // Guard the guard: the anchor tables stay representative, not exhaustive.
     expect(anchorRows('ui').length).toBeLessThan(80)
     expect(anchorRows('inkling').length).toBeLessThan(20)
   })

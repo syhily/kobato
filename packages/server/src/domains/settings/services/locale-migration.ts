@@ -1,12 +1,3 @@
-// One-time, idempotent normalization of the persisted `siteIdentity.locale`: legacy
-// bare or script-qualified BCP 47 tags are rewritten once BEFORE the settings snapshot
-// is built, so every downstream consumer (cache keys, ETag inputs, feed/email rendering)
-// sees exactly one canonical tag. The read schema canonicalizes the same aliases, so a
-// legacy value can never drop the section (and with it the whole install). No
-// `system.*` flag row: settings are single-row data, unlike the corpus-wide backfills
-// that need a flag — re-running is safe, a canonical value performs zero writes and
-// logs nothing.
-
 import type { Database } from '@kobato/db/database.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
@@ -43,8 +34,6 @@ export function migrateLegacySiteIdentityLocale(db: Database): LocaleMigrationRe
   if (previous !== null && isKnownLocaleValue(previous)) {
     log.info('Normalized legacy siteIdentity.locale', { from: previous, to: locale })
   } else {
-    // The one place an unknown tag is announced: it is otherwise silently
-    // canonicalized to the default on every read.
     log.warn('Unrecognized siteIdentity.locale; falling back to the default', { from: previous, to: locale })
   }
   return { changed: true, previous, locale }

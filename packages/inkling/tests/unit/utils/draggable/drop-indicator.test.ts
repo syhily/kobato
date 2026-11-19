@@ -2,9 +2,6 @@ import { DROP_INDICATOR_SELECTOR } from '@kobato/inkling-internal/utils/draggabl
 import { DropIndicator, type DropIndicatorGeometry } from '@kobato/inkling-internal/utils/draggable/drop-indicator'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// a droppable at (20, 100), 200x50, inside an offset parent whose viewport
-// position is (5, 10) — the indicator position is the droppable offset box
-// minus the parent position
 const droppableBox = { top: 100, left: 20, width: 200, height: 50 }
 const parentPosition = { top: 10, left: 5 }
 

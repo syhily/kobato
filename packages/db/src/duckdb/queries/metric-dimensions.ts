@@ -5,18 +5,6 @@ import type { RawBuilder } from 'kysely'
 import { blobColumns } from '@kobato/db/duckdb/access-events.ts'
 import { sql } from 'kysely'
 
-/**
- * The metric dimension registry: every dimension owns BOTH its display
- * expression (SELECT / GROUP BY) and the predicate used to filter by a displayed
- * value (WHERE) — the filter reuses the display expression, so a clicked row's
- * label round-trips exactly. `events` dimensions read `access_events` through
- * the semantic blob-slot contract (`blobColumns`): a name must be a declared
- * slot, so a typo or a re-allocation fails at compile time — never a silently
- * wrong `blob7`. `env` dimensions read `device_env_client`, which the metric
- * query INNER JOINs. Every SQL fragment here is application-owned; user values
- * travel as bound parameters.
- */
-
 export interface EventsDimension {
   source: 'events'
   column: string
@@ -34,20 +22,11 @@ export type MetricDimension = EventsDimension | EnvDimension
 
 const env = (column: string) => sql.ref(`device_env_client.${column}`)
 
-/** A declared, non-reserved blob slot referenced by its semantic name. */
 const events = (name: Exclude<BlobName, 'reserved'>): EventsDimension => ({
   source: 'events',
   column: blobColumns[name],
 })
 
-// Bucket values are LOCALE-NEUTRAL machine tokens (never copy): the admin UI
-// resolves them through `admin.analytics.metrics.value.*`.
-
-/**
- * Screen resolution is session-static: only `has_static = true` rows carry it, so
- * this dimension aggregates over the beacon-covered subset. Nulls stay OUT of the
- * aggregation (never an `(unknown)` bucket).
- */
 const screen: EnvDimension = {
   source: 'env',
   select: sql<string>`CAST(${env('screen_w')} AS VARCHAR) || '×' || CAST(${env('screen_h')} AS VARCHAR)`,
@@ -122,12 +101,6 @@ export const METRIC_DIMENSIONS: Record<MetricType, MetricDimension> = {
   path: events('path'),
 }
 
-/**
- * Equality filter for a dimension's displayed values. Environment dimensions
- * filter through a semi-join (`event_id IN (SELECT …)`) built from the SAME
- * expression the panel groups by, so any dashboard query can honor an env filter
- * without joining the sidecar itself.
- */
 export function dimensionWhere(dimension: MetricDimension, values: string[]): RawBuilder<boolean> {
   const list = sql.join(values)
   if (dimension.source === 'events') {

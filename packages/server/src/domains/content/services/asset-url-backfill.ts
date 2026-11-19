@@ -19,15 +19,8 @@ import { isRecord } from '@kobato/utils/type-guards.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { eq, ne } from 'drizzle-orm'
 
-/**
- * Rewrites legacy baked asset URLs to the site-owned origin-relative form
- * (`/storage/<key>`): storage backends, buckets and CDN hosts change over a site's
- * lifetime, so content must never carry those absolutes.
- */
-
 const log = getLogger('content.asset-url-backfill')
 
-/** Durable one-shot flag: a `system.`-scoped `setting` row (hydration reads `blog.*` only). */
 const BOOT_FLAG_SCOPE = 'system.asset-url-backfill'
 
 export interface AssetUrlBackfillResult {
@@ -39,13 +32,6 @@ export interface AssetUrlBackfillResult {
   skippedContentRows: number
 }
 
-/**
- * Resolve a stored reference to its storage key when it is provably site-owned. The
- * site-owned core is `parseAssetUrl` (origin-relative plus any-origin absolute forms);
- * the legacy CDN-absolute width and the bare `storage/<key>` form layer on top via
- * the images matcher. The bare `/images/…` form is deliberately NOT rewritten: it
- * collides with first-party site routes (`/images/og/…`, `/images/calendar/…`).
- */
 function rewritableStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (publicBaseUrl !== null && src.startsWith(`${publicBaseUrl}/`)) {
     return nonEmpty(resolveSrcToStoragePath(src, publicBaseUrl))
@@ -80,12 +66,6 @@ function siteOwnedSrc(storagePath: string): string {
   return `/storage/${storagePath.startsWith('/') ? storagePath.slice(1) : storagePath}`
 }
 
-/**
- * Host-card dataset keys carrying nested-editor HTML: images inside them are `<img>`
- * markup, not nodes. `footnotedefinition` joins solution / two-column; music-player
- * carries no images. The exportDOM markup emits no `data-storage-path` (storage
- * internals never enter HTML), so these datasets rewrite through the src predicate.
- */
 const NESTED_HTML_DATASET_KEYS: Record<string, readonly string[]> = {
   [SOLUTION_NODE_TYPE]: ['content'],
   [TWO_COLUMN_NODE_TYPE]: ['left', 'right'],
@@ -108,12 +88,6 @@ function escapeHtmlAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
 }
 
-/**
- * Rewrite every double-quoted `<img src="…">` in a card-dataset HTML string through
- * `rewrite` (null = leave untouched); the exportDOM renderers always emit
- * double-quoted srcs. srcset is deliberately NOT rewritten: its candidates are
- * render-time transform URLs regenerated from `src`, not stored references.
- */
 function rewriteHtmlImgSrcs(html: string, rewrite: (src: string) => string | null): { html: string; changed: boolean } {
   let changed = false
   const next = html.replace(
@@ -179,12 +153,6 @@ function isLexicalBody(body: unknown): boolean {
   return isRecord(body) && isRecord(body.root) && Array.isArray(body.root.children)
 }
 
-/**
- * Writes a rewritten Lexical body and re-derives the three projection columns;
- * without that `body_html` keeps embedding the old baked URLs and the backfill is
- * pointless on the read path. Derivation is best-effort (the save-pipeline
- * convention): a failure writes the body alone and leaves stale columns with a warning.
- */
 async function persistRewrittenLexicalRow(db: Database, id: number, state: LexicalEditorState): Promise<void> {
   let projections: { bodyHtml: string; bodyText: string; bodyHtmlFeed: string } | null = null
   try {
@@ -219,7 +187,6 @@ export function rewriteAssetReference(url: string, publicBaseUrl: string | null)
   return url === next ? null : next
 }
 
-/** The CURRENT CDN base; `null` pre-install / unhydrated (the `/storage/` forms still rewrite). */
 async function currentPublicBaseUrl(db: Database): Promise<string | null> {
   try {
     await hydrateBlogSettings(db)
@@ -229,11 +196,6 @@ async function currentPublicBaseUrl(db: Database): Promise<string | null> {
   }
 }
 
-/**
- * The rewrite engine. Idempotent: rewritten values resolve to themselves, so a second
- * run updates zero rows. A row whose body is not a Lexical state — or that throws —
- * logs, counts as skipped, and the rest of the corpus still backfills.
- */
 export async function backfillStorageAssetUrls(db: Database): Promise<AssetUrlBackfillResult> {
   const publicBaseUrl = await currentPublicBaseUrl(db)
   const result: AssetUrlBackfillResult = {
@@ -319,11 +281,6 @@ async function rewriteCategoryCovers(db: Database, publicBaseUrl: string | null)
   )
 }
 
-/**
- * Flag-gated boot entry point: runs once per database, persists the flag only when the
- * run finishes with ZERO skipped rows (the next boot retries a partial run), and
- * swallows failures (logged).
- */
 export async function runAssetUrlBackfillOnceAtBoot(db: Database): Promise<void> {
   try {
     if (findSettingByScope(db, BOOT_FLAG_SCOPE) !== null) {

@@ -10,9 +10,6 @@ import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 
-// The perimeter RBAC middleware answers through the same localized JSON shape
-// as the oRPC guard: status + code + descriptor + the request locale's copy.
-
 function makeApp(options: { role: Role | null; locale?: AppLocale }): Hono {
   const user: SessionUser | null =
     options.role === null ? null : { id: '1', name: 'User', email: 'u@example.com', website: null, role: options.role }

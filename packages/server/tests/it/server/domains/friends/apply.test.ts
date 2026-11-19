@@ -22,7 +22,6 @@ const mockFetch = installFetch()
 
 const ADMIN_EMAIL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email
 
-// Mailgun transport against the mocked fetch; tests `vi.waitFor` the send so the fire-and-forget promise settles in-test.
 function enableMail() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -43,7 +42,6 @@ function enableMail() {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // Process-level Map: reset it or earlier tests exhaust the per-IP window.
   __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
@@ -65,7 +63,6 @@ function lastMailBody(): { to: string; subject: string; html: string } {
   return { to: body.get('to') as string, subject: body.get('subject') as string, html: body.get('html') as string }
 }
 
-// audit_log.actor_id references user.id — a missing actor row dead-letters the audit insert.
 async function seedAdmin(): Promise<number> {
   const rows = await db
     .insert(user)
@@ -159,7 +156,6 @@ describe('integration / friends apply', () => {
     const rows = await friendRows()
     expect(rows).toHaveLength(1)
     expect(rows[0]!.website).toBe('首次')
-    // The duplicate was rejected before the notification leg.
     expect(mockFetch.calls).toHaveLength(1)
   })
 
@@ -203,7 +199,6 @@ describe('integration / friends apply → admin approve', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset — the batcher's timer can dead-letter buffered events on the actor FK.
     await flushAuditLog()
     resetAllBatchers()
   })

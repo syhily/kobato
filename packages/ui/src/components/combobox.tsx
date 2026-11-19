@@ -75,10 +75,6 @@ function ComboboxContent<Item>({
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
-          {/*
-           * `Combobox.Empty` doubles as an `aria-live` region, so it must stay mounted — no
-           * conditional render, no `display:none`; padding sits on the `not-empty:` variant.
-           */}
           <BaseCombobox.Empty className="text-center text-sm text-muted-foreground not-empty:px-3 not-empty:py-6">
             {empty}
           </BaseCombobox.Empty>

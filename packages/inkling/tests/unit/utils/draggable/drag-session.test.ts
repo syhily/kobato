@@ -6,10 +6,6 @@ import {
 } from '@kobato/inkling-internal/utils/draggable/drag-session'
 import { describe, expect, it, vi } from 'vitest'
 
-// the threshold policy is exercised synchronously through the ports: the
-// listen port captures the session's listeners (standing in for the document
-// event listeners DragDropHandler attaches) and the start/cancel ports record
-// the resolution
 function setup(grab: DragSessionPoint = { x: 10, y: 10 }) {
   const onStart = vi.fn()
   const onCancel = vi.fn()

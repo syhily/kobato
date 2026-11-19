@@ -14,7 +14,6 @@ export default [
     route('search/:keyword/page/:num', 'routes/public/search/list.tsx', { id: 'search-list-page' }),
     route('posts/:slug', 'routes/public/post/detail.tsx'),
     route(':slug', 'routes/public/page/detail.tsx'),
-    // Splat must stay last: `*` is the lowest-priority match and only fires for paths nothing else handles.
     route('*', 'routes/public/not-found.tsx'),
   ]),
 

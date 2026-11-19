@@ -3,7 +3,6 @@ import type { Database } from '@kobato/db/database.ts'
 import { slugRegistry } from '@kobato/db/schema/config.ts'
 import { eq, and } from 'drizzle-orm'
 
-// Sync (node:sqlite): called inside entity transactions.
 export function insertSlugRegistry(
   db: Database,
   {

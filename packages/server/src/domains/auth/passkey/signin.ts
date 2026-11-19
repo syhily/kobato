@@ -44,8 +44,6 @@ export async function signInWithPasskey(
     })
     return { type: 'redirect', to: redirectTo, setCookie: established.setCookie }
   } catch (err) {
-    // Domain failures from the passkey service already carry a descriptor; an upstream
-    // non-Error rejection falls back to the generic catalog copy.
     if (err instanceof DomainError && err.descriptor !== undefined) {
       return { type: 'error', message: err.message, descriptor: err.descriptor }
     }

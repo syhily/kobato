@@ -25,12 +25,7 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// Adds populated rows, the error state and the search-active case to TagsView, whose
-// rows come from useAdminInfiniteList's useInfiniteQuery and search from
-// useDebouncedSearch.
-
 vi.mock('@kobato/ui/lib/use-debounced-search.ts', () => ({
-  // Hoisted pair so each test drives the search-input value.
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 

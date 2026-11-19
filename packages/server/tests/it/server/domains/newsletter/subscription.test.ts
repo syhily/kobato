@@ -129,7 +129,6 @@ describe('integration / newsletter', () => {
     await callRpc('/newsletter/subscribe', { email: 'once@example.com' }, ctx)
     const token = extractConfirmToken()
     expect((await callRpc('/newsletter/confirm', { token }, ctx)).status).toBe(200)
-    // Replay: the hash was cleared on confirm, so the link is dead.
     expect((await callRpc('/newsletter/confirm', { token }, ctx)).status).toBe(400)
   })
 
@@ -156,7 +155,6 @@ describe('integration / newsletter', () => {
     const second = await callRpc('/newsletter/unsubscribe', { id, sig }, ctx)
     expect(second.status).toBe(200)
 
-    // Unknown id — also a quiet success (no enumeration).
     const unknown = await callRpc('/newsletter/unsubscribe', { id: '999999', sig: signUnsubscribeId(999999) }, ctx)
     expect(unknown.status).toBe(200)
   })
@@ -187,7 +185,6 @@ describe('integration / newsletter', () => {
       const res = await callRpc('/newsletter/subscribe', { email: 'victim@example.com' }, ctx)
       expect(res.status).toBe(200)
     }
-    // A case-variant of the same address hits the same counter (hashes normalize).
     const fourth = await callRpc('/newsletter/subscribe', { email: 'Victim@Example.com' }, ctx)
     expect(fourth.status).toBe(429)
     expect(mockFetch.calls).toHaveLength(3)

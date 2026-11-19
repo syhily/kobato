@@ -52,8 +52,6 @@ describe('useMediumZoom', () => {
   it('attaches images found by the container probe (no bodyHtml substring gate)', async () => {
     const { container, ref } = mountContainer('<img src="/x.png" alt="">')
     await act(async () => {
-      // The re-scan key intentionally carries no '<img' marker — the
-      // container probe, not a markup substring, gates the dynamic import.
       renderDomHook(() => useMediumZoom(ref, 'rescan-key'))
       await Promise.resolve()
     })

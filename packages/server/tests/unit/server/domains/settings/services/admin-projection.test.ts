@@ -25,7 +25,6 @@ describe('projectSectionForAdmin', () => {
 
     expect(projected.mail.smtpPassMask).toBe('bb22')
     expect(projected.mail.mailgunApiKeyMask).toBe('cc33')
-    // The ciphertext/plaintext fields never reach the admin shape.
     expect('smtpPass' in projected.mail).toBe(false)
     expect('mailgunApiKey' in projected.mail).toBe(false)
     expect(projected.mail.smtpHost).toBe(bundle.mail?.mail.smtpHost)
@@ -43,7 +42,6 @@ describe('projectSectionForAdmin', () => {
     expect(projected.secretAccessKeyMask).toBe('dd44')
     expect('secretAccessKey' in projected.storage).toBe(false)
     expect(projected.storage.accessKeyId).toBe(bundle.assets?.storage.accessKeyId)
-    // Every branding slot is present in the loader shape, even unset ones.
     expect(projected.branding.faviconSvg).toEqual({ etag: '' })
     expect(projected.branding.robotsTxt).toBe('')
   })
@@ -71,9 +69,6 @@ describe('projectSectionForAdmin', () => {
 
   it('fails loudly with DomainError(INTERNAL) when the projected slice drifts from the schema', () => {
     const bundle = bundleWithSecrets()
-    // `limits` validates against the registry schema: a string where the
-    // DTO demands a number is exactly the drift the assembly gate exists
-    // to catch.
     bundle.limits = { ...bundle.limits!, maxRequestBodySize: 'ten' as unknown as number }
 
     expect(() => projectSectionForAdmin('limits', bundle, computeSecretMasks(bundle))).toThrowError(DomainError)

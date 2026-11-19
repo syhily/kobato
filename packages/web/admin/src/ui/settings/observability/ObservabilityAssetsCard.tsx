@@ -14,7 +14,6 @@ import { useState } from 'react'
 
 interface ObservabilityAssetsCardProps {
   status: ObservabilityStatusOutput | undefined
-  /** Last-4 mask of the stored RUM token — display only, never editable here. */
   rumClientTokenMask: string | null
   onStatusInvalidated: () => void
 }

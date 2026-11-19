@@ -1,20 +1,3 @@
-// The WYSIWYG parity gate for the host cards: each card's decorate chrome
-// (what the canvas shows) must match the exportDOM markup the shared spec
-// renderers produce for the save-time projection (`body_html`). Both sides
-// derive from the same class/copy constants in `@kobato/lexical/cards/`; this
-// file proves the assembly by rendering the React chrome
-// (renderToStaticMarkup) and the shared renderers (a stub RenderContext over
-// jsdom) and comparing the DOM-normalized markup.
-//
-// The card modules' top-level `defineCard` calls run on import — pure
-// registry writes, safe under the node environment.
-//
-// The composer context is mocked with a real headless editor (the barrel's
-// `createHeadlessEditor`) because the music card's component and picker ride
-// the inkling pick seam (`useCardPicker` / `useCardChrome`), which reads the
-// composer context. The picker dialog itself is stubbed — its props are the
-// pick seam's observable boundary.
-
 // @vitest-environment jsdom
 
 import type { MusicPickerDialogProps } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx'
@@ -22,9 +5,6 @@ import type { ReactElement } from 'react'
 
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import { createHeadlessEditor } from '@kobato/inkling'
-// White-box parity pins: these two reach inkling internals the exports map
-// deliberately does not expose, through the private source alias rather than
-// widening the public surface.
 import { lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels.ts'
 import { getHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry.ts'
 import { MUSIC_PLAYER_META_KEYS } from '@kobato/lexical/artifacts.ts'
@@ -79,8 +59,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// The dialog is host chrome around an oRPC list — stub it and capture the
-// props the picker render hands it (open/onOpenChange/onPick are the seam).
 const musicPickerDialogProps: { current: MusicPickerDialogProps | null } = { current: null }
 vi.mock('@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx', () => ({
   MusicPickerDialog: (props: MusicPickerDialogProps) => {
@@ -89,8 +67,6 @@ vi.mock('@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx', () => ({
   },
 }))
 
-// One shared headless editor stands in for the composer context; the pick
-// tests insert real music-player nodes into it.
 const sharedEditor: LexicalEditor = createHeadlessEditor({ nodes: [musicPlayerCard.node], onError: () => {} })
 vi.mocked(useLexicalComposerContext).mockReturnValue([sharedEditor, { getTheme: () => null }])
 
@@ -100,8 +76,6 @@ function escapeText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-/** The render-context fields the host-card renderers touch, identity-style
- * (sanitization/URL policy are pinned separately by the projection tests). */
 function stubContext(feed = false): CardRenderContext {
   return {
     createDocument: () => dom.window.document,
@@ -124,12 +98,10 @@ function normalized(html: string): string {
   return body.innerHTML
 }
 
-/** SSR render through the root i18n provider (the card chrome calls `useI18n`). */
 function renderHtml(node: ReactElement): string {
   return renderToStaticMarkup(wrapWithI18n(node))
 }
 
-/** Client render through the root i18n provider. */
 function renderClient(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
@@ -163,8 +135,6 @@ describe('host card parity — solution', () => {
 
   it('pins the card assembly to the whitelist type and the shared spec', () => {
     expect(solutionCard.nodeType).toBe(SOLUTION_NODE_TYPE)
-    // The assembled class subclasses the shared base class (assembled by
-    // `assembleCardNodeOnce`).
     expect(solutionCard.node.prototype).toBeInstanceOf(BaseSolutionNode)
     expect(SOLUTION_NESTED_EDITOR.serializedKey).toBe(SOLUTION_CARD_PROPERTIES[0]!.name)
   })
@@ -256,9 +226,6 @@ describe('host card parity — music-player', () => {
   })
 
   it('keeps the export fallback aligned with the player paused state', () => {
-    // The byte-level parity lives in tests/unit/ui/public/music-player —
-    // this suite only pins that the export fallback still ships the shared
-    // structure the hydration hook replaces.
     const exported = musicPlayerFallbackHtml(META, escapeText)
     expect(exported).toContain(MUSIC_PLAYER_CARD_CLASSES.fallbackBody)
     expect(exported).toContain(MUSIC_PLAYER_CARD_CLASSES.fallbackProgress)
@@ -286,7 +253,6 @@ describe('host card parity — music-player', () => {
   it('pins the card assembly to the whitelist type and the meta-snapshot contract', () => {
     expect(musicPlayerCard.nodeType).toBe(MUSIC_PLAYER_NODE_TYPE)
     expect(musicPlayerCard.node.prototype).toBeInstanceOf(BaseMusicPlayerNode)
-    // The dataset is playerId plus exactly the server-owned meta keys.
     expect(MUSIC_PLAYER_CARD_PROPERTIES.map((property) => property.name)).toEqual([
       'playerId',
       ...MUSIC_PLAYER_META_KEYS,
@@ -295,7 +261,6 @@ describe('host card parity — music-player', () => {
 })
 
 describe('music-player pick seam', () => {
-  /** Inserts one empty music-player node into the shared editor; resolves its key after commit. */
   async function insertMusicNode(): Promise<string> {
     let key = ''
     await new Promise<void>((resolve) => {
@@ -311,7 +276,6 @@ describe('music-player pick seam', () => {
     return key
   }
 
-  /** The node's meta snapshot, read inside an editor-state read. */
   function readMusicMeta(nodeKey: string): MusicPlayerCardMeta | null {
     return sharedEditor.getEditorState().read(() => {
       const node = $getNodeByKey(nodeKey)
@@ -338,7 +302,6 @@ describe('music-player pick seam', () => {
     ).toEqual({
       playerId: 'p1',
       name: 'Song',
-      // the library's packed ' / ' artist form, matching the save-time snapshot
       artist: '周杰伦 / 费玉清',
       cover: '/storage/music/cover.png',
       audioUrl: '/storage/music/song.mp3',
@@ -370,7 +333,6 @@ describe('music-player pick seam', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    // the freshly picked card renders the playable player immediately
     expect(readMusicMeta(nodeKey)).toEqual({
       playerId: 'p9',
       name: 'Picked Song',
@@ -419,9 +381,6 @@ describe('music-player pick seam', () => {
 })
 
 describe('host card menu copy', () => {
-  // The card specs carry English fallbacks (the label the overlay uses when a
-  // locale table has no override); the active locale's label table supplies the
-  // other languages through `labelKey`. A spec must never bake a locale in.
   const CARDS = [
     {
       nodeType: SOLUTION_NODE_TYPE,
@@ -456,8 +415,6 @@ describe('host card menu copy', () => {
       expect(entry?.desc).toBe(card.desc)
       expect(entry?.labelKey).toBeDefined()
 
-      // The overlay key exists in both tables: the fallback never renders for
-      // a supported locale.
       const prefix = `menu.${entry?.labelKey}`
       expect(lookupLabel(zh, `${prefix}.label`, card.label)).toBe(card.zhLabel)
       expect(lookupLabel(zh, `${prefix}.desc`, card.desc)).toBe(card.zhDesc)
@@ -487,8 +444,6 @@ describe('music-player editing chrome', () => {
       dataTestId: 'remove-music-card',
     })
 
-    // the click handlers stop propagation (the wrapper's selection would
-    // otherwise fire) and invoke the affordance
     const event = { stopPropagation: vi.fn() } as unknown as React.MouseEvent
     if (replace?.kind === 'custom') {
       replace.onClick(event)

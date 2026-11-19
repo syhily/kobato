@@ -1,6 +1,3 @@
-// Polymorphic entity reference shared by the metric / comment / like
-// tables. Server-only — the public wire uses `metric.public_id` UUIDs.
-
 export type EntityType = 'post' | 'page'
 
 export interface EntityTarget {

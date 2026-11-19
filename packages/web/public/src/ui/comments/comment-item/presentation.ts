@@ -64,8 +64,6 @@ export function editableHint(
   if (expiresAt === undefined) {
     return isPending ? t('public.comments.editablePending') : t('public.comments.editable')
   }
-  // `Date.now()` is safe here: ownership only populates post-mount, so this hint never
-  // renders during SSR/hydration.
   const remainingMs = expiresAt - Date.now()
   if (remainingMs <= 0) {
     return isPending ? t('public.comments.editExpiredPending') : t('public.comments.editExpired')

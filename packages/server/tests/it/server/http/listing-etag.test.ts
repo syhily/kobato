@@ -16,11 +16,6 @@ import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Listing-document revalidation through the real oRPC path: the tag fingerprints the COMPLETE
-// payload (page slice + counters, SEO, sidebar/extra, archives/categories) plus locale/time
-// zone/format, the LISTING generation, the site calendar day and APP_VERSION. Only an identical
-// representation may answer not-modified, and a 304 never records a view.
-
 const analytics = vi.hoisted(() => ({ trackPageView: vi.fn() }))
 
 vi.mock('@kobato/server/domains/analytics/track.ts', () => ({
@@ -32,7 +27,7 @@ const db = getTestDb()
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date('2026-11-08T04:00:00.000Z')) // 12:00 Asia/Shanghai
+  vi.setSystemTime(new Date('2026-11-08T04:00:00.000Z'))
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   __resetRateLimitsForTests()
@@ -260,10 +255,10 @@ describe('listing representation ETags — site midnight and pinned settings', (
   it('rotates exactly at the site-zone midnight (body and tag stay in step)', async () => {
     await seedPost({ slug: 'one' })
 
-    vi.setSystemTime(new Date('2026-11-08T15:59:59.000Z')) // 23:59:59 Asia/Shanghai
+    vi.setSystemTime(new Date('2026-11-08T15:59:59.000Z'))
     const before = await read<OkListing>('/content/home', {})
 
-    vi.setSystemTime(new Date('2026-11-08T16:00:01.000Z')) // 00:00:01, next site day
+    vi.setSystemTime(new Date('2026-11-08T16:00:01.000Z'))
     const after = await read<OkListing>('/content/home', { ifNoneMatch: before.etag })
 
     expect(after.kind).toBe('ok')
@@ -275,7 +270,6 @@ describe('listing representation ETags — site midnight and pinned settings', (
       await seedPost({ slug: `search-${i}`, title: 'react notes' })
     }
 
-    // Global search page size is 7 → 2 pages; the pinned capture says 3 → 3 pages.
     const json = await read<OkListing>('/content/search', { keyword: 'react' }, LOCALIZATION, withPageSize('search', 3))
     expect(json.listing.totalPage).toBe(3)
   })
@@ -290,7 +284,6 @@ describe('listing representation ETags — site midnight and pinned settings', (
       })
     }
 
-    // Global posts page size is 6 → 3 pages; the pinned capture says 4 → 4 pages.
     const json = await read<OkListing>(
       '/content/posts/list',
       { scope: { type: 'category', slug: 'general' } },
@@ -323,7 +316,6 @@ describe('listing representation ETags — redirects and page views', () => {
     expect(repeated.kind).toBe('not-modified')
     expect(analytics.trackPageView).toHaveBeenCalledTimes(1)
 
-    // A changed representation is served again → one more view.
     await seedPost({ slug: 'second', firstPublishedAt: new Date('2026-02-01') })
     await read<OkListing>('/content/home', { ifNoneMatch: first.etag })
     expect(analytics.trackPageView).toHaveBeenCalledTimes(2)

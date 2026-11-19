@@ -1,10 +1,6 @@
 import { zodIssueParams } from '@kobato/contracts/api-error.ts'
 import { describe, expect, it } from 'vitest'
 
-// The ONE issue-params extractor shared by the client form hook and the server
-// wire mapper: numeric bounds (`too_small`/`too_big`) merged with a custom
-// issue's explicit `params` bag, primitives only.
-
 describe('zodIssueParams', () => {
   it('merges numeric bounds with custom primitive params', () => {
     expect(

@@ -6,7 +6,6 @@ import {
 } from '@kobato/contracts/newsletter.ts'
 import { oc } from '@orpc/contract'
 
-// The newsletter RPC contract — anonymous subscribe/confirm/unsubscribe.
 export const newsletterContract = {
   subscribe: oc
     .route({ method: 'POST', path: '/newsletter/subscribe' })

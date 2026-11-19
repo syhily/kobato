@@ -6,12 +6,6 @@ import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comm
 import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@kobato/web-tests/contract/composer-nodes.ts'
 import { describe, expect, it } from 'vitest'
 
-// The two zod schemas, the node-whitelist constants, and the composer-mounted
-// node sets must stay three-way identical — the editor must never produce a
-// node the server rejects, nor accept one it cannot produce. The manifest
-// assertions below re-derive the mounted sets from the composer modules
-// themselves, so a composer edit that drifts from the whitelist fails here.
-
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
 }
@@ -24,8 +18,6 @@ function state(children: unknown[]) {
   return { root: element('root', children) }
 }
 
-// Minimal valid payload per whitelisted type; the fixture key set is pinned
-// against the whitelist, so a missing fixture (or a stale one) fails here.
 const MINIMAL_NODE_FIXTURES: Record<string, () => Record<string, unknown>> = {
   paragraph: () => element('paragraph'),
   linebreak: () => ({ type: 'linebreak', version: 1 }),
@@ -83,8 +75,6 @@ describe('contract: lexical node whitelist', () => {
   })
 
   it('rejects types outside the full whitelist', () => {
-    // Upstream base types replaced by inkling's extended nodes, PT-spelling
-    // leftovers, inkling nodes kobato does not mount, and the root type.
     for (const node of [
       { type: 'text', version: 1, ...textFields() },
       element('heading', [], { tag: 'h1' }),
@@ -116,10 +106,6 @@ describe('contract: lexical node whitelist', () => {
 
   it('pins the composer manifests to the whitelist constants', () => {
     expect(sorted(ARTICLE_COMPOSER_NODE_TYPES)).toEqual(sorted(FULL_EDITOR_NODE_TYPES))
-    // The comment composer is a strict SUBSET of the storage whitelist:
-    // math / math-inline stay storage-valid so existing bodies still validate,
-    // but the composer does not mount them (formulas are authored as ```math
-    // fences and rendered by the comment projection).
     const commentWhitelist = new Set<string>(COMMENT_NODE_TYPES)
     for (const type of COMMENT_COMPOSER_NODE_TYPES) {
       expect(commentWhitelist.has(type), type).toBe(true)
@@ -151,9 +137,6 @@ describe('contract: lexical node whitelist', () => {
       }
     }
     const mounted = new Set([...classTypes].filter((type) => !shadowed.has(type)))
-    // AsideNode is filtered out of the composer (PageBodyEditor captures the
-    // Ctrl+Q chord) — assert the filter still holds, then add the two
-    // core-registered types that serialize into real documents.
     expect(mounted.has('aside')).toBe(false)
     mounted.add('paragraph')
     mounted.add('linebreak')
@@ -161,10 +144,6 @@ describe('contract: lexical node whitelist', () => {
   })
 
   it('derives the comment manifest from the actually-mounted composer nodes', () => {
-    // Same derivation as the article manifest above, on the trimmed comment
-    // composer. The comment set additionally filters out the heading family
-    // (HeadingNode + its extended replacement pair) and the table element
-    // family — assert all three exclusions still hold.
     type NodeEntry = (() => unknown) | { getType?: () => string; replace?: { getType?: () => string } }
     const shadowed = new Set<string>()
     const classTypes = new Set<string>()
@@ -186,7 +165,6 @@ describe('contract: lexical node whitelist', () => {
       'table',
       'tablerow',
       'tablecell',
-      // Storage-valid but never composer-mounted.
       'math',
       'math-inline',
     ]) {

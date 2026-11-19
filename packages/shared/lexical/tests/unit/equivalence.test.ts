@@ -9,9 +9,6 @@ import {
 } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
-// Both sides MUST be zod-parsed states (the parse strips unknown keys and
-// pins the required-field shape); fixtures below parse through the real
-// schema so the tests exercise the contract callers rely on.
 function parse(state: unknown) {
   return lexicalEditorStateSchema.parse(state)
 }
@@ -21,11 +18,9 @@ describe('lexical/equivalence', () => {
     const a = parse(lexicalBodyWith([lexicalParagraph('hi')]))
     const reordered = JSON.parse(
       JSON.stringify(lexicalBodyWith([lexicalParagraph('hi')])),
-      // Reverse every object's key order on the way in.
       function (this: unknown, _key: string, value: unknown) {
         if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
           const record = value as Record<string, unknown>
-          // The lib target has no toReversed(); reduceRight reinserts keys in reverse order.
           return Object.fromEntries(
             Object.entries(record).reduceRight<Array<[string, unknown]>>((acc, entry) => {
               acc.push(entry)

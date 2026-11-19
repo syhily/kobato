@@ -11,8 +11,6 @@ export function RealtimeFeed({ className }: { className?: string }) {
   const { events, state } = useEventStream({ bufferSize: 50 })
 
   const ordered = useMemo(() => {
-    // SSE delivers chronological order; the UI reads newest-first.
-    // ES2022 lib has no toReversed — build the reversed copy by hand.
     const copy: RealtimeEvent[] = []
     for (let i = events.length - 1; i >= 0; i -= 1) {
       copy.push(events[i]!)
@@ -36,7 +34,6 @@ export function RealtimeFeed({ className }: { className?: string }) {
             <ul className="flex flex-col gap-1">
               {ordered.map((e) => (
                 <li
-                  // Key on content identity, not list position — the rolling window can drop the head and shift keys.
                   key={`${e.ts}-${e.path}-${e.browser ?? ''}-${e.os ?? ''}`}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl px-2 py-1 text-xs hover:bg-accent/40"
                 >

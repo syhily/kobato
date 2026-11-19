@@ -2,57 +2,31 @@ import type { CacheBucketId } from '@kobato/cache/types.ts'
 
 import { Buffer } from 'node:buffer'
 
-/**
- * Process-local L1 in front of the file cache: DECODED values, so a hot entry
- * costs a Map lookup instead of a file read plus a `JSON.parse`. Each bucket
- * owns an LRU bounded on entry count AND estimated bytes; a value above
- * `MAX_ENTRY_BYTES` is never admitted (it would displace many small entries
- * for a single hit).
- *
- * - Expiry is the disk envelope's own deadline (`0` = never); L1 never derives
- *   a fresh one, so a memory copy can never outlive the file it mirrors.
- * - A hit returns the SAME decoded object to every caller — cached values are
- *   read-only by contract; consumers must never mutate a result in place.
- * - Best-effort: nothing here does I/O or throws into a request path.
- */
-
 interface MemoryBudget {
   maxEntries: number
   maxBytes: number
 }
 
-// Count caps track each bucket's key cardinality; byte caps bound the heap a
-// bucket can pin when its values are large. The sum stays under ~12 MiB.
 const BUCKET_BUDGETS: Record<CacheBucketId, MemoryBudget> = {
-  // Slug lists, one per (generation, query); a result can run to tens of KB.
   searchResult: { maxEntries: 64, maxBytes: 2 * 1024 * 1024 },
-  // Full RSS/Atom bodies (~24KB); the scope × locale ceiling is small.
   feed: { maxEntries: 16, maxBytes: 1024 * 1024 },
   sitemap: { maxEntries: 8, maxBytes: 512 * 1024 },
-  // One object per owner/repo/endpoint.
   githubRelease: { maxEntries: 8, maxBytes: 512 * 1024 },
-  // One base64 URL (or '' while the upstream is failing).
   githubAvatar: { maxEntries: 4, maxBytes: 64 * 1024 },
-  // These two buckets are L1-EXEMPT BY POLICY: their renders are file-only, and
-  // a zero budget is a hard refusal in `setMemoryItem` (independent of value size).
   og: { maxEntries: 0, maxBytes: 0 },
   calendar: { maxEntries: 0, maxBytes: 0 },
-  // Many small avatar PNGs served straight into an HTTP response.
   avatar: { maxEntries: 512, maxBytes: 4 * 1024 * 1024 },
 }
 
-/** Entries above this stay file-only: they would displace too many small hot entries. */
 const MAX_ENTRY_BYTES = 64 * 1024
 
 interface MemoryEntry {
   value: unknown
-  /** Absolute deadline (epoch ms), `0` = never — the disk envelope's value. */
   expiresAtMs: number
   bytes: number
 }
 
 interface BucketStore {
-  /** Insertion order IS the LRU order: oldest first; a read re-inserts (touch). */
   entries: Map<string, MemoryEntry>
   bytes: number
 }
@@ -84,13 +58,10 @@ function estimateBytes(value: unknown): number {
   try {
     return Buffer.byteLength(JSON.stringify(value) ?? '', 'utf8')
   } catch {
-    // Not cacheable JSON (circular/BigInt): report unbounded so it stays out of L1.
     return Number.POSITIVE_INFINITY
   }
 }
 
-/** The cached value, or `undefined` for a miss/expired entry (`undefined` is
- *  never stored, so the sentinel is unambiguous). */
 export function getMemoryItem(id: CacheBucketId, key: string): unknown {
   const store = stores.get(id)
   const entry = store?.entries.get(key)
@@ -101,7 +72,6 @@ export function getMemoryItem(id: CacheBucketId, key: string): unknown {
     evict(store, key)
     return undefined
   }
-  // Touch: delete + set moves the key to the MRU end of the insertion order.
   store.entries.delete(key)
   store.entries.set(key, entry)
   return entry.value
@@ -115,7 +85,6 @@ export interface MemoryEntryMeta {
 }
 
 export function setMemoryItem(id: CacheBucketId, key: string, value: unknown, meta: MemoryEntryMeta): void {
-  // `null` reads as a miss on the disk plane too, so it never enters L1.
   if (value === null || value === undefined) {
     return
   }
@@ -124,14 +93,11 @@ export function setMemoryItem(id: CacheBucketId, key: string, value: unknown, me
     return
   }
   const budget = BUCKET_BUDGETS[id]
-  // Zero budget is a hard refusal for the whole bucket — without this, a
-  // zero-byte value would slip past the `size > maxBytes` check below.
   if (budget.maxEntries === 0 || budget.maxBytes === 0) {
     return
   }
   const size = meta.bytes ?? estimateBytes(value)
   const store = storeFor(id)
-  // A rewrite supersedes the previous value — drop it before sizing the new one.
   evict(store, key)
   if (size > MAX_ENTRY_BYTES || size > budget.maxBytes) {
     return
@@ -147,7 +113,6 @@ export function setMemoryItem(id: CacheBucketId, key: string, value: unknown, me
   store.bytes += size
 }
 
-/** Drop a whole bucket's memory entries (synchronous invalidation contract). */
 export function clearMemoryBucket(id: CacheBucketId): void {
   stores.delete(id)
 }

@@ -9,7 +9,6 @@ import {
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Pure in-process counter map: fake timers drive windows; the test-only seam resets it between cases.
 const T0 = new Date('2026-01-01T00:00:00.000Z').getTime()
 
 beforeEach(() => {
@@ -60,7 +59,6 @@ describe('server/rate-limit — config-driven thresholds', () => {
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(false)
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(true)
 
-    // The snapshot is read synchronously — the tightened cap applies at once.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -68,9 +66,7 @@ describe('server/rate-limit — config-driven thresholds', () => {
         signIn: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
-    // Counter for `5.5.5.5` is already at 4 — over the new cap of 1.
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(true)
-    // Only `count > maxAttempts` trips the limit — a fresh IP's first hit (count 1) sits at the cap.
     expect((await tryRateLimit('9.9.9.9')).exceeded).toBe(false)
     expect((await tryRateLimit('9.9.9.9')).exceeded).toBe(true)
   })
@@ -78,7 +74,6 @@ describe('server/rate-limit — config-driven thresholds', () => {
   it('falls back to the historical defaults when the snapshot is null (pre-install)', async () => {
     setBlogSettingsBundleForTests(null)
 
-    // Default sign-in cap is 5.
     for (let i = 0; i < 5; i += 1) {
       expect((await tryRateLimit('7.7.7.7')).exceeded).toBe(false)
     }

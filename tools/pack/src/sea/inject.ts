@@ -45,7 +45,6 @@ async function ensureSentinelFuse() {
 }
 
 function resignDarwinBinary(out: string) {
-  // Best-effort removal: a failed codesign --remove must not stop the build.
   tryRun('codesign', ['--remove-signature', out])
   // REQUIRED on darwin: a modified binary must be ad-hoc re-signed or the
   // OS refuses to execute it.

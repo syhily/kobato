@@ -9,10 +9,6 @@ import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The canonical `mockTanstackQuery()` cannot express this suite: the patch
-// path needs a REAL QueryClient (cache writes against oRPC's infinite-key
-// shape) and a mutation double that actually runs `onSuccess`. Behavioural
-// mock by design — see tools/test/AGENTS.md.
 const harness = vi.hoisted(() => ({
   client: null as any,
   invalidate: null as any,
@@ -56,8 +52,6 @@ const { NotificationsDrawer } = await import('@kobato/web-public/ui/shared/notif
 const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
 const { patchNotificationReadState } = await import('@kobato/web-public/ui/shared/notifications/use-notifications.ts')
 
-// The drawer reads `useI18n()` and the site identity; both providers ride the
-// render wrapper (a wrapper, not inline JSX, so cache assertions keep their tree).
 function render(ui: ReactElement) {
   return rtlRender(ui, {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -85,7 +79,6 @@ function makeItem(overrides: Partial<NotificationDto> = {}): NotificationDto {
   }
 }
 
-/** The pane's own key construction — same input shape, so the cached entry is the one the patch scans. */
 function listKey(tab: NotificationTab) {
   return orpcQuery.notifications.list.infiniteOptions({
     input: (pageParam: string) => ({ tab, cursor: pageParam === '' ? undefined : pageParam, limit: 20 }),
@@ -126,7 +119,6 @@ describe('ui/shared/notifications read-state cache patch', () => {
     expect(cachedItems('all')[0].read).toBe(true)
     expect(cachedItems('unread')).toHaveLength(0)
     expect(cachedUnreadCount()).toEqual({ count: 4 })
-    // The whole point: no list refetch chain.
     expect(harness.invalidate).not.toHaveBeenCalled()
   })
 
@@ -140,7 +132,6 @@ describe('ui/shared/notifications read-state cache patch', () => {
     fireEvent.click(screen.getByLabelText('标为未读'))
 
     expect(cachedItems('all')[0].read).toBe(false)
-    // The unread tab never gains rows locally — the next poll reconciles.
     expect(cachedItems('unread')).toHaveLength(0)
     expect(cachedUnreadCount()).toEqual({ count: 2 })
     expect(harness.invalidate).not.toHaveBeenCalled()
@@ -175,7 +166,6 @@ describe('ui/shared/notifications read-state cache patch', () => {
     patchNotificationReadState(harness.client, [item.id], true, 3)
 
     expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.notifications.key() })
-    // Parseable tabs are still patched; the refetch is what reconciles the rest.
     expect(cachedItems('all')[0].read).toBe(true)
     expect(cachedUnreadCount()).toEqual({ count: 3 })
   })

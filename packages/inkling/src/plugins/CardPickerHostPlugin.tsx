@@ -4,28 +4,12 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getNodeByKey } from 'lexical'
 import React from 'react'
 
-/**
- * The pick seam's dispatch half (CONTEXT.md: "pick seam"): one generic
- * picker host on the editor surface (a CORE_PLUGINS entry, non-nested
- * surfaces only — nested composers share the top-level store, so a nested
- * mount would render the active picker twice). Subscribes to the
- * per-composer pick request store, resolves the node type's picker through
- * the registry's single channel, and mounts `picker.render(...)` exactly
- * once for the active request. Requests drop on close, node deletion, or
- * host unmount — a store write that outlived its host would re-open the
- * picker unprompted on the next mount.
- */
 export function CardPickerHostPlugin() {
   const [editor] = useLexicalComposerContext()
   const store = useCardPickerStore()
   const request = useCardPickerState((state) => state.request)
 
   const picker = request === null ? undefined : resolveCardPicker(request.nodeType)
-  // A card deleted while its picker is open strands the dialog on a dead key
-  // — drop the request on the first update that loses the node. Read node
-  // existence ONCE at registration too: a deletion committed between the
-  // store write and this effect's attach is invisible to the forward
-  // listener.
   React.useEffect(() => {
     if (request === null) {
       return
@@ -43,9 +27,6 @@ export function CardPickerHostPlugin() {
     })
   }, [editor, request, store])
 
-  // Unmount clears the active request: the surface flips readOnly on every
-  // save/publish, unmounting this host — without the cleanup the request
-  // survives and the picker pops back unprompted when the save resolves.
   React.useEffect(() => {
     return () => {
       store.setState({ request: null })

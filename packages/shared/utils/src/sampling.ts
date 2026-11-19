@@ -22,7 +22,6 @@ function seededRandom(seed: string): () => number {
   }
 }
 
-// Fisher-Yates shuffle. Returns a new array; does not mutate the input.
 export function shuffle<T>(items: readonly T[], seed?: string): T[] {
   const copy = items.slice()
   const random = seed === undefined ? Math.random : seededRandom(seed)
@@ -33,7 +32,6 @@ export function shuffle<T>(items: readonly T[], seed?: string): T[] {
   return copy
 }
 
-// Drop-in replacement for `_.sampleSize` — avoids shipping lodash.
 export function sampleSize<T>(items: readonly T[], n: number, seed?: string): T[] {
   if (n <= 0 || items.length === 0) {
     return []

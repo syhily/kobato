@@ -7,8 +7,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Pins the FontUploadButton wiring: the exact options handed to the hook
-// (endpoint, guards, message factories, family-name field) and the phase transitions.
 const hookMock = vi.hoisted(() => ({
   options: undefined as UseFileUploadOptions | undefined,
   upload: vi.fn(),
@@ -71,7 +69,6 @@ describe('FontUploadButton', () => {
     render(<FontUploadButton />, { wrapper: makeWrapper() })
     selectFile(new File([new Uint8Array(8)], 'OPPOSans.ttf'))
 
-    // Input phase: family name prefilled from the file name.
     expect(await screen.findByDisplayValue('OPPOSans')).toBeInTheDocument()
 
     const opts = options()
@@ -86,7 +83,6 @@ describe('FontUploadButton', () => {
     expect(opts.messages?.httpFailure?.(502)).toBe('服务器错误 (502)')
     expect(opts.messages?.failure).toBe('admin.toast.unknownErrorRetry')
     expect(opts.t('admin.toast.unknownErrorRetry')).toBe('未知错误，请稍后重试')
-    // No success toast — the success phase is the feedback.
     expect(opts.messages?.success).toBeUndefined()
 
     fireEvent.change(screen.getByDisplayValue('OPPOSans'), { target: { value: '  My Sans  ' } })

@@ -26,9 +26,6 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// The remaining SSR-reachable render path: driven by the music-player context, the
-// play/pause button reflects whether the viewed track is current and playback active.
-
 const playerState = vi.hoisted(() => ({
   currentTrack: null as AdminMusicDto | null,
   isPlaying: false,
@@ -47,8 +44,6 @@ vi.mock('@kobato/web-admin/ui/music/player/music-player-context.tsx', () => ({
   useMusicPlayerTime: () => playerState.currentTime,
 }))
 
-// Local fixture defaults deliberately differ from the shared catalog factory
-// (夜的第七章 / 十一月的萧邦).
 const qingHuaCi: Partial<AdminMusicDto> = {
   name: '青花瓷',
   album: '我很忙',

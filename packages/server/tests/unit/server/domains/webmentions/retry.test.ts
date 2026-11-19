@@ -1,8 +1,6 @@
 import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
 import { describe, expect, it } from 'vitest'
 
-// The worker's retry-timing contract, pinned directly (the retry-flow
-// integration tests only observe it implicitly through nextRetryAt).
 describe('webmentionBackoffMs', () => {
   it('doubles per attempt from the one-minute base (attempts already incremented)', () => {
     expect(webmentionBackoffMs(1)).toBe(120_000)

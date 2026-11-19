@@ -22,11 +22,6 @@ import {
 } from '@kobato/contracts/users.ts'
 import { oc } from '@orpc/contract'
 
-// Admin users RPC contract — all procedures run on the admin base. The
-// contract splits along the same three controller groups the server's
-// `apiRouter.admin.users` merges flat (crud | admin actions | sessions), so
-// each controller implements exactly its own sub-contract.
-
 export const adminUsersCrudContract = {
   count: oc.route({ method: 'GET', path: '/admin/users/count' }).output(adminUsersCountOutputSchema),
   passkeyFlag: oc.route({ method: 'GET', path: '/admin/users/passkey-flag' }).output(adminUsersPasskeyFlagOutputSchema),
@@ -82,7 +77,6 @@ export const adminUsersSessionsContract = {
     .output(adminBulkDeleteCommentsOutputDto),
 }
 
-// The flat `apiRouter.admin.users` merge the contract tree composes.
 export const adminUsersContract = {
   ...adminUsersCrudContract,
   ...adminUsersAdminContract,

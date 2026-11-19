@@ -27,7 +27,6 @@ describe('i18n/locales', () => {
       ['zh-Hant-HK', 'zh-HK'],
       ['zh-TW', 'zh-TW'],
       ['zh-Hant-TW', 'zh-TW'],
-      // Case and `_` separators are tolerated: HTTP headers and og-style tags both reach storage.
       ['ZH-hant-tw', 'zh-TW'],
       ['zh_CN', 'zh-CN'],
       ['  zh-HK  ', 'zh-HK'],

@@ -7,8 +7,6 @@ import { describe, expect, it } from 'vitest'
 describe('feed-safety', () => {
   describe('escapeCdataPayload', () => {
     it('escapes EVERY ]]> so the CDATA wrapper cannot terminate early', () => {
-      // xml-js splits only the first occurrence — the second must already
-      // be neutralized when the payload reaches the serializer.
       expect(escapeCdataPayload('a ]]> b ]]> c')).toBe('a ]]&gt; b ]]&gt; c')
       expect(escapeCdataPayload(']]>')).toBe(']]&gt;')
       expect(escapeCdataPayload('clean text')).toBe('clean text')
@@ -21,7 +19,6 @@ describe('feed-safety', () => {
       expect(sanitizeFeedHtml(input)).toBe('<p>hello</p><p>world</p>')
     })
 
-    // Unclosed <script> tags must also be stripped.
     it('strips unclosed <script> tags', () => {
       const input = '<p>hello</p><script>alert(1)'
       expect(sanitizeFeedHtml(input)).toBe('<p>hello</p>')
@@ -81,7 +78,6 @@ describe('feed-safety', () => {
 
     it('neutralizes javascript: URLs (drops href, keeps link text)', () => {
       const input = '<a href="javascript:alert(1)">click</a>'
-      // sanitize-html drops the attribute rather than rewriting it to "#".
       const out = sanitizeFeedHtml(input)
       expect(out).not.toContain('javascript:')
       expect(out).toContain('click')
@@ -127,8 +123,6 @@ describe('feed-safety', () => {
   })
 
   describe('feed-variant projection → sanitizeFeedHtml pipeline', () => {
-    // The feed variant must emit escaped plain code, not CDATA — sanitize-html drops
-    // CDATA sections wholesale.
     it('keeps the code text after sanitization when highlightedHtml is present', async () => {
       const state = lexicalEditorStateSchema.parse(
         lexicalBodyWith([

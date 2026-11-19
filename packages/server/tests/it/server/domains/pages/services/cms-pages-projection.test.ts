@@ -3,10 +3,6 @@ import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
-// Projection-layer tests, mock-free (pure data shaping): legacy/malformed
-// bodies degrade without throwing, and the DTO shape stays stable (id
-// stringification, ISO dates).
-
 const { toCmsPage } = await import('@kobato/server/domains/pages/projection.ts')
 const { toAdminRevisionDto } = await import('@kobato/server/domains/content/projection.ts')
 

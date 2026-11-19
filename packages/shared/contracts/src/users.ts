@@ -12,8 +12,6 @@ import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
 import { optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
-// Per-user signin method: `password` default, `magic-link` (needs a ready
-// mail transport), `passkey` (needs a registered passkey + global switch).
 export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const
 export const loginMethodSchema = z.enum(LOGIN_METHODS)
 export type LoginMethod = z.infer<typeof loginMethodSchema>
@@ -68,7 +66,6 @@ export const adminUserDto = z.object({
 })
 export type AdminUserDto = z.infer<typeof adminUserDto>
 
-// Self-service profile projection; a missing row degrades to empty fields.
 export interface AccountProfile {
   id: string
   name: string
@@ -82,9 +79,6 @@ export interface AccountProfile {
   lastUa: string | null
   loginMethod: LoginMethod
 }
-
-// Admin users wire — the single Zod source the `@kobato/api` users contract
-// composes and the server validates against.
 
 export const adminUserIdInput = z.object({ id: z.string().min(1) })
 export type AdminUserIdInput = z.infer<typeof adminUserIdInput>
@@ -111,7 +105,6 @@ export type AdminUsersListOutput = z.infer<typeof adminUsersListOutputDto>
 export const adminUserMuteInput = z.object({ id: z.string().min(1), muted: z.boolean() })
 export type AdminUserMuteInput = z.infer<typeof adminUserMuteInput>
 
-// `{ user: <dto> }` — shared by `get`, `mute` and `clearPasskeys`.
 export const adminUserEnvelopeDto = z.object({ user: adminUserDto })
 export type AdminUserEnvelopeOutput = z.infer<typeof adminUserEnvelopeDto>
 
@@ -133,8 +126,6 @@ export type AdminUserSendPasswordResetInput = z.infer<typeof adminUserSendPasswo
 export const adminUserClearPasskeysInput = z.object({ id: z.string().min(1) })
 export type AdminUserClearPasskeysInput = z.infer<typeof adminUserClearPasskeysInput>
 
-// Sessions / per-user moderation actions (`admin.users.*`).
-
 export const adminUserIdParamInput = z.object({ userId: z.string().min(1) })
 export type AdminUserIdParamInput = z.infer<typeof adminUserIdParamInput>
 
@@ -150,8 +141,6 @@ export type AdminBulkApproveCommentsOutput = z.infer<typeof adminBulkApproveComm
 export const adminBulkDeleteCommentsOutputDto = z.object({ deleted: z.number() })
 export type AdminBulkDeleteCommentsOutput = z.infer<typeof adminBulkDeleteCommentsOutputDto>
 
-// Public passkey auth-begin (`passkey.authBegin`) — CSRF-less: it only returns
-// a single-use 5-minute challenge, nothing is read or mutated.
 export const passkeyAuthBeginInputSchema = z.object({
   email: z.email().optional(),
 })
@@ -161,8 +150,6 @@ export type PasskeyAuthBeginInput = z.input<typeof passkeyAuthBeginInputSchema>
 // wire schema (`z.any()`), validated inside the auth domain.
 export const passkeyOptionsOutputSchema = z.object({ options: z.any() })
 
-// `getAccountProfile`'s full projection (deleted-mid-session rows degrade
-// to empty fields) plus the two feature switches the profile page renders.
 export const accountProfileOutputSchema = z.object({
   user: z.custom<AccountProfile>(),
   passkeyEnabled: z.boolean(),
@@ -170,13 +157,8 @@ export const accountProfileOutputSchema = z.object({
 })
 export type AccountProfileOutput = z.infer<typeof accountProfileOutputSchema>
 
-// `account.update-profile` wire input — session-identity profile edits (no
-// caller-supplied id, deliberately NOT merge-patch). The profile view derives
-// its payload type from this schema instead of the server router.
 export const accountUpdateProfileInput = z.object({
   name: z.string().min(1).max(50).optional(),
-  // http(s)-only like the admin user-edit schema — a bare z.url() would
-  // accept javascript:/data: hrefs into the profile link.
   link: clearable(optionalHttpUrlSchema),
   badgeName: clearable(z.string().max(20)),
   badgeColor: clearable(z.string().max(7)),
@@ -185,8 +167,6 @@ export const accountUpdateProfileInput = z.object({
 })
 export type AccountUpdateProfileInput = z.infer<typeof accountUpdateProfileInput>
 
-// Session-list wire rows. The UA label is rendered server-side
-// (`formatUaLabel`, node-device-detector) — the browser never parses a UA.
 export interface AccountSessionDto {
   sid: string
   userId: number
@@ -206,9 +186,6 @@ export interface AdminSessionDto extends AccountSessionDto {
 export const accountSessionsOutputSchema = z.custom<AccountSessionDto[]>()
 export type AccountSessionsOutput = z.infer<typeof accountSessionsOutputSchema>
 
-// Safe subset of user fields exposed back to the account owner after a
-// profile edit — deliberately excludes password, lastIp, lastUa and the
-// admin-only counters.
 export const accountUserDto = z.object({
   id: z.string(),
   name: z.string(),
@@ -239,7 +216,6 @@ export const accountRevokeSessionOutputSchema = z.object({
 })
 export type AccountRevokeSessionOutput = z.infer<typeof accountRevokeSessionOutputSchema>
 
-// Passkey credential list for the account security card.
 export const accountPasskeyListOutputSchema = z.object({
   credentials: z.array(
     z.object({
@@ -252,8 +228,6 @@ export const accountPasskeyListOutputSchema = z.object({
 })
 export type AccountPasskeyListOutput = z.infer<typeof accountPasskeyListOutputSchema>
 
-// Registration options/finish come from `@simplewebauthn/server` — opaque to
-// the wire schema (`z.any()`), validated inside the auth domain.
 export const accountPasskeyRegisterBeginInput = z.object({ deviceName: z.string().max(100).optional() })
 export type AccountPasskeyRegisterBeginInput = z.infer<typeof accountPasskeyRegisterBeginInput>
 
@@ -278,9 +252,6 @@ export const adminUsersListSessionsOutputSchema = z.custom<AdminSessionDto[]>()
 
 export const adminUsersPasskeyFlagOutputSchema = z.boolean()
 
-// `admin.users.update` wire input — the merge-patch field-update contract for
-// the admin user editor. The web form derives its payload type from this
-// schema, so the form and the server validate against one shape.
 export const adminUserUpdateInput = mergePatchInput({
   name: z.string().min(1).optional(),
   email: z.email().optional(),

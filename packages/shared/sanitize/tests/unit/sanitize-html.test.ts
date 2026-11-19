@@ -167,9 +167,6 @@ describe('sanitize/sanitize-html', () => {
         '<span class="line"><span style="color:#111">const</span></span></code></pre>'
       const clean = sanitizeHtmlString(html, 'body')
       expect(clean).toContain('data-language="typescript"')
-      // jsdom 31 serializes `<` in attribute values as `&lt;` (byte
-      // parity with the DOMPurify browser engine, see
-      // sanitize-html-parity.test.ts); both forms parse back identically.
       expect(clean).toContain('data-code="const a = &lt;b&gt;"')
       expect(clean).toContain('class="language-typescript"')
       expect(clean).toContain('color: #111')

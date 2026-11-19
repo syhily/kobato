@@ -5,15 +5,10 @@ import type { MetricRow, NewMetric } from '@kobato/db/types.ts'
 import { metric } from '@kobato/db/schema/metric.ts'
 import { and, eq, sql } from 'drizzle-orm'
 
-// Matches `uq_metric_owner` — a plain UNIQUE on `(type, owner_id)`, both NOT NULL.
 function whereTarget(target: EntityTarget) {
   return and(eq(metric.type, target.type), eq(metric.ownerId, target.ownerId))
 }
 
-/**
- * Ensure-once: read first, insert only when missing; the `ON CONFLICT` no-op
- * is the concurrent-create race fallback.
- */
 export async function ensureMetric(db: Database, target: EntityTarget): Promise<MetricRow> {
   const existing = await findMetricByTarget(db, target)
   if (existing !== null) {
@@ -37,7 +32,6 @@ export async function ensureMetric(db: Database, target: EntityTarget): Promise<
   return result[0]
 }
 
-/** One SQL round-trip regardless of batch size. */
 export async function ensureMetricsBatch(db: Database, targets: EntityTarget[]): Promise<MetricRow[]> {
   if (targets.length === 0) {
     return []
@@ -69,7 +63,6 @@ export async function findMetricByTarget(db: Database, target: EntityTarget): Pr
   return rows[0] ?? null
 }
 
-/** Many `pv += delta` updates in one sync transaction; the map key is `"<type>:<ownerId>"`. */
 export async function incrementMetricPvBatch(db: Database, deltas: Map<string, number>): Promise<void> {
   const positive: Array<['post' | 'page', number, number]> = []
   for (const [composite, delta] of deltas) {

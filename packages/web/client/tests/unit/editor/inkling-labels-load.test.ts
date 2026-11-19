@@ -1,11 +1,6 @@
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-// The public comment composer fetches its label table on demand. Each locale
-// lives in its own module, so the bundler emits FOUR small chunks and a visitor
-// downloads exactly the active UI locale's one — never all four. This pins the
-// loader mapping; the component-side gating is covered by
-// `ui/public/comments/lazy-comment-body-editor.test.tsx`.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const imports = vi.hoisted(() => ({ loaded: [] as string[] }))
@@ -36,7 +31,6 @@ const LABEL: Record<AppLocale, string> = {
 
 describe('client/editor/inkling-labels — lazy per-locale chunks', () => {
   beforeEach(() => {
-    // Fresh module registry per case, so the factories record THAT call's imports.
     vi.resetModules()
     imports.loaded.length = 0
   })

@@ -1,6 +1,3 @@
-// ANCHOR_POPUP_GAP is the single source for the 10px anchor↔popup gap; the settings panel's
-// CARD_SPACING (20px, panel-to-card distance) is a different semantic and lives in floating-panel.ts.
-
 export const ANCHOR_POPUP_GAP = 10
 
 export interface FitRect {

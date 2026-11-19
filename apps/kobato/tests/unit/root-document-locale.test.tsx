@@ -7,12 +7,6 @@ import { requestContext } from '@kobato/server/http/request-context.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
 // @vitest-environment jsdom
-/**
- * Real document parity: the Content-Language header emitted by entry.server
- * must equal the `<html lang>` the real root Layout renders for the same
- * router context — both on a successful root loader and when it failed (no
- * i18n payload → the Layout's DEFAULT_LOCALE fallback).
- */
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -117,8 +111,6 @@ describe('document Content-Language ⇔ <html lang>', () => {
 
   it('agrees with the Layout fallback when the root loader failed', () => {
     expect(renderedLang(undefined)).toBe(DEFAULT_LOCALE)
-    // The request still says en-US — but the document renders the fallback,
-    // so the header must not claim a language the body does not use.
     expect(responseLocale(undefined, 'en-US')).toBe(DEFAULT_LOCALE)
   })
 

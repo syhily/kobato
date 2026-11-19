@@ -54,9 +54,7 @@ function readTokenMap(): Record<string, string> {
     if (isRecordOfStrings(parsed)) {
       return parsed
     }
-  } catch {
-    // Corrupt data — reset.
-  }
+  } catch {}
   return {}
 }
 
@@ -87,7 +85,6 @@ export function createLikeButtonState(commentKey: string, likes: number): LikeBu
   return { commentKey, likes, liked: false }
 }
 
-/** Exported for unit tests. */
 export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'unlike'): LikeButtonState {
   if (action === 'like') {
     return { ...state, liked: true, likes: state.likes + 1 }
@@ -97,15 +94,12 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
 
 export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeButtonProps) {
   const { t } = useI18n()
-  // Dispatch inside a transition and keep it pending until `onSuccess` commits.
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  // SSR and the first hydrated render take the server snapshot; NumberFlow only after.
   const showNumberFlow = useHydrated()
 
   const tokenRef = useRef<string | null>(null)
-  // Discard validate verdicts that predate a newer interaction.
   const interactionSeqRef = useRef(0)
   const validateSeqRef = useRef(0)
 
@@ -152,7 +146,6 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     },
   })
 
-  // Reset state when navigating between detail routes (same component instance).
   const validateMutate = validate.mutate
   const [lastPermalink, setLastPermalink] = useState(permalink)
   if (permalink !== lastPermalink) {
@@ -168,7 +161,6 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     tokenRef.current = token
     validateSeqRef.current = interactionSeqRef.current
     validateMutate({ key: commentKey, token })
-    // Re-validate when permalink changes; identity-stable refs only.
   }, [permalink, commentKey, validateMutate])
 
   const isPending = increase.isPending || decrease.isPending
@@ -190,10 +182,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         addOptimistic('unlike')
         try {
           await decreaseMutateAsync({ key: commentKey, token })
-        } catch {
-          // Rejected (e.g. the token was already consumed): the optimistic toggle reverts
-          // with the transition, so no base state was committed.
-        }
+        } catch {}
       })
     } else {
       interactionSeqRef.current += 1
@@ -201,9 +190,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         addOptimistic('like')
         try {
           await increaseMutateAsync({ key: commentKey })
-        } catch {
-          // Same contract as the unlike path (e.g. rate-limited).
-        }
+        } catch {}
       })
     }
   }, [isPending, state.liked, permalink, addOptimistic, decreaseMutateAsync, increaseMutateAsync, commentKey])

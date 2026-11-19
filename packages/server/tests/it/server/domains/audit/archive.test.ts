@@ -4,8 +4,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Real audit_log rows + real storage seam; only the AWS SDK is mocked, so
-// the half-configured cases exercise the backend's real isAvailable().
 const sendMock = vi.fn<(command: { input: unknown }) => Promise<unknown>>()
 const destroyMock = vi.fn()
 const middlewareStack = { addRelativeTo: vi.fn() }
@@ -31,7 +29,6 @@ vi.mock('@aws-sdk/client-s3', () => {
 
 const db = getTestDb()
 
-// Comfortably older than any retention cutoff the fixture can produce.
 const OLD_DAY = new Date('2026-01-01T12:00:00Z')
 
 async function seedAuditRow(overrides: Partial<typeof auditLog.$inferInsert> = {}): Promise<void> {

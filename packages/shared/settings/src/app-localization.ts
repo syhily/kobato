@@ -1,14 +1,3 @@
-// The one resolver for "which UI locale, site time zone and representation
-// generation does this render use", derived from the settings snapshot. Every
-// surface that needs it (request context, content.bootstrap, meta, cache keys,
-// ETags) goes through this module — never a per-call re-derivation, never a
-// locale → time zone inference.
-//
-// UI locale and site time zone are separate facts: `en-US` + `Asia/Shanghai` is a
-// valid configuration, and the browser time zone stays analytics-only. The boot
-// token (`revision`) is request identity; the per-scope content hashes
-// (`revisions`) are what cache keys and ETags consume.
-
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { RepresentationRevisions } from '@kobato/settings/representation-scopes.ts'
 import type { BlogSettingsSnapshot } from '@kobato/settings/snapshot.ts'
@@ -38,21 +27,13 @@ export interface AppLocalization {
   revisions: RepresentationRevisions
 }
 
-/** The settings snapshot a representation was captured from, plus its localization. */
 export interface AppSnapshot {
   settings: BlogSettingsBundle | null
   localization: AppLocalization
 }
 
-/** Pre-install only: nothing date-bearing renders before the setup form writes settings. */
 export const PRE_INSTALL_TIME_ZONE = 'UTC'
 
-/**
- * Resolve the localization from an explicit settings snapshot. Omit the argument
- * for the current process snapshot (background jobs: the send-time snapshot). A
- * request must pass the SAME captured snapshot it renders with, so the cache key's
- * revision and the rendered bytes can never disagree.
- */
 export function resolveAppLocalization(
   snapshot: BlogSettingsSnapshot = getBlogSettingsSnapshotSync(),
 ): AppLocalization {
@@ -75,18 +56,11 @@ export function resolveAppLocalization(
   }
 }
 
-/** One atomic read of bundle + revision, resolved into both request representations. */
 export function captureAppSnapshot(): AppSnapshot {
   const snapshot = getBlogSettingsSnapshotSync()
   return { settings: snapshot.bundle, localization: resolveAppLocalization(snapshot) }
 }
 
-/**
- * Per-request lazy memo: capture on FIRST access, then pin bundle + revision +
- * localization for that request. Request context is derived before settings hydrate,
- * so the accessor must not read the snapshot eagerly. Both `settings` and
- * `localization` MUST come from this one capture.
- */
 export function createLazyAppSnapshot(): () => AppSnapshot {
   let captured: AppSnapshot | null = null
   return () => {

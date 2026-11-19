@@ -7,8 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// The descriptor key is the stable identity the client and the migration UI match;
-// no locale sees a raw id.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams
@@ -68,7 +66,6 @@ const PARAM_CASES: Case[] = [
   },
 ]
 
-// Placeholder-free keys: every locale must resolve to a finished sentence.
 const PLAIN_KEYS: UiMessageId[] = [
   'storage.error.migrationRunning',
   'storage.error.migrationUnfinished',

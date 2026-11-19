@@ -135,17 +135,12 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
   const labels = useInklingLabels()
   const [expandedPicker, setExpandedPicker] = useState<'background' | 'button' | null>(null)
 
-  // null-safe composer read (the card renders without one in isolated unit
-  // tests): the 'accent' keyword resolves scoped to THIS editor's root, so a
-  // second editor on the page can't supply the accent
   const composerContext = useContext(LexicalComposerContext)
   const editorRoot = composerContext?.[0]?.getRootElement() ?? null
 
   useEffect(() => {
     let cancelled = false
     void resolveHeaderImageTextColor(backgroundImageSrc, layout).then((color) => {
-      // the background image changed again before the color was
-      // extracted — don't apply the previous image's color
       if (color && !cancelled) {
         handleTextColor(color)
       }

@@ -108,14 +108,6 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
   return result
 }
 
-/**
- * The pinned inputs every sidebar selector samples from.
- *
- * `seed` is built ONCE per request/representation by the orchestrator
- * (`http/loaders/sidebar-select::sidebarSelection`): entity/URL scope + the
- * site calendar date in the request's time zone + the settings revision. The
- * selectors themselves never read the settings snapshot.
- */
 export interface SidebarSelection {
   /** Request-pinned `blog.sidebar` section — never the global snapshot. */
   settings: SidebarSettings
@@ -128,11 +120,6 @@ export async function selectSidebarPosts(db: Database, selection: SidebarSelecti
     return []
   }
   const where = and(livePostWhere(), eq(postMetaTable.visible, true))
-  // Read candidate ids once (stable id order), pick distinct positions with the
-  // SEEDED shuffle, then fetch via one IN query. The seed rotates per site
-  // calendar day / scope / settings revision, so repeated renders of the same
-  // representation pick the same posts — the detail ETag stays stable — while
-  // the widget keeps its "random" flavor.
   const idRows = await db
     .select({ id: postMetaTable.id })
     .from(postMetaTable)
@@ -144,8 +131,6 @@ export async function selectSidebarPosts(db: Database, selection: SidebarSelecti
   const candidateIds = idRows.map((row) => row.id)
   const picked = shuffle(candidateIds, `${selection.seed}|posts|${candidateIds.length}`).slice(0, count)
   const metas = await db.select().from(postMetaTable).where(inArray(postMetaTable.id, picked))
-  // Preserve the seeded pick order — the payload (and its ETag) must not depend
-  // on the DB's incidental row order.
   const metaById = new Map(metas.map((meta) => [meta.id, meta]))
   const ordered = picked.flatMap((id) => {
     const meta = metaById.get(id)

@@ -3,10 +3,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import { isHttpUrl } from '@kobato/utils/safe-url.ts'
 import { z } from 'zod'
 
-/**
- * Typed catalog id for the shared http(s)-URL rule: every schema reusing the
- * rule emits the same descriptor, never raw prose or a bare key.
- */
 export const HTTP_URL_MESSAGE = 'common.error.httpUrlRequired' satisfies UiMessageId
 
 const httpUrlSchema = z.url().refine(isHttpUrl, { message: HTTP_URL_MESSAGE })

@@ -4,13 +4,6 @@ import { renderHookWithI18n } from '@kobato/test/i18n-render.tsx'
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Integration suite for useEditorShellPersist, crossing the same interface
-// callers do. The wire-payload and status-transition DECISIONS live in the
-// pure planner (editor-shell-persist-plan.test.ts); this suite pins the React
-// wiring: gating, mutation legs, banner protocol, baseline/freeze/token
-// ownership. Mutation slots are keyed by mutationFn identity — never by
-// useMutation call order.
-
 interface MutationConfig {
   onSuccess?: (data: never) => void
   onError?: (error: Error) => void
@@ -48,7 +41,6 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
-// Per-test control over the stored local draft the conflict detection reads.
 const localDraftState = vi.hoisted(() => ({
   loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
@@ -67,7 +59,6 @@ import { useAutosave } from '@kobato/web-admin/ui/editor-shell/drafts/use-autosa
 import { useLocalDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
 import { useEditorShellPersist } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist.ts'
 
-// The editor shell hooks call `useI18n()`, so every render needs the provider.
 const renderHook = renderHookWithI18n
 
 const useAutosaveMock = vi.mocked(useAutosave)
@@ -86,7 +77,6 @@ type Entity = EntityLike
 
 const baseMeta: Meta = { title: 't', slug: 's', published: false, publishedAt: '' }
 
-// Minimal Lexical body — a single paragraph of text.
 function body(text: string): LexicalEditorState {
   return lexicalBodyWith([lexicalParagraph(text)])
 }
@@ -119,7 +109,6 @@ function savedEntity(overrides: Partial<Entity> = {}): Entity {
   return { id: 'e1', slug: 's', updatedAt: '2026-07-10T00:00:00.000Z', publishedAt: null, ...overrides }
 }
 
-/** Edit-mode detail; `baselineBody` seeds the owned lastSavedBody + expectedToken. */
 function makeDetail(baselineBody?: LexicalEditorState, token = 'tok-1'): EditorShellDetail<Entity> {
   return {
     entity: { id: 'e1', slug: 's', updatedAt: '2026-07-01T00:00:00.000Z', publishedAt: null },
@@ -169,14 +158,12 @@ function makeArgs(
   }
 }
 
-/** The mutation slot registered for one of the args' wire functions. */
 function slotFor(fn: unknown): MutationSlot {
   const slot = slotsByMutationFn.get(fn)
   expect(slot, 'mutation slot registered for the wire fn').toBeDefined()
   return slot!
 }
 
-/** Options of the most recent useAutosave call (one per render). */
 function lastAutosaveOptions() {
   const call = useAutosaveMock.mock.calls.at(-1)
   expect(call).toBeDefined()
@@ -188,7 +175,6 @@ function lastAutosaveOptions() {
   }
 }
 
-/** Options of the most recent useLocalDraft call (one per render). */
 function lastLocalDraftOptions() {
   const call = useLocalDraftMock.mock.calls.at(-1)
   expect(call).toBeDefined()
@@ -220,7 +206,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — initial-return surface
     expect(result.current.displaySaveAtMs).toBeNull()
     expect(result.current.isBodyDirty).toBe(false)
 
-    // Owned revision race + conflict state, read-only for the shell.
     expect(result.current.expectedToken).toBeNull()
     expect(result.current.latestRevision).toBeNull()
     expect(result.current.publishedRevision).toBeNull()
@@ -333,7 +318,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     act(() => result.current.persistSave())
 
     expect(slotFor(args.mutations.upsertMetaFn).mutate).toHaveBeenCalledTimes(1)
-    // The body leg carries the owned token onto the wire.
     expect(slotFor(args.mutations.saveDraftFn).mutate).toHaveBeenCalledWith({
       id: 'e1',
       body: body('new text'),
@@ -346,8 +330,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.({ status: 'saved', revision } as never))
     expect(result.current.previewBanner).toEqual({ kind: 'draft', slug: 's' })
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
-    // The owned race advanced: token rotated, body no longer dirty, and the
-    // local-draft key follows the new token.
     expect(result.current.expectedToken).toBe('tok-2')
     expect(result.current.isBodyDirty).toBe(false)
     expect(lastLocalDraftOptions().clientRevisionToken).toBe('tok-2')
@@ -417,7 +399,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
     act(() => result.current.persistSave())
 
     act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload({ body: divergedBody }) as never))
-    // Baseline moves to the submitted reference so the next debounce tick is a no-op.
     expect(autosaveMockReturns.setBaseline).toHaveBeenCalledTimes(1)
     expect(autosaveMockReturns.setBaseline).toHaveBeenCalledWith(divergedBody)
   })
@@ -444,14 +425,12 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
     act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(conflictPayload() as never))
     expect(autosaveMockReturns.setBaseline).not.toHaveBeenCalled()
 
-    // The conflict dropped the pending snapshot; a later clean save must not mark a stale body.
     act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload() as never))
     expect(autosaveMockReturns.setBaseline).not.toHaveBeenCalled()
   })
 })
 
 describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the autosave baseline', () => {
-  // Seeding the baseline makes the first debounce tick hit the reference check.
   it('seeds the engine baseline with the opening body on mount', () => {
     const openingBody = body('server state')
     const args = makeArgs({
@@ -498,10 +477,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — owned conflict freeze'
     await act(async () => {
       outcome = await lastAutosaveOptions().flush([] as never)
     })
-    // The conflict outcome stops the engine from emitting its generic 'saved' tick.
     expect(outcome).toBe('conflict')
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
-    // The server freeze leg is owned here: autosave is now gated off.
     expect(lastAutosaveOptions().enabled).toBe(false)
 
     act(() => lastAutosaveOptions().onStatusChange({ kind: 'saved', at: Date.now() }))
@@ -539,13 +516,11 @@ describe('ui/admin/editor-shell/useEditorShellPersist — owned conflict freeze'
     expect(lastAutosaveOptions().enabled).toBe(true)
     expect(result.current.conflict).toBeNull()
 
-    // The stored draft arrives (IndexedDB load resolves) and diverges.
     localDraftState.loadedDraft = { body: localBody, savedAt: 123 }
     rerender({ args })
     expect(result.current.conflict).toEqual({ localBody, localSavedAt: 123 })
     expect(lastAutosaveOptions().enabled).toBe(false)
 
-    // Adopting the server version resolves the conflict and unfreezes.
     act(() => result.current.adoptServerVersion())
     expect(result.current.conflict).toBeNull()
     expect(lastAutosaveOptions().enabled).toBe(true)
@@ -561,7 +536,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on pic
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    // 取消排期: the explicit null must reach the wire.
     expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
       meta: args.draft.meta,
       id: 'e1',
@@ -574,7 +548,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on pic
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    // Nothing scheduled: undefined leaves the column untouched — a live post is never unpublished.
     expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
       meta: args.draft.meta,
       id: 'e1',
@@ -659,8 +632,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     expect(result.current.previewBanner).toEqual({ kind: 'published', slug: 's' })
     expect(result.current.publishedRevision).not.toBeNull()
 
-    // After a successful publish the optimistic publishedAt is the truth: an
-    // empty picker cancels it with an explicit null — never a "publish now".
     const nextArgs: Args = { ...args, draft: { ...args.draft, meta: { ...baseMeta, publishedAt: '' } } }
     rerender({ args: nextArgs })
     act(() => result.current.persistSave())
@@ -672,7 +643,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
   })
 
   it('reverts the optimistic server publishedAt when the publish leg fails (V3-07)', () => {
-    // A live entity: its publishedAt is a past fact, not a schedule.
     const detail = makeDetail(body('x'))
     detail.entity = { ...detail.entity, publishedAt: '2026-01-01T00:00:00.000Z' }
     const args = makeArgs({
@@ -689,8 +659,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     act(() => slotFor(args.mutations.publishFn).config.onError?.(new Error('boom')))
     expect(result.current.status).toEqual({ kind: 'error', message: 'boom' })
 
-    // After a failed publish the optimistic schedule is reverted: omit the
-    // field (undefined), never null — null cancels and would unpublish the live entity.
     const nextArgs: Args = {
       ...args,
       draft: { ...args.draft, meta: { ...baseMeta, published: true, publishedAt: '' } },

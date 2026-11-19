@@ -1,7 +1,3 @@
-// `pnpm run trace:up` — start the single-container OpenObserve development
-// instance. Idempotent, loopback-only, dedicated volume, never required by
-// normal development.
-
 import {
   buildState,
   ensureDocker,

@@ -13,7 +13,6 @@ interface MailFormProps {
 }
 
 export function MailForm({ mail }: MailFormProps) {
-  // Track the last-saved transport so the UI flips to the new provider immediately.
   const [savedTransport, setSavedTransport] = useState<MailLoaderShape['mail']['transport'] | null>(null)
   const transport = savedTransport ?? mail.mail.transport
   return (

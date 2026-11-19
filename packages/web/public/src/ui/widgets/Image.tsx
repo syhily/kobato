@@ -20,7 +20,6 @@ export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>,
   siteOrigin?: string
 }
 
-// Exported so plain `<img>` consumers can reuse the same dark-mode dimming.
 export const DARK_IMAGE_DIM_CLASS =
   'transition-[filter] duration-300 dark:[filter:brightness(0.72)_contrast(0.95)_saturate(0.9)]'
 

@@ -42,7 +42,6 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
-  // Bump `bodyKey` so a fresh editor never leaks the previous reply.
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
     setBody(EMPTY_COMMENT_EDITOR_STATE)

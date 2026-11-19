@@ -7,12 +7,6 @@ import { describe, expect, it } from 'vitest'
 
 const siteIdentity = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 
-// SSR parity for the content-language boundary: the UI renders in en-US while the prose
-// is whatever the author declared. Only the body container takes the author's `lang` and
-// `dir="auto"` (so RTL prose lays out correctly); every other element keeps the UI
-// locale/direction, and an unset value renders neither attribute.
-
-// `comments={false}` keeps the streamed promise out of the SSR tree.
 const neverSettles = new Promise<never>(() => undefined)
 
 function renderBody({
@@ -72,8 +66,6 @@ describe('snapshot: DetailBodyChrome content language', () => {
     (contentLanguage, title, body, permalink) => {
       const html = renderBody({ contentLanguage, title, bodyHtml: body, permalink })
 
-      // Explicit content language always stamps `dir="auto"`: the browser reads
-      // the paragraph direction from the first strong character.
       expect(html).toMatch(
         new RegExp(`<div[^>]*class="[^"]*post-content[^"]*"[^>]*lang="${contentLanguage}"[^>]*dir="auto"`),
       )

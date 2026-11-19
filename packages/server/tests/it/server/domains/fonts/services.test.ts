@@ -11,12 +11,8 @@ import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Only the storage registry is substituted — DB and settings stay real.
-// The real deleteFontPackage runs against the in-memory 'local' backend
-// injected through the registry seam.
 const mem = makeMemoryBackend({ driver: 'local' })
 
-// Section-change dispatch is unit-tested; kept out of these persistence cases.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -51,7 +47,6 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Prom
   return row
 }
 
-/** Mirror what putFont would have written: result.css + the woff2 chunks. */
 function seedFontPackage(hash: string): void {
   for (const name of ['result.css', 'chunk-0.woff2', 'chunk-1.woff2', 'chunk-2.woff2']) {
     mem.store.set(`fonts/${hash}/${name}`, { body: Buffer.from(name), contentType: 'application/octet-stream' })

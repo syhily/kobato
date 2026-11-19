@@ -94,8 +94,6 @@ describe('OpenObserve development assets', () => {
           query?.fields?.stream_type,
         )
         expect(query?.fields?.stream, `${entry.file}/${panel.id} stream`).toBeTruthy()
-        // Raw SDK performance objects / error messages are forbidden; only
-        // the numeric view_* fields and the pipeline-derived INP column.
         expect(query?.query).not.toContain('view_performance_')
         expect(query?.query).not.toContain('error_message')
       }
@@ -118,8 +116,6 @@ describe('OpenObserve development assets', () => {
         logPanels += 1
         expect(query.fields.stream_type, `${entry.file}/${panel.id} stream type`).toBe('logs')
         const sql = query.query ?? ''
-        // O2 cannot join a logs stream to a traces stream in one SQL query; the
-        // correlation is a UI/export join on trace_id/span_id, never a fake join.
         expect(sql, `${entry.file}/${panel.id} join`).not.toMatch(/\bJOIN\b/i)
         expect(sql, `${entry.file}/${panel.id} cross-stream`).not.toContain('"default"')
         expect(sql, `${entry.file}/${panel.id} rum stream`).not.toContain('_rumdata')
@@ -141,11 +137,8 @@ describe('OpenObserve development assets', () => {
     ]) {
       expect(slowSql, `co-slow-requests selects ${fragment}`).toContain(fragment)
     }
-    // A generic slow-request table: route/status filtering is the dashboard
-    // user's drill-down step, so no status/route is hardcoded for the smoke.
     expect(slowSql).not.toContain('http_response_status_code =')
     expect(slowSql).not.toContain('http_route =')
-    // Never a fabricated exemplar/TraceID join into a metric or another stream.
     expect(slowSql).not.toContain('trace_id =')
     expect(slowSql.toUpperCase()).not.toContain('JOIN')
     expect(slowRequests?.queries?.[0]?.fields?.stream_type).toBe('traces')
@@ -204,10 +197,6 @@ describe('OpenObserve development assets', () => {
   })
 
   it('aggregates delta counter/histogram streams as per-bucket totals', async () => {
-    // The OTLP exporter uses DELTA temporality (pinned by the runtime
-    // temporality test), so each `_sum`/`_count` row is the increment for one
-    // export interval. Bucketing with `sum(value)` yields that bucket's true
-    // total; `avg(value)` would report a mean increment instead of a total.
     let sumPanels = 0
     let countPanels = 0
     for (const entry of await dashboards()) {
@@ -259,8 +248,6 @@ describe('OpenObserve development assets', () => {
     for (const forbidden of [
       'unknown_secret_field',
       '.ip',
-      // Finer identity detail stays banned: only the coarse family/country
-      // granularity is allowlisted below.
       '.geo_info_city',
       '.geo_info_location',
       '.user_agent_user_agent_major',
@@ -275,8 +262,6 @@ describe('OpenObserve development assets', () => {
     ]) {
       expect(vrl, `${forbidden} absent`).not.toContain(`safe${forbidden}`)
     }
-    // The five coarse identity dimensions survive only behind a null guard, so
-    // the default anonymous mode (all-null enrichment) stores nothing.
     for (const coarse of [
       'geo_info_country',
       'geo_info_country_iso_code',

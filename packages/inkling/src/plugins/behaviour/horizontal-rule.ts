@@ -56,18 +56,14 @@ export function resolveDividerScanTarget(editor: LexicalEditor): ParagraphNode |
 
 export function registerHorizontalRuleInsert(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
   return editor.registerCommand(INSERT_HORIZONTAL_RULE_COMMAND, () => $insertHorizontalRule(), COMMAND_PRIORITY_EDITOR)
 }
 
 export function registerHorizontalRuleScan(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('horizontalrule')) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
   return registerUpdateScan(editor, {
     dirty: 'leaves-or-elements',

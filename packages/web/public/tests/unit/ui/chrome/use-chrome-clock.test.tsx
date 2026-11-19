@@ -5,9 +5,7 @@ import { act, render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The stale instant the root loader baked at request time.
 const LOADER_NOW = '2026-07-31T23:59:00.000Z'
-// The live client clock — already past the loader's instant.
 const CLIENT_NOW = '2026-08-01T00:30:00.000Z'
 
 function setup() {
@@ -36,9 +34,7 @@ describe('useChromeClock', () => {
     const { renders } = setup()
     await act(async () => {})
 
-    // First paint must match the server-rendered instant…
     expect(renders[0]).toBe(LOADER_NOW)
-    // …and once mounted, the stale loader value is replaced by the client clock.
     expect(renders.at(-1)).toBe(CLIENT_NOW)
   })
 

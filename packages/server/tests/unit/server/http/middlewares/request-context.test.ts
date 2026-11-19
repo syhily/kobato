@@ -58,8 +58,6 @@ describe('requestContextMiddleware', () => {
     return { app, session, user, ensureCsrfToken, commitSessionWithMaxAge, getClientAddress }
   }
 
-  // The persisted-session contract: the signed `__session` cookie makes the middleware
-  // mint/reuse the session-persisted token.
   const sessionCookie = { Cookie: '__session=test-session' }
 
   it('sets c.var.requestContext with the derived fields', async () => {
@@ -84,23 +82,18 @@ describe('requestContextMiddleware', () => {
 
   it('pins the settings bundle and localization from ONE snapshot capture', async () => {
     const { app } = await buildApp()
-    // Same module graph as the dynamically imported middleware (resetModules
-    // ran in beforeEach), so these writes reach the real snapshot slot.
     const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
     const { resolveAppLocalization } = await import('@kobato/settings/app-localization.ts')
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
     app.get('/', (c) => {
       const rc = c.var.requestContext
-      // First read captures the snapshot …
       const settings = rc.settings
       const localization = rc.localization
-      // … a settings save lands mid-request …
       setBlogSettingsBundleForTests({
         ...TEST_BLOG_SETTINGS_BUNDLE,
         siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
       })
-      // … and both getters stay pinned to the captured generation.
       return c.json({
         settingsLocale: settings?.siteIdentity?.locale,
         locale: localization.locale,
@@ -119,7 +112,6 @@ describe('requestContextMiddleware', () => {
       laterLocale: 'zh-CN',
       sameBundle: true,
     })
-    // A capture created after the request sees the new generation.
     expect(resolveAppLocalization().locale).toBe('en-US')
   })
 
@@ -134,9 +126,6 @@ describe('requestContextMiddleware', () => {
     expect(res.headers.get('Set-Cookie')).toBe('__session=abc')
   })
 
-  // node-server can report an undefined socket.remoteAddress (e.g. behind a TCP reverse
-  // proxy) while remotePort is known — key the direct peer on `port:<n>` so rate limits
-  // stay per connection.
   it('keys the direct peer on the socket port when remoteAddress is unavailable', async () => {
     const { app, getClientAddress } = await buildApp()
     app.get('/', (c) => c.json({ ok: true }))
@@ -172,14 +161,10 @@ describe('requestContextMiddleware', () => {
   it('yields to a route that set the session cookie itself (login rotation / logout)', async () => {
     const { app } = await buildApp({ sessionCtx: { dirty: true } })
     app.get('/', (c) => {
-      // The route owns the cookie channel for this response — e.g. a
-      // sid-rotating login or a session-destroying logout.
       c.header('Set-Cookie', '__session=new-sid', { append: true })
       return c.json({ ok: true })
     })
     const res = await app.request('/', { headers: sessionCookie })
-    // The middleware's dirty commit must NOT land after the route's header
-    // (last Set-Cookie wins — appending would resurrect the old sid).
     expect(res.headers.getSetCookie()).toEqual(['__session=new-sid'])
   })
 
@@ -192,9 +177,6 @@ describe('requestContextMiddleware', () => {
     const res = await app.request('/', { headers: sessionCookie })
     expect(res.headers.getSetCookie()).toEqual(['visitor=xyz', '__session=abc'])
   })
-
-  // Anonymous (cookieless) requests: a bot flood of anonymous GETs must not write one
-  // session row per request, so the token derives statelessly from the `__csrf` cookie.
 
   it('anonymous GET: no session write, no __session cookie, token derived from a minted __csrf cookie', async () => {
     const { app, session, ensureCsrfToken, commitSessionWithMaxAge } = await buildApp()
@@ -228,7 +210,6 @@ describe('requestContextMiddleware', () => {
     expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
     expect(ensureCsrfToken).not.toHaveBeenCalled()
     expect(res.headers.getSetCookie()).toEqual([])
-    // No token anywhere — the CSRF guard rejects this request downstream.
     expect(session.get('csrfToken')).toBeUndefined()
   })
 

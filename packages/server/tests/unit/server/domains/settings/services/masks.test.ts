@@ -23,12 +23,10 @@ describe('redactSecretsFromBundle', () => {
     expect(redacted.mail?.mail.mailgunApiKey).toBe('')
     expect(redacted.assets?.storage.secretAccessKey).toBe('')
     expect(redacted.comments?.comments.githubToken).toBe('')
-    // Non-secret neighbours survive the redaction untouched.
     expect(redacted.mail?.mail.smtpHost).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.smtpHost)
     expect(redacted.mail?.mail.sender).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.sender)
     expect(redacted.assets?.storage.accessKeyId).toBe(TEST_BLOG_SETTINGS_BUNDLE.assets?.storage.accessKeyId)
     expect(redacted.assets?.asset).toEqual(TEST_BLOG_SETTINGS_BUNDLE.assets?.asset)
-    // Sections without secrets are carried over by reference value.
     expect(redacted.security).toEqual(TEST_BLOG_SETTINGS_BUNDLE.security)
     expect(redacted.limits).toEqual(TEST_BLOG_SETTINGS_BUNDLE.limits)
   })
@@ -51,15 +49,12 @@ describe('redactSecretsFromBundle', () => {
     const redacted = redactSecretsFromBundle(bundle)
 
     expect(redacted.mail).toBeNull()
-    // An empty secret stays empty (the mask story is "unset", not "blanked").
     expect(redacted.assets?.storage.secretAccessKey).toBe('')
   })
 
   it('covers every SECRET_FIELDS entry — a new secret cannot escape redaction', () => {
     const redacted = redactSecretsFromBundle(bundleWithSecrets())
 
-    // Runtime parity guard: walk the config the same way the redactor
-    // does and assert every configured slot came out blanked.
     for (const { bundleKey, path, field } of SECRET_FIELDS) {
       const section = redacted[bundleKey] as unknown as Record<string, Record<string, unknown>> | null
       expect(section?.[path][field]).toBe('')

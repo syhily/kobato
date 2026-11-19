@@ -11,15 +11,10 @@ import { createHash } from 'node:crypto'
 import { zstdDecompressSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
-// SEA blob compression contract: the writer and reader must agree on the
-// packed format, with the manifest asset riding uncompressed as the
-// decompression registry. The reader runs against a stub node:sea source (see sea.test.ts).
-
 function sha256(bytes: Buffer): string {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
-/** Deterministic non-trivial bytes (compressible, but not a single run). */
 function sampleBytes(length: number): Buffer {
   return Buffer.from(Array.from({ length }, (_, index) => (index * 31 + (index % 7) * 61) % 256))
 }
@@ -30,10 +25,6 @@ interface ManifestEntryShape {
   size?: number
 }
 
-/** Manifest bytes in the exact writer shape: entries sorted by key,
- *  `{ key, path, sha256, codec, size }`, 2-space JSON + trailing newline
- *  (the natives cache dir is named after the sha256 of these bytes);
- *  `codec`/`size` optional to emulate pre-compression binaries. */
 function manifestAsset(entries: ManifestEntryShape[], rawByKey: Record<string, Buffer>): Buffer {
   const files = sortManifestFiles(
     entries.map((entry) => {
@@ -55,7 +46,6 @@ function manifestAsset(entries: ManifestEntryShape[], rawByKey: Record<string, B
   return Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, 'utf-8')
 }
 
-/** Stub `node:sea`-shaped asset source that counts reads per key. */
 function makeSource(assets: Map<string, Buffer>) {
   const reads = new Map<string, number>()
   const source: EmbeddedAssetSource = {
@@ -71,8 +61,6 @@ function makeSource(assets: Map<string, Buffer>) {
   return { source, reads }
 }
 
-/** Packs entries through the real writer and assembles the blob assets
- *  (packed payloads + uncompressed manifest) like `collectSeaAssets`. */
 function buildBlob(rawByKey: Record<string, Buffer>) {
   const assets = new Map<string, Buffer>()
   const entries = Object.keys(rawByKey).map((key) => {
@@ -149,7 +137,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
   it('round-trips packed and raw assets through the real writer and reader', () => {
     const rawByKey = {
       'client/assets/app.js': sampleBytes(128 * 1024),
-      'client/favicon.svg': sampleBytes(128), // below the threshold: 'none'
+      'client/favicon.svg': sampleBytes(128),
       'drizzle/0001_init/migration.sql': sampleBytes(8 * 1024),
     }
     const { source } = makeSource(buildBlob(rawByKey))
@@ -197,7 +185,6 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
 
     expect(reads.get('client/assets/app.js')).toBe(1)
     expect(reads.get(SEA_MANIFEST_KEY)).toBe(1)
-    // The second key hits the memoized registry; its own payload decodes once.
     expect(reads.get('client/assets/vendor.js')).toBe(1)
   })
 
@@ -205,7 +192,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
     const raw = sampleBytes(16 * 1024)
     const assets = buildBlob({ 'client/assets/app.js': raw })
     const corrupted = Buffer.from(assets.get('client/assets/app.js')!)
-    corrupted[0] ^= 0xff // destroy the zstd frame magic
+    corrupted[0] ^= 0xff
     assets.set('client/assets/app.js', corrupted)
 
     const { source } = makeSource(assets)

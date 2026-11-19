@@ -61,7 +61,7 @@ describe('useSelectionAnchoredPopup', () => {
   it('flips above the anchor when the scroll container overflows', () => {
     const { popup } = setup({ scrollHeight: 800 })
 
-    expect(popup.style.top).toBe(`${700 - 10}px`) // popupHeight is 0 in jsdom
+    expect(popup.style.top).toBe(`${700 - 10}px`)
   })
 
   it('does not reposition while the anchor resolves to null', () => {

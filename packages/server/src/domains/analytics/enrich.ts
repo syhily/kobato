@@ -27,7 +27,6 @@ function parseRefererHost(referer: string | null): string | null {
   }
 }
 
-// Raw referer is persisted for months and may carry tokens — strip query/hash/userinfo.
 function minimizeReferer(referer: string | null): string | null {
   if (!referer) {
     return null
@@ -56,7 +55,6 @@ function truncated(value: string | null | undefined, max: number): string {
   return (value ?? '').slice(0, max)
 }
 
-/** `Sec-CH-UA-Mobile` is a structured boolean (`?1` / `?0`); anything else is "not received". */
 function parseMobileHint(mobile: string | null | undefined): boolean | null {
   if (mobile === '?1') {
     return true
@@ -67,11 +65,6 @@ function parseMobileHint(mobile: string | null | undefined): boolean | null {
   return null
 }
 
-/**
- * A session's first hits arrive without
- * hints, so strings degrade to '' and `mobile` to NULL rather than being
- * inferred from the UA.
- */
 export function buildDeviceEnvServerRow(raw: RawAccessEvent): DeviceEnvServerRow {
   const hints = raw.clientHints
   return {
@@ -108,8 +101,6 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     eventId: raw.eventId,
     ts: raw.ts,
     visitorHash: hashIp(raw.ip),
-    // Privacy: the raw IP feeds the geo lookup and the salted hash but is
-    // never persisted — only the daily-salted visitorHash is stored.
     path: raw.path,
     entityType: raw.target?.type ?? null,
     entityId: raw.target?.ownerId ?? null,

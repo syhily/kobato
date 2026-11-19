@@ -3,8 +3,6 @@ import { processImageBuffer } from '@kobato/server/infra/image/process.ts'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
-// Generate a tiny in-memory PNG so no fixture file is needed; the pipeline re-encodes to
-// JPEG and reports post-encoding dimensions.
 async function syntheticPng(
   width: number,
   height: number,
@@ -30,7 +28,6 @@ describe('server/images/process — processImageBuffer', () => {
     expect(result.width).toBe(640)
     expect(result.height).toBe(480)
     expect(result.byteSize).toBe(result.buffer.byteLength)
-    // JPEGs always start with 0xFFD8 0xFFE0/0xFFE1.
     expect(result.buffer.subarray(0, 2).toString('hex')).toBe('ffd8')
     // Thumbhash is a base64 string between 16 and 32 chars typically.
     expect(typeof result.thumbhash).toBe('string')

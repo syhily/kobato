@@ -91,8 +91,6 @@ function HydratedMounts({ samples }: { samples: Sample[] }) {
 export default function MusicPlayerDemo() {
   const [dark, setDark] = useState(false)
 
-  // demo.css pins `:root { font-size: 62.5% }` (the inkling playground's convention) while production renders at
-  // 16px, so rem-based utilities would look shrunken here; counteract it while this route is mounted.
   useEffect(() => {
     const root = document.documentElement
     const previous = root.style.fontSize

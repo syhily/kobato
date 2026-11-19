@@ -35,10 +35,8 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
   const [addOpen, setAddOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  // Key-driven: reopening with a stale cached key shows cached rows while react-query revalidates.
   const listInput = { q: q.trim() === '' ? undefined : q.trim(), limit: 60 }
   const listQuery = useQuery(orpcQuery.admin.music.list.queryOptions({ input: listInput, enabled: open }))
-  // `null` (not []) keeps the loading/empty split — fresh key → undefined data → spinner.
   const musics = listQuery.data?.musics ?? null
 
   return (
@@ -105,7 +103,6 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onAdded={(music) => {
-          // Prepend the freshly-added row for immediate picking; no auto-pick so multi-add still works.
           queryClient.setQueryData(
             orpcQuery.admin.music.list.key({ input: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 } }),
             (old: ListMusicOutput | undefined): ListMusicOutput | undefined => {

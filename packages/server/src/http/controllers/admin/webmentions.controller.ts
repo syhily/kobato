@@ -35,8 +35,6 @@ const reject = impl.reject.handler(async ({ input, context }) => {
   })
 })
 
-// Manual re-verification — the ONLY recovery path for a `hidden` mention;
-// success restores it, failure records the message. Returns the refreshed row.
 const reverify = impl.reverify.handler(async ({ input, context }) => {
   const row = await reverifyWebmention(context.db, input.id)
   recordAuditEventFromContext(context, {
@@ -47,7 +45,6 @@ const reverify = impl.reverify.handler(async ({ input, context }) => {
   return asAdminWebmentionWire(row)
 })
 
-// Outbound send log, read-only: retry = republish (upsert resets terminal rows); never deleted.
 const outbox = impl.outbox.handler(async ({ input, context }) => {
   return listAdminWebmentionOutbox(context.db, input)
 })

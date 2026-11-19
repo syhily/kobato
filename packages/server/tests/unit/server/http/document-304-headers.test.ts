@@ -30,8 +30,6 @@ const LISTING_ID = 'routes/public/home'
 const build = {
   routes: {
     [ROOT_ID]: { module: { headers: documentHeaders } },
-    // `routes/public/layout.tsx` exports the same pass-through: it owns the
-    // public ErrorBoundary, so a loader-thrown 304 bubbles to IT, not to root.
     [LAYOUT_ID]: { module: { headers: documentHeaders } },
     [DETAIL_ID]: { module: { headers: detailHeaders } },
     [LISTING_ID]: { module: { headers: listingHeaders } },
@@ -59,8 +57,6 @@ describe('document headers — route wiring', () => {
   it.each(['apps/kobato/src/root.tsx', 'apps/kobato/src/routes/public/layout.tsx'])(
     '%s exports the pass-through headers()',
     (file) => {
-      // The boundary that receives `errorHeaders` is the one that must export it:
-      // root for a root-level failure, the public layout for every public route.
       expect(readFileSync(resolve(process.cwd(), file), 'utf8')).toContain('export const headers = documentHeaders')
     },
   )
@@ -133,9 +129,6 @@ describe('document headers — thrown listing 304', () => {
 })
 
 describe('document headers — thrown 304 document response', () => {
-  // A loader-thrown 304 bubbles to the public layout's ErrorBoundary: RR slices `matches`
-  // to [root, layout] and only hands the thrown headers to the LAST match's headers() as
-  // `errorHeaders`, so the detail route's own headers() never runs.
   const thrown = notModifiedResponse('W/"detail-304"', {
     locale: 'zh-TW',
     timeZone: 'Asia/Taipei',

@@ -20,14 +20,13 @@ const db = getTestDb()
 const mockFetch = installFetch()
 
 const SOURCE = 'https://sender.example/mentioning-post'
-// `resolveWebmentionTarget` re-derives this URL from the live post's slug.
 const TARGET = 'https://example.com/posts/wm-target/'
 const linkingHtml = (href: string) =>
   `<html><head><title>Mentioning post</title><meta name="author" content="Jane Doe"></head>` +
   `<body><p>I wrote about <a href="${href}">this post</a>.</p></body></html>`
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const dueAt = () => new Date(Date.now() - DAY_MS - 60_000) // crossed the 24h waterline
+const dueAt = () => new Date(Date.now() - DAY_MS - 60_000)
 const freshAt = () => new Date(Date.now() - 60_000)
 
 async function seedLivePost(slug = 'wm-target'): Promise<number> {
@@ -130,7 +129,6 @@ describe('integration / daily re-verification cycle', () => {
     expect(row.verificationStatus).toBe('failed')
     expect(row.verifyFailStreak).toBe(7)
 
-    // Hidden rows leave the cycle: the next run checks nothing.
     expect(await runWebmentionReverifyBatch(db)).toBe(0)
     expect(mockFetch.calls).toHaveLength(1)
   })
@@ -177,11 +175,10 @@ describe('integration / daily re-verification cycle', () => {
     expect(await runWebmentionReverifyBatch(db)).toBe(1)
 
     const row = await rowOf(id)
-    expect(row.status).toBe('hidden') // a never-verifying pending row leaves the cycle too
+    expect(row.status).toBe('hidden')
     expect(row.verificationStatus).toBe('failed')
     expect(row.verifyFailStreak).toBe(7)
 
-    // Out of the re-fetch cycle: the next run touches nothing.
     expect(await runWebmentionReverifyBatch(db)).toBe(0)
     expect(mockFetch.calls).toHaveLength(1)
   })
@@ -204,7 +201,6 @@ describe('integration / daily re-verification cycle', () => {
   })
 
   it('counts a vanished target as a permanent failure toward the streak', async () => {
-    // The post is deleted: the target no longer resolves.
     const id = await seedMention({ status: 'approved' })
 
     expect(await runWebmentionReverifyBatch(db)).toBe(1)
@@ -250,7 +246,6 @@ describe('integration / manual re-verification (admin)', () => {
 
     await expect(reverifyWebmention(db, id.toString())).rejects.toThrow('source could not be fetched (HTTP 404)')
 
-    // A failed admin attempt must not move the 24h waterline (or delay the next scheduled check).
     const row = await rowOf(id)
     expect(row.status).toBe('hidden')
     expect(row.verificationStatus).toBe('failed')
@@ -286,7 +281,6 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset: buffered audit events dead-letter on the actor FK.
     await flushAuditLog()
     resetAllBatchers()
   })
@@ -338,7 +332,6 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
 describe('integration / pickWebmentionsDueForReverify', () => {
   it('picks only cycle rows that crossed the waterline, oldest first', async () => {
     await seedLivePost()
-    // Distinct (source, target) pairs required — the upsert folds same-pair seeds into one row.
     const oldApproved = await seedMention({
       sourceUrl: `${SOURCE}?a=1`,
       status: 'approved',
@@ -358,7 +351,6 @@ describe('integration / pickWebmentionsDueForReverify', () => {
       lastVerifiedAt: dueAt(),
     })
     await seedMention({ sourceUrl: `${SOURCE}?a=5`, status: 'rejected', lastVerifiedAt: dueAt() })
-    // Spent its failure budget: the sweep hides it, the picker never re-fetches it.
     await seedMention({
       sourceUrl: `${SOURCE}?a=6`,
       status: 'pending',

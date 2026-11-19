@@ -12,13 +12,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 const SITE = 'https://site.example.com'
 const HASH = 'a'.repeat(64)
 
-// `resolveAssetUrl` reads the real settings snapshot; each test overrides one section at a time.
 function seedSettings(overrides: { assetHost?: string; storageEnabled?: boolean; website?: string | null } = {}) {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
     siteIdentity: {
       ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!,
-      // Nullable on purpose — the unset-website path is under test; the section type is string.
       website: (overrides.website === undefined ? 'https://site.example.com' : overrides.website) as string,
     },
     assets: {
@@ -57,8 +55,6 @@ describe('getPublicBaseUrl', () => {
   })
 })
 
-// Site-owned contract: every stored asset renders as `${website}/storage/<key>`
-// regardless of the driver holding the bytes; the `/storage/*` route redirects.
 describe('resolveAssetUrl — site-owned URLs', () => {
   it('joins the site origin + /storage for a local asset', () => {
     expect(resolveAssetUrl('images/2026/05/x.jpg')).toBe('https://site.example.com/storage/images/2026/05/x.jpg')
@@ -90,14 +86,11 @@ describe('resolveAssetUrl — missing-origin guard', () => {
   })
 
   it('re-throws non-ActionFailure errors from safeResolveAssetUrl', () => {
-    // The unhydrated-snapshot Error must not be swallowed as an ActionFailure.
     setBlogSettingsBundleForTests(null)
     expect(() => safeResolveAssetUrl('images/a.jpg')).toThrow('not been hydrated')
   })
 })
 
-// Font URL contract (hard repo rule): `/fonts/embedded/<hash>/result.css` —
-// the route override is driver-neutral, so the form holds for local AND s3 rows.
 describe('resolveAssetUrl — route override (font options bag)', () => {
   const CSS_KEY = `fonts/${HASH}/result.css`
   const FONT_OPTIONS = { route: '/fonts/embedded/', stripPrefix: 'fonts/' }
@@ -126,8 +119,6 @@ describe('resolveAssetUrl — route override (font options bag)', () => {
   })
 })
 
-// Inverse grammar: parseAssetUrl is the exact counterpart of resolveAssetUrl
-// above — same module, shared path grammar in `@kobato/assets/asset-url`.
 describe('parseAssetUrl — origin-relative forms', () => {
   it('parses both route shapes', () => {
     expect(parseAssetUrl('/storage/images/2026/05/x.jpg')).toEqual({
@@ -178,7 +169,6 @@ describe('parseAssetUrl — absolute forms', () => {
   it('rejects absolute CDN URLs and foreign origins', () => {
     expect(parseAssetUrl('https://cdn.example.com/images/a.jpg', { siteOrigin: SITE })).toBeNull()
     expect(parseAssetUrl('https://other.example/storage/images/a.jpg', { siteOrigin: SITE })).toBeNull()
-    // A CDN URL whose path happens to match the grammar still fails the origin check.
     expect(parseAssetUrl('https://cdn.example.com/storage/images/a.jpg', { siteOrigin: SITE })).toBeNull()
   })
 
@@ -187,7 +177,6 @@ describe('parseAssetUrl — absolute forms', () => {
       key: 'images/a.jpg',
       route: STORAGE_ROUTE_PREFIX,
     })
-    // …but the path grammar still applies.
     expect(parseAssetUrl('https://cdn.example.com/images/a.jpg', { anyOrigin: true })).toBeNull()
   })
 

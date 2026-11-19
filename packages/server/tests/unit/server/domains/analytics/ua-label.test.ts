@@ -1,9 +1,6 @@
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
 import { describe, expect, it } from 'vitest'
 
-// Server-rendered session labels (the admin session lists): node-device-detector
-// with the analytics normalization maps; never parsed in the browser.
-
 describe('ua-parse — formatUaLabel', () => {
   it('returns the English technical label for empty input (no hardcoded Han copy)', () => {
     expect(formatUaLabel(null)).toBe('Unknown device')

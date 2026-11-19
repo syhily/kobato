@@ -16,12 +16,8 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
-// Critical preloads for the public launch route — the only editorial list;
-// tier 2 is derived from route-ID prefixes below.
 export const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home']
 
-// Tier-2 buckets derive from route-ID prefixes (see TIER2_PREFIXES);
-// un-prefixed paginated aliases are skipped — they share their base route's chunk.
 const TIER2_PREFIXES = [
   ['routes/public/', 'public'],
   ['routes/admin/', 'admin'],
@@ -40,7 +36,6 @@ export function tier2BucketForRouteId(id: string): Tier2Bucket | null {
   return null
 }
 
-// TIER1 members are excluded up front so they stay tier-1-only despite their public prefix.
 export function deriveTier2RouteIds(manifest: RouteManifest): Record<Tier2Bucket, string[]> {
   const tier1 = new Set<string>(TIER1_ROUTES)
   const buckets: Record<Tier2Bucket, string[]> = { public: [], admin: [], editor: [], auth: [] }
@@ -56,7 +51,6 @@ export function deriveTier2RouteIds(manifest: RouteManifest): Record<Tier2Bucket
   return buckets
 }
 
-// Chunks excluded from all tiers except where explicitly allowed
 const EXCLUDED_PATTERNS = WARMUP_GLOBAL_EXCLUDED_PATTERNS.map((p) => new RegExp(p))
 
 const IDLE_SIZE_LIMIT = 100 * 1024
@@ -83,21 +77,17 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   }
 }
 
-// The warmup entry lives in the web-client package; anchor it to this file's
-// location so the path holds no matter which directory the build runs from.
 const WARMUP_ENTRY = fileURLToPath(
   new URL('../../../../packages/web/client/src/route-warmup/idle-script.entry.ts', import.meta.url),
 )
 const VIRTUAL_ID = 'virtual:route-warmup-script'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 
-// Static per build — bundle once, cached as a promise so concurrent loads dedupe.
 let compiledWarmupPromise: Promise<string> | null = null
 
 function bundleWarmupScript(): Promise<string> {
   if (!compiledWarmupPromise) {
     compiledWarmupPromise = (async () => {
-      // Isolated build (no project plugins); output is a single self-contained IIFE.
       const result = await build({
         configFile: false,
         logLevel: 'warn',
@@ -116,7 +106,6 @@ function bundleWarmupScript(): Promise<string> {
       const outputs = (Array.isArray(result) ? result : [result]).flatMap((r) => ('output' in r ? r.output : []))
       for (const chunk of outputs) {
         if (chunk.type === 'chunk' && chunk.fileName.endsWith('.js')) {
-          // Guards against minifier surprises and sentinel drift.
           if (!chunk.code.includes(CHUNKS_SENTINEL)) {
             throw new Error(
               '[route-warmup] bundled inline script is missing the chunk sentinel — did the minifier config change?',
@@ -151,7 +140,6 @@ export function routeWarmupPlugin(): Plugin {
       if (id !== RESOLVED_VIRTUAL_ID) {
         return
       }
-      // No warmup <script> in dev — the component short-circuits on DEV too.
       if (isServe) {
         return 'export default ""\n'
       }
@@ -165,7 +153,6 @@ export function routeWarmupPlugin(): Plugin {
         // Client build fires first; run in the SSR environment so both assets and the manifest exist.
         const env = unsafeCast<{ environment?: { name?: string } }>(this).environment
 
-        // Skip client env (server manifest not written yet)
         if (env?.name === 'client') {
           return
         }
@@ -174,7 +161,6 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // Server build outDir; client assets are at ../client/assets.
         const serverOutDir = options.dir
         if (!serverOutDir) {
           return
@@ -185,7 +171,6 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // Client build fired first, so the manifest is already written here.
         const manifest = loadServerManifest(clientAssetsDir)
         if (!manifest) {
           return
@@ -218,7 +203,6 @@ export function routeWarmupPlugin(): Plugin {
 
         const tier1Set = new Set(t1Raw)
 
-        // Exclusion patterns match against the chunk basename.
         const filterTier = (chunks: string[], isIdle: boolean, excludeAlreadyIn: Set<string>): string[] => {
           const result: string[] = []
           for (const c of chunks) {

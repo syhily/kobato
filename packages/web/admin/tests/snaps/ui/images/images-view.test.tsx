@@ -35,10 +35,6 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// The query layer is a hoisted mutable singleton so the data-loaded render paths run;
-// the mock defaults to pending for the loading test.
-
-// Varied dimensions give the justified-rows algorithm meaningful aspect ratios.
 function makeImage(overrides: Partial<AdminImageDto> & { id: string } = { id: 'img-1' }): AdminImageDto {
   return {
     kind: 'generic',
@@ -60,7 +56,6 @@ function makeImage(overrides: Partial<AdminImageDto> & { id: string } = { id: 'i
 
 describe('snapshot: ImagesView', () => {
   beforeEach(() => {
-    // Reset to pending/loading; data-loaded cases reassign below.
     queryMocks.infinite = {
       data: { pages: [] },
       isLoading: true,
@@ -125,7 +120,6 @@ describe('snapshot: ImagesView', () => {
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
     expect(html).toContain('图片管理')
     expect(html).toContain(`共 ${images.length} 条`)
-    // Grid falls back to skeleton on SSR; the sentinel copy proves the data-loaded branch.
     expect(html).toContain(`已加载全部 ${images.length} 张图片`)
     expect(html).toMatch(/rounded-xl/)
   })
@@ -177,7 +171,6 @@ describe('snapshot: buildJustifiedRows', () => {
   })
 
   it('packs a single image into one row at the target height', () => {
-    // Lone image flushes as a non-filled last row at target height.
     const rows = buildJustifiedRows([makeImage({ id: 'a', width: 800, height: 600 })], 1200, 200, 12)
     expect(rows).toHaveLength(1)
     const row = rows[0]!
@@ -187,7 +180,6 @@ describe('snapshot: buildJustifiedRows', () => {
   })
 
   it('force-fills a single oversized image row so the item spans the container', () => {
-    // Oversized lone image → row scaled down, item width snaps to container.
     const rows = buildJustifiedRows([makeImage({ id: 'wide', width: 2400, height: 200 })], 1200, 200, 12)
     expect(rows).toHaveLength(1)
     const row = rows[0]!
@@ -200,7 +192,6 @@ describe('snapshot: buildJustifiedRows', () => {
     const images = Array.from({ length: 6 }, (_, i) => makeImage({ id: `img-${i}`, width: 800, height: 600 }))
     const rows = buildJustifiedRows(images, 800, 200, 12)
     expect(rows.length).toBeGreaterThan(1)
-    // Rows must fit the container width including inter-item gaps.
     for (const row of rows) {
       const total = row.items.reduce((sum, item) => sum + item.width, 0) + 12 * (row.items.length - 1)
       expect(total).toBeLessThanOrEqual(800 + 1)
@@ -211,7 +202,6 @@ describe('snapshot: buildJustifiedRows', () => {
 
 describe('snapshot: JustifiedImageGrid (component)', () => {
   it('falls back to the skeleton while the container width is unknown during SSR', () => {
-    // useElementWidth returns 0 on the server → skeleton instead of measured rows.
     const html = stableHtml(
       renderToHtml(
         <JustifiedImageGrid
@@ -230,7 +220,6 @@ describe('snapshot: JustifiedImageGridSkeleton', () => {
   it('renders four rows of rounded placeholder tiles', () => {
     const html = stableHtml(renderToHtml(<JustifiedImageGridSkeleton />))
     expect(html).toMatch(/rounded-xl/)
-    // Four rows are emitted by default (see Array.from({ length: 4 })).
     const rowCount = html.match(/height:200/g)?.length ?? 0
     expect(rowCount).toBe(4)
   })
@@ -258,7 +247,6 @@ describe('snapshot: ImageDetailDialog', () => {
   })
 
   it('renders nothing when open is true but no image is supplied', () => {
-    // image === null early-returns before any DOM, even when open.
     const html = stableHtml(
       renderToHtml(
         <ImageDetailDialog

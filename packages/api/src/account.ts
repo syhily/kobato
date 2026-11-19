@@ -16,9 +16,6 @@ import {
 } from '@kobato/contracts/users.ts'
 import { oc } from '@orpc/contract'
 
-// The account RPC contract — the single source of each procedure's HTTP route
-// and wire schemas. Route paths are the deployed surface; the server controller
-// implements these procedures and owns no schema or route of its own.
 export const accountContract = {
   profile: oc.route({ method: 'GET', path: '/account/profile' }).output(accountProfileOutputSchema),
   sessions: oc.route({ method: 'GET', path: '/account/sessions' }).output(accountSessionsOutputSchema),

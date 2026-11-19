@@ -1,4 +1,3 @@
-// Asserting the tracked key snapshot pins the key constructors and `readBucket` bucket selection.
 import {
   tryCommentPostRateLimit,
   tryCommentPostRateLimitByEmail,
@@ -34,7 +33,6 @@ describe('rate-limit — bucket routing', () => {
     __resetRateLimitsForTests()
   })
 
-  // Unrelated throttles must not share a counter.
   it('routes IP-bound buckets to distinct keys', async () => {
     await tryRateLimit('1.1.1.1')
     await tryInviteRateLimit('1.1.1.1')
@@ -134,7 +132,6 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('reports exceeded=true when the count strictly exceeds maxAttempts', async () => {
-    // resource default maxAttempts is 60; the 61st hit trips.
     for (let i = 0; i < 60; i += 1) {
       expect((await tryResourceRateLimit('8.8.8.8')).exceeded).toBe(false)
     }
@@ -146,7 +143,6 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('reports exceeded=false exactly at the threshold (count === maxAttempts)', async () => {
-    // invite default maxAttempts is 3; counts 1-3 are allowed (strict >).
     expect(await tryInviteByEmailRateLimit(7, 'a@b.c')).toEqual({ count: 1, exceeded: false })
     expect((await tryInviteByEmailRateLimit(7, 'a@b.c')).exceeded).toBe(false)
     expect((await tryInviteByEmailRateLimit(7, 'a@b.c')).exceeded).toBe(false)
@@ -154,7 +150,6 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('applies the settings-driven windowSeconds to the window length', async () => {
-    // resource fixture windowSeconds is 60: t+59s shares the window, t+61s starts fresh.
     expect((await tryResourceRateLimit('10.0.0.1')).count).toBe(1)
     vi.setSystemTime(T0 + 59_000)
     expect((await tryResourceRateLimit('10.0.0.1')).count).toBe(2)

@@ -6,9 +6,6 @@ import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
 
-// Builders for the oRPC `context` argument. Authed procedures gate on `context.viewer`
-// via requireAuth/requireRole, so the viewer and session stub are both seeded.
-
 export interface MockCtxOptions {
   userId?: string
   role?: 'admin' | 'author' | 'visitor'
@@ -26,12 +23,10 @@ export interface MockCtxOptions {
   settings?: BlogSettingsBundle | null
 }
 
-/** Test-only partial projection: missing representation fields come from the lazy capture. */
 type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
   Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>
 
 function makeSessionStub(user: { id: string; role: string } | undefined, sessionId: string, csrfToken?: string) {
-  // Minimal `BlogSession` surface — only the methods orpc-base actually calls.
   return {
     id: sessionId,
     get: (key: string) => {
@@ -56,8 +51,6 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     opts.url ?? 'http://localhost/rpc',
     opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
   )
-  // Lazy pair: a HandlerContext built before the snapshot hydrates must not
-  // pin the pre-hydration defaults.
   const lazySnapshot = createLazyAppSnapshot()
   return {
     request,

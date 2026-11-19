@@ -20,8 +20,6 @@ const testQueryClient = new QueryClient({
   },
 })
 
-// Tiny SSR helpers shared across snapshot tests — pick sync vs stream render per spec.
-
 export function renderToHtml(element: ReactElement): string {
   return renderToString(
     <QueryClientProvider client={testQueryClient}>
@@ -36,8 +34,6 @@ export function renderToHtml(element: ReactElement): string {
   )
 }
 
-// Render under a memory router (catch-all route) so router hooks resolve. The locale
-// defaults to zh-CN; pass `{ locale }` to pin another catalog.
 export function renderInRouter(
   node: ReactNode,
   initialPath: string = '/',
@@ -59,8 +55,6 @@ export function renderInRouter(
   )
 }
 
-/** Like `renderInRouter`, but the tree sits under a parent `<Outlet>`
- *  carrying `outletContext` (for `useOutletContext` consumers). */
 export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, outletContext: unknown): string {
   const routes: RouteObject[] = [
     {
@@ -83,8 +77,6 @@ export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, o
   )
 }
 
-/** Stream-render like the production SSR pipeline and collect the result —
- *  for components depending on Suspense / server-only data fetching. */
 export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
     <QueryClientProvider client={testQueryClient}>
@@ -104,8 +96,6 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
-/** Router-wrapped `prerenderToHtml` — use for lazily-loaded components
- *  (the synchronous helper only renders the boundary's fallback). */
 export async function prerenderInRouter(node: ReactNode, initialPath: string = '/'): Promise<string> {
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
@@ -127,16 +117,11 @@ export async function prerenderInRouter(node: ReactNode, initialPath: string = '
   return Buffer.concat(chunks).toString('utf8')
 }
 
-/** Strip volatile React server attributes / hydration markers so snapshots
- *  survive React minor upgrades. Regex-based, no DOM rebuild. */
 export function stableHtml(html: string): string {
-  return (
-    html
-      .replace(/\s+data-react[\w-]+="[^"]*"/g, '')
-      .replace(/<!--\$-->|<!--\/\$-->|<!--\$\?-->|<!--\$!-->|<!---->/g, '')
-      // Base UI emits volatile useId-based ids — normalize them.
-      .replace(/id="base-ui-[^"]*"/g, 'id="base-ui-id"')
-      .replace(/\s{2,}/g, ' ')
-      .trim()
-  )
+  return html
+    .replace(/\s+data-react[\w-]+="[^"]*"/g, '')
+    .replace(/<!--\$-->|<!--\/\$-->|<!--\$\?-->|<!--\$!-->|<!---->/g, '')
+    .replace(/id="base-ui-[^"]*"/g, 'id="base-ui-id"')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
 }

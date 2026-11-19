@@ -80,8 +80,6 @@ const unpublish = impl.unpublish.handler(async ({ input, context }) => {
   return { post }
 })
 
-// Shared revision factory; posts hand in the author implementer so the
-// adapter enforces author-owns-post (see `passViewerToSaveBody`).
 const { saveDraft, publishLatest } = makeRevisionRouter({
   impl,
   adapter: postLifecycleAdapter,
@@ -172,7 +170,6 @@ const mySummary = impl.mySummary.handler(async ({ context }) => {
 
 const analytics = impl.analytics.handler(async ({ input, context }) => {
   const meta = findPostMetaById(context.db, input.postId)
-  // Authors reach only their own posts' analytics; admins are unrestricted.
   assertOwnPostOr404(meta, context.viewer)
   const tags = await findTagNamesByPostId(context.db, input.postId)
   const post = toAdminPostDto(meta, { tags })

@@ -1,8 +1,3 @@
-// API error-shape helpers shared by client hooks and UI components.
-// The server translates per request: `ORPCError.message` carries the issue
-// summary and `data` ships `{ descriptor, issues }`; bare-array rejections
-// keep their server message unchanged.
-
 export function extractApiErrorMessage(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null) {
     return undefined
@@ -28,11 +23,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-/**
- * The stable `messageKey` of a rejection carrying `error.data =
- * { descriptor, issues? }`; client branches compare this, never localized prose.
- * `undefined` for raw errors.
- */
 export function apiErrorDescriptorKey(error: unknown): string | undefined {
   if (!isRecord(error)) {
     return undefined

@@ -12,7 +12,6 @@ import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder.ts'
 import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils.ts'
 
-// tables. No audit events (read-only queries MUST NOT record them).
 const impl = implementAdmin(adminJobsContract)
 
 function toJobRunDto(row: JobRunRow): JobRunDto {

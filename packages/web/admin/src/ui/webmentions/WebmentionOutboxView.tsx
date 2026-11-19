@@ -69,7 +69,6 @@ function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
   )
 }
 
-// Read-only outbound send log — a retry is a republish, so this view offers filters and visibility, never actions.
 export function WebmentionOutboxView() {
   const { t } = useI18n()
   const [status, setStatus] = useState<StatusFilter>('all')

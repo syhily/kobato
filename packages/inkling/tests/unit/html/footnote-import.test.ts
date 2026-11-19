@@ -2,12 +2,6 @@ import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-d
 import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behaviour/markdown-paste'
 import { htmlToLexical as importWithDom } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
 import { renderLive } from '@kobato/inkling/tests/utils/render-live'
-// The footnote import lanes: the
-// markdown `[^n]` paste dialect (markdown-it-footnote → sanitize → DOM
-// import), kobato/inkling HTML, and the export → import → export round trip.
-// The targetKey policy is import-is-a-new-entity: source anchor slugs only
-// correlate refs with their definitions WITHIN one import pass; the keys
-// themselves are always recast (see src/inkling/nodes/footnote/footnote-keys.ts).
 import { beforeAll, describe, expect, it } from 'vitest'
 
 interface NodeJSON {
@@ -41,8 +35,6 @@ function collect(nodes: NodeJSON[], type: string): NodeJSON[] {
 
 const PASTE_MARKDOWN = 'note.[^1]\n\n[^1]: The **text**.'
 
-// the paste dialect engine rides the lazy port; the sync converter reads the
-// loaded cache — warm it once for every lane in this file
 beforeAll(() => loadPasteDialect())
 
 describe('footnote import — the markdown paste lane', () => {

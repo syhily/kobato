@@ -33,11 +33,6 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-// Rows come from `useAdminInfiniteList`'s internal useInfiniteQuery; the
-// list/actors/mutation mocks are stubbed via hoisted slots.
-
-// Fixtures mirror the DTO shapes exactly so wire-type changes fail loudly.
-
 let rowIdCounter = 0
 function makeRow(overrides: Partial<AuditLogItemDto> = {}): AuditLogItemDto {
   rowIdCounter += 1
@@ -137,7 +132,6 @@ describe('snapshot: AuditLogRow', () => {
   it('exposes an expand affordance when details are present', () => {
     const row = makeRow({ details: { foo: 'bar' } })
     const html = stableHtml(renderToHtml(<AuditLogRow row={row} />))
-    // Expandable rows surface role="button" + aria-expanded to AT users.
     expect(html).toContain('role="button"')
     expect(html).toContain('aria-expanded="false"')
     expect(html).toContain('展开详情')

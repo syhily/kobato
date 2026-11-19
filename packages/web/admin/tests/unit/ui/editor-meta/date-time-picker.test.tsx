@@ -19,7 +19,6 @@ describe('DateTimePicker i18n', () => {
     const zhTW = renderToStaticMarkup(
       wrapWithI18n(<DateTimePicker value="2099-06-15T14:30" onChange={noop} />, { locale: 'zh-TW' }),
     )
-    // CLDR zh-TW's short time is h12 with a dayPeriod.
     expect(zhTW).toContain('2099/6/15')
     expect(zhTW).toContain('下午2:30')
   })
@@ -28,8 +27,6 @@ describe('DateTimePicker i18n', () => {
     const enUS = renderToStaticMarkup(wrapWithI18n(<DateTimePicker value="" onChange={noop} />, { locale: 'en-US' }))
     expect(enUS).toContain('Select date and time')
 
-    // The open panel is only mounted on interaction; the trigger label is the
-    // SSR-visible surface, so the AM/PM copy is asserted through the catalogs.
     const zhCN = renderToStaticMarkup(wrapWithI18n(<DateTimePicker value="" onChange={noop} />))
     expect(zhCN).toContain('选择日期与时间')
   })

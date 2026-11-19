@@ -49,7 +49,6 @@ export function useSettingsMutation(): UseSettingsMutationResult {
           payload: unsafeCast<Record<string, unknown>>(payload),
         })
         setStatus('saved')
-        // Persisted — warnings mean a post-save side effect failed; the baseline is still honestly adopted.
         for (const warning of result.warnings) {
           toast.warning(warning)
         }

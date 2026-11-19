@@ -1,7 +1,3 @@
-// Turns the `observability` settings projection into either an inert no-op or a
-// validated server/frontend projection. Never imports an OTel/OpenObserve SDK:
-// `runtime.ts` owns the implementation and consumes `ServerTraceRuntimeConfig`.
-
 import type { RumClientIdentity } from '@kobato/settings/sections/observability.ts'
 import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 
@@ -15,21 +11,11 @@ import { verifiedFrontendBootstrap, verifiedFrontendRelay } from '@kobato/server
 
 const log = getLogger('trace')
 
-// Header values are printable ASCII without surrounding whitespace: the
-// ingestion value must carry no CR/LF (header injection) and no stray space that
-// changes the upstream credential.
 const AUTHORIZATION_HEADER_PATTERN = /^[\x20-\x7E]+$/
-// Application IDs and RUM client tokens are opaque printable strings; both
-// reject whitespace so a pasted value cannot silently break the browser SDK.
 const APPLICATION_ID_PATTERN = /^[A-Za-z0-9._:-]{1,256}$/
 const CLIENT_TOKEN_PATTERN = /^[\x21-\x7E]{1,4096}$/
 const MAX_AUTHORIZATION_HEADER_LENGTH = 8192
 
-/**
- * The server-side half of the frontend pipeline: everything the same-origin
- * intake relay needs to forward a browser batch to OpenObserve. Never projected
- * to the browser — the gate hands it only to the intake resource route.
- */
 export interface FrontendRumRelay {
   endpoint: string
   organization: string
@@ -102,11 +88,6 @@ export interface TraceFrontendSettings {
   clientIdentity: RumClientIdentity
 }
 
-/**
- * The runtime input, equivalent to the `observability` settings section. The
- * domain layer composes `authorizationHeader` from the admin username/password
- * so this module stays free of credential semantics.
- */
 export interface TraceRuntimeSettings {
   enabled: boolean
   endpoint: string
@@ -173,14 +154,6 @@ function buildServerConfig(
   }
 }
 
-/**
- * Resolve activation from a settings projection.
- *
- * Any invalid server configuration disables BOTH pipelines rather than partially
- * initializing; frontend RUM is only offered on top of a fully active server
- * pipeline. Exposing the browser gate is the runtime verification's decision in
- * `activeFrontendRum()`, and is environment-independent.
- */
 export function resolveTraceConfig(
   input: TraceRuntimeSettings,
   options: ResolveTraceConfigOptions,
@@ -274,43 +247,22 @@ export function resolveTraceConfig(
   }
 }
 
-/**
- * Build-time environment label projected into the browser bootstrap. It never
- * gates a pipeline: dev and production builds run the same verification and
- * exposure path; only the `env` RUM dimension differs.
- */
 export function traceEnvironment(): TraceEnvironment {
   return import.meta.env.DEV === true && import.meta.env.PROD !== true ? 'development' : 'production'
 }
 
-/**
- * Frontend bootstrap the root loader and CSP may expose. The settings projection
- * only produces a CANDIDATE; this requires the runtime's successful verification
- * of the O2 allowlist pipeline. A withheld, offline, or stopped pipeline hides
- * only browser RUM — server traces/metrics/logs keep running.
- */
 export function activeFrontendRum(): FrontendRumBootstrap | null {
   return verifiedFrontendBootstrap()
 }
 
-/**
- * Server-only relay target the `/api/rum/intake` resource forwards to. Gated by
- * the same verification entry as the browser bootstrap: when it closes, the
- * relay closes at the same instant.
- */
 export function activeFrontendRelay(): FrontendRumRelay | null {
   return verifiedFrontendRelay()
 }
 
-/** Format one diagnostic without ever echoing a configured value. */
 export function formatTraceDiagnostic(diagnostic: TraceConfigDiagnostic): string {
   return `${DIAGNOSTIC_MESSAGES[diagnostic.code]}: ${diagnostic.fields.join(', ')}`
 }
 
-/**
- * Emit the safe activation diagnostics: one log line per affected pipeline,
- * field names only — never a configured value.
- */
 export function logTraceDiagnostics(diagnostics: readonly TraceConfigDiagnostic[]): void {
   for (const diagnostic of diagnostics) {
     const message = formatTraceDiagnostic(diagnostic)

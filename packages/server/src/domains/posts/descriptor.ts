@@ -55,7 +55,6 @@ interface IndexablePostData {
   revision: ContentRow
 }
 
-// Sync (node:sqlite): called inside the upsert transaction.
 function ensureTagsExist(db: Database, tagNames: string[]): void {
   if (tagNames.length === 0) {
     return
@@ -66,7 +65,6 @@ function ensureTagsExist(db: Database, tagNames: string[]): void {
   )
 }
 
-// Sync (node:sqlite): called inside the upsert transaction.
 function resolveTagIdsForNames(db: Database, names: string[]): number[] {
   if (names.length === 0) {
     return []
@@ -122,16 +120,12 @@ export const postDescriptor: MetaEntityDescriptor<
     project: (meta, revision) => toCmsPost(meta, revision),
     async afterPublish(db, meta, body, warnings) {
       invalidateContent({ entity: 'post' })
-      // Warm the OG card + today's calendar ahead of a crawler's first scan.
       warmContentRenderCaches({
         slug: meta.slug,
         title: meta.title,
         summary: meta.summary,
         cover: meta.cover,
       })
-      // Index the in-scope `body` — freshly canonicalized; the plain-text
-      // corpus is its `body_text` projection leg (recomputed here so the
-      // indexer never depends on the column write having landed).
       try {
         await indexPost(db, meta.id, meta.title, meta.summary, computeBodyText(body))
       } catch (err: unknown) {
@@ -174,7 +168,6 @@ export const postDescriptor: MetaEntityDescriptor<
   },
   mutations: {
     resolveAuthorId: (authorId, viewer) => (viewer && viewer.role !== 'admin' ? idFromString(viewer.id) : authorId),
-    // Pre-flight the category so a stale select 400s instead of tripping the FK mid-transaction.
     async preflightUpsert(db, input) {
       if (input.categoryId != null && (await findCategoryById(db, input.categoryId)) === null) {
         throw new DomainError('BAD_REQUEST', descriptorFor('content.error.categoryNotFound'))
@@ -188,7 +181,6 @@ export const postDescriptor: MetaEntityDescriptor<
     }),
     updateExtras: (input, existing) => ({
       visible: input.visible ?? existing.visible,
-      // The editor sends a fresh stamp on every save — keep the original on an already-pinned post.
       pinnedAt:
         input.pinnedAt === undefined
           ? existing.pinnedAt
@@ -204,7 +196,6 @@ export const postDescriptor: MetaEntityDescriptor<
       const tagIds = resolveTagIdsForNames(tx, tagNames)
       setPostTags(tx, metaId, tagIds)
     },
-    // The index row is deleted in-transaction so a rollback never loses it.
     deleteRelations(tx, metaId) {
       removePostIndex(tx, metaId)
     },
@@ -216,13 +207,10 @@ export const postDescriptor: MetaEntityDescriptor<
       return { tags, categoryName }
     },
     async afterMutation(db, meta, event) {
-      // An unpublished create/update changes no public surface; publish already invalidated.
       if ((event === 'create' || event === 'update') && !isPromoted(meta)) {
         return
       }
-      // A published post's meta update reaches the public surface immediately — invalidate now.
       invalidateContent({ entity: 'post' })
-      // Re-warm live rows' OG card + calendar under the NEW render inputs; others skip.
       if (isLive(meta)) {
         warmContentRenderCaches({
           slug: meta.slug,
@@ -240,7 +228,6 @@ export const postDescriptor: MetaEntityDescriptor<
         return
       }
       if (event === 'update' && isPromoted(meta)) {
-        // Body unchanged — re-index from the persisted revision for title/summary hits.
         const revision = findContentById(db, meta.publishedRevisionId)
         if (revision === null) {
           return

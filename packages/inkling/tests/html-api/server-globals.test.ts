@@ -1,13 +1,6 @@
 import { renderHeadless } from '@kobato/inkling/tests/utils/render-live'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Server-globals suite: headless renders must not touch browser globals. A
-// sanitize leg reading the global window/DOMParser at call time would
-// ReferenceError in a Node process (or sanitize against the wrong window).
-// Each case renders once with the jsdom-test globals present and once with
-// `window`/`document`/`DOMParser` stubbed away, pinning byte-identical output
-// from the injected dom alone.
-
 function stateOf(...children: Record<string, unknown>[]): string {
   return JSON.stringify({
     root: {

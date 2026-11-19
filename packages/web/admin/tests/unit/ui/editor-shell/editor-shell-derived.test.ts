@@ -50,7 +50,6 @@ describe('ui/admin/editor-shell/localInputValueToIso', () => {
     const iso = localInputValueToIso('2026-06-01T12:00')
     expect(iso).not.toBeNull()
     expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
-    // Round-trip: the ISO denotes the same instant as the picker value.
     expect(Date.parse(iso!)).toBe(Date.parse('2026-06-01T12:00'))
   })
 

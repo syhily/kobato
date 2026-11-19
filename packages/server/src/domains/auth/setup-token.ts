@@ -8,7 +8,6 @@ import { randomBytes, timingSafeEqual } from 'node:crypto'
 const TOKEN_KEY = 'setup_token'
 const TTL_SECONDS = 7 * 24 * 60 * 60
 
-/** Local fast-path flag; multi-instance correctness relies on the DB row. */
 let tokenInvalidated = false
 
 async function readSetupToken(db: Database): Promise<string | null> {
@@ -25,11 +24,6 @@ async function readSetupToken(db: Database): Promise<string | null> {
   }
 }
 
-/**
- * Generate (or retrieve) the one-time setup token; valid only until the
- * first admin is created. Never written to structured logs — stdout and
- * the caller (install wizard) only.
- */
 export async function getSetupToken(db: Database): Promise<string> {
   if (tokenInvalidated) {
     throw new Error('Setup token has been invalidated — an admin already exists')
@@ -71,7 +65,6 @@ export async function verifySetupToken(db: Database, candidate: string): Promise
   return timingSafeEqual(Buffer.from(candidate), Buffer.from(token))
 }
 
-/** Second layer of defense: true only while the row still exists. */
 export async function isSetupTokenActive(db: Database): Promise<boolean> {
   const token = await readSetupToken(db)
   return token !== null

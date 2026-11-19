@@ -13,15 +13,6 @@ import React from 'react'
 
 export type MediaUploadKind = 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail'
 export type MediaUploader = ReturnType<FileUploader['useFileUpload']>
-/**
- * The bare host-uploader channel for one media kind — the one home of the
- * host-hook identity contract (the composer requires `useFileUpload` to be
- * identity-stable for the editor's lifetime, so this call returns the same
- * function every render; the compiler cannot verify context provenance).
- * Channels without input/drag/dialog wiring (video's main→thumbnail
- * composition uploads its synthesized thumbnail through this) use it
- * directly instead of re-typing the contract's lint suppression.
- */
 export function useMediaUploader(kind: MediaUploadKind): MediaUploader {
   const { fileUploader } = useInklingHostEssentials()
   // oxlint-disable-next-line react/hooks -- host-provided hook; identity is a composer contract
@@ -90,12 +81,6 @@ export function useMediaCardUpload<TNode>({
   useTriggerFileDialog({
     editor,
     nodeKey,
-    // composed runtime narrowing instead of a cast: `TNode` can't be constrained
-    // to `TriggerFileDialogCardNode` — gallery/header guards narrow to node types
-    // without `triggerFileDialog`, and the cards' `triggerFileDialog?: boolean |
-    // undefined` property isn't assignable to the interface's write-only setter
-    // under strict mode. The probe matches the accessor the assembled card classes
-    // generate from the spec's `accessor: true` entry.
     guard: (node: unknown): node is TriggerFileDialogCardNode =>
       typeof node === 'object' && node !== null && 'triggerFileDialog' in node && guard(node),
     fileInputRef,

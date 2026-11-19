@@ -10,8 +10,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, mergeRegister } from 'lexical'
 import React from 'react'
 
-// command payloads cross an untyped runtime boundary (menu dispatch, external
-// consumers), so narrow before constructing the node
 function isCardDataset(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -21,10 +19,6 @@ function registerCardInsert(
   { nodeType, node, command, insert, pickerAutoOpen }: CardInsertRegistration,
 ) {
   const insertCard = (dataset: Record<string, unknown>) => {
-    // key presence is observable in INSERT_CARD_COMMAND listeners: the
-    // openInEditMode key exists only for the five edit-mode cards, openPicker
-    // only for picker-carrying cards (CONTEXT.md: "pick seam"). Both ride the
-    // insert-COMMAND channel, so editor-state loads never trigger either.
     editor.dispatchCommand(INSERT_CARD_COMMAND, {
       cardNode: new node(dataset),
       ...(insert.openInEditMode ? { openInEditMode: true } : {}),

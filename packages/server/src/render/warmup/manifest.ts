@@ -114,7 +114,6 @@ function buildRouteTree(manifest: RouteManifest): RouteObject[] {
   function build(id: string): RouteObject {
     const route = manifest.routes[id]
     const children = (childrenByParent.get(id) ?? []).map((r) => build(r.id))
-    // `index` is a discriminant in the RouteObject union — assertion required.
     return unsafeCast<RouteObject>({
       id,
       path: route?.path,

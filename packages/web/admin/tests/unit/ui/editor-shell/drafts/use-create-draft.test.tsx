@@ -2,7 +2,6 @@ import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock the draft store: program return values per test, capture every call.
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
@@ -37,9 +36,6 @@ const config: CreateDraftConfig<LexicalEditorState> = {
 const emptyBody: LexicalEditorState = emptyLexicalBody()
 const meta = { title: 'Hello', summary: '' }
 
-// The hook guards storage with `typeof window === 'undefined'`; the SSR
-// harness never fires `useEffect`, so only synchronous branches are
-// reachable — install a fake `window` with a `sessionStorage` slot.
 function makeSessionStorage(initial: Record<string, string> = {}) {
   const store = new Map<string, string>(Object.entries(initial))
   return {
@@ -115,7 +111,6 @@ describe('useCreateDraft — sessionId derivation (readOrCreateSessionId)', () =
   })
 
   it('falls back to a Date.now-based id when sessionStorage throws on read', () => {
-    // Throwing sessionStorage getter exercises the catch fallback.
     const fake = installWindow()
     Object.defineProperty(fake, 'sessionStorage', {
       configurable: true,
@@ -149,7 +144,6 @@ describe('useCreateDraft — synchronous return shape', () => {
     installWindow()
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
     result.clearDraft()
-    // The callback body runs synchronously in the harness, so the call is observable.
     expect(draftStore.remove).toHaveBeenCalledWith(expect.stringContaining(config.keyPrefix))
   })
 
@@ -157,7 +151,6 @@ describe('useCreateDraft — synchronous return shape', () => {
     const fake = installWindow()
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
     result.migrateToEditKey('post-42', 'rev-7', emptyBody)
-    // The body is an async IIFE — flush the microtask queue before asserting.
     for (let i = 0; i < 5; i++) {
       await Promise.resolve()
     }
@@ -213,7 +206,6 @@ describe('useCreateDraft — stability', () => {
         return r
       },
       {
-        // The actions queue triggers a second render pass.
         actions: [
           (r) => {
             r.clearDraft()

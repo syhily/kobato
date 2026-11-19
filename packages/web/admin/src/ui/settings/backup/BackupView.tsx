@@ -77,20 +77,14 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   )
 
   const safeLoadPage = useCallback(
-    (limit: number, token?: string) =>
-      loadPage(limit, token).catch(() => {
-        /* intentionally empty — loadPage already shows a toast on error */
-      }),
+    (limit: number, token?: string) => loadPage(limit, token).catch(() => undefined),
     [loadPage],
   )
 
-  // Defer the initial load so `isInitialLoading` derives from `backupFiles` state alone.
   useEffect(() => {
     Promise.resolve()
       .then(() => safeLoadPage(5))
-      .catch(() => {
-        /* handled in safeLoadPage */
-      })
+      .catch(() => undefined)
   }, [safeLoadPage])
   const isInitialLoading = backupFiles === undefined
 
@@ -108,14 +102,11 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     mutationFn: ({ password }: { password?: string }) =>
       orpc.admin.backup.create(password !== undefined ? { password } : undefined),
     onSuccess: () => {
-      // Keep the current rows while reloading — clearing to undefined would
-      // flash the "loading / empty" states over a successful create.
       void safeLoadPage(5)
     },
     onError: onMutationError('admin.toast.backupCreateFailed', t),
   })
 
-  /** Shared tail for the list-restore flow: wait out the restart, toast, reload. */
   const waitForRestart = useCallback(() => {
     setRestorePhase('waiting')
     pollAbortRef.current = new AbortController()
@@ -134,7 +125,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       orpc.admin.backup.restore(password !== undefined ? { key, password } : { key }),
     onSuccess: (result, variables) => {
       if ('passwordRequired' in result && result.passwordRequired) {
-        // The stored backup is encrypted and no usable password was found — prompt.
         setRestoreKey(null)
         setRestorePhase('confirm')
         setPasswordKey(variables.key)
@@ -145,8 +135,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     },
     onError: (error: Error) => {
       toastApiError(error, 'admin.toast.restoreFailed', t)
-      // A wrong password (400) keeps the prompt open for a retry — matched by
-      // the stable descriptor key, never localized prose.
       if (apiErrorDescriptorKey(error) === 'backup.error.passwordWrong' && passwordKey !== null) {
         setRestorePhase('confirm')
         return
@@ -185,8 +173,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [selectedFile, uploadRestore])
 
-  // While a restore is pending or the server is swapping/restarting, every
-  // mutating control locks — the server would only answer 409/network noise.
   const restoreBusy = restoreMutation.isPending || restorePhase === 'waiting'
   const uploadBusy = uploadRestore.state.active || restoreBusy
   const listBusy = restoreBusy || uploadRestore.state.active

@@ -1,14 +1,3 @@
-// Server-only messages (email, notifications, background jobs). These never
-// enter the client bundle: the root loader ships `UiMessages` only.
-//
-// `email.*` keys are not persisted — they may be renamed as templates evolve.
-// `notification.*` keys, once a producer writes them into a notification row,
-// are append-only (rename/delete breaks rendering of rows already stored).
-//
-// English copy uses ASCII punctuation (no 【】《》「」 or full-width marks);
-// `packages/server/tests/unit/server/infra/email/email-messages.test.ts` enforces it for the
-// catalog templates only — user-supplied values are legitimate in any script.
-
 export const serverMessagesEnUS = {
   'email.common.automaticNotice': 'This email was sent automatically. Replies are not monitored.',
   'email.common.copyright': '<siteLink>{siteTitle}</siteLink> © {year}',

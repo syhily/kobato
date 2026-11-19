@@ -1,6 +1,3 @@
-// Strategy data shared by the two sanitize engines; dependency-free so the
-// facade and both engines can import it in either bundle.
-
 export type SafeHtmlStrategy =
   | 'shiki'
   | 'math'
@@ -32,7 +29,6 @@ export interface SanitizeStrategyConfig {
   noopenerOnBlankTarget?: boolean
 }
 
-// `data-*` attributes carry card, Base UI, and shiki state on inline nodes.
 const DATA_ATTR = /^data-.*$/
 
 const BASE_TAGS = [
@@ -70,8 +66,6 @@ const BASE_ATTRIBUTES = ['class', 'href', 'title', 'alt', 'target', 'rel', DATA_
 
 const BASE_SCHEMES = ['http', 'https', 'mailto'] as const
 
-// Restricted to the property/value shapes shiki actually emits, so a hand-crafted
-// body can't smuggle in `expression()` / `url(javascript:)` etc.
 const SHIKI_ALLOWED_STYLES: Readonly<Record<string, readonly RegExp[]>> = {
   color: [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\([^()]*\)$/],
   'background-color': [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\([^()]*\)$/],
@@ -165,9 +159,6 @@ const EMAIL_ATTRIBUTES = [
   'src',
 ] as const
 
-// Tags the comment feed-variant projection can emit (per the comment editor's
-// node whitelist, COMMENT_NODE_TYPES; math degrades to TeX text in the feed
-// variant). Shared by the 'comment' and 'comment-email' strategies.
 const COMMENT_TAGS = [
   'p',
   'br',
@@ -216,8 +207,6 @@ const BODY_ATTRIBUTES = [
   'y',
 ] as const
 
-// Code blocks keep shiki's inline colors; paragraphs/headings add text-align;
-// images add aspect-ratio placeholders. Anything else (position, url(), …) dies.
 const BODY_ALLOWED_STYLES: Readonly<Record<string, readonly RegExp[]>> = {
   ...SHIKI_ALLOWED_STYLES,
   'text-align': [/^(left|right|center|justify|start|end)$/i],
@@ -262,17 +251,10 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         schemes: BASE_SCHEMES,
       }
 
-    // SSR/hydration boundary for the saved `body_html` projection (inkling
-    // exportDOM) and comment `content` (its feed variant). Everything inkling
-    // exports survives: data-* hooks, figure/img srcset + thumbhash, KaTeX
-    // MathML, footnote anchors, host-card markup, shiki code spans.
     case 'body':
       return {
         tags: [...BASE_TAGS, ...BODY_TAGS, ...MATH_TAGS],
         attributes: [...BASE_ATTRIBUTES, ...BODY_ATTRIBUTES, ...MATH_ATTRIBUTES],
-        // `id` only where the projection emits one: heading anchors and the
-        // footnote ref/definition anchors. A free-floating id elsewhere is
-        // DOM-clobbering surface with no legitimate producer.
         tagAttributes: {
           h1: ['id'],
           h2: ['id'],
@@ -287,13 +269,6 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         styles: BODY_ALLOWED_STYLES,
       }
 
-    // Server-only boundary for feed XML output (`render/feed/generator`). The
-    // tag set mirrors the feed-variant projection's real output
-    // (`infra/lexical/lexical-projection` — inkling exportDOM, artifacts stripped):
-    // inline marks, sup/sub footnote refs, the footnotes <section>, media
-    // figure/figcaption/audio, and the table family. `id` on `*` covers
-    // headings, footnote anchors, and the footnotes section. img's data: scheme
-    // rides DOMPurify's default DATA_URI_TAGS.
     case 'feed':
       return {
         tags: [
@@ -352,10 +327,6 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         noopenerOnBlankTarget: true,
       }
 
-    // Server-only boundary for the comment `content` column at the email
-    // boundary (`domains/comments/services/email`). Tags mirror the comment
-    // feed-variant projection: paragraphs, inline marks, blockquote, lists,
-    // plain pre/code (artifacts stripped), and links.
     case 'comment-email':
       return {
         tags: COMMENT_TAGS,
@@ -367,10 +338,6 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         noProtocolRelative: true,
       }
 
-    // Public-site render boundary for the same comment `content` column
-    // (`ui/public/comments/CommentContentHtml`). Same tag set as
-    // 'comment-email' — the comment node whitelist admits no media or heading
-    // nodes — plus the blank-target rel rewrite for untrusted commenter links.
     case 'comment':
       return {
         tags: COMMENT_TAGS,

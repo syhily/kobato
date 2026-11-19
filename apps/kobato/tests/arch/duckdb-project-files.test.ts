@@ -6,9 +6,6 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 
-// Markers that load or drive the real DuckDB native engine. A full
-// `vi.mock` of the duckdb module (no importOriginal) means the native
-// binding never loads, so mocked files stay in their home project.
 const ENGINE_MARKERS = [
   'createTestAnalyticsDb',
   'openAnalyticsDatabase',
@@ -50,7 +47,6 @@ describe('duckdb project membership', () => {
     const actual: string[] = []
     for (const tree of TEST_TREES) {
       for (const filePath of walk(join(REPO_ROOT, tree))) {
-        // This scanner file itself carries the marker strings.
         if (filePath.endsWith('arch/duckdb-project-files.test.ts')) {
           continue
         }

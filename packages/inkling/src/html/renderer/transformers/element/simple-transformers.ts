@@ -34,9 +34,6 @@ const headingTransformer: ElementTransformer = {
     }
 
     const tag = node.getTag()
-    // Both export paths generate heading ids: the live HtmlOutputPlugin runs
-    // this same transformer stack, and the per-render dedup tracking lives in
-    // the render context every pass builds fresh.
     const id = context.trackIdAttribute(slugify(node.getTextContent()))
 
     return `<${tag} id="${id}"${formatAttribute(node)}>${exportChildren(node)}</${tag}>`

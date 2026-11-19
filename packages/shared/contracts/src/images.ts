@@ -1,9 +1,6 @@
 import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
 import { z } from 'zod'
 
-// Admin images wire inputs — the single Zod source the `@kobato/api` images
-// contract composes and the server validates against.
-
 const optionalTrimmed = (max: number) =>
   z
     .string()
@@ -81,15 +78,9 @@ export type ListImagesOutput = z.infer<typeof listImagesOutputDto>
 export const adminImageMutationOutputDto = z.object({ image: adminImageDto })
 export type AdminImageMutationOutput = z.infer<typeof adminImageMutationOutputDto>
 
-// ---------------------------------------------------------------------------
-// Public `image.resolveThumbhash` surface — the single Zod source the
-// `@kobato/api` image contract composes.
-// ---------------------------------------------------------------------------
-
 export const imageResolveThumbhashInputSchema = z.object({ src: z.string().trim().min(1).max(2000) })
 export type ImageResolveThumbhashInput = z.input<typeof imageResolveThumbhashInputSchema>
 
-// All three fields nullable: an unresolved ref answers nulls, never an error.
 export const imageResolveThumbhashOutputSchema = z.object({
   thumbhash: z.string().nullable(),
   width: z.number().nullable(),

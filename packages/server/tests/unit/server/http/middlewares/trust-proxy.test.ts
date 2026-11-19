@@ -22,7 +22,6 @@ function httpSiteBundle() {
   return bundle
 }
 
-// Gate ON: the fixture bundle declares website 'https://example.com'.
 describe('trustProxy / trusted (https site URL)', () => {
   beforeEach(() => {
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

@@ -4,7 +4,6 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 
-// Both consumers serve content-addressed assets (timestamped keys / sha256 names) — one-year immutable.
 export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 
 /**
@@ -28,7 +27,7 @@ export function nodeStreamToWeb(stream: Readable): ReadableStream<Uint8Array> {
 
 export interface ByteRange {
   start: number
-  end: number // inclusive
+  end: number
   total: number
 }
 
@@ -38,14 +37,12 @@ export function parseRange(header: string | undefined, size: number): ByteRange 
   }
   const spec = header.slice(6).trim()
   if (spec.includes(',')) {
-    // Multi-range isn't supported — let the client re-request a single range.
     return null
   }
   const [startRaw, endRaw] = spec.split('-')
   let start: number
   let end: number
   if (startRaw === '') {
-    // Suffix range: last N bytes.
     const n = Number.parseInt(endRaw, 10)
     if (!Number.isFinite(n) || n <= 0) {
       return 'unsatisfiable'
@@ -131,7 +128,6 @@ export function respondWithLocalFile(input: LocalFileResponseInput): Response {
     'Cache-Control': cacheControl,
     ETag: etag,
     AcceptRanges: 'bytes',
-    // Uploads are magic-byte validated on write, but pin the type against extension-mismatched HTML/script.
     'X-Content-Type-Options': 'nosniff',
   }
 

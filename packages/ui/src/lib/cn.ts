@@ -1,8 +1,5 @@
 import { createCn } from 'cn/config'
 
-// Project-wide `cn` helper — the `cn` package's engine extended with every `@theme`
-// token so custom utilities are classified correctly. Keep in sync with `packages/ui/src/styles/tailwind.css`.
-
 const TEXT_TOKENS = [
   'admin-sm',
   'admin-base',

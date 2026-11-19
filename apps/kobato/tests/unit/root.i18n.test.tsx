@@ -1,14 +1,4 @@
 // @vitest-environment jsdom
-/**
- * Root SSR/i18n contract:
- *  · the root Layout feeds the loader's i18n payload to ONE react-intl provider
- *    and stamps `<html lang>` from it;
- *  · a real `renderToString` → `hydrateRoot` round-trip with identical
- *    locale/messages/now produces no hydration mismatch (and the control case
- *    proves the assertion can fail);
- *  · a root-loader failure (no i18n payload) renders the minimal ErrorView over
- *    the synchronous fallback — never the BaseLayout chrome.
- */
 import type { ReactNode } from 'react'
 
 import { fallbackMessages } from '@kobato/i18n/fallback-messages.ts'
@@ -30,8 +20,6 @@ import { ErrorBoundary, Layout, shouldRevalidate } from '@/root.tsx'
 
 // Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
-// Under the jsdom/web transform pipeline the virtual specifier is resolved too
-// late — stub the component that owns the import as well.
 vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
 
 // Meta/Links/Scripts/ScrollRestoration need the framework build manifest a

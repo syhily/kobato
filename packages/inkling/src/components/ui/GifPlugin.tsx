@@ -30,7 +30,6 @@ const GifPluginSelector = ({ nodeKey, providerConfig }: { nodeKey: NodeKey; prov
   const { closeSelector, placeholderExists } = useSelectorPlaceholderLifecycle(nodeKey)
 
   const insertImageToNode = (image: { src: string; width: number; height: number }) => {
-    // a pick that lands after cancellation (the placeholder is gone) no-ops
     if (!placeholderExists()) {
       return
     }

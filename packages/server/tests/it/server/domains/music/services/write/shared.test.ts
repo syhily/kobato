@@ -1,4 +1,3 @@
-// music/write/shared against the real DB; mocks: randomBytes (deterministic ids) and global fetch (network is a true external).
 import { music } from '@kobato/db/schema/media.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,7 +20,6 @@ beforeEach(async () => {
   randomBytesMock.mockImplementation((size: number) => Buffer.alloc(size, 7))
 })
 
-// A byte `b` yields PLAYER_ID_ALPHABET[b % 36] repeated 16 times — e.g. 7 → '7777777777777777'.
 function candidateFor(byte: number): string {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
   return alphabet[byte % alphabet.length]!.repeat(16)
@@ -51,9 +49,9 @@ describe('music/write/shared — generateUniquePlayerId', () => {
     await seedMusicWithPlayerId(candidateFor(1))
     await seedMusicWithPlayerId(candidateFor(2))
     randomBytesMock
-      .mockImplementationOnce(() => Buffer.alloc(16, 1)) // collision
-      .mockImplementationOnce(() => Buffer.alloc(16, 2)) // collision
-      .mockImplementation(() => Buffer.alloc(16, 3)) // free
+      .mockImplementationOnce(() => Buffer.alloc(16, 1))
+      .mockImplementationOnce(() => Buffer.alloc(16, 2))
+      .mockImplementation(() => Buffer.alloc(16, 3))
     const id = await generateUniquePlayerId(db)
     expect(id).toBe(candidateFor(3))
   })
@@ -65,7 +63,7 @@ describe('music/write/shared — generateUniquePlayerId', () => {
     let call = 0
     randomBytesMock.mockImplementation(() => {
       call += 1
-      return Buffer.alloc(16, call) // 1..5 — all seeded above
+      return Buffer.alloc(16, call)
     })
     await expect(generateUniquePlayerId(db)).rejects.toMatchObject({
       descriptor: { messageKey: 'music.error.playerIdConflict' },

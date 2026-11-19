@@ -17,8 +17,6 @@ export interface InputListGroupData<T extends InputListItemData = InputListItemD
   items: T[]
 }
 
-// Flat option lists and grouped option lists are told apart by the presence of
-// an `items` array on the first entry (groups always carry one, items never do).
 function isGroupList<T extends InputListItemData>(
   listOptions: T[] | InputListGroupData<T>[] | undefined,
 ): listOptions is InputListGroupData<T>[] {
@@ -68,8 +66,6 @@ export function InputListItem<T extends InputListItemData = InputListItemData>({
     }
   }, [selected, scrollIntoView])
 
-  // Capture phase for mousedown: a bubble-phase handler would run after the
-  // input's blur removed the list, so the click would never land
   const handleMouseDown = (event: React.MouseEvent) => {
     event.preventDefault()
     onClick(item)

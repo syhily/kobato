@@ -23,8 +23,6 @@ interface NotificationsDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   isAdmin: boolean
-  /** Owned by the shell (one observer per shell) — the drawer never subscribes.
-   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
 }
 
@@ -53,8 +51,6 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
   const markAllRead = useMutation(
     orpcQuery.notifications.markRead.mutationOptions({
       onSuccess: (data) => {
-        // Every row in every tab changes, so the pages must refetch — seed the
-        // badge from the authoritative count first so it never flickers.
         patchReadState([], true, data.count)
         void invalidate()
       },
@@ -66,8 +62,6 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
     onOpenChange(next)
     if (!next) {
       setSelected(null)
-      // Closing the drawer hands focus back to its trigger — do not fight the
-      // sheet's focus restoration with a row focus target.
       setLastSelectedId(null)
     }
   }
@@ -113,7 +107,6 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
                 onValueChange={(value) => {
                   if (isNotificationTab(value)) {
                     setTab(value)
-                    // A pending row-focus target belongs to the previous tab.
                     setLastSelectedId(null)
                   }
                 }}

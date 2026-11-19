@@ -45,9 +45,6 @@ export function handlePlainTextPaste(
     if (getLoadedPasteDialect()) {
       editor.dispatchCommand(PASTE_MARKDOWN_COMMAND, { text, allowBr })
     } else {
-      // cold first paste (the mount pre-warm hasn't landed): await the engine
-      // chunk, then run the same dispatch — the command handler's conversion
-      // stays synchronous
       void loadPasteDialect().then(() => {
         editor.dispatchCommand(PASTE_MARKDOWN_COMMAND, { text, allowBr })
       })

@@ -373,16 +373,6 @@ export const DEFAULT_LABELS: InklingLabels = {
   'alt.imageUploadProgress': 'upload in progress, {progress}',
 }
 
-/**
- * The host menu-label namespace: a host card's menu entries name their
- * `labelKey` `host.<name>` (built-in keys stay bare), so the menu-build
- * resolver looks up `menu.host.<name>.label` / `.desc` through the same
- * `<InklingComposer labels={...}>` merge channel. The namespace opens on the
- * INPUT side only — the shipped `InklingLabels` table (and its snapshot pin)
- * stays closed, while a host's override keys are compile-checked by the
- * template-literal pattern. Absent an override, the entry's own spec text
- * stays the fallback.
- */
 export type InklingHostMenuLabelKey = `menu.host.${string}.label` | `menu.host.${string}.desc`
 
 export type InklingLabelsInput =

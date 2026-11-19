@@ -10,9 +10,6 @@ vi.mock('@kobato/web-public/ui/shared/auth/use-logout.ts', () => ({
   useLogout: () => vi.fn(),
 }))
 
-// VersionDialog (inside the footer) queries the GitHub avatar through
-// react-query, so the shared mock supplies its slots — the unread count
-// arrives as a prop.
 mockTanstackQuery()
 
 const { AppSidebarFooter } = await import('@kobato/web-admin/ui/shell/AppSidebarFooter.tsx')

@@ -70,7 +70,6 @@ function recordingDelegate(overrides: Partial<TraceDelegate> = {}): {
   return { delegate, span, state, startSpan }
 }
 
-/** A delegate whose span is instrumented and whose runInSpan behaviour is scripted. */
 function scriptedDelegate(runInSpan: (span: Span, fn: () => unknown) => unknown): {
   delegate: TraceDelegate
   state: SpanState
@@ -654,7 +653,6 @@ describe('trace facade — manual runInSpan async isolation', () => {
       }),
     ).resolves.toBe('app-result')
 
-    // Manual spans belong to the caller: runInSpan must never end them.
     expect(state.ended).toBe(0)
   })
 

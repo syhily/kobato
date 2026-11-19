@@ -24,9 +24,7 @@ import { useMutation } from '@tanstack/react-query'
 
 interface CommentActionsProps {
   comment: CommentItemType
-  /** Open the inline editor; moderators hit `admin.comments.edit`, token owners `comments.edit`. */
   onEditAdmin: () => void
-  /** Open the visitor self-edit area (posts to `comment.updateOwn`). */
   onEditOwn: () => void
 }
 
@@ -44,8 +42,6 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
     onSuccess: () => actions.onDeleted(comment.id),
   })
 
-  // Own-comment mutations return the updated wire comment — route it through the same
-  // reducer action; no loader revalidate needed.
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: (payload) => actions.onEdited(payload.comment),
@@ -65,8 +61,6 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
   const handleDelete = () => remove.mutate({ commentId: comment.id })
   const handleRequestDelete = () => requestDelete.mutate({ commentId: comment.id })
   const handleCancelDelete = () => cancelDelete.mutate({ commentId: comment.id })
-  // The reply / edit buttons mount the composer eagerly on click, so hover intent warms
-  // both chunks first.
   const warmComposer = () => warmCommentEditorChunks(locale)
 
   return (

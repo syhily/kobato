@@ -18,11 +18,8 @@ function nextId(prefix: string): string {
   return `${prefix}-${counter}`
 }
 
-// Comment factories derive body keys, content and author fields from one
-// shared 1-based sequence so a single test's fixtures stay coherent.
 let commentSeq = 0
 
-/** Minimal Lexical comment state — one paragraph with one text node. */
 export function makeCommentBody(text: string): CommentEditorState {
   return unsafeCast<CommentEditorState>({
     root: {
@@ -38,7 +35,6 @@ export function makeCommentBody(text: string): CommentEditorState {
           direction: 'ltr',
           format: '',
           indent: 0,
-          // 0.53 full-dialect paragraph keys (the schema heal refills them)
           textFormat: 0,
           textStyle: '',
           children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }],
@@ -48,7 +44,6 @@ export function makeCommentBody(text: string): CommentEditorState {
   })
 }
 
-// Post/page ids are numeric strings — generated ids MUST be numeric (the detail loader Number()s them).
 let idCounter = 1_000_000
 function nextNumericId(): string {
   idCounter += 1

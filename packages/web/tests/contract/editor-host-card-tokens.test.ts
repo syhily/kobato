@@ -3,16 +3,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Host cards render kobato-chrome components whose Tailwind utilities resolve
-// var(--text-*) at RUNTIME, but inkling's scoped theme (@layer theme on
-// .inkling-lexical in src/inkling/styles/index.css) re-declares that whole
-// scale with its own values. The restore rule in
-// src/styles/inkling-editor.css re-declares the kobato scale on every host
-// card chrome; this contract pins (a) the selector list against
-// KOBATO_HOST_CARD_NODE_TYPES and (b) coverage + value of every text token
-// inkling shadows, so adding a host card or bumping the inkling/Tailwind
-// scale fails here instead of regressing silently in the canvas.
-
 const editorCss = readFileSync(resolve(process.cwd(), 'packages/web/admin/src/styles/inkling-editor.css'), 'utf8')
 const inklingCss = readFileSync(resolve(process.cwd(), 'packages/inkling/src/styles/index.css'), 'utf8')
 const tailwindCss = readFileSync(resolve(process.cwd(), 'packages/ui/src/styles/tailwind.css'), 'utf8')
@@ -36,8 +26,6 @@ const TAILWIND_DEFAULT_TEXT_SCALE: Record<string, string> = {
   '9xl': '8rem',
 }
 
-// Tokens inkling declares that kobato cannot consume (no text-2xs utility in
-// the kobato theme), excluded from the coverage requirement.
 const INKLING_ONLY_TOKENS = new Set(['--text-2xs'])
 
 function kobatoTextValue(token: string): string {

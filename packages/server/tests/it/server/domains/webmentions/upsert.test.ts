@@ -105,7 +105,6 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     const row = await rowOf(first.row.id)
     expect(row.status).toBe('pending')
     expect(row.title).toBe('Edited after approval')
-    // moderatedAt belongs to the moderation act — a re-mention must not rewrite it.
     expect(row.moderatedAt?.toISOString()).toBe(moderated!.toISOString())
   })
 
@@ -136,13 +135,11 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     const updated = await rowOf(row.id)
     expect(updated.status).toBe('approved')
     expect(updated.verifyFailStreak).toBe(0)
-    // The verification state itself is untouched — only the count resets.
     expect(updated.verificationStatus).toBe('failed')
     expect(updated.lastError).toBe('source could not be fetched (HTTP 500)')
   })
 
   it('folds a same-key race into the ON CONFLICT fallback, reported as `updated`', async () => {
-    // One racer loses the pair-SELECT race, hits the unique index, and reports 'updated'.
     const [a, b] = await Promise.all([
       upsertWebmention(db, mentionValues({ title: 'Race A' })),
       upsertWebmention(db, mentionValues({ title: 'Race B' })),
@@ -191,8 +188,6 @@ describe('integration / upsertWebmentionVerificationFailure (terminal receive-ti
   })
 
   it('never resets an existing row’s failure streak on a failed re-send', async () => {
-    // Repeatedly re-submitting a failing source must not restart the daily
-    // cycle's countdown — that would keep the row in the fetch schedule forever.
     const { row } = await upsertWebmention(
       db,
       mentionValues({ verificationStatus: 'failed', lastError: 'old error', verifyFailStreak: 5 }),

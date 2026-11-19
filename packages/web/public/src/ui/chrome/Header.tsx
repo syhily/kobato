@@ -174,7 +174,6 @@ export function Header({
         aria-hidden={!isDesktop && !menuOpen ? true : undefined}
         inert={!isDesktop && !menuOpen ? true : undefined}
       >
-        {/* Dismiss overlay — real button so keyboard users can close the drawer. */}
         <button
           type="button"
           className={asideOverlayClass}

@@ -45,19 +45,12 @@ export function GeneralTimeZoneCard({
     fromState: (values) => ({
       locale: values.locale,
       timeZone: values.timeZone.trim(),
-      // `null` is the "follow the locale" state, never a blank override.
       timeFormat: values.timeFormat === null ? null : values.timeFormat.trim(),
     }),
   })
 
-  // Cross-tab half of the switch: the announcement is handled once at the root
-  // (`LocaleSyncProvider`), so every open document — settings, editor,
-  // analytics — follows it. This card only publishes; it never subscribes.
   const publishLocaleChange = useLocaleSyncPublish()
 
-  // The locale switch owns the commit, so its guard returns
-  // `SETTINGS_SKIP_COMMIT`; the trigger ref is the focus anchor because the
-  // picked option lives in a portal and unmounts when the popup closes.
   const { isSwitching, requestChange } = useLocaleSwitch<AppLocale>({
     loadedLocale: siteIdentity.locale,
     runTransaction,
@@ -77,10 +70,6 @@ export function GeneralTimeZoneCard({
   )
   const { formState } = form
 
-  // Switching to "custom" restores the last pattern the admin typed, so the
-  // round-trip through "follow the locale" never silently loses it.
-  // `useWatch` (never `form.watch`) — the React Compiler would freeze a
-  // render-time `watch()` value at its initial state.
   const timeFormat = useWatch({ control: form.control, name: 'timeFormat' })
   const lastPatternRef = useRef(siteIdentity.timeFormat ?? DEFAULT_TIME_FORMAT_PATTERN)
   useEffect(() => {

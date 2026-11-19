@@ -58,8 +58,6 @@ describe('lexical/collect — collectLexicalHeadings', () => {
   })
 
   it('drops empty-text entries but still feeds the tracker (export-pass parity)', () => {
-    // The whitespace-only heading slugifies to '' and consumes the base id;
-    // the symbol-only heading then gets '-1' instead of the base.
     const state = lexicalBodyWith([lexicalHeading('h2', '   '), lexicalHeading('h2', '!!!')])
 
     expect(collectLexicalHeadings(state)).toEqual([{ depth: 2, text: '!!!', slug: '-1' }])

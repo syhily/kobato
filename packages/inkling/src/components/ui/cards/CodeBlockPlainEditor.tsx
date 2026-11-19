@@ -15,14 +15,6 @@ interface CodeBlockPlainEditorProps {
   onEscape?: () => void
 }
 
-/**
- * The code block card's plain edit surface (`codeEditor: 'plain'` on the
- * composer's ui prefs — minimal surfaces like kobato's comment composer): a
- * static auto-sizing textarea in the display-mode code box. Deliberately free
- * of CodeMirror and LazyCardEditor imports — in plain mode the codemirror
- * chunk must not be fetched at all (pinned by the import-guard test). Enter
- * inserts newlines natively; Escape hands back to the card via `onEscape`.
- */
 export function CodeBlockPlainEditor({ code, language, updateCode, onEscape }: CodeBlockPlainEditorProps) {
   const { darkMode } = React.useContext(InklingUiPrefsContext)
   const labels = useInklingLabels()

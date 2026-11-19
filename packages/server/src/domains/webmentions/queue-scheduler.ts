@@ -4,11 +4,6 @@ import type { Logger } from '@kobato/server/infra/logger.ts'
 import { jobDb, registerJob } from '@kobato/server/infra/job-registry.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 
-// Single owner of the webmention queue-loop mechanics. Callers keep their own
-// exported seams (MIN_DELAY_MS constants + enqueue-path nudges) and supply
-// policy through the closures below — `name` must stay `webmentions.<queue>`:
-// the logger scope and the batch log line derive from it.
-
 export interface QueueSchedulerOptions {
   name: string
   /** Catalog task binding — live-state tracking only (no history: high-frequency batches would flood `job_run`). */
@@ -30,8 +25,6 @@ export function makeQueueScheduler(options: QueueSchedulerOptions): QueueSchedul
   function nextDelayMs(): number | null {
     const due = options.findNextDueAt(jobDb())
     if (due === null) {
-      // Nothing due: suspend; enqueues nudge the seam (outbox/inbox), and the
-      // seam's periodic re-evaluation picks up new rows regardless.
       return null
     }
     if (due === 'now') {
@@ -60,12 +53,6 @@ export function makeQueueScheduler(options: QueueSchedulerOptions): QueueSchedul
   return queue
 }
 
-// The per-row error-isolation invariant, defined exactly once: a row must
-// never kill the batch. Each queue supplies only its picker and row handler;
-// `onRowError` is the escape hatch for post-throw recovery that must keep
-// the batch alive (the outbox counts a thrown row as one retryable attempt
-// there) — the hook itself owns not throwing.
-
 export interface RunDueRowsOptions<Row> {
   pick: () => Promise<Row[]>
   handleRow: (row: Row) => Promise<void>
@@ -82,7 +69,6 @@ export async function runDueRows<Row extends { id: number | string }>(
     try {
       await options.handleRow(row)
     } catch (error: unknown) {
-      // A row must never kill the batch: log and move on; the row stays due.
       options.log.warn(options.rowThrewMessage, { id: row.id, error: String(error) })
       await options.onRowError?.(row, error)
     }

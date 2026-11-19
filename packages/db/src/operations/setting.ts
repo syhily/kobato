@@ -4,16 +4,12 @@ import type { Setting } from '@kobato/db/types.ts'
 import { setting } from '@kobato/db/schema/config.ts'
 import { eq, like } from 'drizzle-orm'
 
-// Sync (node:sqlite): called inside the settings-save transaction.
 export function findSettingByScope(db: Database, scope: string): Setting | null {
   const rows = db.select().from(setting).where(eq(setting.scope, scope)).limit(1).all()
   return rows[0] ?? null
 }
 
-/** All settings rows whose `scope` starts with `prefix`; the caller filters/parses them. */
-// Sync (node:sqlite): called inside the hydration read path.
 export function findSettingsByScopePrefix(db: Database, prefix: string): Setting[] {
-  // `%`-suffixed LIKE still uses the unique B-tree on `scope`; the prefix is caller-hard-coded.
   return db
     .select()
     .from(setting)
@@ -21,7 +17,6 @@ export function findSettingsByScopePrefix(db: Database, prefix: string): Setting
     .all()
 }
 
-// Sync (node:sqlite): called inside transactions (install, settings save).
 export function upsertSetting(
   db: Database,
   data: Record<string, unknown>,

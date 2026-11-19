@@ -5,8 +5,6 @@ import type { ReactElement } from 'react'
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The unit setup registers an inert `sonner` stub; this file asserts the real
-// `<Toaster />` container label, so restore the actual module.
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
 import type { AppLocale } from '@kobato/i18n/locales.ts'

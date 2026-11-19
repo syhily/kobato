@@ -21,7 +21,6 @@ describe('email/templates/ConfirmSubscription', () => {
     const html = renderTemplate()
     const link = 'https://example.com/newsletter/confirm?token=abc123'
     expect(html).toContain(`href="${link}"`)
-    // Raw link text for clients that block buttons.
     expect(html).toContain(link)
   })
 

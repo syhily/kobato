@@ -23,11 +23,6 @@ import {
 } from '@kobato/contracts/comments.ts'
 import { oc } from '@orpc/contract'
 
-// The comments RPC contract, split by controller surface the same way the
-// server splits its controllers; `commentsContract` composes the merged
-// `apiRouter.comments` shape. Route paths are the deployed surface.
-
-// `controllers/comments-public.controller.ts` — anonymous + token-authorized edits.
 export const commentsPublicContract = {
   replyComment: oc
     .route({ method: 'POST', path: '/comments/reply' })
@@ -47,7 +42,6 @@ export const commentsPublicContract = {
     .output(ownCommentMutationDto),
 }
 
-// `controllers/comments-authed.controller.ts` — the signed-in own-comment family.
 export const commentsAuthedContract = {
   updateOwn: oc
     .route({ method: 'POST', path: '/comments/update-own' })
@@ -76,7 +70,6 @@ export const commentsAuthedContract = {
     .output(commentsResolveEntityOutputSchema),
 }
 
-// `controllers/comments-token.controller.ts` — the `__comment_tokens` cookie surface.
 export const commentsTokenContract = {
   revokeToken: oc
     .route({ method: 'POST', path: '/comments/revoke-token' })

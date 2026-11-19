@@ -7,9 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// The content/taxonomy noun is a machine kind ('post' | 'page' | 'category' | 'tag');
-// the catalog's ICU `select` renders it per locale, in all four locales.
-
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

@@ -21,7 +21,6 @@ export const TYPE_LABEL_IDS = {
   search: 'admin.settings.navigation.type.search',
 } as const satisfies Record<FooterNavItem['type'], UiMessageId>
 
-// Narrow Select's `string` callback values back to the unions — guards, not casts.
 const FOOTER_NAV_TYPE_SET: ReadonlySet<string> = new Set(['social', 'themeToggle', 'search'])
 const SOCIAL_NETWORK_SET: ReadonlySet<string> = new Set(SOCIAL_NETWORKS)
 

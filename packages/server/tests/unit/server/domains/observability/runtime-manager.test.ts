@@ -67,8 +67,6 @@ function verified(site: Partial<ObservabilitySettingsSlice> = {}): Observability
   return { ...merged, verifiedFingerprint: observabilityConnectionFingerprint(merged) }
 }
 
-/** A verified configuration whose pipeline switches are then flipped — the
- *  stored connection fingerprint stays as it was. */
 function verifiedThenChanged(patch: Partial<ObservabilitySettingsSlice>): ObservabilitySettingsSlice {
   return { ...verified(), ...patch }
 }
@@ -324,7 +322,6 @@ describe('observability runtime manager — post-start retention pass', () => {
       await vi.advanceTimersByTimeAsync(60_000)
       expect(retentionMock.syncObservabilityRetention).toHaveBeenCalledTimes(1)
 
-      // No further pass is scheduled by the timer itself.
       await vi.advanceTimersByTimeAsync(120_000)
       expect(retentionMock.syncObservabilityRetention).toHaveBeenCalledTimes(1)
     } finally {
@@ -354,8 +351,6 @@ describe('observability runtime manager — post-start retention pass', () => {
       seed(verified())
       await syncObservabilityRuntime()
 
-      // A fingerprint change restarts the runtime; the first pass is replaced,
-      // so the retention sync still runs exactly once.
       await vi.advanceTimersByTimeAsync(30_000)
       seed(verified({ sampleRate: 0.25 }))
       await syncObservabilityRuntime()

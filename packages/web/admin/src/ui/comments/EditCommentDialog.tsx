@@ -51,14 +51,12 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
     onError: onMutationError('admin.toast.commentSaveFailed', t),
   })
 
-  // Reset the editor when the target comment changes; only refetch on id change.
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
     setLoaded(false)
     setInitialBody(EMPTY_COMMENT_EDITOR_STATE)
     setBody(EMPTY_COMMENT_EDITOR_STATE)
   }
-  // Apply raw body once it arrives (or differs from the last applied value).
   if (rawData !== lastRawData) {
     setLastRawData(rawData)
     if (comment && rawData) {

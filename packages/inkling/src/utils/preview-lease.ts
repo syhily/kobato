@@ -1,10 +1,3 @@
-/**
- * The owned lifetime of a blob object URL used as an in-editor preview: the one file that
- * calls `URL.createObjectURL` / `URL.revokeObjectURL`, pinned by
- * `tests/inkling/unit/utils/upload-preview-imports.test.ts`. A lease pairs creation with an
- * idempotent release; several concurrent previews hold a `PreviewLeasePool`.
- */
-
 function revokePreviewUrl(url: string | null | undefined): void {
   if (url?.startsWith('blob:')) {
     URL.revokeObjectURL(url)

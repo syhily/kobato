@@ -1,15 +1,3 @@
-// Save-time body projections: `body_html` / `body_text` / `body_html_feed` are computed
-// here from the canonical Lexical state, so SSR/RSS/search never pay the jsdom render per
-// request. The columns are read-side derived data only — they never join the editor
-// contract or the no-op-save equivalence check (which compares `body` alone).
-//
-// Imports inkling ONLY through the `./headless` entry: the `.` entry would inline the full
-// ~2.5MB editor into the SEA binary.
-//
-// Host cards register here as BASE classes from the shared React-free specs
-// (`@kobato/lexical/cards/`); solution / two-column override `getTextContent` because the
-// generated one would leak raw markup into `body_text`.
-
 import type { LexicalStateToHtmlOptions } from '@kobato/inkling/headless'
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/lexical/schema.ts'
 
@@ -83,13 +71,6 @@ class MusicPlayerProjectionNode extends generateDecoratorNode({
   defaultRenderFn: renderMusicPlayerCard,
 }) {}
 
-/**
- * KobatoImageNode's projection twin: replaces DEFAULT_HTML_NODES' stock image baseNode by
- * same-type registration (a later entry wins), so `body_html` / `body_html_feed` carry the
- * kobato figure markup (layout classes, data-thumbhash, srcset) instead of the stock inkling
- * card. This headless class declares the full twelve-property spec directly — no nested
- * caption editor server-side, so the serialized caption HTML stays an opaque property.
- */
 class KobatoImageProjectionNode extends generateDecoratorNode({
   nodeType: 'image',
   properties: KOBATO_IMAGE_PROPERTIES,
@@ -102,8 +83,6 @@ class KobatoImageProjectionNode extends generateDecoratorNode({
   }
 }
 
-/** The srcset facts of the full-fidelity pass — the same triple BlockImage reads from the
- *  settings contexts, resolved from the server-side snapshot. */
 function imageRenderEnv(): KobatoImageRenderEnv {
   const assets = requireBlogSettingsSection('assets')
   return {
@@ -113,9 +92,6 @@ function imageRenderEnv(): KobatoImageRenderEnv {
   }
 }
 
-// The host cards register for every projection pass, so `toProjectionState` never
-// substitutes them (that path remains the defense for types this module does not
-// register). The class list and the renderable-type set derive from the same whitelist.
 const PROJECTION_EXTRA_NODES: NonNullable<LexicalStateToHtmlOptions['nodes']> = [
   SolutionProjectionNode,
   TwoColumnProjectionNode,
@@ -124,8 +100,6 @@ const PROJECTION_EXTRA_NODES: NonNullable<LexicalStateToHtmlOptions['nodes']> = 
 ]
 const RENDERABLE_HOST_CARD_TYPES: ReadonlySet<string> = new Set(KOBATO_HOST_CARD_NODE_TYPES)
 
-// inkling's renderer swallows errors by default; the projection must fail
-// fast instead (a swallowed parse error silently truncates the document).
 function failFast(error: Error): never {
   throw error
 }
@@ -134,10 +108,6 @@ function renderOptions(feed: boolean): LexicalStateToHtmlOptions {
   return {
     nodes: PROJECTION_EXTRA_NODES,
     onError: failFast,
-    // The feed pass answers the card renderers through the open render-meta seam; the
-    // full-fidelity pass leaves the kind unanswered. The image render env (srcset facts)
-    // rides the same seam for BOTH passes — the full variant consumes the whole triple,
-    // the feed variant only its siteOrigin.
     resolveRenderMeta: (kind) => {
       if (kind === FEED_VARIANT_META_KIND) {
         return feed ? true : undefined
@@ -156,19 +126,11 @@ function renderOptions(feed: boolean): LexicalStateToHtmlOptions {
   }
 }
 
-/** The plain-text leg alone (`body_text`) — the search indexer and any caller that needs the
- *  corpus without paying for the two jsdom HTML passes. Throws on render failure, like
- *  {@link computeBodyProjections}. */
 export function computeBodyText(state: LexicalEditorState): string {
   const renderable = toProjectionState(state, { feed: false, renderableHostCardTypes: RENDERABLE_HOST_CARD_TYPES })
   return lexicalStateToPlainText(renderable, { nodes: PROJECTION_EXTRA_NODES, onError: failFast })
 }
 
-/**
- * Computes all three projections of one canonical state. Throws on render
- * failure — the save pipeline catches and degrades to NULL columns (a save
- * must never fail because the projection did).
- */
 export async function computeBodyProjections(state: LexicalEditorState): Promise<BodyProjections> {
   const renderable = toProjectionState(state, { feed: false, renderableHostCardTypes: RENDERABLE_HOST_CARD_TYPES })
   const feedState = toProjectionState(state, { feed: true, renderableHostCardTypes: RENDERABLE_HOST_CARD_TYPES })
@@ -180,18 +142,6 @@ export async function computeBodyProjections(state: LexicalEditorState): Promise
   return { bodyHtml, bodyText, bodyHtmlFeed }
 }
 
-/**
- * The comment row's `content` snapshot: the feed-variant degraded HTML of the comment state
- * (artifact slots stripped, codeblock → plain pre/code). Full-fidelity mathml/highlightedHtml
- * would bloat the column past the comment length cap and pollute substring search. Comment
- * node types are all covered by inkling's DEFAULT_HTML_NODES, so no extra nodes register here.
- *
- * One exception: ```math fences — the comment surface has no math card, so the fence IS the
- * formula authoring path. `renderCommentMathFences` converts every `codeblock[language=math]`
- * into a math node with a fresh display-mode KaTeX MathML artifact BEFORE rendering (after
- * the feed strip, so the artifact survives). Throws on render failure — the caller falls
- * back to plain text.
- */
 export async function computeCommentContentProjection(state: LexicalEditorState): Promise<string> {
   const feedState = toProjectionState(state, { feed: true })
   renderCommentMathFences(feedState)
@@ -200,8 +150,6 @@ export async function computeCommentContentProjection(state: LexicalEditorState)
 
 type MutableProjectionNode = Record<string, unknown> & { type: string; children?: LexicalNodeJson[] }
 
-// Mutates the (already cloned) projection state. A KaTeX failure keeps the
-// fence as a plain code block — degraded render, never fatal.
 function renderCommentMathFences(state: LexicalEditorState): void {
   rewriteMathFences(unsafeCast<MutableProjectionNode>(state.root))
 }

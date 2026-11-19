@@ -55,11 +55,6 @@ export interface EditorShellPersistMutations<
   directSaveDraft: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['directSaveDraft']
 }
 
-/** The few writes persist must report into orchestrator-owned state. The
- *  revision race, both freeze legs, and the local-draft conflict are owned by
- *  persist (its sibling slices), not the shell state hook: the token persist
- *  owns feeds the draft key, and the conflict it detects feeds the freeze with
- *  no render-input round-trip. */
 export interface EditorShellPersistNotifications<TMeta> {
   applyServerMeta: (meta: TMeta) => void
   /** Flip the local meta draft's `published` flag after a successful publish. */
@@ -99,8 +94,6 @@ export function useEditorShellPersist<
   const { editPath, navigate } = routing
   const isEditing = detail !== undefined
 
-  // Owned save-flow status + baselines; the mutation slice reports through
-  // these setters.
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
   const [lastSavedBody, setLastSavedBody] = useState<LexicalEditorState>(
@@ -116,12 +109,9 @@ export function useEditorShellPersist<
     dismiss: dismissPreviewBanner,
   } = useActionBanner()
 
-  // Owned revision race (expected token + latest/published) + the `server`
-  // freeze leg.
   const { expectedToken, latestRevision, publishedRevision, serverConflicted, updateAfterSave, noteServerConflict } =
     useEditorShellPersistRace(detail)
 
-  // Owned local-draft session + conflict detection (the `local` freeze leg).
   const { conflict, clearLocalDraft, resolveConflict } = useEditorShellPersistConflict({
     localDraftConfig,
     entityId: isEditing ? detail.entity.id : null,
@@ -131,22 +121,12 @@ export function useEditorShellPersist<
     initialBody,
   })
 
-  // The merged autosave freeze: one gate, two owned sources; the local leg
-  // wins the `source` label when both are set.
   const freeze: ConflictFreezeSource | null = conflict !== null ? 'local' : serverConflicted ? 'server' : null
 
-  // Body snapshot of the in-flight manual save; on success the autosave
-  // baseline advances to it so the next debounce tick short-circuits.
   const manualSaveBodyRef = useRef<LexicalEditorState | null>(null)
 
-  // Pre-publish `publishedAt` for rollback on a failed publish — a leftover
-  // optimistic future date would make a picker-clear save silently unpublish.
   const publishedAtBeforePublishRef = useRef<string | null>(null)
 
-  // The single mirror that breaks the declaration cycle: the body mutations
-  // and the autosave flush are declared before `noteBodySaved` (which reads
-  // the engine's `setBaseline`), so they reach it through this ref. The
-  // effect below keeps it pointing at the latest closure.
   const handleBodySavedRef = useRef<(payload: SaveBodyOutput) => void>(() => undefined)
 
   const { upsertMetaMutation, saveDraftMutation, publishMutation, unpublishMutation, isSubmittingAny } =
@@ -174,7 +154,6 @@ export function useEditorShellPersist<
   const flushAutosave = useCallback(
     async (snapshot: LexicalEditorState): Promise<AutosaveFlushOutcome> => {
       if (!isEditing || !detail) {
-        // Unreachable while `enabled` gates on isEditing — no-op keeps the engine's bookkeeping consistent.
         return 'saved'
       }
       try {
@@ -194,10 +173,6 @@ export function useEditorShellPersist<
     [isEditing, detail, expectedToken, directSaveDraft, t],
   )
 
-  // Opening-body baseline seed, captured once at mount: the first debounce tick
-  // with zero edits no-ops instead of firing an unconditional PATCH that
-  // rotates the token and orphans the IndexedDB draft. Mount-captured state
-  // makes the once-only seed structural.
   const [openingBaseline] = useState<LexicalEditorState | null>(() => (isEditing ? body : null))
 
   const { setBaseline } = useAutosave({
@@ -209,8 +184,6 @@ export function useEditorShellPersist<
       if (autosaveStatus.kind === 'saving') {
         setStatus({ kind: 'saving' })
       } else if (autosaveStatus.kind === 'saved') {
-        // The flush's own noteBodySaved may have surfaced a warning / conflict —
-        // the engine's generic 'saved' tick must not hide either.
         setStatus((prev) =>
           prev.kind === 'warning' || prev.kind === 'conflict'
             ? prev
@@ -222,15 +195,10 @@ export function useEditorShellPersist<
     },
   })
 
-  // Apply the pure save plan (editor-shell-persist-plan): status transition,
-  // freeze leg, baseline advance, revision race — no decisions here.
   const noteBodySaved = useCallback(
     (payload: SaveBodyOutput) => {
       const plan = planBodySave(payload, manualSaveBodyRef.current, new Date())
       if (plan.kind === 'conflict') {
-        // Freeze autosave: the token can never advance while the server
-        // rejects it, and the engine must not clobber this status with a
-        // generic `saved` tick.
         manualSaveBodyRef.current = null
         noteServerConflict()
         setStatus({ kind: 'conflict', expectedToken: plan.expectedToken })
@@ -238,7 +206,6 @@ export function useEditorShellPersist<
         return
       }
       if (plan.consumePendingSnapshot && manualSaveBodyRef.current !== null) {
-        // A manual save just persisted this exact snapshot — advance the engine baseline.
         setBaseline(manualSaveBodyRef.current)
       }
       manualSaveBodyRef.current = null
@@ -416,7 +383,6 @@ export function useEditorShellPersist<
       })
       handleBodySavedRef.current(result)
       if (verdictBodySave(result).kind === 'saved') {
-        // Advance the autosave baseline to the adopted body so the next debounce tick short-circuits.
         setBaseline(conflict.localBody)
       }
     } catch (error) {

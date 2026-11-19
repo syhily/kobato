@@ -2,10 +2,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// The post editor's metadata model: the sidebar metadata draft and the
-// toggle-field registry. The `admin.posts.upsert-meta` wire shapes are
-// zod-derived in `@kobato/contracts/posts` — import them there, never here.
-
 export interface PostMetaDraft {
   slug: string
   title: string
@@ -48,16 +44,12 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   publishedAt: '',
 }
 
-// Keys derive from `EMPTY_POST_META_DRAFT` so a new draft field joins the
-// equality check automatically. The cast is sound: the empty draft is a
-// complete `PostMetaDraft`, so its runtime keys are exactly `keyof PostMetaDraft`.
 const POST_META_DRAFT_KEYS = unsafeCast<Array<keyof PostMetaDraft>>(Object.keys(EMPTY_POST_META_DRAFT))
 
 export function postMetaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
   return POST_META_DRAFT_KEYS.every((key) => {
     const av = a[key]
     const bv = b[key]
-    // Array fields (tags/alias) compare element-wise via JSON; the rest are primitives.
     return Array.isArray(av) && Array.isArray(bv) ? JSON.stringify(av) === JSON.stringify(bv) : av === bv
   })
 }

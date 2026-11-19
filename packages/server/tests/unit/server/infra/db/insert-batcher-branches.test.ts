@@ -40,7 +40,6 @@ function fakeDb(): Database {
 class TestBatcher extends InsertBatcher<string> {
   static inserted: string[][] = []
   static failNext = false
-  /** When set, insertBatch parks on this promise so pushes can land mid-flush. */
   static gate: Promise<void> | null = null
 
   protected insertBatch(_db: Database, events: string[]): void | Promise<void> {
@@ -81,7 +80,6 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     expect(TestBatcher.inserted).toEqual([['before']])
 
     batcher.push('during')
-    // While paused even an explicit flush is a no-op — the backup consistency window stays write-free.
     const held = await batcher.flush()
     expect(held).toEqual({ committed: 0, deadLettered: 0 })
     expect(TestBatcher.inserted).toEqual([['before']])
@@ -107,16 +105,15 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
         }
       })({ flushIntervalMs: 60_000, flushThreshold: 1 }, 'test', () => fakeDb())
 
-      gated.push('a') // threshold → flush starts, parks on the gate
-      const pausePromise = gated.pause() // joins the in-flight flush (the gate is already up)
-      gated.push('b') // only the joining flush may absorb it
+      gated.push('a')
+      const pausePromise = gated.pause()
+      gated.push('b')
       release()
       await pausePromise
-      // 'b' was absorbed by the drain loop before pause() resolved.
       expect(TestBatcher.inserted).toEqual([['a'], ['b']])
 
       gated.push('c')
-      gated.push('d') // crosses the threshold
+      gated.push('d')
       await vi.advanceTimersByTimeAsync(60_000)
       expect(TestBatcher.inserted).toEqual([['a'], ['b']])
 
@@ -138,7 +135,6 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     expect(await batcher.flush()).toEqual({ committed: 0, deadLettered: 0 })
     expect(TestBatcher.inserted).toEqual([])
 
-    // The teardown variant (shutdown hook, restore swap) ignores the gate: buffered rows must not strand.
     expect(await batcher.flushForTeardown()).toEqual({ committed: 1, deadLettered: 0 })
     expect(TestBatcher.inserted).toEqual([['held']])
     batcher.resume()
@@ -150,7 +146,6 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     await batcher.pause()
     batcher.push('sigterm-window')
 
-    // The constructor registers the hook last among this file's batchers.
     const hook = vi.mocked(registerShutdownHook).mock.calls.at(-1)![0] as () => Promise<void>
     await hook()
 
@@ -165,7 +160,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
       const batcher = new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 2 }, 'test', () => fakeDb())
       await batcher.pause()
       batcher.push('a')
-      batcher.push('b') // crosses the flush threshold
+      batcher.push('b')
 
       await vi.advanceTimersByTimeAsync(60_000)
       expect(TestBatcher.inserted).toEqual([])
@@ -190,22 +185,20 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
       const batcher = new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 3 }, 'test', () => fakeDb())
       batcher.push('a')
       batcher.push('b')
-      batcher.push('c') // threshold → flush starts, parks on the gate
+      batcher.push('c')
       expect(TestBatcher.inserted).toEqual([['a', 'b', 'c']])
 
-      // The threshold is crossed again while the first flush is in flight — no later trigger exists.
       batcher.push('d')
       batcher.push('e')
       batcher.push('f')
       release()
       TestBatcher.gate = null
-      await batcher.flush() // join the singleflight; the drain must follow
+      await batcher.flush()
       expect(TestBatcher.inserted).toEqual([
         ['a', 'b', 'c'],
         ['d', 'e', 'f'],
       ])
 
-      // No latent trigger remains: advancing several intervals produces nothing.
       await vi.advanceTimersByTimeAsync(10_000)
       expect(TestBatcher.inserted).toEqual([
         ['a', 'b', 'c'],
@@ -221,7 +214,6 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     vi.useFakeTimers()
     try {
       TestBatcher.inserted = []
-      // The parked first write rejects after new events buffered mid-flush.
       let release!: (error: Error) => void
       const gate = new Promise<void>((_resolve, reject) => {
         release = reject
@@ -231,7 +223,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
         protected override async insertBatch(_db: Database, events: string[]): Promise<void> {
           if (this.failArmed) {
             this.failArmed = false
-            await gate // rejects → the whole batch dead-letters
+            await gate
           }
           TestBatcher.inserted.push(events)
         }
@@ -239,21 +231,19 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
       failing.push('a')
       failing.push('b')
-      failing.push('c') // threshold → flush starts, parks on the gate
-      // Every trigger the buffered rows produce is consumed by the in-flight flush.
+      failing.push('c')
       failing.push('d')
-      await vi.advanceTimersByTimeAsync(1_000) // timer fires mid-flush: no-op, consumed
+      await vi.advanceTimersByTimeAsync(1_000)
       failing.push('e')
-      await vi.advanceTimersByTimeAsync(1_000) // same
-      failing.push('f') // threshold → joins the singleflight, arms nothing
+      await vi.advanceTimersByTimeAsync(1_000)
+      failing.push('f')
       expect(TestBatcher.inserted).toEqual([])
 
       release(new Error('insert failed'))
-      const result = await failing.flush() // join; 'a..c' dead-letter
+      const result = await failing.flush()
       expect(result).toEqual({ committed: 0, deadLettered: 3 })
       expect(TestBatcher.inserted).toEqual([])
 
-      // The settled flush must re-arm the interval — nothing else can flush 'd..f'.
       await vi.advanceTimersByTimeAsync(1_000)
       expect(TestBatcher.inserted).toEqual([['d', 'e', 'f']])
     } finally {
@@ -271,7 +261,6 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
       batcher.dispose()
 
-      // A disposed batcher must never flush its stale batch into a post-reset database.
       await vi.advanceTimersByTimeAsync(60_000)
       expect(TestBatcher.inserted).toEqual([])
       const result = await batcher.flush()
@@ -337,7 +326,6 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
         batcher.push(`e${i}`)
       }
 
-      // The three overflow events are dropped, not dead-lettered and not written.
       expect(await batcher.flush()).toEqual({ committed: 5, deadLettered: 0 })
       expect(TestBatcher.inserted).toEqual([['e0', 'e1', 'e2', 'e3', 'e4']])
       expect(logger.warn).toHaveBeenCalledTimes(1)
@@ -367,7 +355,6 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
       batcher.push('drop-2')
       await batcher.flush()
 
-      // A drain frees capacity; the next burst warns again with the cumulative count.
       batcher.push('c')
       batcher.push('d')
       batcher.push('drop-3')

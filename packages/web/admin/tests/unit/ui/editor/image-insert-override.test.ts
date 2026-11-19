@@ -1,16 +1,3 @@
-// Unit tests for the image insert override: the two HIGH-priority
-// class-identity gates. Pins that the priority comes from the inkling barrel
-// (never a hardcoded number), that INSERT_IMAGE_COMMAND inserts a
-// KobatoImageNode with the four kobato dataset keys intact, and that
-// OPEN_IMAGE_LIBRARY_COMMAND routes through the pick seam (an empty
-// KobatoImageNode + the `openPicker` payload flag) instead of inkling's stock
-// selector overlay. The upload legs (paste/drop/file-dialog via
-// `initialFile`/`triggerFileDialog` datasets) must NOT carry the flag.
-//
-// Insert payloads are captured with a CRITICAL listener that declines (the
-// stock LOW choreography stays unmounted — these tests pin the override, not
-// the insert surgery).
-
 import {
   COMMAND_PRIORITY_HIGH,
   createHeadlessEditor,
@@ -28,8 +15,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const dom = new JSDOM('')
 
-// The generated constructor's caption nested-editor setup binds the DOM
-// globals (same preamble as kobato-image-node.test.ts).
 Object.assign(globalThis, {
   DOMParser: dom.window.DOMParser,
   document: dom.window.document,
@@ -79,7 +64,6 @@ describe('registerKobatoImageInsertCommands', () => {
       imageId: kobato.__imageId,
       layout: kobato.__layout,
     }).toEqual({ thumbhash: 'th-abcd', storagePath: 'objects/abcdef.png', imageId: 'img_1', layout: 'center' })
-    // the upload/insert intents never open the picker
     expect(captured[0]!.openPicker).toBeUndefined()
   })
 

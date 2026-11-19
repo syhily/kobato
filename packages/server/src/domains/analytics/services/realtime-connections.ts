@@ -2,11 +2,8 @@ import { createHash } from 'node:crypto'
 
 const MAX_REALTIME_CONNECTIONS_PER_SESSION = 2
 
-// Per-session connection counter — a plain Map is safe (single-threaded);
-// keep this state off any future worker threads.
 const activeSSEConnections = new Map<string, number>()
 
-/** Cap key: session id when present, else a truncated SHA-256 of the client address — the raw IP is never used as a map key. */
 export function realtimeConnectionKey(sessionId: string | null | undefined, clientAddress: string): string {
   if (sessionId) {
     return `session:${sessionId}`

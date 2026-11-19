@@ -156,10 +156,6 @@ export function resolvePlusHoverButtonVerdict(
     return null
   }
 
-  // the left-gutter fudge: the plus button renders in the gutter left of the
-  // editor column, so a mouse left of the container's left edge hovers
-  // BESIDE a paragraph, not over one — nudge the hit-test point 40px inward
-  // so elementFromPoint lands on that paragraph
   const containerRect = rootElement.getBoundingClientRect()
   const hitX = pageX < containerRect.left ? pageX + 40 : pageX
 
@@ -187,14 +183,6 @@ export function shouldHidePlusButtonOnSelectionChange(
   return !anchorNode || !rootElement?.contains(anchorNode)
 }
 
-/**
- * The slash-menu insert's trigger-paragraph swap (useCardMenu keeps the
- * type-erased dispatch): paragraphs at the beginning of the document delete
- * themselves via .collapseAtStart() when their contents are replaced, so
- * the trigger paragraph is swapped for a fresh empty one — selected — and
- * the insert command then replaces that selection with the new node. No-op
- * without a range selection. Runs inside editor.update.
- */
 export function $swapTriggerParagraph(dispatch: () => void): void {
   const selection = $getSelection()
   if (!$isRangeSelection(selection)) {

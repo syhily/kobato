@@ -97,8 +97,6 @@ describe('snapshot: Comments form variants', () => {
   })
 
   it('SSR renders the interaction-gated placeholder, not the editor island', () => {
-    // The composer chunk is lazy: the first paint is the placeholder shell
-    // (byte-stable between server and client), and no contenteditable ships.
     const html = renderInRouter(
       <CommentReplyForm
         commentKey="https://example.com/posts/hello/"

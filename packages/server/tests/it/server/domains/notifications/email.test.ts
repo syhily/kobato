@@ -15,9 +15,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 
-// Real in-app fan-out + real notification rows; only the Mailgun `fetch` edge is
-// stubbed (same seam as comments/services/email.test.ts).
-
 const logWarn = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
 
@@ -42,8 +39,6 @@ const SYSTEM_NOTICE = {
 const ZH_NOTICE = createServerTranslator('zh-CN')
 const EN_NOTICE = createServerTranslator('en-US')
 
-// The opt-out footer is a server-catalog message rendered in the site locale
-// (the fixture's zh-CN).
 const NOTIFICATION_EMAIL_FOOTER = createServerTranslator('zh-CN').format('email.notification.footerNote')
 
 const mailgunConfigured = {
@@ -86,7 +81,6 @@ function viewer(id: number, role: Role, name = 'viewer'): SessionUser {
   return { id: String(id), name, email: `${name}@example.com`, website: null, role }
 }
 
-/** Drain the fire-and-forget microtask/macrotask chain when no send is expected. */
 async function settle(): Promise<void> {
   for (let i = 0; i < 4; i += 1) {
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -153,13 +147,11 @@ describe('notifications email — direct and admin kinds', () => {
     expect(body.get('subject')).toBe(`您在【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】收到一条新私信`)
     const html = body.get('html') as string
     expect(html).toContain('私信标题')
-    // Plain text rows are escaped by React — never injected as HTML.
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
     expect(html).not.toContain('<script>alert(1)</script>')
     expect(html).toContain('你好，visitor')
     expect(html).toContain(`href="${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.website}"`)
     expect(html).toContain(NOTIFICATION_EMAIL_FOOTER)
-    // The DM CTA is the site root, never the admin shell.
     expect(html).not.toContain('href="https://example.com/admin"')
   })
 
@@ -230,8 +222,6 @@ describe('notifications email — replies', () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
     expect(sentMessage(0).get('to')).toBe('admin-1@example.com')
-    // The other audience member never sees the fork, and the replier's own
-    // pre-read copy gets no mail.
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(otherVisitorId).toBeGreaterThan(0)
   })
@@ -245,14 +235,12 @@ describe('notifications email — failure isolation', () => {
 
     const row = sendDirectMessage(db, adminId, visitorId, { title: '私信', body: '正文' })
 
-    // Synchronous producer contract: the row exists before any mail work settles.
     expect(row.threadId).toBe(row.id)
     expect(unreadCount(db, visitorId)).toBe(1)
 
     await vi.waitFor(() => expect(logWarn).toHaveBeenCalled())
     const [, context] = logWarn.mock.calls[0]!
     expect(context).toMatchObject({ reason: 'network', userId: visitorId })
-    // Recipient PII stays out of the log: the user id carries the same debug value.
     expect(context).not.toMatchObject({ to: expect.anything() })
     expect(JSON.stringify(context)).not.toContain('visitor-2@example.com')
     expect(unreadCount(db, visitorId)).toBe(1)
@@ -261,7 +249,6 @@ describe('notifications email — failure isolation', () => {
   it('keeps fanning out when one recipient’s transport rejects', async () => {
     const adminId = await seedUser('admin', 'admin')
     const secondAdminId = await seedUser('admin', 'admin2')
-    // Only the FIRST send rejects; the rest of the fan-out is healthy.
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
 
     notifyAdmins(db, SYSTEM_NOTICE)
@@ -276,7 +263,6 @@ describe('notifications email — failure isolation', () => {
     expect(attempted[0]).toBe(warned.userId === adminId ? 'admin-1@example.com' : 'admin2-2@example.com')
     expect(logError).not.toHaveBeenCalled()
 
-    // Every recipient still owns their in-app row regardless of mail outcome.
     expect(unreadCount(db, adminId)).toBe(1)
     expect(unreadCount(db, secondAdminId)).toBe(1)
   })
@@ -285,8 +271,6 @@ describe('notifications email — failure isolation', () => {
     const senderModule = await import('@kobato/server/infra/email/sender.ts')
     await seedUser('admin', 'admin')
     await seedUser('admin', 'admin2')
-    // `sendEmail` itself throws (not a transport-level `ok:false`): only the
-    // per-recipient try/catch stands between this and the next admin's mail.
     const rejectOnce = vi.spyOn(senderModule, 'sendEmail').mockRejectedValueOnce(new Error('bad address'))
 
     try {
@@ -348,7 +332,6 @@ describe('notifications email — site locale at send time', () => {
     expect(html).toContain('Open the admin panel')
     expect(html).toContain('href="https://example.com/admin"')
     expect(html).toContain(expectedTitle)
-    // HTML text escapes `>` (`Settings &gt; Mail`); the copy itself is plain text.
     expect(html).toContain(EN_NOTICE.format('notification.mail.zeaburCleanup.body').replaceAll('>', '&gt;'))
   })
 })
@@ -402,8 +385,6 @@ describe('notifications email — descriptor resolution', () => {
     expect(html).toContain(expected.title)
     expect(html).toContain(expected.body)
 
-    // English legitimately equals the stored fallback; every other locale is a
-    // real translation, so neither the fallback title nor body may leak.
     if (locale !== 'en-US') {
       expect(html).not.toContain(STORED_FALLBACK_TITLE)
       expect(html).not.toContain(STORED_FALLBACK_BODY)
@@ -448,8 +429,6 @@ describe('notifications email — descriptor resolution', () => {
     setSiteLocale('en-US')
     await seedUser('admin', 'admin')
 
-    // `Unexpected token '<'` is ordinary job-error text: encoding must not throw
-    // and swallow the notification, so the row and its email both exist.
     const row = notifyAdmins(db, {
       titleKey: 'notification.job.failed.title',
       titleParams: { taskKey: '<script>alert(1)</script>' },
@@ -463,7 +442,6 @@ describe('notifications email — descriptor resolution', () => {
     expect(body.get('subject')).toBe(`${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}: System alert: ${row.title}`)
 
     const html = body.get('html') as string
-    // Plain-text params are escaped by React: the mailbox never sees live markup.
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
     expect(html).not.toContain('<script>alert(1)</script>')
     expect(html).toContain('Unexpected token')

@@ -17,9 +17,6 @@ interface TooltipProbe {
 
 function probeTooltip(popup: HTMLElement): TooltipProbe {
   const rect = popup.getBoundingClientRect()
-  // The tooltip carries `pointer-events-none` by design (hover must flow
-  // through it), which would make elementFromPoint skip it entirely. Override
-  // inline just for the probe so hit-testing follows paint order for the popup.
   const restorePointerEvents = popup.style.pointerEvents
   popup.style.pointerEvents = 'auto'
   const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)

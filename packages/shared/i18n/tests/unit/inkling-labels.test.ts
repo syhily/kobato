@@ -1,12 +1,5 @@
 // @vitest-environment happy-dom
 
-// The four per-locale Kobato Inkling overlays. The tables live in `shared` so
-// the server can ship ONE of them through the root i18n payload; the compile-
-// time key guarantee (every key legal for Inkling) is pinned in
-// `@/client/editor/inkling-labels`, the only layer allowed to import `@kobato/inkling-internal`
-// types. This suite pins the RUNTIME contract the types cannot: the used-key
-// set, the interpolation tokens, and the locale selection.
-
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
 import {
   kobatoInklingLabelsEnUS,
@@ -45,7 +38,6 @@ function tokensIn(text: string): string[] {
 
 describe('i18n/inkling-labels — used-key parity', () => {
   it('covers exactly the 157 mounted keys', () => {
-    // 156 + `image.altToggle` (the caption editor's alt toggle).
     expect(EN_KEYS).toHaveLength(157)
     for (const [locale, table] of Object.entries(TABLES)) {
       expect(Object.keys(table).sort(), locale).toEqual(EN_KEYS)
@@ -64,8 +56,6 @@ describe('i18n/inkling-labels — used-key parity', () => {
   })
 
   it('keeps every built-in English value byte-identical to Inkling DEFAULT_LABELS', () => {
-    // The English table is data (server-shipped), not an Inkling import — this
-    // parity check is the drift gate when an Inkling default changes.
     for (const key of EN_KEYS) {
       if ((HOST_MENU_KEYS as readonly string[]).includes(key)) {
         continue

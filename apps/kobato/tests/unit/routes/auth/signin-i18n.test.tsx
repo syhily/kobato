@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Stub WebAuthn so the imported admin forms don't call the real browser entry under SSR.
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn(),
   startRegistration: vi.fn(),

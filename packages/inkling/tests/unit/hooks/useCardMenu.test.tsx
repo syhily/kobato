@@ -156,7 +156,6 @@ describe('useCardMenu', () => {
     const editor = createTestEditor()
     const dispatchCommandSpy = vi.spyOn(editor, 'dispatchCommand')
 
-    // discrete so the state is committed synchronously in a root-less editor
     editor.update(
       () => {
         const paragraph = $createParagraphNode()

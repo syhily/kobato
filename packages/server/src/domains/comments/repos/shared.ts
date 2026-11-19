@@ -48,17 +48,8 @@ export type CommentWithUser = {
     : (typeof commentWithUser)[K]['_']['data'] | null
 }
 
-// Compile-time parity between the select map and the shared `CommentAndUser`
-// row type. `shared/` cannot import the drizzle schema (layering), so the
-// interface is declared there and the drift check lives here where both sides
-// are visible: adding a key to either side without the other fails the
-// typecheck. `deleteRequestedBy` is deliberately server-only — moderation
-// internals never reach the wire-facing type.
 type _commentFieldKeyParity = Assert<Equals<keyof CommentWithUser, keyof CommentAndUser | 'deleteRequestedBy'>>
 
-// Type compatibility: every selected column must be assignable to the shared
-// declaration (which is deliberately wider in a few nullable spots and widens
-// `deleteRequestedAt` to also accept pre-serialized strings).
 type _commentFieldTypeParity = Assert<Omit<CommentWithUser, 'deleteRequestedBy'> extends CommentAndUser ? true : false>
 
 export function whereTarget(target: EntityTarget) {
@@ -185,8 +176,6 @@ export interface AdminPendingRow {
 
 export const MY_COMMENTS_SOFT_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000
 
-/** Soft-delete cutoff: comments deleted after this instant stay visible to
- *  their author. Pass an explicit `cutoff` for parallel mine-queries. */
 export function mineSoftDeleteCutoff(now: Date = new Date()): Date {
   return new Date(now.getTime() - MY_COMMENTS_SOFT_DELETE_GRACE_MS)
 }

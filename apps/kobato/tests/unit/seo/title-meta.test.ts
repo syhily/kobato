@@ -9,9 +9,6 @@ import { describe, expect, it } from 'vitest'
 
 import { titleMeta } from '@/seo/title-meta.ts'
 
-// `titleMeta` resolves the bundle / i18n payload from the root match, never
-// the settings snapshot — every test clears the snapshot first, so client
-// navigation (where no server section exists) is what's actually exercised.
 type MetaEntry = MetaDescriptor & Record<string, unknown>
 
 function findByName(meta: MetaEntry[], name: string) {

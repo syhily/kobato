@@ -23,8 +23,6 @@ import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The `content.*` read procedures over the real RPCHandler JSON round-trip.
-
 const db = getTestDb()
 
 function publicUiKeys(catalog: Record<string, string>): string[] {
@@ -124,7 +122,6 @@ async function seedPage(
 
 type RpcError = { code: string; status: number; message: string }
 
-/** Shrink the `resource` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -148,7 +145,6 @@ describe('content.bootstrap', () => {
     expect(json.admin).toBe(false)
     expect(json.currentUser).toBeNull()
     expect(json.blogSettings?.siteIdentity.title).toBe('且听书吟')
-    // The fixture's font slots are empty — the resolver answers the empty shape.
     expect(json.fonts).toEqual({ global: [], post: [], code: [] })
     expect(json.csrfToken).toBe('test-csrf-token')
   })
@@ -204,19 +200,16 @@ describe('content.bootstrap', () => {
 
     expect(json.i18n.locale).toBe('zh-CN')
     expect(json.i18n.messages['common.action.save']).toBe('保存')
-    // Workspace-only families are excluded, not just `admin.*`:
     expect(json.i18n.messages['admin.settings.general.title']).toBeUndefined()
     expect(json.i18n.messages['backup.error.notFound']).toBeUndefined()
     expect(json.i18n.messages['storage.error.invalidPath']).toBeUndefined()
     expect(
       Object.keys(json.i18n.messages).filter((key) => key.startsWith('admin.') && !key.startsWith('admin.toast.')),
     ).toEqual([])
-    // Exactly the allowlisted public UI subset — email/notification/server keys never cross the wire.
     expect(Object.keys(json.i18n.messages).sort()).toEqual(publicUiKeys(uiMessagesZhCN))
     for (const key of Object.keys(serverMessagesZhCN)) {
       expect(Object.hasOwn(json.i18n.messages, key)).toBe(false)
     }
-    // The representation token travels with the payload so peers can dedupe.
     expect(json.i18n.revision).toBe(getBlogSettingsSnapshotSync().revision)
   })
 
@@ -234,12 +227,10 @@ describe('content.bootstrap', () => {
       expect(Object.keys(json.i18n.messages).sort(), path).toEqual(Object.keys(uiMessagesZhCN).sort())
       expect(json.i18n.messages['meta.title.admin.dashboard'], path).toBe('欢迎')
       expect(json.i18n.messages['backup.error.notFound'], path).toBeDefined()
-      // One complete table for the ACTIVE locale (the editor chrome's own tokens).
       expect(json.i18n.inklingLabels, path).toEqual(kobatoInklingLabelsZhCN)
       expect(json.i18n.inklingLabels['placeholder.editor'], path).toBe('开始撰写内容…')
       expect(json.i18n.inklingLabels['menu.host.solution.label'], path).toBe('解答块')
-      // The other locales' tables never travel with the payload.
-      expect(JSON.stringify(json.i18n.inklingLabels), path).not.toContain('程式碼區塊') // zh-TW
+      expect(JSON.stringify(json.i18n.inklingLabels), path).not.toContain('程式碼區塊')
       expect(JSON.stringify(json.i18n.inklingLabels), path).not.toContain('「開始撰寫內容」')
     }
 
@@ -257,7 +248,7 @@ describe('content.bootstrap', () => {
     )
     expect(localizedJson.i18n.locale).toBe('zh-TW')
     expect(localizedJson.i18n.inklingLabels).toEqual(kobatoInklingLabelsZhTW)
-    expect(JSON.stringify(localizedJson.i18n.inklingLabels)).not.toContain('开始撰写内容…') // zh-CN
+    expect(JSON.stringify(localizedJson.i18n.inklingLabels)).not.toContain('开始撰写内容…')
   })
 
   it('keeps auth/setup on the workspace catalog but without an editor label table', async () => {
@@ -271,10 +262,8 @@ describe('content.bootstrap', () => {
         i18n: { messages: Record<string, string>; inklingLabels?: Record<string, string> }
       }>(res)
 
-      // Auth copy is workspace-scoped: the whole catalog (sign-in, OTP, setup).
       expect(Object.keys(json.i18n.messages).sort(), path).toEqual(Object.keys(uiMessagesZhCN).sort())
       expect(json.i18n.messages['auth.setup.intro'], path).toBeDefined()
-      // No signed-in editor exists on these pages → no label table.
       expect(json.i18n, path).not.toHaveProperty('inklingLabels')
     }
   })
@@ -302,7 +291,6 @@ describe('content.bootstrap', () => {
     expect(Object.keys(localizedJson.i18n.messages).sort()).toEqual(publicUiKeys(uiMessagesEnUS))
     expect(localizedJson.i18n.messages['common.action.save']).toBe('Save')
 
-    // Pre-install: no settings row at all — the default locale still ships a scoped catalog.
     setBlogSettingsBundleForTests(null)
     const preinstall = await callRpc(
       '/content/bootstrap',
@@ -487,7 +475,6 @@ describe('content.posts.bySlug', () => {
   })
 
   it('gates the draft preview by role and ownership: anonymous 404s, the author sees their draft', async () => {
-    // makeAuthedCtx defaults to user id 1 — the draft's author.
     await seedDraftPost('secret', 'Secret', 1)
 
     const anonymous = await callRpc('/content/posts/bySlug', { slug: 'secret' }, makePublicCtx({ db }))
@@ -507,7 +494,6 @@ describe('content.posts.bySlug', () => {
   })
 
   it('never 304s a draft preview against the stale published ETag (unpublish keeps published_at)', async () => {
-    // `published_at` survives an unpublish, so the published ETag must never revalidate a draft body.
     const rows = await db
       .insert(postTable)
       .values({
@@ -539,7 +525,6 @@ describe('content.posts.bySlug', () => {
   })
 
   it('never 304s a first-draft preview (constant etag over null published_at)', async () => {
-    // Never published: `updated` is null, so a constant ETag would revalidate a stale draft.
     const postId = await seedDraftPost('fresh', 'Fresh', 1)
     const firstPreviewEtag = weakEtag(['post', String(postId), undefined])
 
@@ -556,8 +541,6 @@ describe('content.posts.bySlug', () => {
   })
 
   it('serves the saved body_html projection raw — sanitization is the render boundary', async () => {
-    // Raw-at-rest invariant: the wire DTO carries the UNSANITIZED projection and the public body
-    // renderer owns the 'body'-strategy sanitize pass — no server-side stripping or escaping.
     const raw = '<p>raw <strong>body</strong></p><form action="https://evil.example"><button>x</button></form>'
     await seedPost({ slug: 'raw-body', publishedAt: new Date('2024-01-01') })
     await db.update(contentTable).set({ bodyHtml: raw })
@@ -611,7 +594,6 @@ describe('content.pages.bySlug', () => {
     expect(typeof json.etag).toBe('string')
     expect(json.payload.page.permalink).toBe('/about')
     expect(json.payload.showFriends).toBe(false)
-    // Empty Lexical body and no projection columns: the compute-on-read fallback yields ''.
     expect(json.payload.bodyHtml).toBe('')
   })
 
@@ -674,8 +656,6 @@ describe('content.pages.bySlug', () => {
     const first = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
     const publishedEtag = (await parseRpcJson<{ etag: string }>(first)).etag
 
-    // `draft: true` must skip revalidation, or a match answers `not-modified` and the draft never
-    // renders.
     const res = await callRpc(
       '/content/pages/bySlug',
       { slug: 'about', draft: true, ifNoneMatch: publishedEtag },

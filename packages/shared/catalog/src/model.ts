@@ -190,7 +190,6 @@ export interface CommentFormUser {
   admin: boolean
 }
 
-// Internal catalog records: persistence columns used by server hydration.
 export interface Post extends ClientPost {
   /** Saved full-fidelity projection column; NULL when only the parsed state exists (compute-on-read). */
   bodyHtml: string | null

@@ -5,13 +5,8 @@ import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// One fixture per UserOperationsCard gating branch (role, deletedAt, isMuted,
-// pendingCount, commentCount, passkeyCount), covering the deleted, anonymous and
-// passkey-edge arms plus a resolved UserDetailView.
-
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
-  // Key-presence checks honour null/false/0 overrides (?? would replace them).
   const pick = <K extends keyof AdminUserDto>(key: K, fallback: AdminUserDto[K]): AdminUserDto[K] =>
     key in overrides ? (overrides[key] as AdminUserDto[K]) : fallback
   return {
@@ -60,7 +55,6 @@ describe('snapshot: UserOperationsCard', () => {
     const html = renderOpsCard(user)
     expect(html).toContain('恢复用户')
     expect(html).not.toContain('软删除用户')
-    // Mute gates on role !== 'admin' (not deletedAt) — restore swap is the deleted-branch signal.
     expect(html).not.toContain('通过全部待审')
   })
 
@@ -76,7 +70,6 @@ describe('snapshot: UserOperationsCard', () => {
     expect(html).not.toContain('发送重置邮件')
     expect(html).not.toContain('强制全部登出')
     expect(html).not.toContain('清除 Passkey')
-    // role=null still gets mute (role !== 'admin') + bulk-approve (pendingCount > 0).
     expect(html).toContain('通过全部待审')
   })
 
@@ -111,9 +104,7 @@ describe('snapshot: UserOperationsCard', () => {
   it('shows "解除禁言" for a muted non-admin user', () => {
     const user = makeAdminUser({ id: 'muted-1', role: 'visitor', isMuted: true })
     const html = renderOpsCard(user)
-    // The button is the only place this compound word appears as a label.
     expect(html).toContain('解除禁言')
-    // Volume2 (not VolumeOff) confirms the unmute variant.
     expect(html).toContain('lucide-volume-2')
     expect(html).not.toContain('lucide-volume-off')
   })
@@ -133,14 +124,11 @@ describe('snapshot: UserOperationsCard', () => {
   it('shows the role select for another user with a non-null role', () => {
     const user = makeAdminUser({ id: 'other-1', role: 'author' })
     const html = renderOpsCard(user, 'self-1')
-    // Trigger renders the current role label; the options live in a SelectContent portal that never emits under SSR.
     expect(html).toContain('角色')
     expect(html).toContain('data-slot="select-trigger"')
     expect(html).toContain('data-slot="select-value">作者</span>')
   })
 })
-
-// useQuery (user + comments) is stubbed so SSR resolves the fixture user.
 
 const queryMocks = vi.hoisted(() => ({
   userQuery: {
@@ -165,7 +153,6 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    // useQuery call order: 1st = user, 2nd = comments; hoisted counter resets per render.
     useQuery: () => {
       queryCounter.n += 1
       return queryCounter.n === 1 ? queryMocks.userQuery : queryMocks.commentsQuery
@@ -231,7 +218,6 @@ describe('snapshot: UserDetailView', () => {
     expect(html).toContain('diana@example.com')
     expect(html).toContain('作者')
     expect(html).toContain('data-slot="select-trigger"')
-    // Status badge: not muted, not deleted => 正常.
     expect(html).toContain('正常')
     expect(html).toContain('VIP')
     expect(html).toContain('统计信息')
@@ -301,7 +287,6 @@ describe('snapshot: UserDetailView', () => {
         '/admin/security/users/dm-1',
       ),
     )
-    // deletedAt takes precedence over isMuted in the badge chain.
     expect(html).toContain('已删除')
     expect(html).not.toContain('已禁言')
     expect(html).toContain('恢复用户')

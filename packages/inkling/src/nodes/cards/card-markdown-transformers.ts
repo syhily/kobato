@@ -28,10 +28,6 @@ import { $createVideoNode, type VideoNode } from '@kobato/inkling-internal/nodes
  * declarations must never import wrappers.
  */
 
-/**
- * The named fence exception: image speaks standard `![alt](src)` markdown, so its
- * transformer is a hand-written element transformer, not an `inkling:image` fence one.
- */
 export const IMAGE_CARD_TRANSFORMER: ElementTransformer = {
   dependencies: [ImageNode],
   export: (node) => {
@@ -79,10 +75,6 @@ export function createCardTransformer({
     replace: (rootNode, _children, _startMatch, _endMatch, linesInBetween, _isImport) => {
       const raw = linesInBetween?.join('\n') ?? ''
       const parsed: unknown = raw.trim() ? JSON.parse(raw) : {}
-      // JSON.parse hands back any JSON value; the payload guards below only
-      // describe wrong-typed FIELDS on an object, so a non-object body (fence
-      // `null`, `42`) must fail here — naming the card — instead of surfacing
-      // a bare "Cannot read properties of null" TypeError from `data.<field>`
       if (typeof parsed !== 'object' || parsed === null) {
         throw new TypeError(
           `card markdown transformer: expected '${card}' fence body to be a JSON object, got ${describeValue(parsed)}`,
@@ -108,9 +100,6 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-// `createNode` receives JSON.parse output from the card fence body: validate the fields
-// it reads instead of asserting them, so malformed markdown throws a clear TypeError at
-// the transformer boundary naming the card and field.
 function describeValue(value: unknown): string {
   return value === null ? 'null' : Array.isArray(value) ? 'an array' : typeof value
 }
@@ -227,7 +216,6 @@ const CARD_FENCE_PAYLOADS: Record<FenceCardNodeType, CardFencePayload> = {
   },
   gallery: {
     getData: (node: GalleryNode) => ({
-      // mid-upload images carry no `src` yet; skip them rather than export `undefined`
       images: node.images.flatMap((image) => (typeof image.src === 'string' ? [{ src: image.src }] : [])),
       caption: node.caption,
     }),

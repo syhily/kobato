@@ -5,14 +5,6 @@ import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The ViewsChart query contract: the client derives the bucket `unit` from
-// the resolved range and always sends `clientTimezone`. The oRPC query-utils
-// module is mocked to capture the exact input object; react-query uses the
-// canonical mock (pending query → the component stays on the SSR skeleton
-// branch, so no chart chunk is needed). The URL state is hoisted to the
-// route module, so the harness mimics the route composition: real
-// useAnalyticsState → provider → panel.
-
 const control = mockTanstackQuery()
 
 const captured = vi.hoisted(() => ({ inputs: [] as Record<string, unknown>[] }))
@@ -86,7 +78,6 @@ describe('ui/admin/analytics/ViewsChart query input', () => {
     expect(input.preset).toBe('last-1h')
     expect(input.startAt).toBeUndefined()
     expect(input.endAt).toBeUndefined()
-    // last-1h derives the minute unit from the computed preset range.
     expect(input.unit).toBe('minute')
   })
 })

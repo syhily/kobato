@@ -1,21 +1,3 @@
-// Shared "scan the document on each non-history update" gate for plugins that
-// rewrite just-typed content (EmEnDash dashes, HorizontalRule's '---').
-//
-// Three skips, in unobservable order:
-//
-// 1. History tags (HISTORIC/HISTORY_PUSH/HISTORY_MERGE) — the undo-resurrection
-//    guard: undo restores the pre-scan text, which matches the trigger again, so
-//    without this skip the scan re-fires and resurrects the replacement the user
-//    just undid. Skipping 'history-push' also keeps a caller's own tagged scan
-//    commit from re-triggering its scan.
-// 2. Composing — never rewrite text mid-IME-composition. Checked at listener time:
-//    a listener-scheduled update flushes inside the same commit, so no
-//    compositionstart/end can flip the flag between read points.
-// 3. Empty dirty sets — a selection-only commit cannot have produced new trigger
-//    text; `dirty` picks which sets count ('leaves' when only text/leaf changes
-//    can carry the trigger, 'leaves-or-elements' when an element-only change can,
-//    as for HR's matching paragraph).
-
 import {
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,

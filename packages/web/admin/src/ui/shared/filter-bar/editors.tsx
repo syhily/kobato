@@ -29,9 +29,6 @@ import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/opt
 import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-// Pill value editors — one per field `kind`; the pill owns serialization.
-
-/** Static options dropdown; searchable sets render the local-filter list (w-56), plain sets the compact list (w-32). */
 export function OptionsValueEditor<K extends string>({
   field,
   value,
@@ -88,7 +85,6 @@ export function OptionsValueEditor<K extends string>({
   )
 }
 
-/** Async combobox backed by the field's debounced server search (comments page / author, my-comments entity). */
 export function SearchComboboxEditor<K extends string>({
   field,
   value,
@@ -179,7 +175,6 @@ function TextOperatorTrigger({
   )
 }
 
-/** Operator dropdown + free text, committed on blur / Enter (comments text filter). */
 export function TextFilterEditor<K extends string>({
   field,
   value,

@@ -13,14 +13,9 @@ import { Buffer } from 'node:buffer'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 
-// Cover fetch budget: TTFB + body, and a hard byte cap. A cover can never
-// justify more — the render is best-effort and cached by the caller.
 const COVER_TIMEOUT_MS = 5_000
 const COVER_MAX_BYTES = 8 * 1024 * 1024
 
-/** Cover reference → absolute URL. Site-owned refs (`/storage/…`,
- *  `/images/…`) resolve against the site origin; anything else must already
- *  be http(s). Null means "not fetchable" — never hand it to `loadImage`. */
 function resolveCoverUrl(cover: string, website: string): string | null {
   if (cover.startsWith('/') && !cover.startsWith('//')) {
     return website === '' ? null : `${website}${cover}`
@@ -32,7 +27,6 @@ function resolveCoverUrl(cover: string, website: string): string | null {
  *  redirects, no timeout, no size cap, no SSRF guard), so cover bytes are
  *  fetched through `safeFetch` and decoded from the buffer. */
 async function loadCover(cover: string, website: string): Promise<Image> {
-  // Inline images decode locally — no network, so no guard applies.
   if (/^\s*data:/i.test(cover)) {
     return loadImage(cover)
   }
@@ -46,7 +40,6 @@ async function loadCover(cover: string, website: string): Promise<Image> {
     operation: 'og.cover',
   })
   if (!result.ok) {
-    // A cover URL may carry a signed query string — log the redacted shape.
     throw new Error(`OG cover fetch failed (${result.reason}): ${redactUrlForLog(url)}`)
   }
   return loadImage(Buffer.from(result.body))
@@ -127,9 +120,6 @@ function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | n
   return ensureCanvasFont('og', settings)
 }
 
-/** `settings` is the caller's PINNED snapshot (the OG resource passes the same request
- *  capture whose revision keys the cache entry); omitted = the current process snapshot
- *  for background/test callers. */
 export async function drawOpenGraph(
   { title, summary, cover }: OpenGraphProps,
   settings?: BlogSettingsBundle | null,

@@ -1,10 +1,3 @@
-// Trimmed inkling comment composer — no cards, slash menu, or card insert; kobato glue
-// (node set, markdown transformers, legacy math downgrade) lives in `./editor/`. Load only
-// through `./LazyCommentBodyEditor`: this module, the inkling island, and
-// `inkling-comment-editor.css` must stay in a lazy chunk so the public post page's static
-// import graph stays editor-free. `isEmojiEnabled={false}` keeps the emoji-mart chunk out of
-// nested editors; `codeEditor="plain"` avoids the CodeMirror chunk here.
-
 import '@kobato/inkling/styles/index.css'
 import '@kobato/web-public/styles/inkling-comment-editor.css'
 import type { InklingLabelsInput } from '@kobato/inkling'
@@ -34,8 +27,6 @@ export interface CommentBodyEditorProps {
   labels?: InklingLabelsInput
 }
 
-/** An unparseable seed falls back to the empty state instead of crashing the composer;
- *  legacy math cards ride the fence downgrade so they open as editable ```math blocks. */
 function safeInitialState(body: CommentEditorState): CommentEditorState {
   const result = safeValidateCommentEditorState(body)
   return result.ok ? downgradeLegacyCommentMath(result.state) : EMPTY_COMMENT_EDITOR_STATE
@@ -92,8 +83,6 @@ export function CommentBodyEditor({
           readOnly={disabled === true}
           onChange={handleChange}
           registerAPI={registerAPI}
-          // An empty fragment, not `placeholderText=""`: the latter still mounts
-          // inkling's absolutely positioned placeholder div.
           placeholder={<></>}
           contentEditableClassName="typeset typeset-comment"
           markdownTransformers={COMMENT_MARKDOWN_TRANSFORMERS}

@@ -4,10 +4,6 @@
  * drift from the upstream algorithm.
  */
 
-/**
- * Encodes an RGBA image to a ThumbHash. RGB should not be
- * premultiplied by A. Input must be ≤100×100 (`w*h*4` pixels).
- */
 export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): Uint8Array {
   if (w > 100 || h > 100) {
     throw new Error(`${w}x${h} doesn't fit in 100x100`)
@@ -33,16 +29,15 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
   }
 
   const hasAlpha = avgA < w * h
-  const lLimit = hasAlpha ? 5 : 7 // Use fewer luminance bits if there's alpha
+  const lLimit = hasAlpha ? 5 : 7
   const lx = max(1, round(lLimit * (w / max(w, h))))
   const ly = max(1, round(lLimit * (h / max(w, h))))
 
-  const l: number[] = [] // luminance
-  const p: number[] = [] // yellow - blue
-  const q: number[] = [] // red - green
-  const a: number[] = [] // alpha
+  const l: number[] = []
+  const p: number[] = []
+  const q: number[] = []
+  const a: number[] = []
 
-  // Convert the image from RGBA to LPQA (composite atop the average color)
   for (let i = 0, j = 0; i < w * h; i++, j += 4) {
     const alpha = rgba[j + 3] / 255
     const r = avgR * (1 - alpha) + (alpha / 255) * rgba[j]
@@ -54,7 +49,6 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
     a[i] = alpha
   }
 
-  // Encode using the DCT into DC (constant) and normalized AC (varying) terms
   function encodeChannel(channel: number[], nx: number, ny: number): [number, number[], number] {
     let dc = 0
     const ac: number[] = []
@@ -94,7 +88,6 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
   const [qDC, qAC, qScale] = encodeChannel(q, 3, 3)
   const [aDC, aAC, aScale] = hasAlpha ? encodeChannel(a, 5, 5) : [0, [], 0]
 
-  // Write the constants
   const isLandscape = w > h
   const header24 =
     round(63 * lDC) |
@@ -112,7 +105,6 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
     hash.push(round(15 * aDC) | (round(15 * aScale) << 4))
   }
 
-  // Write the varying factors
   const acChannels = hasAlpha ? [lAC, pAC, qAC, aAC] : [lAC, pAC, qAC]
   for (const ac of acChannels) {
     for (const f of ac) {
@@ -124,7 +116,6 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
   return new Uint8Array(hash)
 }
 
-/** Decodes a ThumbHash to an RGBA image (RGB not premultiplied by A). */
 export function thumbHashToRGBA(hash: ArrayLike<number>): {
   w: number
   h: number
@@ -132,7 +123,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
 } {
   const { PI, min, max, cos, round } = Math
 
-  // Read the constants
   const header24 = hash[0] | (hash[1] << 8) | (hash[2] << 16)
   const header16 = hash[3] | (hash[4] << 8)
   const lDC = (header24 & 63) / 63
@@ -148,7 +138,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
   const aDC = hasAlpha ? (hash[5] & 15) / 15 : 1
   const aScale = hasAlpha ? (hash[5] >> 4) / 15 : 0
 
-  // Read the varying factors (boost saturation by 1.25x to compensate for quantization)
   const acStart = hasAlpha ? 6 : 5
   let acIndex = 0
   function decodeChannel(nx: number, ny: number, scale: number): number[] {
@@ -167,7 +156,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
   const qAC = decodeChannel(3, 3, qScale * 1.25)
   const aAC = hasAlpha ? decodeChannel(5, 5, aScale) : null
 
-  // Decode using the DCT into RGB
   const ratio = thumbHashToApproximateAspectRatio(hash)
   const w = round(ratio > 1 ? 32 : 32 * ratio)
   const h = round(ratio > 1 ? 32 / ratio : 32)
@@ -189,14 +177,12 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
         fy[cy] = cos((PI / h) * (y + 0.5) * cy)
       }
 
-      // Decode L
       for (let cy = 0, j = 0; cy < ly; cy++) {
         for (let cx = cy ? 0 : 1, fy2 = fy[cy] * 2; cx * ly < lx * (ly - cy); cx++, j++) {
           l += lAC[j] * fx[cx] * fy2
         }
       }
 
-      // Decode P and Q
       for (let cy = 0, j = 0; cy < 3; cy++) {
         for (let cx = cy ? 0 : 1, fy2 = fy[cy] * 2; cx < 3 - cy; cx++, j++) {
           const f = fx[cx] * fy2
@@ -205,7 +191,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
         }
       }
 
-      // Decode A
       if (hasAlpha && aAC) {
         for (let cy = 0, j = 0; cy < 5; cy++) {
           for (let cx = cy ? 0 : 1, fy2 = fy[cy] * 2; cx < 5 - cy; cx++, j++) {
@@ -227,7 +212,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
   return { w, h, rgba }
 }
 
-/** Approximate aspect ratio of the original image (width / height). */
 export function thumbHashToApproximateAspectRatio(hash: ArrayLike<number>): number {
   const header = hash[3]
   const hasAlpha = hash[2] & 0x80
@@ -237,11 +221,6 @@ export function thumbHashToApproximateAspectRatio(hash: ArrayLike<number>): numb
   return lx / ly
 }
 
-/**
- * Encodes an RGBA image to a PNG data URL (RGB not premultiplied by
- * A). Optimized for speed, not size — uncompressed. Input must be
- * ≤100×100 (`w*h*4` pixels).
- */
 export function rgbaToDataURL(w: number, h: number, rgba: ArrayLike<number>): string {
   const row = w * 4 + 1
   const idat = 6 + h * (5 + row)

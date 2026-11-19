@@ -14,8 +14,6 @@ export function createMenuNavigator() {
     subscribe: store.subscribe,
 
     moveUp(maxItemIndex: number) {
-      // an empty menu (maxItemIndex -1) has no selectable item — stay on 0
-      // instead of wrapping to -1
       if (maxItemIndex < 0) {
         return
       }
@@ -27,8 +25,6 @@ export function createMenuNavigator() {
     },
 
     moveDown(maxItemIndex: number) {
-      // an empty menu (maxItemIndex -1) has no selectable item — stay on 0
-      // instead of stepping to 1
       if (maxItemIndex < 0) {
         return
       }

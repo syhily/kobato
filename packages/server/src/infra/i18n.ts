@@ -110,8 +110,6 @@ export function createServerTranslator(locale: AppLocale): ServerTranslator {
   function requireMessage(id: MessageId): string {
     const message = messages[id]
     if (message === undefined) {
-      // The catalog types make this unreachable; a dynamic legacy key that
-      // still arrives here is a bug worth stopping in dev and test.
       if (NODE_ENV !== 'production') {
         throw new Error(`Unknown i18n message id: ${id}`)
       }

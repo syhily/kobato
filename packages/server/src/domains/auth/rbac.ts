@@ -18,10 +18,6 @@ export function requireRole(user: SessionUser | undefined, min: Role): asserts u
   requireUserRole(user, min)
 }
 
-// Two predicate families, kept separate on purpose:
-// `is{Entity}Owner` — strict ownership, no admin bypass (own-routes);
-// `canEdit{Entity}` — admin OR owner (admin surfaces).
-
 function ownerOf<K extends string>(field: K) {
   return (viewer: ViewerIdentity, row: Record<K, number | null>): boolean => {
     const owner = row[field]

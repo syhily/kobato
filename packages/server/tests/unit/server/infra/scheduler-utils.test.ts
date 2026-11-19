@@ -1,8 +1,6 @@
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The recorder is mocked: this file asserts the scheduler's instrumentation
-// CALLS; real row writes are covered by the recorder's integration tests.
 vi.mock('@kobato/server/infra/db/job-run-recorder.ts', () => ({
   startJobRun: vi.fn(() => 42),
   finishJobRun: vi.fn(),
@@ -34,21 +32,18 @@ describe('infra/scheduler-utils — computeNextRun', () => {
   })
 
   it('computes next weekly run on same day when time has not passed', () => {
-    // Monday 2024-01-15 10:00 CST
     const now = new Date('2024-01-15T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'weekly', hour: 14, minute: 0, dayOfWeek: 1 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-15T14:00:00.000+08:00')
   })
 
   it('computes next weekly run on same day when time has passed', () => {
-    // Monday 2024-01-15 16:00 CST
     const now = new Date('2024-01-15T16:00:00+08:00')
     const next = computeNextRun({ frequency: 'weekly', hour: 14, minute: 0, dayOfWeek: 1 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-22T14:00:00.000+08:00')
   })
 
   it('computes next weekly run for a different day', () => {
-    // Monday 2024-01-15 10:00 CST, target is Wednesday
     const now = new Date('2024-01-15T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'weekly', hour: 3, minute: 0, dayOfWeek: 3 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-17T03:00:00.000+08:00')
@@ -73,7 +68,6 @@ describe('infra/scheduler-utils — computeNextRun', () => {
   })
 
   it('handles Sunday as dayOfWeek 7', () => {
-    // Monday 2024-01-15 10:00 CST, target is Sunday
     const now = new Date('2024-01-15T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'weekly', hour: 3, minute: 0, dayOfWeek: 7 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-21T03:00:00.000+08:00')
@@ -121,8 +115,6 @@ describe('infra/scheduler-utils — computeNextRun', () => {
 })
 
 describe('infra/scheduler-utils — scheduleJob long-delay chunking', () => {
-  // Node clamps setTimeout delays ≥ 2^31-1 ms to 1 ms, so long delays must
-  // never reach a single setTimeout call.
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
 
   beforeEach(() => {
@@ -260,7 +252,6 @@ describe('infra/scheduler-utils — task live state & history', () => {
     const nextDelayMs = vi.fn().mockReturnValueOnce(THIRTY_DAYS_MS).mockReturnValue(60_000)
     scheduleJob({ name: 'test-chunked-state', task: { key: 'backup' }, nextDelayMs, run: vi.fn() })
 
-    // A chunk boundary is neither suspended nor due: the initial state survives.
     expect(getSchedulerTaskState('backup')).toEqual({
       suspended: false,
       nextRunAt: null,

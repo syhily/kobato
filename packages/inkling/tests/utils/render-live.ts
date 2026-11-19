@@ -7,9 +7,6 @@ import defaultTheme from '@kobato/inkling-internal/themes/default'
 import { JSDOM } from 'jsdom'
 import { createEditor } from 'lexical'
 
-// The HTML render harness: the two render paths the suite pins against, plus
-// the single jsdom construction site (jsdom is the pinned optional peer).
-
 export function createTestDom(html?: string): JSDOM {
   return new JSDOM(html)
 }

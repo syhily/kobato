@@ -1,5 +1,3 @@
-// Flat heading list stored on the published row (`content.headings`),
-// collected at publish time; kept isomorphic so UI can build TOCs.
 export interface MarkdownHeading {
   depth: number
   slug: string
@@ -28,7 +26,6 @@ export function generateToC(headings: MarkdownHeading[], opts: TocOpts | false):
   return toc
 }
 
-// Inject a ToC entry as deep in the tree as its `depth` property requires.
 function injectChild(items: TocItem[], item: TocItem): void {
   const lastItem = items.at(-1)
   if (!lastItem || lastItem.depth >= item.depth) {

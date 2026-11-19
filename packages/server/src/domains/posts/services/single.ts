@@ -56,9 +56,6 @@ async function findPostWithRevisionBySlug(
   )
 }
 
-/**
- * Slug OR alias match — json_each unpacks the JSON-array alias column in SQL.
- */
 function whereSlugOrAlias(slug: string): SQL {
   return sql`EXISTS (SELECT 1 FROM json_each(${postMetaTable.alias}) WHERE json_each.value = ${slug})`
 }

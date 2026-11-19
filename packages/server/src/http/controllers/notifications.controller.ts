@@ -48,9 +48,6 @@ const thread = impl.thread.handler(({ input, context }) =>
   getThread(context.db, context.viewer, Number(input.threadId), context.localization.locale),
 )
 
-// Replies write to other users' inboxes AND mail the admin team — gate the
-// per-IP resource bucket and a per-user bucket. Both limiters ride the
-// implementer so they run BEFORE the contract's input validation.
 const reply = impl
   .use(resourceRateLimit)
   .use(notificationReplyRateLimit)

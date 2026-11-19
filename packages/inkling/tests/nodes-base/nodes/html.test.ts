@@ -240,7 +240,6 @@ describe('BaseHtmlNode', function () {
           expect(result.type).toBe('value')
           const element = result.element as HTMLTextAreaElement
 
-          // do not prettify, it will add a closing tag to the compared string causing a false pass
           expect(element.value).toBe(
             '\n<!--inkling-card-begin: html-->\n<div style="color:red">\n<!--inkling-card-end: html-->\n',
           )

@@ -1,15 +1,9 @@
-// HTTP client for out-of-process e2e journeys: drives a real kobato instance
-// (the SEA binary booted by tools/pack/src/sea/e2e.ts, or any live
-// instance reached by base URL) over plain fetch with a minimal cookie jar —
-// nothing in-process.
-
 export interface E2eEnv {
   baseUrl: string
   adminEmail: string
   adminPassword: string
 }
 
-/** Read and validate the env contract injected by tools/pack/src/sea/e2e.ts. */
 export function e2eEnv(): E2eEnv {
   const { KOBATO_E2E_BASE_URL, KOBATO_E2E_ADMIN_EMAIL, KOBATO_E2E_ADMIN_PASSWORD } = process.env
   if (!KOBATO_E2E_BASE_URL || !KOBATO_E2E_ADMIN_EMAIL || !KOBATO_E2E_ADMIN_PASSWORD) {
@@ -46,7 +40,6 @@ export class E2eClient {
     if (cookie !== undefined) {
       headers.set('cookie', cookie)
     }
-    // Redirects are asserted explicitly in e2e — never follow silently.
     const res = await fetch(`${this.baseUrl}${path}`, { ...init, headers, redirect: 'manual' })
     this.storeCookies(res)
     return res
@@ -74,10 +67,6 @@ export class E2eClient {
   }
 }
 
-/**
- * The anonymous visitor's CSRF token: the one 64-hex value in the page. Use only on pages
- * without 64-hex avatars or branding etags.
- */
 export async function getPublicCsrfToken(client: E2eClient, path: string): Promise<string> {
   const res = await client.get(path)
   if (res.status !== 200) {
@@ -91,10 +80,6 @@ export async function getPublicCsrfToken(client: E2eClient, path: string): Promi
   return unique[0]
 }
 
-/**
- * Real signin over HTTP. Returns the action response (302 + Set-Cookie on success) and the
- * PRE-login CSRF token, valid only for the login POST; use `getAdminCsrfToken` for RPCs.
- */
 export async function loginAdmin(client: E2eClient, env: E2eEnv): Promise<{ res: Response; csrfToken: string }> {
   const page = await client.get('/admin/signin')
   const html = await page.text()
@@ -111,8 +96,6 @@ export async function loginAdmin(client: E2eClient, env: E2eEnv): Promise<{ res:
   return { res, csrfToken }
 }
 
-/** The authenticated session's CSRF token — the one 64-hex value in the
- *  /admin document. Required as `x-csrf-token` on every /rpc/* call. */
 export async function getAdminCsrfToken(client: E2eClient): Promise<string> {
   const res = await client.get('/admin')
   if (res.status !== 200) {

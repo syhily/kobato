@@ -2,7 +2,6 @@ import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock the IndexedDB-backed draft store; each test programs the return values.
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
@@ -82,7 +81,6 @@ describe('useLocalDraft — synchronous render branches', () => {
       }),
     )
     result.clearDraft()
-    // With key === null the early-return guards the removeDraft call.
     expect(draftStore.remove).not.toHaveBeenCalled()
   })
 
@@ -95,16 +93,12 @@ describe('useLocalDraft — synchronous render branches', () => {
   })
 
   it('clearDraft sweeps every rotated-token draft for the entity and broadcasts the clear once a key is derived', () => {
-    // The key embeds the clientRevisionToken, so clearing only
-    // the current-token key orphans every rotated predecessor. The edit
-    // adapter clears by entity prefix instead.
     const result = renderHook(() =>
       useLocalDraft(config, { entityId: '1', clientRevisionToken: 'rev1', body: emptyBody }),
     )
     result.clearDraft()
     expect(draftStore.removeByPrefix).toHaveBeenCalledWith('cms-post-draft:1:')
     expect(draftStore.remove).not.toHaveBeenCalled()
-    // A BroadcastChannel was opened to fan out the clear event.
     expect(FakeBroadcastChannel.instances.length).toBeGreaterThan(0)
   })
 })

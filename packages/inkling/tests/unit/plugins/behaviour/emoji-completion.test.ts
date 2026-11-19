@@ -72,8 +72,6 @@ interface TextSegment {
   format?: 'bold' | 'code'
 }
 
-// Segments that would merge (adjacent same-format text) must use
-// buildSplitParagraph instead.
 async function buildParagraph(
   editor: LexicalEditor,
   segments: TextSegment[],
@@ -314,10 +312,6 @@ describe('$insertSelectedEmoji', () => {
 
     let committed: EmojiCommitResult | null = null
     await drainEnqueuedUpdates(editor, () => {
-      // split the query node out the way the typeahead's
-      // selectOptionAndCleanUp does ($splitNodeContainingQuery) — the split
-      // and the surgery share one update because same-format text nodes
-      // re-merge at commit time
       const selection = $getSelection()
       if (!$isRangeSelection(selection)) {
         throw new Error('expected a range selection')
@@ -350,9 +344,6 @@ describe('$insertSelectedEmoji', () => {
   })
 
   it('consumes a trigger colon the typeahead split left in the previous sibling', async () => {
-    // the typeahead re-split the query after the colon — [`:`][`tac`] — and
-    // handed the surgery only the `tac` node; without the sibling consumption
-    // the commit leaves the stray ':' behind (the e2e flake)
     const editor = createTestEditor()
     await buildParagraph(editor, [{ text: ':tac' }], { segment: 0, offset: 4 })
 

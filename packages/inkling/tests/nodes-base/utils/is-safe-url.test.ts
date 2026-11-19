@@ -29,18 +29,12 @@ describe('isSafeUrl', () => {
   })
 
   it('rejects mailto, tel, and ftp URLs', () => {
-    // export-side navigation policy keeps only http/https/relative. The input
-    // side (`isPasteableLinkUrl` in `@kobato/inkling-internal/plugins/behaviour/clipboard-protocol`)
-    // deliberately accepts these schemes; the divergence is pinned in
-    // `tests/inkling/unit/plugins/behaviour/clipboard-protocol.test.tsx`.
     expect(isSafeUrl('mailto:test@example.com')).toBe(false)
     expect(isSafeUrl('tel:+1234567890')).toBe(false)
     expect(isSafeUrl('ftp://example.com/file.txt')).toBe(false)
   })
 
   it('rejects URLs with control characters or whitespace inside the scheme', () => {
-    // browsers strip ASCII tab/LF/CR before scheme parsing, so these would
-    // otherwise be treated as relative URLs and navigated as javascript:
     expect(isSafeUrl('jav\tascript:alert(1)')).toBe(false)
     expect(isSafeUrl('java\nscript:alert(1)')).toBe(false)
     expect(isSafeUrl('java\rscript:alert(1)')).toBe(false)

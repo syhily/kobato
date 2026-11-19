@@ -3,9 +3,6 @@ import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// Contract: every TEST_BLOG_SETTINGS_BUNDLE section must parse against its
-// registry schema — the fixture seeds the whole suite's settings snapshot,
-// so drift would surface as render/RPC failures far from the cause.
 describe('contract: blog-settings fixture matches the section registry', () => {
   it('provides a non-null value for every declared section', () => {
     for (const section of SETTINGS_SECTIONS) {

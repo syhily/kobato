@@ -17,13 +17,11 @@ export interface MigrateDatabaseOptions {
   logger?: MigrationLogger
 }
 
-/** Resolve from the installed package, not a bundled chunk's URL or the process cwd. */
 export function defaultMigrationsFolder(): string {
   const require = createRequire(import.meta.url)
   return join(dirname(require.resolve('@kobato/db/package.json')), 'drizzle')
 }
 
-/** Migrate on the caller's connection, including its observability lifecycle. */
 export function migrateDatabase(db: Database, options: MigrateDatabaseOptions = {}): void {
   const folder = options.migrationsFolder ?? defaultMigrationsFolder()
   const logger = options.logger

@@ -20,7 +20,6 @@ import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/
 import { assertPageExists, type PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
-// Warm key must mirror the OG resolver (`http/resources/images.ts`): empty summary → site description.
 function pageOgTarget(meta: PageMetaRow) {
   return {
     slug: meta.slug,
@@ -74,7 +73,6 @@ export const pageDescriptor: MetaEntityDescriptor<
     }),
     async afterMutation(db, meta) {
       invalidateContent({ entity: 'page' })
-      // Re-warm only when the mutation leaves a publicly reachable page.
       if (isLive(meta)) {
         warmContentRenderCaches(pageOgTarget(meta))
       }

@@ -56,8 +56,6 @@ describe('getModifierState', () => {
 })
 
 describe('protocol-owned modifier listeners', () => {
-  // The protocol itself writes the modifier state from real document
-  // keydown/keyup events — no plugin needs to mount its own listeners.
   it('tracks Shift from real key events with no plugin mounted', () => {
     const state = getModifierState(createTestEditor())
 
@@ -157,12 +155,6 @@ describe('isPasteableLinkUrl', () => {
 
 describe('input/export url policy divergence', () => {
   it('pins the deliberate scheme divergence across the export seam', () => {
-    // Two deliberate policies that do not compose: the input side accepts
-    // ftp/mailto/tel as pasteable links, while the export side's navigation
-    // policy (`isSafeUrl`, behind the render context's `safeUrl`) keeps only
-    // http/https/relative. A pasted ftp/mailto/tel link is live in the editor
-    // and blanked on export — documented and pinned here, deliberately not
-    // aligned.
     expect(isPasteableLinkUrl('ftp://example.com/file')).toBe(true)
     expect(isSafeUrl('ftp://example.com/file')).toBe(false)
   })

@@ -1,18 +1,3 @@
-// OpenObserve OTel runtime: one of the two server modules allowed to import the
-// OpenTelemetry SDKs (the other is `logs-runtime.ts`, which this constructs),
-// reached through a dynamic import from `domains/observability/runtime-manager.ts`
-// so the SDK chunk loads only when tracing is configured. `facade.ts` stays the
-// application-facing surface.
-//
-// - Resource attributes come from the fixed three-key `resource.ts` for ALL
-//   signals. No host/OS/process/env detector runs.
-// - Export is direct OTLP/HTTP behind a bounded queue; nothing in the request
-//   path waits on an export. Only W3C `traceparent`/`tracestate` are extracted.
-// - Metrics use a periodic reader and the closed instrument/attribute catalog
-//   (`metrics.ts`): a non-finite value or an undeclared label never exports.
-// - Logs are a sibling pipeline projected by `log-record.ts`; a logs failure
-//   degrades only logs.
-
 import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
 import type {
   ActiveTraceIds,
@@ -87,8 +72,6 @@ const log = getLogger('trace')
 const TRACER_NAME = 'kobato-server'
 const TRACER_VERSION = APP_VERSION
 
-// Bounded batch pipeline: a stalled OpenObserve instance drops telemetry
-// instead of growing the heap or delaying shutdown.
 const MAX_QUEUE_SIZE = 1024
 const MAX_EXPORT_BATCH_SIZE = 256
 const SCHEDULED_DELAY_MS = 1000
@@ -156,7 +139,6 @@ interface RuntimeState {
   logPipeline: LogPipeline | null
   config: ServerTraceRuntimeConfig
   cleanup: () => void
-  /** Token guard so an old runtime cannot clear a newer gate. */
   gateToken: object
   stopped: boolean
 }
@@ -171,7 +153,6 @@ const INERT_HANDLE: TraceRuntimeHandle = {
 
 const rawSpans = new WeakMap<Span, OtelSpan>()
 
-/** Bound a promise without rejecting: shutdown must never block process exit. */
 function withTimeout(promise: Promise<unknown>, timeoutMs: number): Promise<void> {
   return new Promise((resolve) => {
     let settled = false
@@ -244,8 +225,6 @@ function createFacadeSpan(span: OtelSpan): Span {
       span.setAttributes(sanitizeSpanAttributes(attributes))
     },
     setStatus(status) {
-      // The message argument is intentionally dropped: it may carry user/
-      // request content, and a status code is all a trace needs.
       span.setStatus({ code: status === 'error' ? SpanStatusCode.ERROR : SpanStatusCode.OK })
     },
     recordError(error) {
@@ -356,7 +335,6 @@ function createInstrumentCache(meter: Meter | null): InstrumentCache {
       }
       return {
         add(value, attributes) {
-          // Signed deltas are the point: only a non-finite value is dropped.
           const projected = sanitizeMetricAttributes(name, attributes)
           if (!Number.isFinite(value) || projected === null) {
             return
@@ -408,10 +386,6 @@ function createDelegate(provider: TracerProvider, meter: Meter | null): TraceDel
   }
 }
 
-// No rate-limiting on export-failure noise: the SDK logs one stderr line per
-// failed flush, which only happens while OpenObserve is unreachable — that
-// stream is the outage signal. The bounded queue drops spans during a prolonged
-// outage instead of growing memory without bound.
 function buildExporter(config: ServerTraceRuntimeConfig): SpanExporter {
   return new OTLPTraceExporter({
     url: config.otlpTracesUrl,
@@ -432,22 +406,11 @@ function buildProvider(config: ServerTraceRuntimeConfig, exporter: SpanExporter)
   })
   return new TracerProvider({
     resource,
-    // ParentBased on purpose: a RUM-sampled browser session propagates
-    // traceparent with sampled=1, so every server span under that session is
-    // recorded regardless of `sampleRate`. The effective rate for
-    // browser-initiated requests is governed by frontend.sessionSampleRate;
-    // `sampleRate` bounds only server-originated (parentless) traces.
     sampler: new ParentBasedSampler({ root: new TraceIdRatioBasedSampler(config.sampleRate) }),
     spanProcessors: [spanProcessor],
   })
 }
 
-/**
- * The single production metric exporter. DELTA temporality makes OpenObserve's
- * `_sum`/`_count` streams per-interval increments, so a dashboard `sum(value)`
- * in a short bucket is a true per-bucket total; up-down counters stay
- * cumulative (the SDK's documented delta preference).
- */
 export function buildMetricExporter(config: ServerTraceRuntimeConfig): OTLPMetricExporter {
   return new OTLPMetricExporter({
     url: config.otlpMetricsUrl,
@@ -458,10 +421,6 @@ export function buildMetricExporter(config: ServerTraceRuntimeConfig): OTLPMetri
   })
 }
 
-/**
- * The event-loop observer is a `perf_hooks` interval histogram — no
- * host/process detector is involved.
- */
 function buildMetricPipeline(
   config: ServerTraceRuntimeConfig,
   healthToken: object,
@@ -483,8 +442,6 @@ function buildMetricPipeline(
   try {
     meter = provider.getMeter(TRACER_NAME, TRACER_VERSION)
   } catch (error) {
-    // A bound reader starts its periodic interval; never leave it running when
-    // the pipeline cannot be completed.
     void provider.shutdown().catch(() => undefined)
     throw error
   }
@@ -495,9 +452,6 @@ function buildMetricPipeline(
       observerHooks?.createMonitor !== undefined
         ? observerHooks.createMonitor()
         : monitorEventLoopDelay({ resolution: EVENT_LOOP_RESOLUTION_MS })
-    // Register the live interval BEFORE enabling it or touching the meter: any
-    // later failure (enable, gauge creation, callback registration) must be
-    // able to disable exactly the object this attempt created.
     monitor = histogram
     histogram.enable()
     const gauge =
@@ -516,9 +470,7 @@ function buildMetricPipeline(
   } catch (error) {
     try {
       monitor?.disable()
-    } catch {
-      // Observer cleanup must never mask the original failure.
-    }
+    } catch {}
     monitor = null
     log.warn('Event-loop delay observer unavailable; other metrics stay enabled', {
       error: error instanceof Error ? error.name : typeof error,
@@ -528,11 +480,6 @@ function buildMetricPipeline(
   return { provider, meter, monitor }
 }
 
-/**
- * A prior HMR instance may already own the global slot; the re-registration
- * then fails benignly and the working manager is kept. It is never disabled on
- * shutdown so a reload cannot break the next instance.
- */
 function ensureContextManager(): void {
   try {
     const manager = new AsyncLocalStorageContextManager()
@@ -598,10 +545,6 @@ function makeHandle(state: RuntimeState): TraceRuntimeHandle {
   }
 }
 
-/**
- * Idempotent: a started process returns the same handle; disabled/invalid
- * configurations resolve to an inert handle without constructing a provider.
- */
 export async function startTraceRuntime(options: TraceRuntimeStartOptions): Promise<TraceRuntimeHandle> {
   if (runtime !== null) {
     return makeHandle(runtime)
@@ -623,9 +566,7 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
       log.warn('OpenObserve trace provider could not start; tracing stays disabled', {
         error: error instanceof Error ? error.name : typeof error,
       })
-    } catch {
-      // The logger must not turn a telemetry failure into an application error.
-    }
+    } catch {}
     return INERT_HANDLE
   }
 
@@ -645,14 +586,8 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
   let shutdownHook: (() => Promise<void>) | null = null
   let rolledBack = false
 
-  /**
-   * Each step is isolated: one failure must not block the rest, and no cleanup
-   * error may escape HMR disposal or the process shutdown hook.
-   */
   const cleanup = (): void => {
     const steps: Array<() => void> = [
-      // Detach the log sink first: nothing new may enter the pipeline while the
-      // provider below is being flushed and shut down.
       () => {
         if (logPipeline !== null) {
           clearLogSink(logPipeline.sink)
@@ -686,16 +621,10 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
     for (const step of steps) {
       try {
         step()
-      } catch {
-        // Every step runs even when an earlier one fails; rollback is best-effort.
-      }
+      } catch {}
     }
   }
 
-  /**
-   * Idempotent rollback for everything after the tracer provider is
-   * constructed; provider shutdown is bounded and never rejects.
-   */
   const rollback = async (): Promise<void> => {
     if (rolledBack) {
       return
@@ -704,14 +633,10 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
     cleanup()
     try {
       await shutdownSignals(provider, metricPipeline?.provider ?? null, logPipeline, SHUTDOWN_TIMEOUT_MS)
-    } catch {
-      // Rollback never rejects; a shutdown failure must not mask the original error.
-    }
+    } catch {}
   }
 
   try {
-    // A metric failure degrades to trace-only telemetry; it never disables the
-    // trace pipeline (or the site).
     try {
       metricPipeline = buildMetricPipeline(config, gateToken, options.metricReader, options.eventLoopObserver)
     } catch (error) {
@@ -722,8 +647,6 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
 
     ensureContextManager()
 
-    // Logs are a sibling pipeline: a construction failure degrades only logs,
-    // never traces or metrics.
     if (config.logs !== null) {
       try {
         logPipeline = buildLogPipeline(config.logs, { exporter: options.logRecordExporter, healthToken: gateToken })
@@ -743,9 +666,6 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
       return INERT_HANDLE
     }
 
-    // The sink slot is process-wide: when it is already taken (an older
-    // runtime left over from HMR), discard only this new log pipeline and keep
-    // tracing.
     if (logPipeline !== null) {
       let installed = false
       try {
@@ -758,9 +678,7 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
         logPipeline = null
         try {
           log.warn('OpenObserve log sink slot is unavailable; logs stay disabled')
-        } catch {
-          // A diagnostics failure must not affect tracing.
-        }
+        } catch {}
         await withTimeout(discarded.shutdown(), EXPORT_TIMEOUT_MS)
       }
     }
@@ -787,13 +705,8 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
       gateToken,
       stopped: false,
     }
-    // Export health starts clean for the new runtime; failures land here via
-    // the observed exporters from this point on.
     activateExportHealth(gateToken)
 
-    // Whenever the settings projection produced a frontend CANDIDATE, verify
-    // the O2 allowlist pipeline before exposing it. A failed/offline probe
-    // withholds only browser RUM; the server pipeline keeps running.
     if (resolution.frontend !== null) {
       const verifier = options.verifyFrontendPipeline ?? verifyRumPrivacyPipeline
       const verifyTimeoutMs = options.frontendVerifyTimeoutMs ?? RUM_PRIVACY_VERIFY_TIMEOUT_MS
@@ -842,8 +755,6 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
 
     return makeHandle(runtime)
   } catch (error) {
-    // A logger/telemetry failure after the slot assignment must not leave a
-    // live runtime handle behind.
     if (runtime?.provider === provider) {
       runtime = null
     }
@@ -851,9 +762,7 @@ export async function startTraceRuntime(options: TraceRuntimeStartOptions): Prom
       log.warn('OpenObserve tracing start failed; rolling back to the no-op facade', {
         error: error instanceof Error ? error.name : typeof error,
       })
-    } catch {
-      // The logger must not turn a telemetry failure into an application error.
-    }
+    } catch {}
     await rollback()
     return INERT_HANDLE
   }
@@ -869,9 +778,7 @@ export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Pr
 
   try {
     state.cleanup()
-  } catch {
-    // Cleanup must never escape HMR disposal or a shutdown hook.
-  }
+  } catch {}
 
   try {
     await shutdownSignals(
@@ -880,9 +787,7 @@ export async function stopTraceRuntime(options: { timeoutMs?: number } = {}): Pr
       state.logPipeline,
       options.timeoutMs ?? SHUTDOWN_TIMEOUT_MS,
     )
-  } catch {
-    // Telemetry shutdown must never escape HMR disposal or a shutdown hook.
-  }
+  } catch {}
 }
 
 export function isTraceRuntimeRunning(): boolean {

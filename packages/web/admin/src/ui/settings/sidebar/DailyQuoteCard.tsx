@@ -35,8 +35,6 @@ export function DailyQuoteCard({ sidebar }: { sidebar: SidebarSettings }) {
   })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  // useWatch, not form.watch: the React Compiler memoizes render-time watch()
-  // results (stable form dep), freezing the values at their initial state.
   const source = useWatch({ control: form.control, name: 'source' })
   const customQuotes = useWatch({ control: form.control, name: 'customQuotes' })
 
@@ -79,7 +77,6 @@ export function DailyQuoteCard({ sidebar }: { sidebar: SidebarSettings }) {
       author: typeof row.author === 'string' ? row.author.trim().slice(0, 30) : '',
     }))
     form.setValue('customQuotes', quotes, { shouldDirty: true })
-    // A discrete action (not per-row list editing) — saving immediately surfaces the server validation.
     void save('customQuotes')
   }
 

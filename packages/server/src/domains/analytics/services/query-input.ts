@@ -26,8 +26,6 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): ResolvedAna
 
   let parsed = analyticsQuerySchema.safeParse(fields)
   if (!parsed.success) {
-    // A poisonous field (control characters, oversized value) drops the
-    // dimension filters, never the whole query.
     for (const type of METRIC_TYPES) {
       delete fields[type]
     }

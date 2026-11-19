@@ -1,9 +1,5 @@
 import { z } from 'zod'
 
-// Likes wire family — the single Zod source the `@kobato/api` likes contract
-// composes and the server validates against; consumers import these schemas,
-// never a copy.
-
 export const likeIncreaseInput = z.object({ key: z.string() })
 export type LikeIncreaseInput = z.infer<typeof likeIncreaseInput>
 

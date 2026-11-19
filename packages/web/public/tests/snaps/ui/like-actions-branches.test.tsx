@@ -5,9 +5,6 @@ import { describe, expect, it } from 'vitest'
 
 mockTanstackQuery()
 
-// like-actions.test.tsx covers LikeShare; this adds the SSR render-path
-// for LikeButton (handlers/localStorage/optimistic transition are client-only).
-
 describe('snapshot: LikeButton branches', () => {
   it('renders the initial unliked button with the like count', () => {
     const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="key-1" likes={42} />))

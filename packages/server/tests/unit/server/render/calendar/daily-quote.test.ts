@@ -6,10 +6,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { parseISO } from 'date-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `getDailyQuote` dispatches on `sidebar.dailyQuote.source` and never throws — a remote
-// outage falls back to the deterministic local bank. The settings snapshot is seeded per
-// test and the global fetch stubbed (safeFetch runs on it), keeping the suite hermetic.
-
 const DATE = parseISO('2024-04-24')
 const originalFetch = globalThis.fetch
 
@@ -153,7 +149,6 @@ describe('render/calendar/daily-quote — local sources', () => {
       content: `另一组一言${i + 1}`,
       author: '另一作者',
     }))
-    // The process snapshot holds one bank; the request-pinned bundle another.
     setBlogSettingsBundleForTests(bundleWithSource('custom', customQuotes))
 
     const quote = await getDailyQuote(DATE, bundleWithSource('custom', otherBank))

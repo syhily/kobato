@@ -5,7 +5,6 @@ import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { describe, expect, it } from 'vitest'
 
-// One paragraph whose text is wrapped in a link node with the given URL.
 function linkedCommentBody(url: string): CommentEditorState {
   return unsafeCast<CommentEditorState>({
     root: {

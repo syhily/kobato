@@ -13,9 +13,6 @@ import { idFromString } from '@kobato/utils/id.ts'
 
 const impl = implementAdmin(adminUsersSessionsContract)
 
-// Every live session, joined against the user — the security page sorts and
-// projects `isCurrent` in the loader. The UA label is rendered here (the
-// detector dataset is server-only; route loaders cannot import the domain).
 const listSessions = impl.listSessions.handler(async ({ context }) => {
   const rows = await listAllSessions(context.db)
   const translator = createServerTranslator(context.localization.locale)
@@ -27,7 +24,6 @@ const listSessions = impl.listSessions.handler(async ({ context }) => {
     loginAt: row.loginAt,
     lastActiveAt: row.lastActiveAt,
     expiresAt: row.expiresAt,
-    // The auth service returns '' when the user row is gone; localize the placeholder here.
     userName: row.userName === '' ? translator.format('auth.sessions.deletedUser') : row.userName,
     userEmail: row.userEmail,
     userRole: row.userRole,

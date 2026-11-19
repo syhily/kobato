@@ -12,8 +12,6 @@ interface InternalOptions extends DebounceOptions {
   maxWait?: number
 }
 
-// Date.now based, so it behaves identically under fake timers. `maxWait` is internal-only
-// and used to implement throttle.
 function debounceInternal<A extends unknown[], R>(
   fn: (...args: A) => R,
   wait: number,

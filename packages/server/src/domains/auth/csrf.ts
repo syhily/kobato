@@ -25,9 +25,6 @@ export function ensureCsrfToken(session: BlogSession): string {
   return generateAndStore(session)
 }
 
-// Cookieless requests get a stateless HMAC(sessionSecret, __csrf cookie)
-// double-submit token; per-request session rows would flood the session table.
-
 const CSRF_COOKIE_VALUE_RE = /^[a-f0-9]{64}$/i
 
 export function isCsrfCookieValue(value: string): boolean {
@@ -66,7 +63,6 @@ export function validateCsrfToken(session: BlogSession, headerValue: string | nu
 
 export function isPathExempt(path: string): boolean {
   const exemptPaths = getBlogSettingsBundleSync()?.security?.csrf.exemptPaths ?? []
-  // Segment-boundary match: `/api/admin` covers `/api/admin/...` but not `/api/adminx`.
   return exemptPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 }
 
@@ -74,7 +70,6 @@ const log = getLogger('auth.csrf')
 
 let csrfDisabledWarned = false
 
-/** True when the admin disabled `security.csrf.enabled`; pre-install fails closed. */
 export function isCsrfValidationSkipped(): boolean {
   const enabled = getBlogSettingsBundleSync()?.security?.csrf.enabled ?? true
   if (enabled) {

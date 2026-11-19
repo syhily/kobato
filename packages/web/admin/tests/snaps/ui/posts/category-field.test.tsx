@@ -3,10 +3,6 @@ import { renderToHtml } from '@kobato/test/render.tsx'
 import { CategoryField } from '@kobato/web-admin/ui/posts/meta/CategoryField.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// CategoryField resolves the category name via the SelectValue children
-// function (Base UI renders the raw value by default) — the trigger must
-// show "技术" for id "1", never the id itself.
-
 const queryMocks = mockTanstackQuery()
 
 const CATEGORIES = [{ id: '1', name: '技术' }]

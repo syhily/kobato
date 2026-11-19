@@ -1,15 +1,9 @@
 import type { Context } from 'hono'
 
-/** Shape of the Hono context slice `resBindings` reads — avoids parameterising on `Env` (infra keeps no upwards dependency). */
 type ResBindingsContext = Context<{
   Variables: { requestId: string }
 }>
 
-/**
- * Privacy-aware request header sanitisation for Pino HTTP logging.
- * L5 (credentials, cookies): fully replaced with `[REDACTED]`, never tagged.
- * L3 (UA, IP headers): wrapped in {E}…{/E} markers per the logger convention.
- */
 const L5_REQ_HEADERS = new Set(['authorization', 'proxy-authorization', 'x-csrf-token', 'cookie'])
 const L3_REQ_HEADERS = new Set([
   'user-agent',

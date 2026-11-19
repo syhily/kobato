@@ -22,7 +22,6 @@ import type { LexicalEditorState, LexicalNodeJson } from '@kobato/lexical/schema
 import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/lexical/node-whitelist.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-/** Music-player fallback copy, used when the save-time meta snapshot is absent. */
 export const MUSIC_PLAYER_PROJECTION_PLACEHOLDER = '🎵 此文章包含音乐播放器，请访问原文收听。'
 
 export interface ProjectionStateOptions {
@@ -34,10 +33,6 @@ export interface ProjectionStateOptions {
 
 type MutableNode = Record<string, unknown> & { type: string; children?: LexicalNodeJson[] }
 
-/**
- * Returns a deep-copied state shaped for the projection renderer. The input
- * is never mutated (the save pipeline persists the canonical state itself).
- */
 export function toProjectionState(state: LexicalEditorState, options: ProjectionStateOptions): LexicalEditorState {
   const copy = structuredClone(state)
   rewriteChildren(unsafeCast<MutableNode>(copy.root), options)
@@ -93,8 +88,6 @@ function substituteHostCard(node: MutableNode, options: ProjectionStateOptions):
       ],
     }
   }
-  // solution / two-column carry their content in nested-editor HTML strings
-  // with no text fallback — an unregistered one is dropped.
   return null
 }
 

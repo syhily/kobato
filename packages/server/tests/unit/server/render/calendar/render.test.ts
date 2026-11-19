@@ -7,9 +7,6 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `renderCalendar` mixes the Shanbay quote API, lunar conversion, and canvas drawing —
-// mock fetch and assert the PNG structural invariants.
-
 const originalFetch = globalThis.fetch
 
 function bundleWithQuoteBank(bank: CustomQuote[]): BlogSettingsBundle {
@@ -57,7 +54,6 @@ describe('services/images/calendar — renderCalendar', () => {
     const buffer = await renderCalendar(parseISO('2024-04-24'), 'light', 'zh-CN')
 
     expect(Buffer.isBuffer(buffer)).toBe(true)
-    // PNG magic bytes
     expect(buffer[0]).toBe(0x89)
     expect(String.fromCharCode(buffer[1], buffer[2], buffer[3])).toBe('PNG')
 
@@ -80,13 +76,11 @@ describe('services/images/calendar — renderCalendar', () => {
   })
 
   it('encodes lunar dates for traditional Chinese New Year correctly', { timeout: 30_000 }, async () => {
-    // 2024-02-09 converts to Lunar New Year's eve in Asia/Shanghai — exercises the Solar→Lunar branch.
     const buffer = await renderCalendar(parseISO('2024-02-09'), 'light', 'zh-CN')
     expect(buffer.byteLength).toBeGreaterThan(0)
   })
 
   it('clamps a very long quote instead of overflowing the card', { timeout: 30_000 }, async () => {
-    // Built-in bank entries can run 100+ chars — must clamp to three lines with an ellipsis.
     globalThis.fetch = vi.fn(
       async () =>
         new Response(JSON.stringify({ content: 'long', translation: '很长'.repeat(60), author: '某人' }), {

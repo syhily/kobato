@@ -20,12 +20,10 @@ import { afterAll } from 'vitest'
 const openHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
 
-/** The ONE in-memory database this module graph shares (migrated at import). */
 export function getTestDb(): Database {
   return getDatabaseHandle().db
 }
 
-/** A fresh, migrated temp FILE — for flows that need a real file on disk. */
 export function createTestDatabaseFile(): DatabaseHandle {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-it-'))
   tempDirs.push(dir)
@@ -35,26 +33,21 @@ export function createTestDatabaseFile(): DatabaseHandle {
   return handle
 }
 
-/** Test-teardown hook: close every file-backed handle still registered. */
 export function closeAllTestDatabases(): void {
   for (const handle of openHandles.splice(0)) {
     try {
       closeDatabase(handle)
-    } catch {
-      // already closed by the test — fine
-    }
+    } catch {}
   }
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true })
   }
 }
 
-// Module-scope cleanup — setup.ts must never import this helper (cache-before-mocks hazard).
 afterAll(() => {
   closeAllTestDatabases()
 })
 
-/** Delete all user-table rows with FK checks temporarily off, resetting AUTOINCREMENT ids. */
 export async function clearAllTables(db: Database): Promise<void> {
   const rows = db.all<{ name: string }>(sql`
     SELECT name
@@ -73,8 +66,6 @@ export async function clearAllTables(db: Database): Promise<void> {
   } finally {
     db.run(sql`PRAGMA foreign_keys = ON`)
   }
-  // The cache lives outside SQLite: wipe its tree, its process-local L1 and the
-  // generation memo so every test starts cold.
   await wipeCache()
   __resetMemoryCacheForTests()
   resetCacheCounterMemo()

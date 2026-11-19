@@ -8,10 +8,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `sendNewComment` against the real engine: the slug/title lookup and the
-// saved `content`-projection email body are real; only `fetch` (Mailgun)
-// is stubbed.
-
 const db = getTestDb()
 
 interface MailFixture {
@@ -37,7 +33,6 @@ function setMail(mail: Partial<MailFixture>) {
   })
 }
 
-// Shared target post: slug `hi` / title `Hi`, resolved by the real slug lookup.
 async function seedTargetPost(): Promise<number> {
   const rows = await db
     .insert(post)
@@ -48,7 +43,6 @@ async function seedTargetPost(): Promise<number> {
 
 const fetchMock = vi.fn<typeof fetch>()
 
-/** React's text-node escaping (renderToStaticMarkup) — catalog copy may include quotes. */
 function htmlText(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -65,14 +59,11 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
-  // Restore the setup fixture so the next test sees a hydrated snapshot.
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   vi.unstubAllGlobals()
 })
 
 describe('email/sender — internalSend (via sendNewComment)', () => {
-  // Fixture row used below; the email body comes from the saved `content`
-  // degraded-HTML projection column.
   const commentInfo = {
     id: 7,
     body: {
@@ -290,7 +281,6 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     await sendNewComment(db, noSnapshot, { type: 'post', ownerId })
 
     const html = sentBody().get('html') as string
-    // Plain text, escaped — never injected as markup.
     expect(html).toContain('plain &lt;b&gt;raw&lt;/b&gt; text')
     expect(html).not.toContain('<b>raw</b>')
   })
@@ -370,8 +360,6 @@ describe('comments email — site locale at send time', () => {
     expect(result.ok).toBe(true)
     const [, init] = fetchMock.mock.calls[0]
     const body = init?.body as FormData
-    // Derive the expected copy from the real catalog: the English templates
-    // are ASCII (`{siteTitle}: {subject}`, `A new comment in "{title}"`).
     const t = createServerTranslator('en-US')
     expect(body.get('subject')).toBe(
       t.format('email.adminNotification.subject', {
@@ -384,7 +372,6 @@ describe('comments email — site locale at send time', () => {
     expect(html).toContain('Post:')
     expect(html).toContain('This comment needs review')
     expect(html).toContain('View comment')
-    // User-authored comment body stays raw, whatever the locale.
     expect(html).toContain('<p>hello in english</p>')
   })
 })

@@ -150,7 +150,6 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
   const hasSearch = filters.some((f) => f.field === 'q')
   const hasKind = filters.some((f) => f.field === 'kind')
 
-  // Match comments filter shortcut: press "f" outside inputs to open the filter menu.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'f' || e.metaKey || e.ctrlKey || e.altKey) {

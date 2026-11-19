@@ -26,10 +26,6 @@ import { makeAuthedCtx, makePublicCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// The admin/me oRPC procedures over the real RPCHandler wire: real SQLite rows,
-// adopted DuckDB sidecar, role gating pinned by real 401/403/404/503s.
-// Wire paths follow the router OBJECT TREE (api-router.ts), not each procedure's `.route()` path.
-
 const db = getTestDb()
 
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
@@ -121,7 +117,6 @@ describe('account.profile', () => {
       role: 'admin',
       loginMethod: 'password',
     })
-    // The test settings fixture disables both switches.
     expect(json.passkeyEnabled).toBe(false)
     expect(json.mailReady).toBe(false)
   })
@@ -163,17 +158,14 @@ describe('admin badge endpoints (count / passkeyFlag / pendingCounts)', () => {
   })
 
   it('admin.users.passkeyFlag mirrors the in-process passkey switch', async () => {
-    // The test fixture ships `security.passkey.enabled: false`.
     const off = await callRpc('/admin/users/passkeyFlag', undefined, makeAuthedCtx({ db }))
     expect(await parseRpcJson<boolean>(off)).toBe(false)
 
-    // The fixture ships `security` as a literal (never null).
     const security = TEST_BLOG_SETTINGS_BUNDLE.security!
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       security: {
         ...security,
-        // Fresh mutable copies — spreading the shared fixture widens `csrf`/`cors` to `| undefined`.
         csrf: { ...security.csrf },
         cors: { ...security.cors },
         passkey: { enabled: true },
@@ -272,7 +264,6 @@ describe('comments.myCounts', () => {
     await seedComment(me, { deleteRequestedAt: new Date('2024-01-05') })
     await seedComment(me, { deletedAt: new Date(Date.now() - 60_000) })
     await seedComment(me, {})
-    // Another user's comments never leak into the caller's counters.
     await seedComment(999, { isPending: true })
 
     const res = await callRpc('/comments/myCounts', undefined, makeAuthedCtx({ db, userId: String(me) }))
@@ -379,7 +370,6 @@ describe('admin.posts.analytics', () => {
         country: 'US',
       },
       { ts, visitorHash: 'b', path: '/posts/analytics-post', entityType: 'post', entityId: postId, country: 'US' },
-      // Another entity's view must stay out of the per-post counters.
       { ts, visitorHash: 'c', path: '/other', entityType: 'post', entityId: postId + 100, country: 'US' },
     ])
 
@@ -474,9 +464,7 @@ describe('admin.analytics.overview', () => {
     }>(res)
 
     expect(json.counters).toEqual({ visits: 3, visitors: 2, referers: 1 })
-    // The views series is fetched client-side (real timezone), not in the fan-out.
     expect('views' in json).toBe(false)
-    // First tab of every metric group ships in the initial fan-out.
     expect(Object.keys(json.initialMetrics).sort()).toEqual(['country', 'device', 'language', 'os', 'referer'])
   })
 
@@ -501,7 +489,6 @@ describe('admin.analytics.mentions', () => {
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ referers: Array<{ name: string; visits: number; visitors: number }> }>(res)
 
-    // Referers group by the referer HOST slot (blob3) — see `METRIC_DIMENSIONS` in metric-dimensions.ts.
     expect(json.referers.map((r) => r.name).sort()).toEqual(['(unknown)', 'google.com', 'twitter.com'])
     expect(json.referers.find((r) => r.name === 'google.com')).toMatchObject({ visits: 2, visitors: 2 })
   })
@@ -533,7 +520,6 @@ describe('admin.settings.bootstrap', () => {
     }>(res)
 
     expect(json.bundle.siteIdentity.title).toBe('且听书吟')
-    // The admin bundle blanks the secret; the mask exposes only the last 4 characters.
     expect(json.bundle.assets.storage.secretAccessKey).toBe('')
     expect(json.masks.assetsSecretAccessKeyMask).toBe('test')
     expect(json.timeZones.length).toBeGreaterThan(0)

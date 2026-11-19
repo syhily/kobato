@@ -23,9 +23,6 @@ import { eq } from 'drizzle-orm'
 import { Readable } from 'node:stream'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-// Backup services run real against the test DB + in-memory storage; only
-// the file-exchange boundary stays mocked (getBackupStream, staging). The
-// restore machine runs real on injected deps.
 vi.mock('@kobato/server/domains/backup/services/backup.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/backup.ts')>()
   return {
@@ -36,9 +33,6 @@ vi.mock('@kobato/server/domains/backup/services/backup.ts', async (importOrigina
 })
 
 vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOriginal) => {
-  // Real classes (the controller keys on EncryptedBackupPasswordRequired's
-  // dir/uploadPath and on the BackupPasswordError type) — only the
-  // file-exchange seams are stubbed.
   const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/restore.ts')>()
   return {
     ...actual,
@@ -47,7 +41,6 @@ vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOrigin
   }
 })
 
-// The machine is re-wired with test deps in beforeEach; keep the process/restart boundary inert.
 vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
@@ -60,12 +53,9 @@ vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
 
 const db = getTestDb()
 
-// Both slots route at in-memory backends: 's3' reports available (the
-// ACTIVE backend); 'local' keeps the reconcile off real storage.
 const s3Memory = makeMemoryBackend({ driver: 's3' })
 const localMemory = makeMemoryBackend({ driver: 'local' })
 
-// The real machine's engine deps are spies; the choreography under test is the machine's own.
 let restoreDeps: {
   drain: Mock<() => Promise<void>>
   prepareForSwap: Mock<() => Promise<void>>
@@ -97,7 +87,6 @@ afterEach(async () => {
   localMemory.reset()
 })
 
-// audit_log.actor_id references user.id: the admin actor must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -112,7 +101,6 @@ function adminCtx(userId: number) {
 
 describe('adminBackupRouter.status', () => {
   it('returns the active primary driver', async () => {
-    // The injected 's3' backend is available, so it resolves as the primary driver.
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.status, undefined, { context: adminCtx(admin) })
     expect(res).toEqual({ primaryDriver: 's3' })
@@ -121,7 +109,6 @@ describe('adminBackupRouter.status', () => {
 
 describe('adminBackupRouter.list', () => {
   it('returns files array', async () => {
-    // Seed an object with no DB row: the real reconcile registers it.
     await s3Memory.backend.put({
       key: 'backup/backup-2026-01-01T00-00-00.db.tar.gz',
       body: Buffer.alloc(1024),
@@ -159,7 +146,6 @@ describe('adminBackupRouter.create', () => {
   })
 
   it('rejects a concurrent create with CONFLICT while another backup is in flight', async () => {
-    // Stall the first upload so the second request hits the single-flight slot.
     let enteredPutStream!: () => void
     const putStreamEntered = new Promise<void>((resolve) => {
       enteredPutStream = resolve
@@ -205,7 +191,6 @@ describe('adminBackupRouter.create', () => {
     const res = await call(adminBackupRouter.create, { password: 'one-off-password' }, { context: adminCtx(admin) })
     expect(res.fileName).toMatch(/\.db\.tar\.gz\.enc$/)
 
-    // The real createBackup piped the archive through the cipher — magic, not gzip.
     const stored = s3Memory.store.get(`backup/${res.fileName}`)
     expect(stored).toBeDefined()
     expect(stored!.body.subarray(0, 8).toString('latin1')).toBe('KOBENC01')
@@ -255,13 +240,11 @@ describe('adminBackupRouter.restore', () => {
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
     expect(res).toEqual({ accepted: true })
 
-    // The chain is fire-and-forget; wait for completion before asserting the ordering.
     await vi.waitFor(() => expect(restoreDeps.complete).toHaveBeenCalledWith(true, undefined))
     expect(restoreDeps.drain).toHaveBeenCalledOnce()
     expect(restoreDeps.prepareForSwap).toHaveBeenCalledOnce()
     expect(restoreDeps.reopenAfterSwap).toHaveBeenCalledOnce()
 
-    // afterReopenFn records the restore audit event into the batcher.
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'backup_restored'))
     expect(rows).toHaveLength(1)
@@ -279,7 +262,6 @@ describe('adminBackupRouter.restore', () => {
   })
 
   it('rejects concurrent restore requests', async () => {
-    // Occupy the slot: the next claim returns 'busy', which the route maps to 409.
     expect(tryBeginRestore()).toBe(true)
     const admin = await seedAdmin()
     await expect(
@@ -293,7 +275,6 @@ describe('adminBackupRouter.restore', () => {
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
     expect(res).toEqual({ passwordRequired: true })
-    // Declined BEFORE the download: no stream opened, no restore job started.
     expect(vi.mocked(backupService.getBackupStream)).not.toHaveBeenCalled()
     expect(restoreDeps.drain).not.toHaveBeenCalled()
   })
@@ -343,7 +324,6 @@ describe('adminBackupRouter.restore', () => {
     ).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
       status: 400,
-      // The stable identity the client matches — never localized prose.
       data: { descriptor: { messageKey: 'backup.error.passwordWrong' } },
     })
   })
@@ -362,7 +342,6 @@ describe('adminBackupRouter.restore', () => {
     vi.mocked(restoreService.stageBackup).mockRejectedValue(new restoreService.BackupPasswordError())
     const admin = await seedAdmin()
 
-    // Ten guesses all reach the staging path (and burn the hourly budget).
     for (let i = 0; i < 10; i++) {
       await expect(
         call(
@@ -374,7 +353,6 @@ describe('adminBackupRouter.restore', () => {
     }
     expect(vi.mocked(backupService.getBackupStream)).toHaveBeenCalledTimes(10)
 
-    // The 11th is refused before the download even starts.
     await expect(
       call(
         adminBackupRouter.restore,
@@ -395,15 +373,11 @@ describe('adminBackupRouter.restore', () => {
       encrypted: true,
       fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
     })
-    // The staged decrypt with the stored password fails the GCM tag check.
     vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(new restoreService.BackupPasswordError())
-    // The controller resolves the stored password through the composition
-    // root's wired resolver — wire the test double here.
     const { wireBackupEncryption, resetBackupEncryption } = backupService
     wireBackupEncryption({ resolveEncryptionPassword: () => 'stored-password' })
     try {
       const admin = await seedAdmin()
-      // No explicit password: the stored one was tried and declined — ask the user.
       const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
       expect(res).toEqual({ passwordRequired: true })
       expect(vi.mocked(restoreService.stageBackup)).toHaveBeenCalledWith(
@@ -418,8 +392,6 @@ describe('adminBackupRouter.restore', () => {
   it('asks for a password when the row says plain but the BYTES are encrypted — and sweeps the staged dir', async () => {
     const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
     const restoreService = await import('@kobato/server/domains/backup/services/restore.ts')
-    // isBackupEncrypted stays false (the default mock): the key has no .enc
-    // suffix, but the payload carries the encryption magic.
     vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
       stream: Readable.from(['archive-bytes']),
       byteSize: 13,
@@ -431,10 +403,7 @@ describe('adminBackupRouter.restore', () => {
     vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(required)
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
-    // Declined into the password prompt — NOT a 500.
     expect(res).toEqual({ passwordRequired: true })
-    // The prepare declined, so the machine chain never started: no drain, no
-    // swap — the slot was released by the claim wrapper, not by the job.
     expect(restoreDeps.drain).not.toHaveBeenCalled()
     expect(restoreDeps.complete).not.toHaveBeenCalled()
   })

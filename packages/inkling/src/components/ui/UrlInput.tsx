@@ -25,8 +25,6 @@ export interface UrlInputProps {
   value?: string
 }
 
-// submits the URL on Enter even when focus is in the main editor rather
-// than the input (e.g. right after pasting a URL into the editor)
 function UrlInputPlugin({ onEnter }: { onEnter?: () => void }) {
   const composerContext = React.useContext(LexicalComposerContext)
   const editor = composerContext?.[0]

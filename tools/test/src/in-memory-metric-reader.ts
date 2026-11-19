@@ -33,7 +33,6 @@ export function dataPointsOf(resourceMetrics: ResourceMetrics, name: string): Da
   return metricByName(resourceMetrics, name)?.dataPoints ?? []
 }
 
-/** Numeric measure for a Sum/Histogram/Gauge data point. */
 export function pointValue(point: DataPoint<unknown>): number | null {
   if (typeof point.value === 'number') {
     return point.value

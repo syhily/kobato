@@ -55,16 +55,11 @@ export const shikiTransformers = () => [
   transformerNotationErrorLevel({ matchAlgorithm: 'v3' }),
 ]
 
-// Dual-theme: `defaultColor: false` emits both `--shiki-light` and
-// `--shiki-dark` vars; the solarized pair matches the palette one-to-one.
 export const SHIKI_THEMES = {
   light: 'solarized-light',
   dark: 'solarized-dark',
 } as const
 
-// Fine-grained wiring: the 36 modules below mirror `HIGHLIGHT_LANGUAGES`
-// one-to-one (keep in sync); wasm arrives base64-inlined, so there is no
-// separate asset.
 const SHIKI_LANGUAGE_MODULES = [
   bash,
   shell,
@@ -106,8 +101,6 @@ const SHIKI_LANGUAGE_MODULES = [
 
 const SHIKI_THEME_MODULES = [solarizedLight, solarizedDark]
 
-/** Lookup view of `HIGHLIGHT_LANGUAGES`; a shiki release dropping a grammar fails at
- *  build time instead of silently degrading to plain text. */
 export const SHIKI_SUPPORTED_LANGUAGES: ReadonlySet<string> = new Set(HIGHLIGHT_LANGUAGES)
 
 export function createShikiHighlighter() {

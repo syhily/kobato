@@ -6,11 +6,6 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Adds the recent-comments list, the user-query error branch and the admin badge on top
-// of the skeleton, resolved user and operations branches covered elsewhere.
-
-// useQuery call order: 1st = user, 2nd = comments.
-
 const queryMocks = vi.hoisted(() => ({
   userQuery: {
     data: null as { user: AdminUserDto } | null,

@@ -3,10 +3,6 @@ import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/lexic
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { describe, expect, it } from 'vitest'
 
-// The dialect pair (packages/shared/lexical/src/dialect.ts): compact storage payloads
-// omit serializer-default keys; the schema's normalize preprocess refills
-// them, so both dialects parse to the same full-dialect output.
-
 function text(value: string, extra: Record<string, unknown> = {}) {
   return { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text: value, ...extra }
 }
@@ -19,7 +15,6 @@ function state(children: unknown[]) {
   return { root: element('root', children) }
 }
 
-/** A full-dialect document touching every default-rule family. */
 function fullDocument() {
   return state([
     element('paragraph', [text('plain')], { textFormat: 0, textStyle: '' }),
@@ -74,12 +69,10 @@ describe('compactLexicalEditorState', () => {
     expect(json.root).toEqual({ type: 'root', children: expect.any(Array) })
     const [paragraph, heading, quote, bullet, numbered, check, links, table, hr, br] = json.root.children as never[]
 
-    // paragraph: element triple + textFormat/textStyle + version stripped
     expect(paragraph).toEqual({
       type: 'paragraph',
       children: [{ type: 'extended-text', text: 'plain' }],
     })
-    // heading keeps its tag
     expect(heading).toEqual({
       type: 'extended-heading',
       tag: 'h2',
@@ -89,25 +82,21 @@ describe('compactLexicalEditorState', () => {
       type: 'extended-quote',
       children: [{ type: 'paragraph', children: [{ type: 'extended-text', text: 'quoted' }] }],
     })
-    // bullet list keeps listType, drops derivable tag/start
     expect(bullet).toEqual({
       type: 'list',
       listType: 'bullet',
       children: [{ type: 'listitem', children: [{ type: 'extended-text', text: 'bullet' }] }],
     })
-    // number list drops listType (= the import default) and tag, keeps start 3
     expect(numbered).toEqual({
       type: 'list',
       start: 3,
       children: [{ type: 'listitem', children: [{ type: 'extended-text', text: 'numbered' }] }],
     })
-    // check item keeps its checked flag
     expect(check).toEqual({
       type: 'list',
       listType: 'check',
       children: [{ type: 'listitem', checked: true, children: [{ type: 'extended-text', text: 'done' }] }],
     })
-    // link/autolink: null defaults and isUnlinked:false stripped
     expect(links).toEqual({
       type: 'paragraph',
       children: [

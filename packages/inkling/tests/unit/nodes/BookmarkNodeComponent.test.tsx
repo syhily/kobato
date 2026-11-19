@@ -24,9 +24,6 @@ import {
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// These specs attach a root element, so reconciliation calls decorate() —
-// the injection port is filled here (vi.mock hoisting keeps the mocks below
-// ahead of this import; see tests/inkling/utils/test-editor.ts for the rationale).
 registerCardDecorateAdapter()
 
 vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
@@ -52,9 +49,6 @@ function createTestEditor(): LexicalEditor {
   return editor
 }
 
-// UrlInputPlugin reads the real composer context (not the mocked hook) to
-// register its editor-level Enter handler, so tests that dispatch Enter from
-// the editor wrap the component in the real provider
 function EditorComposerProvider({ editor, children }: { editor: LexicalEditor; children: React.ReactNode }) {
   const value = React.useMemo<React.ContextType<typeof LexicalComposerContext>>(
     () => [editor, { getTheme: () => null }],

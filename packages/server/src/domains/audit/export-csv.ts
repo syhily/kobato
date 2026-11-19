@@ -2,8 +2,6 @@ import type { auditLog } from '@kobato/db/schema/config.ts'
 
 import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection.ts'
 
-// Display-oriented CSV for the audit-log spreadsheet export: cells starting
-// with `=`, `+`, `-`, `@` get a tab prefix (formula-injection protection).
 const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
 
 export function csvEscapeDisplay(value: string | number | null | undefined): string {

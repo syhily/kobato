@@ -1,7 +1,3 @@
-// Self-update pipeline: stage → download → verify → extract → verify →
-// chmod → backup → swap, with best-effort restore and `.bak` rollback.
-// Sidecars: archive hash checked pre-extraction, binary hash post-extraction.
-
 import type { UpdateJobState } from '@kobato/contracts/update.ts'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
@@ -42,16 +38,11 @@ function binaryHashAssetName(): string {
   return assetName().replace(/\.tar\.gz$/, '.sha256')
 }
 
-/** Byte-ceiling label for the descriptor param — unit abbreviations stay untranslated. */
 function byteLimitLabel(bytes: number): string {
   const mebibytes = bytes / (1024 * 1024)
   return mebibytes >= 1 ? `${Number(mebibytes.toFixed(1))} MB` : `${bytes} bytes`
 }
 
-/**
- * Size-cap guard, exported so the 512 MB branch is unit-testable without
- * streaming half a gigabyte through the pipeline.
- */
 export function assertDownloadSize(received: number, maxBytes: number = MAX_DOWNLOAD_BYTES): void {
   if (received > maxBytes) {
     throw new DomainError('INTERNAL', descriptorFor('update.error.packageTooLarge', { max: byteLimitLabel(maxBytes) }))
@@ -86,7 +77,6 @@ async function sha256File(path: string): Promise<string> {
   return hash.digest('hex')
 }
 
-// Extracts the first regular-file entry (the CI archive holds exactly one).
 async function extractBinaryFromTarGz(archivePath: string, destPath: string): Promise<void> {
   const tarPath = `${archivePath}.tar`
   await pipeline(createReadStream(archivePath), createGunzip(), createWriteStream(tarPath))
@@ -102,7 +92,7 @@ async function extractBinaryFromTarGz(archivePath: string, destPath: string): Pr
       }
       const typeFlag = header[156]
       const size = Number.parseInt(header.toString('latin1', 124, 136), 8) || 0
-      if (typeFlag === 0 || typeFlag === 48 /* '0' */) {
+      if (typeFlag === 0 || typeFlag === 48) {
         await pipeline(
           createReadStream(tarPath, {
             start: offset + TAR_BLOCK_SIZE,
@@ -119,8 +109,6 @@ async function extractBinaryFromTarGz(archivePath: string, destPath: string): Pr
   }
 }
 
-// Sidecars come from `sha256sum` in sea.yml as `<hash>  <name>`; if the
-// workflow changes the format, this parser must change in lockstep.
 export function parseSha256Sidecar(text: string): string {
   const hash = text.trim().split(/\s+/)[0] ?? ''
   if (!/^[0-9a-f]{64}$/i.test(hash)) {
@@ -164,15 +152,12 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
     try {
       await extractBinaryFromTarGz(stagedArchivePath, stagedPath)
     } catch (err) {
-      // The specific "no executable" failure already carries its descriptor;
-      // everything else is an opaque extraction failure (logged with detail).
       if (err instanceof DomainError) {
         throw err
       }
       log.error('update package extraction failed', { err: err instanceof Error ? err.message : String(err) })
       throw new DomainError('INTERNAL', descriptorFor('update.error.extractFailed'))
     }
-    // The archive hash covers only the container; this check authenticates the extracted bytes.
     const actualBinary = await sha256File(stagedPath)
     if (actualBinary !== expectedBinary) {
       throw new DomainError('INTERNAL', descriptorFor('update.error.binaryHashMismatch'))
@@ -185,7 +170,6 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
     await rename(stagedPath, execPath)
   } catch (err) {
     if (backedUp) {
-      // Best-effort restore; a failure leaves the `.bak` for manual recovery.
       await rename(backupPath, execPath).catch(() => undefined)
     }
     throw err

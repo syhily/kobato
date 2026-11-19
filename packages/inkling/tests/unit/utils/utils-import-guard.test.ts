@@ -2,19 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * The packages/inkling/src/utils boundary, pinned statically: utils is the bottom
- * layer — framework-free helpers the upper layers pull in, never the reverse.
- * A utils module that runtime-imports the node tree or the
- * components/hooks/plugins layers closes the cycles the card pipeline guards
- * against. Type-only imports erase at runtime and stay free.
- *
- * The one carve-out: `nodes/base/utils/` holds pure leaf helpers (URL
- * grammar, gallery fill, card widths) shared by both trees, so importing those
- * pulls no node class, declaration, or registry; the public barrel's
- * CARD_WIDTHS re-export rides the same carve-out.
- */
-
 const FORBIDDEN_LAYERS = ['components', 'hooks', 'plugins'] as const
 
 function listSourceFiles(dir: string): string[] {
@@ -23,15 +10,6 @@ function listSourceFiles(dir: string): string[] {
     .filter((name) => /\.tsx?$/.test(name))
 }
 
-/**
- * Runtime (non-type-only) import specifiers of a source string. Two erasure
- * passes strip type-only imports before matching, so the guard checks only
- * what the runtime module graph pulls:
- * - whole-statement type imports (`import type { A } from 'x'`, multiline ok);
- * - inline type modifiers in named imports (`import { type A } from 'x'`) —
- *   when the braces are left empty the import is type-only and erased;
- *   `import { type A, b } from 'x'` keeps its runtime binding and survives.
- */
 function runtimeImportSpecifiers(source: string): string[] {
   const withoutTypeImports = source
     .replace(/import\s+type\s[\s\S]{0,500}?from\s+['"][^'"]+['"]/g, '')

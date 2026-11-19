@@ -5,12 +5,6 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
-/**
- * Build `process-worker.ts` as a standalone Node worker file (the main
- * build can't emit `new Worker(new URL(...))` chunks). Sharp and node
- * builtins stay external; everything else is inlined.
- */
-
 // This module lives at packages/server/src/infra/image/ — five levels below
 // the repository root. The process cwd varies (build runs in apps/kobato,
 // `pnpm dev` runs vite from the repository root), so every path must be
@@ -42,7 +36,6 @@ export function processWorkerEntryPlugin(): Plugin {
           write: false,
           minify: false,
           sourcemap: false,
-          // Node target: keeps runtime env access live and node builtins external.
           ssr: true,
           rolldownOptions: {
             input: WORKER_ENTRY,
@@ -63,7 +56,6 @@ export function processWorkerEntryPlugin(): Plugin {
         },
       })
 
-      // `write: false` returns RolldownOutput | RolldownOutput[] (never a watcher).
       const results = Array.isArray(result) ? result : [result]
       for (const res of results) {
         if (!('output' in res)) {

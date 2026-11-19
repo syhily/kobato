@@ -14,8 +14,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// saveBody stays mocked (covered end-to-end by the
-// content/lifecycle suites); everything else runs real.
 vi.mock('@kobato/server/domains/content/lifecycle.ts', () => ({
   saveBody: vi.fn(),
 }))
@@ -28,7 +26,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: an armed timer leaks queued events into the next test.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -55,7 +52,6 @@ async function seedRevision(ownerId: number, revisionNo: number, status: 'draft'
       ownerId,
       revisionNo,
       status,
-      // listRevisions/get project rows through the admin revision DTO, which expects a Lexical body.
       body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
@@ -64,7 +60,6 @@ async function seedRevision(ownerId: number, revisionNo: number, status: 'draft'
   return row!
 }
 
-// audit_log.actor_id references user.id: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)

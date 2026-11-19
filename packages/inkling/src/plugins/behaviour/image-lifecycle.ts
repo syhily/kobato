@@ -13,13 +13,6 @@ export interface ImageLifecyclePorts {
   write: (mutator: (node: BaseImageNode) => void) => void
   onError: (error: unknown) => void
 }
-/**
- * The data:-URL migration (copy/paste from Google Docs): converts the src to
- * a File and uploads it through the card's channel. Skips non-data: srcs and
- * in-flight uploads; `isCancelled` abandons a stale run after the await (the
- * component's unmount flag). A conversion failure reports through onError.
- * Returns true when a conversion+upload ran.
- */
 export async function migrateImageDataUrl(
   { src, isLoading, isCancelled }: { src: string; isLoading?: boolean; isCancelled?: () => boolean },
   { runUpload, onError }: Pick<ImageLifecyclePorts, 'runUpload' | 'onError'>,

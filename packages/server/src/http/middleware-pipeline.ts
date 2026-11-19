@@ -55,13 +55,6 @@ export interface CspInput {
 export const ACCEPT_CH_HEADER =
   'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Form-Factors'
 
-/**
- * Dynamic CSP: per-request nonce in prod, `unsafe-inline` + blob workers in dev.
- * The asset CDN host is trusted for style/font/img/media, and the configured site
- * origin for img/media only (saved content carries absolute asset URLs built
- * against `siteIdentity.website`). `connect-src` never widens: browser RUM posts
- * to the same-origin relay.
- */
 export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const origins = new Set<string>()
   if (bundle?.assets?.asset?.host) {
@@ -75,9 +68,6 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
   // Dev: Vite's client may create blob workers — `worker-src` needs blob:.
   const workerSrc = isDev ? "worker-src 'self' blob:" : "worker-src 'self'"
-  // Dev: a dev server routinely renders a prod-shaped database whose saved content
-  // carries asset URLs baked under another environment's site origin, so allow any
-  // https image/media source; production stays on the explicit origin list above.
   const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
   return [
     "default-src 'self'",
@@ -98,18 +88,12 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
 
 export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
-  // Trust-proxy must land before anything reads the request URL (request-context
-  // derivation, RR's `.data` action origin check).
   app.use(trustProxy)
   app.use(requestId())
-  // The root server span starts after trust-proxy/request-ID (so the W3C parent and
-  // normalized request exist) and BEFORE compression (so it covers the whole pipeline).
   app.use(devTraceRequestMiddleware())
   app.use(compress())
-  // Overwrite `secureHeaders`' static CSP with the nonce value — must stay registered before it.
   app.use(async (c, next) => {
     await next()
-    // Early short-circuits (301/404 before requestContextMiddleware) leave the static CSP.
     const rc = c.var.requestContext
     if (!rc) {
       return
@@ -176,8 +160,6 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.use(honoWpDecoyMiddleware)
   app.use(
     requestTimeout(30_000, [
-      // Backup upload/decrypt staging moves up to 500 MB inside the request
-      // — a slow uplink needs far more than the 30s default.
       { prefix: '/api/admin/backup/upload-restore', timeoutMs: 30 * 60_000 },
       { prefix: '/api/setup/restore', timeoutMs: 30 * 60_000 },
     ]),
@@ -188,13 +170,9 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.get('/ready', readyHandler)
 
-  // RUM drift signal + same-origin intake relay, mounted in every build: settings
-  // changes never re-mount these routers, so the gate is evaluated per request
-  // inside the handlers. Both paths stay out of HTTP spans and RUM activity.
   app.route('/', rumStatusRouter)
   app.route('/', rumIntakeRouter)
 
-  // Mounted BEFORE createApiApp so their bodyLimit is not overridden by the 10 MB global limit.
   app.route('/', backupRouter)
   app.route('/', fontsRouter)
   app.route('/', fontsPackageRouter)
@@ -209,9 +187,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', analyticsEventsRouter)
   app.route('/', feedRouter)
   app.route('/', imagesRouter)
-  // $DATA_PATH/storage assets — legacy uploads, public, Range-capable.
   app.route('/', localStorageRouter)
-  // Self-hosted web-font packages — separate namespace from /storage/*.
   app.route('/', fontsEmbeddedRouter)
   app.route('/', sitemapRouter)
   app.route('/', redirectsRouter)
@@ -222,7 +198,6 @@ export function configureMiddleware(app: Hono<Env>): void {
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
   const rc = c.var.requestContext
-  // Hydrate first: loaders read the in-process settings snapshot synchronously.
   await hydrateBlogSettings(rc.db)
   const context = new RouterContextProvider()
   context.set(requestContext, rc)

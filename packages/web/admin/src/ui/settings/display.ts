@@ -1,7 +1,3 @@
-// Settings navigation metadata — NEUTRAL registry, no UI copy. Every label and
-// description is a UI message id; the settings route resolves them through
-// `useI18n()` so the same registry serves all four locales.
-
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { SettingsSection } from '@kobato/settings/sections.ts'
 

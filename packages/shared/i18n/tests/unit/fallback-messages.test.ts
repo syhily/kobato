@@ -12,8 +12,6 @@ describe('i18n/fallback-messages', () => {
   })
 
   it('stays byte-identical to the Simplified Chinese catalog', () => {
-    // The module duplicates these strings on purpose (importing the catalog
-    // would pull the whole corpus into the client graph) — this is the pin.
     for (const id of FALLBACK_MESSAGE_IDS) {
       expect(fallbackMessages[id]).toBe(uiMessagesZhCN[id])
     }

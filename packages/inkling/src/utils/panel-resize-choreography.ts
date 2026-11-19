@@ -195,19 +195,11 @@ export function createPanelDomWiring({
       return
     }
 
-    // React event handlers attach at the root, so panel-level listeners would
-    // stopPropagation any React events on child nodes; these live on the body and check
-    // the event target instead.
     const startListener = (e: TouchEvent | MouseEvent) => {
       const target = e.target
       if (!(target instanceof Node) || !getElement()?.contains(target)) {
         return
       }
-      // Shield EVERY press inside the panel, not just grab-capable left presses: the
-      // bubble-phase window/document mousedown fleet (click-outside handlers, the floating
-      // toolbar's mousedown, the card drag grab) mostly ignores the button, so a
-      // right/middle press leaking past body would read as an editor-canvas press and tear
-      // down open sessions.
       e.stopPropagation()
 
       if (e.type !== 'touchstart' && !(e instanceof MouseEvent && e.button === 0)) {
@@ -311,9 +303,7 @@ export function createPanelDomWiring({
       if (initialPosition) {
         setPosition(initialPosition)
       }
-    } catch {
-      /* noop */
-    }
+    } catch {}
     previousViewport.current = getViewport()
   }
 

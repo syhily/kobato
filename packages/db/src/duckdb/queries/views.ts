@@ -7,7 +7,6 @@ import { pickTimeUnit } from '@kobato/db/duckdb/queries/types.ts'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { sql } from 'kysely'
 
-/** strftime bucket format per unit — server-side, timezone-aware bucketing. */
 const UNIT_FORMAT: Record<TimeUnit, string> = {
   minute: '%Y-%m-%d %H:%M',
   hour: '%Y-%m-%d %H',

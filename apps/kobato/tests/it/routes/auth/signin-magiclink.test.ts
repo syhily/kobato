@@ -17,9 +17,6 @@ import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Magic-link signin against the real engine; only mocks: the
-// request-context seam and email DELIVERY (the plaintext token extraction channel).
-
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendSignInLink: vi.fn<any>(),
@@ -73,7 +70,6 @@ let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // Flush before teardown: pending events reference rows the next clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   setBlogSettingsBundleForTests(MAGIC_LINK_TEST_BUNDLE)
   await clearAllTables(db)

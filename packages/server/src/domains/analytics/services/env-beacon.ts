@@ -16,10 +16,6 @@ import {
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// The beacon's `event_id` is NOT validated against `access_events`: a bot-gated or
-// direct-POST id simply yields an orphan row, which the JOIN drops and retention
-// clears in the same 180-day window.
-
 const BATCHER_NAME = 'DeviceEnvBeaconBatcher'
 
 function deadLetterPath(): string {
@@ -63,8 +59,6 @@ function deserializeFromDeadLetter(line: string): DeviceEnvClientRow | null {
   })
 }
 
-// The DuckDB writer is injected by the composition root — importing it directly
-// would invert the dependency direction (domain → composition root).
 let resolveWriter: (() => DuckDBConnection) | null = null
 
 export function wireDeviceEnvBeaconBatcher(deps: { getWriter: () => DuckDBConnection }): void {
@@ -78,13 +72,6 @@ function requireWriter(): DuckDBConnection {
   return resolveWriter()
 }
 
-/**
- * Beacons are duplicates by nature: back/forward navigation re-fires an old
- * event id, StrictMode's dev double-effect sends twice, and dead-letter replay
- * can re-send a batch that partially landed. `event_id` is the PK, so one
- * duplicate would poison the WHOLE appender batch (and its replay) — filter
- * against the table (and within the batch) before appending.
- */
 async function filterAlreadyStored(
   writer: DuckDBConnection,
   rows: DeviceEnvClientRow[],
@@ -106,8 +93,6 @@ async function filterAlreadyStored(
   return fresh
 }
 
-// Lazy writer getter: the sidecar opens AFTER the batchers register, so the
-// connection resolves at flush time, never at construction.
 class DeviceEnvBeaconBatcher extends InsertBatcher<DeviceEnvClientRow, DuckDBConnection> {
   constructor() {
     super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.env-beacon', requireWriter)

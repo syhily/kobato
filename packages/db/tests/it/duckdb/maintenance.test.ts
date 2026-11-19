@@ -10,17 +10,12 @@ import {
 } from '@kobato/test/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// The DuckDB half of the daily DB maintenance job against a real sidecar:
-// the 180-day retention DELETE + CHECKPOINT over all three tables at one
-// cutoff. The SQLite half stays in the server package's maintenance test.
-
 interface CapturedLog {
   level: 'info' | 'warn' | 'error'
   msg: string
   ctx?: Record<string, unknown>
 }
 
-/** Capture logger standing in for the composition layer's injected logger. */
 function captureLogger(): DuckDBLogger & { lines: CapturedLog[] } {
   const lines: CapturedLog[] = []
   return {
@@ -40,9 +35,7 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
     log = captureLogger()
   })
 
-  afterAll(async () => {
-    // Handles are tracked by the helper and closed wholesale.
-  })
+  afterAll(async () => {})
 
   it('deletes rows past the 180-day retention, keeps recent rows, logs counts and file sizes', async () => {
     const old = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)
@@ -65,7 +58,6 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
           retentionDays: 180,
           rowsBefore: 2n,
           rowsAfter: 1n,
-          // File-backed handle → real file sizes logged (null on :memory:).
           bytesBefore: expect.any(Number),
           bytesAfter: expect.any(Number),
         }),
@@ -103,7 +95,6 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
     const client = await analyticsHandle.reader.runAndReadAll('SELECT event_id::VARCHAR AS id FROM device_env_client')
     expect(client.getRowObjects()).toEqual([{ id: recentId }])
 
-    // The logged totals cover all three tables (2 events + 2 + 2).
     expect(log.lines).toContainEqual(
       expect.objectContaining({
         level: 'info',
@@ -116,8 +107,6 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
   })
 
   it('applies the same absolute cutoff regardless of the session TimeZone', async () => {
-    // Pin a non-UTC session zone on BOTH connections: the cutoff binds epoch
-    // seconds through to_timestamp(?), so TIMESTAMPTZ compares stay absolute.
     await analyticsHandle.writer.run(`SET TimeZone='America/Los_Angeles'`)
     await analyticsHandle.reader.run(`SET TimeZone='Pacific/Auckland'`)
     const justOld = new Date(Date.now() - 181 * 24 * 60 * 60 * 1000)

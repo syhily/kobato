@@ -53,12 +53,6 @@ function provisionFailureDescriptor(error: unknown): ErrorMessageDescriptor {
   return descriptorFor('admin.settings.observability.error.provisionFailed')
 }
 
-/**
- * Product chain: a verified connection immediately provisions the default O2
- * assets. A failure here is NOT a connection failure — the verified
- * fingerprint is already persisted — so the outcome is reported alongside
- * `ok: true` and the admin retries via `admin.observability.provision`.
- */
 async function provisionAfterConnectionTest(
   context: AuthedHandlerContext,
   site: ObservabilitySettingsSlice,
@@ -84,12 +78,9 @@ async function provisionAfterConnectionTest(
 const impl = implementAdmin(adminObservabilityContract)
 
 const testConnection = impl.testConnection.handler(async ({ context }) => {
-  // Saved settings only: a connection test must never prove an unsaved draft.
   const site = requireSavedSite(context)
   const result = await testObservabilityConnection(site)
 
-  // The CONNECTION fingerprint (endpoint/org/credentials only) unlocks
-  // activation; flipping a sampling switch afterwards keeps it valid.
   const fingerprint = observabilityConnectionFingerprint(site)
   await settingsWriter(context)({ verifiedFingerprint: fingerprint })
 
@@ -109,8 +100,6 @@ const testConnection = impl.testConnection.handler(async ({ context }) => {
     },
   })
   if (provisionOutcome.status === 'failed') {
-    // The connection event stays the single success event; the failed asset
-    // sync gets its own machine-readable record for diagnostics.
     recordAuditEventFromContext(context, {
       action: 'observability_provisioning_failed',
       resourceType: 'observability',
@@ -157,8 +146,6 @@ const provision = impl.provision.handler(async ({ context }) => {
     },
   })
 
-  // The settings writes above already trigger the section handler; this is
-  // an explicit convergence pass after provisioning completes.
   await syncObservabilityRuntime()
   return result
 })

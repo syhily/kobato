@@ -53,8 +53,6 @@ export function useEditorSurface<TBody extends SerializedEditorState>({
   return { editorInstance, registerAPI, mountedInitialState, handleChange }
 }
 
-/** Composer props minus the host-owned constants (`labels`, `darkMode`);
- *  `nodes` is re-required — a surface always names its node set. */
 export interface EditorSurfaceComposerProps extends Omit<
   InklingComposerProps,
   'labels' | 'darkMode' | 'nodes' | 'wordCountLanguage'
@@ -71,9 +69,6 @@ export interface EditorSurfaceComposerProps extends Omit<
 export function EditorSurfaceComposer({ labels: explicitLabels, ...props }: EditorSurfaceComposerProps) {
   const { resolvedTheme } = useTheme()
   const { locale } = useI18n()
-  // Only workspace documents carry the active locale's table in the root loader
-  // payload; a missing payload (public document, root-loader failure, router-less
-  // render) falls back to Inkling's English defaults.
   const payloadLabels = useKobatoInklingLabels()
   const labels = explicitLabels ?? payloadLabels
   const { children, ...composerProps } = props

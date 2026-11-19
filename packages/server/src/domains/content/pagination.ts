@@ -3,10 +3,6 @@ export interface LimitOffset {
   offset?: number
 }
 
-/**
- * Minimal structural view of a drizzle select builder that can still be paginated:
- * a conditional `.where()` retypes it as an `Omit<>`, so class constraints no longer hold.
- */
 interface Paginatable<Row> extends PromiseLike<Row[]> {
   limit(limit: number): PromiseLike<Row[]> & { offset(offset: number): PromiseLike<Row[]> }
   offset(offset: number): PromiseLike<Row[]>

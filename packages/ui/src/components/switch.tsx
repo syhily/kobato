@@ -3,8 +3,6 @@ import type { ComponentProps } from 'react'
 import { Switch as BaseSwitch } from '@base-ui/react/switch'
 import { cn } from '@kobato/ui/lib/cn.ts'
 
-/** Base UI Switch wrapper. Inside native forms pass `uncheckedValue` (or use an
- *  RHF Controller) so the unchecked state submits correctly. */
 function Switch({ className, ...props }: ComponentProps<typeof BaseSwitch.Root>) {
   return (
     <BaseSwitch.Root

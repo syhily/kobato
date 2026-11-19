@@ -8,9 +8,6 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 
-// The SEA binary runs the same folder migrator against a byte-identical embedded copy of this
-// `drizzle/` tree; here the folder path itself is pinned.
-
 const MIGRATIONS_FOLDER = defaultMigrationsFolder()
 
 interface MigrationRow {
@@ -24,7 +21,6 @@ interface DbShape {
   migrations: MigrationRow[]
 }
 
-/** The single migration folder in the squashed tree (`<timestamp>_initial_schema`). */
 function soleMigrationSql(): string {
   const folders = readdirSync(MIGRATIONS_FOLDER, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -47,7 +43,6 @@ function readDbShape(db: Database): DbShape {
   return { tables, migrations }
 }
 
-// Directly-opened handles close locally; createTestDatabaseFile self-cleans via the harness registry.
 const handles: DatabaseHandle[] = []
 afterAll(() => {
   for (const handle of handles.splice(0)) {
@@ -64,7 +59,6 @@ describe('folder migrations (sqlite)', () => {
     const shape = readDbShape(handle.db)
     expect(shape.tables.length).toBeGreaterThan(0)
     expect(shape.migrations.length).toBeGreaterThan(0)
-    // No SQLite cache table: storage lives on the filesystem.
     expect(shape.tables).not.toContain('kv_cache')
   })
 
@@ -88,8 +82,6 @@ describe('folder migrations (sqlite)', () => {
         .map((column) => [column.name, column.notnull]),
     )
 
-    // English fallback stays in title/body; the descriptor columns are nullable, so existing
-    // direct/broadcast rows need no backfill.
     expect(columns).toMatchObject({
       title: 1,
       body: 1,
@@ -109,13 +101,9 @@ describe('folder migrations (sqlite)', () => {
       const column = handle.db
         .all<{ name: string; notnull: number; dflt_value: string | null }>(sql`PRAGMA table_info(${sql.raw(table)})`)
         .find((entry) => entry.name === 'content_language')
-      // Nullable with no default: a pre-migration row keeps meaning "unset"
-      // (inherit the document language) without any data rewrite.
       expect(column).toMatchObject({ name: 'content_language', notnull: 0, dflt_value: null })
     }
 
-    // The squashed initial migration carries the columns inline: pure CREATE
-    // DDL, no ALTER / UPDATE data rewrite.
     const migrationSql = soleMigrationSql()
     expect(migrationSql).toContain('`content_language` text')
     expect(migrationSql).not.toMatch(/ALTER TABLE|^\s*UPDATE/im)
@@ -133,8 +121,6 @@ describe('folder migrations (sqlite)', () => {
   })
 
   it('no-ops on a database that already holds the final schema', () => {
-    // The dev-environment upgrade path: rows wiped from __drizzle_migrations,
-    // schema already present — the defensive guards make the re-run a no-op.
     const handle = openDatabase(':memory:')
     handles.push(handle)
     migrateDatabase(handle.db)
@@ -155,7 +141,6 @@ describe('folder migrations (sqlite)', () => {
   })
 
   it('applies the pragma set the runtime relies on', () => {
-    // journal_mode=wal only exists on a real file — use the file variant.
     const handle = createTestDatabaseFile()
     expect(handle.db.get(sql`PRAGMA auto_vacuum`)).toEqual({ auto_vacuum: 2 })
     expect(handle.db.get(sql`PRAGMA journal_mode`)).toEqual({ journal_mode: 'wal' })

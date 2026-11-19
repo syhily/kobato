@@ -81,9 +81,7 @@ export function registerFileDropCommands(editor: LexicalEditor, ports: FileDropP
 export function registerDragOverSuppression(editor: LexicalEditor): () => void {
   const rootElement = editor.getRootElement()
   if (!rootElement) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
   const handleDragOver = (event: DragEvent) => {
     const target = event.target instanceof HTMLElement ? event.target : null

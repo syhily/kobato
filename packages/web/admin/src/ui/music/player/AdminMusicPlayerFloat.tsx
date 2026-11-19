@@ -41,18 +41,14 @@ function loadPosition(): PlayerPosition {
         return { x: parsed.x, y: parsed.y }
       }
     }
-  } catch {
-    // ignore
-  }
+  } catch {}
   return { x: 0, y: 0 }
 }
 
 function savePosition(pos: PlayerPosition) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pos))
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 export function AdminMusicPlayerFloat() {

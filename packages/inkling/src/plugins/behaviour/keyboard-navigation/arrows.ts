@@ -25,9 +25,6 @@ import {
   type LexicalCommand,
 } from 'lexical'
 
-// The vertical-arrow pair shares one skeleton; the directions diverge in two
-// one-sided policies: up exits the editor at the document start
-// (`cursorDidExitAtTop`), down ensures a trailing paragraph after a doc-end card.
 function registerVerticalArrowCommand(
   editor: LexicalEditor,
   deps: KeyboardNavigationDeps,

@@ -2,15 +2,11 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-// AdminInstallForm's mode is event-gated, unreachable in one SSR pass; this file adds
-// the full field set and the submitting copy driven by a mocked useNavigation.
-
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn(),
   startRegistration: vi.fn(),
 }))
 
-// Hoisted useNavigation singleton so each test flips state/formMethod.
 const navigationState = vi.hoisted(() => ({ state: 'idle', formMethod: 'GET' }))
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
@@ -20,8 +16,6 @@ vi.mock('react-router', async () => {
     useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
   }
 })
-
-// extractApiErrorMessage / isApiAccepted stay real (SSR-safe pure helpers).
 
 describe('snapshot: AdminInstallForm (install form fields)', () => {
   it('renders the install form with title / name / email / password fields and a CSRF hidden input', () => {

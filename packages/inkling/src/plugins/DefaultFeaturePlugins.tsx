@@ -13,8 +13,6 @@ import TypographyPlugin from '@kobato/inkling-internal/plugins/TypographyPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 import React from 'react'
 
-// A feature plugin entry, as data. The explicit key keeps rendering stable
-// without leaning on component names (which minification can collapse).
 export interface FeaturePluginEntry {
   key: string
   Component: React.ComponentType

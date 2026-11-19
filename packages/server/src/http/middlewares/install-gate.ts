@@ -7,15 +7,7 @@ import { createMiddleware } from 'hono/factory'
 
 const log = getLogger('install.gate')
 
-const EXEMPT_PATHS = new Set([
-  '/admin/signin',
-  '/admin/setup',
-  '/api/setup/restore',
-  // The frontend RUM drift probe must always answer; pre-install it reports
-  // `{enabled:false}` instead of redirecting the browser poll.
-  '/api/rum/status',
-  '/ready',
-])
+const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup', '/api/setup/restore', '/api/rum/status', '/ready'])
 
 const EXEMPT_PATH_PREFIXES = [
   '/assets/',
@@ -28,7 +20,6 @@ const EXEMPT_PATH_PREFIXES = [
   '/robots.txt',
   '/sitemap.xml',
   '/__manifest',
-  // The RUM intake relay answers its own gated JSON error, never a redirect.
   '/api/rum/intake/',
 ]
 
@@ -40,7 +31,6 @@ function isExempt(pathname: string): boolean {
 }
 
 export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) => {
-  // `requestContext.url` is the normalized document URL — `.data` is already stripped.
   if (isExempt(c.var.requestContext.url.pathname)) {
     return next()
   }

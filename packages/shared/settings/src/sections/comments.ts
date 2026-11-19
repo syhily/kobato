@@ -4,7 +4,6 @@ import { AVATAR_SOURCES } from '@kobato/assets/avatar.ts'
 import { isAllowedMirrorUrl } from '@kobato/assets/gravatar.ts'
 import { z } from 'zod'
 
-/** Custom validation messages: typed UI-catalog ids (mapped to descriptors on write). */
 export const commentsValidationMessages = {
   mirrorInvalid: 'admin.settings.comments.error.mirrorInvalid',
   duplicateSource: 'admin.settings.comments.error.duplicateSource',
@@ -15,17 +14,12 @@ export const commentsSchema = z.object({
     size: z.coerce.number().int().min(1).max(100),
     avatar: z.object({
       mirror: z.url().refine(isAllowedMirrorUrl, commentsValidationMessages.mirrorInvalid),
-      // Upstream fetch order; replace semantics on patch (the form always
-      // submits the full permutation). Empty/duplicated chains are rejected.
       sources: z
         .array(z.enum(AVATAR_SOURCES))
         .min(1)
         .refine((sources) => new Set(sources).size === sources.length, commentsValidationMessages.duplicateSource)
         .default(['qq', 'github', 'gravatar']),
     }),
-    // GitHub PAT for the Search API email lookup; encrypted at rest via
-    // SECRET_FIELDS. Redaction blanks it to '' — keep '' valid here. Kept at
-    // the bucket level because declareSecret addresses exactly one level.
     githubToken: z.string().max(255).optional(),
     tokenTtlSeconds: z.coerce.number().int().min(60).max(86400).default(1800),
   }),

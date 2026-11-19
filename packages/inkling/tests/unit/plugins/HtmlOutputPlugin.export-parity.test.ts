@@ -1,24 +1,3 @@
-/**
- * Cross-path identity pin for the editor's two HTML export paths:
- *
- * - LIVE: `HtmlOutputPlugin` runs the shared serializer (`$convertToHtmlString`
- *   plus Inkling's element transformers) inside `editor.read()` on the mounted
- *   editor; `renderLive` drives that exact call. The plugin's remaining
- *   behaviour (empty-document guard, debounce) is covered by
- *   HtmlOutputPlugin.test.ts.
- * - HEADLESS: `lexicalStateToHtml` renders a serialized state through the same
- *   serializer and transformers.
- *
- * Both paths run ONE serializer, so their output is byte-identical for any
- * document content: each case pins the single output and asserts both paths
- * agree. An intentional output change means updating the pinned strings.
- *
- * One input-dependent exception: the headless renderer registers a pre-render
- * transform that removes temporary AtLinkNodes (mid-search link placeholders)
- * before serializing; the live adapter cannot mutate the document it exports,
- * so an in-progress at-link search serializes as its inline query text.
- */
-
 import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
 import { describe, expect, it } from 'vitest'
 

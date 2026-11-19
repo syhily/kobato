@@ -1,12 +1,3 @@
-// Log-line projection for the OpenObserve log pipeline.
-//
-// SDK-free and never imports the logger: the trace runtime feeds it the
-// serialized Pino lines captured by the log sink, and only what this projection
-// returns can leave the process. Messages are a closed shape (a fixed HTTP
-// phrase or a sanitized non-HTTP static message); request ids, URLs, headers,
-// host/pid, arbitrary context, error messages, stacks, and causes have no route
-// through here. Local stdout logging is unaffected by any drop.
-
 import { projectError } from '@kobato/server/infra/trace/sanitize.ts'
 import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths.ts'
 
@@ -97,12 +88,6 @@ function projectTimestamp(value: unknown, now: number): number {
   return now
 }
 
-/**
- * The whole scope decides whether the record is allowed out. `trace` is the
- * telemetry subsystem's own scope: projecting it would feed the log pipeline
- * with its own output, so the record is dropped outright. An absent scope gets
- * the surface default; a present-but-invalid one stays out of the attributes.
- */
 function readScope(value: unknown, isHttp: boolean): { drop: boolean; scope: string | undefined } {
   if (value === undefined || value === null) {
     return { drop: false, scope: isHttp ? 'http' : 'app' }
@@ -116,7 +101,6 @@ function readScope(value: unknown, isHttp: boolean): { drop: boolean; scope: str
   return { drop: false, scope: undefined }
 }
 
-/** Non-HTTP message body: marker-bearing lines never leave, control chars are stripped, length is bounded. */
 function projectMessage(value: unknown): { drop: boolean; body: string | undefined } {
   if (typeof value !== 'string') {
     return { drop: false, body: undefined }
@@ -128,7 +112,6 @@ function projectMessage(value: unknown): { drop: boolean; body: string | undefin
   return { drop: false, body: cleaned === '' ? undefined : cleaned.slice(0, LOG_BODY_MAX_LENGTH) }
 }
 
-/** HTTP records never read the original message: the body is one of three fixed phrases. */
 function projectHttpBody(severityNumber: number, status: number | null): string {
   if (severityNumber >= ERROR_SEVERITY_NUMBER || (status !== null && status >= 500)) {
     return 'HTTP request failed'
@@ -167,10 +150,6 @@ function project(line: string, now: number): LogLineProjection {
 
   const status = readStatus(parsed.res)
 
-  // Self-telemetry endpoints (health probes, the RUM status poll every 10 s
-  // per open tab, the intake relay) are excluded from spans and metrics; the
-  // same paths must not flood the log stream either. Only QUIET lines drop —
-  // a rejection or failure stays visible. Local stdout logging is unaffected.
   if (
     isHttp &&
     severity.number < ERROR_SEVERITY_NUMBER &&
@@ -223,10 +202,6 @@ function project(line: string, now: number): LogLineProjection {
   return { kind: 'ok', record }
 }
 
-/**
- * Project one serialized Pino line. Never throws: any unexpected failure is a
- * drop, because a broken line must not reach the caller's loop.
- */
 export function projectLogLine(line: string, now: number): LogLineProjection {
   try {
     return project(line, now)

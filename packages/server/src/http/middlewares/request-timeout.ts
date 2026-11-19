@@ -28,7 +28,6 @@ export function requestTimeout(
     // Wrap the raw request with the combined signal; some runtimes (Vite dev)
     // reject `new Request()` on the incoming request, so fall back to a Proxy.
     try {
-      // unsafeCast: Hono types `c.req.raw` as readonly.
       unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Request(c.req.raw, { signal: combined })
     } catch {
       unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Proxy(c.req.raw, {
@@ -48,7 +47,6 @@ export function requestTimeout(
     try {
       await next()
     } catch (err) {
-      // Only the timeout (not a client disconnect) emits the 503.
       if (controller.signal.aborted && !clientSignal.aborted) {
         throw localizedHttpException(503, 'error.api.timeout')
       }

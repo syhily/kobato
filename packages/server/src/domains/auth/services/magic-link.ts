@@ -1,5 +1,3 @@
-// step). Only the POST consumes the token, so mail-client prefetchers never burn it.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
 import { findUserById } from '@kobato/db/operations/user.ts'
@@ -20,10 +18,6 @@ import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@
 
 const log = getLogger('auth.magic-link')
 
-/**
- * Send the one-time signin link; returns a descriptor on failure, `null` on success —
- * the caller answers generically either way.
- */
 export async function sendMagicLink(
   ctx: SigninFlowContext,
   request: Request,
@@ -40,8 +34,6 @@ export async function sendMagicLink(
   }
 
   const { token } = issueSignInLinkToken(db, dbUser.id)
-  // Resolved from the configured site: a request-supplied origin would let a spoofed
-  // Host header point the emailed token at an attacker host.
   const origin = resolveSiteOrigin(request)
   const link = `${origin}/admin/signin?action=magiclink&token=${encodeURIComponent(token)}&redirect_to=${encodeURIComponent(redirectTo)}`
 

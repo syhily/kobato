@@ -3,11 +3,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
-/**
- * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null while
- * the upload toggle is OFF so existing `s3` rows keep rendering; it is the 302 target
- * of the site-owned `/storage/*` routes and never appears in stored asset URLs.
- */
 export function getPublicBaseUrl(): string | null {
   const assets = requireBlogSettingsSection('assets')
   const host = assets.asset.host.trim()
@@ -47,12 +42,6 @@ export interface ResolveAssetUrlOptions {
   stripPrefix?: string
 }
 
-/**
- * Site-owned absolute URL for a stored asset: `${website}/storage/<key>` (or
- * `options.route`), so a storage-backend switch never breaks stored links — the
- * `/storage/*` route 302s to the current backend when S3 is active. Throws 503 when
- * the site origin is unset; appends `?v=<updatedAtMs>`.
- */
 export function resolveAssetUrl(storagePath: string, updatedAtMs?: number, options?: ResolveAssetUrlOptions): string {
   const website = getGeneralWebsite()
   if (website === '') {
@@ -66,7 +55,6 @@ export function resolveAssetUrl(storagePath: string, updatedAtMs?: number, optio
   return appendVersion(`${website}${route}${key}`, updatedAtMs)
 }
 
-/** Null-safe variant: `null` instead of `ActionFailure` when the site origin is unset. */
 export function safeResolveAssetUrl(storagePath: string, updatedAtMs?: number): string | null {
   try {
     return resolveAssetUrl(storagePath, updatedAtMs)
@@ -97,13 +85,6 @@ function stripQueryAndFragment(url: string): string {
   return cut === -1 ? url : url.slice(0, cut)
 }
 
-/**
- * Inverse of `resolveAssetUrl`: site-owned asset URL → `{ key, route }`. Accepts the
- * origin-relative forms (`/storage/<key>`, `/fonts/embedded/<hash>/<file>`) and — per
- * `options` — the absolute form, with any query/fragment stripped. Returns `null` for
- * CDN URLs, foreign origins, malformed URLs, and anything outside the grammar owned by
- * `@kobato/assets/asset-url`; this wrapper adds the origin policy.
- */
 export function parseAssetUrl(url: string, options: ParseAssetUrlOptions = {}): ParsedAssetUrl | null {
   if (url.startsWith('/') && !url.startsWith('//')) {
     return parseAssetUrlPath(stripQueryAndFragment(url))

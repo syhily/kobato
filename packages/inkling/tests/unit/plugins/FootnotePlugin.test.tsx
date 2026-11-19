@@ -18,11 +18,6 @@ import {
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The undo-merge pin: the caret-trigger insertion commits untagged, so it
-// merges into the typing history entry and one undo reverts the whole footnote
-// insertion (ref + definition) along with the `^ ` typing. The
-// undo-resurrection guard is pinned at the gate level in update-scan.test.ts.
-
 function createTestEditor() {
   return createEditor({
     namespace: 'test',

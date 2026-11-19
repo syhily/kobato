@@ -13,9 +13,6 @@ import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
 
-// The @unovis chunk is client-only: SSR and the first client render emit the
-// static skeleton; the lazy chart mounts behind an identical fallback.
-
 const LazyViewsChartInner = lazy(() =>
   import('@kobato/web-admin/ui/analytics/ViewsChartInner.tsx').then((module) => ({ default: module.ViewsChartInner })),
 )
@@ -60,7 +57,6 @@ export function ViewsChart({ className, scope }: ViewsChartProps) {
   )
 }
 
-// Byte-identical between SSR, first client render and the lazy fallback (React #418).
 function ViewsChartSkeleton({ className }: { className?: string }) {
   const { t } = useI18n()
   return (

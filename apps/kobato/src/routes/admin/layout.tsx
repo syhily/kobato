@@ -10,9 +10,6 @@ import type { RouteHandle } from '@/root.tsx'
 
 import type { Route } from './+types/layout'
 
-// `admin.css` shares the token partial with the public site but scans only admin-rendered sources, so this
-// bundle excludes the public cascade; `useDetachPublicCss` covers SPA navigations arriving with `public.css`
-// still in <head>.
 import '@/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }

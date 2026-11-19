@@ -15,7 +15,6 @@ export interface LiveContentOptions {
   includeScheduled?: boolean
 }
 
-/** In-memory projection of the shared "live" gate; must stay in sync with `liveContentWhere`. */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
     return false
@@ -42,7 +41,6 @@ export interface LiveContentColumns {
   publishedAt: typeof postMetaTable.publishedAt | typeof pageMetaTable.publishedAt
 }
 
-/** SQL projection of the same "live" gate as `isLive`; keep the two in sync. */
 export function liveContentWhere(columns: LiveContentColumns, options: LiveContentOptions = {}): SQL {
   const conditions: SQL[] = [
     isNull(columns.deletedAt),
@@ -71,7 +69,6 @@ export interface PromotedContentColumns {
   publishedRevisionId: typeof postMetaTable.publishedRevisionId | typeof pageMetaTable.publishedRevisionId
 }
 
-/** SQL projection of the same "promoted" gate as `isPromoted`; keep the two in sync. */
 export function promotedContentWhere(columns: PromotedContentColumns): SQL {
   return and(eq(columns.published, true), isNotNull(columns.publishedRevisionId))!
 }

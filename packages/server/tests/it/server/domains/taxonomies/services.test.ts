@@ -414,13 +414,11 @@ describe('taxonomies/categories — rename cascades to posts with zero post writ
     const before = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
     await upsertAdminCategory(db, { id, name: 'New', cover: '', description: '' })
-    // The public pipeline resolves the display name via category_id…
     const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate.ts')
     const metas = await listPublicPosts(db, { categoryId: id })
     const posts = await hydratePostList(db, metas)
     expect(posts[0]?.category).toBe('New')
-    // …while the post row itself saw no write: same reference, same updated_at.
     const after = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     expect(after[0]?.categoryId).toBe(id)
     expect(after[0]?.updatedAt).toEqual(before[0]?.updatedAt)

@@ -96,8 +96,6 @@ export function BookmarkNodeComponent({
   }, [editor, nodeKey])
 
   React.useEffect(() => {
-    // only run this once (the input state already initialises from `url`, so
-    // the effect only kicks off the initial fetch)
     if (createdWithUrl) {
       fetchInitialMetadata(url).catch(() => {
         handlePasteAsLink()

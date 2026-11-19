@@ -3,7 +3,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import { coerceBoolean } from '@kobato/settings/sections/shared.ts'
 import { z } from 'zod'
 
-/** Custom validation messages: typed ids; the minimum rides `params`. */
 export const sidebarValidationMessages = {
   customQuotesTooFew: 'admin.settings.sidebar.error.customQuotesTooFew',
 } as const satisfies Record<string, UiMessageId>
@@ -17,8 +16,6 @@ export const sidebarSchema = z.object({
         count: z.coerce.number().int().min(0).max(100).optional(),
       }),
     ),
-    // Daily-quote source for the calendar image. Remote sources fall back to the
-    // built-in bank on failure; `custom` needs ≥ 10 uploaded quotes or behaves like `local`.
     dailyQuote: z
       .object({
         source: z.enum(['shanbay', 'one', 'hitokoto', 'custom', 'local']).default('shanbay'),

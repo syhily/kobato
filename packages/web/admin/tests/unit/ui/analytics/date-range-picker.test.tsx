@@ -1,10 +1,5 @@
 // @vitest-environment happy-dom
 
-// Pins the two-click custom-range flow: the first calendar click only sets
-// the start day (no search fires), the second completes the range and
-// commits it. Regression test for react-day-picker v10 completing a
-// same-day range on the first click without `resetOnSelect`.
-
 import type { DateRange } from '@kobato/contracts/analytics.ts'
 
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
@@ -23,12 +18,8 @@ function startOfNextDaySec(date: Date): number {
   return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime() / 1000)
 }
 
-/** Day button for the given date (the calendar marks days via `data-day`). */
 function dayButton(date: Date): HTMLElement {
-  // `data-day` is the machine yyyy-MM-dd value the calendar stamps.
   const machineDay = calendarMachineDay(date)
-  // DayPicker stamps `data-day` on its own day cell too; target OUR button
-  // (the calendar's day button carries the same machine value).
   const el = document.querySelector<HTMLElement>(`button[data-day="${machineDay}"]`)
   if (!el) {
     throw new Error(`day button not found: ${machineDay}`)
@@ -40,8 +31,6 @@ function renderPicker(ui: React.ReactElement) {
   return render(wrapWithI18n(ui))
 }
 
-// Pick selectable days guaranteed inside the current month (never disabled,
-// never duplicated as outside days of the adjacent rendered month).
 function pickDays(): { startDay: Date; endDay: Date } {
   const now = new Date()
   const startDay = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -50,8 +39,6 @@ function pickDays(): { startDay: Date; endDay: Date } {
 }
 
 async function openCustomPicker() {
-  // The trigger shows 自定义 while a preset is active and the formatted
-  // range (containing the – separator) once a custom range is applied.
   fireEvent.click(screen.getByRole('button', { name: /自定义|–/ }))
   await waitFor(() => {
     expect(document.querySelector('[data-day]')).toBeTruthy()
@@ -98,7 +85,6 @@ describe('DateRangePicker custom range', () => {
     fireEvent.click(dayButton(startDay))
     expect(onSelectRange).not.toHaveBeenCalled()
 
-    // Close without completing, then reopen — the pending start must reset.
     fireEvent.keyDown(document, { key: 'Escape' })
     await waitFor(() => {
       expect(document.querySelector('[data-day]')).toBeNull()

@@ -8,9 +8,6 @@ import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { makeTranslator } from '@kobato/test/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// Validation messages are UI message IDS: the client resolves them with
-// `localizeMessage`, the server maps them through `messageDescriptor`. Raw
-// prose here would ship untranslated copy in every locale.
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
 const CASES = [

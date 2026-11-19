@@ -5,7 +5,6 @@ import {
   type FootnoteHandleState,
 } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 
-// Per-composer footnote handle; nested composers share the top-level one.
 export const {
   Context: FootnoteHandleContext,
   useHandle: useFootnoteHandle,

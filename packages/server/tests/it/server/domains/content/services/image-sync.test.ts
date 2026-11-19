@@ -5,8 +5,6 @@ import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } fro
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// No module mocks: real image rows; the stamp is the origin-relative
-// site-owned form regardless of the settings snapshot.
 const { syncLibraryImageBlocks } = await import('@kobato/server/domains/content/services/image-sync.ts')
 
 const db = getTestDb()
@@ -138,8 +136,6 @@ describe('content/services/image-sync — row resolution', () => {
   })
 
   it('always stamps the origin-relative site-owned src, independent of the CDN base', async () => {
-    // Host '' makes the real getPublicBaseUrl() return null; the it setup's
-    // afterEach restores the default bundle automatically.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       assets: {

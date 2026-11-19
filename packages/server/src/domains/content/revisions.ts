@@ -5,7 +5,6 @@ import type { ContentType } from '@kobato/server/domains/content/schemas/revisio
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 
-// Sync (node:sqlite): called inside the restore transaction.
 export function findContentById(db: Database, id: number): ContentRow | null {
   const rows = db.select().from(contentTable).where(eq(contentTable.id, id)).limit(1).all()
   return rows[0] ?? null

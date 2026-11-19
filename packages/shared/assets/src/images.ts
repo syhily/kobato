@@ -2,17 +2,12 @@ import { isOnSiteOrigin, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.t
 
 export type AdminImageKind = 'generic' | 'category' | 'friend'
 
-/**
- * Sparse image metadata for an image source (the block keeps its own src),
- * produced by the images domain enhancer and consumed by the renderer.
- */
 export interface ResolvedImageMeta {
   thumbhash?: string
   width?: number
   height?: number
 }
 
-/** Client-friendly classifier so the table column doesn't have to import server code. */
 export function classifyImageKind(storagePath: string): AdminImageKind {
   if (storagePath.startsWith('images/categories/')) {
     return 'category'
@@ -25,7 +20,6 @@ export function classifyImageKind(storagePath: string): AdminImageKind {
 
 const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
 
-/** Isomorphic host extractor for client-side cover dialogs; must mirror `extractHostForFriendKey` in `@/server/domains/images/key`. */
 export function extractFriendHostSafe(homepage: string): string | null {
   const trimmed = homepage.trim()
   if (trimmed === '') {
@@ -43,7 +37,6 @@ export function extractFriendHostSafe(homepage: string): string | null {
   return host
 }
 
-/** Whether the value is safe to embed in an S3 key (categories enforce the lowercase ASCII pattern at the form layer). */
 export function isSafeImageSegment(value: string): boolean {
   const trimmed = value.trim()
   if (trimmed === '') {
@@ -75,11 +68,6 @@ export interface ImageUrlOptions {
 
 const DEFAULT_SRCSET_BREAKPOINTS = [256, 512, 768, 1024, 1280, 1536]
 
-/**
- * The src unchanged when it is a site-owned asset URL — origin-relative
- * (`/storage/<key>`) or absolute on the site origin — otherwise `null`
- * (external URLs use the inline-template path).
- */
 export function siteOwnedStorageSrc(src: string, siteOrigin: string | undefined): string | null {
   if (src.startsWith(STORAGE_ROUTE_PREFIX)) {
     return src
@@ -92,9 +80,7 @@ export function siteOwnedStorageSrc(src: string, siteOrigin: string | undefined)
     if (isOnSiteOrigin(url, siteOrigin)) {
       return url.pathname.startsWith(STORAGE_ROUTE_PREFIX) ? src : null
     }
-  } catch {
-    // Not a URL (data:, malformed) — not site-owned storage.
-  }
+  } catch {}
   return null
 }
 
@@ -141,9 +127,6 @@ export function getImageUrl({
 }: ImageUrlOptions): string {
   const template = (urlTemplate ?? '').trim()
   if (siteOwnedStorageSrc(src, siteOrigin) !== null) {
-    // Site-owned asset: signal transform intent as query params; the
-    // `/storage/*` redirect substitutes them into the template. Without a
-    // template there is nothing to signal — serve the plain URL.
     return template === '' ? src : appendTransformParams(src, width, height, quality)
   }
 
@@ -160,7 +143,6 @@ export function getImageUrl({
     .replaceAll('{height}', String(height))
     .replaceAll('{quality}', String(imageQuality))
 
-  // Re-append the query string so cache-buster params don't land mid-URL.
   const qIndex = src.indexOf('?')
   const srcPath = qIndex >= 0 ? src.slice(0, qIndex) : src
   const search = qIndex >= 0 ? src.slice(qIndex) : ''

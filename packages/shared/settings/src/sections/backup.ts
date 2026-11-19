@@ -3,7 +3,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import { coerceBoolean } from '@kobato/settings/sections/shared.ts'
 import { z } from 'zod'
 
-/** Custom validation messages: typed ids; numeric bounds ride `params`. */
 export const backupValidationMessages = {
   dayOfWeekRequired: 'admin.settings.backup.error.dayOfWeekRequired',
   dayOfMonthRequired: 'admin.settings.backup.error.dayOfMonthRequired',
@@ -28,12 +27,8 @@ export const backupSchema = z
     encryption: z
       .object({
         enabled: coerceBoolean,
-        // Like every settings secret: `undefined` means "keep the stored
-        // value", any string (including empty) is a deliberate overwrite.
         password: z.string().max(512).optional(),
       })
-      // Rows written before the encryption field existed carry no key — the
-      // default keeps them valid.
       .default({ enabled: false, password: '' }),
   })
   .superRefine((value, ctx) => {
@@ -59,10 +54,6 @@ export const backupSchema = z
     if (!value.encryption.enabled) {
       return
     }
-    // The merged view carries the stored (encrypted) password when the patch
-    // omits it. Enabled with NO password (never set, or explicitly cleared)
-    // would silently write PLAINTEXT archives while the UI claims encryption
-    // — fail closed instead of degrading.
     const password = value.encryption.password
     if (password === undefined || password.trim() === '') {
       ctx.addIssue({

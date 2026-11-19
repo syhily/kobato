@@ -36,7 +36,6 @@ function mockSharp(opts: {
   return () => staged
 }
 
-// The worker statically imports sharp, so the mock targets the package.
 const sharpMock = vi.hoisted(() => {
   let current: (() => unknown) | null = null
   const fn = Object.assign(

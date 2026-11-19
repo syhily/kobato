@@ -1,9 +1,6 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
-// Per-entity metric counters keyed on `(type, owner_id)` (`post`/`page`).
-// `public_id` is the opaque UUID on the wire (envelope field still named
-// `page_key`) so numeric ids never reach the browser.
 export const metric = sqliteTable(
   'metric',
   {
@@ -15,7 +12,6 @@ export const metric = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date()),
     deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
-    // `type` mirrors the `content` convention (plain `text`, no DB enum) so entity types extend without a migration.
     type: text('type').$type<'post' | 'page'>().notNull(),
     ownerId: integer('owner_id').notNull(),
     publicId: text('public_id')

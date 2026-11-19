@@ -18,17 +18,6 @@ import prettifyFileName from '@kobato/inkling-internal/utils/prettify-file-name'
 import { createPreviewLease, type PreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
 import { $getNodeByKey, type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
 
-/**
- * The one upload-intent module: file(s) + per-card metadata extraction in, typed node
- * patch out through the write seam ($updateCardNode). Previews lease from the
- * preview-lease module (lease on start, release on settle). Per-card variance is
- * expressed as three small policy unions (preview / metadata / empty-result), each
- * closed over its valid shapes, so combinations the runner would silently ignore — a
- * publish without a lease, an after-upload timing without an extractor, an `onBail`
- * hook under the patch policy, pre-extracted metadata alongside an extractor — do not
- * compile (tests/inkling/typecheck/upload-intent-options.ts).
- */
-
 export interface UploadResultItem {
   url?: string
   fileName?: string
@@ -58,29 +47,10 @@ export interface PatchContext<TMeta> {
   file: File
 }
 
-/**
- * Preview policy. The PRESENCE of this policy is the lease request: an object
- * URL is created for `files[0]` before any extraction and released in the
- * runner's `finally`. `publish` pushes the leased URL onto the node through
- * the seam (image's `previewSrc`); omitting it keeps the lease metadata-only
- * (audio's duration URL). There is no publish-without-lease shape.
- */
 export interface UploadPreviewPolicy<TNode> {
   publish?: (node: TNode, url: string) => void
 }
 
-/**
- * Metadata policy: exactly one of three shapes, so the runner never carries a
- * timing it cannot use and never has to choose between pre-extracted and
- * extracted metadata.
- *
- * - `preExtracted` — extraction happened outside the runner and its result is
- *   handed in (video's caught `extractVideoMetadata`).
- * - `extract` + `beforeUpload` — runs after the preview lease and before the
- *   upload (image dimensions from the preview URL).
- * - `extract` + `afterUpload` — runs only after a non-empty result (audio
- *   duration, custom-thumbnail/header dimensions from the result URL).
- */
 export type UploadMetadataPolicy<TMeta> =
   | { kind: 'preExtracted'; meta: TMeta }
   | {
@@ -91,13 +61,6 @@ export type UploadMetadataPolicy<TMeta> =
 
 export type UploadEmptyResultPredicate = (result: UploadResultItem[] | undefined) => boolean
 
-/**
- * The empty-result policy. `patch` always writes the patch (image's `src: ''`,
- * header's zeroed dimensions), so it has no predicate; `bail` leaves the node
- * untouched beyond `prePatch` (audio, file, thumbnails, video) and is the only
- * shape that can carry a custom emptiness predicate or an `onBail` hook (video
- * clears its component-owned preview).
- */
 export type UploadEmptyResultPolicy =
   | { kind: 'patch' }
   | { kind: 'bail'; isEmptyResult?: UploadEmptyResultPredicate; onBail?: () => void }
@@ -110,7 +73,6 @@ interface UploadIntentBaseOptions<TNode extends LexicalNode> {
   guard: (node: unknown) => node is TNode
   files: FileList | File[] | null
   upload: UploadFn
-  /** Extra upload options, or a resolver computing them off the current node — called inside an editor read (audio thumbnail's `formData` url). */
   uploadOptions?: UploadOptions | ((node: TNode | null) => UploadOptions)
 
   prePatch?: (node: TNode) => void
@@ -129,16 +91,6 @@ export interface RunUploadIntentOptions<
   patch: (node: TNode, context: PatchContext<TMeta>) => void
 }
 
-/**
- * Runs one upload intent: null/file guard → `prePatch` → preview lease (+
- * publish) → `beforeUpload` extraction → upload → empty-result policy →
- * `afterUpload` extraction → `patch` through the write seam. The lease is
- * released in a `finally` around the whole flow; rejections always propagate.
- *
- * INTERNAL seam the per-card factories bind to, deliberately not on the public
- * `@kobato/inkling-internal` surface. Returns the first result URL (`undefined` when the flow
- * bailed) so callers can compose follow-up intents imperatively.
- */
 export async function runUploadIntent<TNode extends LexicalNode, TMeta = undefined>({
   editor,
   nodeKey,
@@ -196,9 +148,6 @@ export async function runUploadIntent<TNode extends LexicalNode, TMeta = undefin
             return uploadOptions(guard(node) ? node : null)
           })
         : uploadOptions
-    // one-arg call when the card carries no upload options — the pinned
-    // handlers' call arity (upload(files) vs upload(files, options)) is part
-    // of the per-card contract
     const result = resolvedUploadOptions ? await upload(files, resolvedUploadOptions) : await upload(files)
     const resultUrl = result?.[0]?.url
 
@@ -537,14 +486,6 @@ export function headerBackgroundUploadIntent({
   })
 }
 
-// Gallery's multi-file adapter. The single-intent runner cannot express this
-// flow: previews publish to the gallery images mirror's LOCAL overlay (never
-// the node) before the batched upload, results merge back by fileName, and
-// the failure path cleans up in-flow instead of propagating. The node write
-// (the mirror's setImages) lands only after the upload resolves, so in-flight
-// uploads stay reorderable by previewSrc with stable image identity
-// (useGalleryReorder).
-
 export interface GalleryUploadIntentDeps {
   upload: UploadFn
   files: FileList | File[]
@@ -637,8 +578,6 @@ export async function galleryUploadIntent({
 
     previews.release(image.previewSrc)
 
-    // Object.assign, not spread: the overlay images are shared state, so the
-    // merge must stay copy-on-write without allocating through a spread
     return Object.assign({}, image, {
       src: result.url,
       previewSrc: undefined,

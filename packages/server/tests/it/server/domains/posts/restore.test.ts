@@ -26,7 +26,6 @@ describe('integration / admin posts restore', () => {
     const deleteRes = await callRpc('/admin/posts/delete', { id: a.post.id }, ctx)
     expect(deleteRes.status).toBe(200)
 
-    // The unique constraint blocks a second post row, so the registry row is inserted directly.
     await db.insert(slugRegistry).values({
       slug: 'shared-slug',
       entityType: 'post',
@@ -86,7 +85,6 @@ describe('integration / admin posts restore', () => {
     const deleteRes = await callRpc('/admin/posts/delete', { id: post.post.id }, ctx)
     expect(deleteRes.status).toBe(200)
 
-    // Cross-entity slug reuse is allowed.
     const createPage = await callRpc(
       '/admin/pages/upsertMeta',
       { title: 'Page B', slug: 'cross-slug', summary: '' },

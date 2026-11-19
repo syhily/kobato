@@ -9,9 +9,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// resolveSessionContext against the real engine — no mocks; the one
-// sabotage case passes a broken db HANDLE, not a module mock.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -33,10 +30,6 @@ async function seedUser(overrides: Record<string, unknown> = {}) {
 }
 
 let sidCounter = 0
-/**
- * Mint a real signed `__session` cookie; the follow-up UPDATE swaps in
- * the exact payload — dangling user ids stay NULL so the FK never trips.
- */
 async function sessionCookie(
   data: BlogSessionData,
   opts: { userId?: number | null } = {},
@@ -55,7 +48,6 @@ function requestWithCookie(cookie: string): Request {
   return new Request('http://localhost/', { headers: { Cookie: cookie } })
 }
 
-/** A legacy (pre-role) session payload: no role field. */
 function legacyUser(id: string, name = 'legacy', email = 'legacy@example.com') {
   return { id, name, email, website: null } as BlogSessionData['user']
 }
@@ -110,7 +102,6 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
   it('returns dirty=true and clears user when the back-compat lookup throws', async () => {
     const u = await seedUser()
     const { cookie } = await sessionCookie({ user: legacyUser(String(u.id)) }, { userId: u.id })
-    // Sabotaged db HANDLE (not a module mock): every lookup throws.
     const brokenDb = {
       select: () => {
         throw new Error('connection lost')

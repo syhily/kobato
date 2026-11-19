@@ -34,11 +34,6 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Same mock pattern as `musics-view.test.tsx`; dialog primitives are stubbed because
-// the Base UI portal never mounts under SSR.
-
-// `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the
-// machine's state directly.
 const searchHookMock = vi.hoisted(() => ({
   state: {
     results: [] as MetingSearchHit[],
@@ -69,11 +64,8 @@ function resetSearchHookMock(): void {
   }
 }
 
-// Stub motion/react as an SSR-safe passthrough so the lazy-motion branch
-// renders children directly (keeps the SSR output stable).
 vi.mock('motion/react', async () => {
   const actual = await vi.importActual<typeof import('motion/react')>('motion/react')
-  // Strip motion-only props so they don't leak onto the DOM.
   const MOTION_ONLY_PROPS = new Set([
     'initial',
     'animate',
@@ -100,7 +92,6 @@ vi.mock('motion/react', async () => {
       {},
       {
         get: () => {
-          // Every `motion.X` access becomes a pass-through element forwarding DOM-safe props.
           const MotionStub = ({
             children,
             as,
@@ -219,8 +210,6 @@ describe('snapshot: AddMusicDialog', () => {
   })
 })
 
-// Result-row markup is covered directly — the dialog's seed-on-change path can't run under SSR.
-
 describe('snapshot: SearchResultItem', () => {
   it('renders the hit cover, title, artist, album and action buttons', () => {
     const hit = makeSearchHit({ name: 'Hello', artist: ['Adele'], album: '25' })
@@ -333,8 +322,6 @@ describe('snapshot: AddMusicView', () => {
   })
 
   it('renders the hero song count and a populated library snapshot when libraryQuery resolves', () => {
-    // `libraryQuery.data` drives the hero, so a populated library IS
-    // reachable on SSR; the search grid stays empty (machine starts idle).
     const music = makeAdminMusic({ name: '蓝色风暴', artist: ['周杰伦'] })
     queryMocks.query = {
       ...queryMocks.query,
@@ -464,7 +451,6 @@ describe('snapshot: SearchAlbumCard', () => {
   })
 })
 
-// Pure-props view — the route module supplies id + navigate.
 const navigateMock = vi.fn()
 
 describe('snapshot: MusicDetailView', () => {
@@ -548,7 +534,6 @@ describe('snapshot: MusicDetailView', () => {
         '/admin/library/music/music-42',
       ),
     )
-    // Track identity (artist list joined by ' / ', then ' · album')
     expect(html).toContain('青花瓷')
     expect(html).toContain('周杰伦 · 我很忙')
     expect(html).toContain('https://cdn.example.com/qinghua.jpg')

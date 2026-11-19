@@ -1,12 +1,5 @@
 // @vitest-environment happy-dom
 
-// The client resolver for the ACTIVE locale's Inkling label overlay. The tables
-// are server data: the root loader's `i18n.inklingLabels` carries exactly one
-// of them, so the composer never imports a table module (a four-table import
-// would put ~22 KB of every language into the public comment composer chunk).
-// Pinned by `apps/kobato/tests/arch/client-bundle.test.ts`; this suite pins the
-// payload read + the degraded no-payload path.
-
 import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
 import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'
 import { useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels.ts'
@@ -43,8 +36,6 @@ describe('client/editor/inkling-labels — payload resolver', () => {
   })
 
   it('degrades to Inkling English defaults when the payload is absent', () => {
-    // Root-loader failure / router-less test render: the composer gets no
-    // override table and Inkling's own English defaults apply.
     expect(readLabels(undefined)).toBeUndefined()
     expect(readLabels({ i18n: null })).toBeUndefined()
     expect(readLabels({})).toBeUndefined()

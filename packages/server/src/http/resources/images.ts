@@ -11,14 +11,11 @@ import { serveCalendar } from '@kobato/server/http/resources/calendar.ts'
 import { through } from '@kobato/server/infra/cache/registry.ts'
 import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-// Side-effect: wires render-layer warmup into the content domain's slot
-// (this module owns the OG/calendar request path it mirrors).
 import '@kobato/server/render/warmup/content-cache.ts'
 import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 import { Hono } from 'hono'
 
-// Slug-keyed OG URLs outlive the image content — `immutable` would pin stale cards; short max-age revalidates.
 const OG_HEADERS = {
   'Cache-Control': 'public, max-age=3600',
 }
@@ -30,7 +27,6 @@ function respondPng(c: Context<Env>, buffer: Uint8Array, headers: Readonly<Recor
 }
 
 function ogFallback(c: Context<Env>) {
-  // Pinned request snapshot — never the global one.
   const { settings } = c.var.requestContext
   const suffix = brandingVersionSuffix(settings?.assets?.branding?.openGraph)
   return c.redirect(
@@ -69,8 +65,6 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
     const summary =
       entity.summary ||
       (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity', settings).description : '')
-    // The key carries the pinned settings generation AND the renderer gets the
-    // same bundle, so the card's title/logo/SEO dimensions match the key.
     const buffer = await through(
       'og',
       {
@@ -120,14 +114,10 @@ const AVATAR_HEADERS = {
 const AVATAR_IP_RATE_BUCKET = { windowSeconds: 60, maxAttempts: 3000 }
 const AVATAR_RATE_BUCKET = { windowSeconds: 1, maxAttempts: 5 }
 
-// Hono footgun: `:name.png` captures the `.png` into the param — declare
-// `{[^/]+\\.png}` regex constraints instead.
 function stripPng(filename: string | undefined): string {
   return filename?.replace(/\.png$/, '') ?? ''
 }
 
-// Per-route limiter, never router-level `.use()` — mounted at `/`, a bare
-// `.use()` would rate-limit every public SSR page view against the images bucket.
 const imagesRateLimit = rateLimitByIp('images', 'resource')
 
 export const imagesRouter = new Hono<Env>()

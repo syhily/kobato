@@ -9,9 +9,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The hook drives its search / rehydrate lookups through react-query against
-// the oRPC client, mocked as a plain object so `orpcQuery` derives real
-// query options over the stubbed procedures.
 const api = vi.hoisted(() => ({
   searchPages: vi.fn(),
   searchAuthors: vi.fn(),
@@ -92,7 +89,6 @@ describe('useFilterPills — controlled mode', () => {
 
     act(() => result.current.dispatch({ type: 'removeFilter', field: 'status' }))
     await waitFor(() => expect(onChange).toHaveBeenCalledWith([], { type: 'removeFilter', field: 'status' }))
-    // The local state follows the dispatch optimistically.
     expect(result.current.filters).toEqual([])
 
     const fromUrl: ActiveFilter<CommentFilterFieldKey>[] = [{ field: 'page', value: 'p1', label: 'Hello' }]
@@ -106,7 +102,6 @@ describe('useFilterPills — controlled mode', () => {
       wrapper: makeWrapper(),
     })
 
-    // The empty text pill maps to q: null, so the value prop never changes and the pill stays editable.
     act(() =>
       result.current.dispatch({
         type: 'addFilter',
@@ -192,18 +187,15 @@ describe('useFilterPills — async search', () => {
     api.searchPages.mockResolvedValue({ pages: [{ key: 'p1', title: 'Hello' }] })
     const { result } = renderPills({ fields: COMMENT_FILTER_FIELDS, initial: [] })
 
-    // The idle query fires immediately with an empty input.
     await waitFor(() => expect(result.current.bar.search.page?.items).toEqual([{ value: 'p1', label: 'Hello' }]))
     expect(api.searchPages).toHaveBeenCalledWith({})
 
     act(() => result.current.bar.search.page?.setQuery('sec'))
-    // The debounce window hasn't elapsed — no refetch with the new term yet.
     expect(api.searchPages).not.toHaveBeenCalledWith({ q: 'sec' })
     await waitFor(() => expect(api.searchPages).toHaveBeenCalledWith({ q: 'sec' }))
   })
 
   it('pins the selected value into the search items when it is not in the fetched window', async () => {
-    // The idle search window must not displace the pinned selection.
     api.searchPages.mockImplementation((input: { key?: string }) =>
       Promise.resolve(
         input.key === 'pinned'

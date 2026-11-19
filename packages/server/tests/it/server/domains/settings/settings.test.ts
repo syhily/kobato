@@ -13,11 +13,8 @@ import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Real in-memory engine for reads/merge/UPSERT/encryption/snapshot;
-// only the section-change dispatch stays with the unit tests.
 const db: Database = getTestDb()
 
-// The DB stores one row per section; seedSections() projects this bundle into per-scope rows.
 const fixtureBundle: BlogSettingsBundle = {
   siteIdentity: {
     title: 'fixture title',
@@ -188,9 +185,6 @@ const BUNDLE_SCOPES: Record<keyof BlogSettingsBundle, string> = {
   observability: 'blog.observability',
 }
 
-/**
- * Seed the fixture bundle as per-scope rows; `except` skips scopes, `override` swaps a scope's payload.
- */
 async function seedSections(
   bundle: BlogSettingsBundle = fixtureBundle,
   opts: { except?: string[]; override?: Record<string, Record<string, unknown>> } = {},
@@ -242,7 +236,6 @@ describe('services/settings — hydrateBlogSettings', () => {
   })
 
   it('treats a deployment as uninstalled when only some sections exist', async () => {
-    // The snapshot requires both siteIdentity AND assets to consider the deployment installed.
     await db.insert(setting).values({
       scope: 'blog.general',
       data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
@@ -254,8 +247,6 @@ describe('services/settings — hydrateBlogSettings', () => {
   })
 
   it('names the failing secret field when a stored secret cannot be decrypted', async () => {
-    // Well-formed enc2: ciphertext the configured key can't authenticate;
-    // the error must name the failing secret field.
     const undecryptable = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
     await seedSections(fixtureBundle, {
       override: {
@@ -338,7 +329,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
     const row = readRow('blog.assets')
     const payload = row.data as Record<string, unknown>
     expect(payload.asset).toEqual({ host: 'cdn.test.example', scheme: 'https' })
-    // The omitted secret survived the patch, routed through encryptSecretsInRow like any plaintext.
     const storage = payload.storage as Record<string, unknown>
     expect(storage.secretAccessKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(storage.secretAccessKey as string)).toBe('STORED')
@@ -439,7 +429,6 @@ describe('services/settings — mail section', () => {
     )
 
     const mail = readBucket('blog.mail', 'mail')
-    // smtpPass omitted from the patch: preserved from the stored row, then encrypted.
     expect(mail.smtpPass).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.smtpPass as string)).toBe('STOREDSMTPPASS')
     expect(mail.smtpHost).toBe('smtp.example.com')
@@ -509,7 +498,6 @@ describe('services/settings — comments section', () => {
 
     const comments = readBucket('blog.comments', 'comments')
     const avatar = comments.avatar as Record<string, unknown>
-    // Arrays replace, never concatenate.
     expect(avatar.sources).toEqual(['github', 'gravatar', 'qq'])
     expect(comments.githubToken).toMatch(/^enc2:/)
     expect(decryptIfNeeded(comments.githubToken as string)).toBe('NEWGITHUBTOKEN')
@@ -532,12 +520,10 @@ describe('services/settings — comments section', () => {
     await updateBlogSettingsSection(db, 'comments', { comments: { avatar: { sources: ['gravatar'] } } }, null)
 
     const comments = readBucket('blog.comments', 'comments')
-    // githubToken omitted from the patch: preserved from the stored row, then encrypted.
     expect(comments.githubToken).toMatch(/^enc2:/)
     expect(decryptIfNeeded(comments.githubToken as string)).toBe('STOREDGITHUBTOKEN')
     const avatar = comments.avatar as Record<string, unknown>
     expect(avatar.sources).toEqual(['gravatar'])
-    // Untouched avatar keys survive the sparse patch (deep-merge).
     expect(avatar.mirror).toBe('https://gravatar.com/avatar/')
   })
 
@@ -641,7 +627,6 @@ describe('services/settings — rateLimit section', () => {
     )
 
     const row = readRow('blog.rateLimit').data as Record<string, unknown>
-    // Patched bucket overwritten; omitted buckets survive from the stored row.
     expect(row.signIn).toEqual({ windowSeconds: 600, maxAttempts: 3 })
     expect(row.comment).toEqual(fixtureBundle.rateLimit!.comment)
     expect(row.like).toEqual(fixtureBundle.rateLimit!.like)
@@ -701,7 +686,6 @@ describe('services/settings — cache section', () => {
           cache: {
             og: { prefix: 'og:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
-            // `og` is a strict prefix of `og:` and lacks the required `:` suffix.
             avatar: { prefix: 'og', ttlSeconds: 60 * 60 },
             searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
@@ -982,7 +966,6 @@ describe('services/settings — section patch merge', () => {
 
   it('accepts a complete fonts payload and writes it verbatim', async () => {
     await seedSections(fixtureBundle, { except: ['blog.fonts'] })
-    // setFontSlot posts a full FontsSettings — a complete object is a valid patch.
     const fontsPayload = {
       og: { family: 'NotoSansCJK' },
       calendar: { family: '' },
@@ -1018,7 +1001,6 @@ describe('services/settings — snapshot reader', () => {
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
-    // Legacy pre-searchResult rows must backfill, not crash the cache card.
     await seedSections(fixtureBundle, { except: ['blog.cache'] })
     await db.insert(setting).values({
       scope: 'blog.cache',
@@ -1035,7 +1017,6 @@ describe('services/settings — snapshot reader', () => {
 
     expect(bundle).not.toBeNull()
     expect(bundle!.cache!.cache.searchResult).toEqual({ prefix: 'search-result:', ttlSeconds: 60 * 60 })
-    // The backfill rewrote the legacy row in the database itself.
     const cache = readBucket('blog.cache', 'cache')
     expect(cache.searchResult).toEqual({ prefix: 'search-result:', ttlSeconds: 60 * 60 })
   })

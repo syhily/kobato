@@ -160,8 +160,6 @@ describe('TKPlugin', () => {
     const cardValue = createCardContextValue()
     renderTKPlugin(handle, cardValue)
 
-    // The hook is mocked, so assert on the plugin's call arguments; the matcher's
-    // offset behaviour is pinned in behaviour/tk-matcher.test.ts.
     const [getMatch, targetNode, createNode, nodeType] = vi.mocked(useInklingTextEntity).mock.calls[0]
     expect(getMatch).toBe(getTKMatch)
     expect(targetNode).toBe(TKNode)

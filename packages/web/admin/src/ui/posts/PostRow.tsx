@@ -11,7 +11,6 @@ import { Link } from 'react-router'
 
 interface PostRowProps {
   post: AdminPostDto
-  /** Receives the category ID + display name — the filter pill keys by id and shows the name. */
   onFilterCategory?: (categoryId: string, categoryName: string) => void
 }
 

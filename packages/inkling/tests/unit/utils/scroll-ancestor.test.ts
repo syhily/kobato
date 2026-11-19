@@ -7,8 +7,6 @@ describe('getScrollAncestor — floating policy', () => {
   })
 
   it('returns the node itself when it is scrollable', () => {
-    // Attached to the document: jsdom 31's getComputedStyle resolves no
-    // styles for detached nodes.
     const node = document.createElement('div')
     node.style.overflowY = 'auto'
     Object.defineProperty(node, 'scrollHeight', { value: 200 })

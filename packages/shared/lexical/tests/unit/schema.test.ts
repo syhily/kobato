@@ -1,10 +1,6 @@
 import { ARTICLE_LIST_MAX_DEPTH, lexicalEditorStateSchema, MAX_TREE_DEPTH } from '@kobato/lexical/schema.ts'
 import { describe, expect, it } from 'vitest'
 
-// Fixtures pin the storage wire shape the inkling composer produces —
-// element nodes always carry children/direction/format/indent, text nodes
-// carry detail/format/mode/style/text (lexical 0.53 exporters).
-
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
 }
@@ -17,14 +13,11 @@ function state(children: unknown[]) {
   return { root: element('root', children) }
 }
 
-/** `depth` nested lists (list > listitem > list > …), leaf item holds text. */
 function nestedList(depth: number): unknown {
   const item = element('listitem', depth === 1 ? [text('item')] : [nestedList(depth - 1)], { value: 1 })
   return element('list', [item], { listType: 'bullet', start: 1, tag: 'ul' })
 }
 
-/** Paragraphs nested `depth` levels — structurally odd but type-valid,
- * which is exactly what the depth-bomb guard must bound. */
 function nestedParagraphs(depth: number): unknown {
   return depth === 1 ? element('paragraph', [text('leaf')]) : element('paragraph', [nestedParagraphs(depth - 1)])
 }
@@ -77,8 +70,6 @@ describe('lexicalEditorStateSchema', () => {
         ]),
       ]),
       { type: 'footnotedefinition', version: 1, content: '<p>note</p>', targetKey: 'fn-1', index: 1 },
-      // Host cards carry their full datasets (spec modules in
-      // `@kobato/lexical/cards/`).
       { type: 'solution', version: 1, content: '<p>answer</p>' },
       { type: 'two-column', version: 1, left: '<p>L</p>', right: '<p>R</p>' },
       {
@@ -103,16 +94,13 @@ describe('lexicalEditorStateSchema', () => {
   })
 
   it('rejects host cards with missing or mistyped dataset keys', () => {
-    // solution requires the nested-editor HTML string.
     expect(lexicalEditorStateSchema.safeParse(state([{ type: 'solution', version: 1 }])).success).toBe(false)
-    // two-column requires both panes.
     expect(lexicalEditorStateSchema.safeParse(state([{ type: 'two-column', version: 1, left: '<p/>' }])).success).toBe(
       false,
     )
     expect(
       lexicalEditorStateSchema.safeParse(state([{ type: 'two-column', version: 1, left: 1, right: '<p/>' }])).success,
     ).toBe(false)
-    // music-player requires playerId; meta keys must be strings when present.
     expect(lexicalEditorStateSchema.safeParse(state([{ type: 'music-player', version: 1 }])).success).toBe(false)
     expect(
       lexicalEditorStateSchema.safeParse(state([{ type: 'music-player', version: 1, playerId: 'p1', name: 42 }]))
@@ -139,10 +127,7 @@ describe('lexicalEditorStateSchema', () => {
     expect(lexicalEditorStateSchema.safeParse({ root: null }).success).toBe(false)
     expect(lexicalEditorStateSchema.safeParse({ root: element('paragraph') }).success).toBe(false)
     expect(lexicalEditorStateSchema.safeParse({ root: { type: 'root', version: 1, children: {} } }).success).toBe(false)
-    // node missing required fields (children is never a serializer default)
     expect(lexicalEditorStateSchema.safeParse(state([{ type: 'paragraph' }])).success).toBe(false)
-    // a compact-dialect paragraph (serializer-default keys omitted) heals —
-    // packages/shared/lexical/src/dialect.ts
     expect(
       lexicalEditorStateSchema.safeParse(state([{ type: 'paragraph', version: 1, children: [], indent: 0 }])).success,
     ).toBe(true)
@@ -156,10 +141,8 @@ describe('lexicalEditorStateSchema', () => {
     expect(
       lexicalEditorStateSchema.safeParse(state([element('paragraph', [text('x', { detail: 'bold' })])])).success,
     ).toBe(false)
-    // missing `text` — not a serializer default, nothing heals it
     const { text: _text, ...noText } = text('x')
     expect(lexicalEditorStateSchema.safeParse(state([element('paragraph', [noText])])).success).toBe(false)
-    // missing serializer-default keys heal (the compact storage dialect)
     const { style: _style, ...noStyle } = text('x')
     expect(lexicalEditorStateSchema.safeParse(state([element('paragraph', [noStyle])])).success).toBe(true)
   })

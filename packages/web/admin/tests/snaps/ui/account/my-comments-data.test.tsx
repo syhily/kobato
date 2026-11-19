@@ -33,12 +33,6 @@ queryMocks.infinite = {
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// MyCommentsView's list hook is stubbed via the mock-react-query singleton
-// (the orpcQuery option builder never runs its network path); mirrors the
-// tags/musics-view pattern.
-
-// CommentBodyEditor's inkling tree is hard to assert under SSR — stub its lazy
-// boundary to a sentinel element.
 vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx', () => ({
   LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))

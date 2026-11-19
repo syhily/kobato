@@ -1,12 +1,8 @@
 import { thumbHashToDataURL } from '@kobato/utils/thumbhash.ts'
 import { useSyncExternalStore, type CSSProperties } from 'react'
 
-// In-process cache of decoded thumbhash styles — many mounts share one decode.
 const thumbhashStyleCache = new Map<string, CSSProperties>()
 
-// Lazily decodes a thumbhash string into a CSS style object so the placeholder
-// fades behind the real image; `undefined` until the decode finishes. Server
-// snapshot is undefined — decode happens on the client only.
 export function useThumbhashBackground(thumbhash: string | undefined, loaded = false): CSSProperties | undefined {
   return useSyncExternalStore(
     emptySubscribe,

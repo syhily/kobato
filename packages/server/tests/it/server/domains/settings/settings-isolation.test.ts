@@ -6,8 +6,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Section-change dispatch is covered by the unit tests; keep the
-// backup/audit schedulers out of these persistence-focused cases.
 const db = getTestDb()
 
 beforeEach(async () => {

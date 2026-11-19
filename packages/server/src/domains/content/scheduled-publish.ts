@@ -10,8 +10,6 @@ import { and, asc, gt } from 'drizzle-orm'
 
 const log = getLogger('content.scheduled-publish')
 
-// Importing either entity's live-gate binding here would close a
-// content ↔ entity import cycle — bind the shared base instead.
 const postLiveColumns = {
   deletedAt: postMetaTable.deletedAt,
   published: postMetaTable.published,
@@ -26,12 +24,6 @@ const pageLiveColumns = {
   publishedAt: pageMetaTable.publishedAt,
 } satisfies LiveContentColumns
 
-// The job registry owns boot start-up and the shared db getter; the getter
-// is invoked at evaluate time, so a recreated handle (restore completion)
-// is picked up.
-
-/** Earliest future `publishedAt` among promoted posts AND pages — the next moment the public surface changes on its own. */
-// Sync (node:sqlite): the scheduleJob seam's nextDelayMs is sync.
 function findNextScheduledPublishAt(db: Database): Date | null {
   const now = new Date()
   const nextPost = db
@@ -58,17 +50,12 @@ function findNextScheduledPublishAt(db: Database): Date | null {
 function nextScheduledPublishDelayMs(): number | null {
   const next = findNextScheduledPublishAt(jobDb())
   if (next === null) {
-    // Nothing scheduled: suspend — every content write nudges `rescheduleScheduledPublish`.
     return null
   }
-  // Clamped at 0: the row went due between arming and firing — run now.
   return Math.max(next.getTime() - Date.now(), 0)
 }
 
-// Sync (node:sqlite): invalidateContent is sync.
 function runScheduledPublish(): void {
-  // The row is live as of now; invalidate both entities (idempotent).
-  // No extra search reindex — the `searchResult` bump covers it.
   invalidateContent({ entity: 'post' })
   invalidateContent({ entity: 'page' })
   log.info('Scheduled publish reached; public caches invalidated')

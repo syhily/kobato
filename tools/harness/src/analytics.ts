@@ -1,7 +1,3 @@
-// Post-shutdown DuckDB verification: open the analytics sidecar AFTER the
-// server stopped (its close checkpoints the WAL) and prove page views landed
-// as access_events rows.
-
 import { DuckDBInstance } from '@duckdb/node-api'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 

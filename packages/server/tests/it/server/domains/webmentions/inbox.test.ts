@@ -12,8 +12,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Capture the notification seam: the worker drives receiveWebmention,
-// whose rules decide when to notify.
 vi.mock('@kobato/server/domains/webmentions/email.ts', () => ({
   sendNewWebmention: vi.fn(async () => ({ ok: true })),
 }))
@@ -61,7 +59,6 @@ describe('integration / upsertWebmentionInbox (queue dedup)', () => {
     const rows = await listWebmentionInbox(db)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.id).toBe(first!.id)
-    // A re-POST must not hand a hostile source a fresh attempt budget.
     expect(rows[0]!.attempts).toBe(2)
     expect(rows[0]!.nextRetryAt?.getTime()).toBe(retryAt.getTime())
     expect(rows[0]!.lastError).toBe('boom')
@@ -175,9 +172,6 @@ describe('integration / webmention inbox worker', () => {
     expect(row!.nextRetryAt!.getTime()).toBeGreaterThan(Date.now())
     expect(row!.lastError).toContain('source could not be fetched')
 
-    // Second and third failures: process the re-read row directly (its
-    // attempts counter is what the budget decision reads). Each enqueue
-    // is one-shot, so every attempt needs its own throwing responder.
     mockFetch.enqueue(SOURCE, () => {
       throw new Error('simulated timeout')
     })
@@ -204,8 +198,6 @@ describe('integration / webmention inbox worker', () => {
     await runWebmentionInboxBatch(db)
     expect((await listWebmentionInbox(db))[0]!.attempts).toBe(1)
 
-    // The sender re-POSTs: the backoff waterline is honored (a re-POST does not
-    // reset it), so the retry runs once the row comes due.
     await enqueue()
     const [queued] = await listWebmentionInbox(db)
     await db

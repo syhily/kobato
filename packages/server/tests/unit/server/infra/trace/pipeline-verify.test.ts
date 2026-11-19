@@ -180,7 +180,6 @@ describe('RUM privacy pipeline verifier', () => {
     const extraEdge = [...(pipeline().edges as unknown[]), { id: 'einput-output', source: 'input', target: 'output' }]
     expect(__pipelineVerification.verifiedPipeline(pipeline({ edges: extraEdge }), 'default')).toBe(false)
 
-    // A bypass edge alone leaves one of the two required hops missing.
     expect(
       __pipelineVerification.verifiedPipeline(
         pipeline({

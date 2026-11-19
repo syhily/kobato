@@ -22,10 +22,6 @@ export const streamTimeout = 5_000
 
 const log = getLogger('entry.server')
 
-/**
- * Must match what the root Layout renders (`rootData.i18n.locale`); a failed root loader has no payload, so
- * the header must not claim the request locale.
- */
 function documentLocale(routerContext: EntryContext): AppLocale {
   const loaderData: unknown = routerContext.staticHandlerContext?.loaderData
   const root: unknown = isRecord(loaderData) ? loaderData.root : undefined
@@ -36,8 +32,6 @@ function documentLocale(routerContext: EntryContext): AppLocale {
   return DEFAULT_LOCALE
 }
 
-// Required export — RR would otherwise log errors via bare console.error, bypassing pino.
-// Only non-Response errors route here; post-shell streaming errors go to `onError` below.
 export function handleError(error: unknown, { request }: { request: Request }) {
   if (request.signal.aborted) {
     return
@@ -56,8 +50,6 @@ export default function handleRequest(
   routerContext: EntryContext,
   loadContext: RouterContextProvider,
 ) {
-  // One AppLocale drives `<html lang>`, og:locale, and this header. 304 responses never reach this entry (their
-  // headers are rebuilt by RR — see root's `headers` export).
   responseHeaders.set('Content-Language', documentLocale(routerContext))
 
   // https://httpwg.org/specs/rfc9110.html#HEAD
@@ -114,9 +106,6 @@ export default function handleRequest(
     const readyOption: keyof RenderToPipeableStreamOptions =
       isBot(userAgent) || routerContext.isSpaMode ? 'onAllReady' : 'onShellReady'
 
-    // Abort after `streamTimeout` so rejected boundaries have time to flush.
-    // `abort` is a no-op until the renderer exists; the synchronous-throw path
-    // below clears this timer.
     let pipe: (destination: PassThrough) => void = () => undefined
     let abort: () => void = () => undefined
     let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(() => abort(), streamTimeout + 1000)
@@ -136,7 +125,6 @@ export default function handleRequest(
               final(callback) {
                 clearTimeout(timeoutId)
                 timeoutId = undefined
-                // A boundary error may already have marked this stream; keep it.
                 if (streamOutcome !== 'error') {
                   streamOutcome = 'completed'
                 }
@@ -151,7 +139,6 @@ export default function handleRequest(
               finishStream()
             })
             body.once('close', () => {
-              // A client abort destroys the stream without the `final` callback.
               if (!streamEnded) {
                 streamOutcome = 'aborted'
                 finishStream()

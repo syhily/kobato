@@ -19,10 +19,6 @@ export interface AdminImagesListFilters {
   includeDeleted?: boolean
 }
 
-/**
- * Admin list projection: `image` columns plus `uploaderName` via LEFT
- * JOIN `user`; null when the row has no uploader or the user was deleted.
- */
 export interface AdminImageRowWithUploader extends ImageRow {
   uploaderName: string | null
 }
@@ -40,7 +36,6 @@ function buildAdminImageConditions(filters: AdminImagesListFilters): SQL[] {
     } else if (filters.kind === 'friend') {
       conditions.push(like(image.storagePath, 'images/links/%'))
     } else {
-      // generic = neither prefix; storage_path is NOT NULL, so no NULL guard needed.
       const notCat = sql`${image.storagePath} NOT LIKE 'images/categories/%'`
       const notFriend = sql`${image.storagePath} NOT LIKE 'images/links/%'`
       conditions.push(notCat)
@@ -90,7 +85,6 @@ export async function listAdminImageRows(
   return applyPage(q, filters)
 }
 
-/** Single-row variant of `listAdminImageRows` keyed by `id`; used by the post-mutation paths. */
 export async function findAdminImageRowById(db: Database, id: number): Promise<AdminImageRowWithUploader | null> {
   return imageUploader.findJoinedRowById(db, id)
 }
@@ -108,7 +102,6 @@ export async function findImageById(db: Database, id: number): Promise<ImageRow 
   return rows[0] ?? null
 }
 
-/** Skips empty input arrays to avoid `IN ()` syntax errors. */
 export async function findImagesByIds(db: Database, ids: readonly number[]): Promise<ImageRow[]> {
   if (ids.length === 0) {
     return []
@@ -119,7 +112,6 @@ export async function findImagesByIds(db: Database, ids: readonly number[]): Pro
     .where(inArray(image.id, [...ids]))
 }
 
-/** Skips empty input arrays to avoid `IN ()` syntax errors. */
 export async function findImagesByStoragePaths(db: Database, paths: readonly string[]): Promise<ImageRow[]> {
   if (paths.length === 0) {
     return []
@@ -139,7 +131,6 @@ export async function insertImage(db: Database, values: NewImage): Promise<Image
   return rows[0]
 }
 
-/** Always clears `deleted_at` so a re-upload resurrects a soft-deleted row. */
 export async function upsertImageByStoragePath(db: Database, values: NewImage): Promise<ImageRow> {
   const now = new Date()
   const rows = await db

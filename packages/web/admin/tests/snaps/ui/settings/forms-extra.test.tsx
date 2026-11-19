@@ -9,11 +9,6 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-// The inert `useSettingsMutation` stub (setup.ts) keeps forms network-free.
-
-// MailTestCard's sendTest mutation is inert via the mock-react-query singleton; react-query is otherwise left intact.
-
-// orpc mock stays resolvable + inert; the react-query stub intercepts calls.
 vi.mock('@kobato/web-client/api/client.ts', () => ({
   orpc: {
     admin: {
@@ -21,9 +16,6 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({
     },
   },
 }))
-
-// `MailLoaderShape` mirrors `MailSettings` with secrets swapped for `*Mask`
-// trailing fragments (null when never configured); the `mail:` wrapper matches `mailSchema`.
 
 const smtpPopulated: MailLoaderShape = {
   mail: {
@@ -61,7 +53,6 @@ const mailgunPopulated: MailLoaderShape = {
   },
 }
 
-// Never-configured fixture: blank transports → "尚未配置" hints + disabled test-send.
 const emptyMail: MailLoaderShape = {
   mail: {
     enabled: false,
@@ -86,7 +77,6 @@ describe('snapshot: MailForm', () => {
     expect(html).toContain('邮件发送总开关')
     expect(html).toContain('id="mail-enabled"')
     expect(html).toContain('发送通知邮件')
-    // SelectContent is a portal — SSR emits only the trigger's selected-value label.
     expect(html).toContain('邮件服务提供商')
     expect(html).toContain('id="mail-transport"')
     expect(html).toContain('发件人邮箱')
@@ -104,7 +94,6 @@ describe('snapshot: MailForm', () => {
     expect(html).toContain('强制 TLS（requireTLS）')
     expect(html).toContain('验证 TLS 证书')
     expect(html).not.toContain('Mailgun 配置')
-    // configured=true → button enabled; the test bundle seeds the author email as default testTo.
     expect(html).toContain('测试发送')
     expect(html).not.toContain('请先填入并保存 SMTP 服务器地址')
   })

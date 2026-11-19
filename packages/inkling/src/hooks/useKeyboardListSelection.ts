@@ -28,9 +28,6 @@ export function useKeyboardListSelection<T>({
   const [scrollSelectedIntoView, setScrollSelectedIntoView] = React.useState(false)
   const [hasNavigated, setHasNavigated] = React.useState(false)
 
-  // Adjust the selection during render (React discards this render's output
-  // and re-renders immediately): re-select the default and reset navigation
-  // state when the default changes, clamp the index when the items shrink
   const [prevDefaultIndex, setPrevDefaultIndex] = React.useState(defaultIndex)
   if (prevDefaultIndex !== defaultIndex) {
     setPrevDefaultIndex(defaultIndex)
@@ -62,16 +59,11 @@ export function useKeyboardListSelection<T>({
         setScrollSelectedIntoView(true)
       }
       if (event.key === 'Enter') {
-        // an explicit index check, not truthiness — a falsy item (''/0/false)
-        // is still a valid selection
         const hasSelection = selectedIndex < items.length
         if (!hasSelection && !onEnterWithoutSelection) {
           return
         }
 
-        // When the link input is focused and the user hasn't explicitly navigated
-        // the suggestion list, let the input's own Enter handler submit the typed
-        // URL instead of selecting the default suggestion.
         const target = event.target
         if (!hasNavigated && target instanceof HTMLInputElement && target.dataset.inklingLinkInput !== undefined) {
           return

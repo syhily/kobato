@@ -15,8 +15,6 @@ interface PolicyProps {
   backgroundImageSrc: string
 }
 
-// capture each seam mutator's effect on a fresh node-shaped record, so the
-// policy transitions assert as a synchronous table
 function renderPolicy(initialProps: PolicyProps) {
   const applied: Array<Partial<BaseHeaderNode>> = []
   const write: HeaderNodeWriter = (update) => {

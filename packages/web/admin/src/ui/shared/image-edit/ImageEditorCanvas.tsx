@@ -44,7 +44,6 @@ function loadImage(file: File, t: I18nValue['t']): Promise<HTMLImageElement> {
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
-      // Revoke after the bitmap is on the GPU — drawImage below doesn't need the URL.
       URL.revokeObjectURL(url)
       resolve(img)
     }
@@ -80,10 +79,6 @@ export function ImageEditorCanvas({
     originX: number
     originY: number
     startCrop: CropRect
-    /**
-     * CSS px per source px at drag start — from `clientWidth / sourceWidth`, NOT
-     * `displayLayout.scale` (wrong when the canvas is downscaled by `max-w-full`).
-     */
     cssScale: number
   } | null>(null)
 
@@ -124,7 +119,6 @@ export function ImageEditorCanvas({
     }
   }, [source, rotation])
 
-  // Compute the crop from displayLayout + locked aspect during render to avoid a cascading render.
   const [lastCropInputs, setLastCropInputs] = useState<{ displayLayout: typeof displayLayout; locked: typeof locked }>({
     displayLayout,
     locked,
@@ -234,7 +228,6 @@ export function ImageEditorCanvas({
       throw new Error(t('admin.shared.imageEditor.noCanvas'))
     }
 
-    // Draw the rotated source to a working canvas, then read back the cropped region.
     const working = document.createElement('canvas')
     working.width = displayLayout.sourceWidth
     working.height = displayLayout.sourceHeight

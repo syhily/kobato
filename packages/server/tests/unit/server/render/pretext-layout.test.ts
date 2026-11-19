@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest'
 const ctx = createCanvas(1, 1).getContext('2d')
 const FONT = '32px serif'
 
-// Punctuation that must never open a line under CJK kinsoku rules.
 const LINE_START_FORBIDDEN = /^[，。！？；：、）】》」』”’…—·]/
 
 describe('render/pretext-layout — layoutCanvasLines', () => {

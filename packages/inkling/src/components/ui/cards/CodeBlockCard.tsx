@@ -10,9 +10,6 @@ import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPre
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import React from 'react'
 
-// The CodeMirror-backed editor loads behind the hydration-safe lazy boundary
-// (LazyCardEditor): the SSR'd canvas and the first client render both show
-// the static code-box fallback, then the editor chunk takes over after mount.
 const LazyCodeEditor = React.lazy(() =>
   import('@kobato/inkling-internal/components/ui/cards/CodeBlockEditor').then((module) => ({
     default: module.CodeEditor,

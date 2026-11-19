@@ -48,8 +48,6 @@ describe('ui/public/chrome/LazyUserMenu', () => {
   })
 
   it('mounts the real menu OPEN on the first click and keeps it mounted after close', async () => {
-    // Resolve the chunk the lazy boundary imports, so the assertions never
-    // race module loading when the full suite saturates the machine.
     await import('@kobato/web-public/ui/chrome/UserMenu.tsx')
 
     renderLazy(1)
@@ -58,8 +56,6 @@ describe('ui/public/chrome/LazyUserMenu', () => {
 
     expect(screen.getByText('消息通知')).toBeTruthy()
 
-    // Close via Escape, then reopen by clicking the (now real) trigger — the
-    // mounted menu survives instead of falling back to the placeholder.
     fireEvent.keyDown(document, { key: 'Escape' })
     fireEvent.click(screen.getByLabelText('用户菜单，1 条未读消息'))
     await settle()
@@ -76,9 +72,6 @@ describe('ui/public/chrome/LazyUserMenu', () => {
     expect(document.activeElement?.getAttribute('role')).toBe('menu')
   }, 15_000)
 
-  // The placeholder must mirror the real UserMenu trigger subtree exactly —
-  // the mount-time swap has to be visually invisible (the music-player
-  // fallback parity pin uses the same helper).
   it('keeps the placeholder trigger markup-identical to the real trigger', () => {
     const placeholder = renderLazy(2)
     const real = render(
@@ -91,8 +84,6 @@ describe('ui/public/chrome/LazyUserMenu', () => {
     const diffs = diffHtmlStructures(
       within(real.container as HTMLElement).getByLabelText('用户菜单，2 条未读消息').outerHTML,
       within(placeholder.container as HTMLElement).getByLabelText('用户菜单，2 条未读消息').outerHTML,
-      // Base UI's trigger wiring adds ids/data-* the static placeholder
-      // cannot know; the visual skeleton is the contract.
       { dataAttributes: [], attributes: ['aria-label'] },
     )
     placeholder.unmount()

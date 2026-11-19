@@ -16,9 +16,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Public comment controllers against the real engine; only seams: email (true external)
-// and a loadComments spy that can force the null → BAD_GATEWAY branch.
-
 vi.mock('@kobato/server/domains/comments/services/email.ts', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
@@ -115,7 +112,6 @@ function makePublicCtxWithCookie(cookie: string): ReturnType<typeof makePublicCt
   return ctx
 }
 
-/** Public context holding the ownership cookie for one comment. */
 async function makeTokenCtx(commentId: number, userId: number): Promise<ReturnType<typeof makePublicCtx>> {
   const token = await issueCommentToken(db, commentId, userId, 'pk-edit', 600)
   const cookie = serializeCommentTokensCookie({
@@ -131,7 +127,6 @@ async function readComment(id: number) {
 
 describe('likesRouter.increase', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
-    // Single-hit bucket trips the real in-process limiter.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -212,7 +207,6 @@ describe('commentsRouter.loadComments', () => {
   })
 
   it('throws BAD_GATEWAY when the comment loader fails', async () => {
-    // Pins the controller's defensive null → BAD_GATEWAY translation.
     const pid = await seedPost('gateway')
     await seedMetricRow('post', pid, 'pk-gateway')
     vi.mocked(publicQuery.loadComments).mockResolvedValueOnce(null)
@@ -232,7 +226,6 @@ describe('commentsRouter.loadComments', () => {
     const ctx = makePublicCtx({ db })
     const res = await call(commentsRouter.loadComments, { page_key: 'pk-thread', offset: 0 }, { context: ctx })
 
-    // Anonymous viewers only see approved comments; pending stays hidden.
     expect(res.comments).toHaveLength(1)
     expect(res.comments[0]).toMatchObject({ name: 'Alice', isPending: false })
     expect(res.next).toBe(false)
@@ -242,8 +235,6 @@ describe('commentsRouter.loadComments', () => {
 
 describe('commentsRouter.replyComment', () => {
   it('rate-limits before oRPC validates the Lexical body (limiter ordered ahead of .input)', async () => {
-    // A single-hit bucket + an invalid body: the limiter must answer first,
-    // proving the middleware sits before the input-validation index.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -288,7 +279,6 @@ describe('commentsRouter.replyComment', () => {
     )
 
     expect(res.comment).toMatchObject({ name: 'Alice', link: 'https://example.test/about' })
-    // A first-time commenter lands in the moderation queue.
     expect(res.comment.isPending).toBe(true)
     const rows = await db.select().from(comment)
     expect(rows).toHaveLength(1)
@@ -448,7 +438,6 @@ describe('commentsRouter.edit', () => {
     const row = await readComment(id)
     expect(row?.isPending).toBe(false)
     expect(row?.content).toContain('edited in grace')
-    // The token cookie is refreshed by the middleware on every authorized edit.
     expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')
   })
 
@@ -477,7 +466,6 @@ describe('commentsRouter.edit', () => {
     expect(row?.isPending).toBe(true)
     expect(row?.content).toContain('spam link later')
 
-    // Re-pended: gone from the anonymous list until an admin approves it again.
     const beforeApproval = await call(
       commentsRouter.loadComments,
       { page_key: 'pk-edit', offset: 0 },

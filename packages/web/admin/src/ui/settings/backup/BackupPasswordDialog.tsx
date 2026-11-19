@@ -20,8 +20,6 @@ interface BackupPasswordDialogProps {
   onCancel: () => void
 }
 
-/** Password prompt for encrypted backups — used both when an upload turns
- *  out to be encrypted and when a stored backup needs its password. */
 export function BackupPasswordDialog({ title, description, pending, onSubmit, onCancel }: BackupPasswordDialogProps) {
   const { t } = useI18n()
   const [password, setPassword] = useState('')

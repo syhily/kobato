@@ -17,9 +17,6 @@ import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Moderation domain seam: the asserted error codes and Chinese messages are the
-// wire contract, translated byte-identically by `domainErrorGuard`.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -82,7 +79,6 @@ function ctxFor(userId: number) {
 }
 
 async function seedAdmin(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  // actor_id FK: a synthetic id would dead-letter the batched insert.
   return seedVisitor({
     name: 'Admin',
     email: `admin-${Date.now()}-${Math.random()}@example.com`,

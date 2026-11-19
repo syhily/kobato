@@ -1,11 +1,3 @@
-// HTTP e2e orchestrator (`pnpm run sea:e2e [binary]`): boots the built SEA binary
-// against per-run temp files, seeds the admin with a KNOWN random password, then
-// runs the tests/e2e vitest project over real HTTP. The tests receive the base URL
-// and credentials through KOBATO_E2E_* env vars only.
-
-// The suite signs in over real HTTP — the relaxed buckets and the seeded
-// admin come from @kobato/harness/seed.ts (the canonical implementations).
-
 import type { SmokeServer } from '@kobato/harness/sea-instance.ts'
 
 import { bootServer, ensureBinaryExists, waitForExit, waitForHttp } from '@kobato/harness/sea-instance.ts'
@@ -48,13 +40,9 @@ async function main() {
   }
 
   let vitestStatus: number | null = null
-  // Never fail() from here on: an immediate exit would skip the finally
-  // below and leak the server process plus the mkdtemp root. Throw instead.
   let server: SmokeServer | null = null
   try {
     server = await bootServer(binaryPath, dirs, env, serverLogPath)
-    // First boot: applies the embedded migrations (the seed needs the
-    // tables) and proves the fresh-install gate answers the setup redirect.
     console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
     const fresh = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
     if (fresh.status !== 303) {
@@ -63,8 +51,6 @@ async function main() {
     server.child.kill('SIGTERM')
     await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
 
-    // The suite signs in over real HTTP — seed a bcrypt hash of a per-run
-    // random password; the settings snapshot loads at boot, so restart.
     const adminEmail = 'e2e-admin@kobato.local'
     const adminPassword = randomBytes(12).toString('hex')
     await seedInstalledInstance(databases.database, {
@@ -99,7 +85,6 @@ async function main() {
         KOBATO_E2E_BASE_URL: `http://127.0.0.1:${server.port}`,
         KOBATO_E2E_ADMIN_EMAIL: adminEmail,
         KOBATO_E2E_ADMIN_PASSWORD: adminPassword,
-        // Sanctioned seam for flows no admin RPC can stage — the throwaway per-run DB.
         KOBATO_E2E_DATABASE: databases.database,
       },
     })
@@ -120,7 +105,6 @@ async function main() {
 }
 
 await main().catch((error: unknown) => {
-  // The finally already ran (server stopped, temp root removed) — report and exit non-zero.
   console.error(error instanceof Error ? error.message : String(error))
   process.exitCode = 1
 })

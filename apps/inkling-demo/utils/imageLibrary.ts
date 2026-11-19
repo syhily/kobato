@@ -1,8 +1,5 @@
 import type { ImageLibrarySettings, LibraryImageItem } from '@kobato/inkling'
 
-// e2e seam: `?imageLibrary=fixture` installs a deterministic stand-in for the host's media library — local static
-// images only, never an external URL. `?imageLibrary=fixture-upload` adds the optional in-picker upload stub; the
-// default demo host has no library, so the menu entry stays hidden.
 const FIXTURE_ITEMS: LibraryImageItem[] = [
   {
     src: '/inkling-editor-1.png',

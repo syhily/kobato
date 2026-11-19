@@ -15,7 +15,6 @@ export async function deleteMusic(db: Database, id: number, viewer?: ViewerIdent
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
-  // Best-effort storage delete, mirroring the image library — always proceed to the DB soft-delete.
   await Promise.allSettled([
     backendFor(existing.storageDriver).delete(existing.audioStoragePath),
     backendFor(existing.storageDriver).delete(existing.coverStoragePath),

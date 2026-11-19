@@ -8,8 +8,6 @@ import {
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// githubAvatar carries a 4-entry / 64KiB budget — the smallest one, so the
-// count and byte caps are reachable with a handful of tiny values.
 const BUCKET = 'githubAvatar'
 
 beforeEach(() => {
@@ -27,7 +25,6 @@ describe('memory store — LRU', () => {
     setMemoryItem(BUCKET, 'c', 'c', { expiresAtMs: 0 })
     setMemoryItem(BUCKET, 'd', 'd', { expiresAtMs: 0 })
 
-    // Reading `a` makes `b` the oldest.
     expect(getMemoryItem(BUCKET, 'a')).toBe('a')
     setMemoryItem(BUCKET, 'e', 'e', { expiresAtMs: 0 })
 
@@ -46,7 +43,6 @@ describe('memory store — LRU', () => {
       setMemoryItem('sitemap', `k${index}`, index, { expiresAtMs: 0 })
     }
 
-    // The sitemap budget is 8 entries, so the githubAvatar fill cannot evict it.
     expect(getMemoryItem('sitemap', 'k0')).toBe(0)
     expect(getMemoryItem(BUCKET, 'k0')).toBe(0)
   })
@@ -58,7 +54,6 @@ describe('memory store — byte cap and oversized entries', () => {
     setMemoryItem(BUCKET, 'first', chunk, { expiresAtMs: 0 })
     setMemoryItem(BUCKET, 'second', chunk, { expiresAtMs: 0 })
 
-    // 2 × ~40KiB exceeds the 64KiB bucket budget.
     expect(getMemoryItem(BUCKET, 'first')).toBeUndefined()
     expect(getMemoryItem(BUCKET, 'second')).toBe(chunk)
   })
@@ -86,8 +81,6 @@ describe('memory store — byte cap and oversized entries', () => {
     setMemoryItem(BUCKET, 'key', chunk, { expiresAtMs: 0 })
     setMemoryItem(BUCKET, 'other', small, { expiresAtMs: 0 })
 
-    // Correct accounting: ~40KiB + ~20KiB fits the 64KiB budget. A rewrite that
-    // kept the old bytes would leave no room for `other`.
     expect(getMemoryItem(BUCKET, 'key')).toBe(chunk)
     expect(getMemoryItem(BUCKET, 'other')).toBe(small)
   })
@@ -95,7 +88,6 @@ describe('memory store — byte cap and oversized entries', () => {
   it('would reject the same Buffer wrapper without an explicit size', () => {
     const entry = { status: 0, buffer: Buffer.alloc(50 * 1024, 7) }
 
-    // JSON.stringify expands the Buffer into a numeric array, far past the cap.
     setMemoryItem('avatar', 'a@b.c', entry, { expiresAtMs: 0 })
 
     expect(getMemoryItem('avatar', 'a@b.c')).toBeUndefined()
@@ -110,8 +102,6 @@ describe('memory store — byte cap and oversized entries', () => {
   })
 
   it('rejects even a zero-byte value in an L1-exempt bucket', () => {
-    // Without the zero-budget early return, `0 > maxBytes` is false and an empty
-    // value would slip past the exemption.
     setMemoryItem('og', 'og:empty', Buffer.alloc(0), { expiresAtMs: 0, bytes: 0 })
     setMemoryItem('calendar', 'calendar:empty', '', { expiresAtMs: 0, bytes: 0 })
 

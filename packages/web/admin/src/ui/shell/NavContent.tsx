@@ -26,11 +26,9 @@ interface NavContentProps {
 
 export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCount = 0, userCount }: NavContentProps) {
   const { t } = useI18n()
-  // The posts status submenu tracks the list's ?status= param (PostsView keeps the URL in sync with its pills).
   const { pathname, search } = useLocation()
   const onPostsList = pathname === '/admin/posts'
   const rawPostsStatus = new URLSearchParams(search).get('status')
-  // Bookmarked deep links may carry `hidden` — the old spelling of `unlisted`.
   const postsStatus = rawPostsStatus === 'hidden' ? 'unlisted' : rawPostsStatus
   if (!role) {
     return null

@@ -4,7 +4,6 @@ import { postTag } from '@kobato/db/schema/post-tag.ts'
 import { tag } from '@kobato/db/schema/taxonomy.ts'
 import { eq, inArray } from 'drizzle-orm'
 
-// Sync (node:sqlite): called inside the upsert transaction.
 export function setPostTags(db: Database, postId: number, tagIds: number[]): void {
   db.delete(postTag).where(eq(postTag.postId, postId)).run()
   if (tagIds.length === 0) {

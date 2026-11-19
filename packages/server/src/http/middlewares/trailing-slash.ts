@@ -1,10 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { MiddlewareHandler } from 'hono'
 
-/**
- * 301-normalise trailing slashes on public GET/HEAD routes (root, `/rpc/*` and probes
- * untouched) before React Router, so every public page has one canonical URL shape.
- */
 export const trailingSlashNormaliser: MiddlewareHandler<Env> = async (c, next) => {
   const path = c.req.path
 

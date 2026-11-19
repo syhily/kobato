@@ -13,7 +13,6 @@ import {
 import { voidOutput } from '@kobato/contracts/primitives.ts'
 import { oc } from '@orpc/contract'
 
-// Admin music RPC contract — author base on the server.
 export const adminMusicContract = {
   list: oc.route({ method: 'GET', path: '/admin/music/list' }).input(adminMusicListInput).output(listMusicOutputDto),
   search: oc

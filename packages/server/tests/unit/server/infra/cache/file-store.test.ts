@@ -19,7 +19,6 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Test-local mirror of the documented layout: bucket/<h[0:2]>/<h[2:]>.
 function expectedEntryPath(bucket: string, fullKey: string): string {
   const digest = createHash('sha256').update(fullKey, 'utf8').digest('hex')
   return path.join(resolveCacheRoot(), bucket, digest.slice(0, 2), digest.slice(2))
@@ -216,7 +215,6 @@ describe('write mechanics', () => {
 
 describe('generation counter and counter-bucket clear', () => {
   beforeEach(async () => {
-    // This bucket is shared with the expiry cases above; start it cold.
     await rm(bucketPath('githubRelease'), { recursive: true, force: true })
   })
 
@@ -253,7 +251,6 @@ describe('statBucket', () => {
     await setItem('githubRelease', badKey, { ok: 'overwritten' })
     await writeFile(expectedEntryPath('githubRelease', badKey), Buffer.from('XXXX12345678garbage'))
 
-    // Neither the generation file nor _tmp are entry files.
     const bucketDir = path.join(resolveCacheRoot(), 'githubRelease')
     await writeFile(path.join(bucketDir, '_generation'), '7')
     await mkdir(path.join(bucketDir, '_tmp'), { recursive: true })
@@ -282,7 +279,6 @@ describe('bucket clear races', () => {
       await rm(bucketPath('sitemap'), { recursive: true, force: true })
 
       await expect(getItemWithExpiry('sitemap', key)).resolves.toBeNull()
-      // The write recreates the bucket tree instead of assuming it survived.
       await expect(setItem('sitemap', key, { limit: 5 })).resolves.toBe('{"limit":5}')
       await expect(getItemWithExpiry('sitemap', key)).resolves.toMatchObject({ value: { limit: 5 } })
       await expect(removeItem('sitemap', 'comments:never-written')).resolves.toBeUndefined()

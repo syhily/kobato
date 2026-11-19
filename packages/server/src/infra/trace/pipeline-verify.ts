@@ -1,11 +1,3 @@
-// Verifier for the OpenObserve RUM privacy pipeline.
-//
-// Server-only probe using the same OTLP authorization value as the exporter. It
-// checks the pipeline wiring AND the stored function body hash, not just a
-// human-readable description. It never logs the credential and never throws: a
-// false result withholds only the browser bootstrap, while server
-// traces/metrics continue.
-
 import type { ServerTraceRuntimeConfig } from '@kobato/server/infra/trace/config.ts'
 
 import {
@@ -24,7 +16,6 @@ export const RUM_PRIVACY_VERIFY_TIMEOUT_MS = 1500
 
 export type FrontendPipelineVerifier = (config: ServerTraceRuntimeConfig) => Promise<boolean>
 
-/** O2 stores the submitted VRL with a trailing ` \n .` sentinel. */
 export function canonicalFunctionBody(body: string): string {
   return body.replace(/ \n \.$/, '')
 }
@@ -156,7 +147,6 @@ export async function verifyRumPrivacyPipeline(
   }
 }
 
-/** Exported for focused tests without a live OpenObserve. */
 export const __pipelineVerification = {
   verifiedPipeline,
   verifiedFunctionBody,

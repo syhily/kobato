@@ -1,9 +1,3 @@
-// DEV-server (`react-router dev`) lifecycle for tooling that must exercise
-// the repository's dev process itself: a throwaway config file, boot with
-// output captured to a log, /health polling, and a bounded stop. The SEA
-// binary lifecycle lives in sea-instance.ts; Docker/OpenObserve tooling
-// stays in @kobato/trace.
-
 import type { ExitState } from '@kobato/harness/process.ts'
 import type { ChildProcess } from 'node:child_process'
 
@@ -33,12 +27,6 @@ export interface BootDevServerOptions {
   logPath: string
 }
 
-/**
- * Throwaway DEV config: random secrets, loopback bind, storage inside the
- * per-run data dir. The observability settings section has no config-file
- * surface — it is configured through the real admin RPC on the booted
- * instance. Synthetic fixtures deliberately never reach the config file.
- */
 export async function writeDevConfig(path: string, port: number, dataDir: string): Promise<void> {
   const config = {
     server: { host: '127.0.0.1', port, loggingLevel: 'info' },
@@ -70,8 +58,6 @@ export async function bootDevServer(options: BootDevServerOptions): Promise<DevS
     ],
     {
       cwd: options.repoRoot,
-      // VITEST/NODE_ENV must go too — a vitest parent would flip the dev
-      // server's own environment semantics.
       env: {
         ...scrubbedParentEnv({ drop: ['VITEST', 'NODE_ENV'] }),
         KOBATO_CONFIG_FILE: options.configPath,
@@ -96,18 +82,12 @@ export async function bootDevServer(options: BootDevServerOptions): Promise<DevS
       if (res.ok) {
         return { child, exitState, port: options.port, logPath: options.logPath }
       }
-    } catch {
-      // not listening yet
-    }
+    } catch {}
     await sleep(POLL_INTERVAL_MS)
   }
   throw new Error(`DEV server did not answer /health within ${BOOT_TIMEOUT_MS / 1000}s; see ${options.logPath}`)
 }
 
-/**
- * SIGTERM the server and race a deadline; on timeout the child is SIGKILLed
- * and `'timeout'` returned — the caller decides whether that is fatal.
- */
 export async function stopDevServer(server: DevServer, timeoutMs: number): Promise<'stopped' | 'timeout'> {
   if (server.exitState.exited) {
     return 'stopped'

@@ -43,9 +43,6 @@ const params = new URLSearchParams(url.search)
 const WEBSOCKET_ENDPOINT = params.get('multiplayerEndpoint') || 'ws://localhost:1234'
 const WEBSOCKET_ID = params.get('multiplayerId') || '0'
 
-// e2e seam: `?renderMath=stub` installs a deterministic stand-in for the host's server-side KaTeX channel, so the
-// math card's preview flow is exercised without a backend. The default demo host has no renderMath — its preview
-// shows the TeX source.
 const stubRenderMath: NonNullable<CardConfig['renderMath']> = () =>
   Promise.resolve({
     svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 16" width="40" height="16" data-math-stub="true"><rect width="40" height="16" fill="currentColor"/></svg>',
@@ -172,7 +169,6 @@ function getAllowedNodes({ editorType }: { editorType?: string }) {
   } else if (editorType === 'minimal') {
     return MINIMAL_NODES
   }
-  // The full surface adds the demo host card to DEFAULT_NODES rather than forking the built-in set.
   return [...DEFAULT_NODES, musicPlayer.node]
 }
 
@@ -326,11 +322,7 @@ function DemoComposer({
     deleteSnippet,
     searchLinks: searchParams.get('searchLinks') === 'false' ? undefined : defaultCardConfig.searchLinks,
     renderMath: searchParams.get('renderMath') === 'stub' ? stubRenderMath : undefined,
-    // e2e seam: `?imageLibrary=fixture[-upload]` installs the fixture adapter (demo/utils/imageLibrary.ts);
-    // absent = no library menu entry
     imageLibrary: getDemoImageLibrary(searchParams.get('imageLibrary')),
-    // Pintura is a runtime CDN import — point the demo at a licensed build with VITE_PINTURA_JS_URL /
-    // VITE_PINTURA_CSS_URL to test image editing.
     pinturaConfig: {
       jsUrl: import.meta.env.VITE_PINTURA_JS_URL || undefined,
       cssUrl: import.meta.env.VITE_PINTURA_CSS_URL || undefined,

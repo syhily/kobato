@@ -6,10 +6,6 @@ import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog.tsx'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Rows come from useInfiniteQuery and search from useDebouncedSearch; the list query is
-// stubbed so SSR emits the loading/empty chrome. Other seams come from mock-react-query,
-// setup.ts and _helpers/stubs.
-
 const queryMocks = mockTanstackQuery()
 
 queryMocks.infinite = {

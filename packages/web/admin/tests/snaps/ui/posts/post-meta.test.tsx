@@ -9,10 +9,6 @@ import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web-admin/ui/posts/PostMetaSidebar.tsx'
 import { describe, expect, it } from 'vitest'
 
-// PostMetaSidebar is props-driven (no fetching), so SSR renders the populated and empty
-// branches by swapping the draft. MetaPanel wrappers use a stubbed editor-shell state;
-// PostEditorShell is skipped (TipTap is browser-only).
-
 const noop = () => undefined
 
 const populatedDraft: PostMetaDraft = {
@@ -204,20 +200,17 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(draft.slug).toBe(post.slug)
     expect(draft.pinned).toBe(true)
     expect(draft.tags).toEqual(['a', 'b'])
-    // Past publishedAt → cleared (future ones stay as local input values).
     expect(draft.publishedAt).toBe('')
   })
 
   it('metaDraftFromPost keeps a future publishedAt as a local input value', () => {
     const post = makeAdminPost({ publishedAt: '2099-12-31T10:00:00.000Z' })
     const draft = metaDraftFromPost(post)
-    // ISO → local datetime-local value; assert shape, not a timezone-pinned string.
     expect(draft.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/u)
     expect(Date.parse(localInputValueToIso(draft.publishedAt)!)).toBe(Date.parse(post.publishedAt))
   })
 
   it('postMetaDraftsEqual returns true for identical drafts and false for any diff', () => {
-    // Build two drafts from the same source so generated ids/slugs match.
     const source = makeAdminPost({ slug: 'fixed-slug', tags: ['a'] })
     const a = metaDraftFromPost(source)
     const b = metaDraftFromPost(source)
@@ -251,9 +244,6 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(Number.isFinite(backToLocal)).toBe(true)
   })
 })
-
-// Minimal stubs satisfy the panel props — the full editor state machine
-// (TipTap + draft sync) isn't needed.
 
 const sidebarState = {
   draft: populatedDraft,
@@ -321,7 +311,6 @@ describe('snapshot: EditorMetaPanel (aside)', () => {
 describe('snapshot: EditorMetaPanel (sheet)', () => {
   it('renders the sheet wrapper (closed state emits no panel body on SSR)', () => {
     const post = makeAdminPost({ title: 'Sheet Post' })
-    // Closed Sheet portal emits nothing under SSR — the component still mounts without throwing.
     const html = stableHtml(
       renderInRouter(
         <EditorMetaPanel
@@ -338,7 +327,6 @@ describe('snapshot: EditorMetaPanel (sheet)', () => {
         '/editor/post/1',
       ),
     )
-    // Closed portals emit nothing — assert only that the render doesn't throw.
     expect(html).toBe('')
   })
 })

@@ -48,9 +48,6 @@ export async function latestDistinctCommentIds(db: Database, adminIds: number[],
   return rows.map((row) => idFromString(String(row.id)))
 }
 
-/** Digest access path: the plan is pinned by
- *  `packages/server/tests/it/server/domains/comments/repos.test.ts` — no speculative partial
- *  index (only 124→75ms at 100k); revisit past ~50k rows if cache-miss costs show. */
 export function latestDistinctCommentIdsQuery(adminIds: number[], limit: number): SQL {
   const userFilter = adminIds.length > 0 ? sql`${comment.userId} NOT IN (${sql.join(adminIds, sql`, `)})` : sql`1 = 1`
   return sql`SELECT    id

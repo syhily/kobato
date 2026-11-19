@@ -17,9 +17,6 @@ import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// After a successful password rotation, ALL other sessions of the target user MUST be revoked.
-// Real engine; only mock: email delivery.
-
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendPasswordReset: vi.fn<any>(),
@@ -51,7 +48,6 @@ let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // Flush before teardown: pending events reference rows the next clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   await db.insert(user).values({

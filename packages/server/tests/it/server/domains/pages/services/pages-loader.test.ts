@@ -10,10 +10,6 @@ import { adminUser } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Tests for `loadPagePreview` against the real engine: the live gate,
-// the post-wins redirect, and the admin draft preview run on seeded meta
-// rows + content revisions.
-
 const db = getTestDb()
 
 const pageBody: LexicalEditorState = lexicalBodyWith([lexicalParagraph('Hello')])
@@ -97,7 +93,6 @@ async function seedPage(opts: {
 }
 
 function makeArgs(slug: string, viewer: SessionUser | null = null) {
-  // Draft-preview gate inputs arrive as plain values (viewer + the draft flag), not a request context.
   return {
     db,
     slug,
@@ -147,7 +142,6 @@ describe('loadPagePreview — slug redirect logic', () => {
 
     expect(result.page.title).toBe('About')
     expect(result.page.slug).toBe('about')
-    // No projection columns seeded → the compute-on-read state surfaces.
     expect(result.sourcePage.bodyState).toEqual(pageBody)
     expect(result.draftMarker).toBeNull()
   })

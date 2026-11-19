@@ -165,9 +165,6 @@ describe('$insertSnippet', () => {
   })
 
   it('no-ops when the node list contains non-node entries', async () => {
-    // { nodes: [42] } slips past an Array.isArray-only guard and throws inside
-    // $generateNodesFromSerializedNodes — a malformed snippet must no-op
-    // silently instead of surfacing an editor error
     const errors: Error[] = []
     const strictEditor = createEditor({
       namespace: 'test',

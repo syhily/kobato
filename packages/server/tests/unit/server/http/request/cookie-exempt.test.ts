@@ -3,11 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 describe('isExempt', () => {
   it.each([
-    // The real feed routes: exact `/feed` plus the `/feed/` sub-paths.
     ['/feed', true],
     ['/feed/atom', true],
-    // Not feed routes: a bare `/feed` prefix would exempt these, skip CSRF minting, and
-    // turn the missing route into a 500 instead of a 404.
     ['/feed.xml', false],
     ['/feedfoo', false],
     ['/cats/tech/feed', false],

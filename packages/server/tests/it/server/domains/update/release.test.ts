@@ -3,8 +3,6 @@ import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// fetchLatestRelease against the real file cache; only the network is mocked.
-
 const db = getTestDb()
 
 const RELEASE_URL = /api\.github\.com\/repos\/[^/]+\/[^/]+\/releases\/latest/
@@ -53,7 +51,6 @@ describe('update/release — fetchLatestRelease cache', () => {
   })
 
   it('keeps the entry through 14 minutes and re-requests after the 15-minute TTL', async () => {
-    // Fake only the clock: fs promises and vi.waitFor still use real timers.
     vi.useFakeTimers({ toFake: ['Date'] })
     const start = new Date('2026-07-19T00:00:00Z')
     vi.setSystemTime(start)

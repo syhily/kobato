@@ -1,11 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Release-chain acceptance contract: the flow is a single chain — tag push →
-// sea.yml build matrix → release-upload — ending with the draft flipping
-// public. These tests pin each handoff as text so a re-break fails here, not
-// during a release.
-
 const sea = readFileSync('.github/workflows/sea.yml', 'utf-8')
 const releaseTs = readFileSync('tools/pack/src/release.ts', 'utf-8')
 
@@ -19,7 +14,6 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('release.ts creates the release as a draft (the no-partial-release guarantee)', () => {
-    // Users must never see a release with missing assets.
     expect(releaseTs).toMatch(/gh release create[^\n]*--draft/)
   })
 
@@ -42,9 +36,7 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('sea.yml build matrix gate admits tag pushes — anchored per release-upload dependency job', () => {
-    // Whole-file matches miss one leg's gate breaking — assert per job block.
     const tagGate = /if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/
-    // Job keys are the only two-space-indented lines under `jobs:` — one block per job.
     const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
     for (const job of ['build', 'build-darwin', 'build-windows']) {
       const block = jobBlocks.find((b) => b.startsWith(`${job}:`))
@@ -90,8 +82,6 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('no workflow consumes the `published` release event — the chain ends at release-upload (M2: the ghcr chain is gone)', () => {
-    // A workflow that also triggers on `release: published` silently forks the
-    // release chain.
     for (const file of readdirSync('.github/workflows')) {
       if (!file.endsWith('.yml') && !file.endsWith('.yaml')) {
         continue

@@ -43,7 +43,6 @@ describe('createPromiseMemo', () => {
     expect(await memo()).toBe(2)
     expect(loader).toHaveBeenCalledTimes(2)
 
-    // The retried success is memoized from then on.
     expect(await memo()).toBe(2)
     expect(loader).toHaveBeenCalledTimes(2)
   })

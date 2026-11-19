@@ -14,8 +14,6 @@ interface ReindexProgress {
 
 const IDLE: ReindexProgress = { phase: 'idle', total: 0, processed: 0, failed: 0 }
 
-/** Manual search-index rebuild — the recovery hatch after bulk imports
- *  (database pump, WordPress migration); the index maintains itself otherwise. */
 export function SearchReindexCard() {
   const { t } = useI18n()
   const [reindex, setReindex] = useState<ReindexProgress>(IDLE)

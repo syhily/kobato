@@ -4,9 +4,6 @@ import { addClassNamesToElement, $createParagraphNode, type EditorConfig } from 
 export class AsideNode extends BaseAsideNode {
   createDOM(config: EditorConfig) {
     const element = document.createElement('aside')
-    // EditorThemeClasses carries an open `[key: string]: any` index, so the
-    // custom `aside` key reads as any — narrow it to the class list
-    // addClassNamesToElement expects
     const asideClassNames: unknown = config.theme.aside
     addClassNamesToElement(element, typeof asideClassNames === 'string' ? asideClassNames : undefined)
     return element

@@ -5,8 +5,6 @@ import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web-admin/ui/sha
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { FileTextIcon, ListChecksIcon, SearchIcon } from 'lucide-react'
 
-// My-comments filter-pill specs. The URL is the source of truth — the
-// `toQuery` mappers are inert; pill edits mirror back via controlled mode.
 export type MyCommentFilterFieldKey = 'status' | 'page' | 'text'
 
 export const MY_STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [

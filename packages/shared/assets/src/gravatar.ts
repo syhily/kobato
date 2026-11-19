@@ -1,6 +1,3 @@
-// Gravatar-compatible avatar mirrors. The admin-configurable mirror URL is
-// fetched by a public endpoint, so the host allowlist is the security boundary:
-// the server's outbound fetch still applies its SSRF/DNS guard on every hop.
 const ALLOWED_GRAVATAR_HOSTS = new Set([
   'gravatar.com',
   'www.gravatar.com',
@@ -8,7 +5,6 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
   'en.gravatar.com',
   'secure.gravatar.com',
   'i.gravatar.com',
-  // Public mirrors; keep the list explicit — never open it to arbitrary hosts.
   'cdn.v2ex.com',
   'sdn.geekzu.org',
   'gravatar.loli.net',
@@ -24,12 +20,6 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
   'use.sevencdn.com',
 ])
 
-/**
- * Preset mirror base URLs on allowlisted hosts. URLs only: labels live in the
- * admin settings layer (this module is part of the public avatar graph and must
- * not carry workspace catalog ids). The allowlist above stays the superset — a
- * configured mirror outside these presets is appended as a custom option.
- */
 export const GRAVATAR_MIRROR_URLS = [
   'https://www.gravatar.com/avatar',
   'https://cn.gravatar.com/avatar',
@@ -51,8 +41,6 @@ export const GRAVATAR_MIRROR_URLS = [
 
 export type GravatarMirrorUrl = (typeof GRAVATAR_MIRROR_URLS)[number]
 
-/** HTTPS on a known mirror host. Host literals/IPs can never be in the
- *  allowlist, so private and metadata addresses are rejected here as well. */
 export function isAllowedMirrorUrl(rawUrl: string): boolean {
   let parsed: URL
   try {

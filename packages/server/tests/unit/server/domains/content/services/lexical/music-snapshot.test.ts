@@ -13,7 +13,6 @@ const META = {
   lyric: '[00:00]la',
 }
 
-// zod parse clones — always assert against the PARSED state's nodes.
 function parse(state: unknown) {
   return lexicalEditorStateSchema.parse(state)
 }

@@ -16,12 +16,10 @@ describe('encodeIco', () => {
 
     const ico = encodeIco([icon16, icon32])
 
-    // ICONDIR header: reserved=0, type=1 (ICO), count=2.
     expect(ico.readUInt16LE(0)).toBe(0)
     expect(ico.readUInt16LE(2)).toBe(1)
     expect(ico.readUInt16LE(4)).toBe(2)
 
-    // First directory entry: 16×16, 32bpp, points at the first PNG blob.
     const firstDataOffset = 6 + 16 * 2
     expect(ico.readUInt8(6)).toBe(16)
     expect(ico.readUInt8(7)).toBe(16)
@@ -29,13 +27,11 @@ describe('encodeIco', () => {
     expect(ico.readUInt32LE(14)).toBe(icon16.length)
     expect(ico.readUInt32LE(18)).toBe(firstDataOffset)
 
-    // Second directory entry: 32×32, follows the first blob.
     expect(ico.readUInt8(22)).toBe(32)
     expect(ico.readUInt8(23)).toBe(32)
     expect(ico.readUInt32LE(30)).toBe(icon32.length)
     expect(ico.readUInt32LE(34)).toBe(firstDataOffset + icon16.length)
 
-    // Payloads are the untouched PNG buffers, in order.
     expect(ico.subarray(firstDataOffset, firstDataOffset + icon16.length).equals(icon16)).toBe(true)
     expect(ico.subarray(firstDataOffset + icon16.length).equals(icon32)).toBe(true)
     expect(ico.length).toBe(firstDataOffset + icon16.length + icon32.length)

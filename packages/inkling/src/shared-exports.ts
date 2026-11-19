@@ -1,9 +1,3 @@
-/* The public barrel's shared contract, single-sourced so shared names have one
- * home. Must stay free of the card NODE classes: these are the card-free
- * composition pieces a card-free host surface consumes, and the pick-seam /
- * card-chrome exports below name only registry facts, contexts, and chrome
- * components. */
-
 export type { Transformer } from '@lexical/markdown'
 export type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 

@@ -8,9 +8,6 @@ import {
 import { Solar } from 'lunar-typescript'
 import { describe, expect, it } from 'vitest'
 
-// Calendar copy is static per-locale data: en-US renders no lunar / 宜 lines, zh-TW + zh-HK
-// use a hand-reviewed traditional table, and nothing is converted at runtime.
-
 describe('calendar locale copy', () => {
   it('labels months and weekdays per locale', () => {
     expect(calendarCopyFor('zh-CN').months[0]).toBe('一月')
@@ -54,7 +51,6 @@ describe('calendar locale copy', () => {
     expect(auspiciousLabel(calendarCopyFor('zh-TW'), '动土')).toBe('宜動土')
     expect(auspiciousLabel(calendarCopyFor('zh-TW'), '会亲友')).toBe('宜會親友')
     expect(auspiciousLabel(calendarCopyFor('zh-HK'), '诸事不宜')).toBe('宜諸事不宜')
-    // Identical glyphs still resolve through the table (no implicit identity fallback).
     expect(auspiciousLabel(calendarCopyFor('zh-TW'), '祭祀')).toBe('宜祭祀')
   })
 

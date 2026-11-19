@@ -2,16 +2,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Contract: every `<Select>` call site must show a human-readable label in
-// the trigger, never the raw `value` — via `items` on the root or a children
-// function on `<SelectValue>`.
-
 const UI_ROOTS = [
   resolve(process.cwd(), 'packages/web/admin/src/ui/'),
   resolve(process.cwd(), 'apps/kobato/src/routes/'),
 ]
 
-// Select family child tags, so they aren't mistaken for the root `<Select>`.
 const SELECT_CHILDREN = [
   'Content',
   'Item',
@@ -33,13 +28,11 @@ const SELECT_CHILDREN = [
 ] as const
 
 function stripComments(source: string): string {
-  // Strip comments only; `{...}` JSX and `https://` URLs must survive.
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
 function findSelectRoots(source: string): { attrs: string; block: string; line: number }[] {
   const roots: { attrs: string; block: string; line: number }[] = []
-  // `<Select` not followed by a child name; optional generic; attrs may span lines.
   const rootRe = new RegExp(`<Select(?!${SELECT_CHILDREN.join('|')})(?:<[^>]*>)?([\\s\\S]*?)>`, 'g')
   let match: RegExpExecArray | null
   while ((match = rootRe.exec(source)) !== null) {

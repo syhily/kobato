@@ -3,9 +3,6 @@ import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comment
 import { makeCommentBody } from '@kobato/test/catalog.ts'
 import { describe, expect, it } from 'vitest'
 
-// `parseComments` turns the roots+children union into the render tree:
-// soft-deleted rows vanish and replies re-attach to the nearest live
-// ancestor, or become roots.
 const { parseComments, MAX_THREAD_CHILDREN } = await import('@kobato/server/domains/comments/services/public-query.ts')
 
 function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): CommentAndUser {
@@ -119,7 +116,6 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   })
 
   it('terminates when rid points back at the row itself (cycle guard)', async () => {
-    // Pathological row: rid === id; the cycle guard must terminate.
     const input: CommentAndUser[] = [row({ id: 5, rid: 5, rootId: 0 })]
 
     const tree = await parseComments(input)
@@ -129,7 +125,6 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   })
 
   it('treats a missing ancestor as terminating the walk at root', async () => {
-    // Missing parent (filtered by paging / visibility): the reply still renders, promoted to root.
     const input: CommentAndUser[] = [row({ id: 7, rid: 99, rootId: 99 })]
 
     const tree = await parseComments(input)
@@ -169,7 +164,6 @@ describe('services/comments/loader — parseComments thread cap', () => {
   })
 
   it('caps each root independently and counts nested descendants', async () => {
-    // Root 1: a chain 1 → 2 → 3 → … deeper than the cap. Root 2: no replies.
     const input: CommentAndUser[] = [
       row({ id: 1, rid: 0, rootId: 0 }),
       row({ id: 10000, rid: 0, rootId: 0 }),

@@ -22,7 +22,6 @@ describe('registerTkNodeTracking', () => {
   let editor: LexicalEditor
 
   beforeEach(() => {
-    // mutation listeners only fire on a mounted editor
     const rootElement = document.createElement('div')
     document.body.appendChild(rootElement)
     editor = createEditor({

@@ -14,7 +14,6 @@ import { useCallback, useRef, useState } from 'react'
 import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
-// Per-slot UI metadata: `publicPath` mirrors the server-side `ASSET_ROUTES` table.
 type BrandingFileSlot =
   | 'faviconSvg'
   | 'faviconIco'
@@ -307,7 +306,6 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
     } catch (err) {
       toastApiError(err, 'admin.toast.clearFailed', t)
     }
-    // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
     setClearing(false)
   }, [csrfToken, meta, revalidator, t])
 

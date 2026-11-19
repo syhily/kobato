@@ -12,8 +12,6 @@ import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// selectFeedPosts against the real engine: visibility policy, published-
-// revision hydration, and the real scope resolvers.
 const db = getTestDb()
 
 const RESOLVERS = { resolveCategory: resolveCategoryBySlugOrName, resolveTag: resolveTagBySlugOrName }
@@ -57,8 +55,6 @@ async function seedPost(opts: {
       revisionNo: 1,
       status: 'published',
       body: opts.body ?? paragraphBody(bodyText),
-      // Saved projections stand in for the save-pipeline output; the feed
-      // reads `body_html_feed` verbatim.
       bodyHtml: `<p>${bodyText}</p>`,
       bodyText,
       bodyHtmlFeed: `<p>${bodyText}</p>`,

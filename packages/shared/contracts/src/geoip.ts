@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-// Admin GeoIP wire — the single Zod source the `@kobato/api` geoip contract
-// composes and the server validates against.
-
 export const adminGeoipStatusInput = z.object({})
 export type AdminGeoipStatusInput = z.infer<typeof adminGeoipStatusInput>
 

@@ -10,15 +10,7 @@ import { format } from 'date-fns'
 
 const log = getLogger('render.warmup')
 
-/**
- * Render-layer half of the content warmup seam: pre-warm the OG card and
- * today's calendar (both themes) through the same `through(...)` key the
- * HTTP resources use. Failures are logged and swallowed.
- */
 function warmContentCaches(og: OgWarmTarget): void {
-  // The request path keys by the REQUEST capture; the warmup has no request, so
-  // it resolves TODAY'S snapshot once and keys + renders from that same capture
-  // (OG cards include settings-derived identity/SEO, so they carry it too).
   const snapshot = getBlogSettingsSnapshotSync()
   const localization = resolveAppLocalization(snapshot)
 
@@ -54,5 +46,4 @@ function warmContentCaches(og: OgWarmTarget): void {
   }
 }
 
-// Self-wires into the content domain's warmup slot at import time.
 wireContentRenderWarmup(warmContentCaches)

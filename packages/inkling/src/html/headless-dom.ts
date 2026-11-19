@@ -35,12 +35,6 @@ export async function resolveHeadlessDom(injected?: ExportDOMDom, load: LoadJsdo
     return injected
   }
 
-  // The REAL global window, not a fabricated {document} shell — the render
-  // context binds DOMPurify to options.dom.window downstream, and a
-  // structural fake is not a bindable window. The typeof guard goes through
-  // a nullable local (not `window?.document`): optional chaining does not
-  // protect an UNDECLARED global — in a windowless realm `window?.x` is a
-  // ReferenceError, not undefined.
   const browserWindow = typeof window === 'undefined' ? undefined : window
   if (browserWindow?.document) {
     return { window: browserWindow }
@@ -49,9 +43,6 @@ export async function resolveHeadlessDom(injected?: ExportDOMDom, load: LoadJsdo
   if (!cachedDefaultDom) {
     const pending = load()
     cachedDefaultDom = pending
-    // Clear the cache on failure so the failure leg never poisons later
-    // resolutions; the identity guard skips the clear if a newer load has
-    // already replaced this promise.
     pending.catch(() => {
       if (cachedDefaultDom === pending) {
         cachedDefaultDom = undefined

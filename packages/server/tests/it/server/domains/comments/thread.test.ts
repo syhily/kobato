@@ -25,7 +25,6 @@ describe('integration / comment threading', () => {
     )
     expect(pageRes.status).toBe(200)
 
-    // List pages to trigger metric creation and get commentPublicId
     const listRes = await callRpc('/admin/pages/list', { offset: 0, limit: 1 }, adminCtx)
     expect(listRes.status).toBe(200)
     const list = await parseRpcJson<{
@@ -82,8 +81,6 @@ describe('integration / comment threading', () => {
     expect(commentRes.status).toBe(200)
     const created = await parseRpcJson<{ comment: { id: string } }>(commentRes)
 
-    // Both stored columns derive from one canonicalize pass — the body is the
-    // canonical Lexical state, content its degraded-feed HTML projection.
     const expected = await canonicalizeCommentBody(input)
     const rows = await db
       .select()

@@ -2,10 +2,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// The page editor's metadata model: the sidebar metadata draft and the
-// toggle-field registry. The `admin.pages.upsert-meta` wire shapes are
-// zod-derived in `@kobato/contracts/pages` — import them there, never here.
-
 export interface PageMetaDraft {
   slug: string
   title: string
@@ -39,9 +35,6 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   publishedAt: '',
 }
 
-// Keys derive from `EMPTY_PAGE_META_DRAFT` so a new draft field joins the
-// equality check automatically. The cast is sound: the empty draft is a
-// complete `PageMetaDraft`, so its runtime keys are exactly `keyof PageMetaDraft`.
 const PAGE_META_DRAFT_KEYS = unsafeCast<Array<keyof PageMetaDraft>>(Object.keys(EMPTY_PAGE_META_DRAFT))
 
 export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean {

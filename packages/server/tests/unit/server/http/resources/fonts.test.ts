@@ -66,8 +66,6 @@ describe('fontsRouter', () => {
   })
 
   it('invalidates the canvas font slot on upload — the next ensureCanvasFont re-reads', async () => {
-    // Use the real canvas-fonts module — only its leaf deps (settings, fs,
-    // the native font registry) are mocked.
     const families = { og: 'OPPO Sans', calendar: '' }
     const fsMocks = {
       mkdir: vi.fn().mockResolvedValue(undefined),
@@ -76,8 +74,6 @@ describe('fontsRouter', () => {
       readFile: vi.fn().mockResolvedValue(Buffer.from('ttf-v1')),
     }
     const registered = new Set<string>()
-    // `vi.doMock` registrations are file-scoped: undo the partial assets
-    // mock from the first test so the real module loads below.
     vi.doUnmock('@kobato/server/render/canvas-fonts.ts')
     vi.doMock('@kobato/server/domains/audit/services/record.ts', () => ({
       recordAuditEvent: vi.fn(),
@@ -113,12 +109,10 @@ describe('fontsRouter', () => {
     const app = createTestApp()
     app.route('/', fontsRouter)
 
-    // Warm the slot: the first render registers the family.
     const first = await ensureCanvasFont('og')
     expect(first?.family).toBe('OPPO Sans')
     expect(fsMocks.readFile).toHaveBeenCalledTimes(1)
 
-    // Sanity: without an upload, the fast path serves the cached slot.
     await ensureCanvasFont('og')
     expect(fsMocks.readFile).toHaveBeenCalledTimes(1)
 
@@ -131,7 +125,6 @@ describe('fontsRouter', () => {
     })
     expect(res.status).toBe(200)
 
-    // The very next render re-reads the file — no process restart needed.
     fsMocks.readFile.mockResolvedValue(Buffer.from('ttf-v2'))
     const second = await ensureCanvasFont('og')
     expect(fsMocks.readFile).toHaveBeenCalledTimes(2)

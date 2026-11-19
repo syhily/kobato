@@ -214,12 +214,6 @@ describe('Markdown round-trip for decorator cards', function () {
 })
 
 describe('Markdown round-trip for host cards', function () {
-  // A host card joins the round-trip through registration alone
-  // (registry-default wiring): its assembled node class registers on the
-  // conversion editor and its fence transformer is derived from the stored
-  // spec. The `cards` option augments the default for handles built without
-  // defineCard (and overrides a registered type on collision); passing the
-  // registered handle back is an idempotent no-op.
   const musicPlayer: HostCard<'musicPlayer'> = defineCard({
     nodeType: 'musicPlayer',
     baseNode: generateDecoratorNode({
@@ -230,15 +224,10 @@ describe('Markdown round-trip for host cards', function () {
     render: () => null,
     markdownFence: {
       getData: (node) => ({ src: (node as unknown as { src: string }).src }),
-      // the closure resolves the assembled class lazily — defineCard has
-      // returned by the time an import runs
       createNode: (data): LexicalNode => new musicPlayer.node({ src: data.src }),
     },
   })
 
-  // A fence-less registered host card: its node class joins the conversion
-  // editor (a serialized state containing it parses), but no `inkling:` fence
-  // maps to it — the fence stays an opt-in (`markdownFence`).
   defineCard({
     nodeType: 'fencelessWidget',
     baseNode: generateDecoratorNode({ nodeType: 'fencelessWidget' }),
@@ -271,9 +260,6 @@ describe('Markdown round-trip for host cards', function () {
   })
 
   it('parses a state containing a fence-less registered host card, but speaks no fence for it', function () {
-    // the node class joined the conversion editor through the registry
-    // default (the getHostCardNodes projection) — a state holding the node
-    // parses instead of throwing on an unknown type…
     const fencelessClass = getHostCardNodes().find((node) => node.getType() === 'fencelessWidget')
     expect(fencelessClass).toBeDefined()
     const source = createHeadlessEditor({ nodes: getHostCardNodes(), onError: () => {} })
@@ -287,8 +273,6 @@ describe('Markdown round-trip for host cards', function () {
     state = source.getEditorState().toJSON()
     expect(() => lexicalStateToMarkdown(state)).not.toThrow()
 
-    // …but with no markdownFence the card speaks no fence: its would-be tag
-    // falls through to the code-fence import, never to a card node
     const imported = markdownToLexicalState(inklingCard('fencelessWidget', {}))
     const node = imported.root.children[0] as unknown as { type: string }
     expect(node.type).not.toBe('fencelessWidget')
@@ -296,12 +280,6 @@ describe('Markdown round-trip for host cards', function () {
 })
 
 describe('Malformed card fence payloads', function () {
-  // The fence body passes through JSON.parse unchecked for shape: only a
-  // plain object can carry the card's fields. A scalar/null body must throw a
-  // descriptive TypeError naming the card at the transformer boundary — the
-  // same idiom as the per-field str() guards — not a bare "Cannot read
-  // properties of null" from `data.<field>` inside createNode.
-
   it('throws a descriptive TypeError naming the card when the fence body is null', function () {
     const markdown = '```inkling:html\nnull\n```'
     expect(() => markdownToLexicalState(markdown)).toThrow(TypeError)

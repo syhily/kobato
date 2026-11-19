@@ -27,7 +27,6 @@ export const codeBlockDeclaration = checkedCardDeclaration({
   ],
   insert: { openInEditMode: true },
   dragIcon: 'codeblock',
-  // Live e2e selector contract ("code-block"), deliberately not a transform of "codeblock"
   toolbarLabel: 'code-block',
 
   markdown: { kind: 'exempt' },

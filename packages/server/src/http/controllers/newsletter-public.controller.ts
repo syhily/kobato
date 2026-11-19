@@ -4,13 +4,9 @@ import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/
 import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// The limiter rides the
-// implementer so it runs BEFORE the contract's input validation.
 const impl = implementPublic(newsletterContract).use(resourceRateLimit)
 
 const subscribeProc = impl.subscribe.handler(async ({ input, context }) => {
-  // Anonymous + mails the submitted address: cap per-address too, or a
-  // distributed spray relays unlimited confirmation mail to one victim.
   const byEmail = await tryNewsletterSubscribeByEmailRateLimit(input.email)
   if (byEmail.exceeded) {
     throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'newsletter.error.rateLimited')

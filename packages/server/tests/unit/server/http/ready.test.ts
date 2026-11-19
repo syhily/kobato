@@ -15,9 +15,6 @@ import { __getLifecycleContainer, setServerPhase } from '@kobato/server/infra/li
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Real handler and state machines; only the restore engine deps are
-// no-op test doubles.
-
 function resetPhaseTo(phase: ServerPhase): void {
   __getLifecycleContainer().serverPhase = phase
 }
@@ -58,7 +55,6 @@ describe('/ready endpoint', () => {
   it('returns 503 with the restore projection when phase is restarting', async () => {
     setServerPhase('restarting')
     wireNoopMachine()
-    // A real claim leaves the machine in the draining phase.
     expect(tryBeginRestore()).toBe(true)
 
     const res = await app().request('/ready')
@@ -96,7 +92,6 @@ describe('/ready endpoint', () => {
     try {
       const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
       const gated = new Hono<Env>()
-      // The gate reads only url and db from requestContext.
       gated.use('*', async (c, next) => {
         c.set('requestContext', {
           url: new URL(c.req.url),

@@ -1,10 +1,6 @@
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryParseUrl } from '@kobato/utils/safe-url.ts'
 
-// Link verification + best-effort metadata extraction. Regex-based and
-// best-effort (the fetch layer size-caps the document); the only hard
-// requirement is an `<a href>` resolving to the target.
-
 const ANCHOR_HREF_RE = /<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi
 const TITLE_RE = /<title\b[^>]*>([\s\S]*?)<\/title>/i
 const META_TAG_RE = /<meta\b[^>]*>/gi
@@ -34,8 +30,6 @@ function clean(value: string, max: number): string | null {
   return text.slice(0, max)
 }
 
-/** Normalise for link-equality: http(s) only, fragment and default ports
- *  dropped, trailing slashes stripped; query strings compare as-is. */
 export function normalizeForMatch(raw: string): string | null {
   const url = tryParseUrl(raw)
   if (url === null || (url.protocol !== 'http:' && url.protocol !== 'https:')) {
@@ -53,8 +47,6 @@ export function normalizeForMatch(raw: string): string | null {
   return url.toString()
 }
 
-/** `normalizeForMatch` for http(s)-constrained inputs: null is unreachable,
- *  so it throws. The single source of the normalized source key. */
 export function requireSourceKey(raw: string): string {
   const key = normalizeForMatch(raw)
   if (key === null) {
@@ -74,8 +66,6 @@ export function extractLinks(html: string): string[] {
   return links
 }
 
-/** True when an `<a href>` (relative links resolved against the source URL)
- *  resolves to the target canonical URL — only anchors count. */
 export function sourceLinksToTarget(html: string, sourceUrl: string, targetCanonicalUrl: string): boolean {
   const wanted = normalizeForMatch(targetCanonicalUrl)
   if (wanted === null) {

@@ -4,8 +4,6 @@ import type { TextFilterOperatorOption, TextFilterValue } from '@kobato/web-admi
 import type { UseQueryOptions } from '@tanstack/react-query'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
 
-// Shared filter-pill contracts: views declare fields as a `FilterFieldSpec` array; pill values stay opaque strings.
-
 export type FilterFieldIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 export interface FilterOptionItem {
@@ -15,7 +13,6 @@ export interface FilterOptionItem {
 
 export type FilterOptionRenderer = (option: FilterOptionItem, selected: boolean) => ReactNode
 
-/** Partial list-query patch from one filter: `undefined` entries are dropped by the merge. */
 export type FilterQueryPatch = Record<string, string | undefined>
 
 interface FilterFieldBase<K extends string> {
@@ -34,10 +31,8 @@ export interface OptionsFilterField<K extends string> extends FilterFieldBase<K>
   toQuery: (value: string) => FilterQueryPatch
 }
 
-/** Async combobox backed by a debounced server search; `resolveOptions` rehydrates a URL-restored pill's label. */
 export interface SearchFilterField<K extends string> extends FilterFieldBase<K> {
   kind: 'search'
-  // `any`s keep the spec closed over heterogeneous procedure data.
   queryOptions: (query: string) => UseQueryOptions<any, Error, any, any>
   select: (data: any) => FilterOptionItem[]
   initialItems?: readonly FilterOptionItem[]
@@ -81,7 +76,6 @@ export type FilterFieldSpec<K extends string> =
   | DateSingleFilterField<K>
   | DateRangeFilterField<K>
 
-/** Per-search-field live state for the bar: resolved items, pending flag, pre-debounce setter. */
 export interface SearchFieldState {
   items: FilterOptionItem[]
   isPending: boolean

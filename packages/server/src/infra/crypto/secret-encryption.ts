@@ -75,9 +75,7 @@ function decrypt(ciphertext: string): string {
   if (ciphertext.startsWith(ENCRYPTED_V2_PREFIX)) {
     try {
       return tryDecrypt(ciphertext, getDeploymentKey())
-    } catch {
-      // Backward-compat fallback for pre-deployment-salt secrets.
-    }
+    } catch {}
     return tryDecrypt(ciphertext, getLegacyV2Key())
   }
   return tryDecrypt(ciphertext, getLegacyKey())
@@ -104,13 +102,6 @@ function getFingerprintHmacKey(purpose: string): Buffer {
   return key
 }
 
-/**
- * Keyed digest for values that leave the server (e.g. the admin-visible
- * observability fingerprint). A plain sha256 over a password-bearing payload is
- * offline-guessable, so the digest is keyed with a purpose-scoped HKDF of the
- * deployment key. Consequence: rotating `security.encryptionKey` invalidates
- * every stored fingerprint, which then reads as unverified until re-tested.
- */
 export function secretHmac(purpose: string, payload: string): string {
   return createHmac('sha256', getFingerprintHmacKey(purpose)).update(payload).digest('hex')
 }

@@ -23,7 +23,6 @@ describe('services/backup — key validation', () => {
     expect(isValidBackupKey('abc')).toBe(false)
     expect(isValidBackupKey('2026-06-05')).toBe(false)
     expect(isValidBackupKey('2026-06-05T12:34:56')).toBe(false)
-    // Malformed suffixes: too short, uppercase, non-hex, dangling separator.
     expect(isValidBackupKey('2026-06-05T12-34-56-0123456789abcde')).toBe(false)
     expect(isValidBackupKey('2026-06-05T12-34-56-0123456789ABCDEF')).toBe(false)
     expect(isValidBackupKey('2026-06-05T12-34-56-0123456789abcdeg')).toBe(false)
@@ -75,7 +74,6 @@ describe('services/backup — encryption resolver (fail closed on misconfigurati
       fallbackMessage: 'Backup encryption is enabled but no password is stored.',
     })
 
-    // String-message construction wraps the raw text in the passthrough descriptor.
     const legacy = new BackupEncryptionMisconfiguredError('enabled but passwordless')
     expect(legacy.message).toBe('enabled but passwordless')
     expect(legacy.descriptor).toEqual({

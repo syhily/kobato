@@ -1,6 +1,5 @@
 import type { Buffer } from 'node:buffer'
 
-// Thrown from loaders/actions; React Router routes it to the `ErrorBoundary`.
 export function notFound(message = 'Not Found'): never {
   throw new Response(message, { status: 404 })
 }

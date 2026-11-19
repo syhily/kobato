@@ -40,8 +40,6 @@ async function dispatchColon(editor: LexicalEditor): Promise<KeyboardEvent> {
 
 describe('emoji search-result boundary', () => {
   beforeAll(async () => {
-    // the port's chunk module is mocked here, so this only resolves/caches the
-    // scripted chunk promise — there is no real emoji-mart runtime to prewarm
     await ensureEmojiSearchReady()
   })
 

@@ -12,9 +12,8 @@ const NEW_YORK = {
 describe('utils/formatter — formatShowDate far-past branch', () => {
   it('falls through to formatLocalDate when the delta is >= 210 days', () => {
     const past = new Date('2020-01-01T00:00:00Z')
-    const now = new Date('2024-01-01T00:00:00Z') // ~1461 days later
+    const now = new Date('2024-01-01T00:00:00Z')
     const out = formatShowDate(past, SETTINGS, now)
-    // Falls back to the configured timeFormat template.
     expect(out).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
   })
 
@@ -46,7 +45,6 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
     const iso = '2024-03-05T06:07:08Z'
     // Asia/Shanghai is UTC+8 → 14:07:08 local. We assert each token appears.
     const out = formatLocalDate(iso, 'yyyy-LL-MM-dd HH:mm:ss', SETTINGS)
-    // Two substitutions both produce the month ("03"), so MM and LL match.
     expect(out).toBe('2024-03-03-05 14:07:08')
   })
 
@@ -56,7 +54,6 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
   })
 
   it('pads the hour to 00 at local midnight (h23 semantics)', () => {
-    // 2024-03-05T16:00:00Z is exactly midnight 2024-03-06 in Asia/Shanghai.
     const out = formatLocalDate('2024-03-05T16:00:00Z', 'yyyy-LL-dd HH:mm:ss', SETTINGS)
     expect(out).toBe('2024-03-06 00:00:00')
   })
@@ -67,14 +64,11 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
   })
 
   it('substitutes the dayPeriod token but leaves other date-fns letters verbatim', () => {
-    // The format string is user-supplied: only the nine documented tokens are
-    // substituted — `E`, `p` (and any other letter) must render as-is.
     const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy年LL月dd日 a E p', SETTINGS)
     expect(out).toBe('2024年03月05日 下午 E p')
   })
 
   it('substitutes the 12-hour token and a localized dayPeriod', () => {
-    // 14:07 Asia/Shanghai → 02:07 PM.
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 下午')
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'HH:mm a', SETTINGS)).toBe('14:07 下午')
     expect(formatLocalDate('2024-03-05T18:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 上午')
@@ -83,7 +77,6 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
   })
 
   it('only treats a STANDALONE `a` as the dayPeriod token', () => {
-    // `day` is a literal word in the custom pattern, not a token + letters.
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'day=dd month=LL year=yyyy', SETTINGS)).toBe(
       'day=05 month=03 year=2024',
     )
@@ -101,17 +94,11 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
   })
 
   it('leaves literal words alone (a run must START with a token to substitute)', () => {
-    // `dd` inside `add` is a word, not the day token; the trailing, delimited
-    // `dd` still substitutes.
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'add dd', SETTINGS)).toBe('add 05')
 
-    // Each run below begins with a character that cannot start a token, so the
-    // WHOLE run stays literal even when a token sequence appears later
-    // (`myyyyword` contains `yyyy`).
     const words = 'summary myyyyword ALLOW class day date month year'
     expect(formatLocalDate('2024-03-05T06:07:08Z', words, SETTINGS)).toBe(words)
 
-    // A standalone token next to those words still substitutes.
     expect(formatLocalDate('2024-03-05T06:07:08Z', `${words} dd`, SETTINGS)).toBe(`${words} 05`)
   })
 
@@ -125,8 +112,6 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
   })
 
   it('keeps substituting after a literal letter inside a compact run', () => {
-    // The `T` is emitted verbatim; the HH that follows is still a token. This
-    // is the ISO-ish admin pattern that must keep working.
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'yyyy-MM-ddTHH:mm', SETTINGS)).toBe('2024-03-05T14:07')
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'ddTHH', SETTINGS)).toBe('05T14')
   })
@@ -141,13 +126,11 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
   })
 
   it('handles the America/New_York spring-forward gap', () => {
-    // 2024-03-10: 02:00–03:00 local does not exist; 06:30Z is 01:30 EST, 07:30Z is 03:30 EDT.
     expect(formatLocalDate('2024-03-10T06:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-03-10 01:30:00')
     expect(formatLocalDate('2024-03-10T07:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-03-10 03:30:00')
   })
 
   it('handles the America/New_York fall-back overlap', () => {
-    // 2024-11-03: 01:30 happens twice (EDT then EST) — both instants render identically.
     expect(formatLocalDate('2024-11-03T05:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-11-03 01:30:00')
     expect(formatLocalDate('2024-11-03T06:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-11-03 01:30:00')
   })

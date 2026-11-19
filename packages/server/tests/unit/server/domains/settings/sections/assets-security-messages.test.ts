@@ -3,9 +3,6 @@ import { assetsValidationMessages, assetsWriteSchema } from '@kobato/settings/se
 import { securitySchema, securityValidationMessages } from '@kobato/settings/sections/security.ts'
 import { describe, expect, it } from 'vitest'
 
-// Settings Zod prose is a typed catalog id at the schema; zodIssuesToWire turns it into a
-// descriptor: typed key + params + English fallback + producer code + preserved field path.
-
 function issueOf(
   schema: { safeParse: (input: unknown) => { success: boolean; error?: { issues: unknown[] } } },
   input: unknown,

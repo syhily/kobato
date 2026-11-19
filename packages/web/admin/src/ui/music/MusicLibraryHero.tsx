@@ -16,7 +16,7 @@ interface MusicLibraryHeroProps {
   children?: ReactNode
 }
 
-const TARGET_CELL_SIZE = 100 // px — target size for each collage cell
+const TARGET_CELL_SIZE = 100
 const MIN_COLS = 3
 const MIN_ROWS = 2
 
@@ -70,7 +70,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
     gridRef.current = grid
   })
 
-  // Track previous urls to avoid re-initialising when only the array reference changes
   const prevUrlsRef = useRef<string[]>([])
 
   useEffect(() => {
@@ -108,7 +107,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
       return
     }
 
-    // Skip when the urls haven't actually changed and the cells already fill the grid
     if (urlsEqual(prevUrlsRef.current, allCoverUrls) && cells.length === grid.count) {
       return
     }
@@ -132,7 +130,7 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
     let running = true
 
     const scheduleNext = () => {
-      const nextDelay = 2000 + Math.random() * 1000 // 2–3 s between refreshes
+      const nextDelay = 2000 + Math.random() * 1000
       refreshTimer = setTimeout(() => {
         if (!running) {
           return
@@ -212,8 +210,6 @@ function PlayingBackground({ coverUrl, extractedColor }: { coverUrl: string; ext
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Blurred cover backdrop — scale compensates blur edge fade.
-          The ambient slowLoop is decorative; freeze it under reduced-motion. */}
       <LazyMotionDiv
         className="absolute inset-0"
         animate={prefersReducedMotion ? { scale: 1.1 } : { scale: [1.05, 1.2] }}

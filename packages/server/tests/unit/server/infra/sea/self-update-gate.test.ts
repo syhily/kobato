@@ -134,7 +134,6 @@ describe('update/gate evaluateSelfUpdateGate', () => {
       'update.gate.platform',
       'update.gate.devBuild',
     ])
-    // Every descriptor keeps an English technical fallback for doctor/logs.
     for (const reason of gate.reasonDescriptors) {
       expect(reason.fallbackMessage).toMatch(/[A-Za-z]/)
     }

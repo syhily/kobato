@@ -1,7 +1,3 @@
-// Per-run temp roots for out-of-process instances: an isolated data/cache/cwd
-// tree under the OS temp dir plus the canonical database paths inside it.
-// Nothing here reads or writes a real kobato config or the user's ./data.
-
 import { mkdir, mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

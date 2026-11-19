@@ -15,11 +15,6 @@ import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// End-to-end template renders per family: the copy inside the HTML comes from
-// the SERVER catalog, keyed by the explicit translator prop. en-US and zh-TW
-// are enough to prove the seam (every key is pinned in four locales by
-// `email-messages.test.ts`).
-
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF]/
 
 function setSiteLocale(locale: 'en-US' | 'zh-TW'): void {
@@ -29,8 +24,6 @@ function setSiteLocale(locale: 'en-US' | 'zh-TW'): void {
   })
 }
 
-// Raw user-authored/site data (the site title) stays out of the catalog; an
-// ASCII title lets the "no Han characters" assertions target the TEMPLATE copy.
 function setEnglishSite(): void {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -91,7 +84,6 @@ describe('email templates — footer copyright (one rich-text sentence)', () => 
       </EmailLayout>,
     )
 
-    // One catalog sentence: `<siteLink>{siteTitle}</siteLink> © {year}`.
     expect(html).toMatch(/<a [^>]*>Kobato<\/a> © \d{4}/)
     // The copyright year must never be part of the anchor.
     expect(html).not.toMatch(/© \d{4}<\/a>/)
@@ -194,7 +186,6 @@ describe('email templates — comment family', () => {
     expect(html).toContain('Reply:')
     expect(html).toContain('View reply')
     expect(html).toContain('Reset your password and sign in via this link:')
-    // User-authored bodies stay raw (sanitised upstream) and never go through the catalog.
     expect(html).toContain('<p>my comment</p>')
     expect(html).toContain('<p>the reply</p>')
   })

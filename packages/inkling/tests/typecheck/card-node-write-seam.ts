@@ -1,9 +1,3 @@
-/**
- * Compile-time contract fixtures for the card write seam (`$updateCardNode`).
- *
- * This file is included by the root tsconfig (unlike test/unit) and is only
- * type-checked — it is never executed and contains no runtime assertions.
- */
 import type { NodeKey } from 'lexical'
 
 import { $isGalleryNode, $isVideoNode, $updateCardNode } from '@kobato/inkling-internal/nodes/base'

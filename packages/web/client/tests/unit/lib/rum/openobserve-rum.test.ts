@@ -78,7 +78,6 @@ describe('startRum initialization', () => {
 
     expect(configuration).toMatchObject({
       applicationId: 'kobato-dev',
-      // The placeholder token never leaves the same-origin relay.
       clientToken: 'kobato-relay',
       service: 'kobato',
       env: 'development',
@@ -103,7 +102,6 @@ describe('startRum initialization', () => {
       traceContextInjection: 'sampled',
     })
     expect(configuration.proxy).toBe(rumIntakeProxyUrl)
-    // The browser learns neither the OpenObserve endpoint nor the organization.
     expect(configuration).not.toHaveProperty('site')
     expect(configuration).not.toHaveProperty('insecureHTTP')
     expect(configuration).not.toHaveProperty('organizationIdentifier')
@@ -438,8 +436,6 @@ describe('tracing propagation predicate', () => {
     await startRum(BOOTSTRAP, ROUTE)
     const { beforeSend } = initConfiguration()
     const view = makeViewEvent()
-    // Even if the SDK attached a document trace id to the view, the policy
-    // strips it: only browser-initiated resource/error events may correlate.
     ;(view._o2 as Record<string, unknown>).trace_id = RUM_TEST_TRACE_ID
 
     expect(beforeSend(view, { location: globalThis.location })).toBe(true)

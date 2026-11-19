@@ -5,7 +5,6 @@ import { checkTokenConflict, lockMetaAndLoadLatest } from '@kobato/server/domain
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { describe, expect, it } from 'vitest'
 
-/** The tx handle handed to a `db.transaction(...)` callback — same alias as in the module under test. */
 type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
@@ -64,15 +63,10 @@ describe('content/repos/mutate — checkTokenConflict', () => {
 })
 
 interface FakeTxOptions {
-  /** Meta rows returned by the locking select; empty means the owner is gone. */
   lockRows: { id: number; firstPublishedAt: Date | null }[]
   latestRows: ContentRow[]
 }
 
-/**
- * Structural fake of the drizzle tx: `select(fields)` is the meta-row lock,
- * bare `select()` the latest-revision lookup.
- */
 function makeFakeTx(options: FakeTxOptions): RevisionTx {
   const lockChain = {
     from: () => lockChain,

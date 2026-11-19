@@ -4,8 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const DB_PATH = '/tmp/maxmind/GeoLite2-City.mmdb'
 const META_PATH = '/tmp/maxmind/GeoLite2-City.meta.json'
 
-// Per-test knobs read by the mocked modules; beforeEach's vi.resetModules()
-// gives each test a fresh module graph (and inflight slot).
 const knobs = vi.hoisted(() => ({
   installed: true,
   metaJson: null as string | null,

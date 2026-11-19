@@ -1,25 +1,3 @@
-// Smart-typography replacement grammar — the scan body TypographyPlugin wires
-// into the update-scan seam, next to EmEnDashPlugin's dash grammar. Pure text
-// policy over dirty leaves, zero DOM, headless so the rule set is pinned as a
-// synchronous test table.
-//
-// Rule set aligns with tiptap's extension-typography defaults, minus tiptap's
-// emDash rule ('--' → '—'): inkling's dash policy lives in
-// @kobato/inkling-internal/plugins/behaviour/em-en-dash ('---' → em dash, '--' + whitespace →
-// en dash) and the two grammars would fight over '--'.
-//
-// Two structural differences from tiptap's input rules fall out of the scan
-// model, both pinned in the test table:
-// - The scan sees the whole dirty text node, so each rule replaces EVERY match
-//   in the node, not just the caret-end one; per-keystroke typing still
-//   converges to tiptap's result because the scan re-runs after every commit.
-// - Smart-quote direction reads the preceding character of the REPLACED text,
-//   reproducing tiptap's open-quote context class incrementally.
-//
-// No code-block guard: no CodeNode is registered (code is a CodeMirror card),
-// so dirty leaves are never code content. IME composition protection lives in
-// the update-scan seam's composing skip.
-
 import { $getNodeByKey, $getSelection, $isRangeSelection, $isTextNode } from 'lexical'
 
 const OPEN_QUOTE_PRECEDER = /[\s{[(<'"‘“]/
@@ -42,12 +20,6 @@ interface PatternRule {
   replace: (match: RegExpExecArray) => string
 }
 
-// Replacement order follows tiptap's buildInputRules order (minus emDash).
-// Every replacement is a character its own pattern cannot match, so the
-// bounded re-run below converges; the re-run exists for cascading matches
-// one global pass cannot see ('2x3x4' — the first match consumes the middle
-// digit the second match needs; per-keystroke typing never hits this because
-// the scan re-runs after every commit).
 const PATTERN_RULES: readonly PatternRule[] = [
   { pattern: /(^|[^.])\.{3}/g, replace: (m) => m[1] + '…' },
 
@@ -70,10 +42,6 @@ const PATTERN_RULES: readonly PatternRule[] = [
 
 const MAX_RULE_PASSES = 4
 
-// Applies one pattern rule to `text` until it stops matching (bounded),
-// returning the new text and the total character shrink before `caret`.
-// Matches within one pass never overlap (exec advances past each match), so
-// right-to-left application keeps the earlier spans valid.
 function applyPatternRule(
   input: string,
   caret: number | null,
@@ -136,9 +104,6 @@ export function $replaceTypography(dirtyLeaves: Set<string>) {
     }
 
     let text = node.getTextContent()
-    // Quotes run first so their 1:1 replacements cannot disturb the span
-    // arithmetic of the shrinking rules; direction context is unaffected
-    // (no quote char participates in any pattern rule).
     text = replaceSmartQuotes(text)
 
     let totalCaretAdjustment = 0

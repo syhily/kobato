@@ -12,7 +12,6 @@ import {
 } from '@kobato/contracts/analytics.ts'
 import { oc } from '@orpc/contract'
 
-// The analytics RPC contract — the dashboard's DuckDB read surface.
 export const analyticsContract = {
   counters: oc.route({ method: 'GET', path: '/analytics/counters' }).input(analyticsQuerySchema).output(countersDto),
   views: oc.route({ method: 'GET', path: '/analytics/views' }).input(analyticsQuerySchema).output(viewsDto),

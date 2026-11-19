@@ -10,7 +10,6 @@ import { isRecord } from '@kobato/utils/type-guards.ts'
 
 const log = getLogger('branding.http')
 
-// Admin-only `/api/admin/branding/*`; 2 MiB ceiling covers every slot's binaries with margin.
 export const brandingRouter = adminUploadRoute({
   path: '/api/admin/branding/upload',
   maxSize: 2 * 1024 * 1024,

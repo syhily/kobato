@@ -20,19 +20,7 @@ export const HtmlOutputPlugin = ({
 
   const exportHtml = React.useCallback(() => {
     editor.read(() => {
-      // One serializer for both export paths: the live export runs the same
-      // $convertToHtmlString + element transformers the headless
-      // LexicalHTMLRenderer runs, here against the mounted editor. With no
-      // options bag the render context falls back to the browser's document,
-      // and cards receive the same exportDOM dispatch as the headless path.
-      // Byte-level parity with the headless output is pinned by
-      // tests/inkling/unit/plugins/HtmlOutputPlugin.export-parity.test.ts.
       const htmlString = $convertToHtmlString(editor)
-      // Emptiness is structural, not textual: a document is empty only when
-      // it holds nothing or one blank paragraph — the shape the serializer
-      // strips to ''. A text-less but structured document (a bare <hr>, an
-      // image card) has real export output; judging by root text would
-      // collapse it to '' here while the headless path emits the markup.
       const children = $getRoot().getChildren()
       const isEmptyDocument =
         children.length === 0 ||
@@ -60,7 +48,6 @@ export const HtmlOutputPlugin = ({
       return
     }
 
-    // discrete so the state commits before the export below
     editor.update(
       () => {
         const parser = new DOMParser()
@@ -71,8 +58,6 @@ export const HtmlOutputPlugin = ({
       { discrete: true },
     )
 
-    // OnChangePlugin skips updates whose previous state is empty, so the
-    // initial parse above never triggers an export - do it explicitly
     exportHtml()
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [])

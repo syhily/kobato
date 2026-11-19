@@ -44,8 +44,6 @@ const LibraryPluginSelector = ({ nodeKey, imageLibrary }: { nodeKey: NodeKey; im
   const { closeSelector, placeholderExists } = useSelectorPlaceholderLifecycle(nodeKey)
 
   const onPick = (item: LibraryImageItem) => {
-    // a host upload UX resolves asynchronously and can land after the picker
-    // was cancelled — a pick without its placeholder no-ops
     if (!placeholderExists()) {
       return
     }

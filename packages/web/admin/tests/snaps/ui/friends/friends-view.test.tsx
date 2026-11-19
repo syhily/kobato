@@ -29,9 +29,6 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// FriendsView relies on an infinite-query list + delete mutation + debounced
-// search; queries are neutralized so SSR emits the loading chrome.
-
 vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 describe('snapshot: FriendsView', () => {
@@ -109,7 +106,6 @@ describe('snapshot: EditFriendDialog', () => {
       return <EditFriendDialog friend={target} onClose={() => undefined} onSaved={() => undefined} />
     }
     const html = stableHtml(renderToHtml(<Wrapper />))
-    // Draft sync bails out of a single SSR pass — assert structure, not field values.
     expect(html).toContain('编辑友链')
     expect(html).toContain('修改友链信息')
     expect(html).toContain('friend-website')

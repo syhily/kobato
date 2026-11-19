@@ -7,10 +7,6 @@ import {
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-// The leaf hooks fail loudly outside `<Comments>` (an all-noop bag would
-// hide test-setup mistakes behind dead callbacks); wrap bare leaves in the
-// `makeLeafContext` provider.
-
 function IdentityProbe() {
   useCommentsIdentity('IdentityProbe')
   return null

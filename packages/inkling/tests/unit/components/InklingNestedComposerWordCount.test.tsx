@@ -78,9 +78,6 @@ describe('InklingNestedComposer word-count channel', () => {
   })
 
   it('mounts the nested WordCountPlugin reactively when the callback lands after render', () => {
-    // the top-level plugin publishes in a layout effect, which can land after
-    // a nested composer's first render — the handle subscription must re-render
-    // the nested composer and mount the plugin without any unrelated re-render
     const wordCountHandle = createWordCountHandle()
     renderNestedComposer(wordCountHandle)
 

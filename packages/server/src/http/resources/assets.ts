@@ -8,11 +8,8 @@ import { Hono } from 'hono'
 export const assetsRouter = new Hono<Env>()
 
 const ASSET_CACHE_CONTROL = 'public, max-age=3600, must-revalidate'
-/** The manifest embeds the UI language — stored but revalidated on every reuse. */
 export const MANIFEST_CACHE_CONTROL = 'public, no-cache'
 
-// Branding bytes change on re-upload — no `immutable`; ETag (sha256) +
-// `must-revalidate` gives conditional 304s with no body/S3 fetch on the hot path.
 for (const path of Object.keys(ASSET_ROUTES)) {
   assetsRouter.get(path, async (c) => {
     const resolved = await resolveSiteAsset(path, { original: c.req.query('original') !== undefined })
@@ -33,20 +30,14 @@ for (const path of Object.keys(ASSET_ROUTES)) {
   })
 }
 
-// Hard-coded fallbacks: the settings bundle may be `null` early in boot,
-// and uptime probes hit these routes before any admin has logged in.
 const DEFAULT_MANIFEST_NAME = 'Site'
 
 assetsRouter.get('/manifest.webmanifest', async (c) => {
-  // Request-pinned snapshot: the manifest name/icons and its language come from
-  // ONE capture, the same one the ETag/locale decision describes.
   const { settings: bundle, localization } = c.var.requestContext
   const siteIdentity = bundle?.siteIdentity
   const name = siteIdentity?.title || DEFAULT_MANIFEST_NAME
   const branding = bundle?.assets?.branding
   const locale = localization.locale
-  // Hand-built bytes: the ETag must hash the EXACT body we send — hashing the
-  // object and re-serializing would drift on key order / spacing.
   const body = JSON.stringify({
     name,
     short_name: name,

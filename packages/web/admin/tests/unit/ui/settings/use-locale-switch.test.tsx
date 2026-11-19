@@ -79,11 +79,8 @@ describe('ui/admin/settings/use-locale-switch', () => {
     })
 
     expect(verdict).toEqual(SETTINGS_SKIP_COMMIT)
-    // The transaction wrapper covers flush → change → explicit commit →
-    // announce → reload. Peers learn about the change after the server has it.
     expect(calls).toEqual(['transaction', 'flush', 'change', 'commit', 'broadcast', 'reload'])
     expect(broadcast).toHaveBeenCalledWith('en-US')
-    // No explicit anchor → the provider keeps its active-element fallback.
     expect(transactionAnchors).toEqual([undefined])
     expect(result.current.isSwitching).toBe(false)
   })
@@ -118,8 +115,6 @@ describe('ui/admin/settings/use-locale-switch', () => {
       await result.current.requestChange('en-US')
     })
 
-    // The whole attempt still ran inside the transaction (which releases the
-    // workspace on failure via its `finally`).
     expect(calls[0]).toBe('transaction')
     expect(change).not.toHaveBeenCalled()
     expect(commit).not.toHaveBeenCalled()

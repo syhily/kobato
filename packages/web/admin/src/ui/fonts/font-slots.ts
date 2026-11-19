@@ -11,7 +11,6 @@ import { useEffect, useReducer, useRef } from 'react'
 import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
-// Optimistic slot controller: mirrors `blogSettings.fonts`; `seeded` only rewrites from the server while no mutation is in flight.
 export const MAX_SLOT_FONTS = 8
 
 export type SlotState = Record<FontSlot, string[]>
@@ -62,7 +61,6 @@ export function useFontSlotsController() {
   const [slots, dispatch] = useReducer(slotsReducer, undefined, emptySlots)
   const inFlightRef = useRef(0)
 
-  // Seed from server, but skip while a mutation is in flight so the optimistic state survives the revalidate.
   useEffect(() => {
     if (inFlightRef.current > 0) {
       return
@@ -98,8 +96,6 @@ export function useFontSlotsController() {
     },
   })
 
-  // Serialize persists: concurrent unversioned POSTs could land out of order
-  // and leave the server holding a stale order.
   const persistQueueRef = useRef<Promise<void>>(Promise.resolve())
 
   const persist = (slot: FontSlot, ids: string[]) => {
@@ -134,7 +130,6 @@ export function useFontSlotsController() {
       return
     }
 
-    // Compute the post-move state once, then dispatch + persist from it — avoids a stale `slots` read.
     const next: SlotState = { ...slots }
     if (fromSlot && fromSlot !== targetSlot) {
       next[fromSlot] = slots[fromSlot].filter((id) => id !== fontId)

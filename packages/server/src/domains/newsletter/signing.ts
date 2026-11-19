@@ -1,9 +1,6 @@
 import { serverConfig } from '@kobato/server/infra/config.ts'
 import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto'
 
-// HMAC-SHA256 signing key for unsubscribe URLs, HKDF-derived from the
-// deployment encryption key (no extra secret; rotation invalidates
-// outstanding links). Cached — the config is immutable per process.
 const HKDF_SALT = 'kobato-newsletter-unsubscribe-salt'
 const HKDF_INFO = 'newsletter-unsubscribe-signing-key'
 const SIGNATURE_HEX_LEN = 64

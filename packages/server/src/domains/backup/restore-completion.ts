@@ -6,8 +6,6 @@ import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { restartServer } from '@kobato/server/infra/lifecycle.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 
-/** A failed reopen aborts the chain before the restart — never restart into a dead handle. */
-
 export interface RestoreCompletionDeps {
   reopenDatabase(): Promise<DatabaseHandle>
   getDb(): Database
@@ -56,7 +54,6 @@ export function createRestoreCompletion(
     }
 
     if (!recreated) {
-      // Never restart into a dead handle — stay down rather than 500 against a closed DB.
       log.error('Restore completion aborted: no live database handle; server not restarted')
       return
     }

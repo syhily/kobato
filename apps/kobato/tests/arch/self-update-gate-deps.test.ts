@@ -4,10 +4,6 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// `sea-cli` imports the gate through `kobato doctor`, whose `--version/--help`
-// path must stay side-effect free. Pin the gate's whole local import closure: a
-// transitive edge reaching `server/infra/config` reads NODE_ENV and can create
-// a default config file.
 const ENTRY = 'packages/server/src/infra/sea/self-update-gate.ts'
 const BANNED = [
   'packages/server/src/infra/config.ts',

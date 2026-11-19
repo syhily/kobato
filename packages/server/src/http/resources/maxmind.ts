@@ -43,8 +43,6 @@ export const maxmindRouter = new Hono<Env>().post(
       return errorJsonResponse(c, 400, 'common.error.uploadEmpty')
     }
 
-    // Serialize with the remote-update flow; the write is atomic — stage,
-    // validate by opening, then rename. A corrupt upload never touches the live DB.
     const ok = await withGeoipWriteLock(async () => {
       await mkdir(path.dirname(MAXMIND_DB_PATH), { recursive: true })
       const tmpPath = `${MAXMIND_DB_PATH}.upload`
@@ -57,8 +55,6 @@ export const maxmindRouter = new Hono<Env>().post(
       }
       await rename(tmpPath, MAXMIND_DB_PATH)
 
-      // Refresh the reader first, then mark provenance — the daily auto-update
-      // must not replace a manually installed database.
       resetGeoReader()
       await writeGeoipMetaBestEffort({ version: null, source: 'upload', updatedAt: new Date().toISOString() })
       return true

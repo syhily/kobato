@@ -12,9 +12,6 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// signUpInitialAdminWithSession against the real engine — nothing
-// mocked; the concurrent-install race is a real UNIQUE collision.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -23,7 +20,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -146,7 +142,6 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
   })
 
   it('propagates the insert failure and rolls the seed back (concurrent install race)', async () => {
-    // A visitor holds the email: insertAdmin collides with the real UNIQUE constraint.
     await db.insert(userTable).values({
       name: 'Squatter',
       email: 'admin@example.com',

@@ -12,8 +12,6 @@ import { formatBytes } from '@kobato/utils/format.ts'
 export const fontsPackageRouter = adminUploadRoute({
   path: '/api/admin/fonts/package/upload',
   maxSize: FONT_MAX_BYTES,
-  // Params resolve per request: the size label follows the settings locale, and
-  // the route's bodyLimit rejection happens before any handler runs.
   tooLarge: {
     messageKey: 'fonts.error.packageTooLarge',
     params: () => ({ max: formatBytes(FONT_MAX_BYTES, { locale: resolveAppLocalization().locale }) }),

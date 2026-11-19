@@ -20,8 +20,6 @@ vi.mock('@kobato/server/http/api-router.ts', () => ({
   apiRouter: { mock: true },
 }))
 
-// The bridge hydrates settings before projecting `localization`; the stub db
-// below cannot answer a real hydrate query.
 vi.mock('@kobato/server/domains/settings/services/hydrate.ts', () => ({
   hydrateBlogSettings: vi.fn(async () => null),
 }))
@@ -52,9 +50,6 @@ describe('createApiApp', () => {
     handlerHandleMock.mockReset()
   })
 
-  // The RPC bridge projects `c.var.requestContext` (derived upstream by the
-  // request-context middleware) into the oRPC HandlerContext — stub the
-  // canonical context the way the perimeter would.
   async function makeApp() {
     const { createApiApp } = await import('@kobato/server/http/app.ts')
     const app = new Hono<Env>()

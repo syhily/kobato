@@ -5,7 +5,6 @@ import { renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 
-// A real thumbhash (1x1 white) — decode failure paths return undefined.
 const THUMBHASH = '1QcSHQRnh493V4dIh4eXh1h4kJUI'
 
 function mountContainer(html: string): { container: HTMLDivElement; ref: RefObject<HTMLDivElement | null> } {
@@ -64,7 +63,6 @@ describe('useThumbhashHydration', () => {
     const html = `<img src="/x.png" data-thumbhash="${THUMBHASH}" alt="">`
     const { container, ref } = mountContainer(html)
 
-    // The re-scan key intentionally carries no 'data-thumbhash' marker.
     renderHook(() => useThumbhashHydration(ref, 'rescan-key'))
 
     expect(container.querySelector('img')!.style.backgroundImage).toContain('data:image/png')

@@ -5,7 +5,6 @@ import type { ReactElement } from 'react'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
@@ -67,8 +66,6 @@ describe('useSettingsCard — response-authoritative display', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'save' }))
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
-    // The server merged 'Typed' into the stored row and returned the
-    // result — display follows the RESPONSE, not a local projection.
     await waitFor(() => expect(screen.getByTestId('display-title').textContent).toBe('Server Merged'))
   })
 })

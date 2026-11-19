@@ -126,8 +126,6 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       }
     },
     async configureServer(server) {
-      // Force 'development' before any server module that reads `NODE_ENV`
-      // from `@kobato/server/infra/config` (parsed at module load) is imported.
       forceDevMode()
 
       setViteDevServer(server)
@@ -243,8 +241,6 @@ function findDefaultServerEntry(rootDirectory: string, appDirectory: string): st
   const fileWay = `${appDirectory}/server.ts`
   const folderWay = `${appDirectory}/server/index.ts`
 
-  // fs probes must anchor on the vite root — the process cwd can differ
-  // (the monorepo dev script runs vite from the repository root).
   if (fs.existsSync(path.resolve(rootDirectory, fileWay))) {
     return fileWay
   }

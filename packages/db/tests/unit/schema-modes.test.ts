@@ -2,9 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Schema-lint: every SQLite timestamp column must use
-// `integer({ mode: 'timestamp_ms' })`; other modes fail here at
-// authoring time.
 const SCHEMA_DIR = join(process.cwd(), 'packages/db/src/schema')
 
 function schemaSources(): [string, string][] {
@@ -17,7 +14,6 @@ describe('contract: schema column modes', () => {
   it('every timestamp column uses timestamp_ms', () => {
     const offenders: string[] = []
     for (const [name, source] of schemaSources()) {
-      // `mode: 'timestamp'` exactly (no _ms suffix), and the date-only mode.
       for (const match of source.matchAll(/mode:\s*'(timestamp|date)'/g)) {
         offenders.push(`${name}: mode: '${match[1]}'`)
       }

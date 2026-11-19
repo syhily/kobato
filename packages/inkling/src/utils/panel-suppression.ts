@@ -73,8 +73,6 @@ export function createPanelSuppression({ getElement, stylesheetId }: PanelSuppre
       disablePointerEvents()
     },
     deactivate() {
-      // Removing click suppression immediately re-enables the click in the same event
-      // loop, losing the suppression when dragging out of the canvas; defer a tick.
       setTimeout(() => {
         window.removeEventListener('click', cancelClick, { capture: true })
       }, 1)

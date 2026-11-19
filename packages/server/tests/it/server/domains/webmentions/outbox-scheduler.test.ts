@@ -3,8 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-// Real safeFetch stack; only the network boundary is stubbed: fetch via installFetch, DNS to a fixed address.
-// Stubbed target pages declare no endpoint — processed rows land on the terminal `no-endpoint` state.
 vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
@@ -18,8 +16,6 @@ import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
-// The webmention outbox job against the real engine; the registered job is
-// started explicitly, like server.ts.
 const db = getTestDb()
 
 const mockFetch = installFetch()
@@ -29,7 +25,6 @@ const HOUR_MS = 3_600_000
 
 let seq = 0
 
-/** A fresh pending row plus its stubbed target page (declares no endpoint). */
 async function seedDueRow(nextRetryAt?: Date): Promise<void> {
   const key = ++seq
   await upsertWebmentionOutbox(db, {
@@ -40,7 +35,6 @@ async function seedDueRow(nextRetryAt?: Date): Promise<void> {
   mockFetch.enqueue(/target\.example/, () => htmlResponse('<html><head><title>plain</title></head>', { status: 200 }))
 }
 
-// Sync (node:sqlite).
 function statusCount(status: 'pending' | 'no-endpoint'): number {
   return db.select().from(webmentionOutbox).where(eq(webmentionOutbox.status, status)).all().length
 }
@@ -74,7 +68,6 @@ describe('webmentions/outbox scheduler throttle', () => {
     await seedDueRow(new Date(Date.now() + OUTBOX_MIN_DELAY_MS / 2))
     scheduleRegisteredJob('webmentions.outbox')
 
-    // Past the waterline but below the floor: the row must not go out early.
     await vi.advanceTimersByTimeAsync(OUTBOX_MIN_DELAY_MS / 2 + 100)
     expect(mockFetch.calls).toHaveLength(0)
     expect(statusCount('pending')).toBe(1)
@@ -99,7 +92,6 @@ describe('webmentions/outbox scheduler throttle', () => {
     scheduleRegisteredJob('webmentions.outbox')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
-    // Without the nudge, the row waits for the suspended re-check (30s), not the floor.
     await seedDueRow()
     await vi.advanceTimersByTimeAsync(5_000)
     expect(mockFetch.calls).toHaveLength(0)
@@ -120,7 +112,6 @@ describe('webmentions/outbox scheduler throttle', () => {
     expect(mockFetch.calls).toHaveLength(OUTBOX_BATCH_SIZE)
     expect(statusCount('pending')).toBe(1)
 
-    // Still due NOW, but the next batch waits a full floor interval — the burst throttle.
     await vi.advanceTimersByTimeAsync(OUTBOX_MIN_DELAY_MS - 1)
     expect(mockFetch.calls).toHaveLength(OUTBOX_BATCH_SIZE)
 

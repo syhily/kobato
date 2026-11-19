@@ -38,15 +38,11 @@ describe('assets/images — extractFriendHostSafe', () => {
   })
 
   it('returns null when the hostname is empty', () => {
-    // A URL like `file:///x` has no hostname.
     expect(extractFriendHostSafe('file:///x')).toBeNull()
   })
 
   it('returns null when the hostname contains characters outside the safe segment charset', () => {
-    // The safe segment charset is [a-z0-9._-]. Uppercase, tilde, and other
-    // punctuation are rejected. Lowercased dotted hosts are accepted.
     expect(extractFriendHostSafe('https://example.host/x')).toBe('example.host')
-    // `~` is outside the charset → rejected even though it's a valid URL char.
     expect(extractFriendHostSafe('https://exa~mple.com/x')).toBeNull()
   })
 })
@@ -69,8 +65,6 @@ describe('assets/images — isSafeImageSegment', () => {
   })
 })
 
-// Quality + placeholder-substitution branches; the rest lives in images.test.ts.
-
 describe('assets/images — getImageUrl placeholder + quality branches', () => {
   const opts = {
     src: 'https://cdn.example.com/img.jpg',
@@ -84,7 +78,6 @@ describe('assets/images — getImageUrl placeholder + quality branches', () => {
     const url = getImageUrl(opts)
     expect(url).toContain('/cdn/100/50/')
     expect(url).toContain('img.jpg')
-    // quality defaults to 100 when undefined.
     expect(url).toContain('100')
   })
 
@@ -120,7 +113,6 @@ describe('assets/images — getImageSrcset', () => {
     const out = getImageSrcset({ ...base, breakpoints: [256, 512] })
     expect(out).toContain('256w')
     expect(out).toContain('512w')
-    // ratio preserved: 512 / (800/400) → height 256
     expect(out).toContain('/512w/')
   })
 
@@ -131,7 +123,6 @@ describe('assets/images — getImageSrcset', () => {
       height: 200,
       breakpoints: [128, 256, 512, 4096],
     })
-    // width=400 → maxWidth = max(800, 1536) = 1536; 4096 filtered out
     expect(out).toContain('128w')
     expect(out).toContain('256w')
     expect(out).toContain('512w')
@@ -140,7 +131,6 @@ describe('assets/images — getImageSrcset', () => {
 
   it('uses the default breakpoint set when breakpoints omitted', () => {
     const out = getImageSrcset(base)
-    // Default breakpoints include 256 / 512 / 768 / 1024 / 1280 / 1536
     expect(out).toContain('256w')
     expect(out).toContain('1536w')
   })

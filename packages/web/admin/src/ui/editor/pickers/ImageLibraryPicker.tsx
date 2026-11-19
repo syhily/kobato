@@ -11,8 +11,6 @@ import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
 import { isValidElement, useState } from 'react'
 
-// Customizable trigger; `onPick` passes the full `AdminImageDto` (publicUrl + storagePath).
-
 export interface ImageLibraryPickerProps {
   trigger?: React.ReactNode
   onPick: (image: AdminImageDto) => void

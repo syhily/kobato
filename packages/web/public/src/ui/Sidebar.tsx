@@ -198,7 +198,6 @@ function RandomTags({ tags }: RandomTagsProps) {
 }
 
 function WidgetTitle({ children, tooltip }: { children: string; tooltip: string }) {
-  // Use `<h3>` so keyboard users can focus the trigger and screen readers get real heading semantics.
   return (
     <Tooltip placement="left">
       <Tooltip.Trigger as="h3" tabIndex={0} className={widgetTitleClass}>

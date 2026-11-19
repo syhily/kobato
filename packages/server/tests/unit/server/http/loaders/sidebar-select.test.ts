@@ -74,7 +74,6 @@ describe('sidebar selection — seed composition', () => {
     })
     expect(shanghai.seed).not.toBe(utc.seed)
 
-    // A zone that shares the calendar day yields the SAME rotation bucket.
     const tokyo = sidebarSelection({
       settings: SIDEBAR_SETTINGS,
       scope: 'post:7',
@@ -129,8 +128,6 @@ describe('services/sidebar/select — selectSidebarTags', () => {
   })
 
   it('keeps a near-uniform distribution across rotation buckets', () => {
-    // 8 tags, size 3 → the top-6 pool; over 180 distinct days every eligible
-    // tag must be drawn and no tag may dominate (expected 90 draws each).
     const tags = tagPool(8)
     const counts = new Map<string, number>()
     for (let day = 1; day <= 30; day++) {
@@ -141,7 +138,6 @@ describe('services/sidebar/select — selectSidebarTags', () => {
       }
     }
 
-    // The two lowest-count tags stay outside the top-2N window.
     expect(counts.has('tag-0')).toBe(false)
     expect(counts.has('tag-1')).toBe(false)
     const eligible = ['tag-2', 'tag-3', 'tag-4', 'tag-5', 'tag-6', 'tag-7'].map((slug) => counts.get(slug) ?? 0)

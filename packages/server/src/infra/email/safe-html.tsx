@@ -1,8 +1,3 @@
-/**
- * Email HTML injection wrapper so templates never call `dangerouslySetInnerHTML`.
- * Pass only sanitised HTML (e.g. `sanitizeCommentEmailHtml` output) — this
- * component does not sanitise.
- */
 export function RawEmailHtml({
   html,
   tag = 'div',

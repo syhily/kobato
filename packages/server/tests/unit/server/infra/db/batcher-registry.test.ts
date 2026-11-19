@@ -16,10 +16,6 @@ function fakeBatcher() {
   return { flush: vi.fn(async () => ({ committed: 0, deadLettered: 0 })) }
 }
 
-// Registrations accumulate for the whole file (there is no unregister —
-// production registers once per module at import time), so every test
-// uses its own batcher names. `resetAllBatchers` in beforeEach drops any
-// live instances left over from the previous test.
 describe('server/infra/db/batcher-registry', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -85,8 +81,6 @@ describe('server/infra/db/batcher-registry', () => {
 
     await flushAllBatchers()
 
-    // The restore swap can land inside a backup pause window; the gated
-    // flush() would keep those rows buffered for dispose() to discard.
     expect(batcher.flushForTeardown).toHaveBeenCalledOnce()
     expect(batcher.flush).not.toHaveBeenCalled()
   })
@@ -140,8 +134,6 @@ describe('server/infra/db/batcher-registry', () => {
   })
 
   it('resetAllBatchers joins an in-flight flush before resolving', async () => {
-    // Registrations accumulate file-wide and later tests re-init this
-    // batcher, so the gate must disarm itself once this test is done.
     let release!: () => void
     let inflight: Promise<void> | null = new Promise<void>((resolve) => (release = resolve))
     const batcher = { ...fakeBatcher(), settle: vi.fn(() => inflight ?? Promise.resolve()) }
@@ -152,7 +144,6 @@ describe('server/infra/db/batcher-registry', () => {
     const reset = resetAllBatchers().then(() => {
       resolved = true
     })
-    // Instances detach synchronously; only the in-flight join is deferred.
     expect(() => requireBatcher('test-settle-join')).toThrow('test-settle-join not initialized')
     await Promise.resolve()
     expect(resolved).toBe(false)

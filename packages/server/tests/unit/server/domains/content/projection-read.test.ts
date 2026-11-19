@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest'
 const { readHeadings, readRevisionProjection } = await import('@kobato/server/domains/content/projection-read.ts')
 
 function revisionRow(overrides: Partial<ContentRow>): ContentRow {
-  // Only the columns the projection reads matter here.
   return { body: [], bodyHtml: null, bodyHtmlFeed: null, imageSources: [], headings: [], ...overrides } as ContentRow
 }
 

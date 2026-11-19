@@ -1,9 +1,3 @@
-// Deep end-to-end smoke for the built SEA binary.
-// Managed mode (default): full lifecycle against per-run temp files (no
-// external services). `--external` runs HTTP assertions only; `--binary-only`
-// runs the service-free checks. Instance lifecycle shared with e2e and the
-// browser runner via @kobato/harness.
-
 import type { SmokeServer } from '@kobato/harness/sea-instance.ts'
 
 import { scanAccessEvents } from '@kobato/harness/analytics.ts'
@@ -36,7 +30,6 @@ const CALENDAR_MIN_BYTES = 2_048
 const results: CheckResult[] = []
 let serverLogPath: string | null = null
 
-/** Run one named check: print the verdict immediately, record it, never throw. */
 async function check(name: string, fn: () => string | undefined | Promise<string | undefined>) {
   try {
     const detail = (await fn()) ?? ''
@@ -55,10 +48,6 @@ function tailLines(text: string, count: number) {
   return text.trim().split('\n').slice(-count).join('\n')
 }
 
-/**
- * The binary under test is the one passed in — CI renames it before
- * `--binary-only`. Runs in managed and binary-only mode.
- */
 async function checkBinarySize(binaryPath: string) {
   const binary = await stat(binaryPath).catch(() => null)
   if (binary === null) {
@@ -87,11 +76,6 @@ function checkVersion(binaryPath: string) {
   return line
 }
 
-/**
- * The extraction dir is FLAT and holds exactly the native dynamic libraries
- * — no node_modules tree, no package files. The materialized bundles
- * (server.mjs, smoke-worker.mjs) share the dir by design and are excluded.
- */
 const NATIVES_FILE_COUNT = process.platform === 'win32' ? 7 : 5
 
 function isExpectedNativeFile(name: string): boolean {
@@ -156,7 +140,6 @@ function checkNatives(binaryPath: string, cacheDir: string) {
   return expected
 }
 
-/** `--smoke-vfs` needs zero environment — the mount exists before any config. */
 function checkVfs(binaryPath: string) {
   const expected = 'SEA VFS smoke passed:'
   const result = spawnSync(binaryPath, ['--smoke-vfs'], {
@@ -177,10 +160,6 @@ function checkVfs(binaryPath: string) {
   return output.split('\n').find((line) => line.includes(expected)) ?? expected
 }
 
-/**
- * `--smoke-intl` is a pure probe: it imports the locale contract and the shared
- * display formatter, so it reads no configuration and touches no database.
- */
 function checkIntl(binaryPath: string) {
   const expected = 'SEA Intl smoke passed: en-US, zh-HK, zh-TW, zh-CN'
   const result = spawnSync(binaryPath, ['--smoke-intl'], {
@@ -202,11 +181,6 @@ function checkIntl(binaryPath: string) {
   return `${rendered.length} locale render lines + success`
 }
 
-/**
- * `--smoke-worker` validates the full server config at import time but never
- * connects. `--config` points into the temp cache dir so env loading never
- * persists a config next to the binary.
- */
 function checkWorker(binaryPath: string, env: Record<string, string>) {
   const expected = `SEA worker smoke passed: ${process.platform}-${process.arch}`
   const result = spawnSync(
@@ -231,7 +205,6 @@ function checkWorker(binaryPath: string, env: Record<string, string>) {
   return expected
 }
 
-// Bcrypt placeholder (never logged in; the install gate only counts the row).
 const SEED_ADMIN_PASSWORD = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
 const SEED_ADMIN_EMAIL = 'smoke-admin@kobato.local'
 
@@ -256,10 +229,6 @@ async function checkShutdown(server: SmokeServer) {
   throw new Error(`unexpected exit: code ${outcome.code ?? 'null'}, signal ${outcome.signal ?? 'none'}`)
 }
 
-/**
- * Assert the warm natives cache was reused. Lines are parsed as JSON and
- * matched on the `msg` field only, so a logger refactor can't false-fail.
- */
 async function checkNativesReuse() {
   const expectedCount = NATIVES_FILE_COUNT
   const log = await readFile(serverLogPath ?? fail('serverLogPath unset'), 'utf-8')
@@ -282,9 +251,7 @@ async function checkNativesReuse() {
         extracted = Number(entry.extracted)
         reused = Number(entry.reused)
       }
-    } catch {
-      // Not a JSON line (warnings, stacks) — skip.
-    }
+    } catch {}
   }
   if (extracted === null || reused === null) {
     throw new Error('no "SEA natives ready" line in the server log')
@@ -317,10 +284,6 @@ function calendarPath() {
   return `/images/calendar/${new Date().getFullYear()}/0101.png`
 }
 
-/**
- * Assert a calendar response is a direct 200 with a real PNG large enough
- * that @napi-rs/canvas actually rendered something.
- */
 async function assertCalendarPng(res: Response) {
   const contentType = res.headers.get('content-type') ?? ''
   if (res.status !== 200) {
@@ -340,10 +303,6 @@ async function assertCalendarPng(res: Response) {
   return `200 ${contentType.split(';')[0]}, ${body.length} bytes`
 }
 
-/**
- * HTTP assertions shared by managed and external mode; pass the boot-poll
- * response or null to fetch /health directly (external mode).
- */
 async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
   let ssrPath: string | null = null
   await check('GET /health — boot + install gate', async () => {
@@ -396,10 +355,6 @@ async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
   }
 }
 
-/**
- * The @napi-rs/canvas calendar endpoint over HTTP. External mode tolerates
- * an uninstalled instance (redirect/500) and reports SKIP instead of failing.
- */
 async function checkCalendar(baseUrl: string, { optional }: { optional: boolean }) {
   await check(`GET ${calendarPath()} — canvas render over HTTP`, async () => {
     const res = await fetchManual(`${baseUrl}${calendarPath()}`)
@@ -413,7 +368,6 @@ async function checkCalendar(baseUrl: string, { optional }: { optional: boolean 
   })
 }
 
-/** Returns a cleanup callback; the caller runs it after the summary/log dump. */
 async function runManaged(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
   const dirs = await makeTempDirs()
@@ -434,8 +388,6 @@ async function runManaged(binaryPath: string) {
     NODE_ENV: 'production',
   }
 
-  // Widened initializer: `server` is assigned only inside `check` closures, so a
-  // plain `= null` would narrow the declared union to `null` at the use sites.
   let server = null as SmokeServer | null
   try {
     await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
@@ -460,7 +412,6 @@ async function runManaged(binaryPath: string) {
         const bootedServer = server
         await runHttpChecks(`http://127.0.0.1:${bootedServer.port}`, bootedServer.healthResponse)
         await check('SIGTERM clean shutdown', () => checkShutdown(bootedServer))
-        // Wait for the stream flush — buffered writes outlive the process.
         await Promise.race([bootedServer.logClosed, sleep(2_000)])
         await check('natives cache reused by the server', () => checkNativesReuse())
         await check('config file converged (env written back)', async () => {
@@ -472,16 +423,12 @@ async function runManaged(binaryPath: string) {
         })
       }
 
-      // The settings snapshot only loads at boot — restart so the seeded
-      // rows are visible (doubles as a second natives-cache reuse exercise).
       const seeded =
         booted &&
         (await check('seed admin + core settings (SQL)', () =>
           seedInstalledInstance(databases.database, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
         ))
       if (seeded) {
-        // Reduced env on purpose: database/secrets come from the converged
-        // config file — the file-only boot proof.
         const fileOnlyEnv = {
           KOBATO_CACHE_DIR: dirs.cache,
           NODE_ENV: 'production',
@@ -509,8 +456,6 @@ async function runManaged(binaryPath: string) {
             return `200 text/html, ${body.length} bytes`
           })
           await checkCalendar(baseUrl, { optional: false })
-          // The tracker drops bot UAs — fetch with a browser UA; the
-          // shutdown below flushes the access-log batcher.
           const BROWSER_UA =
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
           const PAGE_VIEWS = 3
@@ -556,10 +501,6 @@ async function runManaged(binaryPath: string) {
   }
 }
 
-/**
- * Binary-only mode: the service-free checks (CLI flags, natives extraction,
- * the sharp worker pool). Returns a cleanup callback for the temp dirs.
- */
 async function runBinaryOnly(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
   const dirs = await makeTempDirs()
@@ -612,7 +553,6 @@ async function main() {
     const baseUrl = normalizeBaseUrl(args[1])
     console.log(`==> SEA smoke (external: ${baseUrl})`)
     await runHttpChecks(baseUrl, null)
-    // No seeding in external mode — the database belongs to someone else.
     await checkCalendar(baseUrl, { optional: true })
   } else if (args[0] === '--binary-only') {
     const binaryPath = args[1] ? resolvePath(args[1]) : seaBinaryPath()

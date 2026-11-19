@@ -8,14 +8,8 @@ import { and, asc, count, desc, eq, gte, isNull, lt, lte, or, sql } from 'drizzl
 
 export type WebmentionStatus = WebmentionRow['status']
 
-/** Group-by-status row counts (`all` + one entry per lifecycle status). Wire
- *  twin: `webmentionStatusCountsSchema` in `@kobato/contracts/webmentions`. */
 export type WebmentionStatusCounts = { all: number } & { [S in WebmentionStatus]: number }
 
-/**
- * Re-mention upsert outcome: `inserted` new pair, `updated` metadata refresh,
- * `demoted` when an approved row's source changed.
- */
 export type WebmentionUpsertOutcome = 'inserted' | 'updated' | 'demoted'
 
 export interface WebmentionUpsertResult {
@@ -32,8 +26,6 @@ async function findWebmentionByPair(db: Database, sourceUrl: string, targetUrl: 
   return rows[0] ?? null
 }
 
-// Re-mention refreshes metadata and re-verifies the source (flips back to
-// `verified`); `status` / `moderatedAt` are not touched here.
 function refreshSet(values: NewWebmention, now: Date) {
   return {
     title: values.title ?? null,
@@ -48,7 +40,6 @@ function refreshSet(values: NewWebmention, now: Date) {
   }
 }
 
-/** Plain INSERT with a same-key `ON CONFLICT DO UPDATE` fallback; the conflict path reports `raced: true` (it cannot see the old status). */
 async function insertWebmentionRow(
   db: Database,
   values: NewWebmention,
@@ -80,8 +71,6 @@ async function insertWebmentionRow(
   }
 }
 
-/** Insert a verified mention, or fold a re-mention into the existing row.
- * Read-then-write: the demote decision needs the OLD status, which `ON CONFLICT`'s `excluded.*` cannot see. */
 export async function upsertWebmention(db: Database, values: NewWebmention): Promise<WebmentionUpsertResult> {
   const now = new Date()
   const existing = await findWebmentionByPair(db, values.sourceUrl, values.targetUrl)
@@ -141,7 +130,6 @@ export async function countWebmentionsByStatus(db: Database): Promise<Webmention
   return counts
 }
 
-/** Public display: approved mentions of one entity, oldest first. Rides `idx_webmention_target` — no dedicated index at personal-blog volume. */
 export async function listApprovedWebmentionsForTarget(
   db: Database,
   target: EntityTarget,
@@ -172,7 +160,6 @@ export async function setWebmentionStatus(
     .set({
       status,
       moderatedAt: now,
-      // A fresh approval restarts the hide countdown — the rule counts failures of the APPROVED mention.
       verifyFailStreak: status === 'approved' ? 0 : undefined,
       updatedAt: now,
     })
@@ -181,14 +168,8 @@ export async function setWebmentionStatus(
   return rows[0] ?? null
 }
 
-// Both the receive-time check and the daily cycle write these columns;
-// the 24h waterline caps re-fetch to once per day.
-
 export const WEBMENTION_REVERIFY_INTERVAL_MS = 24 * 60 * 60 * 1000
 
-/** Consecutive daily verification failures that take a row out of the
- *  re-fetch cycle (`hidden`). Applies to `approved` AND `pending` rows —
- *  an unapproved row that never verifies must not be re-fetched forever. */
 export const WEBMENTION_HIDE_STREAK = 7
 
 const MAX_LAST_ERROR_LENGTH = 500
@@ -197,7 +178,6 @@ function truncateVerifyError(message: string): string {
   return message.length > MAX_LAST_ERROR_LENGTH ? `${message.slice(0, MAX_LAST_ERROR_LENGTH)}…` : message
 }
 
-/** Terminally failed receive-time verification: `pending` + `'failed'` row, `approved` pairs demote. A new row starts at streak 0; an existing row keeps its streak (the daily cycle owns the countdown). */
 export async function upsertWebmentionVerificationFailure(
   db: Database,
   values: {
@@ -238,18 +218,12 @@ export async function upsertWebmentionVerificationFailure(
       lastError: failureSet.lastError,
       updatedAt: now,
       status: existing.status === 'approved' ? 'pending' : existing.status,
-      // `verifyFailStreak` stays untouched: re-submitting a failing source
-      // must not reset the daily cycle's countdown (unbounded re-fetching).
     })
     .where(eq(webmention.id, existing.id))
     .returning()
   return rows[0]!
 }
 
-/** The re-fetch cycle's row filter: approved rows, plus failed-receive
- *  `pending` rows that have NOT spent their failure budget. Rows at or past
- *  the hide threshold are excluded — they are one atomic UPDATE away from
- *  `hidden` and must never be fetched again. */
 function reverifyCycleWhere() {
   return or(
     eq(webmention.status, 'approved'),
@@ -261,7 +235,6 @@ function reverifyCycleWhere() {
   )
 }
 
-/** Re-verify picks: cycle rows past the 24h waterline; `hidden`/`rejected` are never picked. */
 export async function pickWebmentionsDueForReverify(db: Database, now: Date, limit: number): Promise<WebmentionRow[]> {
   const cutoff = new Date(now.getTime() - WEBMENTION_REVERIFY_INTERVAL_MS)
   return db
@@ -272,8 +245,6 @@ export async function pickWebmentionsDueForReverify(db: Database, now: Date, lim
     .limit(limit)
 }
 
-/** Repairs rows that reached the hide threshold while `pending`: hide them
- *  without fetching. Self-healing — the picker already excludes them. */
 export async function hideExhaustedPendingWebmentions(db: Database): Promise<number> {
   const rows = await db
     .update(webmention)
@@ -289,7 +260,6 @@ export async function hideExhaustedPendingWebmentions(db: Database): Promise<num
   return rows.length
 }
 
-/** Earliest 24h waterline among cycle rows; `'now'` when one is due, else null. No nudge seam — the suspended poll (30s) re-evaluates. */
 export function findNextWebmentionReverifyDueAt(db: Database): Date | 'now' | null {
   const rows = db
     .select({ lastVerifiedAt: webmention.lastVerifiedAt })
@@ -308,9 +278,6 @@ export function findNextWebmentionReverifyDueAt(db: Database): Date | 'now' | nu
   return new Date(first.lastVerifiedAt.getTime() + WEBMENTION_REVERIFY_INTERVAL_MS)
 }
 
-/** Successful verification: `verified` + fresh waterline, failure bookkeeping resets.
- *  A `hidden` row restores to `approved` (the manual recovery path — the daily cycle
- *  never picks `hidden`, so the CASE only ever fires there). */
 export async function applyWebmentionReverifySuccess(
   db: Database,
   id: number,
@@ -341,7 +308,6 @@ export async function applyWebmentionReverifySuccess(
   return rows[0] ?? null
 }
 
-/** Failed verification: `daily` bumps the streak (capped at `hideStreak`) and may hide in one atomic UPDATE; `manual` records only the message. */
 export async function applyWebmentionReverifyFailure(
   db: Database,
   id: number,

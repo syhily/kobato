@@ -13,10 +13,6 @@ function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata
   return { ...post, meta: { likes: 5, views: 42, comments: 3 } }
 }
 
-// A few high-leverage UI shells. They render pure components (no SSR loaders, no DB) so
-// markup drift surfaces as a diff; real route snapshots would need the whole catalog and
-// session pipeline mocked.
-
 describe('snapshot: Pagination', () => {
   it('dense (total = 4) at page 2', () => {
     const html = renderInRouter(<Pagination current={2} total={4} rootPath="/archives" />)

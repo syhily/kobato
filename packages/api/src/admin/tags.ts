@@ -8,9 +8,6 @@ import {
 } from '@kobato/contracts/tags.ts'
 import { oc } from '@orpc/contract'
 
-// Admin tags RPC contract — `list`/`upsert` run on the author base, `delete`
-// on the admin base (deleting shared tags is admin-only); the controller maps
-// each procedure to its original guard.
 export const adminTagsContract = {
   list: oc.route({ method: 'GET', path: '/admin/tags/list' }).input(adminTagsListInput).output(adminTagsListOutputDto),
   upsert: oc

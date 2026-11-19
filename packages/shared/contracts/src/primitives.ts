@@ -15,16 +15,12 @@ export function safeBoolean() {
     .transform((v) => (v === 'true' ? true : v === 'false' ? false : v))
 }
 
-// Shared boolean success envelope for single-gesture admin mutations.
 export const successDto = z.object({ success: z.boolean() })
 export type SuccessOutput = z.infer<typeof successDto>
 
-// Shared literal-ok envelope for anonymous submissions that must not reveal
-// whether the address/record was ever seen.
 export const okDto = z.object({ ok: z.literal(true) })
 export type OkOutput = z.infer<typeof okDto>
 
-// Shared void output for procedures that only mutate (nothing crosses back).
 export const voidOutput = z.void()
 
 const HONEYPOT_MAX_LENGTH = 240

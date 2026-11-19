@@ -1,14 +1,6 @@
 import type * as LockModule from '@kobato/web-client/lib/viewport-zoom-lock.ts'
 
 // @vitest-environment happy-dom
-/**
- * The refcounted viewport zoom lock (client/AGENTS.md → iOS auto-zoom):
- * iOS Safari decides the input auto-zoom when focus lands, so activations
- * freeze the viewport meta until the editable has taken focus, then restore
- * it — pinch-zoom stays available. Refcounting lets the document-level
- * form-control tracker and the composer's activation handoff overlap
- * without racing the same `<meta>` rewrite.
- */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'
@@ -29,8 +21,6 @@ function mountViewportMeta() {
   return meta
 }
 
-// The lock keeps module-level holder state — a fresh module graph per case
-// keeps them independent.
 beforeEach(() => {
   vi.resetModules()
   document.querySelector('meta[name="viewport"]')?.remove()
@@ -49,8 +39,6 @@ describe('viewport-zoom-lock', () => {
     acquireViewportZoomLock()
     expect(meta.content).toBe(LOCKED_CONTENT)
 
-    // A second holder (form-control tracker + composer handoff overlap) must
-    // not restore the meta early.
     acquireViewportZoomLock()
     releaseViewportZoomLock()
     expect(meta.content).toBe(LOCKED_CONTENT)
@@ -78,7 +66,6 @@ describe('viewport-zoom-lock', () => {
       releaseViewportZoomLock()
     }).not.toThrow()
 
-    // The skipped pair left no phantom holder: the next cycle still locks.
     const meta = mountViewportMeta()
     acquireViewportZoomLock()
     expect(meta.content).toBe(LOCKED_CONTENT)

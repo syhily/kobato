@@ -1,7 +1,6 @@
 import { ORPCError } from '@orpc/client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// sonner is stubbed so toast copy is asserted, not rendered.
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: toastMock }))
 
@@ -44,7 +43,6 @@ describe('toastApiError', () => {
   })
 
   it('uses the Error message as description for oRPC/HTTP rejections', () => {
-    // ORPCError rejections are Error instances whose .message is the server copy.
     toastApiError(new Error('请求过于频繁，请稍后再试。'), 'admin.toast.operationFailed', tZhCN)
     expect(toastMock.error).toHaveBeenCalledWith('操作失败', { description: '请求过于频繁，请稍后再试。' })
   })
@@ -92,14 +90,11 @@ describe('toastApiError', () => {
   })
 
   it('never retranslates the server description — only the title is localized', () => {
-    // A server body that happens to equal a catalog value stays verbatim.
     toastApiError(new Error('保存失败'), 'admin.toast.saveFailed', tEnUS)
     expect(toastMock.error).toHaveBeenCalledWith('Save failed', { description: '保存失败' })
   })
 
   it('toasts a descriptor ORPCError message verbatim — issues are folded server-side', () => {
-    // Descriptor rejections ship a request-locale message with the issue
-    // summary already folded in by the server; the toast never inspects `data`.
     const err = new ORPCError('BAD_REQUEST', {
       message: '设置数据无效：resource.maxAttempts：最大尝试次数不能超过 1000',
       data: {

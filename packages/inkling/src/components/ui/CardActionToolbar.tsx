@@ -40,13 +40,6 @@ export interface CardActionToolbarProps {
 }
 const DEFAULT_ITEMS: CardToolbarItem[] = [{ kind: 'edit' }, { kind: 'separator' }, { kind: 'snippet' }]
 
-// the card's toolbar name — both blocks render
-// data-inkling-card-toolbar={label} (a live CSS/e2e selector contract). The
-// label is resolved from the card declaration by the node's own type — read
-// from the wrapper's CardContext when present (the wrapper derived it once
-// at init); a bare mount (tests) falls back to one init-time read. No
-// un-subscribed editor read on the render path — a card's type is static
-// for its mounted lifetime.
 export function useCardToolbarLabel(nodeKey: NodeKey): string | undefined {
   const { cardType } = React.useContext(CardContext)
   const [editor] = useLexicalComposerContext()
@@ -84,10 +77,6 @@ export function CardActionToolbar({
     editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey })
   }
 
-  // separators default to the snippet gate: they exist to separate the
-  // snippet item, so they share its visibility unless a card overrides them.
-  // Keys are precomputed in render scope — the render callback must not
-  // mutate a counter while mapping
   const separatorKeys = new Map<CardToolbarItem, number>()
   let separatorCount = 0
   for (const item of resolvedItems) {

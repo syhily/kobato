@@ -37,7 +37,6 @@ export async function countPublicPosts(
   return rows[0]?.count ?? 0
 }
 
-/** Cards for one listing page. The filtered count is deliberately not run here — callers needing `total` call `countPublicPosts` themselves. */
 export async function listPublicPostCardsPaginated(
   db: Database,
   pageNum: number,
@@ -46,7 +45,6 @@ export async function listPublicPostCardsPaginated(
     sortBy?: 'publishedAt' | 'updatedAt'
     categoryId?: number
     tag?: string
-    /** Override the default offset. Tail-merge callers must base it on the original page size. */
     offset?: number
   },
 ): Promise<ListingPostCard[]> {
@@ -111,10 +109,6 @@ export async function listSitemapPosts(db: Database, now = new Date()): Promise<
     .orderBy(desc(postMetaTable.firstPublishedAt))
 }
 
-/**
- * Hydrates posts by slug, in the caller's slug order — the search pipeline
- * relies on the relevance ranking, so no re-ordering by date.
- */
 export async function getPostsBySlugs(
   db: Database,
   slugs: readonly string[],
@@ -132,7 +126,6 @@ export async function getPostsBySlugs(
   const now = new Date()
   const filteredRows = rows.filter((meta) => {
     const visible = filters.includeHidden || meta.visible
-    // `includeScheduled` relaxes only the publishedAt<=now leg — a row without a promoted revision is never public.
     const live = isLive(meta, { asOf: now, includeScheduled: filters.includeScheduled })
     return visible && live
   })

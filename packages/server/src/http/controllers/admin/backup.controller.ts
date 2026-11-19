@@ -34,7 +34,6 @@ const log = getLogger('backup.controller')
 const impl = implementAdmin(adminBackupContract)
 
 const status = impl.status.handler(async () => {
-  // Backups land in local storage when S3 is unconfigured; `primaryDriver` is informational only.
   return { primaryDriver: activeBackend().driver }
 })
 
@@ -70,9 +69,6 @@ const restore = impl.restore.handler(async ({ input, context }) => {
   if (!isValidBackupKey(input.key)) {
     throw new ActionFailure(400, descriptorFor('backup.error.invalidKey'))
   }
-  // Resolve the password BEFORE claiming the slot: an encrypted archive
-  // without any usable password declines without touching the machine.
-  // Trim like the create path does, so both sides derive the same key.
   const encrypted = await isBackupEncrypted(context.db, input.key)
   const trimmedPassword = input.password?.trim()
   const explicitPassword = trimmedPassword !== undefined && trimmedPassword !== '' ? trimmedPassword : null
@@ -80,9 +76,6 @@ const restore = impl.restore.handler(async ({ input, context }) => {
   if (encrypted && password === null) {
     return { passwordRequired: true }
   }
-  // An explicit password guess is an online oracle for the archive key —
-  // cap tries per (admin, backup). The stored-settings password path stays
-  // exempt: it is one fixed candidate, not a guess.
   if (encrypted && explicitPassword !== null) {
     const passwordLimit = await tryBackupRestorePasswordRateLimit(context.viewer.id, input.key)
     if (passwordLimit.exceeded) {
@@ -90,13 +83,8 @@ const restore = impl.restore.handler(async ({ input, context }) => {
     }
   }
 
-  // Claim BEFORE the (potentially large) download — check-then-act across an
-  // await races a second restore into the same staging path.
   const outcome = await withRestoreClaim(async () => {
     const { stream } = await getBackupStream(context.db, input.key)
-    // Report the staging legs (decrypt/extract) through the same progress
-    // slot the upload flow uses — peekRestoreProgress prefers staging over
-    // the machine's (premature) 'draining' phase during this window.
     const progressOwned = beginStagingProgress()
     let staged
     try {
@@ -107,16 +95,10 @@ const restore = impl.restore.handler(async ({ input, context }) => {
           : undefined,
       })
     } catch (error) {
-      // The row said "not encrypted" but the bytes are (out-of-band bucket
-      // edits): no password could possibly have worked — sweep the staged
-      // dir (nothing to park here; the source lives in storage) and ask.
       if (error instanceof EncryptedBackupPasswordRequired) {
         rmSync(error.dir, { recursive: true, force: true })
         return null
       }
-      // The stored password didn't fit (e.g. the backup used a one-off
-      // override): ask the user instead of failing hard. Only a genuine
-      // password failure declines — structural corruption fails loudly.
       if (encrypted && explicitPassword === null && error instanceof BackupPasswordError) {
         return null
       }
@@ -129,7 +111,6 @@ const restore = impl.restore.handler(async ({ input, context }) => {
     return {
       restoreFn: () => restoreFromStagedBackup(staged, input.key),
       afterReopenFn: async () => {
-        // The audit event buffers into the re-initialized batcher, writing to the restored DB.
         recordAuditEventFromContext(context, {
           action: 'backup_restored',
           resourceType: 'backup',
@@ -137,8 +118,6 @@ const restore = impl.restore.handler(async ({ input, context }) => {
         })
         log.info('Restore completed', { key: input.key })
       },
-      // A pre-swap throw (drain/prepareForSwap) means the swap never ran
-      // — drop the staged dir instead of leaking it until the next boot.
       onFailureFn: () => {
         rmSync(staged.dir, { recursive: true, force: true })
       },

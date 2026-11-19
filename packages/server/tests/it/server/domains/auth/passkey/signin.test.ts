@@ -19,10 +19,6 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// signInWithPasskey against the real engine; the only mock is
-// `@simplewebauthn/server` — the attestation crypto is a true external
-// no test can drive.
-
 const swaMocks = vi.hoisted(() => ({
   generateAuthenticationOptions: vi.fn(),
   verifyAuthenticationResponse: vi.fn(),
@@ -76,7 +72,6 @@ async function seedCredential(userId: number, credentialId: string): Promise<voi
   })
 }
 
-/** Real ceremony — the challenge row lands in `one_time_token`. */
 async function beginAuthentication(challenge: string, email?: string): Promise<void> {
   swaMocks.generateAuthenticationOptions.mockResolvedValueOnce({ challenge, rpId: 'example.com' })
   await generateAuthenticationOptions(db, email)
@@ -109,7 +104,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -219,7 +213,6 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
     const userId = await seedUser()
     await seedCredential(userId, 'cred-1')
     await beginAuthentication('challenge-1')
-    // The service does not wrap upstream failures — non-Error rejections propagate raw.
     swaMocks.verifyAuthenticationResponse.mockRejectedValueOnce('boom')
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm(), '/admin')

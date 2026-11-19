@@ -5,7 +5,6 @@ import { comment } from '@kobato/db/schema/comment.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { and, count, desc, eq, gte, inArray } from 'drizzle-orm'
 
-// Sync (node:sqlite): called inside the comment persist transaction.
 export function countApprovedCommentsByUser(db: Database, userId: number): number {
   const rows = db
     .select({ count: count() })

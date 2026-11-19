@@ -30,27 +30,15 @@ export interface FeedOptions {
   settings?: BlogSettingsBundle | null
 }
 
-// Allowlist HTML sanitizer for feed output — a thin wrapper over the shared DOMPurify
-// 'feed' strategy; `packages/shared/sanitize/src/config.ts` owns the tag/attribute allowlist, which
-// mirrors the feed-variant projection's real output (inkling exportDOM, artifacts
-// stripped).
 export function sanitizeFeedHtml(html: string): string {
   return sanitizeHtmlString(html, 'feed')
 }
 
-// xml-js (the feed library's serializer) CDATA-wraps content but splits only the FIRST `]]>`
-// a payload contains — a second occurrence would end the CDATA early and invalidate the
-// document. Escaping every occurrence up front decodes back to `>` in the reader and always
-// yields parseable XML.
-/** Exported for unit tests. */
 export function escapeCdataPayload(value: string): string {
   return value.replaceAll(']]>', ']]&gt;')
 }
 
 async function renderEntryContent(entry: Post | Page): Promise<string> {
-  // The saved `body_html_feed` projection already carries the rssMode degradations
-  // (math→TeX, code→plain pre, host cards flattened) and origin-absolutized media srcs;
-  // the sanitize allowlist is the last boundary before the XML.
   const html = await resolveBodyHtmlFeed(entry)
   return escapeCdataPayload(sanitizeFeedHtml(html))
 }
@@ -63,7 +51,6 @@ export async function generateFeeds(db: Database, options: FeedOptions) {
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
-  // Visibility policy lives in the posts domain; the renderer wires the taxonomy resolvers only.
   const feedPosts = await selectFeedPosts(
     db,
     { category, tag, limit: content.feed.size },
@@ -89,7 +76,6 @@ export async function generateFeeds(db: Database, options: FeedOptions) {
       email: siteIdentity.author.email,
       link: siteIdentity.author.url,
     },
-    // No XML stylesheet — browsers are deprecating XSLT for XML documents.
   })
 
   const allTagNames = [...new Set(feedPosts.flatMap((p) => p.tags))]

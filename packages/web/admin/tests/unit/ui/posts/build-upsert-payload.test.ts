@@ -4,10 +4,6 @@ import { buildPostUpsertPayload } from '@kobato/web-admin/ui/posts/build-post-up
 import { EMPTY_POST_META_DRAFT } from '@kobato/web-admin/ui/posts/post-meta.ts'
 import { describe, expect, it } from 'vitest'
 
-// The editor never sends a tag the server would reject: one bad field must not
-// fail an otherwise valid meta/body save. The field shows the inline error and
-// the stored value stays untouched (omitted key = leave untouched).
-
 describe('upsert payloads — contentLanguage', () => {
   it('sends a trimmed valid tag verbatim for post and page', () => {
     const post = buildPostUpsertPayload({

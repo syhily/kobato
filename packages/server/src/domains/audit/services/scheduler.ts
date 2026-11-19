@@ -12,7 +12,6 @@ registerJob({
   nextDelayMs: () => {
     const bundle = getBlogSettingsBundleSync()
     if (!bundle) {
-      // Boot-time race: suspend; the seam re-evaluates shortly.
       log.warn('Settings not hydrated; audit archive suspended')
       return null
     }

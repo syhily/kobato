@@ -2,8 +2,6 @@ import type { BrandingObjectRef } from '@kobato/settings/types.ts'
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-// Real settings table + storage registry seam; only the favicon-pack
-// generator (sharp) is mocked; writes are read back from SQLite.
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
@@ -20,7 +18,6 @@ const { uploadBrandingAsset, clearBrandingAsset } = await import('@kobato/server
 
 const db = getTestDb()
 
-// PNG magic-byte prefix, padded so the sniff returns 'image/png'.
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x00])
 const ICO_BYTES = Buffer.from([0x00, 0x00, 0x01, 0x00, 0x01, 0x00])
 const SVG_BYTES = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>', 'utf8')
@@ -149,7 +146,6 @@ describe('clearBrandingAsset', () => {
   it('clears favicon pack when faviconSvg is cleared', async () => {
     await clearBrandingAsset(db, 'faviconSvg')
 
-    // 5 slots × 2 keys (current + legacy) = 10 deletes
     expect(mem.deletedKeys).toHaveLength(10)
     expect(mem.deletedKeys).toEqual(
       expect.arrayContaining([

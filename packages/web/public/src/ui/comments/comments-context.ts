@@ -2,10 +2,6 @@ import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comme
 
 import { createContext, use } from 'react'
 
-/**
- * Token-claimed ownership of one comment; `expiresAt` (ms epoch) is absent
- * when the token carries no expiry.
- */
 export interface MyCommentOwnership {
   expiresAt?: number
 }
@@ -31,27 +27,18 @@ export type CommentTreeAction =
   | { type: 'mergeMyComments'; comments: CommentItemType[]; expiresAt: Record<string, number> }
   | { type: 'dismissMyComment'; id: string }
 
-/**
- * Hot tree state — a new identity per dispatch; only the orchestrator's own
- * slots (Header / List / LoadMore) subscribe.
- */
 export interface CommentsTreeContextValue {
   commentKey: string
   totalCount: number
   state: CommentTreeState
 }
 
-/**
- * Viewer identity + ownership — referentially stable across tree dispatches, so
- * leaves subscribed here do not re-render on reply, edit, approve, or load-more.
- */
 export interface CommentsIdentityContextValue {
   admin: boolean
   currentUserId: string | null
   myComments: ReadonlyMap<string, MyCommentOwnership>
 }
 
-/** The reply-form slot — hot on reply-toggle only. */
 export interface CommentsReplySlotContextValue {
   activeReplyToId: number
   replyForm: React.ReactNode

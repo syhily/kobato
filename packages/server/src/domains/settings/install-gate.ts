@@ -3,15 +3,8 @@ import type { Database } from '@kobato/db/database.ts'
 import { hasAdmin } from '@kobato/db/operations/user.ts'
 import { redirect } from 'react-router'
 
-// "Has admin" is equivalent to "installed" (user creation and settings seeding are
-// atomic).
-
 export type InstallState = 'noAdmin' | 'installed'
 
-/**
- * Cheap installation check shared by the gate middleware and the install / login routes.
- * Not memoized — do not re-wrap in `React.cache()` (a pure pass-through outside RSC).
- */
 export async function getInstallState(db: Database): Promise<InstallState> {
   if (!(await hasAdmin(db))) {
     return 'noAdmin'

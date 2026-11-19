@@ -1,7 +1,5 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// One-shot tokens (setup, passkey challenges, comment tokens). Consumption
-// is a single `DELETE … RETURNING payload` — atomic no-replay.
 export const oneTimeToken = sqliteTable(
   'one_time_token',
   {

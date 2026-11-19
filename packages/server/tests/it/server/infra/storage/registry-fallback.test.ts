@@ -9,10 +9,8 @@ import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// The it setup pins DATA_PATH to a throwaway tmp root, so these tests touch real files, never the dev data dir.
 const TEST_PREFIX = 'it-registry-fallback'
 
-// Default test bundle with S3 disabled — mirrors a fresh install.
 const LOCAL_ONLY_BUNDLE: BlogSettingsBundle = {
   ...TEST_BLOG_SETTINGS_BUNDLE,
   assets: {
@@ -32,7 +30,6 @@ const LOCAL_ONLY_BUNDLE: BlogSettingsBundle = {
 }
 
 afterAll(async () => {
-  // Remove the whole test subtree so nothing litters the shared tmp root.
   await localBackend.deletePrefix(TEST_PREFIX)
 })
 
@@ -52,7 +49,6 @@ describe('storage/registry — local fallback', () => {
   })
 
   it('resolves to s3 under the default test bundle (the fallback is not vacuous)', () => {
-    // Proves the local result above comes from the S3 availability check, not a registry hardwired to 'local'.
     const resolved = activeBackend()
 
     expect(resolved.driver).toBe('s3')
@@ -60,7 +56,6 @@ describe('storage/registry — local fallback', () => {
   })
 
   it('round-trips bytes through the resolved local backend on the real filesystem', async () => {
-    // Guard: never run filesystem assertions against the dev data directory.
     expect(STORAGE_DIR.startsWith(TEST_ENV.storage__data)).toBe(true)
 
     setBlogSettingsBundleForTests(LOCAL_ONLY_BUNDLE)
@@ -86,7 +81,6 @@ describe('storage/registry — local fallback', () => {
   })
 
   it('falls back to local without throwing when the settings snapshot is not hydrated yet', () => {
-    // Unhydrated snapshot: the S3 availability check throws — the registry must degrade to local.
     setBlogSettingsBundleForTests(undefined)
 
     let resolved: ReturnType<typeof activeBackend> | undefined

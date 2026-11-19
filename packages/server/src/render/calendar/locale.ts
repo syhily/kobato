@@ -1,13 +1,3 @@
-// Calendar copy per AppLocale.
-//
-// Month / weekday / lunar labels and the 宜 term table are HAND-REVIEWED static data —
-// never a runtime simplified→traditional conversion. `en-US` renders neither the lunar
-// nor the 宜 line; zh-TW / zh-HK share the traditional table and omit an unknown 宜 term
-// (the completeness test sees a missing entry; nothing is transliterated).
-//
-// The date/URL machine format (`/images/calendar/:year/:MMdd.png`) is locale-independent
-// and lives outside this module.
-
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 export interface LunarCopy {
@@ -71,7 +61,6 @@ const ZH_LUNAR_DAYS = [
   '三十',
 ]
 
-/** Hand-reviewed traditional forms of every 宜 term `lunar-typescript` emits. */
 const TRADITIONAL_YI_TERMS: Readonly<Record<string, string>> = {
   上梁: '上梁',
   习艺: '習藝',
@@ -248,7 +237,6 @@ export interface LunarParts {
   day: number
 }
 
-/** `甲辰年 正月初一` — the existing zh layout; `null` when the locale has no lunar line. */
 export function lunarLabel(copy: CalendarCopy, parts: LunarParts): string | null {
   if (copy.lunar === null) {
     return null
@@ -262,7 +250,6 @@ export function lunarLabel(copy: CalendarCopy, parts: LunarParts): string | null
   return `${parts.yearGanZhi}${copy.lunar.yearSuffix} ${leap}${monthName}${copy.lunar.monthSuffix}${dayName}`
 }
 
-/** `宜祭祀` in the locale's own terms; `null` when the locale has no 宜 line or the term is unmapped. */
 export function auspiciousLabel(copy: CalendarCopy, term: string): string | null {
   if (copy.auspicious === null || term === '') {
     return null
@@ -271,5 +258,4 @@ export function auspiciousLabel(copy: CalendarCopy, term: string): string | null
   return translated === undefined ? null : `${copy.auspicious.prefix}${translated}`
 }
 
-/** Test/contract surface: every term the library can emit must be mapped. */
 export const TRADITIONAL_YI_TERM_MAP = TRADITIONAL_YI_TERMS

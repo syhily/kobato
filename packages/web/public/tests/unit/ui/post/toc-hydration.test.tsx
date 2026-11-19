@@ -48,7 +48,6 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
   it('hydrates without a mismatch when the motion chunk is already loaded', async () => {
     const html = await renderToPipeableStreamString(wrapWithI18n(<TableOfContents headings={headings} toc="enabled" />))
 
-    // Warm the module cache before hydration, like a preloaded chunk would.
     await import('motion/react')
 
     document.body.innerHTML = `<div id="probe-root">${html}</div>`
@@ -65,9 +64,6 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
     try {
       expect(errors.map((e) => (e instanceof Error ? e.message : String(e)))).toEqual([])
     } finally {
-      // Unmount before the file's happy-dom env is torn down: without it the
-      // React scheduler can fire post-teardown work into a dead `window`
-      // ("window is not defined" as an unhandled error in the full run).
       root.unmount()
     }
   })

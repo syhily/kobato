@@ -6,16 +6,12 @@ const { data: DATA_PATH, defaultFont: DEFAULT_FONT_PATH } = serverConfig.storage
 
 export const FONT_DIR = path.resolve(DATA_PATH, 'fonts')
 export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'dead-letter.jsonl')
-// Separate file: the env-beacon rows have a different wire shape than access events.
 export const ANALYTICS_ENV_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'env-dead-letter.jsonl')
 export const AUDIT_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'audit', 'dead-letter.jsonl')
 export const MAXMIND_DB_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.mmdb')
-// Provenance sidecar for the GeoIP database (installed version, upload vs download, install time).
 export const MAXMIND_META_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.meta.json')
-// Local storage backend root — same key namespace as the S3 backend.
 export const STORAGE_DIR = path.resolve(DATA_PATH, 'storage')
 
-/** True when `target` resolves inside `root` — hardens derived paths against a misconfigured `DATA_PATH`. */
 export function isPathInside(target: string, root: string): boolean {
   const relative = path.relative(root, target)
   return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
@@ -31,7 +27,6 @@ for (const dir of [
   mkdirSync(dir, { recursive: true })
 }
 
-// Seed default Canvas fonts when missing — never overwrite existing files.
 function seedDefaultFonts(): void {
   if (!DEFAULT_FONT_PATH) {
     return
@@ -46,16 +41,12 @@ function seedDefaultFonts(): void {
   if (!existsSync(og)) {
     try {
       copyFileSync(DEFAULT_FONT_PATH, og)
-    } catch {
-      /* noop */
-    }
+    } catch {}
   }
   if (!existsSync(calendar)) {
     try {
       copyFileSync(DEFAULT_FONT_PATH, calendar)
-    } catch {
-      /* noop */
-    }
+    } catch {}
   }
 }
 

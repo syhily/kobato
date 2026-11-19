@@ -17,9 +17,6 @@ export interface ActionBannerController {
   dismiss: () => void
 }
 
-// Two-phase post-save banner protocol: `begin` arms a countdown, `noteLeg`
-// decrements per successful mutation leg; the banner surfaces only when every
-// leg landed — conflict/error paths `cancel` so a late success can't flash a stale link.
 export function useActionBanner(): ActionBannerController {
   const pendingRef = useRef<{ kind: ActionBannerKind; remaining: number } | null>(null)
   const [banner, setBanner] = useState<ActionBannerState | null>(null)

@@ -8,7 +8,6 @@ import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { CalendarIcon, FileTextIcon, ListChecksIcon, SearchIcon, UserIcon } from 'lucide-react'
 
-// Filter-pill specs for the comments list plus the contains/not-contains text codec over the shared one.
 export type CommentFilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
 
 export type TextFilterOperator = 'contains' | 'does-not-contain'
@@ -31,7 +30,6 @@ export interface TextFilterValue {
 
 export function parseTextFilter(value: string | undefined): TextFilterValue | null {
   const parsed = parseTextFilterValue(value, TEXT_FILTER_OPERATORS)
-  // The generic parse already validated `op` against TEXT_FILTER_OPERATORS — the narrowing cast is exact.
   return parsed ? { op: unsafeCast<TextFilterOperator>(parsed.op), value: parsed.value } : null
 }
 
@@ -49,7 +47,6 @@ export const STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [
   { value: 'deleteRequested', labelId: 'admin.comments.filter.status.deleteRequested' },
 ]
 
-/** The `admin.comments.loadAll` input contributed by the active pills. */
 export interface CommentsFilterQuery {
   pageKey?: string
   userId?: string

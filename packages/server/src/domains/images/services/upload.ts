@@ -18,7 +18,6 @@ const log = getLogger('images.service')
 
 type ActiveBackend = ReturnType<typeof activeBackend>['backend']
 
-// Only delete when no row claims the key — a raced upload may own it.
 async function deleteObjectUnlessClaimed(db: Database, backend: ActiveBackend, objectKey: string): Promise<void> {
   const claimed = await findImagesByStoragePaths(db, [objectKey]).catch(() => [] as ImageRow[])
   if (claimed.length === 0) {
@@ -39,9 +38,6 @@ export interface UploadImageInputs {
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'])
 
-/** A declared-envelope rejection; the controller raises it as a localized
- * ORPCError. Pre-read check only — authoritative checks still run in
- * {@link uploadImage}. Messages are the wire contract — do not reword. */
 export type ImageUploadRejection = {
   code: 'BAD_REQUEST' | 'PAYLOAD_TOO_LARGE'
   descriptor: ErrorMessageDescriptor
@@ -66,11 +62,9 @@ function getBufferMimeType(buffer: Buffer): string | null {
   if (buffer.length < 12) {
     return null
   }
-  // JPEG
   if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return 'image/jpeg'
   }
-  // PNG
   if (
     buffer[0] === 0x89 &&
     buffer[1] === 0x50 &&
@@ -83,11 +77,9 @@ function getBufferMimeType(buffer: Buffer): string | null {
   ) {
     return 'image/png'
   }
-  // GIF
   if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
     return 'image/gif'
   }
-  // WebP
   if (
     buffer[0] === 0x52 &&
     buffer[1] === 0x49 &&
@@ -100,7 +92,6 @@ function getBufferMimeType(buffer: Buffer): string | null {
   ) {
     return 'image/webp'
   }
-  // AVIF
   const ftypIndex = buffer.indexOf(Buffer.from('ftyp'))
   if (ftypIndex !== -1 && ftypIndex + 4 < buffer.length) {
     const brand = buffer.toString('ascii', ftypIndex + 4, ftypIndex + 8)
@@ -150,7 +141,6 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
   const keySpec = toKeySpec(input.kind)
   const objectKey = buildObjectKey(keySpec)
 
-  // Driver is persisted on the row so reads/deletes dispatch on it later.
   const { backend, driver } = activeBackend()
   await backend.put({ key: objectKey, body: processed.buffer, contentType: 'image/jpeg', visibility: 'public' })
 

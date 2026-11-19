@@ -10,11 +10,6 @@ import { tick } from '@kobato/inkling/tests/utils/test-editor'
 import { $getRoot, CLICK_COMMAND, createEditor, type LexicalEditor } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The select→edit choreography as a synchronous table: real editor, real
-// card, real container — no browser. Clicks arrive by dispatching
-// CLICK_COMMAND with an event whose target is set (dispatched first on the
-// target element).
-
 describe('card interaction', () => {
   let editor: LexicalEditor
   let store: CardSelectionStore

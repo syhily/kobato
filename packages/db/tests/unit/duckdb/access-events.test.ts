@@ -1,9 +1,6 @@
 import { blobColumns, blobsMap, doublesMap, index1Of } from '@kobato/db/duckdb/access-events.ts'
 import { describe, expect, it } from 'vitest'
 
-// Contract pin for the access_events slot allocation: every blob1..16 is assigned at
-// most once, the reserved slot is documented, and no raw IP can reach a column.
-
 describe('blobsMap slot contract', () => {
   it('assigns all 16 blob slots exactly once', () => {
     const keys = Object.keys(blobsMap)

@@ -9,10 +9,6 @@ import { useEffect, useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-// The resend acknowledgment must restart the cooldown by IDENTITY (the action's
-// typed descriptor), never by comparing the localized sentence — the sentence
-// changes with the site locale.
-
 const SENT_LONG_AGO = Date.now() - 120_000
 
 const control: { setActionData: (data: LoginActionData | null) => void } = { setActionData: () => {} }
@@ -58,7 +54,6 @@ describe('OtpForm resend cooldown', () => {
   it('ignores a legacy sentence without a descriptor', () => {
     const { container } = mount()
 
-    // A bare localized string is not an identity: the cooldown stays off.
     deliver({ message: '验证码已重新发送。' })
     expect(container.textContent).not.toContain('60 秒后重新发送')
   })

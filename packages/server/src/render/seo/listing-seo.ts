@@ -18,8 +18,6 @@ export interface ListingSeoProps {
   ogImageUrl?: string
 }
 
-// One call produces the full MetaDescriptor[] for a listing; `bundle`
-// is optional to avoid touching globalThis when the caller has it.
 export function listingSeo(
   {
     title,
@@ -36,7 +34,6 @@ export function listingSeo(
 ): MetaDescriptor[] {
   let pageTitle = title
   if (pageNum > 1) {
-    // System copy resolved per request — never a hardcoded zh-CN template.
     const t = createServerTranslator(locale)
     pageTitle =
       title === undefined

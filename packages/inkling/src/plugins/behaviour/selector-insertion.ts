@@ -34,9 +34,7 @@ export function $insertFromSelectorDataset(dataset: ImageNodeDataset): boolean {
 
 export function registerSelectorInsertCommands(editor: LexicalEditor): () => void {
   if (!getRegisteredNodeMap(editor).has('image')) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
   return mergeRegister(
     editor.registerCommand(

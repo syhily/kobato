@@ -99,7 +99,6 @@ export function ImageDetailDialog({
 
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2 sm:gap-4 sm:px-6">
             <div className="flex items-center justify-center rounded-xl border bg-muted">
-              {/* Plain <img>: lazy remote URL; alt="" because the path and meta fields convey identity. */}
               <img
                 src={image.publicUrl}
                 alt=""

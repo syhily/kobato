@@ -1,7 +1,3 @@
-// Vitest worker setup: one in-memory SQLite per test file; file-backed
-// flows opt in via `createTestDatabaseFile`. The `:memory:` choice is
-// owned by `#/_helpers/env` (imported before `@/server/infra/config`).
-
 // Run the suite against Zod 4.5's compiled parsers, mirroring production
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
@@ -22,10 +18,7 @@ vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
 
-// Auto-reset the snapshot after every test to prevent isolation leaks.
 afterEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // Analytics queries run untraced in tests: a boot path that wired the
-  // executor must not leak it into later files in this worker.
   setAnalyticsQueryExecutor(null)
 })

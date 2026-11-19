@@ -43,8 +43,6 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
       err: error instanceof Error ? error.message : String(error),
       keys: pending.size,
     })
-    // Merge the snapshot back (the fresh buffer holds increments that
-    // arrived mid-flush) and re-arm — the retry must not be lost.
     for (const [key, count] of pending) {
       this.buffer.set(key, (this.buffer.get(key) ?? 0) + count)
     }

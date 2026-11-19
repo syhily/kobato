@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The real-send path drives sendWebmention through the REAL safeFetch stack — only the network boundary is stubbed.
 vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
@@ -168,7 +167,6 @@ describe('webmentions/outbox upsert dedup', () => {
     const sooner = new Date(Date.now() + 3_600_000)
     const later = new Date(Date.now() + 7_200_000)
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: later })
-    // Republish with an earlier — and with no — publish moment.
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: sooner })
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET })
 
@@ -228,7 +226,6 @@ describe('webmentions/outbox real send path', () => {
     const row = await seedRow({ endpoint: ENDPOINT })
     mockFetch.enqueue(ENDPOINT, new Response('ok', { status: 202 }))
 
-    // Default hooks: the REAL sendWebmention through the REAL safeFetch.
     await processWebmentionOutboxRow(db, row)
 
     const [after] = await db.select().from(webmentionOutbox)
@@ -242,7 +239,6 @@ describe('webmentions/outbox real send path', () => {
     expect(headers['User-Agent']).toBe('Kobato Webmention Sender (+https://example.com)')
     expect(headers['Content-Type']).toBe('application/x-www-form-urlencoded')
     expect(headers.Accept).toBe('*/*')
-    // Form encoding, pinned byte for byte.
     expect(call.init?.body).toBe(`source=${encodeURIComponent(SOURCE)}&target=${encodeURIComponent(TARGET)}`)
   })
 

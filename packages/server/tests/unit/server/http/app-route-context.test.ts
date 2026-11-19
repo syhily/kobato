@@ -3,9 +3,6 @@ import type { Env } from '@kobato/server/http/hono-env.ts'
 import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
 
-// Contract: `c.var` set by a root-app middleware survives `app.route()` into
-// a sub-app handler. If it ever drops, fix the bridge, not the per-loader fallback.
-
 type TestEnv = {
   Variables: {
     requestContext: Env['Variables']['requestContext'] & { marker?: string }
@@ -19,7 +16,6 @@ function buildApp(mount: string) {
     await next()
   })
   const sub = new Hono<TestEnv>()
-  // Mirrors node.ts: the sub-app handler reads c.var with no fallback.
   sub.use(async (c) => c.text(c.var.requestContext?.marker ?? 'DROPPED'))
   app.route(mount, sub)
   return app

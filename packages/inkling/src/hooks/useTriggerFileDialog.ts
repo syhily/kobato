@@ -21,8 +21,6 @@ export function useTriggerFileDialog<TNode extends TriggerFileDialogCardNode>({
   fileInputRef,
   triggerFileDialog,
 }: UseTriggerFileDialogOptions<TNode>): void {
-  // a card inserted from the card menu or slash command shows the file picker
-  // immediately; the setTimeout avoids React's dev-mode double render
   React.useEffect(() => {
     if (!triggerFileDialog) {
       return

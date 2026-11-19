@@ -52,8 +52,6 @@ describe('listAllCategories', () => {
     const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
     const cats = await listAllCategories(db)
 
-    // Real hydration: the cover resolves against the seeded image row and
-    // the DTO picks up the thumbhash + versioned public URL.
     expect(cats[0].coverThumbhash).toBe('cover-hash')
     expect(cats[0].cover).toBe(`https://example.com/storage/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`)
   })
@@ -220,8 +218,6 @@ describe('countPostsByTaxonomy — names narrowing', () => {
     const { countPostsByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy.ts')
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: ['React'] })
 
-    // The unrequested term never enters the aggregate (its posts are
-    // invisible to the query), and the requested term counts its own.
     expect(counts.get('React')).toBe(1)
     expect(counts.has('Vue')).toBe(false)
   })

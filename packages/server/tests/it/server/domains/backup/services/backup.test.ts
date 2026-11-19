@@ -36,7 +36,6 @@ afterEach(() => {
 
 describe('createBackup — single-flight guard', () => {
   it('rejects a concurrent backup with CONFLICT while the first is still in flight', async () => {
-    // Stall the first backup mid-upload so the second starts while the slot is held.
     let enteredPutStream!: () => void
     const putStreamEntered = new Promise<void>((resolve) => {
       enteredPutStream = resolve
@@ -75,7 +74,6 @@ describe('createBackup — single-flight guard', () => {
   })
 
   it('ignores a stale staging file a crashed same-second attempt left behind', async () => {
-    // Stale staging files (`kobato-backup-<ts>.db`) around now — timestamps are second-precision.
     const stalePaths: string[] = []
     for (let offset = -2; offset <= 2; offset += 1) {
       const ts = new Date(Date.now() + offset * 1000).toISOString().replace(/[:.]/g, '-').slice(0, 19)

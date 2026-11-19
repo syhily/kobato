@@ -55,7 +55,6 @@ describe('server/infra/http/etag — request localization', () => {
       locale: 'zh-TW',
       timeZone: 'Asia/Taipei',
       timeFormat: 'yyyy-LL-dd',
-      // Never the process token — only the page-shell generation keys the ETag.
       revision: 'boot-test:0000000007',
     })
   })
@@ -307,7 +306,6 @@ describe('server/infra/http/etag — listing calendar day', () => {
   }
 
   it("buckets by the payload's own instant, so a site-midnight crossing cannot split body and tag", () => {
-    // 15:59:59Z / 16:00:01Z are 23:59:59 / 00:00:01 in Asia/Shanghai.
     expect(listingCalendarDay({ listingNowIso: '2026-11-08T15:59:59.000Z' }, LOCALIZATION)).toBe('2026-11-08')
     expect(listingCalendarDay({ listingNowIso: '2026-11-08T16:00:01.000Z' }, LOCALIZATION)).toBe('2026-11-09')
     // Same instants in UTC sit on the same day — the bucket follows the SITE zone.
@@ -319,7 +317,7 @@ describe('server/infra/http/etag — listing calendar day', () => {
   it('falls back to now for payloads without an instant (categories)', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     try {
-      vi.setSystemTime(new Date('2026-11-08T04:00:00.000Z')) // 12:00 Shanghai
+      vi.setSystemTime(new Date('2026-11-08T04:00:00.000Z'))
       expect(listingCalendarDay({ categories: [] }, LOCALIZATION)).toBe('2026-11-08')
     } finally {
       vi.useRealTimers()

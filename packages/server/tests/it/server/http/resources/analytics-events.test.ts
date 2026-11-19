@@ -21,9 +21,6 @@ import { Hono } from 'hono'
 import { createSession } from 'react-router'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-// The SSE resource against the real engine: connection registry, cap policy,
-// and `queryRealtimeTail` against an adopted DuckDB sidecar — no module mock.
-
 let analyticsHandle: AnalyticsHandle
 
 const ADMIN_VIEWER: SessionUser = {
@@ -55,7 +52,6 @@ async function buildApp(sessionId: string, clientAddress = '127.0.0.1') {
 }
 
 async function openStream(app: Hono<Env>, sessionId: string, clientAddress = '127.0.0.1', query = '') {
-  // The router is stateless — the context (session identity) determines the cap key.
   const scoped = new Hono<Env>()
   scoped.use('*', async (c, next) => {
     c.set('requestContext', makeRequestContext(sessionId, clientAddress))
@@ -72,15 +68,12 @@ async function closeStream(res: Response): Promise<void> {
   const before = __getRealtimeConnectionCountForTests()
   await res.body?.cancel()
   if (before === 0) {
-    // The slot is already released — the body was cancelled upstream (same cancel path).
     return
   }
-  // Wait for the cancel path to actually release the slot, not a fixed delay.
   const released = await waitUntil(() => __getRealtimeConnectionCountForTests() < before, 2_000)
   expect(released).toBe(true)
 }
 
-/** Rides real event/I-O propagation — fake timers cannot drive them. */
 async function waitUntil(condition: () => boolean, timeoutMs: number): Promise<boolean> {
   const deadline = Date.now() + timeoutMs
   while (!condition()) {
@@ -192,14 +185,12 @@ describe('/api/analytics/events realtime tail (real DuckDB)', () => {
   })
 
   it('polls the real tail and broadcasts seeded events as SSE frames', async () => {
-    // ts inside the default 60s look-back window, so the first poll picks it up.
     await seedAccessEvents(analyticsHandle, [
       { ts: new Date(), visitorHash: 'rt', path: '/poll-seeded', browser: 'Chrome' },
     ])
     const res = await openStream(await buildApp('session-poll'), 'session-poll')
     expect(res.status).toBe(200)
 
-    // The poll loop fires every 2s; wait for the 'event: events' frame.
     const frames = await readSseUntil(res, 'event: events')
     expect(frames).toContain('event: events')
     expect(frames).toContain('/poll-seeded')
@@ -209,12 +200,10 @@ describe('/api/analytics/events realtime tail (real DuckDB)', () => {
   })
 
   it('logs a warning when the realtime query fails', async () => {
-    // Engine reset: getAnalyticsReader throws inside the poll loop, logging the warning.
     __resetAnalyticsEngineForTests()
     try {
       const res = await openStream(await buildApp('session-warn'), 'session-warn')
       expect(res.status).toBe(200)
-      // Wait for the first failed poll's warn, with headroom for slow CI.
       await waitUntil(
         () => __logCaptureForTests().some((e) => e.level === 'warn' && e.msg === 'queryRealtimeTail failed'),
         10_000,

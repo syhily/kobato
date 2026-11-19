@@ -11,8 +11,6 @@ export interface AdminPostsListResult {
   hasMore: boolean
 }
 
-// Server-side write shape (number ids / Dates) — distinct from the wire
-// upsert-meta input (string ids / ISO dates).
 export interface PostMetaWriteInput extends UpsertMetaInputBase {
   visible?: boolean
   pinnedAt?: Date | null

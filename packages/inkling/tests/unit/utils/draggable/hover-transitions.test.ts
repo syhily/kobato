@@ -7,10 +7,6 @@ import {
 } from '@kobato/inkling-internal/utils/draggable/hover-transitions'
 import { describe, expect, it } from 'vitest'
 
-// the transition matrix for the drag hover machine: frames and states are
-// plain data (jsdom elements for identity/containment), so every scenario
-// is a synchronous table row
-
 interface FakeContainer {
   name: string
 }

@@ -124,8 +124,6 @@ export async function cleanupExpiredTokens(
   return { cleaned, validEntries }
 }
 
-/** Bounds for the token-jar cookie (browsers cap one cookie at ~4096 bytes).
- *  Eviction drops the globally oldest entry; the fresh token is protected. */
 const MAX_TOKEN_ENTRIES = 50
 const MAX_COOKIE_JSON_BYTES = 3500
 
@@ -163,7 +161,6 @@ export function appendCommentToken(
   token: string,
   ttlSeconds: number,
 ): CommentTokenCookie {
-  // Deep-copy entry lists — eviction must not mutate the caller's arrays.
   const next: CommentTokenCookie = {}
   for (const [key, entries] of Object.entries(existing)) {
     next[key] = [...entries]

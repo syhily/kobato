@@ -26,13 +26,8 @@ export const AUTOLINK_SEPARATOR = /[\s.,;:!?'"()[\]{}<>]/
 const SCHEME_URL = String.raw`(?:https?|ftps?)://[^\s<>"']+`
 const WWW_URL = String.raw`www\.[^\s<>"']+`
 const EMAIL = String.raw`[a-z0-9._%+-]+@(?:[a-z0-9-]+\.)+[a-z]{2,}`
-// bare domain: alpha TLD of 2+ letters, so IPv4 literals and dotless hosts
-// never match (tiptap's shouldAutoLink rejects both)
 const BARE_DOMAIN = String.raw`(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?:[/?#:][^\s<>"']*)?`
 
-// Alternation order is the precedence at a shared start position: a scheme
-// URL swallows any `www.`/email/domain it contains; an email wins over the
-// domain inside it; `www.` wins over the bare-domain reading.
 const AUTOLINK_PATTERN = new RegExp([SCHEME_URL, WWW_URL, EMAIL, BARE_DOMAIN].join('|'), 'i')
 
 const TRAILING_PUNCTUATION = /[.,;:!?'"]+$/

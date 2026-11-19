@@ -4,7 +4,6 @@ import { useRender } from '@base-ui/react/use-render'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { cva, type VariantProps } from '@kobato/ui/lib/cva.ts'
 
-// Button variants matching the public site's `.btn` rules.
 const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=size-])]:size-4 [&_[data-icon]]:size-4 [&_[data-icon=sm]]:size-3 [&_[data-icon=lg]]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:shadow-focus aria-invalid:border-destructive',
   {
@@ -53,7 +52,6 @@ export interface ButtonProps extends ComponentProps<'button'>, VariantProps<type
 }
 
 function Button({ className, variant, size, shape, block, render, ...props }: ButtonProps) {
-  // Put `type="button"` in `props` (not the JSX tag) so caller `type="submit"` wins via spread order.
   const element = useRender({
     defaultTagName: 'button',
     render,

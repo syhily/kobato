@@ -1,13 +1,3 @@
-/**
- * Compile-time pins for the emoji search-result boundary contract
- * (`@kobato/inkling-internal/plugins/behaviour/emoji-completion`): consumers read
- * `skins[0].native`, so the validated type carries a non-empty tuple and an
- * empty-skins literal cannot reach the insertion surgeries. The runtime guard
- * in `isEmojiSearchResult` drops such entries at the boundary.
- *
- * This file is included by the root tsconfig and is only type-checked — it is
- * never executed and contains no runtime assertions.
- */
 import type { EmojiSearchResult } from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'
 
 import { $insertSelectedEmoji } from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'

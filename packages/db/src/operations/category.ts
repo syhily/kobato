@@ -6,7 +6,6 @@ import { assembleWhere } from '@kobato/db/operations/admin-list.ts'
 import { category } from '@kobato/db/schema/taxonomy.ts'
 import { asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 
-// Stable `(sort_order ASC, id ASC)` order: deterministic ranking that does not shift on insert.
 export async function listPublicCategoryRows(db: Database): Promise<CategoryRow[]> {
   return db.select().from(category).orderBy(asc(category.sortOrder), asc(category.id))
 }
@@ -15,7 +14,6 @@ export interface AdminCategoriesListFilters {
   q?: string
 }
 
-// Same ordering as the public listing so the table mirrors the live public order.
 export async function listAdminCategoryRows(
   db: Database,
   filters: AdminCategoriesListFilters = {},
@@ -45,7 +43,6 @@ export async function findCategoryByName(db: Database, name: string): Promise<Ca
   return rows[0] ?? null
 }
 
-// Single seam for post→category name resolution — mount in `hydratePostList`-style pipelines.
 export async function findCategoryNamesByIds(db: Database, ids: readonly number[]): Promise<Map<number, string>> {
   const map = new Map<number, string>()
   if (ids.length === 0) {
@@ -89,8 +86,6 @@ export async function deleteCategory(db: Database, id: number): Promise<boolean>
   return result.length > 0
 }
 
-// Bulk-rewrite `sort_order` to each row's 0-based index in `orderedIds`, inside one
-// transaction; returns rows in the same order as `orderedIds`.
 export async function reorderCategories(db: Database, orderedIds: readonly number[]): Promise<CategoryRow[]> {
   if (orderedIds.length === 0) {
     return []

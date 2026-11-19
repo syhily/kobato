@@ -23,15 +23,11 @@ interface UsersTableProps {
   rows: AdminUserDto[]
   config: SiteIdentitySettings
   isLoading: boolean
-  /** Fragment ref mounted on the last row — the infinite-scroll sentinel observes it. */
   sentinelRef?: Ref<FragmentInstance>
 }
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
   const { t } = useI18n()
-  // One clock for the whole table so the relative "registered" dates share the render
-  // instant: the root loader's `nowIso` during SSR + hydration, the live clock after mount
-  // (a midnight rollover would otherwise mismatch).
   const now = useChromeClock()
   return (
     <Table>
@@ -86,7 +82,6 @@ export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableP
 interface UserRowProps {
   user: AdminUserDto
   config: SiteIdentitySettings
-  /** Stable render clock (root `nowIso` on SSR/hydration) for the relative date. */
   now: Date
 }
 

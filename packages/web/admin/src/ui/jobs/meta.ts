@@ -6,12 +6,10 @@ import type { BadgeProps } from '@kobato/ui/components/badge.tsx'
 import { formatLocalDate } from '@kobato/utils/site-date.ts'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
 
-/** Catalog task key — a summary key is always a catalog key (jobs contract). */
 export type TaskKey = JobSummaryDto['taskKey']
 
 export const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
 
-/** Site-timezone admin timestamp formatter closure (「2026-08-20 04:00:00」). */
 export function useFormatAdminDate(): (iso: string) => string {
   const config = useSiteIdentity()
   return (iso: string) => formatLocalDate(new Date(iso), ADMIN_DATE_FORMAT, config)
@@ -19,7 +17,6 @@ export function useFormatAdminDate(): (iso: string) => string {
 
 type StatusMeta = { labelId: UiMessageId; variant: BadgeProps['variant'] }
 
-// Statuses shared by the task-card badge and the run-history badge keep ONE label/variant pair.
 const SHARED_STATUS_META = {
   running: { labelId: 'admin.tasks.status.running', variant: 'default' },
   failed: { labelId: 'admin.tasks.status.failed', variant: 'destructive' },
@@ -54,9 +51,6 @@ export const RUN_STATUS_META: Record<JobRunStatus, StatusMeta> = {
   success: { labelId: 'admin.tasks.status.success', variant: 'secondary' },
 }
 
-// System-generated `job_run.error` machine codes → UI labels. Any other error
-// string is a stored technical message (legacy rows may be Chinese) and renders
-// verbatim, so a known code is the ONLY thing the UI translates.
 export const JOB_RUN_ERROR_LABEL_IDS: Record<JobRunErrorCode, UiMessageId> = {
   'process-restart': 'admin.tasks.history.error.processRestart',
 }
@@ -83,7 +77,6 @@ export const MIGRATION_PHASE_META: Record<
   interrupted: { labelId: 'admin.tasks.phase.interrupted', status: 'interrupted' },
 }
 
-// Group order follows the catalog's first appearance (system → content → maintenance).
 export const GROUP_META: Record<TaskGroup, { labelId: UiMessageId; descriptionId: UiMessageId }> = {
   system: {
     labelId: 'admin.tasks.group.system.label',
@@ -100,9 +93,6 @@ export const GROUP_META: Record<TaskGroup, { labelId: UiMessageId; descriptionId
 }
 export const GROUP_ORDER: readonly TaskGroup[] = ['system', 'content', 'maintenance']
 
-// Per-task capability table: which footer action / cross-link a task card gets
-// and whether its status + progress derive from the storage-migration DTO.
-// Adding a catalog task = one catalog row + one row here (compile-enforced).
 export interface TaskCapabilities {
   action?: 'backup' | 'migration'
   link?: { to: string; labelId: UiMessageId }

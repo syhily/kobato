@@ -8,18 +8,6 @@ import {
 import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/lexical/walk.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-// Save-time derived columns for the Lexical storage format.
-
-/**
- * TOC entries in document order. The slug policy is inkling's own
- * (`@kobato/inkling/headless` `slugify` + `createHeadingIdTracker`) so the
- * column matches the ids the HTML export stamps byte-for-byte, including the
- * `-N` duplicate suffix. EVERY
- * heading feeds the tracker (even empty-text ones — the export dedups over
- * every heading it renders); empty-text entries are then dropped, producing no
- * TOC row. Host cards carry content in opaque datasets, not `children`, so
- * headings inside them are not collected.
- */
 export function collectLexicalHeadings(state: LexicalEditorState): MarkdownHeading[] {
   const track = createHeadingSlugTracker()
   const out: MarkdownHeading[] = []
@@ -27,8 +15,6 @@ export function collectLexicalHeadings(state: LexicalEditorState): MarkdownHeadi
     if (node.type !== 'extended-heading') {
       return
     }
-    // `tag` is a per-variant field the shared node type does not model; the
-    // schema pins it on extended-heading.
     const tag = unsafeCast<{ tag?: unknown }>(node).tag
     const depth = typeof tag === 'string' && tag.length === 2 ? Number(tag[1]) : Number.NaN
     const rawText = lexicalNodeTextContent(node)
@@ -42,7 +28,6 @@ export function collectLexicalHeadings(state: LexicalEditorState): MarkdownHeadi
   return out
 }
 
-/** Deduped image storage paths in first-seen order. */
 export function collectLexicalImageStoragePaths(state: LexicalEditorState): string[] {
   const paths = new Set<string>()
   visitLexicalNodes(state, (node) => {
@@ -57,7 +42,6 @@ export function collectLexicalImageStoragePaths(state: LexicalEditorState): stri
   return Array.from(paths)
 }
 
-/** Deduped music player ids in first-seen order. */
 export function collectLexicalMusicPlayerIds(state: LexicalEditorState): string[] {
   const ids = new Set<string>()
   visitLexicalNodes(state, (node) => {

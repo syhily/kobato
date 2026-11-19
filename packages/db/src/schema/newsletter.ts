@@ -2,9 +2,6 @@ import { NEWSLETTER_SUBSCRIBER_STATUSES } from '@kobato/db/schema/shared.ts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// Newsletter subscribers (double-opt-in): `pending` rows hold a sha256
-// confirm-token hash, cleared on confirm (single-use); `unsubscribed`
-// rows are kept so a re-subscribe is a state transition, not a new identity.
 export const newsletterSubscriber = sqliteTable(
   'newsletter_subscriber',
   {

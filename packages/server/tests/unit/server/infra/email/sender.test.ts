@@ -518,7 +518,6 @@ describe('infra/email/sender — site-locale subjects', () => {
     expect(payload.html).toContain('Site:')
     expect(payload.html).toContain('Sender:')
     expect(payload.html).toContain('Triggered at (UTC):')
-    // The site title is user-authored and stays raw in every locale.
     expect(payload.html).toContain(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
   })
 

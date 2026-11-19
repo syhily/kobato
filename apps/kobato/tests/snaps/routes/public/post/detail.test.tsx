@@ -20,7 +20,6 @@ describe('snapshot: routes/public/post/detail', () => {
       }),
     )
     const visibleTags = [makeTag({ name: 'typescript', slug: 'typescript' })]
-    // The TOC sits behind a lazy boundary — only streamed SSR output carries it.
     const html = stableHtml(
       await prerenderInRouter(
         <Route

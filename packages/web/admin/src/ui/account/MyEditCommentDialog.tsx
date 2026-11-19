@@ -20,8 +20,6 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-// Self-edit dialog for `/admin/me/comments`: posts to `comment.updateOwn` (visitor-allowed);
-// the server enforces the 30-min auto-approve vs re-pend rule.
 export interface MyEditCommentDialogProps {
   target: { id: string; body: CommentEditorState } | null
   onClose: () => void
@@ -39,7 +37,6 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
   const [lastTargetId, setLastTargetId] = useState(target?.id)
-  // Reset on identity change — `target` is freshly constructed per row click.
   if (target?.id !== lastTargetId) {
     setLastTargetId(target?.id)
     if (!target) {

@@ -20,11 +20,6 @@ export interface MenuKeyboardPorts {
   onSelect: (item: ResolvedMenuItem) => void
 }
 
-/**
- * The slash syntax's arrow/enter navigation. Registered while the slash menu
- * is open; the handlers swallow the key (preventDefault + true) whenever the
- * menu is open, even when nothing is selected.
- */
 export function registerMenuKeyboardNavigation(editor: LexicalEditor, ports: MenuKeyboardPorts): () => void {
   const arrow = (move: () => void) => (event: KeyboardEvent) => {
     if (!ports.isOpen()) {
@@ -56,11 +51,6 @@ export function registerMenuKeyboardNavigation(editor: LexicalEditor, ports: Men
   )
 }
 
-/**
- * The button syntax's arrows-close: a window-level keydown (the editor's own
- * arrow commands belong to the slash syntax) that closes the menu without
- * touching the caret. Registered while the button menu is open.
- */
 export function registerMenuArrowsClose(ports: { isOpen: () => boolean; close: () => void }): () => void {
   const handleKeydown = (event: KeyboardEvent) => {
     if (!ports.isOpen()) {

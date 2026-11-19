@@ -6,21 +6,12 @@ import type { MetaDescriptor } from 'react-router'
 import { fallbackMessages } from '@kobato/i18n/fallback-messages.ts'
 import { isSupportedLocale, toOpenGraphLocale } from '@kobato/i18n/locales.ts'
 import { ogImagePathForSlug } from '@kobato/seo/og-image.ts'
-// Isomorphic by construction: route `meta()` exports pull this module into the
-// browser bundle, so it may only import its own leaf-package deps — never
-// `@kobato/i18n/catalog`. Localized copy arrives as the root loader's `i18n`
-// payload through `matches`.
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { brandingVersionSuffix, extractXHandle } from '@kobato/settings/presentation.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 
-/**
- * The i18n payload the root loader forwards from `content.bootstrap`. `meta()`
- * runs again on client navigation, so this must come from `matches`, never the
- * server settings snapshot.
- */
 export interface SeoI18n {
   locale: AppLocale
   /** Document-scope UI catalog; only title-key lookups read it. */
@@ -230,8 +221,6 @@ function articleTags(variant: SeoVariant, authorName: string, i18n?: SeoI18n | n
     { property: 'article:published_time', content: toIsoString(variant.article.date) },
     { property: 'article:author', content: authorName },
   )
-  // A page's section is system copy (localized); a post's is its category (content).
-  // An uncategorized post has no section — emit nothing rather than content="".
   const section =
     variant.kind === 'page'
       ? (i18n?.messages['meta.section.page'] ?? fallbackMessages['meta.section.page'])
@@ -308,11 +297,6 @@ export function seoForPage(page: PageMetaShape): RouteSeoOptions {
   }
 }
 
-/**
- * Static titles arrive as message ids and resolve ONLY from the root loader's
- * i18n payload (works on client navigation, where no server translator exists).
- * Raw content titles pass through untouched.
- */
 function resolveTitle(
   title: string | undefined,
   titleKey: UiMessageId | undefined,
@@ -349,9 +333,6 @@ export function routeMeta(
   const siteIdentity = resolved?.siteIdentity
   const rawTitle = resolveTitle(title, titleKey, i18n)
   if (resolved === null || siteIdentity === null || siteIdentity === undefined) {
-    // Pre-install (or root loader failed): emit a minimal `<title>` and
-    // noindex; the fallback module is the last-resort language source, never a
-    // bare literal or another catalog.
     return [
       { title: rawTitle ?? i18n?.messages['meta.preinstall'] ?? fallbackMessages['meta.preinstall'] },
       ...robotsTags(true),
@@ -460,11 +441,6 @@ export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBund
   return rootLoader.blogSettings ?? null
 }
 
-/**
- * The root loader's i18n payload, validated structurally. `meta()` resolves
- * static titles and system section labels from HERE — the only source that
- * exists on both SSR and client navigation.
- */
 export function i18nFromMatches(matches: readonly unknown[]): SeoI18n | null {
   const candidate = rootLoaderData(matches)?.i18n
   if (!isRecord(candidate)) {

@@ -12,9 +12,6 @@ import {
 } from 'lexical'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Unit pins for the caption arrow hand-off, beside the Enter hand-off it
-// mirrors in the protocol module. The parent editor is NOT linked
-// (no parentEditor), so every event it sees came through the hand-off.
 function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', onError: () => {} })
 }

@@ -33,7 +33,6 @@ function imagesReducer(state: ImagesState, action: ImagesAction): ImagesState {
       return { ...state, filters: filterPillsReducer(state.filters, action) }
     case 'removeFilter': {
       const filters = filterPillsReducer(state.filters, action)
-      // Removing the last q pill also clears the search box mirror; a remaining q pill keeps it.
       const q = filters.some((f) => f.field === 'q') ? state.q : ''
       return { ...state, filters, q }
     }

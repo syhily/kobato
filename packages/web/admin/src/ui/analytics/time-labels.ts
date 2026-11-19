@@ -1,13 +1,8 @@
-// ViewsPoint.time is a bucket LABEL in clientTimezone, not an ISO instant
-// (minute '%Y-%m-%d %H:%M', hour '%Y-%m-%d %H', day '%Y-%m-%d'); analytics
-// bucketing stays BROWSER-zoned, never the site zone.
-
 import type { TimeUnit } from '@kobato/contracts/analytics.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
 import { formatDate, formatDateTime } from '@kobato/utils/format.ts'
 
-/** Parse a bucket label to a LOCAL-time timestamp (ms); NaN when malformed. */
 export function parseTimeLabel(unit: TimeUnit, label: string): number {
   if (unit === 'day') {
     return new Date(`${label}T00:00:00`).getTime()
@@ -39,7 +34,6 @@ export function formatTimeLabel(unit: TimeUnit, label: string, options: TimeLabe
     : formatDateTime(value, { locale, timeZone, dateStyle: 'short', timeStyle: 'short' })
 }
 
-/** First day key (`%Y-%m-%d`) of a bucket label — works for every unit. */
 export function dayKeyOfLabel(label: string): string {
   return label.slice(0, 10)
 }

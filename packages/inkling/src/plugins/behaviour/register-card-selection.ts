@@ -13,13 +13,6 @@ interface CardSelectionDeps {
 export function registerCardSelection(editor: LexicalEditor, deps: CardSelectionDeps) {
   const { store, isNested } = deps
 
-  // Track card selections restored by undo/redo so decorator reconciliation
-  // side-effects cannot clear them. React re-rendering the decorator can change the
-  // selection transiently, several times in a row under load, so the protection is a
-  // window rather than a one-shot ref. It is released by a stable update confirming
-  // the card selection (after a grace period, because the reconciliation's own
-  // intermediate untagged updates can still carry the selection) or when the window
-  // elapses — a real click that late is a legitimate deselect.
   const PRESERVE_SELECTION_WINDOW_MS = 1000
   const PRESERVE_CONFIRM_GRACE_MS = 200
   let preserveCardSelection: { key: string; until: number; setAt: number } | null = null
@@ -67,9 +60,6 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
       preserveCardSelection = { key: cardKey, until: now + PRESERVE_SELECTION_WINDOW_MS, setAt: now }
     }
 
-    // A non-historic, non-history-merge update that still carries the card selection is
-    // a stable confirm; the grace period keeps the reconciliation's own intermediate
-    // untagged updates from releasing the window before the deselections land.
     if (
       !tags.has('historic') &&
       !tags.has('history-merge') &&
@@ -81,11 +71,6 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
     }
 
     if (!isCardSelected && selectedCardKey) {
-      // Inside the window the deselection is a transient decorator re-render, not a user
-      // action: keep the store value (the behavioural truth for
-      // dispatchSelectedCardDeletion and the card chrome) WITHOUT re-issuing the
-      // selection — a re-select update re-triggers the reconciliation that produced the
-      // deselect, a self-sustaining cycle that can outlive the window.
       const preserved =
         preserveCardSelection?.key === selectedCardKey && performance.now() < preserveCardSelection.until
       if (preserved) {
@@ -112,9 +97,6 @@ export function registerCardSelection(editor: LexicalEditor, deps: CardSelection
       )
     }
 
-    // Cards inserted by markdown expansion cannot open in edit mode through editor
-    // commands. The transient flag exists only on the codeblock card; the `in` checks
-    // are the discriminator.
     const openInEditMode = cardNode && '__openInEditMode' in cardNode ? cardNode.__openInEditMode : undefined
     const clearOpenInEditMode = cardNode && 'clearOpenInEditMode' in cardNode ? cardNode.clearOpenInEditMode : undefined
     if (isCardSelected && openInEditMode === true && typeof clearOpenInEditMode === 'function') {

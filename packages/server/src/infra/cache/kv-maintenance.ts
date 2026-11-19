@@ -10,14 +10,8 @@ import { lt } from 'drizzle-orm'
 
 const log = getLogger('kv.maintenance')
 
-// Fixed hourly interval — infra hygiene, not a site-timezone wall-clock job.
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
-/**
- * Hourly sweep: auth-state rows in SQLite, disposable entries on the
- * filesystem. Each cache bucket is isolated — one unreadable bucket logs and
- * lets every other bucket (and both DB legs) finish.
- */
 export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   const now = new Date()
   await db.delete(oneTimeToken).where(lt(oneTimeToken.expiresAt, now))
@@ -34,9 +28,6 @@ export async function sweepFileCache(now: number = Date.now()): Promise<void> {
     }
   }
 }
-
-// The db getter lives in the job registry and is invoked when the job
-// fires — a reopened handle (restore completion) is picked up.
 
 registerJob({
   name: 'kv.maintenance',

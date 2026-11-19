@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest'
 
 const HELLO_BODY = makeCommentBody('Thoughtful comment.')
 
-// A Lexical state whose root holds a node outside the comment whitelist
-// (headings are article-only; the comment node set excludes them).
 const HEADING_BODY = {
   root: {
     type: 'root',
@@ -77,7 +75,6 @@ describe('commentEditInputSchema', () => {
   })
 
   it('rejects an invalid body', async () => {
-    // A legacy PT array is not a Lexical editor state — old clients are rejected.
     await expect(
       commentEditInputSchema.parseAsync({ rid: '42', body: [{ _type: 'block', _key: 'b1' }] }),
     ).rejects.toBeTruthy()

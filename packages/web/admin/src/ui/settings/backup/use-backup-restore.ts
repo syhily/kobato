@@ -17,7 +17,6 @@ interface XhrResult {
   json: unknown
 }
 
-/** XHR, not fetch: only XHR exposes real upload progress events. */
 function uploadWithProgress(
   url: string,
   file: File,
@@ -81,7 +80,6 @@ const PROGRESS_STAGES: readonly RestoreProgressStage[] = [
   'idle',
 ]
 
-/** Narrow the wire payload to the progress DTO; anything off-shape is dropped. */
 function parseRestoreProgressDto(json: unknown): RestoreProgressDto | null {
   if (typeof json !== 'object' || json === null || !('stage' in json)) {
     return null
@@ -95,9 +93,6 @@ function parseRestoreProgressDto(json: unknown): RestoreProgressDto | null {
   return { stage, percent, error }
 }
 
-/** Poll the merged staging/machine progress while a staging request runs.
- *  Tolerates a burst of transient failures (the drain closes the listener around
- *  the swap) before giving up with an `onGiveUp` notice. */
 async function pollRestoreProgress(
   signal: AbortSignal,
   onDto: (dto: RestoreProgressDto) => void,
@@ -129,9 +124,6 @@ async function pollRestoreProgress(
   }
 }
 
-/** After a decrypt/upload response dies on the wire: did the server accept
- *  the restore anyway? The swap closes the listener seconds later, so a
- *  machine phase of draining/restoring/completed means "yes". */
 async function probeRestoreMachineActive(signal: AbortSignal): Promise<boolean> {
   try {
     const res = await fetch('/api/admin/backup/restore-progress', { cache: 'no-store', signal })
@@ -145,8 +137,6 @@ async function probeRestoreMachineActive(signal: AbortSignal): Promise<boolean> 
   }
 }
 
-/** Wait out the server restart, then read the one-shot terminal report and
- *  toast the outcome. Returns false on timeout/abort (caller resets UI). */
 export async function waitForRestartAndReport(signal: AbortSignal, t: ToastTranslator): Promise<boolean> {
   for (let attempt = 0; attempt < READY_MAX_ATTEMPTS; attempt++) {
     if (signal.aborted) {
@@ -155,9 +145,6 @@ export async function waitForRestartAndReport(signal: AbortSignal, t: ToastTrans
     try {
       const res = await fetch('/ready', { cache: 'no-store', signal })
       if (res.ok) {
-        // The terminal report is consumed once; the job may still be flipping
-        // to its terminal phase right after the restart, so retry briefly
-        // before falling back to a neutral notice.
         let reported = false
         for (let read = 0; read < 5 && !reported && !signal.aborted; read++) {
           try {
@@ -183,15 +170,11 @@ export async function waitForRestartAndReport(signal: AbortSignal, t: ToastTrans
                 }
               }
             }
-          } catch {
-            // The status read is best-effort; the server is up either way.
-          }
+          } catch {}
           if (!reported) {
             await new Promise<void>((resolve) => setTimeout(resolve, 800))
           }
         }
-        // Aborted mid-report (the caller navigated away) — leave quietly:
-        // no toast, no forced reload dragging the user back.
         if (signal.aborted) {
           return false
         }
@@ -201,9 +184,7 @@ export async function waitForRestartAndReport(signal: AbortSignal, t: ToastTrans
         window.location.reload()
         return true
       }
-    } catch {
-      // Network errors during the restart are expected; keep polling.
-    }
+    } catch {}
     await new Promise<void>((resolve) => setTimeout(resolve, READY_POLL_MS))
   }
   if (!signal.aborted) {
@@ -233,20 +214,15 @@ const IDLE_STATE: UploadRestoreState = {
   passwordPending: false,
 }
 
-/** The upload-restore flow state machine: XHR upload (real percent) →
- *  optional password round-trip for encrypted backups (server-reported
- *  decrypt/extract progress) → swap → restart wait → reload. */
 export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | undefined }) {
   const { t } = useI18n()
   const [state, setState] = useState<UploadRestoreState>(IDLE_STATE)
   const xhrRef = useRef<XMLHttpRequest | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const pollRef = useRef<AbortController | null>(null)
-  // Mirror of state.pendingToken so async flows read it outside updaters.
   const tokenRef = useRef<string | null>(null)
 
   useEffect(() => {
-    // Copy the ref OBJECTS (stable) so the cleanup never reads .current off a render-scope ref.
     const xhrSlot = xhrRef
     const abortSlot = abortRef
     const pollSlot = pollRef
@@ -262,8 +238,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
     pollRef.current = null
   }, [])
 
-  /** Server-side staging progress (decrypt %, extraction) rides along while
-   *  the upload / decrypt request is in flight. */
   const startPolling = useCallback(() => {
     stopPolling()
     const controller = new AbortController()
@@ -288,7 +262,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
         })
       },
       () => {
-        // The poller died silently otherwise — the panel would spin forever.
         if (!controller.signal.aborted) {
           toast(t('admin.settings.backup.restore.progressStale'), { id: 'backup-progress-stale' })
         }
@@ -298,15 +271,12 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
 
   const reset = useCallback(() => {
     tokenRef.current = null
-    // Abort the restart-wait tail too — a reset must stop EVERY async leg,
-    // or a later waitForRestartAndReport would reload the page anyway.
     abortRef.current?.abort()
     abortRef.current = null
     stopPolling()
     setState(IDLE_STATE)
   }, [stopPolling])
 
-  /** Shared tail: the restore chain is running server-side; wait it out. */
   const enterTail = useCallback(() => {
     stopPolling()
     setState((prev) => ({ ...prev, pendingToken: null, pendingFileName: null, step: 'switching', percent: null }))
@@ -314,7 +284,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
     abortRef.current = new AbortController()
     const signal = abortRef.current.signal
     void (async () => {
-      // Give the swap leg a visible beat before the restart wait takes over.
       await new Promise<void>((resolve) => setTimeout(resolve, 2000))
       setState((prev) => (prev.active && prev.step === 'switching' ? { ...prev, step: 'restarting' } : prev))
       const done = await waitForRestartAndReport(signal, t)
@@ -358,7 +327,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
         if (status === 200) {
           const token = readEncryptedToken(json)
           if (token !== null) {
-            // Encrypted archive parked server-side — ask for the password.
             stopPolling()
             tokenRef.current = token
             setState((prev) => ({
@@ -411,8 +379,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
             return
           }
           stopPolling()
-          // The response may have died on the wire AFTER the server accepted
-          // the restore — probe the machine before declaring failure.
           if (await probeRestoreMachineActive(signal)) {
             enterTail()
             return
@@ -428,7 +394,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
         }
         stopPolling()
         if (res.status === 410) {
-          // The parked upload expired or was evicted — back to the upload step.
           toastApiError(
             new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.expired')),
             'admin.toast.restoreFailed',
@@ -437,7 +402,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
           reset()
           return
         }
-        // Wrong password (or a transient conflict): stay on the prompt for a retry.
         toastApiError(
           new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.failed')),
           'admin.toast.restoreFailed',
@@ -449,7 +413,6 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
     [csrfToken, enterTail, reset, startPolling, stopPolling, t],
   )
 
-  /** Give up on the password prompt — the parked upload expires server-side. */
   const cancelPending = useCallback(() => {
     abortRef.current?.abort()
     reset()

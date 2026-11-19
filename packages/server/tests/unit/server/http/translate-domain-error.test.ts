@@ -145,7 +145,6 @@ describe('server/http/translate-domain-error — translateDomainError', () => {
       )
       const wire = translated.issues![0]!
       expect(wire.message).toBe(message)
-      // Old consumers read `message`; the descriptor stays for new consumers.
       expect(wire.messageKey).toBe('admin.settings.rateLimit.error.attemptsMax')
       expect(wire.params).toEqual({ max: 1000 })
       expect(wire.fallbackMessage).toBe(expected['en-US'])

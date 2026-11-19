@@ -25,8 +25,6 @@ function setLoginMethod(method: 'password' | 'magic-link'): void {
 
 const capture = new SmtpCapture()
 
-/** Authenticated admin client kept for afterAll — a fresh password login
- *  is impossible while mail is still on (it stages an OTP instead). */
 let adminSession: { client: E2eClient; csrf: string } | null = null
 
 async function rememberAdminSession(client: E2eClient): Promise<void> {

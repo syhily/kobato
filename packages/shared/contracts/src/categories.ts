@@ -9,16 +9,11 @@ export const adminCategoryDto = z.object({
   og: z.string().nullable(),
   description: z.string(),
   sortOrder: z.number().int(),
-  // Live post count; mirrors the delete-block guard (postCount > 0 → 409).
-  // Computed by the service, not persisted.
   postCount: z.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
 })
 export type AdminCategoryDto = z.infer<typeof adminCategoryDto>
-
-// Admin categories wire — the single Zod source the `@kobato/api` categories
-// contract composes and the server validates against.
 
 export const adminCategoriesListInput = z.object({ q: z.string().optional() })
 export type AdminCategoriesListInput = z.infer<typeof adminCategoriesListInput>

@@ -1,9 +1,6 @@
 import { HEADLESS_DOM_MISSING_MESSAGE, resolveHeadlessDom } from '@kobato/inkling-internal/html/headless-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The port's process-level jsdom cache survives across tests in this file,
-// so the loader legs are ordered deliberately: the failure table (which
-// never populates the cache) runs first, the success/cache case runs last.
 describe('resolveHeadlessDom', () => {
   afterEach(() => {
     vi.unstubAllGlobals()

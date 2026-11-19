@@ -1,10 +1,4 @@
 import { renderLive } from '@kobato/inkling/tests/utils/render-live'
-// The footnote export byte contract:
-// the ref anchors, the definition `<li>` with its backref, and the
-// string-layer `<section class="footnotes">` wrap — pinned byte-exact so the
-// kobato SSR anchor contract cannot drift. Live path only (`renderLive` like
-// table-export.test.ts): an editor configured like InklingComposer
-// (DEFAULT_NODES + defaultTheme), a parsed state, `$convertToHtmlString`.
 import { describe, expect, it } from 'vitest'
 
 const ref = (text: string, targetKey: string) => ({
@@ -80,9 +74,6 @@ describe('footnote HTML export (live path)', () => {
       ]),
     )
 
-    // the run order is the anchor truth: keyA's row is fn-1 (its stored ref
-    // digit is ignored — the renumber engine owns digits while editing, the
-    // position owns them at export)
     expect(html).toBe(
       '<p><sup id="user-content-fnref-2"><a href="#user-content-fn-2">2</a></sup> and ' +
         '<sup id="user-content-fnref-1"><a href="#user-content-fn-1">1</a></sup></p>' +

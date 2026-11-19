@@ -10,7 +10,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Admin users routers against the real engine; only stub: the email sender (true external).
 vi.mock('@kobato/server/infra/email/sender.ts', () => ({
   sendAuthorInvite: vi.fn(),
   sendPasswordReset: vi.fn(),

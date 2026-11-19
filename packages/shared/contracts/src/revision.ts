@@ -16,7 +16,6 @@ export const adminRevisionDto = z.object({
 })
 export type AdminRevisionDto = z.infer<typeof adminRevisionDto>
 
-// Shared body-save input for the admin posts and pages controllers.
 export const saveBodyInput = z.object({
   id: z.string().min(1),
   body: lexicalEditorStateSchema,
@@ -26,8 +25,6 @@ export const saveBodyInput = z.object({
 })
 export type SaveBodyInput = z.infer<typeof saveBodyInput>
 
-// The server emits `warning` when a non-fatal side effect (image-library sync)
-// failed; the editor surfaces it instead of swallowing it.
 export const saveResultOutput = z.discriminatedUnion('status', [
   z.object({ status: z.literal('saved'), revision: adminRevisionDto, warning: z.string().optional() }),
   z.object({

@@ -35,8 +35,6 @@ export function PendingModerationPanel({ initial, emptyStateLineId }: PendingMod
   } = useQuery(
     orpcQuery.admin.comments.listPendingDashboard.queryOptions({
       input: { kind: 'all', offset, limit: PAGE_SIZE },
-      // The SSR payload is page 0 only — seeding it under later offsets would
-      // briefly show page-0 rows on every other page before refetch lands.
       initialData: offset === 0 ? initial : undefined,
     }),
   )
@@ -95,8 +93,6 @@ export function PendingModerationPanel({ initial, emptyStateLineId }: PendingMod
   const anyMutationPending =
     approveApi.isPending || rejectApi.isPending || approveDeletionApi.isPending || isListPending
 
-  // `data` is undefined only while a later page is loading — page 0 is always
-  // seeded from the SSR payload via `initialData`.
   const totalPages = data === undefined ? 1 : Math.max(1, Math.ceil(data.total / PAGE_SIZE))
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1
 
@@ -197,9 +193,7 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
   const timestampIso = isDeletion ? (item.deleteRequestedAtIso ?? item.createdAtIso) : item.createdAtIso
   const timestampLabel = timestampIso ? formatLocalDate(new Date(timestampIso), ROW_DATE_FORMAT, config) : ''
   return (
-    // Two-track row: stacks below `sm` so a phone user reads the excerpt first; on `sm+` the buttons float right.
     <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4">
-      {/* Convention: admin layouts stack via flex gap, never `space-*` (boundaries contract test). */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
           <span className="truncate font-medium text-foreground">{item.authorName}</span>

@@ -1,15 +1,3 @@
-/**
- * The thirteen leaf packages under `packages/shared/*`
- * (`packages/shared/{utils,i18n,cache,settings,assets,lexical,sanitize,contracts,seo}`)
- * are UI-runtime-free: they must never carry React into either bundle. The
- * product settings contexts/hooks live in `@kobato/web-client`
- * (`@kobato/web-client/settings/blog-settings-context`); this scan pins that
- * split — no `.tsx` source file and no `react` / `react-dom`
- * import (value OR type) anywhere under those `src` trees.
- *
- * Node-only imports are NOT this guard's concern — the client-bundle scan
- * owns that boundary.
- */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'

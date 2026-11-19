@@ -103,8 +103,6 @@ describe('trace sanitize — error projection', () => {
   })
 
   it('maps ORPCError codes to a stable orpc category', () => {
-    // The real class leaves `name` as the generic 'Error'; its stable
-    // code + HTTP status pair identifies it without reading the message.
     expect(projectError(new ORPCError('FORBIDDEN', { message: 'secret' }))).toEqual({
       type: 'ORPCError',
       category: 'orpc_forbidden',

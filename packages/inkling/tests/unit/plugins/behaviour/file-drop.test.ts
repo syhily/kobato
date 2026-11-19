@@ -7,7 +7,6 @@ vi.mock('lexical', async (importOriginal) => {
   const original = await importOriginal<typeof import('lexical')>()
   return {
     ...original,
-    // lets a test pin the selection to null even after selectEnd()
     $getSelection: () => (selectionMock.forceNull ? null : original.$getSelection()),
   }
 })
@@ -15,7 +14,6 @@ vi.mock('@lexical/clipboard', async (importOriginal) => {
   const original = await importOriginal<typeof import('@lexical/clipboard')>()
   return {
     ...original,
-    // spied so a test can prove the insert is skipped without a selection
     $insertDataTransferForRichText: vi.fn(original.$insertDataTransferForRichText),
   }
 })

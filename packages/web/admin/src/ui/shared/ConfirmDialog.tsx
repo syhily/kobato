@@ -28,8 +28,6 @@ export interface ConfirmDialogProps {
   onClose: () => void
 }
 
-/** Generic approve/delete dialog. The last truthy `state` is cached through
- *  the close animation so title/buttons don't blank mid-animation. */
 export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
   const { t } = useI18n()
   const [lastState, setLastState] = useState<ConfirmState | null>(state)

@@ -133,9 +133,6 @@ describe('snapshot: PasskeyManagementCard', () => {
 })
 
 describe('snapshot: LoginMethodCard', () => {
-  // The passkeyList query stays pending under SSR (no queryFn runs), so the passkey
-  // option always renders its disabled "register a passkey first" hint; only the
-  // mailReady / passkeyEnabled branches are exercisable here.
   it('renders the disabled hints when mail is not ready', () => {
     const html = stableHtml(
       renderInRouter(<LoginMethodCard loginMethod="password" passkeyEnabled={true} mailReady={false} />),
@@ -145,7 +142,6 @@ describe('snapshot: LoginMethodCard', () => {
     expect(html).toContain('邮箱链接登陆')
     expect(html).toContain('Passkey 登陆')
     expect(html).toContain('需要管理员先在「设置 → 邮件服务」完成邮件配置。')
-    // passkeyList pending => passkeyCount 0 => "register one first" hint.
     expect(html).toContain('需要先在下方「Passkey 管理」中注册至少一个 Passkey。')
   })
 

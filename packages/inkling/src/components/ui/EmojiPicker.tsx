@@ -1,9 +1,6 @@
 import { Picker } from 'emoji-mart'
 import React, { useEffect, useRef } from 'react'
 
-// the runtime instance is the picker's custom element, which also exposes an
-// update() method — emoji-mart ships dist/index.d.ts, but its types are `any`
-// throughout, so the instance shape relied on is declared locally
 interface EmojiMartInstance extends HTMLElement {
   update: (props: EmojiMartPickerOptions) => void
 }
@@ -64,11 +61,6 @@ export default function EmojiPicker({
   })
 
   useEffect(() => {
-    // Use the registered custom element class from the registry instead of
-    // the imported Picker class directly. When multiple copies of the bundle
-    // are loaded (e.g. UMD + ESM in Inkling's dev environment), only the first
-    // copy's class gets registered with customElements.define(). Instantiating
-    // an unregistered class throws "Illegal constructor".
     const pickerCandidate: unknown = customElements.get('em-emoji-picker') || Picker
     if (!isEmojiMartPickerConstructor(pickerCandidate)) {
       throw new TypeError('emoji-mart picker constructor is not available')

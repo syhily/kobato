@@ -2,10 +2,6 @@ import type { Database } from '@kobato/db/database.ts'
 
 import { describe, expect, it, vi } from 'vitest'
 
-// The SafeUser projections are the single owner of the "never leaves the
-// server" field list (password, lastIp, lastUa) — pinned through the select
-// argument the functions hand to drizzle.
-
 const SAFE_USER_COLUMNS = [
   'id',
   'createdAt',

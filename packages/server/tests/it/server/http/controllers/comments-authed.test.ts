@@ -113,9 +113,6 @@ describe('commentsAuthedRouter.searchMineEntities', () => {
   })
 })
 
-// Wire-shape coverage only — the delete-request lifecycle (ownership
-// fences, idempotent no-op, audit events) is pinned at the domain seam in
-// `packages/server/tests/it/server/domains/comments/moderation-flows.test.ts`.
 describe('commentsAuthedRouter — delete-request wire shape', () => {
   beforeEach(() => {
     initAllBatchers(getDatabaseHandle())

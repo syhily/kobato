@@ -26,7 +26,6 @@ export function isProgrammaticVolumeSupported(): boolean {
   return cachedVolumeSupport
 }
 
-/** Test seam: clears the memoized probe (same pattern as `__resetRateLimitsForTests`). */
 export function __resetProgrammaticVolumeSupportForTests(): void {
   cachedVolumeSupport = null
 }

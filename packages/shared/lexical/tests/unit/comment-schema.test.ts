@@ -7,9 +7,6 @@ import {
 } from '@kobato/lexical/comment-schema.ts'
 import { describe, expect, it } from 'vitest'
 
-// Comment fixtures mirror the Lexical comment capability set: multi-paragraph,
-// blockquote, nested lists, code block, math block, link, math-inline.
-
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }
 }
@@ -49,8 +46,6 @@ describe('commentEditorStateSchema', () => {
   it('enforces the list nesting cap', () => {
     expect(commentEditorStateSchema.safeParse(state([nestedList(COMMENT_LIST_MAX_DEPTH)])).success).toBe(true)
     expect(commentEditorStateSchema.safeParse(state([nestedList(COMMENT_LIST_MAX_DEPTH + 1)])).success).toBe(false)
-    // the cap counts list ancestry, not tree depth: a list inside a quote
-    // still starts at depth 1
     expect(commentEditorStateSchema.safeParse(state([element('extended-quote', [nestedList(1)])])).success).toBe(true)
     expect(
       commentEditorStateSchema.safeParse(state([element('extended-quote', [nestedList(COMMENT_LIST_MAX_DEPTH + 1)])]))
@@ -134,7 +129,6 @@ describe('commentEditorStateTextLength', () => {
       { type: 'math', version: 1, tex: '\\int x', mathml: '', svg: '' },
     ])
     const parsed = commentEditorStateSchema.parse(value)
-    // 'hello' + ('a' + 'bc') + linebreak + 'x()' + '\int x'
     expect(commentEditorStateTextLength(parsed)).toBe(5 + 3 + 1 + 3 + 6)
   })
 

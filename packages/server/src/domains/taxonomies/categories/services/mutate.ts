@@ -30,7 +30,6 @@ import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { idFromString } from '@kobato/utils/id.ts'
 
-// Warm key must match the OG route's inputs: `cat-` slug, empty description → site description.
 function categoryOgTarget(row: CategoryRow): OgWarmTarget {
   return {
     slug: `cat-${row.slug}`,
@@ -60,7 +59,6 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
     invalidateContent({ entity: 'category' })
-    // Warm the new content-hash OG key now, not on first crawler request.
     warmContentRenderCaches(categoryOgTarget(row))
     const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
@@ -92,7 +90,6 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
     throw taxonomyNotFound('category')
   }
   invalidateContent({ entity: 'category' })
-  // Rename/cover change derives a fresh content-hash key — re-warm under it.
   warmContentRenderCaches(categoryOgTarget(updated))
   const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: updated.name })
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)

@@ -19,12 +19,6 @@ import { createRequestHandler } from 'react-router'
 
 const log = getLogger('hono')
 
-/**
- * Static root for the client build: under SEA (`useVfs`) the whole
- * `build/client` tree is mounted read-only in the binary's VFS, so the same
- * `serveStatic` middleware serves it — its stat/stream reads are standard
- * `node:fs` calls the mount answers.
- */
 function clientStaticRoot(clientBuildPath: string): string {
   const root = seaVfsRoot()
   return root === null ? clientBuildPath : join(root, SEA_CLIENT_ASSET_PREFIX)
@@ -34,10 +28,6 @@ interface HonoNodeServerOptions<E extends Env = BlankEnv> extends HonoServerOpti
   listeningListener?: (info: AddressInfo) => void
   customNodeServer?: CreateNodeServerOptions
   onServe?: (server: ServerType) => void
-  /**
-   * Override the global Request/Response with lightweight versions; can
-   * break `request.clone()` `instanceof` checks. @default false
-   */
   overrideGlobalObjects?: boolean
   hostname?: string
   serveStaticOptions?: {
@@ -83,7 +73,6 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
 
   await mergedOptions.beforeAll?.(app)
 
-  /** Production-only: in dev, Vite serves assets and `build/client` does not exist yet. */
   if (PRODUCTION) {
     app.use(
       `/${import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR}/*`,
@@ -123,19 +112,6 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
       overrideGlobalObjects: mergedOptions.overrideGlobalObjects,
       hostname: mergedOptions.hostname,
     }
-    // Explicit socket timeouts — Node's defaults are wrong for this app:
-    // - `headersTimeout` covers header receipt only; a peer that needs more
-    //   than 20s to send headers is a slowloris, not a slow client. Node
-    //   re-checks sockets every `connectionsCheckingInterval` (default 30s),
-    //   so tighten that to keep the 20s cap meaningful.
-    // - `requestTimeout` covers receiving the ENTIRE request and defaults to
-    //   300s, which would cut off the backup upload/restore endpoints that
-    //   legitimately run under a 30-minute per-route budget. Disable it (0):
-    //   the `requestTimeout` middleware — 30s default, 30min for
-    //   `/api/admin/backup/upload-restore*` + `/api/setup/restore` — is the
-    //   single whole-request governor.
-    // A custom `createServer` (https / http2) owns its own socket options and
-    // replaces these defaults wholesale.
     const server = serve(
       mergedOptions.customNodeServer === undefined
         ? {

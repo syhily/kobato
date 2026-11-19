@@ -260,9 +260,6 @@ describe('$removeLink', () => {
     editor.getEditorState().read(() => {
       expect($nodesOfType(LinkNode)).toHaveLength(0)
       expect($getRoot().getTextContent()).toBe('hello')
-      // linkNode.select() collapses the caret to the end of the link's last
-      // text child (ElementNode.select with no offsets), so the removal
-      // leaves a collapsed caret at the end of the kept text
       const selection = $getSelection()
       expect($isRangeSelection(selection)).toBe(true)
       if ($isRangeSelection(selection)) {
@@ -782,8 +779,6 @@ describe('registerToolbarSelectionSync', () => {
     await selectText(editor, 'hello')
     const text = getPlainTextDom()
 
-    // editor.isComposing() is not reachable through jsdom composition events —
-    // spy the bail condition directly (same approach as the at-link tests)
     const composing = vi.spyOn(editor, 'isComposing').mockReturnValue(true)
     dispatchNativeSelection(text, 0, text, 5)
     expect(session.handle.getState().type).toBe('hidden')

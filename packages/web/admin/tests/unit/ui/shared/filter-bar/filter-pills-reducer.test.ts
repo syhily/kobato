@@ -1,10 +1,6 @@
 import { filterPillsReducer, type ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 import { describe, expect, it } from 'vitest'
 
-// Machine-level invariant matrix for the shared filter-pill machine. The
-// three consumers (comments, audit log, images) parametrize it with their
-// field-key union, so pill bookkeeping is pinned here once.
-
 type Field = 'status' | 'page' | 'author'
 
 function pill(field: Field, value: string = field, label: string = value): ActiveFilter<Field> {

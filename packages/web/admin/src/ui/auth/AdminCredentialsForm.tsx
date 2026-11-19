@@ -31,7 +31,6 @@ export interface LoginFormProps {
   actionData?: LoginActionData | null
 }
 
-// Each step posts to its own handler URL (a bare <Form> would loop the previous `action`); redirect rides along.
 function signinActionUrl(handler: 'identify' | 'passkey' | null, redirectTo?: string): string {
   const params = new URLSearchParams()
   if (handler !== null) {
@@ -45,12 +44,10 @@ function signinActionUrl(handler: 'identify' | 'passkey' | null, redirectTo?: st
 }
 
 export function useWebAuthnSupported(): boolean {
-  // Lazy initializer runs once on mount; avoids setState-in-effect.
   const [supported] = useState(() => typeof window !== 'undefined' && 'PublicKeyCredential' in window)
   return supported
 }
 
-// `passkey/auth-begin` returns `{ options: z.any() }`; narrow to the library's expected shape without an unsafe cast.
 function isAuthBeginResponse(value: unknown): value is { options: PublicKeyCredentialRequestOptionsJSON } {
   if (typeof value !== 'object' || value === null || !('options' in value)) {
     return false
@@ -66,19 +63,15 @@ function extractAuthOptions(value: unknown): PublicKeyCredentialRequestOptionsJS
   if (isAuthBeginResponse(value)) {
     return value.options
   }
-  // Unreachable in practice — throw so a malformed response surfaces as a caught error.
   throw new Error('Passkey service returned malformed data')
 }
 
 type LoginStep = 'email' | 'password' | 'passkey'
 
-// A cross-device ceremony can leave the browser promise pending forever;
-// past two minutes retire the run and surface a visible error.
 const PASSKEY_TIMEOUT_MS = 120_000
 
 export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: LoginFormProps) {
   const { t } = useI18n()
-  // Initial step derives from the identify answer so a fresh mount / SSR lands on the right step.
   const [step, setStep] = useState<LoginStep>(() =>
     actionData?.method === 'password' ? 'password' : actionData?.method === 'passkey' ? 'passkey' : 'email',
   )
@@ -89,11 +82,8 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
   const [passkeyPending, setPasskeyPending] = useState(false)
   const passkeyFormRef = useRef<HTMLFormElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
-  // Monotonic run id: a retry / timeout retires the in-flight ceremony so a
-  // late-resolving promise can never submit or overwrite a newer error state.
   const passkeyRunRef = useRef(0)
 
-  // actionData-driven step transitions (same sync-during-render pattern as OtpForm).
   const [lastActionData, setLastActionData] = useState(actionData)
   if (actionData !== lastActionData) {
     setLastActionData(actionData)
@@ -114,9 +104,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
       if (!isCurrent()) {
         return
       }
-      // Retire the run first so the abort's rejection lands as stale, not as an overwrite.
       passkeyRunRef.current += 1
-      // Dismiss the native prompt so the QR sheet doesn't linger behind the error state.
       WebAuthnAbortService.cancelCeremony()
       setPasskeyPending(false)
       setPasskeyError(t('auth.signin.passkeyTimeout'))
@@ -130,7 +118,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
       if (!isCurrent()) {
         return
       }
-      // Submit via a hidden form so the React Router action handles session creation
       const form = passkeyFormRef.current
       if (!form) {
         setPasskeyPending(false)
@@ -147,7 +134,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
       challengeInput.name = 'passkey_challenge'
       challengeInput.value = challenge
       form.appendChild(challengeInput)
-      // The router's `isSubmitting` takes over the disabled state from here.
       form.requestSubmit()
       setPasskeyPending(false)
     } catch (err) {
@@ -170,7 +156,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     }
   }, [email, t])
 
-  // Leaving the passkey step retires any in-flight ceremony and dismisses the lingering native prompt.
   const backToEmail = () => {
     passkeyRunRef.current += 1
     WebAuthnAbortService.cancelCeremony()
@@ -179,7 +164,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     setStep('email')
   }
 
-  // Unmounting retires any in-flight ceremony for the same reason.
   useEffect(() => {
     return () => {
       passkeyRunRef.current += 1
@@ -259,7 +243,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     )
   }
 
-  // The email and passkey states share the identify form's layout: locked input, scenario-specific primary button.
   const isPasskeyStep = step === 'passkey'
   return (
     <div className="flex w-full flex-col gap-6">
@@ -299,7 +282,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           />
         </div>
         {isPasskeyStep ? (
-          /* The ceremony launches from this click — inside the browser's transient-activation window. */
           <Button
             type="button"
             disabled={!webAuthnSupported || isSubmitting || passkeyPending}
@@ -351,7 +333,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           <p className="text-center text-sm text-muted-foreground">
             {passkeyPending ? t('auth.signin.passkeyVerifying') : t('auth.signin.passkeyPrompt')}
           </p>
-          {/* Passkey-only account with a failing ceremony is otherwise a lockout — identify always routes back here. */}
           <p className="text-center text-sm text-muted-foreground">
             {t('auth.signin.passkeyUnavailable')}
             <Link

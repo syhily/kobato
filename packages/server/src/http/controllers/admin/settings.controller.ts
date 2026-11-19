@@ -17,9 +17,6 @@ const impl = implementAdmin(adminSettingsContract)
 
 const update = impl.update.handler(async ({ input, context }) => {
   const editorId = safeBigInt(context.viewer.id)
-  // DomainError translation lives in orpc-base's domainErrorGuard —
-  // no per-controller catch here. The lock probe is injected here because
-  // domains/settings may not import the storage (Platform) domain.
   const { bundle, warnings } = await updateBlogSettingsSection(context.db, input.section, input.payload, editorId, {
     isStorageMigrationActive: () => isStorageMigrationActive(context.db),
   })
@@ -33,8 +30,6 @@ const update = impl.update.handler(async ({ input, context }) => {
     throw localizedOrpcError(context, 'INTERNAL_SERVER_ERROR', 'admin.settings.errors.saveReadFailed')
   }
   const masks = computeSecretMasks(bundle)
-  // Warnings are descriptors in the domain; the wire keeps the client's
-  // string contract with server-localized copy.
   const translator = createServerTranslator(context.localization.locale)
   return {
     section: projectSectionForAdmin(input.section, bundle, masks),
@@ -42,17 +37,12 @@ const update = impl.update.handler(async ({ input, context }) => {
   }
 })
 
-// Settings layout loader data behind `/admin/settings`: hydrate → eager
-// backfill → 503 semantics replicated from `layout.tsx` exactly.
 const bootstrap = impl.bootstrap.handler(async ({ context }) => {
   const { db } = context
   const bundle = await hydrateBlogSettings(db)
   if (bundle === null) {
     throw localizedOrpcError(context, 'SERVICE_UNAVAILABLE', 'admin.settings.errors.notInstalled')
   }
-  // Eager backfill: any section that is null but carries registry
-  // defaults gets written to DB and populated in the bundle copy before
-  // the missing-section check — matches the layout loader's order.
   const mutable = await backfillSettingsSections(db, bundle)
   const missing = Object.entries(mutable)
     .filter(([, value]) => value === null)

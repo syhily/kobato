@@ -17,12 +17,6 @@ import { createElement } from 'react'
 
 const log = getLogger('notifications.email')
 
-/**
- * The email side effect is ON only when mail itself is enabled (the master
- * switch still wins) AND the section's own toggle is not off. A missing
- * snapshot/section reads as OFF: boot-time producers can run before settings
- * hydration, and an email must never break them.
- */
 function notificationEmailsEnabled(): boolean {
   const mail = getBlogSettingsBundleSync()?.mail?.mail
   return mail?.enabled === true && mail.notificationEmails !== false
@@ -49,7 +43,6 @@ function renderNotificationEmail(
       receiver,
       preview: message.title,
       title: t.format(isAdminAlert ? 'email.notification.adminTitle' : 'email.notification.directTitle'),
-      // The resolver's output is plain text — React escapes it at render.
       rows: [
         { label: t.format('email.notification.rowTitle'), value: message.title },
         { label: t.format('email.notification.rowBody'), value: message.body },
@@ -66,18 +59,11 @@ function renderNotificationEmail(
 }
 
 function logSendResult(notificationId: number, userId: number, result: SendResult): void {
-  // An `ok:false` result is a normal, logged skip (disabled / unconfigured /
-  // upstream) — never an error the producer could have seen.
   if (!result.ok) {
     log.warn('notification email not sent', { notificationId, userId, reason: result.reason })
   }
 }
 
-/**
- * One email per recipient, sequentially (no batching exists in the mail
- * pipeline). Broadcasts are deliberately excluded: they fan out to every
- * user, which is exactly the class email is not for.
- */
 export async function sendNotificationEmail(
   db: Database,
   row: NotificationRow,
@@ -93,8 +79,6 @@ export async function sendNotificationEmail(
   const names = findUserNamesByIds(db, [...emails.keys()])
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const t = emailTranslator()
-  // One resolver call per row: the subject and the body always agree, and the
-  // same function feeds the inbox/thread read paths.
   const message = resolveNotificationMessage(row, t)
   const subject = notificationEmailSubject(row, siteIdentity.title, t, message.title)
   for (const [userId, email] of emails) {
@@ -103,16 +87,11 @@ export async function sendNotificationEmail(
       const result = await sendEmail(email, subject, html)
       logSendResult(row.id, userId, result)
     } catch (error) {
-      // One bad recipient must not starve the rest of the fan-out.
       log.error('failed to send notification email', { notificationId: row.id, error })
     }
   }
 }
 
-/**
- * Producer-facing seam: fire-and-forget so an SMTP outage never delays,
- * errors, or rolls back the in-app fan-out that already committed.
- */
 export function queueNotificationEmail(db: Database, row: NotificationRow, recipientIds: readonly number[]): void {
   fireAndForgetNotify(sendNotificationEmail(db, row, recipientIds), log, 'notification')
 }

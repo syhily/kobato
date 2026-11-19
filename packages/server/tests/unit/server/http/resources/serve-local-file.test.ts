@@ -61,7 +61,7 @@ describe('respondWithLocalFile', () => {
   let dir = ''
   let file = ''
   let mtimeMs = 0
-  const BODY = 'hello world' // 11 bytes
+  const BODY = 'hello world'
 
   const input = (overrides: Partial<Parameters<typeof respondWithLocalFile>[0]> = {}) => ({
     absPath: file,

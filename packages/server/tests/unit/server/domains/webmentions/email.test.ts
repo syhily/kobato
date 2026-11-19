@@ -4,8 +4,6 @@ import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/Adm
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-// Capture the seam call instead of rendering/sending: these tests pin the data mapping
-// (mention → layout props + subject suffix); layout and seam have their own suites.
 vi.mock('@kobato/server/infra/email/admin-notification.ts', () => ({
   sendAdminNotification: vi.fn(async () => ({ ok: true })),
 }))

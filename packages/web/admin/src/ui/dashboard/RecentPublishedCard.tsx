@@ -6,7 +6,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ArrowRightIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-/** tRich chunks renderer for the "write one" link (module scope — stable). */
 function renderNewPostLink(chunks: ReactNode[]): ReactNode {
   return (
     <Link to="/admin/posts/new" className="text-brand hover:underline">

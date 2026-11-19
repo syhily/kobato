@@ -117,7 +117,6 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
         const result = await eyeDropper.open()
         onChange(result.sRGBHex)
       } catch {
-        /* noop */
       } finally {
         document.body.style.removeProperty('pointer-events')
         hexInputRef.current?.focus()

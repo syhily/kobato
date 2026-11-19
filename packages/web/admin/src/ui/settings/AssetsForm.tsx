@@ -13,7 +13,6 @@ interface AssetsFormProps {
   assets: AssetsLoaderShape
 }
 
-// Upload limits: the asset domain / S3 storage / storage migration live in `StorageCards` above.
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
@@ -71,7 +70,6 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   )
 }
 
-// `robots.txt` is plain config text, so it stays on the settings PATCH; brand assets live elsewhere.
 function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
   const { t } = useI18n()
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
@@ -80,8 +78,6 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
     toState: (source) => ({ robotsTxt: source.branding.robotsTxt }),
     fromState: (state) => ({ branding: { robotsTxt: state.robotsTxt } }),
   })
-  // useWatch, not form.watch: the React Compiler memoizes render-time watch()
-  // results (stable form dep), freezing the textarea at its initial content.
   const robotsTxt = useWatch({ control: form.control, name: 'robotsTxt' })
 
   return (

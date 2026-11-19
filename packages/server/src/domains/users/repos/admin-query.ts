@@ -88,8 +88,6 @@ interface CommentStats {
 
 const EMPTY_COMMENT_STATS: CommentStats = { commentCount: 0, pendingCount: 0, lastCommentAt: null }
 
-// One grouped scan over just these users' comments. `lastCommentAt`
-// intentionally counts soft-deleted comments.
 async function aggregateCommentStats(db: Database, userIds: readonly number[]): Promise<Map<number, CommentStats>> {
   const stats = new Map<number, CommentStats>()
   if (userIds.length === 0) {
@@ -124,7 +122,6 @@ export async function listAdminUsers(
 ): Promise<AdminUserRow[]> {
   const conditions = buildAdminUsersConditions(filters)
 
-  // commentCount sort needs the full aggregate, so it LEFT JOINs before LIMIT.
   if (sortBy === 'commentCount') {
     const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
     const rows = await db
@@ -156,7 +153,6 @@ export async function listAdminUsers(
       .offset(offset)
 
     return rows.map((row) =>
-      // Fresh drizzle result row — safe to normalize in place.
       Object.assign(row, {
         role: row.role ?? null,
         commentCount: row.commentCount ?? 0,
@@ -166,7 +162,6 @@ export async function listAdminUsers(
     )
   }
 
-  // Default recency order: aggregate comments only for this page after LIMIT.
   const rows = await db
     .select({
       id: user.id,
@@ -196,7 +191,6 @@ export async function listAdminUsers(
 
   return rows.map((row) => {
     const stat = stats.get(row.id) ?? EMPTY_COMMENT_STATS
-    // Fresh drizzle result row — safe to normalize in place.
     return Object.assign(row, {
       role: row.role ?? null,
       commentCount: stat.commentCount,

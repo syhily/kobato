@@ -1,9 +1,6 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
-// Shared revision table for pages and posts. `(type, owner_id)` is a
-// polymorphic discriminator without a DB FK — the app enforces it in
-// transactions. `client_revision_token` rotates on every write (optimistic concurrency).
 export const content = sqliteTable(
   'content',
   {
@@ -18,8 +15,6 @@ export const content = sqliteTable(
     ownerId: integer('owner_id').notNull(),
     revisionNo: integer('revision_no').notNull(),
     status: text('status').notNull().default('draft'),
-    // Lexical editor state (`@kobato/lexical/schema`); every writer passes it
-    // explicitly, so no default — a missing body fails loudly.
     body: text('body', { mode: 'json' }).notNull(),
     imageSources: text('image_sources', { mode: 'json' })
       .notNull()
@@ -27,15 +22,8 @@ export const content = sqliteTable(
     headings: text('headings', { mode: 'json' })
       .notNull()
       .$defaultFn(() => []),
-    // Save-time projection of `body`, filled by the save pipeline: derived
-    // read-path data, never part of the editor contract or the
-    // version-conflict check (equality compares `body` only).
-    // Rendered via inkling headless `lexicalStateToHtml`.
     bodyHtml: text('body_html'),
-    // Plain text via `lexicalStateToPlainText` — search and revision diffs.
     bodyText: text('body_text'),
-    // Degraded feed variant of `bodyHtml` (math→TeX, code→plain pre,
-    // twoColumn flattened) matching the existing rssMode behavior.
     bodyHtmlFeed: text('body_html_feed'),
     authorId: integer('author_id'),
     clientRevisionToken: text('client_revision_token')
@@ -49,7 +37,6 @@ export const content = sqliteTable(
   ],
 )
 
-// Plain text kept separate so the main `post` table stays narrow; LIKE search joins this table for the body corpus.
 export const postSearchIndex = sqliteTable('post_search_index', {
   postId: integer('post_id').primaryKey().notNull(),
   plainText: text('plain_text').notNull().default(''),

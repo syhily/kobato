@@ -4,14 +4,6 @@ import { sanitizeHtmlEngine as nodeEngine } from '@kobato/sanitize/engine.node.t
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 
-// Byte-parity pin for the two sanitize engine entry points. SSR ships the
-// node engine's output and hydration compares it against the client render's
-// `__html` string, so both must produce identical BYTES — behavioral
-// equivalence is not enough. The engines share one DOMPurify core and differ
-// only in the DOM they bind; the fixtures cover every known divergence class,
-// so a wiring regression or a DOMPurify upgrade fails here instead of
-// hydrating badly.
-
 function expectParity(html: string, strategy: SafeHtmlStrategy): void {
   const config = strategyToConfig(strategy)
   expect(nodeEngine(html, config), `strategy=${strategy} html=${html.slice(0, 60)}`).toBe(browserEngine(html, config))

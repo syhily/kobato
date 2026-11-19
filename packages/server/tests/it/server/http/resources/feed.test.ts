@@ -21,9 +21,6 @@ import { feedRouter } from '@kobato/server/http/resources/feed.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { generateFeeds } from '@kobato/server/render/feed/generator.tsx'
 
-// The real file-cache registry: cold misses persist (fire-and-forget), warm
-// hits serve without regenerating. Seams: the feed generator; the rate limiter
-// runs real against the settings snapshot.
 const db = getTestDb()
 
 const BUILT = { rss: '<rss version="2.0">built</rss>', atom: '<feed>built</feed>' }
@@ -37,7 +34,6 @@ function requestFeed(url: string, headers?: Record<string, string>) {
   })
   app.route('/', feedRouter)
   app.onError(onErrorHandler)
-  // Sentinel SSR-style route that must never count against the feed bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
   return app.request(url, { headers })
 }
@@ -51,7 +47,6 @@ function feedParams(scope: string, locale: AppLocale = 'zh-CN') {
   }
 }
 
-/** The through() write is fire-and-forget; wait for the observable entry. */
 async function waitForCachedFeed(scope: string, locale: AppLocale = 'zh-CN'): Promise<void> {
   await vi.waitFor(async () => {
     expect(await get('feed', feedParams(scope, locale))).toEqual(BUILT)
@@ -94,7 +89,6 @@ describe('feed resource', () => {
   })
 
   it('rate-limits feed requests', async () => {
-    // Shrink the resource bucket so the second request in the window trips.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -112,7 +106,6 @@ describe('feed resource', () => {
   })
 
   it('never counts public non-feed requests against the feed bucket', async () => {
-    // Only the feed routes may draw from the feed bucket — never SSR pages.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -120,11 +113,9 @@ describe('feed resource', () => {
         resource: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
-    // Several hits past the bucket ceiling — none may count against it.
     for (let i = 0; i < 3; i++) {
       expect((await requestFeed('http://localhost/sitemap.xml')).status).toBe(200)
     }
-    // The feed endpoints themselves stay guarded by the same bucket.
     expect((await requestFeed('http://localhost/feed')).status).toBe(200)
     expect((await requestFeed('http://localhost/feed')).status).toBe(429)
   })
@@ -135,7 +126,6 @@ describe('feed resource', () => {
     expect(generateFeeds).toHaveBeenCalledTimes(1)
     await waitForCachedFeed('all')
 
-    // The corpus "changed" — a warm cache must still serve the stored entry.
     ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(REBUILT)
 
     const res = await requestFeed('http://localhost/feed')
@@ -214,8 +204,6 @@ describe('feed resource — conditional requests and locale variants', () => {
     await first.text()
     await waitForCachedFeed('all')
 
-    // A fresh date inside `generateFeeds` would change a body-derived tag only
-    // when the served body changes; a cache hit serves the same bytes.
     ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(REBUILT)
     const second = await requestFeed('http://localhost/feed')
 
@@ -274,7 +262,6 @@ describe('feed resource — conditional requests and locale variants', () => {
     const second = await requestFeed('http://localhost/feed')
     expect(second.status).toBe(200)
     await expect(second.text()).resolves.toBe(BUILT.rss)
-    // The feed scope does not list security → same key, cache hit.
     expect(generateFeeds).toHaveBeenCalledTimes(1)
   })
 
@@ -285,7 +272,6 @@ describe('feed resource — conditional requests and locale variants', () => {
     expect(generateFeeds).toHaveBeenCalledTimes(1)
     await waitForCachedFeed('all')
 
-    // Any section save advances the revision; the old key is unreachable.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Renamed Blog' },
@@ -302,7 +288,6 @@ describe('feed resource — conditional requests and locale variants', () => {
     ]
     expect(options.settings?.siteIdentity?.title).toBe('Renamed Blog')
 
-    // Both generations are on disk; only the new one is addressable.
     await vi.waitFor(async () => {
       expect(await get('feed', feedParams('all'))).toEqual(REBUILT)
     })

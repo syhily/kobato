@@ -36,7 +36,6 @@ function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', nodes: TEST_NODES, onError: () => {} })
 }
 
-/** An editor with a reconciled root element, so $getNearestNodeFromDOMNode / getElementByKey work in jsdom. */
 function createDomLinkedEditor(): { editor: LexicalEditor; rootElement: HTMLDivElement } {
   const editor = createTestEditor()
   const rootElement = document.createElement('div')

@@ -1,8 +1,3 @@
-// inkling's DEFAULT_TRANSFORMERS filtered down to the transformers whose node
-// classes the comment composer registers: deriving from the classes (not names)
-// keeps this in lockstep with COMMENT_EDITOR_NODES. The ``` fence captures its
-// info string, so ```math is the comment formula path.
-
 import type { Transformer } from '@kobato/inkling'
 
 import { DEFAULT_TRANSFORMERS } from '@kobato/inkling'

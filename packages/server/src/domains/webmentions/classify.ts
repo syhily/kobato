@@ -40,10 +40,6 @@ function anchorMarkerTypes(tag: string): WebmentionType[] {
   return MARKER_TYPES.filter(([marker]) => classes.includes(marker)).map(([, type]) => type)
 }
 
-/**
- * Strongest mf2 marker on an anchor resolving to the target canonical URL;
- * URL equality is exactly the link verification's (`normalizeForMatch`).
- */
 export function classifyWebmentionType(html: string, sourceUrl: string, targetCanonicalUrl: string): WebmentionType {
   const wanted = normalizeForMatch(targetCanonicalUrl)
   if (wanted === null) {

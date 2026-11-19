@@ -2,10 +2,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { z } from 'zod'
 
-/**
- * Custom validation messages: typed UI-catalog ids (the settings service maps
- * them into wire descriptors on write). `s3FieldRequired` carries `{label}`.
- */
 export const assetsValidationMessages = {
   endpointHttps: 'admin.settings.assets.error.endpointHttps',
   urlTemplate: 'admin.settings.assets.error.urlTemplate',
@@ -18,12 +14,6 @@ const coerceBoolean = z
   .union([z.boolean(), z.literal('true'), z.literal('false')])
   .transform((v) => (typeof v === 'boolean' ? v : v === 'true'))
 
-// The asset host/scheme pair also feeds image public URLs and music metadata. Storage:
-// S3 when `storage.enabled` and every bucket field is filled, local otherwise. Bucket
-// fields stay nullable when disabled; `secretAccessKey` follows "optional ⇒ keep existing".
-
-// Branding slots are managed via `/admin/branding/upload` + `/admin/branding/clear`, not
-// this PATCH — but must be declared or Zod strips them on read.
 const ROBOTS_PRINTABLE = /^[\t\n\r -~]*$/
 const robotsTxt = z
   .string()
@@ -37,7 +27,6 @@ const brandingObjectRef = z.object({
   contentType: z.string().min(1).max(128),
   size: z.number().int().min(0),
   updatedAt: z.string().min(1).max(64),
-  // Defaults to 's3' for refs persisted before local storage existed.
   driver: z.enum(['s3', 'local']).default('s3'),
 })
 
@@ -72,8 +61,6 @@ export const assetsSchema = z
     }),
     branding: z
       .object({
-        // The 5 SVG + 8 binary slots managed by `/admin/branding/upload` +
-        // `/admin/branding/clear`; absent until uploaded. Names mirror `packages/server/src/assets/defaults.ts`.
         faviconSvg: brandingObjectRef.optional(),
         logoSvg: brandingObjectRef.optional(),
         logoDarkSvg: brandingObjectRef.optional(),
@@ -96,7 +83,6 @@ export const assetsSchema = z
     if (!value.storage.enabled) {
       return
     }
-    // When the toggle is on, every bucket field must carry a real value (catches a hand-crafted PATCH).
     const required: { key: keyof typeof value.storage; label: string }[] = [
       { key: 'endpoint', label: 'Endpoint' },
       { key: 'region', label: 'Region' },
@@ -116,8 +102,6 @@ export const assetsSchema = z
     }
   })
 
-// Install-form seed for the storage/upload buckets (the `asset` host/scheme pair
-// comes from the request hostname); consumed by `services/install-flow.ts` only.
 export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
   storage: {
     enabled: false,
@@ -132,18 +116,6 @@ export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
   upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
 } as const
 
-// Write-path-only storage URL rules, shared with the migration-target input
-// (`http/controllers/admin/storage.controller.ts`). They deliberately live
-// OUTSIDE `assetsSchema`: hydrate shares that schema, and a stored `http://`
-// endpoint from an existing install must keep hydrating — a failing row
-// would silently fall back to section defaults and disable storage. New
-// writes, however, must not persist a plaintext endpoint (credentials ride
-// every request to it) or an open-redirect-capable CDN template.
-/**
- * Write-path storage-URL rules' custom messages: typed UI-catalog ids. The
- * settings service maps them into wire descriptors (English fallback + path),
- * so a rejected save never shows a raw id.
- */
 export const STORAGE_ENDPOINT_HTTPS_MESSAGE = assetsValidationMessages.endpointHttps
 export const STORAGE_URL_TEMPLATE_MESSAGE = assetsValidationMessages.urlTemplate
 
@@ -151,11 +123,6 @@ export function isSafeStorageEndpoint(endpoint: string): boolean {
   return endpoint === '' || endpoint.toLowerCase().startsWith('https://')
 }
 
-/** The redirect boundary (`http/resources/storage-redirect.ts`) treats a
- *  template containing `{src}` as the FULL 302 target (must be an https
- *  URL) and anything else as a suffix appended to the object URL (must not
- *  carry a scheme or a protocol-relative `//` prefix — either would let the
- *  template bounce visitors to an arbitrary origin). */
 export function isSafeStorageUrlTemplate(template: string): boolean {
   if (template === '') {
     return true

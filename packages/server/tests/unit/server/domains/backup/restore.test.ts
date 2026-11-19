@@ -218,7 +218,6 @@ describe('services/backup — stageBackup encrypted archives', () => {
     const error: unknown = await stageBackup(encrypted).catch((caught: unknown) => caught)
     expect(error).toBeInstanceOf(EncryptedBackupPasswordRequired)
     const dir = (error as EncryptedBackupPasswordRequired).dir
-    // The perimeter parks this dir for the follow-up decrypt call.
     expect(existsSync(dir)).toBe(true)
     rmSync(dir, { recursive: true, force: true })
   })
@@ -244,7 +243,6 @@ describe('services/backup — stageBackup encrypted archives', () => {
       const stages = new Set(reports.map((report) => report.stage))
       expect(stages.has('decrypting')).toBe(true)
       expect(stages.has('extracting')).toBe(true)
-      // The decrypt leg knows the total (the encrypted file size); the extract leg does not.
       const decryptReports = reports.filter((report) => report.stage === 'decrypting')
       const lastDecrypt = decryptReports[decryptReports.length - 1]!
       expect(lastDecrypt.totalBytes).toBe(encrypted.length)

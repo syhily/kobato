@@ -1,11 +1,3 @@
-// Bundled OpenObserve provisioning assets: the four versioned v8 dashboards and
-// the fail-closed RUM privacy VRL. These are RAW (unpacked) SEA assets, so they
-// are read through `readAssetTextOrDisk` — the VFS mount under SEA, the source
-// tree otherwise — NEVER the packed `natives/*` blob channel. Main thread only:
-// the VFS mount is invisible to worker threads. The content fingerprint is the
-// HMAC stored as `provisionedFingerprint`; touching any asset makes every
-// installation re-provision at boot.
-
 import {
   OBSERVABILITY_DASHBOARD_FILES,
   SEA_OBSERVABILITY_DASHBOARD_PREFIX,
@@ -23,11 +15,6 @@ const log = getLogger('observability.assets')
 
 const ASSET_DIR = join(import.meta.dirname, 'assets')
 
-/**
- * Asset-set fingerprint purpose, independent of the connection/runtime
- * purposes: rotating `security.encryptionKey` invalidates it, which simply
- * triggers one re-provision.
- */
 const ASSET_FINGERPRINT_PURPOSE = 'observability-assets'
 const ASSET_FINGERPRINT_VERSION = 1
 
@@ -53,7 +40,6 @@ function assetText(key: string, diskPath: string): string {
   return text
 }
 
-/** VRL text as installed into OpenObserve (trimmed; O2 appends its own sentinel). */
 function readVrl(): string {
   return assetText(SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY, 'rum-privacy.vrl').trim()
 }
@@ -74,12 +60,6 @@ function readDashboards(): ObservabilityDashboardAsset[] {
   })
 }
 
-/**
- * Fingerprint of an asset payload. Pure (exported for tests): `contents` is the
- * VRL text followed by each dashboard's JSON in `OBSERVABILITY_DASHBOARD_FILES`
- * order. Keyed with the deployment key so the value is safe to expose to the
- * admin UI.
- */
 export function observabilityAssetFingerprint(contents: readonly string[]): string {
   return secretHmac(ASSET_FINGERPRINT_PURPOSE, JSON.stringify({ version: ASSET_FINGERPRINT_VERSION, contents }))
 }
@@ -100,7 +80,6 @@ export function getObservabilityAssets(): ObservabilityAssets {
   return cached
 }
 
-/** The current asset fingerprint; null when the bundle cannot be read (logged, never thrown on the status path). */
 export function currentObservabilityAssetFingerprint(): string | null {
   try {
     return getObservabilityAssets().fingerprint

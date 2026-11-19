@@ -8,12 +8,6 @@ import { describe, expect, it } from 'vitest'
 
 mockTanstackQuery()
 
-// useMutation hooks run during render even though their effects don't fire
-// under SSR — stubbed to avoid network plumbing.
-
-// The render helper's BlogSettingsProvider seeds the full settings bundle;
-// CommentsRoot wires the rest internally — tests only feed props.
-
 const commentsData = (count: number, roots: number): CommentsData => ({
   count,
   roots_count: roots,

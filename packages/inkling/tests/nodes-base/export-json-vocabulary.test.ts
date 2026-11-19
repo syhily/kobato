@@ -7,17 +7,6 @@ import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Drift guard for the cards whose `exportJSON` is a hand-written key
- * list: the serialized vocabulary must stay tied to the card's declared
- * `properties`. Video/File derive `exportJSON` from the generated path, so
- * this pins the agreement for them; Image keeps a hand-written override
- * because its persisted key order is historical, so this is the check that
- * fails when a property is added without updating the override. Bookmark is
- * excluded — its serialized shape (nested `metadata`) is deliberately not a
- * flat property list.
- */
-
 const editor: LexicalEditor = createHeadlessEditor({ nodes: [BaseImageNode, BaseVideoNode, BaseFileNode] })
 
 function declaredPropertyNames(nodeClass: { getPropertyDefaults(): Record<string, unknown> }): string[] {
@@ -53,8 +42,6 @@ describe('card exportJSON vocabulary', function () {
       () => editor,
       () => {
         const json = $createBaseImageNode().exportJSON()
-        // the persisted key order differs from `imageProperties` order and
-        // must not change — payloads stay byte-identical
         expect(Object.keys(json)).toEqual([
           'type',
           'version',

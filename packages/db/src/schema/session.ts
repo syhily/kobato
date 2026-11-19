@@ -1,9 +1,6 @@
 import { user } from '@kobato/db/schema/user.ts'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Server-side session store. `userId` stays NULL while an OTP challenge
-// is pending (set once login completes); `data` is the plain-JSON
-// `BlogSessionData`; meta fields are flat columns.
 export const session = sqliteTable(
   'session',
   {

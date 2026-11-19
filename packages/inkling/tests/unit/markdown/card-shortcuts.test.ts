@@ -119,10 +119,6 @@ describe('$fireFenceKeyboardShortcut', () => {
 })
 
 describe('$fireFenceKeyboardShortcut without the code card registered', () => {
-  // The class comes from the editor's registered-node map, so a
-  // card-free composition (the ./core entry) gets no fence shortcut — the
-  // paragraph stays untouched and the event is NOT consumed, letting the
-  // caller fall through to its other key handling.
   function createCardlessEditor(): LexicalEditor {
     return createEditor({
       namespace: 'test',

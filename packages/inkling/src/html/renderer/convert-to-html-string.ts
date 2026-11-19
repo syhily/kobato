@@ -22,21 +22,8 @@ function $isInlineMarkupTextEntity(node: LexicalNode): node is TextNode & Inline
   return $isTextNode(node) && hasInlineMarkupProbe(node) && node.isInlineMarkupEntity() === true
 }
 export default function $convertToHtmlString(editor: LexicalEditor, options: ExportDOMOptions = {}): string {
-  // One read-only render context per string render — the only export-time view
-  // the element transformers and TextContent receive. Card exportDOM builds its
-  // own context per call.
-  //
-  // The string layer itself stays verbatim: sanitization happens inside the card
-  // renderers via the render context (`sanitizeBasicHtml` / `sanitizeCardHtml` /
-  // `escapeText`) before markup reaches this layer. Do NOT add a blanket
-  // sanitize here — it would double-escape markup the renderers already
-  // sanitized.
   const context = createRenderContext(options)
 
-  // The one type dispatch every exportDOM splice goes through — top-level
-  // cards and inline markup (entities and decorators) alike: 'inner' takes
-  // the element's innerHTML, 'value' its value property, anything else
-  // (including an absent type) its outerHTML.
   function renderExportOutput(output: {
     element: HTMLElement | DocumentFragment | Text | null
     type?: ExportDOMOutputType
@@ -96,10 +83,6 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
       }
 
       if ($isInlineMarkupTextEntity(child)) {
-        // A TextNode entity whose export is element markup (`<sup><a…>`), not
-        // text — flush the pending run here (the pre-loop flush never sees
-        // it: entities ARE TextNodes) and splice the export like the
-        // inline-decorator branch below.
         if (!textContent.isEmpty()) {
           output.push(textContent.render())
           textContent.clear()
@@ -140,18 +123,12 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
     }
   }
 
-  // Inkling keeps a blank paragraph at the end of a doc; it must not render.
-  // A post-processor's doc-end trailing run (the footnote definition run)
-  // sits after it, so walk back past the claimed run nodes to the last prose
-  // element before checking.
   let lastProseIndex = children.length - 1
   while (lastProseIndex >= 0 && isTrailingRunNode(children[lastProseIndex])) {
     lastProseIndex -= 1
   }
   const lastProse = children[lastProseIndex]
   if (lastProse && $isParagraphNode(lastProse) && lastProse.getTextContent().trim() === '') {
-    // splice by the output-side index — a paragraph always exports non-null,
-    // so its mapped index is the entry to remove
     const removedIndex = outputIndexByChild[lastProseIndex]
     output.splice(removedIndex, 1)
 

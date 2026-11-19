@@ -10,12 +10,10 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// adminTagsRouter against the real engine; audit rows flushed from the batcher.
 const db = getTestDb()
 
 let adminId = 0
 
-// audit_log.actor_id references user.id: the editor must be a real row for the FK.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)

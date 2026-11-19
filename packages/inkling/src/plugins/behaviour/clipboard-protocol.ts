@@ -47,10 +47,6 @@ export function getModifierState(editor: LexicalEditor): ModifierState {
 
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:', 'ftp:'])
 
-// Input-side link acceptance: decides "should this pasted text become a link".
-// The export-side counterpart `isSafeUrl` keeps only http/https/relative. The two
-// sets differ deliberately: a pasted ftp/mailto/tel link is live in the editor and
-// blanked on export (pinned in clipboard-protocol.test.tsx).
 export function isPasteableLinkUrl(url: string): boolean {
   if (/\s/.test(url)) {
     return false

@@ -11,10 +11,8 @@
 // stored spelling is canonical — `Intl.getCanonicalLocales` owns the grammar
 // and the casing, so `zh-hant-tw` is persisted as `zh-Hant-TW`.
 
-/** Longest plausible BCP 47 tag (language + script + region + variants + extensions). */
 export const CONTENT_LANGUAGE_MAX_LENGTH = 63
 
-/** The canonical form of a BCP 47 tag, or `null` when the input is blank or malformed. */
 export function canonicalContentLanguage(value: string | null | undefined): string | null {
   if (value === null || value === undefined) {
     return null
@@ -30,11 +28,6 @@ export function canonicalContentLanguage(value: string | null | undefined): stri
   }
 }
 
-/**
- * Whether a metadata input is acceptable: blank (unset) or a well-formed
- * BCP 47 tag. Mirrors the server's write strictness so the editor can flag a
- * bad tag before the request leaves the browser.
- */
 export function isContentLanguageInput(value: string): boolean {
   return value.trim() === '' || canonicalContentLanguage(value) !== null
 }

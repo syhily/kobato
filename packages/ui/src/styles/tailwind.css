@@ -131,9 +131,6 @@
   --input: var(--border-strong);
   --ring: var(--brand);
 
-  /* Two-layer focus ring: a 2px surface gap, then a 2px brand ring.
-     --ring-color tracks --ring (the shadcn slot); do not diverge them
-     without also updating --shadow-focus in the bridge. */
   --ring-gap-color: var(--canvas);
   --ring-color: var(--ring);
 
@@ -669,7 +666,6 @@ pre.shiki span {
 
   --shadow-focus: 0 0 0 2px var(--ring-gap-color), 0 0 0 4px var(--ring-color);
 
-  /* Semantic elevation tiers. */
   --shadow-raised: var(--shadow-raised);
   --shadow-popover: var(--shadow-popover);
   --shadow-modal: var(--shadow-modal);
@@ -778,11 +774,6 @@ pre.shiki span {
   }
 }
 
-/*
- * Body font chain. Defined as a variable so a configured globalFamily
- * (blogSettings.fonts.globalFamily) can prepend a custom family at runtime
- * via root.tsx; without one the default OPPO Sans CJK chain applies.
- */
 :root {
   --font-body:
     'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
@@ -792,10 +783,6 @@ pre.shiki span {
   --font-serif: 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif;
 }
 
-/*
- * Contract-pinned against src/lib/font-stacks.ts
- * (tests/unit/contract/font-stacks.test.ts) — change both or neither.
- */
 :lang(en-US) {
   --font-body:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans',
@@ -833,11 +820,6 @@ body {
   box-sizing: border-box;
 }
 
-/* Theme switch wipe: the old snapshot stays put while the new one is
-   revealed by a clip-path wipe (top-down into dark, bottom-up into light).
-   The :root.dark gate keys direction off the RESULTING theme — the new
-   snapshot is captured after the class swap. Reduced-motion users never
-   start a transition, so no CSS guard is needed here. */
 ::view-transition-old(root) {
   animation: none;
   mix-blend-mode: normal;

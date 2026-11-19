@@ -12,13 +12,11 @@ describe('CSP middleware', () => {
   function makeApp({ isDev = false }: { isDev?: boolean } = {}): Hono<Env> {
     const app = new Hono<Env>()
 
-    // Mimic the nonce-generation middleware
     app.use('*', async (c, next) => {
       c.set('requestContext', makeRequestContext({ cspNonce: 'test-nonce-12345' }))
       await next()
     })
 
-    // Mimic the dynamic-CSP middleware (simplified inline copy)
     app.use(async (c, next) => {
       await next()
       const nonce = c.var.requestContext.cspNonce

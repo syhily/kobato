@@ -5,10 +5,6 @@ import { isRecord } from '@kobato/server/domains/settings/services/section-patch
 import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 
-/**
- * Shape the validated payload into the row to persist: omitted secrets carry over from
- * the stored row, and the assets `branding` bucket merges instead of replacing.
- */
 export function applySectionPatch(
   section: SettingsSection,
   validated: Record<string, unknown>,
@@ -17,7 +13,6 @@ export function applySectionPatch(
   let row = validated
   const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
   if (secretConfigs.length > 0) {
-    // An omitted secret keeps the stored value; a patch including every secret preserves nothing.
     const needsExisting = secretConfigs.some((config) => !hasSecretInRow(row, config.path, config.field))
     if (needsExisting) {
       for (const secretConfig of secretConfigs) {
@@ -31,10 +26,6 @@ export function applySectionPatch(
   return row
 }
 
-/**
- * Encrypt every plaintext secret on a shallow row copy; already-encrypted values
- * (recognised by their prefix) pass through unchanged.
- */
 export function encryptSecretsInRow(section: SettingsSection, row: Record<string, unknown>): Record<string, unknown> {
   const configs = SECRET_FIELDS.filter((f) => f.section === section)
   if (configs.length === 0) {

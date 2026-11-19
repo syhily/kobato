@@ -72,9 +72,6 @@ export interface LibraryImageItem {
   alt?: string
   width?: number | null
   height?: number | null
-  /* Host-schema pass-through keys: carried on the insert dataset, ignored by
-     the stock image declaration, persisted only when the host's own card
-     declaration declares them as properties. */
   thumbhash?: string
   storagePath?: string
   imageId?: string
@@ -109,9 +106,6 @@ export interface TelemetrySettings {
   telemetry?: TelemetryHandler
 }
 
-// The host's card-behaviour contract, closed: every key the editor reads is
-// declared on a per-area slice and nothing else is accepted, so renaming or
-// tightening a key breaks host code loudly at compile time.
 export interface CardConfig
   extends
     GifSettings,
@@ -130,10 +124,6 @@ export interface InklingHostIntegrationContextValue {
   dragScrollContainerSelector?: string
 }
 
-/* The editor-level channel: uploader and error sink, stable for the editor's
- * lifetime (the `useFileUpload` identity contract in
- * src/inkling/hooks/useMediaCardUpload.ts), so one context serves every
- * consumer. */
 export interface InklingHostEssentials {
   fileUploader: FileUploader
   onError: (error: unknown, info: React.ErrorInfo) => void
@@ -142,18 +132,12 @@ const InklingHostEssentialsContext = React.createContext<InklingHostEssentials>(
   fileUploader: {
     useFileUpload: () => ({ upload: () => Promise.resolve(undefined) }),
   },
-  onError: () => {
-    /* noop */
-  },
+  onError: () => undefined,
 })
 export function useInklingHostEssentials(): InklingHostEssentials {
   return React.useContext(InklingHostEssentialsContext)
 }
 
-/* The feature-level channels: one context per CardConfig slice, so a slice's
- * identity change re-renders only that channel's consumers. Telemetry is
- * excepted — it is page-global, read from props, and handed to the telemetry
- * port directly. */
 const InklingGifSettingsContext = React.createContext<GifSettings>({})
 const InklingLinkingSettingsContext = React.createContext<LinkingSettings>({})
 const InklingSnippetSettingsContext = React.createContext<SnippetSettings>({})

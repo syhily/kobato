@@ -60,7 +60,6 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
           // Cancel the upstream reader first — an un-cancelled chunked body can
           // trickle forever; the catch swallows cancel-on-errored-stream rejections.
           void rawReader.cancel().catch(() => undefined)
-          // An `HTTPException` lets Hono's handler emit 413 — a plain Error would 500.
           controller.error(localizedHttpException(413, 'error.api.payloadTooLarge'))
           return
         }

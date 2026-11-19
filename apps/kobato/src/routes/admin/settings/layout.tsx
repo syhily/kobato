@@ -17,9 +17,6 @@ export interface SettingsOutletContext extends ParentContext {
   masks: SecretMasks
 }
 
-// Single loader read shared by every section route; saves don't revalidate it — cards adopt the authoritative
-// save response as their baseline. The 503 guard lives once in `admin.settings.bootstrap`; this loader only
-// translates it back to the thrown Response.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller } = createSsrCaller({ request, context })
   try {

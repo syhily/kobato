@@ -47,11 +47,8 @@ export function useEditorShellState<
 
   const isEditing = mode === 'edit' && detail !== undefined
 
-  // Create mode has no `detail` — once the async IndexedDB load resolves,
-  // the restored draft body is what PageBodyEditor must mount with instead.
   const [restoredCreateBody, setRestoredCreateBody] = useState<LexicalEditorState | null>(null)
 
-  // `detail` is the loader-stable reference the screen memoizes.
   const initialBody = useMemo<LexicalEditorState>(() => {
     return deriveBaselineRevision(detail)?.body ?? restoredCreateBody ?? EMPTY_LEXICAL_EDITOR_STATE
   }, [detail, restoredCreateBody])
@@ -87,10 +84,6 @@ export function useEditorShellState<
 
   const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
-  // Render-phase state adjustment (react-compiler-safe pattern): hydrate once
-  // when the create draft resolves. Latch only when a stored draft actually
-  // arrived — the load is async, so latching on the first null render would skip
-  // the restore while the banner still claims a restored local draft.
   const [createDraftHydrated, setCreateDraftHydrated] = useState(false)
   if (!isEditing && !createDraftHydrated && createDraft.loadedDraft !== null) {
     setCreateDraftHydrated(true)
@@ -99,15 +92,10 @@ export function useEditorShellState<
     replaceBody(createDraft.loadedDraft.body, `create:restored:${createDraft.loadedDraft.savedAt}`)
   }
 
-  // Persist reports back through these notifications only; the meta draft
-  // stays here because the create-mode hydration above also writes it.
   const markMetaPublished = useCallback(() => {
     setMeta((m) => ({ ...m, published: true }))
   }, [])
 
-  // Persist owns the revision race (expected token + latest/published), both
-  // autosave freeze legs, the local-draft conflict, and the persisted
-  // baseline — everything below is read-only projection of its output.
   const {
     status,
     displaySaveAtMs,
@@ -156,7 +144,6 @@ export function useEditorShellState<
     createDraft,
   })
 
-  // Baseline timestamp — single-owner projection from editor-shell-derived.
   const baselineUpdatedAtMs = useMemo(() => (isEditing ? deriveBaselineUpdatedAtMs(detail) : null), [isEditing, detail])
 
   const publishState = useMemo<PublishState>(

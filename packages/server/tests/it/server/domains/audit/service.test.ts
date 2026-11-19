@@ -16,9 +16,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Real write path recordAuditEvent → AuditLogBatcher → `audit_log` row,
-// asserted after an explicit flush. No mocks.
-
 const db = getTestDb()
 
 function makeRequestFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
@@ -42,7 +39,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: an armed flush timer would insert stale rows into the next case.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -72,7 +68,6 @@ describe('audit/service', () => {
     it('swallows errors and logs them without throwing', async () => {
       expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
-      // The real logger, observed through the capture ring.
       expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
       expect(await db.select().from(auditLog)).toHaveLength(0)
     })
@@ -116,7 +111,6 @@ describe('audit/service', () => {
     it('combines buildAuditContext and recordAuditEvent into one real row', async () => {
       initAllBatchers(getDatabaseHandle())
 
-      // audit_log.actor_id is a real FK — the actor must exist.
       const [actor] = await db
         .insert(userTable)
         .values({ name: 'Author', email: `author-${crypto.randomUUID()}@example.com`, password: 'p', role: 'author' })

@@ -1,7 +1,5 @@
 import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
 
-// Taiwan Traditional Chinese — written and reviewed on its own, never
-// produced by converting the Simplified catalog.
 export const uiMessagesZhTW = {
   'common.action.back': '返回',
   'common.action.cancel': '取消',

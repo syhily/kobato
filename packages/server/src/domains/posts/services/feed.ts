@@ -30,19 +30,11 @@ export interface FeedPostSelection {
   limit?: number
 }
 
-/**
- * Taxonomy resolution for feed scoping, caller-wired by the renderer —
- * importing the taxonomies resolvers would close the domain DAG.
- */
 export interface FeedTaxonomyResolvers {
   resolveCategory: (db: Database, value: string) => Promise<{ id: number } | null>
   resolveTag: (db: Database, value: string) => Promise<{ name: string } | null>
 }
 
-/**
- * Post selection for the feed channel: `visible=false` posts stay listed,
- * scheduled posts do not; an unresolvable scope yields an empty feed.
- */
 export async function selectFeedPosts(
   db: Database,
   options: FeedPostSelection,

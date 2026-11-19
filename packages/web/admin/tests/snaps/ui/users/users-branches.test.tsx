@@ -7,9 +7,6 @@ import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { UsersView } from '@kobato/web-admin/ui/users/UsersView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// UsersView's list query and filters hook are hoisted singletons. Covers populated rows,
-// empty, skeleton, error-toast fallthrough, active search and sentinels.
-
 const controller = vi.hoisted((): { filters: UsersFilters } => ({
   filters: {
     q: '',
@@ -46,7 +43,6 @@ queryMocks.infinite = {
   fetchNextPage: vi.fn(),
 }
 
-// File-level stub: one test drives the search term (real hook's SSR default is empty).
 vi.mock('@kobato/ui/lib/use-debounced-search.ts', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))

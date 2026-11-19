@@ -1,7 +1,3 @@
-// Both transport seams (RPCHandler's `clientInterceptors` for `/rpc/*`,
-// createRouterClient's for `createSsrCaller`) receive the procedure `path`, so spans
-// carry a stable name and never input.
-
 import type { Span } from '@kobato/server/infra/trace/facade.ts'
 
 import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'

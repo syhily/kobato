@@ -23,7 +23,6 @@ function makeDashboardExcerpt(raw: string | null): string {
   if (!raw) {
     return ''
   }
-  // `content` is degraded HTML, not markdown — strip tags before excerpting.
   const trimmed = raw
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
@@ -168,7 +167,6 @@ export async function loadAllComments(db: Database, options: LoadAllCommentsOpti
 
   return {
     comments: comments.map((c) =>
-      // Fresh object out of withCommentBadgeTextColor — safe to extend in place.
       Object.assign(withCommentBadgeTextColor(c), {
         pageTitle: c.pageTitle,
         pagePublicId: c.pagePublicId,

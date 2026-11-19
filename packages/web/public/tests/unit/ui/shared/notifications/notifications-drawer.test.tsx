@@ -10,8 +10,6 @@ import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-
 import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The「去处理」button renders a Router Link. Render it as a plain anchor and
-// prevent the default like the real Link does, so the suite stays Router-free.
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -36,8 +34,6 @@ const control = mockTanstackQuery()
 const { NotificationsDrawer } = await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx')
 const { isForkReply } = await import('@kobato/web-public/ui/shared/notifications/NotificationDetailPane.tsx')
 
-// The drawer reads `useI18n()`; a render wrapper (not inline JSX) keeps the
-// provider mounted across `rerender` calls.
 function render(ui: ReactElement) {
   return rtlRender(ui, {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -113,8 +109,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
   })
 
   it('disables mark-all-read only on a known zero count', () => {
-    // `null` means "unknown" (not loaded / failed), not "zero" — marking read
-    // stays available, since the list may well have unread rows.
     const { rerender } = render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={null} />)
     expect(screen.getByLabelText('全部标为已读').hasAttribute('disabled')).toBe(false)
 
@@ -229,7 +223,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     fireEvent.click(action)
 
     expect(control.mutation.mutate).toHaveBeenCalledWith({ ids: ['1'] })
-    // The click stayed on the action — the thread pane did not open.
     expect(screen.queryByLabelText('返回列表')).toBeNull()
   })
 
@@ -275,8 +268,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: '取消' }))
 
     expect(control.mutation.mutate).not.toHaveBeenCalledWith({ id: '1' })
-    // happy-dom never fires `transitionend`, so Base UI keeps the popup mounted
-    // in its exit phase rather than removing it — assert that phase was entered.
     expect(dialog.hasAttribute('data-ending-style')).toBe(true)
   })
 
@@ -328,8 +319,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     const row = screen.getByText('系统升级公告').closest('li') as HTMLElement
     const action = within(row).getByLabelText('标为未读')
-    // The action's nearest <button> is itself: a button is never nested in
-    // another one, and the row's main button does not contain the action.
     expect(action.closest('button')).toBe(action)
     expect(row.querySelectorAll('button button')).toHaveLength(0)
     const main = row.querySelector('button[data-notification-row="1"]')
@@ -345,7 +334,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
 
     const rowButton = screen.getByRole('button', { name: /未读/ })
     expect(within(rowButton).getByText('未读：')).toBeTruthy()
-    // The dot is decorative — it carries no label of its own.
     const row = rowButton.closest('li') as HTMLElement
     expect(row.querySelector('span.size-2')?.getAttribute('aria-hidden')).toBe('true')
     expect(screen.queryByLabelText('未读')).toBeNull()
@@ -383,8 +371,6 @@ describe('ui/shared/notifications/NotificationsDrawer', () => {
   })
 })
 
-// The mutation harness cannot drive `onSuccess`, so the fork decision that
-// gates the「转入私信」toast is pinned as a pure helper instead.
 describe('ui/shared/notifications/isForkReply', () => {
   it('flags a reply that landed in a different thread (a broadcast fork)', () => {
     expect(isForkReply('3', '7')).toBe(true)

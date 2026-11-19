@@ -58,7 +58,6 @@ export function AddMusicView() {
     onSuccess: () => {
       toast.success(t('admin.musics.toastAdded'))
       setAddingSourceId(null)
-      // The library hero is staleTime: Infinity — invalidate or it shows the pre-add library all session.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
     },
     onError: (error) => {

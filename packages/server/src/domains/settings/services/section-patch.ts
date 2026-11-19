@@ -5,11 +5,6 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { z } from 'zod'
 
-/**
- * The one "settings payload rejected" descriptor. Static (no runtime
- * translation at import): the transports localize it per request from the
- * typed key, while `fallbackMessage` stays the English/log text.
- */
 export const INVALID_SETTINGS_DESCRIPTOR = {
   messageKey: 'admin.settings.errors.invalid',
   fallbackMessage: 'The settings data is invalid',
@@ -19,8 +14,6 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-// Unwrap transparent schema layers (default / optional / pipe…) until a plain object
-// appears; anything else is a leaf — arrays replace wholesale, so their shapes are never walked.
 function objectShape(schema: z.core.$ZodType): Record<string, z.core.$ZodType> | null {
   let current = schema
   for (;;) {
@@ -67,14 +60,6 @@ function collectUnknownKeys(
   }
 }
 
-/**
- * Strict key check: every payload key must exist in the section schema's
- * unwrapped shapes; unknown keys reject with `BAD_REQUEST` before any merge or
- * validation runs. One issue per offending key preserves its field path; the
- * `unrecognizedKeys` descriptor lists every offending key in `params.keys`
- * (and in the English fallback), so neither a raw id nor an empty field name
- * reaches the client.
- */
 export function assertSectionPatchKeys(
   section: SettingsSection,
   payload: unknown,
@@ -96,7 +81,6 @@ export function assertSectionPatchKeys(
     return
   }
 
-  // Sorted so the list is stable regardless of the payload's key order.
   const keyList = [...new Set(unknown.map((entry) => entry.key))].sort().join(', ')
   const fallbackMessage = `Unrecognized keys: ${keyList}`
   throw new DomainError(

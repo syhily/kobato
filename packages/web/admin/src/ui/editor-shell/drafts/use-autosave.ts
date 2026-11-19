@@ -7,10 +7,6 @@ export type AutosaveStatus =
   | { kind: 'saved'; at: number }
   | { kind: 'retrying'; attempt: number; nextAttemptAt: number; message: string }
 
-/**
- * `'conflict'`: the server rejected the write and the flush already surfaced
- * it — the engine must stay silent and not advance the baseline.
- */
 export type AutosaveFlushOutcome = 'saved' | 'conflict'
 
 export interface UseAutosaveOptions<TBody> {
@@ -27,7 +23,6 @@ export interface UseAutosaveOptions<TBody> {
   onStatusChange?: (status: AutosaveStatus) => void
 }
 
-// The 1s/3s/9s backoff ladder is part of the editor's UX contract, not an impl detail.
 export const DEFAULT_RETRY_DELAYS_MS = [1_000, 3_000, 9_000]
 
 export function useAutosave<TBody>({
@@ -46,7 +41,6 @@ export function useAutosave<TBody>({
   const enabledRef = useRef(enabled)
   const onStatusRef = useRef(onStatusChange)
   const retryDelaysRef = useRef(retryDelaysMs)
-  // Latest props in refs, updated in an effect so callbacks always read fresh values.
   useEffect(() => {
     flushRef.current = flush
     bodyRef.current = body
@@ -55,15 +49,11 @@ export function useAutosave<TBody>({
     retryDelaysRef.current = retryDelaysMs
   })
 
-  // The single persisted-baseline owner: seeded once at mount from
-  // `initialBaseline`, advanced by a successful flush or an explicit
-  // `setBaseline` command from a write path that bypassed the engine.
   const lastPersistedRef = useRef<TBody | null>(initialBaseline)
   const inFlightRef = useRef<Promise<AutosaveFlushOutcome | undefined> | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Holds doFlush so the retry path can re-enter it before its own declaration completes.
   const doFlushRef = useRef<(attempt?: number) => Promise<void>>(() => Promise.resolve())
 
   const emit = useCallback((status: AutosaveStatus) => {
@@ -81,11 +71,7 @@ export function useAutosave<TBody>({
       if (inFlightRef.current !== null) {
         try {
           await inFlightRef.current
-        } catch {
-          // Previous flush failed; fall through to retry below.
-        }
-        // Re-check after awaiting: the in-flight flush may have persisted
-        // this exact body or the engine may have been disabled meanwhile.
+        } catch {}
         if (!enabledRef.current || lastPersistedRef.current === bodyRef.current) {
           return
         }
@@ -94,8 +80,6 @@ export function useAutosave<TBody>({
       emit({ kind: 'saving' })
       const promise = flushRef.current(snapshot)
       inFlightRef.current = promise
-      // React Compiler can't lower try/finally — the in-flight reset runs
-      // after the try/catch instead (returns became branches to keep that).
       try {
         const outcome = await promise
         if (outcome !== 'conflict') {
@@ -211,11 +195,6 @@ export function useAutosave<TBody>({
     await doFlush()
   }, [doFlush])
 
-  /**
-   * Advance the persisted baseline after a write that bypassed the engine
-   * (manual Ctrl+S, adopt-local force-save) so the next tick short-circuits.
-   * Every non-engine write path must route through this one command.
-   */
   const setBaseline = useCallback((persistedBody: TBody): void => {
     lastPersistedRef.current = persistedBody
   }, [])

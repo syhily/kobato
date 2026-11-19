@@ -19,9 +19,6 @@ export function $replaceDashes(dirtyLeaves: Set<string>, supportsHrShortcut: boo
 
     let text = node.getTextContent()
 
-    // '---' as the sole content of a paragraph is the horizontal-rule
-    // card shortcut - leave it alone so the seam's HR trigger can fire
-    // (@kobato/inkling-internal/markdown/card-shortcuts)
     if (supportsHrShortcut && text === '---' && node.getParent()?.getTextContent() === '---') {
       return
     }

@@ -15,9 +15,6 @@ import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// `POST /api/analytics/env` against the real engine: body caps, zod gate,
-// per-IP budget, and the append into `device_env_client`.
-
 const ENDPOINT = '/api/analytics/env'
 const EVENT_ID = '00000000-0000-4000-8000-0000000000c1'
 
@@ -192,7 +189,6 @@ describe('POST /api/analytics/env', () => {
     }
     expect((await post(JSON.stringify({ eventId: EVENT_ID, hasStatic: false }))).status).toBe(429)
 
-    // Another IP is unaffected.
     app = buildApp('10.0.0.2')
     expect((await post(JSON.stringify({ eventId: EVENT_ID, hasStatic: false }))).status).toBe(204)
   })

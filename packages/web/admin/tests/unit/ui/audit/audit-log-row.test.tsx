@@ -9,10 +9,6 @@ import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-// The audit detail panel must pass detailsHtml through
-// sanitizeHtml (src/ui/AGENTS.md convention) — the producer escapes
-// today, but the client keeps its own seatbelt.
-
 function makeRow(overrides: Partial<AuditLogItemDto> = {}): AuditLogItemDto {
   return {
     id: '1',
@@ -49,13 +45,9 @@ describe('AuditLogRow details sanitisation', () => {
 
     const panel = document.querySelector('[class*="[&>pre]"]')
     expect(panel).not.toBeNull()
-    // Legitimate shiki output (inline styles) survives — spelled the way the
-    // browser engine serializes it (byte parity, see sanitize-html-parity).
     expect(panel!.innerHTML).toContain('<span style="color: #f00">const x = 1</span>')
-    // …while active content is gone — neither tag nor attribute survives.
     expect(panel!.innerHTML).not.toContain('<script')
     expect(panel!.innerHTML).not.toContain('onerror')
-    // The shiki strategy allows a bare <img> but strips its attributes.
     expect(panel!.innerHTML).not.toContain('src=')
   })
 })

@@ -23,8 +23,6 @@ export function getTKMatch(initialText: string): { start: number; end: number } 
     return true
   }
 
-  // The regex matches invalid TKs (no negative lookbehind), so loop and
-  // discard them, tracking the consumed text for correct offsets.
   let textBeforeMatch = ''
 
   while (matchArr !== null && !isValidMatch(matchArr)) {

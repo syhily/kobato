@@ -98,7 +98,6 @@ describe('distribution/warmup-manifest — collectManifestChunks', () => {
   })
 
   it('dedupes chunks in insertion order', () => {
-    // '/assets/runtime.js' appears in both the entry imports and root imports.
     expect(collectManifestChunks(makeManifest(), ['entry', 'root'])).toEqual([
       '/assets/entry.js',
       '/assets/runtime.js',
@@ -110,7 +109,6 @@ describe('distribution/warmup-manifest — collectManifestChunks', () => {
 
   it('applies exclusion patterns against the chunk basename only', () => {
     const manifest = makeManifest()
-    // Matches the basename 'canvas-hl.js' → excluded.
     manifest.routes.root!.imports.push('/assets/canvas-hl.js')
     expect(collectManifestChunks(manifest, ['root'], [/^canvas-/])).toEqual([
       '/assets/root.js',
@@ -118,7 +116,6 @@ describe('distribution/warmup-manifest — collectManifestChunks', () => {
       '/assets/root-shared.js',
       '/assets/root-loader.js',
     ])
-    // Would match the '/assets/' path segment but never a basename → kept.
     expect(collectManifestChunks(makeManifest(), ['entry'], [/^assets/])).toEqual([
       '/assets/entry.js',
       '/assets/runtime.js',

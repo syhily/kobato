@@ -38,8 +38,6 @@ describe('server/infra/sea/intl-probe', () => {
   })
 
   it('runs the real formatDuration surface and pins its literal output', () => {
-    // CLDR may use narrow no-break spaces; fold them before comparing, exactly
-    // like the probe does.
     const normalize = (value: string) => value.replace(/\s+/g, ' ').trim()
     for (const locale of SUPPORTED_LOCALES) {
       expect(normalize(formatDuration(INTL_PROBE_DURATION_MS, { locale }))).toBe(

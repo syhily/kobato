@@ -8,7 +8,6 @@ export const EMPTY_STATE_LINE_IDS: ReadonlyArray<UiMessageId> = [
   'admin.welcome.empty.line5',
 ]
 
-/** Picked by the loader (stable across SSR + hydration) and resolved by the panel's `t`. */
 export function pickEmptyStateLineId(): UiMessageId {
   return EMPTY_STATE_LINE_IDS[Math.floor(Math.random() * EMPTY_STATE_LINE_IDS.length)] ?? EMPTY_STATE_LINE_IDS[0]!
 }

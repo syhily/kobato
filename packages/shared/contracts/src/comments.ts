@@ -3,8 +3,6 @@ import { commentEditorStateSchema, type CommentEditorState } from '@kobato/lexic
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
-// Welcome-dashboard moderation inbox row. Same shape for both queues —
-// the `kind` discriminator decides which buttons the UI renders.
 const adminPendingItemDto = z.object({
   id: idString,
   kind: z.enum(['approval', 'deletion']),
@@ -30,7 +28,6 @@ export const adminPendingDashboardDto = z.object({
 })
 export type AdminPendingDashboardDto = z.infer<typeof adminPendingDashboardDto>
 
-// Public comment wire — no PII.
 export const commentBaseDto = z.object({
   id: idString,
   createAt: isoDateTime,
@@ -38,7 +35,6 @@ export const commentBaseDto = z.object({
   deleteAt: isoDateTime.nullable(),
   deleteRequestedAt: isoDateTime.nullable().optional(),
   body: commentEditorStateSchema,
-  /** Saved feed-variant HTML projection; sanitized at the render boundary. */
   content: z.string().nullable(),
   type: z.enum(['post', 'page']).nullable(),
   ownerId: idString.nullable(),
@@ -59,34 +55,20 @@ export const commentBaseDto = z.object({
   badgeTextColor: z.string().nullable(),
 })
 
-// The recursive `children` branch uses a getter so zod resolves the schema
-// lazily and `z.infer` derives the recursive wire type directly.
 export const commentItemDto = commentBaseDto.extend({
   get children() {
     return z.array(commentItemDto).optional()
   },
-  // Thread-cap markers (see `parseComments`): present ONLY on a root whose
-  // reply thread exceeded the cap; `childrenTotal` is the full visible count.
   childrenTruncated: z.boolean().optional(),
   childrenTotal: z.number().int().nonnegative().optional(),
 })
 export type CommentItemWire = z.infer<typeof commentItemDto>
 
-// Shared output of the own-comment mutation trio: the updated wire
-// comment, so the public reducer stays the single sync owner.
 export const ownCommentMutationDto = z.object({ comment: commentItemDto })
 export type OwnCommentMutationOutput = z.infer<typeof ownCommentMutationDto>
 
-// ---------------------------------------------------------------------------
-// Public comment surface (`comments.replyComment` / `loadComments` / `getRaw`
-// / `edit`, the token pair, and the authed own-comment trio) — the single
-// Zod source the `@kobato/api` comments contract composes.
-// ---------------------------------------------------------------------------
-
 const commentHoneypot = honeypotField('subtitle')
 
-// JSON callers send `rid` as a number; `0` means top-level reply and is
-// normalised to `undefined` before `createComment`.
 export const commentReplySchema = z
   .object({
     page_key: z.string(),
@@ -94,19 +76,15 @@ export const commentReplySchema = z
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentEditorStateSchema,
-    /** Unused; retained for wire compatibility. */
     rid: z.number().optional(),
-    /** Leave blank — used for bot filtering only; stripped before `createComment`. */
     subtitle: commentHoneypot.schema,
   })
   .superRefine(commentHoneypot.refine)
 
-// Typed catalog id: the input-validation issue carries it (no prose).
 export const commentRidSchema = z.object({
   rid: z.string().regex(/^\d+$/, { message: 'comments.error.idInvalid' as const }),
 })
 
-// Owner-authorized edit: the rid-keyed body rewrite (token or session ownership).
 export const commentEditInputSchema = commentRidSchema.extend({ body: commentEditorStateSchema })
 
 export const commentListInputSchema = z.object({ page_key: z.string(), offset: z.number() })
@@ -114,7 +92,6 @@ export const commentListOutputSchema = z.object({ comments: z.array(commentItemD
 export const replyCommentOutputSchema = z.object({ comment: commentItemDto })
 export const commentGetRawOutputSchema = z.object({ body: commentEditorStateSchema })
 
-// Comment-token surface: revocation by rid, and the per-page token-owned list.
 export const commentRevokeTokenInputSchema = z.object({ rid: z.string() })
 export const commentRevokeTokenOutputSchema = successDto
 export const commentMyCommentsInputSchema = z.object({ page_key: z.string() })
@@ -123,14 +100,11 @@ export const myCommentsOutputSchema = z.object({
   expiresAt: z.record(z.string(), z.number()),
 })
 
-// Own-comment mutation inputs (ownership policy stays server-side).
 export const commentUpdateOwnInputSchema = z.object({ commentId: z.string(), body: commentEditorStateSchema })
 export type CommentUpdateOwnInput = z.input<typeof commentUpdateOwnInputSchema>
 export const commentIdInputSchema = z.object({ commentId: z.string() })
 export type CommentIdInput = z.infer<typeof commentIdInputSchema>
 
-// `/admin/me/comments` listing — body editor state plus the resolved entity
-// and parent excerpts; `MyCommentItem` is the row shape the profile view renders.
 export const myCommentItemDto = z.object({
   id: z.string(),
   body: commentEditorStateSchema,
@@ -164,11 +138,9 @@ export const commentSearchMineEntitiesOutputSchema = z.object({
   entities: z.array(z.object({ value: z.string(), label: z.string() })),
 })
 
-// Avatar lookup for the comment form (`avatar.find`) — email → resolved URL.
 export const avatarFindInputSchema = z.object({ email: z.email() })
 export const avatarFindOutputSchema = z.object({ avatar: z.string() })
 
-// Admin comment wire, including the PII fields.
 export const adminCommentBaseDto = commentBaseDto.extend({
   ua: z.string().nullable(),
   ip: z.string().nullable(),
@@ -177,10 +149,8 @@ export const adminCommentBaseDto = commentBaseDto.extend({
 
 export const adminCommentDto = adminCommentBaseDto.extend({
   pageTitle: z.string().nullable(),
-  // The metric's `public_id` UUID; drives the admin moderation filter Combobox.
   pagePublicId: z.string().nullable(),
   pageCover: z.string().nullable(),
-  // Fully-qualified public URL; powers the per-row "查看文章" overflow item.
   pagePermalink: z.string().nullable(),
 })
 export type AdminCommentWire = z.infer<typeof adminCommentDto>
@@ -277,15 +247,9 @@ export type ListPendingDashboardOutput = AdminPendingDashboardDto
 
 export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'
 
-// Admin moderation wire — the single Zod source the `@kobato/api` admin comments
-// contract composes and the server validates against.
-
 export const adminCommentIdInput = z.object({ commentId: z.string() })
 export type AdminCommentIdInput = z.infer<typeof adminCommentIdInput>
 
-// Moderator edit: rewrites in place and never re-queues — the commenter-facing
-// own-edit policy (grace window, delete fence, reply lock) is deliberately
-// not applied here.
 export const adminCommentEditInput = z.object({ commentId: z.string(), body: commentEditorStateSchema })
 export type AdminCommentEditInput = z.infer<typeof adminCommentEditInput>
 
@@ -346,15 +310,11 @@ export const adminCommentsPendingDashboardInput = z.object({
 })
 export type AdminCommentsPendingDashboardInput = z.infer<typeof adminCommentsPendingDashboardInput>
 
-// Connectivity probe behind the settings avatar-mirror dropdown. Read-only,
-// targets a fixed preset list — no input.
 export const adminAvatarMirrorProbeOutputDto = z.object({
   results: z.array(z.object({ url: z.string(), reachable: z.boolean(), latencyMs: z.number() })),
 })
 export type AdminAvatarMirrorProbeOutput = z.infer<typeof adminAvatarMirrorProbeOutputDto>
 
-// The full `countMyComments` tuple — the profile card renders all four
-// counters; the service tuple passes through unchanged.
 export const commentsMyCountsOutputSchema = z.object({
   total: z.number().int().nonnegative(),
   pending: z.number().int().nonnegative(),
@@ -363,16 +323,12 @@ export const commentsMyCountsOutputSchema = z.object({
 })
 export type CommentsMyCountsOutput = z.infer<typeof commentsMyCountsOutputSchema>
 
-// Follow-up resolve for a URL-pinned `type:ownerId` entity not in the
-// mine-comments list; null when malformed or hard-deleted.
 export const commentsResolveEntityInputSchema = z.object({
   entity: z.string().min(1).max(2048),
 })
 export const commentsResolveEntityOutputSchema = z.object({ value: z.string(), label: z.string() }).nullable()
 export type CommentsResolveEntityOutput = z.infer<typeof commentsResolveEntityOutputSchema>
 
-// `countAdminPendingDashboard` projected to the `{ all }` badge the
-// admin layout renders; the approval/deletion split stays server-side.
 export const adminCommentsPendingCountOutputSchema = z.object({
   all: z.number().int().nonnegative(),
 })

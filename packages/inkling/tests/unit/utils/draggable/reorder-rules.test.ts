@@ -9,9 +9,6 @@ import {
 } from '@kobato/inkling-internal/utils/draggable/reorder-rules'
 import { describe, expect, it } from 'vitest'
 
-// Builds a container with `count` droppable divs and returns it with its
-// children in document order — the stand-in for both the editor root's
-// top-level blocks (vertical) and a gallery's [data-image] grid (horizontal).
 function createDroppables(count: number) {
   const container = document.createElement('div')
   for (let i = 0; i < count; i += 1) {

@@ -25,7 +25,6 @@ interface BackupFileListProps {
   timeZone: string
   isCreating: boolean
   encryptionEnabled: boolean
-  /** Called with the optional one-off password (undefined = the settings default). */
   onCreate: (password?: string) => void
   restorePending: boolean
   onRestore: (key: string) => void
@@ -51,7 +50,6 @@ function formatBackupTimestamp(iso: string, options: { locale: AppLocale; timeZo
   try {
     return formatDateTime(new Date(iso), { ...BASE_OPTS, locale, timeZone })
   } catch {
-    // An invalid configured zone must not crash the list — format the same parts in UTC.
     return formatDateTime(new Date(iso), { ...BASE_OPTS, locale, timeZone: 'UTC' })
   }
 }

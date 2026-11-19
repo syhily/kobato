@@ -55,8 +55,6 @@ export function adminUploadRoute<TValidated>(options: AdminUploadRouteOptions<TV
     csrfGuard,
     bodyLimit({
       maxSize: options.maxSize,
-      // `bodyLimit` types its context as `Context<any, any, {}>`; the mounted
-      // route always runs under `Env`, so the resolver gets that same context.
       onError: (c) => {
         const env = unsafeCast<Context<Env>>(c)
         return errorJsonResponse(env, 413, options.tooLarge.messageKey, options.tooLarge.params?.(env))

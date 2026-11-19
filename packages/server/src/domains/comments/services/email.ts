@@ -24,26 +24,10 @@ import { createElement } from 'react'
 
 const log = getLogger('comments.email')
 
-/**
- * Allowlist sanitizer for the comment `content` column at the email boundary
- * (RawEmailHtml injects without sanitizing, and the saved projection is not
- * safe by construction) — a thin wrapper over the shared DOMPurify stack's
- * 'comment-email' strategy. src/shared/sanitize/config.ts owns the
- * tag/attribute allowlist, which mirrors the comment feed-variant
- * projection's real output.
- */
 function sanitizeCommentEmailHtml(html: string): string {
   return sanitizeHtmlString(html, 'comment-email')
 }
 
-/**
- * Email HTML for a comment row. The saved `content` column is the
- * feed-variant degraded-HTML projection computed at save time, so the mail
- * path reads it directly — sanitized at this boundary. A Lexical body with
- * an empty snapshot (should not happen — canonicalize falls back to plain
- * text) degrades to escaped plain text. Never throws: a notification email
- * must never crash the comment flow.
- */
 function commentBodyEmailHtml(comment: { body: unknown; content: string | null }): string {
   if (comment.content !== null && comment.content !== '') {
     return sanitizeCommentEmailHtml(comment.content)

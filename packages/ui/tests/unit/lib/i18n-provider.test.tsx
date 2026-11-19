@@ -21,7 +21,6 @@ vi.mock('@kobato/ui/lib/logger.ts', () => ({
   }),
 }))
 
-/** The real zh-CN catalog plus the probe messages the assertions need. */
 const MESSAGES = {
   ...uiMessagesZhCN,
   'test.flag': '状态：{enabled}',

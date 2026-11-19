@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock `node:fs` to drive routeWarmupPlugin's writeBundle branches without touching disk.
 const fsState = vi.hoisted(() => {
   return {
     files: new Map<string, string | Buffer>(),

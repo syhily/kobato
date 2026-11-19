@@ -35,10 +35,6 @@ export interface EstablishedLoginSession {
   setCookie: string
 }
 
-/**
- * Establish a login session after any successful credential check; callers MUST NOT
- * re-write `last_login` or record a second login audit.
- */
 export async function establishLoginSession(
   db: Database,
   session: BlogSession,
@@ -69,7 +65,6 @@ export async function establishLoginSession(
     role: dbUser.role,
   }
   const absoluteExpiry = Date.now() + resolveSessionMaxAge() * 1000
-  // Only the NEW session carries the user; the old one is never committed.
   const newSession = buildSessionWithSid(sid, { user: userData, absoluteExpiry })
   const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
@@ -83,9 +78,7 @@ export async function establishLoginSession(
       platformHint,
       ip: clientAddress,
     })
-  } catch {
-    // Best-effort: don't block auth on a meta-write hiccup.
-  }
+  } catch {}
 
   recordAuditEvent({
     action: 'login',
@@ -108,7 +101,6 @@ export function userSession(session: BlogSession): SessionUser | undefined {
 }
 
 export async function logout(session: BlogSession): Promise<void> {
-  // Dropping `user` marks the session dirty; the commit clears the row owner.
   session.unset('user')
 }
 

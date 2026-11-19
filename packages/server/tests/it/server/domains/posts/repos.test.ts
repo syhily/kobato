@@ -84,7 +84,6 @@ async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}
   return rows[0]!
 }
 
-/** The site-owned public URL the real hydrateImageRefs writes for a seeded row. */
 function coverUrl(row: typeof imageTable.$inferSelect): string {
   return `https://example.com/storage/${row.storagePath}?v=${row.updatedAt.getTime()}`
 }
@@ -282,12 +281,8 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate.ts')
     const posts = await hydratePostList(db, rows)
-    // The real hydrateImageRefs rewrites cover/coverThumbhash from the
-    // seeded image row.
     expect(posts[0]?.cover).toBe(coverUrl(imageRow))
     expect(posts[0]?.coverThumbhash).toBe('t')
-    // revision defaults to 'none': no body join even though a published
-    // revision exists.
     expect(posts[0]?.bodyHtml).toBeNull()
     expect(posts[0]?.bodyHtmlFeed).toBeNull()
     expect(posts[0]?.headings).toEqual([])
@@ -300,8 +295,6 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     await seedPost({ slug: 'h-cat', categoryId: techId })
     await seedPost({ slug: 'h-cat-null', categoryId: null })
     await seedPost({ slug: 'h-cat-dangling', categoryId: ghostId })
-    // Dangling FK: remove the category behind p3's back (FK checks off, as
-    // legacy data would look after a pre-FK-era delete).
     db.run(sql`PRAGMA foreign_keys = OFF`)
     try {
       await db.delete(categoryTable).where(eq(categoryTable.id, ghostId))

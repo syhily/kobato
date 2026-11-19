@@ -11,16 +11,7 @@ import {
 } from 'lexical'
 
 export const EDIT_MATH_INLINE_COMMAND = createCommand<{ nodeKey: NodeKey }>('EDIT_MATH_INLINE_COMMAND')
-/**
- * Double-click half of the edit gesture: resolves the math inline node under
- * the event target (the preview is a plain DOM subtree — createDOM renders
- * the stored artifacts without React) and dispatches
- * `EDIT_MATH_INLINE_COMMAND` with its key. Returns whether a node was hit.
- * The dispatch happens outside the read — dispatchCommand runs its own update.
- */
 export function dispatchEditMathInlineAtTarget(editor: LexicalEditor, target: EventTarget | null): boolean {
-  // The target can be any descendant of the preview — including SVG or MathML
-  // elements, which are not HTMLElements — so narrow to Element only.
   if (!(target instanceof Element)) {
     return false
   }

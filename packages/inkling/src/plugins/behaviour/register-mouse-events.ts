@@ -14,8 +14,6 @@ export function registerMouseEvents(editor: LexicalEditor, deps: MouseEventsDeps
 
   const onMousedown = (event: MouseEvent) => {
     if (!event.target || !(event.target instanceof Node) || !document.body.contains(event.target)) {
-      // The event target is no longer in the DOM — possible when a
-      // capture-phase listener elsewhere (e.g. a dropdown) removed it.
       return
     }
 

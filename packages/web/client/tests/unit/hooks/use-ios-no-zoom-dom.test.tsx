@@ -1,13 +1,5 @@
 import { useIosNoZoomOnFocus } from '@kobato/web-client/hooks/use-ios-no-zoom.ts'
 // @vitest-environment happy-dom
-/**
- * The document-level iOS zoom-lock tracker, listener behavior: the lock must
- * be taken at POINTERDOWN (capture) — iOS decides the focus auto-zoom when
- * the tap's default action focuses the target, so the original
- * focusin-time rewrite was already too late on real devices. Form controls
- * hold the lock for their focused session; a contenteditable canvas releases
- * on the task after its focus lands.
- */
 import { render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -43,8 +35,6 @@ function Probe() {
   )
 }
 
-// The handler only reads `event.target` — a bare Event is equivalent to the
-// PointerEvent the browser dispatches.
 function pointerDownOn(el: Element) {
   el.dispatchEvent(new Event('pointerdown', { bubbles: true }))
 }
@@ -118,12 +108,10 @@ describe('useIosNoZoomOnFocus — release choreography', () => {
     pointerDownOn(name)
     name.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
 
-    // input → input (the keyboard "next" hop, no pointerdown to relock).
     name.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: email }))
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(meta.content).toBe(LOCKED_CONTENT)
 
-    // Leaving the form-control world releases.
     email.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }))
     await waitFor(() => expect(meta.content).toBe(ORIGINAL_CONTENT))
   })
@@ -135,7 +123,6 @@ describe('useIosNoZoomOnFocus — release choreography', () => {
     pointerDownOn(document.querySelector('[data-testid="name"]')!)
     expect(meta.content).toBe(LOCKED_CONTENT)
 
-    // No focusin ever lands (drag away / cancelled touch).
     await waitFor(() => expect(meta.content).toBe(ORIGINAL_CONTENT), { timeout: 2000 })
   })
 })

@@ -6,10 +6,6 @@ import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingMo
 import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-// PendingModerationPanel seeds a react-query cache with `initialData`. The shared render
-// helper's QueryClient is a module singleton, so a second test would see the first
-// test's rows; `useQuery` is mocked to return the `initialData` from the options instead,
-// and `useMutation` is stubbed to no-op handlers.
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
@@ -136,7 +132,6 @@ describe('snapshot: VisitSummaryCard', () => {
             unit: 'day',
             clientTimezone: 'Etc/UTC',
             points: [
-              // Day-unit bucket labels (clientTimezone), not ISO instants.
               { time: '2024-01-10', visits: 10, visitors: 5 },
               { time: '2024-01-11', visits: 20, visitors: 8 },
             ],
@@ -144,8 +139,6 @@ describe('snapshot: VisitSummaryCard', () => {
         />,
       ),
     )
-    // Hydration gate: SSR and the first client render emit the skeleton;
-    // the client-timezone-aware query owns the first trend paint.
     expect(html).toContain('role="status"')
     expect(html).toContain('加载中')
     expect(html).not.toContain('最近 7 天趋势')

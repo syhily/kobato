@@ -130,9 +130,6 @@ describe('throttle', () => {
     expect(fn).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
 
-    // the clock jumps past maxWait while the first timer is still pending
-    // (event-loop lag), so the maxing branch re-invokes in a tight loop;
-    // it must clear the stale timer before scheduling the new one
     vi.setSystemTime(150)
     throttled('b')
     expect(fn).toHaveBeenCalledTimes(2)

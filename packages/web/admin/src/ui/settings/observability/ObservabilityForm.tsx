@@ -17,8 +17,6 @@ export function ObservabilityForm({ observability, passwordMask, rumClientTokenM
   const queryClient = useQueryClient()
   const { data: status } = useQuery(orpcQuery.admin.observability.status.queryOptions({ input: {} }))
 
-  // One status projection backs all three cards: saves, the connection test and
-  // provisioning can each change `verified` / `provisioned` / the runtime phase.
   const invalidateStatus = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.observability.status.key() })
   }, [queryClient])

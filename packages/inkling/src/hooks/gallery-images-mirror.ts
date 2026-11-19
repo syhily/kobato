@@ -19,9 +19,6 @@ export function createGalleryImagesMirror({
   writeNodeImages,
   subscribeToNodeImages,
 }: GalleryImagesMirrorPorts) {
-  // the store holds the two state pieces; the published snapshot derives
-  // from them (overlay ?? nodeImages), so an emit that leaves the rendered
-  // list unchanged notifies listeners but cannot re-render React
   const store = createSnapshotStore<{ nodeImages: GalleryImage[]; overlay: GalleryImage[] | null }>({
     nodeImages: readNodeImages() ?? [],
     overlay: null,
@@ -32,17 +29,12 @@ export function createGalleryImagesMirror({
     const { nodeImages, overlay } = store.getSnapshot()
     const fresh = readNodeImages() ?? []
     if (fresh === nodeImages) {
-      // the node was touched without replacing its images (e.g. caption dirt)
       return
     }
     if (overlay !== null && samePersistedImages(fresh, overlay)) {
-      // echo of the mirror's own write: adopt the node's copy as the baseline but
-      // keep the overlay — it still carries the in-flight preview props the
-      // node deliberately strips, and the rendered list is unchanged
       store.emit({ nodeImages: fresh })
       return
     }
-    // an external change: the node wins wholesale
     store.emit({ nodeImages: fresh, overlay: null })
   }
 

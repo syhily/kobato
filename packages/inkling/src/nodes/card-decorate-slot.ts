@@ -1,18 +1,6 @@
 import type { LexicalNode } from 'lexical'
 import type { ReactNode } from 'react'
 
-/**
- * The decorate() injection port — the one edge that keeps the assembled card node
- * classes React-free: the wrapper layer (`@kobato/inkling-internal/nodes/decorate-card`) registers
- * here, and assembly (`@kobato/inkling-internal/nodes/assemble-card-node`) reads the slot. A static
- * import of the adapter from assembly would pull the entire wrapper layer
- * (InklingCardWrapper + every card component) into any graph that touches a card
- * shim — including the markdown round-trip and, through it, the `@kobato/inkling-internal/headless`
- * surface. Headless graphs never call decorate() (no React reconciliation), so the
- * empty-slot throw is unreachable there; it fails loudly if a custom surface renders
- * cards without the barrel's wiring.
- */
-
 export type CardDecorateImpl = (node: LexicalNode) => ReactNode
 
 let cardDecorateImpl: CardDecorateImpl | undefined

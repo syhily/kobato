@@ -14,8 +14,6 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-
 import { useCallback, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 
-// Directional track swap: next slides in from the right and out to the left,
-// prev mirrors. `custom` carries the direction into the variant resolvers.
 const trackInfoVariants = {
   enter: (direction: number) => ({ opacity: 0, x: 14 * direction }),
   center: { opacity: 1, x: 0 },

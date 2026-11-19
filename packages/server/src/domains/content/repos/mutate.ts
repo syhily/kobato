@@ -61,7 +61,6 @@ export interface TokenConflict {
   expectedToken: string
 }
 
-/** Optimistic-concurrency check both mutations run before writing. `undefined` expectation = skip; `null` never matches. */
 export function checkTokenConflict(
   latest: ContentRow | undefined,
   input: { expectedClientRevisionToken?: string | null; force?: boolean },
@@ -75,11 +74,6 @@ export function checkTokenConflict(
   return { status: 'conflict', latest, expectedToken: latest.clientRevisionToken }
 }
 
-/**
- * Draft-save no-op short-circuit, shared by the repo's in-transaction check
- * (authoritative) and the lifecycle's projection-skip pre-check (optimization).
- * Only a PUBLISHED latest can no-op: a draft latest is always rewritten in place.
- */
 export function isEquivalentToPublishedLatest(
   latest: ContentRow | undefined,
   input: SaveDraftInput,
@@ -112,8 +106,6 @@ function writeRevisionRow(
 
   const now = new Date()
   const nextToken = randomUUID()
-  // Projections absent = the caller skipped the computation (no-op pre-check
-  // or degraded render) — keep the existing columns on a rewrite.
   const projectionColumns =
     input.projections != null
       ? {
@@ -167,7 +159,6 @@ export async function saveDraftRevision(
   return db.transaction((tx) => {
     const { latest } = lockMetaAndLoadLatest(tx, type, input.ownerId)
 
-    // Conflict check precedes the no-op short-circuit — a stale token must surface even when bodies match.
     const conflict = checkTokenConflict(latest, input)
     if (conflict !== null) {
       return conflict

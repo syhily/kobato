@@ -33,9 +33,6 @@ interface EmojiMenuItemProps {
 }
 
 const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, emoji }: EmojiMenuItemProps) {
-  // the typeahead scrolls the selected option into view via option.ref; with a
-  // custom menuRenderFn each option's ref must be attached manually — through
-  // the option's own callback ref, invoked at commit (no render-time mutation)
   const attachRef = React.useCallback(
     (element: HTMLLIElement | null) => {
       emoji.setRefElement(element)
@@ -147,7 +144,6 @@ export function EmojiPickerPlugin() {
         setSearchResults(emojis.map((emoji) => new EmojiOption(emoji)))
       })
       .catch(() => {
-        // a failed search shows no suggestions instead of rejecting unhandled
         if (latestQueryRef.current === query) {
           setSearchResults(null)
         }

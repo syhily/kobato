@@ -5,8 +5,6 @@ import { useEffect } from 'react'
 interface UseEditorKeyboardShortcutsArgs {
   mode: 'create' | 'edit'
   isEditing: boolean
-  /** Mirrors the toolbar's disabled state — a second Cmd+S mid-flight would
-   *  resend the same expected token and surface a spurious revision conflict. */
   isPending: boolean
   persistCreate: () => Promise<void>
   persistSave: () => void

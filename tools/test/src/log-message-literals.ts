@@ -1,15 +1,3 @@
-// AST scanner behind tests/arch/log-message-literals.test.ts.
-// The outbound log projection (packages/server/src/infra/trace/log-record.ts) only accepts a
-// static message: non-HTTP bodies are read from `msg` verbatim and marker-bearing
-// messages are dropped, so an interpolated or concatenated message silently loses
-// its detail — and any value baked into it.
-// Logger calls are matched by method name, receiver-agnostic: any
-// debug/info/warn/error/fatal member call counts unless the receiver is `console`,
-// a Web Streams controller, or a bare plugin/handler `this`.
-// Two signatures: the facade is `(message, context?)`; the raw Pino `root` export
-// is `(mergeObject, message)`, so a first-argument object is context and a missing
-// or non-static second argument fails closed.
-
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { parseAst } from 'vite'
@@ -49,12 +37,10 @@ export interface LogMessageScanResult {
 
 const LOG_METHODS: ReadonlySet<string> = new Set(['debug', 'info', 'warn', 'error', 'fatal'])
 
-/** Option-shaped static messages: the value is forwarded to a logger verbatim. */
 const OPTION_MESSAGE_KEYS: ReadonlySet<string> = new Set(['logMessage', 'rowThrewMessage'])
 
 const MESSAGE_MARKERS = ['{E}', '{/E}', '[REDACTED]'] as const
 
-/** Receivers whose `.error()`-style members are not loggers: the console, and a Web Streams controller. */
 const NON_LOGGER_RECEIVER_IDENTIFIERS: ReadonlySet<string> = new Set(['console', 'controller'])
 
 interface AstNode {
@@ -65,7 +51,6 @@ interface AstNode {
 }
 
 interface LiteralMessage {
-  /** Rendered text (interpolations join as `…`). */
   text: string
   static: boolean
 }
@@ -84,7 +69,6 @@ function lineStartOffsets(source: string): number[] {
   return starts
 }
 
-/** 1-based line/column from the line-start index — O(log lines), not O(offset). */
 function positionAt(starts: readonly number[], offset: number): { line: number; column: number } {
   let low = 0
   let high = starts.length - 1
@@ -109,7 +93,6 @@ function identifierName(node: unknown): string | null {
   return null
 }
 
-/** Property name of a member expression, including a literal computed key. */
 function memberName(node: AstNode): string | null {
   if (node.computed === true) {
     const property = node.property
@@ -138,7 +121,6 @@ function unwrapExpression(node: unknown): AstNode | null {
   return null
 }
 
-/** The literal shape of a message argument: static string, static template, or neither. */
 function literalMessage(node: unknown): LiteralMessage | null {
   const expression = unwrapExpression(node)
   if (expression === null) {
@@ -170,10 +152,6 @@ function hasMarker(text: string): boolean {
   return MESSAGE_MARKERS.some((marker) => text.includes(marker))
 }
 
-/**
- * `console.*`, `globalThis.console.*`, a Web Streams `controller.error(…)` and a
- * bare `this.error(…)` are never logger calls; `this.log.error(…)` still matches.
- */
 function isNonLoggerReceiver(node: unknown): boolean {
   if (!isNode(node)) {
     return false
@@ -203,7 +181,6 @@ interface VisitContext {
   file: string
   lineStarts: readonly number[]
   violations: LogMessageViolation[]
-  /** Local names of the raw Pino `root` export (pino's `(object, message)` signature). */
   pinoRootNames: ReadonlySet<string>
 }
 
@@ -224,10 +201,6 @@ function checkMessage(ctx: VisitContext, node: AstNode): void {
   }
 }
 
-/**
- * Raw Pino root: a first-argument object is the merge object, so the message is the
- * second argument. Any other first argument is the message, as with the facade.
- */
 function checkPinoMessage(ctx: VisitContext, args: readonly unknown[]): void {
   const first = args[0]
   if (!isNode(first)) {
@@ -253,7 +226,6 @@ function checkOptionProperty(ctx: VisitContext, node: AstNode): void {
   }
   const value = node.value
   if (!isNode(value)) {
-    // An interface/type declaration (`logMessage: string`) carries no value.
     return
   }
   const message = literalMessage(value)
@@ -309,7 +281,6 @@ function visit(node: AstNode, ctx: VisitContext): void {
   }
 }
 
-/** Local names bound to the raw Pino `root` export (only that module's `root`). */
 function collectPinoRootNames(program: AstNode): Set<string> {
   const names = new Set<string>()
   const body = program.body
@@ -344,11 +315,8 @@ function collectPinoRootNames(program: AstNode): Set<string> {
   return names
 }
 
-/** Scan one source text; `file` selects the parser dialect and the reported path. */
 export function scanSourceForLogMessages(source: string, file: string): LogMessageViolation[] {
   const violations: LogMessageViolation[] = []
-  // `parseAst` throws on a syntax error — a silently skipped file would be
-  // worse than no scan at all.
   const program = parseAst(source, { lang: file.endsWith('.tsx') ? 'tsx' : 'ts' }, file) as unknown as AstNode
   visit(program, {
     source,
@@ -412,7 +380,6 @@ function collectFiles(root: string, cwd: string): string[] {
   return found
 }
 
-/** Scan every production source file under `roots`. */
 export function scanLogMessages(options: LogMessageScanOptions): LogMessageScanResult {
   const cwd = process.cwd()
   const scannedFiles = [...new Set(options.roots.flatMap((root) => collectFiles(root, cwd)))].sort()

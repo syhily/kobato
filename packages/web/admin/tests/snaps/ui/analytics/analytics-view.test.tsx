@@ -14,9 +14,6 @@ import { MetricsGroup } from '@kobato/web-admin/ui/analytics/MetricsGroup.tsx'
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
 import { describe, expect, it } from 'vitest'
 
-// Fixtures mirror the wire DTOs exactly so a contract change fails loudly. Panels
-// read state from the provider, not the URL, so wrap them with the stub state.
-
 function withAnalyticsState(node: ReactNode): ReactNode {
   return <AnalyticsStateProvider state={makeAnalyticsState()}>{node}</AnalyticsStateProvider>
 }
@@ -30,8 +27,6 @@ const METRIC_ROWS: MetricRow[] = [
 describe('snapshot: ViewsChart', () => {
   it('renders the static chart skeleton during SSR (the @unovis chart is client-only)', () => {
     const html = stableHtml(renderInRouter(withAnalyticsState(<ViewsChart />), '/admin/analytics'))
-    // Hydration gate: SSR emits the pre-mount skeleton and never paints loader payload
-    // (it would be Etc/UTC-bucketed); the client-timezone query owns the first paint.
     expect(html).toContain('role="status"')
     expect(html).toContain('aria-busy="true"')
     expect(html).toContain('加载中')
@@ -56,7 +51,6 @@ describe('snapshot: Counters', () => {
     expect(html).toContain('访问量')
     expect(html).toContain('访客数')
     expect(html).toContain('来源域名')
-    // @number-flow/react renders a web component with locale-formatted aria-label.
     expect(html).toContain('aria-label="1,234"')
     expect(html).toContain('aria-label="567"')
     expect(html).toContain('aria-label="89"')
@@ -91,7 +85,7 @@ describe('snapshot: FiltersBar', () => {
 })
 
 describe('snapshot: DateRangePicker', () => {
-  const RANGE = { startAt: 1705276800, endAt: 1705363200 } // 2024-01-15 → 2024-01-16 UTC
+  const RANGE = { startAt: 1705276800, endAt: 1705363200 }
 
   it('renders the seven preset chips plus the custom-range chip', () => {
     const html = stableHtml(

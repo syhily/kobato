@@ -34,8 +34,6 @@ queryMocks.infinite = {
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// Stub IntersectionObserver — the sentinel's constructor is referenced at
-// module load, which warns under SSR.
 vi.stubGlobal(
   'IntersectionObserver',
   class {
@@ -44,10 +42,6 @@ vi.stubGlobal(
     disconnect() {}
   },
 )
-
-// `CommentsView` reads its list from `useCommentsController`, and queries never fetch
-// under SSR, so the controller is swapped via this hoisted singleton. Targeted
-// branches: filter-pill derivation, selected-value pinning, sentinels.
 
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],
@@ -58,7 +52,6 @@ const controllerState = vi.hoisted(() => ({
   isFetchingNextPage: false,
 }))
 
-// No-op actions for the presentational row; hoisted for the mock factory below.
 const stubActions = vi.hoisted((): CommentActions => {
   const noop = () => {}
   return {
@@ -100,9 +93,6 @@ vi.mock('@kobato/web-admin/ui/comments/use-comments-controller.ts', async () => 
   }
 })
 
-// The shared query mock returns one control object for every `useQueries`
-// lookup — pack the option lists onto `data`.
-
 function resetController() {
   controllerState.comments = []
   controllerState.total = 0
@@ -134,11 +124,7 @@ describe('snapshot: CommentsView render branches', () => {
     }
   })
 
-  // The search-items memo runs during render even with the popover closed;
-  // popover text is browser-only, so assert the render completes without throwing.
-
   it('runs the page search-items map branch when searchPages resolves with pages', () => {
-    // Shared query data packs `.pages` and `.authors`; the memo reads only its own.
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -178,7 +164,6 @@ describe('snapshot: CommentsView render branches', () => {
   })
 
   it('runs the page items pinning branch when the active page filter is not in fetched items', () => {
-    // Filter references a page the lookup didn't return — the hook prepends it.
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -251,7 +236,6 @@ describe('snapshot: CommentsView render branches', () => {
   })
 
   it('renders the parentLookup map branch when a row references a parent in the list', () => {
-    // Child `rid` points at the parent — exercises parentLookup + the "回复" hint.
     const parent = makeAdminComment({ id: '100', name: 'Carol' })
     const child = makeAdminComment({
       id: '101',

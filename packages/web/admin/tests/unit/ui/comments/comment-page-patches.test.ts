@@ -11,7 +11,6 @@ import { describe, expect, it } from 'vitest'
 
 const mockBody = makeCommentBody('hello')
 
-// Minimal wire object — the patches only touch a handful of fields.
 function mockComment(overrides: Partial<AdminComment> = {}): AdminComment {
   return {
     id: '1',
@@ -80,8 +79,6 @@ describe('removeCommentFromPages', () => {
   })
 
   it('still decrements the aggregate count when the id is not found', () => {
-    // `all` always steps down by one — the caller only removes rows it just
-    // deleted server-side.
     const comments = [mockComment({ id: '1' })]
     const data = makeData(comments, { all: 1, pending: 1, approved: 0, deleteRequested: 0 })
 

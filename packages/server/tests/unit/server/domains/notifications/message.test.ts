@@ -21,9 +21,6 @@ const { __resetNotificationMessageWarningsForTests, encodeNotificationDescriptor
 const { createServerTranslator } = await import('@kobato/server/infra/i18n.ts')
 const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales.ts')
 
-// The resolver is the single read-side seam for every notification surface (inbox,
-// thread, email): these tests pin the fallback contract and write-time validation.
-
 function row(overrides: Partial<NotificationRow>): NotificationRow {
   return {
     id: 1,
@@ -110,7 +107,6 @@ describe('notification message — descriptor resolution', () => {
 
     expect(first).toEqual({ title: 'Background task failed: backup', body: 'Task backup failed.' })
     expect(second).toEqual(first)
-    // title and body share the same missing key → one warning for it.
     expect(logWarn).toHaveBeenCalledTimes(1)
     expect(logWarn.mock.calls[0]![1]).toMatchObject({ key: 'notification.removed.key', reason: 'unregistered-key' })
   })
@@ -187,7 +183,6 @@ describe('notification message — write-time validation', () => {
       bodyParams: { message: "Unexpected token '<'" },
     })
 
-    // Params are opaque text values, not markup: the guard is JSON semantics.
     expect(encoded.title).toBe('Mail sending was turned off automatically')
     expect(JSON.parse(encoded.titleParams!)).toEqual({ taskKey: '<script>alert(1)</script>' })
     expect(JSON.parse(encoded.bodyParams!)).toEqual({ message: "Unexpected token '<'" })
@@ -226,8 +221,6 @@ describe('notification message — write-time validation', () => {
 })
 
 describe('notification message — HTML-shaped params render as plain text', () => {
-  // A job error such as `Unexpected token '<'` must encode, and every read path must
-  // return it literally — a throw here drops the whole failure notification.
   const SCRIPT = '<script>alert(1)</script>'
   const SYNTAX_ERROR = "Unexpected token '<'"
 
@@ -254,7 +247,6 @@ describe('notification message — HTML-shaped params render as plain text', () 
 
     expect(resolved.title).toContain(SCRIPT)
     expect(resolved.body).toContain(SYNTAX_ERROR)
-    // The full result (detail view) and its inbox preview share one string.
     expect(resolved.body.slice(0, 200)).toBe(resolved.body)
     expect(resolved.body).not.toContain('&lt;')
   })

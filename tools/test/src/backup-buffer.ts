@@ -23,16 +23,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
-/**
- * The in-memory backup tier, for tests only. Production paths stream;
- * these helpers pack/unpack/probe whole payloads in memory — convenient
- * for fixtures, wrong for a 500 MB upload.
- */
-
 const GZIP_MAGIC_1 = 0x1f
 const GZIP_MAGIC_2 = 0x8b
 
-/** Gunzip when the payload is gzipped, pass through when raw. */
 export function extractBackupFile(buffer: Buffer): Buffer {
   return buffer.length >= 2 && buffer[0] === GZIP_MAGIC_1 && buffer[1] === GZIP_MAGIC_2 ? gunzipSync(buffer) : buffer
 }
@@ -93,10 +86,6 @@ export interface BackupPayload {
   analytics: Buffer | null
 }
 
-/**
- * Unpack a decompressed backup into engine payloads (subarray views).
- * Accepted shapes: two-file tar, raw SQLite (content-only), raw DuckDB.
- */
 export function unpackBackupPayload(raw: Buffer): BackupPayload {
   if (isTarArchive(raw)) {
     const entries = unpackTar(raw)
@@ -115,12 +104,10 @@ export function unpackBackupPayload(raw: Buffer): BackupPayload {
     assertDuckdbBackup(raw)
     return { content: null, analytics: raw }
   }
-  // Legacy content-only shape: raw SQLite bytes.
   assertSqliteBackup(raw)
   return { content: raw, analytics: null }
 }
 
-/** Buffer-based admin probe: stage the content and run the production setup check. */
 export async function assertBackupContainsAdmin(buffer: Buffer): Promise<void> {
   const { content } = unpackBackupPayload(extractBackupFile(buffer))
   if (content === null) {

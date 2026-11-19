@@ -29,19 +29,16 @@ export function issueSetupToken(db: Database, userId: number): TokenResult {
 const SIGNIN_LINK_TTL_MS = 15 * 60 * 1000
 export const SIGNIN_LINK_TTL_MINUTES = SIGNIN_LINK_TTL_MS / (60 * 1000)
 
-/** Signin-link tokens are high-entropy, so the generic path suffices. */
 export function issueSignInLinkToken(db: Database, userId: number): TokenResult {
   return issueToken(db, userId, 'signin-link', SIGNIN_LINK_TTL_MS)
 }
 
-// Sync (node:sqlite): called inside the invite transaction.
 function issueToken(db: Database, userId: number, purpose: TokenPurpose, ttlMs: number): TokenResult {
   const raw = generateToken()
   const value = sha256(raw)
   const expiresAt = new Date(Date.now() + ttlMs)
   const id = generateToken().slice(0, 24)
 
-  // Single-token-per-(purpose, user), enforced by `uq_verification_purpose_user`.
   db.insert(verification)
     .values({ id, purpose, userId, value, expiresAt })
     .onConflictDoUpdate({
@@ -73,9 +70,6 @@ function validatedTokenRow(
   return { userId: row.userId }
 }
 
-/**
- * Read-only token check; the destructive {@link consumeToken} is reserved for the action.
- */
 export async function peekToken(db: Database, rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
   if (!TOKEN_LEN_RE.test(rawToken)) {
     return null
@@ -129,9 +123,6 @@ export async function purgeExpired(db: Database): Promise<number> {
   return Number(result.changes)
 }
 
-// 6-digit OTPs (~20 bits) must not be stored as bare sha256; each is salted with
-// a per-token random 16-byte hex string.
-
 export const OTP_TTL_MS = 5 * 60 * 1000
 export const OTP_TTL_MINUTES = OTP_TTL_MS / (60 * 1000)
 
@@ -154,10 +145,6 @@ export interface OtpTokenResult {
   expiresAt: Date
 }
 
-/**
- * Issue a 6-digit OTP stored as `salt:hash`; the row is looked up by
- * `(purpose='signin-otp', userId)`, never by value.
- */
 export async function issueOtpToken(db: Database, userId: number): Promise<OtpTokenResult> {
   const otpCode = generateOtpCode()
   const salt = generateSalt()

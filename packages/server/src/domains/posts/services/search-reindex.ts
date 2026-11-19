@@ -26,7 +26,6 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
   const offset = input.offset ?? 0
   const batchSize = input.batchSize ?? 50
 
-  // Index scheduled rows too — the query-time gate exposes them at `publishedAt`.
   const liveIncludingScheduled = livePostWhere({ includeScheduled: true })
 
   const rows = await db

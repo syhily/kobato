@@ -11,7 +11,6 @@ import { adminSession } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Keep the process/restart boundary inert — the download route never restores.
 vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
@@ -22,7 +21,6 @@ vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
   setRestartRefreshSettings: vi.fn(),
 }))
 
-// Real router + getBackupStream against the shared in-memory backend — no S3, no settings.
 const db = getTestDb()
 const mem = makeMemoryBackend({ driver: 's3' })
 
@@ -48,7 +46,6 @@ async function buildApp(session: BlogSession = adminSession()) {
     await next()
   })
   app.route('/', backupRouter)
-  // ActionFailure → its HTTP status, exactly like the real app.
   app.onError(onErrorHandler)
   return app
 }
@@ -61,8 +58,6 @@ describe('/api/admin/backup/download/:timestamp', () => {
   })
 
   it('streams the archive through the stream channel, never the 100MB-capped buffer read', async () => {
-    // Row records a >100MB size while the in-memory object stands in for the bytes —
-    // the assertion is on the stream channel (getStream vs get), not payload size.
     const byteSize = 150 * 1024 * 1024
     const payload = Buffer.from('fake-gzip-archive-bytes')
     await mem.backend.put({ key: STORAGE_KEY, body: payload, contentType: 'application/gzip' })
@@ -80,7 +75,6 @@ describe('/api/admin/backup/download/:timestamp', () => {
 
     expect(res.headers.get('Content-Type')).toBe('application/gzip')
     expect(res.headers.get('Content-Disposition')).toBe(`attachment; filename="backup-${TIMESTAMP}.db.tar.gz"`)
-    // Content-Length comes from the recorded upload size, not the drained body.
     expect(res.headers.get('Content-Length')).toBe(String(byteSize))
 
     const body = Buffer.from(await res.arrayBuffer())
@@ -96,7 +90,6 @@ describe('/api/admin/backup/download/:timestamp', () => {
     const res = await app.request(`/api/admin/backup/download/${TIMESTAMP}`)
 
     expect(res.status).toBe(400)
-    // The object it names was never opened.
     expect(mem.store.has(ASSET_KEY)).toBe(true)
   })
 })

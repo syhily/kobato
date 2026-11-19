@@ -18,7 +18,6 @@ export interface AnalyticsEventRow {
   [column: string]: unknown
 }
 
-/** Sidecar row shape — only the join key is typed; dimensions are raw columns. */
 export interface AnalyticsEnvRow {
   event_id: string
   [column: string]: unknown
@@ -29,7 +28,6 @@ export type AnalyticsDatabase = {
   device_env_client: AnalyticsEnvRow
 }
 
-// Identifiers are application-owned; user values must use bound parameters.
 const identifierPattern = /^[A-Za-z_][A-Za-z0-9_]*$/
 
 class AnalyticsQueryCompiler extends MysqlQueryCompiler {
@@ -62,7 +60,6 @@ export function createAnalyticsQuery() {
   return coldDb.selectFrom('access_events')
 }
 
-/** `access_events` INNER JOIN `device_env_client` — the env-dimension metric source. */
 export function createEnvMetricQuery() {
   return createAnalyticsQuery().innerJoin('device_env_client', 'device_env_client.event_id', 'access_events.event_id')
 }
@@ -88,10 +85,6 @@ function toBoundParameters(parameters: readonly unknown[]): DuckDBValue[] {
   })
 }
 
-/**
- * Stable operation names for the analytics dashboard read boundary. Generated
- * SQL never becomes a telemetry label.
- */
 export const ANALYTICS_OPERATIONS = [
   'views',
   'heatmap',
@@ -103,12 +96,6 @@ export const ANALYTICS_OPERATIONS = [
 ] as const
 export type AnalyticsOperation = (typeof ANALYTICS_OPERATIONS)[number]
 
-/**
- * The execution seam the composition layer wraps: db may not import the server
- * trace facade, so the server installs its span/metric boundary here and every
- * dashboard query executed inside this package carries it. `null` = untraced
- * (tests, or a composition root that never wired telemetry).
- */
 export type AnalyticsQueryExecutor = (
   reader: AnalyticsReader,
   query: Compilable,
@@ -148,12 +135,6 @@ export async function executeAnalyticsQuery(
     )
 }
 
-/**
- * Compile + execute a read query on the reader connection, through the
- * composition layer's executor when one is installed. This is THE analytics
- * SQL execution boundary: telemetry carries only the caller's stable operation
- * name — never SQL text or bound parameters.
- */
 export async function runAnalyticsQuery(
   reader: AnalyticsReader,
   query: Compilable,

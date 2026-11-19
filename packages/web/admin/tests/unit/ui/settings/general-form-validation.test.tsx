@@ -17,7 +17,6 @@ const EXPECTED = {
   'zh-TW': '請填寫網站標題',
 } as const
 
-/** Clearing the title trips the client-only schema; the message must be translated. */
 async function clearTitleAndReadError(locale: keyof typeof EXPECTED): Promise<string> {
   renderForm(locale)
   const input = document.getElementById('general-title') as HTMLInputElement | null

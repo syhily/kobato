@@ -10,12 +10,10 @@ import { sql } from 'drizzle-orm'
  * the query planner's statistics after a bulk load.
  */
 
-/** `VACUUM INTO` a consistent, fully-checkpointed copy of the database at `targetPath`. */
 export function vacuumDatabaseInto(db: Database, targetPath: string): void {
   db.run(sql.raw(`VACUUM INTO '${targetPath.replaceAll("'", "''")}'`))
 }
 
-/** Refresh the planner's statistics over the whole database. */
 export function analyzeDatabase(db: Database): void {
   db.run(sql`ANALYZE`)
 }

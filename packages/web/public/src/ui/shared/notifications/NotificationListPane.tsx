@@ -21,7 +21,6 @@ import { Fragment, useEffect, useRef } from 'react'
 interface NotificationListPaneProps {
   tab: NotificationTab
   onOpen: (item: NotificationDto) => void
-  /** Row that should regain focus after returning from the thread pane. */
   focusItemId?: string
   onFocusHandled: () => void
 }
@@ -53,8 +52,6 @@ export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled 
   const listRef = useRef<HTMLDivElement>(null)
   const loadedCount = items.length
 
-  // Returning from a thread restores focus to the row that opened it; when that row is not
-  // on the loaded pages the list container takes focus, so the pane swap never strands it.
   useEffect(() => {
     if (focusItemId === undefined || loadedCount === 0 || listRef.current === null) {
       return
@@ -73,8 +70,6 @@ export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled 
     )
   }
 
-  // A failed NEXT page leaves loaded rows in `data` with the query in `status: 'error'`,
-  // so only an empty result means the pane has nothing to show.
   if (query.isError && items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-sm text-muted-foreground">

@@ -47,11 +47,6 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Render-path cases for `MusicsView` (same query stubs, no event handlers — SSR cannot
-// drive them). `SortIcon` renders directly since the view inlines its sort state.
-
-// `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the
-// machine's state directly.
 const searchHookMock = vi.hoisted(() => ({
   state: {
     results: [] as MetingSearchHit[],
@@ -206,9 +201,6 @@ describe('MusicsView render branches', () => {
   })
 })
 
-// `SortIcon` picks a lucide icon per (sortBy, sortOrder); the view's sort state only
-// flips via event handlers SSR cannot drive, so every combo renders directly.
-
 describe('MusicsView SortIcon matrix', () => {
   it.each([
     ['createdAt', 'asc', 'lucide-clock-arrow-up'],
@@ -295,7 +287,6 @@ describe('MusicDetailView render branches', () => {
     expect(html).toContain('aria-label="关闭"')
     expect(html).toContain('aria-label="播放"')
     expect(html).toContain('复制 playerId')
-    // ISO fixtures land on Asia/Shanghai local dates via formatLocalDate.
     expect(html).toContain('2024-01-01')
     expect(html).toContain('2024-02-01')
   })
@@ -335,7 +326,6 @@ describe('MusicDetailView render branches', () => {
 
 describe('AddMusicView render branches', () => {
   beforeEach(() => {
-    // Empty library + idle search machine; populated-search covered via SearchAlbumCard below.
     queryMocks.query = {
       data: null,
       isLoading: false,
@@ -360,7 +350,6 @@ describe('AddMusicView render branches', () => {
     expect(html).toContain('添加音乐')
     expect(html).toContain('aria-label="搜索音乐"')
     expect(html).toContain('placeholder="搜索歌曲、艺人、专辑..."')
-    // Trigger shows the selected source; the option list needs an event (unreachable in SSR).
     expect(html).toContain('来源')
     expect(html).toContain('add-music-source-full')
     expect(html).toContain('网易云')
@@ -426,12 +415,6 @@ describe('AddMusicView render branches', () => {
     expect(html).toContain('text-destructive')
   })
 })
-
-// The populated-results branch needs a search event (machine starts idle)
-// — unreachable in one SSR pass; SearchAlbumCard is snapshotted directly.
-
-// LyricsDisplay is rendered directly to lock down its two branches
-// independent of the detail view's query wiring.
 
 describe('LyricsDisplay direct render branches', () => {
   it('renders the empty-state copy for null lrcText', () => {

@@ -4,8 +4,6 @@ const pipelineMocks = vi.hoisted(() => ({ runSelfUpdate: vi.fn() }))
 
 vi.mock('@kobato/server/domains/update/pipeline.ts', () => ({ runSelfUpdate: pipelineMocks.runSelfUpdate }))
 
-// job.ts holds module-level job state; reset the registry and re-import per
-// test so each case starts from a clean machine.
 async function loadJob() {
   return import('@kobato/server/domains/update/job.ts')
 }
@@ -21,9 +19,6 @@ function deferred<T>() {
 }
 
 describe('update/job startUpdateJob', () => {
-  // The restart is injected (see `StartUpdateJobOptions.restart`): a plain
-  // spy replaces the detached-respawn + `process.exit` seam, which must
-  // never fire inside a vitest worker.
   const restart = vi.fn()
 
   beforeEach(() => {
@@ -74,7 +69,6 @@ describe('update/job startUpdateJob', () => {
     await vi.waitFor(() => {
       expect(job.getUpdateJobStatus().state).toBe('restarting')
     })
-    // Called exactly once, on success only.
     expect(restart).toHaveBeenCalledOnce()
   })
 
@@ -96,7 +90,6 @@ describe('update/job startUpdateJob', () => {
     })
     expect(restart).not.toHaveBeenCalled()
 
-    // A failed job releases the single-job slot.
     const retry = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockReturnValue(retry.promise)
     job.startUpdateJob('v9.9.10', { restart })
@@ -118,8 +111,6 @@ describe('update/job startUpdateJob', () => {
       expect(job.getUpdateJobStatus().state).toBe('failed')
     })
 
-    // The status boundary localizes the stored descriptor; the default is the
-    // site locale, and the VersionDialog renders the finished sentence.
     expect(job.getUpdateJobStatus().error).toBe('更新包校验失败，已中止')
     expect(job.getUpdateJobStatus('en-US').error).toBe(
       'The update package checksum did not match; the update was aborted',
@@ -127,7 +118,6 @@ describe('update/job startUpdateJob', () => {
     expect(job.getUpdateJobStatus('zh-TW').error).toBe('更新套件校驗失敗，已中止')
     expect(job.getUpdateJobStatus('en-US').error).not.toContain('update.error.')
 
-    // A retry drops the stale failure (and its descriptor).
     const retry = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockReturnValue(retry.promise)
     job.startUpdateJob('v9.9.10', { restart })

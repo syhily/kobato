@@ -9,13 +9,6 @@ import { collectLexicalHeadings } from '@kobato/lexical/collect.ts'
 import { lexicalBodyWith, lexicalHeading } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
-// The `headings` derived column written at save time must carry slugs
-// byte-identical to the ids inkling's HTML export stamps on `<hN>` tags —
-// feed/TOC anchors join on them. This test runs both sides over the same
-// state and compares; both sides now read the SAME shared implementation
-// exported from `@kobato/inkling/headless`, so the contract pins that the
-// save pipeline and the export keep composing it identically.
-
 const HEADING_TEXTS = [
   'Hello World',
   '你好 世界',
@@ -50,8 +43,6 @@ describe('lexical/heading-slug — save-time slugs vs inkling export ids', () =>
     const exported = extractHeadingIds(html)
     expect(exported).toHaveLength(HEADING_TEXTS.length)
 
-    // The export assigns an id to EVERY heading (empty-text ones too), in
-    // document order, through inkling's per-render dedup tracker.
     const track = createHeadingSlugTracker()
     const expected = HEADING_TEXTS.map((text, i) => ({
       depth: Number(TAGS[i]![1]),
@@ -70,15 +61,11 @@ describe('lexical/heading-slug — save-time slugs vs inkling export ids', () =>
 
     const exported = new Set(extractHeadingIds(html).map((h) => h.id))
 
-    // Every collected entry's slug must appear among the export's ids.
     const collected = collectLexicalHeadings(state)
     for (const heading of collected) {
       expect(exported.has(heading.slug), `${heading.text} → ${heading.slug}`).toBe(true)
     }
 
-    // And the collected slugs are exactly the tracker outputs for the
-    // non-empty headings, in document order (empty-text headings consume a
-    // tracker slot but produce no entry).
     const track = createHeadingSlugTracker()
     const expected = HEADING_TEXTS.map((text) => ({ text: text.trim(), slug: track(slugifyHeadingText(text)) }))
       .filter((h) => h.text.length > 0)

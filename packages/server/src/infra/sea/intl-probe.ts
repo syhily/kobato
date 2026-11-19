@@ -15,20 +15,12 @@ import type { AppLocale } from '@kobato/i18n/locales.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { formatDuration } from '@kobato/utils/format.ts'
 
-/** Fixed instant so the expected strings never depend on the wall clock. */
 export const INTL_PROBE_INSTANT = new Date('2026-01-02T15:04:05.000Z')
 
-/** `formatDuration` input: 2 minutes 5 seconds — exercises units + ListFormat. */
 export const INTL_PROBE_DURATION_MS = 125_000
 
-/** Plain unit labels for the standalone Intl.ListFormat assertion. */
 export const INTL_LIST_PROBE = ['1 hour', '30 minutes'] as const
 
-/**
- * Collation probe: the same three glyphs sort into different orders per
- * locale (root/en-US code-point order, zh-CN pinyin, zh-Hant stroke), so the
- * pinned output catches a runtime that silently resolves the root collator.
- */
 export const INTL_COLLATION_PROBE = ['張', '李', '王'] as const
 
 export interface IntlLocaleExpectation {
@@ -120,8 +112,6 @@ function assertSupported(locale: AppLocale): void {
       throw new TypeError(`Intl.${name} is unavailable in this runtime (reduced ICU data?)`)
     }
   }
-  // One closure per constructor keeps each static signature concrete — the
-  // heterogeneous constructor union is not callable as a single function.
   const checks: ReadonlyArray<readonly [string, (locales: string[]) => string[]]> = [
     ['DateTimeFormat', (locales) => Intl.DateTimeFormat.supportedLocalesOf(locales)],
     ['NumberFormat', (locales) => Intl.NumberFormat.supportedLocalesOf(locales)],
@@ -162,8 +152,6 @@ export function probeIntlLocale(locale: AppLocale): IntlLocaleProbeResult {
     listUnits: normalizeWhitespace(
       new Intl.ListFormat(locale, { style: 'narrow', type: 'unit' }).format([...INTL_LIST_PROBE]),
     ),
-    // The REAL duration surface, not a re-implementation: units come from
-    // NumberFormat and the joiner from ListFormat.
     duration: normalizeWhitespace(formatDuration(INTL_PROBE_DURATION_MS, { locale })),
     collation: [...INTL_COLLATION_PROBE].sort((a, b) => collator.compare(a, b)).join(','),
   }
@@ -187,10 +175,6 @@ export function probeIntlLocale(locale: AppLocale): IntlLocaleProbeResult {
   return actual
 }
 
-/**
- * Produce one readable line per locale plus a success line. Injected writer
- * keeps the unit test free of stdout capture; the SEA CLI passes the default.
- */
 export function runIntlProbe(write: (line: string) => void = (line) => process.stdout.write(line)): void {
   for (const locale of SUPPORTED_LOCALES) {
     const result = probeIntlLocale(locale)

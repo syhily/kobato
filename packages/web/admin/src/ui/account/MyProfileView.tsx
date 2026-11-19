@@ -61,7 +61,6 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
     ...orpcQuery.account.updateProfile.mutationOptions(),
     onSuccess: () => {
       setProfileMessage(t('admin.my.profile.saved'))
-      // Re-run the route loader so avatar / stats pick up a name change without a reload.
       void revalidator.revalidate()
     },
   })
@@ -73,7 +72,6 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
 
   const profileError = profileMutation.error?.message
-  // Only privileged roles can paint a custom badge; the updateProfile action enforces the same rule.
   const canSetBadge = user.role === 'admin' || user.role === 'author'
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
   const roleLabelText = user.role ? t(ROLE_LABEL_KEYS[user.role]) : t('common.role.anonymous')
@@ -166,7 +164,6 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 onSubmit={(e) => {
                   e.preventDefault()
                   setProfileMessage(null)
-                  // Empty link → null — the http-URL schema rejects empty strings; clearing must send the "no link" sentinel.
                   const trimmedLink = link.trim()
                   const payload: AccountUpdateProfileInput = {
                     name,

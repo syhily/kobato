@@ -51,11 +51,6 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// MusicsView's useState defaults (q '', createdAt desc, 24/page) are what these
-// snapshots assert; fetch hooks are stubbed via mock-react-query and sonner is inert
-// from setup.ts.
-
-// `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the machine state directly.
 const searchHookMock = vi.hoisted(() => ({
   state: {
     results: [] as MetingSearchHit[],
@@ -165,7 +160,6 @@ describe('snapshot: MusicsView', () => {
   })
 })
 
-// Pure-props view — the route module supplies id + navigate.
 const navigateMock = vi.fn()
 
 describe('snapshot: MusicDetailView', () => {
@@ -242,7 +236,6 @@ describe('snapshot: MusicDetailView', () => {
 
 describe('snapshot: AddMusicView', () => {
   beforeEach(() => {
-    // Empty library; the search machine starts idle.
     queryMocks.query = {
       data: { musics: [], total: 0 },
       isLoading: false,
@@ -289,7 +282,6 @@ describe('snapshot: MusicLibraryHero', () => {
     expect(html).toContain('音乐库')
     expect(html).toContain('共 1 首歌曲')
     expect(html).toContain('播放全部')
-    // Collage paints only after a browser ResizeObserver effect — SSR asserts the scrim/title instead.
     expect(html).toContain('共 1 首歌曲')
   })
 
@@ -360,7 +352,6 @@ describe('snapshot: LyricsDisplay', () => {
     expect(html).toContain('夜了呢')
     expect(html).toContain('月光下的苍白')
     expect(html).toContain('手风琴弹奏着那年代的向往')
-    // Active line (index 1 at t=7s) carries the larger / bolder class hook.
     expect(html).toMatch(/text-lg font-medium text-ink-1/u)
   })
 

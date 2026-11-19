@@ -20,7 +20,6 @@ describe('taxonomy cache invalidation', () => {
     const { upsertAdminTag, listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
     const created = await upsertAdminTag(db, { name: 'OldName' })
 
-    // Prime the `tags:all` cache with the pre-rename list.
     const primed = await listAllTags(db)
     expect(primed.map((t) => t.name)).toContain('OldName')
 
@@ -36,7 +35,6 @@ describe('taxonomy cache invalidation', () => {
     const { set } = await import('@kobato/server/infra/cache/registry.ts')
     const created = await upsertAdminCategory(db, { name: 'FeedCat', cover: '', description: '' })
 
-    // Warm the feed bucket, including the category-scoped key.
     const settingsRevision = getBlogSettingsSnapshotSync().revision
     await set('feed', { scope: 'all', locale: 'zh-CN', version: APP_VERSION, settingsRevision }, '<xml>all</xml>')
     await set(
@@ -54,7 +52,6 @@ describe('taxonomy cache invalidation', () => {
   it('increments a tag count immediately when a post carrying the tag is published', async () => {
     const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
 
-    // Prime the cache before the tag/post exist.
     const primed = await listAllTags(db)
     expect(primed.find((t) => t.name === 'CacheTag')).toBeUndefined()
 

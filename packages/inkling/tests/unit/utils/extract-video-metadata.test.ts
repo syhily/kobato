@@ -42,8 +42,6 @@ class MockVideo extends EventTarget {
 }
 
 describe('extractVideoMetadata', () => {
-  // capture the originals through Reflect.get: a plain `document.createElement`
-  // reference trips unbound-method, and one of its overloads is deprecated
   const originalCreateElement = Reflect.get(document, 'createElement') as (tagName: string) => HTMLElement
   const originalCreateObjectURL = Reflect.get(URL, 'createObjectURL') as typeof URL.createObjectURL
   const originalRevokeObjectURL = Reflect.get(URL, 'revokeObjectURL') as typeof URL.revokeObjectURL

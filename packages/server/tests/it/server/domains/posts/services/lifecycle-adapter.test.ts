@@ -4,9 +4,6 @@ import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/life
 import { adminUser, authorUser, regularUser } from '@kobato/test/session.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pins CONTEXT.md "Draft preview": posts require author+ AND ownership —
-// admins may preview anyone's draft, authors only their own.
-
 const AUTHOR_ID = Number(authorUser().id)
 
 function meta(authorId: number | null): PostMetaRow {

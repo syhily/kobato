@@ -46,7 +46,6 @@ describe('auth/schema — password complexity', () => {
   })
 
   it('counts multi-byte runes fully against the byte cap', async () => {
-    // 3 ASCII + 24 × 3-byte runes = 75 bytes.
     await expect(signUpAdminSchema.parseAsync({ ...base, password: `Aa1${'密'.repeat(24)}` })).rejects.toBeTruthy()
   })
 

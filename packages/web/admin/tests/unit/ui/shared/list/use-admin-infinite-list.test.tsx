@@ -10,7 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// sonner is stubbed locally: the list error path is asserted on toast copy.
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: toastMock }))
 
@@ -29,8 +28,6 @@ interface TestInput {
   limit: number
 }
 
-// Structural stand-in for an oRPC procedure's TanStack utils, mirroring
-// `orpcQuery.*.list.infiniteOptions`; the fetcher resolves in-memory pages.
 function makeNamespace<TPage>(fetchPage: (input: TestInput) => Promise<TPage>) {
   return {
     key: () => ['test', 'admin-infinite-list'],
@@ -51,7 +48,6 @@ function makeNamespace<TPage>(fetchPage: (input: TestInput) => Promise<TPage>) {
   }
 }
 
-// The hook reads the root `useI18n()` translator, so every render mounts the provider.
 function makeWrapper(locale: AppLocale = 'zh-CN') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -64,7 +60,6 @@ function makeWrapper(locale: AppLocale = 'zh-CN') {
   )
 }
 
-// Page fetcher serving `total` rows in `pageSize` chunks, recording every input.
 function makePager(total: number) {
   const fetched: TestInput[] = []
   const fetchPage = vi.fn((input: TestInput) => {
@@ -142,7 +137,6 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
     })
     await waitFor(() => expect(result.current.hasNextPage).toBe(false))
 
-    // A trailing fetchNextPage is a no-op — no fourth request fires.
     await act(async () => {
       await result.current.fetchNextPage()
     })
@@ -192,7 +186,6 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
       { wrapper: makeWrapper(), initialProps: { enabled: false } },
     )
 
-    // Idle: pending but not fetching, and no request ever fired.
     expect(result.current.isLoading).toBe(false)
     expect(fetchPage).not.toHaveBeenCalled()
 
@@ -201,7 +194,6 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
   })
 
   it('derives a 0 total for pages without a count aggregate', async () => {
-    // Endpoints like the meting music search report only `hasMore`.
     const fetchPage = vi.fn((input: TestInput) =>
       Promise.resolve({ rows: [{ id: 'r0' }], hasMore: input.offset + input.limit < 1 }),
     )
@@ -229,7 +221,6 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(rowIds(result)).toEqual(['r0', 'r1'])
 
-    // The re-render lands a tick after setQueryData — poll for it.
     await act(async () => {
       result.current.patchPages((data) => ({
         ...data,
@@ -237,7 +228,6 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
       }))
     })
     await waitFor(() => expect(rowIds(result)).toEqual(['r1']))
-    // A patch is not a refetch — no second request fired.
     expect(fetchPage).toHaveBeenCalledTimes(1)
   })
 
@@ -262,7 +252,6 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
     act(() => {
       result.current.reset()
     })
-    // Reset only drops the cache; the caller re-arms the machine.
     expect(wrapper.queryClient.getQueryData(['test', 'admin-infinite-list'])).toBeUndefined()
   })
 })

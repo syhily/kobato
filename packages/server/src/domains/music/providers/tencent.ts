@@ -204,7 +204,6 @@ export const tencentProvider: MusicProvider = {
       throw new ActionFailure(502, descriptorFor('music.error.upstreamUnavailable'))
     }
 
-    // Support both req_1 (batch key) and music.search.SearchCgiService (service key) response shapes.
     const typedRes = unsafeCast<Record<string, unknown>>(res)
     const batchData = unsafeCast<Record<string, unknown> | undefined>(typedRes.req_1)
     const serviceData = unsafeCast<Record<string, unknown> | undefined>(typedRes['music.search.SearchCgiService'])

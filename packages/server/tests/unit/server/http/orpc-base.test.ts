@@ -23,7 +23,6 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-/** Shrink the `resource` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -34,9 +33,6 @@ function seedSingleAttemptResourceBucket() {
   })
 }
 
-// Miniature router in the shape `orpc-base.ts` produces in production:
-// a public procedure with the shared `resourceRateLimit` guard mounted
-// via `.use()` after `.input()`/`.output()`.
 const router = {
   ping: publicProc
     .route({ method: 'POST', path: '/ping' })
@@ -94,8 +90,6 @@ describe('resourceRateLimit oRPC middleware', () => {
 
     const res = await callPing({ msg: '' })
 
-    // Input validation runs before the guard: invalid input must see the validation
-    // error, not 429, and never reach the counter.
     expect(res.status).not.toBe(429)
     expect(res.status).toBeGreaterThanOrEqual(400)
     expect(res.status).toBeLessThan(500)
@@ -103,9 +97,6 @@ describe('resourceRateLimit oRPC middleware', () => {
   })
 })
 
-// Miniature router in the shape the passkey controllers produce: a
-// procedure with the shared `passkeyGuard` mounted via `.use()` after
-// `.input()`/`.output()`.
 const passkeyRouter = {
   passkeyPing: publicProc
     .route({ method: 'POST', path: '/passkey-ping' })
@@ -132,7 +123,6 @@ async function callPasskeyPing(input: unknown) {
   return result.response
 }
 
-/** Flip the real passkey gate by seeding the settings snapshot. */
 function seedPasskeyBundle(enabled: boolean) {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -163,9 +153,6 @@ describe('passkeyGuard oRPC middleware', () => {
   })
 })
 
-// Both HTTP adapters consume `translateDomainError`; this suite pins the
-// oRPC side of the converged contract — `ActionFailure` issues and
-// headers are forwarded exactly like `DomainError` issues.
 const failingRouter = {
   actionFailure: publicProc
     .route({ method: 'POST', path: '/fail/action' })
@@ -226,7 +213,6 @@ describe('domainErrorGuard translation', () => {
     await expect(call(failingRouter.actionFailure, {}, { context: ctx })).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
       status: 429,
-      // The server folds the localized issue summary into the message.
       message: 'slow down：dup',
       data: {
         descriptor: {
@@ -302,7 +288,6 @@ describe('domainErrorGuard translation', () => {
   })
 })
 
-// Middleware gates translate through the same server translator.
 const gateRouter = {
   whoami: authedProc
     .route({ method: 'POST', path: '/whoami' })
@@ -321,9 +306,6 @@ describe('localized middleware gates', () => {
   })
 })
 
-// Miniature router pinning the `commentTokenCookie` middleware contract:
-// parse pre-handler, Set-Cookie write-back only when the handler assigns
-// `refreshed`, and write-back survives a handler throw (finally).
 const REFRESH_VALUE = { 'pk-1': [{ token: 'tok-1', expiresAt: 123 }] }
 
 const tokenRouter = {
@@ -365,7 +347,6 @@ describe('commentTokenCookie oRPC middleware', () => {
     const ctx = makeCookieCtx()
     const res = await call(tokenRouter.read, {}, { context: ctx })
     expect(res).toEqual({ pages: ['pk-1'] })
-    // Read-only procedures never schedule a write-back.
     expect(ctx.responseHeaders.get('Set-Cookie')).toBeNull()
   })
 
@@ -375,7 +356,6 @@ describe('commentTokenCookie oRPC middleware', () => {
     expect(res).toEqual({ ok: true })
     const setCookie = ctx.responseHeaders.get('Set-Cookie')
     expect(setCookie).toContain('__comment_tokens=')
-    // Round-trip: the serialized value parses back to the assigned cookie.
     expect(parseCommentTokensCookie(setCookie)).toEqual(REFRESH_VALUE)
   })
 
@@ -388,10 +368,6 @@ describe('commentTokenCookie oRPC middleware', () => {
   })
 })
 
-// The contract-first counterparts of the procedure bases: a `@kobato/api`
-// contract implemented through `implementPublic`/`implementAuthed` must behave
-// like the `os`-built bases — guard order, one run per request, and the
-// contract's schemas validating input before the handler.
 const implementerContract = {
   ping: oc
     .route({ method: 'POST', path: '/impl/ping' })
@@ -426,8 +402,6 @@ describe('contract implementer bases', () => {
   it('flows the HandlerContext and validates the contract input before the handler', async () => {
     const ctx = makePublicCtx()
     await expect(call(publicImplRouter.ping, { msg: 'hi' }, { context: ctx })).resolves.toEqual({ ok: true })
-    // The contract types the input, so the invalid call goes through the
-    // narrowest test escape to prove the runtime validation still fires.
     await expect(
       call(publicImplRouter.ping, { wrong: 1 } as unknown as { msg: string }, { context: ctx }),
     ).rejects.toMatchObject({

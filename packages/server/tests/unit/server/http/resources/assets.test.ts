@@ -5,8 +5,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The manifest/robots handlers read the REQUEST's pinned snapshot — mount a
-// request-context stub the way the perimeter would.
 function requestContextFor(settings: BlogSettingsBundle | null, locale: 'zh-CN' | 'zh-TW' = 'zh-CN') {
   return {
     db: {},

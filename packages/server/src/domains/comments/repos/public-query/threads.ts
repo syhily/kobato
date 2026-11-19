@@ -6,8 +6,6 @@ import { user } from '@kobato/db/schema/user.ts'
 import { commentWithUser, whereTarget } from '@kobato/server/domains/comments/repos/shared.ts'
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
-// Viewer-visibility predicate: caller-visible pending rows without a delete
-// request, or the viewer's own pending/delete-requested comment.
 function whereViewerVisible(pendingValues: boolean[], currentUserId?: number) {
   return or(
     and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
@@ -76,8 +74,6 @@ export async function findChildComments(
     .where(and(...baseConditions))
 }
 
-/** Public-DTO fields only: the detail ETag hashes this row list before it can
- *  answer 304. Server-only PII (`ua`, `ip`, `email`) stays out of the digest. */
 export async function commentFingerprintRows(db: Database, target: EntityTarget) {
   return db
     .select({

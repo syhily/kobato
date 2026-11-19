@@ -157,7 +157,6 @@ export interface FormatToolbarVisibility {
   hideAlignment: boolean
 }
 
-/** The formats a surface can hide from the toolbar — 'bold' is the only honored value; any other string is a silent no-op. */
 export type HiddenFormat = 'bold'
 
 export function resolveFormatToolbarVisibility(

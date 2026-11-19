@@ -17,9 +17,6 @@ interface UseGifBrowserOptions {
 }
 
 export function useGifBrowser({ config, fetchPage, scheduler, debounceMs }: UseGifBrowserOptions): GifBrowser {
-  // callers re-resolve the config object per render; rekey it on its fields
-  // (the config's full field set — the real inputs) so the browser only
-  // recreates when one of them changes
   const { provider, apiUrl, apiKey, contentFilter } = config
   const memoConfig = React.useMemo(
     () => ({ provider, apiUrl, apiKey, contentFilter }),

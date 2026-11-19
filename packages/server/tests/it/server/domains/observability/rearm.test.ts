@@ -79,7 +79,6 @@ afterEach(() => {
 describe('observability runtime re-arm after an HMR settings-snapshot loss', () => {
   it('hydrates from the DB and starts the verified runtime', async () => {
     seedSettings(VERIFIED)
-    // Simulate the re-created snapshot module: no value, no in-flight hydration.
     expect(getBlogSettingsBundleSync()).toBeNull()
 
     await hydrateBlogSettings(db)
@@ -112,7 +111,6 @@ describe('observability runtime re-arm after an HMR settings-snapshot loss', () 
     await syncObservabilityRuntime()
     expect(runtimeMock.startTraceRuntime).toHaveBeenCalledTimes(1)
 
-    // A later HMR cycle re-created the snapshot module again.
     resetBlogSettingsForTests()
     expect(getBlogSettingsBundleSync()).toBeNull()
 

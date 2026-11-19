@@ -26,7 +26,6 @@ const decreaseLike = impl.decrease.handler(async ({ input, context }) => {
   const target = await resolveMetricTarget(context.db, input.key)
   const consumed = await decreaseLikes(context.db, target, input.token)
   if (!consumed) {
-    // Unknown/consumed/purged token — 200 with the current count would be a lie the client persists.
     throw new DomainError('BAD_REQUEST', descriptorFor('likes.error.stale'))
   }
   return { key: input.key, likes: await queryLikes(context.db, target) }

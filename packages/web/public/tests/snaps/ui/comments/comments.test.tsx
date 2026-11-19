@@ -6,8 +6,6 @@ import { renderInRouter } from '@kobato/test/render.tsx'
 import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem.tsx'
 import { describe, expect, it } from 'vitest'
 
-// Local fixture defaults deliberately differ from the shared catalog factory (seq-based,
-// 2024-03-12 dates).
 const aliceComment: Partial<CommentItemType> = {
   id: '1',
   createAt: '2024-01-15T08:30:00.000Z',

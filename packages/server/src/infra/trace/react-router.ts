@@ -1,9 +1,3 @@
-// React Router root middleware span: one per document or `.data` request.
-//
-// React Router's `next()` returns error responses instead of throwing, so the
-// status comes from the response; a thrown Response stays control flow and a
-// real error is projected to a name plus a stable category by the facade.
-
 import type { Span } from '@kobato/server/infra/trace/facade.ts'
 import type { MiddlewareFunction } from 'react-router'
 

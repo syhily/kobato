@@ -28,9 +28,8 @@ export function setupNestedEditor({
   }
 
   const createdEditor = createEditor({ nodes })
-  // set up a blank document with a paragraph otherwise the editor won't receive focus
   const editorState = createdEditor.parseEditorState(initialEditorState)
-  createdEditor.setEditorState(editorState, { tag: 'history-merge' }) // use history merge to prevent undo clearing the initial state
+  createdEditor.setEditorState(editorState, { tag: 'history-merge' })
   return createdEditor
 }
 

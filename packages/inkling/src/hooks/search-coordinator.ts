@@ -5,11 +5,6 @@ import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-
 import React from 'react'
 
 export const SEARCH_DEBOUNCE_MS = 100
-// A third URL table, deliberately not unified with either side of the
-// clipboard protocol's policy pair: it classifies link-search-box queries
-// (accepts mailto/tel, not ftp), not pasted links (`isPasteableLinkUrl` in
-// `@kobato/inkling-internal/plugins/behaviour/clipboard-protocol`) or export-safe hrefs (`isSafeUrl`
-// in `@kobato/inkling-internal/nodes/base/utils/is-safe-url`).
 const URL_QUERY_REGEX = /^http|^#|^\/|^mailto:|^tel:/
 
 const DEFAULT_URL_OPTION_LABEL = 'Link to web page'
@@ -145,24 +140,16 @@ export function createSearchCoordinator({
   let defaultOptionsLoaded = false
 
   const runSearch = async (id: number, term: string): Promise<void> => {
-    // a scheduled dispatch that fires after a newer query never starts —
-    // the newer request owns the searching flag
     if (!queryTrack.isLatest(id)) {
       return
     }
 
     store.emit({ isSearching: true })
 
-    // a missing search function resolves like a cancelled search: keep the
-    // current options and leave the searching state
     const outcome = await runTrackedRequest(queryTrack, id, () =>
       searchLinks ? searchLinks(term) : Promise.resolve(undefined),
     )
 
-    // undefined means cancelled or superseded: keep the current options instead
-    // of flashing "no results" while a later search is in flight. A rejection is
-    // best-effort too — preserve the last options. Either way the latest request
-    // always leaves the searching state.
     if (outcome?.ok && outcome.value !== undefined) {
       store.emit({
         listOptions: convertSearchResultsToListOptions(outcome.value, term, {
@@ -189,9 +176,7 @@ export function createSearchCoordinator({
             }),
           })
         }
-      } catch {
-        /* noop */
-      }
+      } catch {}
     })()
 
     defaultRequest = { id, promise }

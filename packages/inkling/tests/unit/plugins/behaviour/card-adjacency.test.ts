@@ -43,11 +43,6 @@ function createTestEditor(nodes: LexicalNodeConfig[] = CARD_ADJACENCY_TEST_NODES
   })
 }
 
-/**
- * Fake geometry whose every member throws unless overridden, so a test fails
- * if the queries read geometry they should not need (e.g. caret rects on the
- * empty-paragraph shortcut path).
- */
 function fakeGeometry(overrides: Partial<CardAdjacencyGeometry> = {}): CardAdjacencyGeometry {
   const unexpected = (name: string) => () => {
     throw new Error(`unexpected geometry read: ${name}`)

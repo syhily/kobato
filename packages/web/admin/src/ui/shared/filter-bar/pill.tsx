@@ -22,8 +22,6 @@ import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
-// One pill: label + icon, kind-specific value editor, remove button. Values are
-// opaque strings — this component owns decoding (never throws) + re-serialization.
 interface FilterPillProps<K extends string> {
   field: FilterFieldSpec<K> | undefined
   filter: ActiveFilter<K>
@@ -37,7 +35,6 @@ export function FilterPill<K extends string>({ field, filter, search, onRemove, 
   const fieldLabel = field?.label ?? filter.field
   const FieldIcon = field?.icon
 
-  // Malformed JSON falls back to an empty pill, never throws.
   const dateSingleValue = useMemo(
     () =>
       field?.kind === 'date-single'

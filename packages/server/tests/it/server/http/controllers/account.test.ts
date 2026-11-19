@@ -14,9 +14,6 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Profile / password / session procedures against the real engine (bcrypt + rate
-// limiter). Passkey procedures live in account.controller.test.ts.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -126,7 +123,6 @@ describe('accountRouter.updateProfile', () => {
   })
 
   it('treats a badge-only patch from a visitor as a graceful no-op, not a 500', async () => {
-    // Stripping badge writes leaves an EMPTY patch — must be a graceful no-op.
     const id = await seedUser({ role: 'visitor' })
 
     const res = await call(
@@ -176,7 +172,6 @@ describe('accountRouter.updatePassword', () => {
       ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
 
-    // The rejected attempt never rewrote the stored hash.
     expect(await bcrypt.compare('OldPass1234', (await userRow(id)).password)).toBe(true)
   })
 
@@ -185,7 +180,6 @@ describe('accountRouter.updatePassword', () => {
     const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
     const ip = nextIp()
 
-    // First attempt consumes the single-slot budget and succeeds.
     await call(
       accountRouter.updatePassword,
       { oldPassword: 'OldPass1234', newPassword: 'New-password-1' },
@@ -199,7 +193,6 @@ describe('accountRouter.updatePassword', () => {
       ),
     ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
 
-    // The rejected attempt never reached the password change.
     expect(await bcrypt.compare('New-password-1', (await userRow(id)).password)).toBe(true)
   })
 })

@@ -24,10 +24,6 @@ queryMocks.queryClient = {
   setQueryData: vi.fn(),
 }
 
-// CategoriesView reads rows from the list useQuery + delete/reorder
-// mutations and a dnd-kit context; queries and DnD primitives are neutralized for SSR.
-
-// dnd-kit touches DOM at mount — each primitive is shimmed to render children.
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => children,
   PointerSensor: class PointerSensor {},

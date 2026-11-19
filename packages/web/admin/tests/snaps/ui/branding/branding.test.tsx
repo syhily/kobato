@@ -4,7 +4,6 @@ import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { BrandingView } from '@kobato/web-admin/ui/branding/BrandingView.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-// Route-loader data + revalidator are stubbed so SSR never touches the network.
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -14,7 +13,6 @@ vi.mock('react-router', async () => {
   }
 })
 
-// etag non-empty → "已自定义", empty → "使用默认"; the cast is a documented escape hatch for the partial map.
 function buildBranding(overrides: Partial<AssetsLoaderShape['branding']> = {}): AssetsLoaderShape['branding'] {
   const base: AssetsLoaderShape['branding'] = {
     faviconSvg: { etag: '' },
@@ -48,7 +46,6 @@ describe('snapshot: BrandingView', () => {
     expect(html).toContain('通用素材')
     expect(html).toContain('已自定义')
     expect(html).toContain('使用默认')
-    // Uploads always work (S3 or local fallback) — no storage-disabled state.
     expect(html).toContain('替换')
     expect(html).toContain('上传')
   })

@@ -48,8 +48,6 @@ export interface EditorMetaPanelProps<TMeta> {
   deleteRestore: EditorMetaPanelDeleteRestore
 }
 
-/** Mounts exactly one sidebar instance: aside on large screens, `Sheet`
- *  elsewhere — a dual mount would run the history query and mutations twice. */
 export function EditorMetaPanel<TMeta>({
   entityKind,
   entityLabelId,

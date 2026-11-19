@@ -6,13 +6,6 @@ import { executeAnalyticsQuery, setAnalyticsQueryExecutor } from '@kobato/db/duc
 import { withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
 import { recordDbOperation } from '@kobato/server/infra/trace/metrics.ts'
 
-/**
- * may not cross into `@kobato/db`, so the composition root installs THIS
- * executor through `wireAnalyticsQueryTelemetry` — every dashboard query then
- * carries the `db.duckdb.query` boundary with its stable operation name only
- * (never SQL text or bound parameters).
- */
-
 export async function runAnalyticsQuery(
   reader: AnalyticsReader,
   query: Compilable,

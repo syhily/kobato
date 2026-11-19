@@ -8,8 +8,6 @@ import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation.
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The reservation guard runs against the real engine: the own-meta lookup and the cross-entity
-// registry read are plain SELECTs on seeded rows.
 const db = getTestDb()
 
 beforeEach(async () => {

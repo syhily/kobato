@@ -41,7 +41,6 @@ export type AdminCommentsData = InfiniteData<AdminCommentsPage, number>
 
 const ZERO_STATUS_COUNTS: StatusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
 
-// Cache patches; `total` stays stale on removal — the next page load re-syncs it.
 export function removeCommentFromPages(data: AdminCommentsData, id: string): AdminCommentsData {
   const removed = data.pages.flatMap((page) => page.comments).find((comment) => idStr(comment.id) === id)
   return {
@@ -120,14 +119,12 @@ export function clearDeleteRequestInPages(data: AdminCommentsData, id: string, i
   }
 }
 
-// View-owned editor intents (edit / reply / edit-user); everything else on the actions object is controller-owned.
 export interface CommentIntents {
   edit(comment: AdminComment): void
   reply(comment: AdminComment): void
   editUser(comment: AdminComment): void
 }
 
-// The single comment-actions surface handed to `AdminCommentRow`; triggers lead through their confirm dialog first.
 export interface CommentActions extends CommentIntents {
   approve(comment: AdminComment): void
   remove(comment: AdminComment): void
@@ -141,7 +138,6 @@ export interface CommentActions extends CommentIntents {
   isResolvingDeletion(comment: AdminComment): boolean
 }
 
-// Inverse of the URL write-back; intentionally lenient — a hand-edited URL with invalid values falls back to defaults.
 export function parseCommentFiltersFromSearchParams(
   searchParams: URLSearchParams,
   t: I18nValue['t'],
@@ -182,7 +178,6 @@ export function parseCommentFiltersFromSearchParams(
     const value = JSON.stringify({ date, op: dateOp })
     initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op: dateOp }, t) })
   } else if (date) {
-    // Partial date URL — pair with the default operator (Ghost's "on or before").
     const op = isSingleDateFilterOperator(dateOp) ? dateOp : DEFAULT_SINGLE_DATE_OPERATOR
     const value = JSON.stringify({ date, op })
     initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op }, t) })
@@ -203,10 +198,8 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   const { t } = useI18n()
   const queryClient = useQueryClient()
 
-  // Mirror active filters into the URL (debounced — text/date edits dispatch per keystroke) so a filtered view stays shareable.
   const [searchParams, setSearchParams] = useSearchParams()
   const urlSyncTimerRef = useRef<number | null>(null)
-  // Params string last consumed or produced; a mismatch means Back/Forward — the URL reseeds the pills.
   const consumedParamsRef = useRef<string | null>(null)
   useEffect(() => {
     const current = searchParams.toString()
@@ -216,7 +209,6 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     const isMount = consumedParamsRef.current === null
     consumedParamsRef.current = current
     if (isMount) {
-      // The route already seeded the pills from this URL.
       return
     }
     const restored = parseCommentFiltersFromSearchParams(searchParams, t)
@@ -247,9 +239,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
                 next.set('match', range.op)
               }
             }
-          } catch {
-            // ignore malformed pill value
-          }
+          } catch {}
         } else if (filter.field === 'date' && filter.value) {
           try {
             const range = unsafeCast<{ date?: string; op?: string }>(JSON.parse(filter.value))
@@ -259,13 +249,10 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
             if (range.op) {
               next.set('dateOp', range.op)
             }
-          } catch {
-            // ignore malformed pill value
-          }
+          } catch {}
         }
       }
       if (next.toString() !== searchParams.toString()) {
-        // Record the write so the reseed effect above recognizes it as our own.
         consumedParamsRef.current = next.toString()
         setSearchParams(next, { replace: true, preventScrollReset: true })
       }
@@ -299,7 +286,6 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   })
   const statusCounts = firstPage?.statusCounts ?? ZERO_STATUS_COUNTS
 
-  // Rewrite the cached list pages in place after a server-side action instead of refetching.
   const approveComment = useCallback(
     (id: string) => patchPages((data) => approveCommentInPages(data, id)),
     [patchPages],
@@ -318,12 +304,10 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     [patchPages],
   )
 
-  // Full refresh after mutations the local patches can't model (user edits, replies).
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
   }, [queryClient])
 
-  // Each mutation owns its confirm-dialog state here; the cache patch rides on success.
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const closeConfirm = useCallback(() => setConfirm(null), [])
 
@@ -337,7 +321,6 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     onSuccess: (_result, variables) => removeComment(variables.commentId),
     onError: onMutationError('admin.toast.commentDeleteFailed', t),
   })
-  // Shared by approve-deletion / reject-deletion — the per-call `onSuccess` captures the comment for the reject path's count fixup.
   const resolveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onError: onMutationError('admin.toast.commentDeleteRequestFailed', t),

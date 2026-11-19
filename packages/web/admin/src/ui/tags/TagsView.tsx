@@ -41,7 +41,6 @@ export function TagsView() {
     noun: 'admin.list.noun.tags',
   })
 
-  // Whole-namespace invalidation, no local mirror; a rejected delete (409) surfaces through the confirm dialog.
   const deleteApi = useMutation({
     mutationFn: (id: string) => orpc.admin.tags.delete({ id }),
     onSuccess: () => {

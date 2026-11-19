@@ -79,12 +79,8 @@ describe('hono node server / createHonoServer', () => {
     expect(serveMock).toHaveBeenCalledTimes(1)
     expect(serveMock.mock.calls[0]?.[0]).toMatchObject({
       serverOptions: {
-        // Headers are cheap: a stalled header write must not get Node's 60s default.
         headersTimeout: 20_000,
         connectionsCheckingInterval: 10_000,
-        // The middleware owns the whole-request budget (30s / 30min restore
-        // overrides); Node's 300s default would cut off legitimately long
-        // backup restores.
         requestTimeout: 0,
       },
     })

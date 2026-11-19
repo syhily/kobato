@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Server prerender products are deterministic sentinels marking server-recomputed bytes.
 vi.mock('katex', () => ({
   default: {
     renderToString: (tex: string) => `<math>server:${tex}</math>`,
@@ -63,7 +62,6 @@ describe('content/services/lexical/canonicalize — canonicalizeLexicalEditorSta
     }
   })
 
-  // Client-supplied prerender products must be stripped and recomputed server-side.
   describe('strips server-owned artifact slots', () => {
     it('drops client highlightedHtml/mathml/svg and recomputes them server-side', async () => {
       const state = await canonicalizeLexicalEditorState(

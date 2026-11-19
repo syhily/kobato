@@ -54,7 +54,6 @@ export function isEncryptedBackup(prefix: Buffer): boolean {
 }
 
 function deriveKey(password: string, salt: Buffer, n: number): Buffer {
-  // Node's default maxmem (32 MiB) is below what N=2^15/r=8 needs (~33 MiB).
   try {
     return scryptSync(password, salt, KEY_BYTES, { N: n, r: SCRYPT_R, p: SCRYPT_P, maxmem: 256 * 1024 * 1024 })
   } catch (error) {
@@ -62,8 +61,6 @@ function deriveKey(password: string, salt: Buffer, n: number): Buffer {
   }
 }
 
-/** AAD binding each record to its position: seq (4B BE) ‖ flags (1B); the
- *  flags byte is also on the wire (how the reader learns "final"). */
 function recordAad(seq: number, flags: number): Buffer {
   const aad = Buffer.alloc(5)
   aad.writeUInt32BE(seq, 0)
@@ -173,8 +170,6 @@ export function createBackupCipher(password: string): Transform {
           this.push(header)
           header = null
         }
-        // Exactly one final record per stream — possibly the ONLY record,
-        // empty, when the plaintext is empty.
         this.push(encryptRecord(key, pending.length > 0 ? pending.peek() : Buffer.alloc(0), seq, true))
         callback()
       } catch (error) {
@@ -219,15 +214,11 @@ export function createBackupDecipher(password: string): Transform {
           }
           parseHeader()
         }
-        // Narrowing must survive the closure assignment in parseHeader.
         const derivedKey = key
         if (derivedKey === null) {
           throw new BackupDecryptionError('Invalid backup encryption header')
         }
         while (incoming.length >= 4) {
-          // Pre-check the DECLARED length before waiting for the record to
-          // arrive: a forged multi-GiB length must not turn this buffer
-          // into an unbounded accumulator.
           const buffer = incoming.peek()
           const declaredLength = buffer.readUInt32BE(0)
           if (declaredLength > CHUNK_SIZE) {

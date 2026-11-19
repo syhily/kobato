@@ -4,9 +4,6 @@ import { buildCspHeader } from '@kobato/server/http/middleware-pipeline.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// Exercises the real production `buildCspHeader` (bundle + nonce + dev flag
-// → CSP string), not a parallel inline copy.
-
 const NONCE = 'abcdef0123456789'
 
 function bundleWith(overrides: { host?: string | null }): BlogSettingsBundle {
@@ -80,7 +77,6 @@ describe('buildCspHeader', () => {
     for (const isDev of [true, false]) {
       const csp = buildCspHeader({ bundle: null, nonce: NONCE, isDev })
       expect(csp).toContain("connect-src 'self'")
-      // The OpenObserve origin can never appear in the policy.
       expect(csp).not.toContain('rum/v1')
       expect(csp).not.toContain('openobserve')
     }

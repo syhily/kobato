@@ -38,8 +38,6 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
     PASTE_COMMAND,
     (clipboardEvent) => {
       if (!editorOwnsFocus(editor) && !isNested) {
-        // Swallow paste inside inner inputs/contenteditables — without this,
-        // a paste inside e.g. CodeMirror would replace the card.
         if (shouldIgnoreEvent(clipboardEvent)) {
           return true
         }
@@ -98,9 +96,6 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
 
       return false
     },
-    // COMMAND_PRIORITY_LOW is load-bearing: at-link.ts registers its paste
-    // guard at COMMAND_PRIORITY_HIGH so it pre-empts this handler inside
-    // at-link search nodes.
     COMMAND_PRIORITY_LOW,
   )
 }

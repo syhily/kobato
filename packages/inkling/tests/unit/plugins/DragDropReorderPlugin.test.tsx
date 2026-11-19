@@ -21,11 +21,6 @@ import {
 import React, { useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Exercises the plugin's onDrop result mapping with the drag container stubbed:
-// useDragDropContainer captures the rendered options and resolveDrop is mocked
-// to control the drop-time verification scan. Surgery behavior lives in
-// behaviour/drop-surgery.test.ts.
-
 interface CapturedContainerOptions {
   droppable: {
     onDrop: (draggableInfo: DraggableInfo, dropResolution: DropResolution | null) => DropResult
@@ -78,8 +73,6 @@ function getCapturedOnDropEnd(): CapturedContainerOptions['lifecycle']['onDropEn
   return captureContainerOptions().lifecycle.onDropEnd
 }
 
-// The plugin's editor.update is React-hosted and commits on a later tick, so
-// await one macrotask before asserting on editor state.
 function settleEditor(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, 0)
@@ -175,8 +168,6 @@ describe('DragDropReorderPlugin onDrop result mapping', () => {
     })
 
     expect(result).toBe(false)
-    // Settle before the negative assertion too, or it passes vacuously against
-    // an update that only commits on a later tick.
     await settleEditor()
     expect(readTopLevelKeys()).toEqual(before)
   })

@@ -34,14 +34,6 @@ const impl = implementPublic(contentListingsContract)
 type ListingOutput<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
 type PayloadOutput<T> = ContentNotModifiedSignal | { kind: 'ok'; etag: string; payload: T }
 
-/**
- * Fingerprint the fully assembled listing payload. The listing representation
- * revision + APP_VERSION + the site calendar day (relative-date bucket) ride
- * alongside the payload, so a matching `If-None-Match` proves the document is
- * byte-identical before any 304 is emitted. The calendar day comes from the
- * payload's own `listingNowIso` so the tag and the rendered relative dates can
- * never disagree across a site-zone midnight.
- */
 function listingEtagFor(context: HandlerContext, payload: unknown): string {
   const localization = context.localization
   return listingEtag({
@@ -51,7 +43,6 @@ function listingEtagFor(context: HandlerContext, payload: unknown): string {
   })
 }
 
-/** A rendered listing counts one view; a redirect or a 304 never does. */
 function trackListingPageView(context: HandlerContext): void {
   trackPageView(context.requestFacts, null, {
     isAdmin: context.viewer?.role === 'admin',
@@ -113,7 +104,6 @@ async function scopedPostsListing({
   title: string
   description?: string
   locale: AppLocale
-  /** Request-pinned settings bundle — page size comes from THIS capture. */
   settings: BlogSettingsBundle | null
   ogImageUrl?: string
 }) {
@@ -188,10 +178,6 @@ const postsList = impl.postsList.handler(async ({ input, context }) => {
   )
 })
 
-// Keyword search — the empty-keyword 302, overflow redirects, and the audit event stay inside `searchLoader`.
-// Every miss is a full-corpus LIKE scan and every distinct keyword with hits
-// writes a slug list to the cache + an audit row, so the procedure is throttled;
-// the limiter rides the implementer, BEFORE the contract's input validation.
 const search = impl.use(resourceRateLimit).search.handler(async ({ input, context }) => {
   const auditContext: AuditContext = {
     viewer: context.viewer,
@@ -215,15 +201,10 @@ const categoriesList = impl.categoriesList.handler(async ({ input, context }) =>
   }))
 })
 
-// The archives payload (up to 10k posts + 4 metadata statements) is a
-// deliberate full-corpus fan-out — throttle it like the other expensive reads.
-// The limiter attaches per procedure, after input validation.
 const archives = impl.archives.use(resourceRateLimit).handler(async ({ input, context }) => {
   return runListingPayload(context, input.ifNoneMatch, async () => {
     const db = context.db
     const listingNowIso = new Date().toISOString()
-    // Archives promise completeness — explicit 10k bound (helper defaults to 200);
-    // revisit with year-grouped pagination past ~2,000 live posts.
     const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
     const posts = rawPosts.map(toListingPostCard)
     const resolvedPosts = await getClientPostsWithMetadata(db, posts, {

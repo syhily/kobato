@@ -20,8 +20,6 @@ import { redirect } from 'react-router'
 // un-awaited `Promise`s pass through untouched, so streaming stays intact.
 export type SsrCaller = RouterClient<ApiRouter>
 
-// One interceptor instance for the process: an in-process SSR call is named and parented
-// exactly like a network call, with `in_process` marking the transport.
 const ssrTraceInterceptor = createOrpcTraceInterceptor('in_process')
 
 type SsrCallerArgs = {
@@ -45,7 +43,6 @@ export type SsrCallerResult = {
 
 export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   const rc = getRequestContext(args)
-  // Same projection as the Hono `/rpc/*` bridge, fresh `responseHeaders` bag (never merged).
   const context: HandlerContext = {
     request: args.request,
     requestFacts: rc.requestFacts,
@@ -57,7 +54,6 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
     settings: rc.settings,
     localization: rc.localization,
   }
-  // Nonce derives once here so route modules never call `getRequestContext` themselves.
   return {
     caller: createRouterClient(apiRouter, {
       context,
@@ -74,8 +70,6 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
 export function isOrpcNotFound(error: unknown): boolean {
   return error instanceof ORPCError && error.code === 'NOT_FOUND'
 }
-
-// 30x/304 signals arrive as DATA — the unwrap helpers translate them back into thrown Responses.
 
 type ListingResult<T> = ContentRedirectSignal | ContentNotModifiedSignal | { kind: 'ok'; etag: string; listing: T }
 
@@ -144,8 +138,6 @@ export async function unwrapDetail<T, ETag extends string | null>(
   return { etag: result.etag, payload: result.payload }
 }
 
-// Comments + webmentions fan-out off the detail comment key — shared by the
-// post and page loaders; both promises stay un-awaited so `<Await>` streams them.
 export function streamDetailExtras(
   caller: SsrCaller,
   commentKey: string,

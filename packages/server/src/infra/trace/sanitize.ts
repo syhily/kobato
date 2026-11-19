@@ -1,17 +1,7 @@
-// Server-side telemetry privacy boundary.
-//
-// SDK-free on purpose: the runtime applies it before any value reaches an OTel
-// span, so the allowlist — not the caller — decides what can leave the process.
-// Arbitrary messages, stacks, URLs, headers, and raw paths have no route here.
-
 import type { SpanAttributeValue, SpanAttributes } from '@kobato/server/infra/trace/facade.ts'
 
 import { CACHE_BUCKET_IDS } from '@kobato/cache/types.ts'
 
-/**
- * Closed set of span attributes. A new boundary adds its own low-cardinality
- * keys here instead of passing an ad-hoc attribute through.
- */
 const SPAN_ATTRIBUTE_KEYS: ReadonlySet<string> = new Set([
   'http.request.method',
   'http.route',
@@ -40,11 +30,6 @@ const SPAN_ATTRIBUTE_KEYS: ReadonlySet<string> = new Set([
   'error.category',
 ])
 
-/**
- * Closed, boundary-owned vocabularies. Call sites use these unions so a raw
- * URL/host/path can never be passed as an operation name, and the sanitizer
- * re-checks the value before it reaches an SDK.
- */
 export const SAFE_FETCH_OPERATIONS = [
   'unspecified',
   'music.asset',
@@ -76,7 +61,6 @@ export type DbEngine = (typeof DB_ENGINES)[number]
 export const DB_OUTCOMES = ['success', 'error'] as const
 export type DbOutcome = (typeof DB_OUTCOMES)[number]
 
-/** Closed terminal outcomes of one relayed RUM batch (client-shape rejections are not relay health). */
 export const RUM_RELAY_OUTCOMES = ['ok', 'upstream_error', 'rate_limited', 'oversized'] as const
 export type RumRelayOutcome = (typeof RUM_RELAY_OUTCOMES)[number]
 
@@ -155,8 +139,6 @@ function sanitizeValue(key: string, value: SpanAttributeValue): string | number 
   if (key === 'http.response.status_code') {
     return typeof value === 'number' && Number.isInteger(value) && value >= 100 && value <= 599 ? value : null
   }
-  // Every other allowlisted key is a closed string (or the coalesced boolean
-  // handled above); a number/boolean cannot impersonate a route or operation.
   if (typeof value !== 'string') {
     return null
   }
@@ -180,10 +162,6 @@ function sanitizeValue(key: string, value: SpanAttributeValue): string | number 
   return bounded
 }
 
-/**
- * Validate one value against a known attribute key. The key itself must be in
- * the span allowlist; metrics build their own key allowlist on top.
- */
 export function sanitizeAttributeValue(key: string, value: SpanAttributeValue): string | number | boolean | null {
   if (!SPAN_ATTRIBUTE_KEYS.has(key)) {
     return null
@@ -242,16 +220,10 @@ function safeErrorName(error: unknown): string {
   if (error === null || typeof error !== 'object') {
     return 'NonError'
   }
-  // Only the closed allowlist can name an error; a hostile value degrades to
-  // 'Error' instead of echoing arbitrary content.
   const named = readField(error, 'name')
   return typeof named === 'string' && SAFE_ERROR_TYPES.has(named) ? named : 'Error'
 }
 
-/**
- * Reduce a thrown value to a name plus a stable category. Message, stack,
- * cause, URL, and arbitrary string values are never read into the projection.
- */
 export function projectError(error: unknown): ErrorProjection {
   if (error instanceof Response) {
     const status = safeStatus(error.status)

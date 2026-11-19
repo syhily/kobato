@@ -5,14 +5,6 @@ import type { EditorShellStatus, RevisionLike } from '@kobato/web-admin/ui/edito
 import { areLexicalEditorStatesEquivalent } from '@kobato/lexical/equivalence.ts'
 import { localInputValueToIso } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
 
-// Pure save planners for the editor persist module: wire-payload and
-// status-transition decisions live here so the orchestration is testable without
-// rendering React. The hooks apply these plans verbatim — no decisions there.
-
-/**
- * Classify a body-save wire result once. 'conflict' is interpreted ONLY here:
- * every persist flow consumes this verdict instead of re-reading `payload.status`.
- */
 export type SaveBodyVerdict =
   | { kind: 'conflict'; expectedToken: string }
   | { kind: 'saved'; revision: RevisionLike; warning: string | undefined }
@@ -28,7 +20,6 @@ export type BodySavePlan =
   | { kind: 'conflict'; expectedToken: string }
   | {
       kind: 'saved'
-      /** `warning` when the save landed with a non-fatal side-effect failure. */
       status: EditorShellStatus
       revision: RevisionLike
       consumePendingSnapshot: boolean
@@ -59,7 +50,6 @@ export interface DraftSavePlan {
 }
 
 export function planDraftSave(args: {
-  /** Raw datetime-local picker value ('' = cleared). */
   pickerPublishedAt: string
   serverPublishedAtIso: string | null
   now: number
@@ -69,15 +59,11 @@ export function planDraftSave(args: {
   const pickerIso = localInputValueToIso(args.pickerPublishedAt)
   const serverIsScheduled =
     args.serverPublishedAtIso !== null && (Date.parse(args.serverPublishedAtIso) || 0) > args.now
-  // Picker cleared while the server holds a schedule: explicit `null` (the
-  // cancel-schedule signal); with no schedule the field is omitted entirely.
   const publishedAt = pickerIso ?? (serverIsScheduled ? null : undefined)
   const bodyDiverged = !areLexicalEditorStatesEquivalent(args.body, args.lastSavedBody)
   return { publishedAt, bodyDiverged, bannerLegs: bodyDiverged ? 2 : 1 }
 }
 
-/** Create-mode publishedAt: empty picker means "no schedule supplied" — omit
- *  the field so the server applies its default instead of the cancel signal. */
 export function planCreatePublishedAt(pickerPublishedAt: string): string | undefined {
   return localInputValueToIso(pickerPublishedAt) ?? undefined
 }

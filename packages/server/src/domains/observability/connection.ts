@@ -1,8 +1,3 @@
-// Connection gate + test-connection orchestrator for the observability section.
-// The test uses the CURRENTLY SAVED settings only (the request-pinned bundle),
-// never an unsaved draft: proving a credential the admin has not persisted would
-// let a typo unlock a configuration that was never written.
-
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
 
@@ -32,11 +27,6 @@ function incomplete(field: 'endpoint' | 'organization' | 'username' | 'password'
   throw new DomainError('BAD_REQUEST', descriptorFor('admin.settings.observability.error.incomplete', { field }))
 }
 
-/**
- * Validate the saved connection parameters with the SAME grammar the runtime
- * resolver enforces, throwing the actionable field descriptor instead of a
- * generic "invalid configuration".
- */
 export function assertObservabilityConnectionConfig(site: ObservabilitySettingsSlice): void {
   if (site.endpoint.trim() === '') {
     incomplete('endpoint')
@@ -100,8 +90,6 @@ export async function testObservabilityConnection(
 
   try {
     await client.health()
-    // A lightweight authenticated call: a bad password fails here, before any
-    // organization is created or asset is touched.
     await client.listOrganizations()
     const organization = await client.ensureOrganization()
     const version = await client.getVersion()

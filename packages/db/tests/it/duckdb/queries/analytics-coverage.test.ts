@@ -59,7 +59,6 @@ describe('analytics/views — queryViews', () => {
   })
 
   it('buckets in the client timezone, not UTC', async () => {
-    // 2026-01-15T23:30:00Z is 2026-01-16 07:30 in Asia/Shanghai.
     await seedAccessEvents(handle, [{ ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/', country: 'US' }])
     const range = {
       startAt: Math.floor(ts('2026-01-15T00:00:00Z').getTime() / 1000),
@@ -107,7 +106,6 @@ describe('analytics/realtime — queryRealtimeTail', () => {
     expect(result[0]!.path).toBe('/p2')
     expect(result[0]!.ts).toMatch(/^\d{4}-/)
     expect(result[1]!.country).toBe('US')
-    // Empty blob slots map back to null on the wire.
     expect(result[0]!.country).toBeNull()
   })
 
@@ -126,8 +124,6 @@ describe('analytics/metric — queryMetric', () => {
       { ts: ts('2026-01-15T11:03:00Z'), visitorHash: 'd', path: '/', country: '' },
     ])
     const now = Math.floor(Date.now() / 1000)
-    // Geo-unknown rows are excluded by default; opting in via
-    // `includeUnknown` brings them back as the '(unknown)' bucket.
     const excluded = await queryMetric(handle.reader, { range: { startAt: 0, endAt: now } }, 'country')
     expect(excluded.length).toBeGreaterThan(0)
     expect(excluded.find((r) => r.name === '(unknown)')).toBeUndefined()
@@ -163,10 +159,6 @@ describe('analytics/metric — queryMetric', () => {
     const result = await queryMetric(handle.reader, { range: { startAt: 0, endAt: now } }, 'referer')
     expect(result).toEqual([{ name: 'google.com', visits: 2, visitors: 2 }])
   })
-
-  // Metric-type validation lives at the wire boundary only (the zod
-  // enum in analytics.controller) — pinned in
-  // tests/it/server/http/controllers/analytics.test.ts.
 })
 
 describe('analytics/heatmap — queryHeatmap', () => {

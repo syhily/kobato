@@ -1,13 +1,9 @@
-// L3 (direct identifier) tagging for audit-log `details`; key set shared
-// with `@/server/infra/logger.ts` (`{E}…{/E}` markers).
-
 import { L3_KEYS } from '@kobato/server/infra/logger.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 
 const L3_OPEN = '{E}'
 const L3_CLOSE = '{/E}'
 
-// Unlike the logger, never tag generic 'name' keys.
 const AUDIT_L3_KEYS = new Set([...L3_KEYS].filter((k) => k !== 'name'))
 
 function tagL3(value: string): string {
@@ -100,7 +96,6 @@ export function maskIp(ip: string | null | undefined): string {
     return ''
   }
 
-  // IPv4-mapped IPv6: ::ffff:192.168.1.1
   const mappedMatch = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip)
   if (mappedMatch) {
     const v4 = mappedMatch[1]

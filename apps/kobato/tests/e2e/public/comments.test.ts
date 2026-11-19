@@ -101,7 +101,6 @@ describe('public comments flow (HTTP e2e)', () => {
       const detail = await guest.get('/posts/e2e-comments')
       expect(detail.status).toBe(200)
       const pageKey = scrapePageKey(await detail.text())
-      // /rpc POSTs pass the csrfGuard — anonymous clients need their own session-bound token.
       const guestCsrf = await getPublicCsrfToken(guest, '/posts/e2e-comments')
 
       const reply = await callE2eRpc<{ comment: { id: string; isPending: boolean | null } }>(

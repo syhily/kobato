@@ -22,14 +22,6 @@ import { $createListItemNode, $createListNode } from '@lexical/list'
 import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text'
 import { TableCellNode, TableNode, TableRowNode } from '@lexical/table'
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
-/**
- * Demo-content regenerator — skipped in the suite; run manually with:
- *
- *   GENERATE_DEMO_CONTENT=1 pnpm vitest run tests/inkling/utils/gen-demo-content.test.ts
- *
- * Builds the showcase document through the real node factories so the
- * serialized shapes are guaranteed valid, and writes apps/inkling-demo/content/content.json.
- */
 import { writeFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

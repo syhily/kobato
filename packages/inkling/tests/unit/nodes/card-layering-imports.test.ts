@@ -2,19 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Pins the card pipeline's layering rule statically: declarations are
- * React-free, and the registry layer never value-imports the wrapper layer
- * (card-wrappers, card-decorate, card-menus, card-markdown-transformers,
- * card-insert-commands, decorate-card), the components/hooks/plugins layers,
- * or the per-card shim modules — that is the assembler's job.
- *
- * Specifiers are normalized onto the inkling layer root before judgment, so a
- * relative drift import is caught like its `@kobato/inkling-internal/` twin. The
- * self-check tests pin the patterns against the real modules on disk, so a
- * guard that silently matches nothing fails loudly.
- */
-
 const WRAPPER_LAYER_TARGETS = new Set([
   'nodes/cards/card-wrappers',
   'nodes/cards/card-decorate',
@@ -31,12 +18,6 @@ function listSourceFiles(dir: string): string[] {
     .filter((name) => /\.tsx?$/.test(name))
 }
 
-/**
- * Runtime (non-type-only) import specifiers of a source string. Two erasure
- * passes strip type-only imports first, so only what the runtime module graph
- * pulls is judged: whole-statement `import type`, and named imports whose
- * braces hold only `type X` bindings (`{ type A, b }` keeps `b` and survives).
- */
 function runtimeImportSpecifiers(source: string): string[] {
   const withoutTypeImports = source
     .replace(/import\s+type\s[\s\S]{0,500}?from\s+['"][^'"]+['"]/g, '')
@@ -154,9 +135,6 @@ describe('card pipeline layering guard', () => {
   })
 
   it('self-check: the patterns match the real shim/component modules on disk', () => {
-    // Non-vacuous proof: a pattern anchored to a dead alias matches nothing and
-    // passes forever. Every top-level node shim and card component must exist
-    // AND be judged wrapper-layer.
     const nodesDir = join('packages', 'inkling', 'src', 'nodes')
     const shims = readdirSync(nodesDir).filter((name) => /^[A-Z][A-Za-z]*Node\.ts$/.test(name))
     const components = readdirSync(nodesDir).filter((name) => /^[A-Z][A-Za-z]*NodeComponent\.tsx$/.test(name))

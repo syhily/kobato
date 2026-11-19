@@ -11,7 +11,6 @@ import {
 } from '@kobato/contracts/notifications.ts'
 import { oc } from '@orpc/contract'
 
-// The notifications RPC contract — the signed-in message center.
 export const notificationsContract = {
   list: oc
     .route({ method: 'GET', path: '/notifications/list' })

@@ -60,7 +60,6 @@ export async function searchPages(
     .where(and(...conditions))
     .orderBy(desc(metric.id))
     .limit(limit)
-  // Empty title: the client falls back to its localized "untitled" label.
   return rows.map((r) => ({ key: r.key, title: r.title ?? '' }))
 }
 

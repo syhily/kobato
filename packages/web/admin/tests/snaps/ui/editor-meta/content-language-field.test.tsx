@@ -4,10 +4,6 @@ import { renderInRouter } from '@kobato/test/render.tsx'
 import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField.tsx'
 import { describe, expect, it } from 'vitest'
 
-// The editor's one content-language control: label, hint and error exist in every UI
-// locale while the value is author data (never translated). A missing translation falls
-// back to English, so the "differs from the baseline" leg fails.
-
 function render(value: string, locale: (typeof SUPPORTED_LOCALES)[number]): string {
   return renderInRouter(
     <ContentLanguageField id="post-content-language" value={value} onChange={() => undefined} />,
@@ -23,7 +19,6 @@ describe('snapshot: ContentLanguageField', () => {
 
     expect(html).toContain(messages['admin.editor.contentLanguage.label'])
     expect(html).toContain(messages['admin.editor.contentLanguage.hint'])
-    // Author data is rendered verbatim, not localized.
     expect(html).toContain('value="zh-Hant-TW"')
     expect(html).not.toContain(messages['admin.editor.contentLanguage.error'])
     expect(html).not.toContain('aria-invalid="true"')

@@ -9,7 +9,6 @@ import { formatDate, formatDateTime } from '@kobato/utils/format.ts'
 
 export const WALL_CLOCK_ZONE = 'Etc/UTC'
 
-/** Wall-clock parts normalized onto UTC, so the rendered text is host-zone independent. */
 export function wallClockInstant(date: Date): Date {
   return new Date(
     Date.UTC(
@@ -23,7 +22,6 @@ export function wallClockInstant(date: Date): Date {
   )
 }
 
-/** Wall-clock date + time in the fixed wall-clock zone — identical on server and client. */
 export function formatWallClockDateTime(date: Date, locale: AppLocale): string {
   return formatDateTime(wallClockInstant(date), { locale, timeZone: WALL_CLOCK_ZONE })
 }

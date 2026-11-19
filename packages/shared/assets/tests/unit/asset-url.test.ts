@@ -41,7 +41,6 @@ describe('parseAssetUrlPath — /fonts/embedded/<hash>/<file>', () => {
   })
 
   it('rejects malformed shapes', () => {
-    // Missing filename, missing hash, non-hex / short / uppercase hash.
     expect(parseAssetUrlPath(`/fonts/embedded/${HASH}`)).toBeNull()
     expect(parseAssetUrlPath(`/fonts/embedded/${HASH}/`)).toBeNull()
     expect(parseAssetUrlPath('/fonts/embedded/')).toBeNull()

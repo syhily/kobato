@@ -32,12 +32,10 @@ export interface CommentsViewProps {
 
 export function CommentsView({ currentUserName, currentUserEmail, initialFilters }: CommentsViewProps) {
   const { t } = useI18n()
-  // Dialog targets stay view-owned so the row never sees the dialogs.
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
   const [editUserTarget, setEditUserTarget] = useState<AdminComment | null>(null)
 
-  // The pills own the whole filter surface: reducer state, debounced searches, label rehydration, merged query input.
   const fields = useMemo(() => buildCommentFilterFields(t), [t])
   const pills = useFilterPills({ fields, initial: initialFilters })
 
@@ -73,7 +71,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     <>
       <AdminListPage>
         <AdminListPage.Header title={t('admin.comments.title')} description={t('admin.comments.description')}>
-          {/* Header slot only when no filters are active — body slot below takes over otherwise. */}
           <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
         </AdminListPage.Header>
 

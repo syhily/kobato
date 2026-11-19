@@ -11,11 +11,6 @@ export interface ContentLanguageFieldProps {
   disabled?: boolean
 }
 
-/**
- * Optional BCP 47 tag for the prose itself. Client-side validation only
- * previews the server's write rule — the upsert API stays the authority and
- * answers a descriptor-carrying validation issue.
- */
 export function ContentLanguageField({ id, value, onChange, disabled }: ContentLanguageFieldProps) {
   const { t } = useI18n()
   const invalid = !isContentLanguageInput(value)

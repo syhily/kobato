@@ -23,7 +23,6 @@ export function draftsEqual(a: BucketDraft, b: BucketDraft): boolean {
   return a.prefix === b.prefix && a.ttlHours === b.ttlHours
 }
 
-// Conflict error for another bucket's or a reserved system prefix; `null` when acceptable.
 export function validateBucket(
   draft: BucketDraft,
   bucketId: CacheBucketId,
@@ -45,7 +44,6 @@ export function validateBucket(
   if (reserved !== undefined) {
     return t('admin.settings.cache.validation.reserved', { prefix: reserved })
   }
-  // Defensive skip: an "other" entry sharing this card's bucket id shouldn't exist.
   for (const other of others) {
     if (other.id === bucketId) {
       continue

@@ -25,10 +25,6 @@ import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// auth/password-flow against the real engine; only mocks:
-// sendPasswordReset (email is external), hasApprovedComments (an
-// injected flow dependency), deleteAllCredentials (failure seeding).
-
 const mocks = vi.hoisted(() => ({
   sendPasswordReset: vi.fn<(user: unknown, link: string) => Promise<{ ok: boolean }>>(async () => ({ ok: true })),
   deleteAllCredentials: vi.fn(),
@@ -53,7 +49,6 @@ vi.mock('@kobato/server/domains/auth/passkey/service.ts', async (importOriginal)
 
 const db = getTestDb()
 const CLIENT = '203.0.113.7'
-/** The generic, enumeration-safe reset acknowledgment (never account-specific). */
 const GENERIC_KEY = 'auth.passwordReset.sent'
 
 const hasApprovedComments = vi.fn(async (_db: unknown, _userId: number) => false)
@@ -132,7 +127,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -149,7 +143,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
-    // Exactly one token total (from the first, unthrottled call).
     expect(await db.select().from(verification)).toHaveLength(1)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(1)
     void userId
@@ -271,7 +264,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
-    // These pin the upgrade-before-issue ordering.
     expect((await userRow(userId))!.role).toBe('visitor')
     expect(await resetTokenRow(userId)).toBeDefined()
     expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
@@ -385,7 +377,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       counter: 0,
       transports: [],
     })
-    // Two pre-existing sessions — the reset invariant must destroy both.
     for (const sid of ['old-sid-1', 'old-sid-2']) {
       await db.insert(sessionTable).values({
         id: sid,
@@ -505,7 +496,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
   it('returns 账户状态异常 when the user is gone after token consume', async () => {
     const userId = await seedUser()
     const { token } = issueResetToken(db, userId)
-    // No FK on verification: the token row survives the hard-deleted user.
     await db.delete(userTable).where(eq(userTable.id, userId))
 
     const result = await resetPasswordWithToken(

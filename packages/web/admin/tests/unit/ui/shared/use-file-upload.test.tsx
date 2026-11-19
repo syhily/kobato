@@ -3,9 +3,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The hook reads the CSRF token via `useRouteLoaderData('root')`; a hoisted
-// singleton lets each test toggle the token without standing up a router.
-// sonner is stubbed so toast copy is asserted, not rendered.
 const routerState = vi.hoisted(() => ({ csrfToken: 'test-csrf-token' as string | undefined }))
 
 vi.mock('react-router', async () => {

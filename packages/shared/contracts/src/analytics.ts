@@ -1,9 +1,3 @@
-// Analytics wire types, the shared query schema and time-range primitives.
-// Consumed by the server query layer and the React dashboard — isomorphic, no
-// server-only imports. The DuckDB persistence twins (resolved query + query
-// IO + the same time primitives) live in `@kobato/db/duckdb/queries/types.ts`,
-// pinned value-identical by the server's db-wire parity test.
-
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
 
 import { safeBoolean } from '@kobato/contracts/primitives.ts'
@@ -13,7 +7,6 @@ export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30
 
 export type PresetKey = (typeof PRESET_KEYS)[number]
 
-// Typed tuple for z.enum (z.enum does not accept readonly arrays).
 export const PRESET_KEY_VALUES = [...PRESET_KEYS] as [PresetKey, ...PresetKey[]]
 
 export interface DateRange {
@@ -60,7 +53,6 @@ export function computeDateRange(preset: PresetKey, now: Date = new Date()): Dat
 export const TIME_UNITS = ['minute', 'hour', 'day'] as const
 export type TimeUnit = (typeof TIME_UNITS)[number]
 
-/** Bucket unit for the views time series: ≤1h → minute, ≤1d → hour, else day. */
 export function pickTimeUnit(range: DateRange): TimeUnit {
   const span = range.endAt - range.startAt
   if (span <= HOUR) {
@@ -84,7 +76,6 @@ export const METRIC_TYPES = [
   'browserType',
   'device',
   'deviceType',
-  // Environment dimensions read from `device_env_client`, joined by event id.
   'screen',
   'viewport',
   'dpr',
@@ -111,7 +102,6 @@ export const METRIC_GROUP_TABS: Record<MetricGroup, MetricType[]> = {
 
 export type Filters = Partial<Record<MetricType, string>>
 
-/** Control characters (C0 + DEL) are rejected in every filter value. */
 export function hasControlChars(value: string): boolean {
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i)
@@ -122,21 +112,12 @@ export function hasControlChars(value: string): boolean {
   return false
 }
 
-/** Per-dimension equality filter: comma-separated values → `IN (...)`. */
 const dimensionFilter = z
   .string()
   .max(1024)
   .refine((value) => !hasControlChars(value), { message: 'Analytics filters must not contain control characters' })
   .optional()
 
-/**
- * The single source for every analytics query wire shape. Timestamps are unix
- * seconds; `clientTimezone` is an IANA zone name validated against the shape here
- * and against `Intl.DateTimeFormat` server-side (fallback `Etc/UTC`); dimension
- * filters are comma-separated equality lists. `includeUnknown` opts back into
- * geo-unknown events (country blob = '') — queries exclude them by default while
- * writes always keep them.
- */
 export const analyticsQuerySchema = z.object({
   preset: z.enum(PRESET_KEY_VALUES).optional(),
   startAt: z.coerce.number().int().nonnegative().optional(),
@@ -173,8 +154,6 @@ export const analyticsQuerySchema = z.object({
 
 export type AnalyticsQuery = z.infer<typeof analyticsQuerySchema>
 
-/** A query with its time range resolved to concrete unix seconds; services apply
- *  the `analyticsQuerySchema` defaults to absent optional fields. */
 export interface ResolvedAnalyticsQuery extends Partial<AnalyticsQuery> {
   range: DateRange
 }
@@ -187,7 +166,6 @@ export const countersDto = z.object({
 export type CountersDto = z.infer<typeof countersDto>
 
 export const viewsPointDto = z.object({
-  /** Bucket label in `clientTimezone`: `%Y-%m-%d %H:%M` / `%Y-%m-%d %H` / `%Y-%m-%d` by unit. */
   time: z.string(),
   visits: z.number().int().nonnegative(),
   visitors: z.number().int().nonnegative(),
@@ -202,9 +180,7 @@ export const viewsDto = z.object({
 export type ViewsDto = z.infer<typeof viewsDto>
 
 export const heatmapCellDto = z.object({
-  /** ISO weekday: 1 = Monday … 7 = Sunday. */
   weekday: z.number().int().min(1).max(7),
-  /** 0–23, in `clientTimezone`. */
   hour: z.number().int().min(0).max(23),
   visits: z.number().int().nonnegative(),
   visitors: z.number().int().nonnegative(),
@@ -218,8 +194,6 @@ export const metricRowDto = z.object({
 })
 export type MetricRow = z.infer<typeof metricRowDto>
 
-// `analytics.metrics` — a query plus the dimension to break it down by. The
-// row cap is tighter than the query default: the dashboard table paginates.
 export const analyticsMetricsInputSchema = analyticsQuerySchema.extend({
   type: z.enum(METRIC_TYPE_VALUES),
   limit: z.coerce.number().int().min(1).max(500).default(20),
@@ -229,7 +203,6 @@ export type AnalyticsMetricsInput = z.infer<typeof analyticsMetricsInputSchema>
 export const analyticsMetricsOutputSchema = z.array(metricRowDto)
 export const analyticsHeatmapOutputSchema = z.array(heatmapCellDto)
 
-/** CSV text export grouped by path (views / visitors / referers). */
 export const analyticsExportOutputSchema = z.string()
 
 export interface AnalyticsOverviewData {
@@ -248,7 +221,6 @@ export interface RealtimeEvent {
   isBot: boolean
 }
 
-/** Raw CSS-pixel screen / avail / viewport dimensions; panels bucket at query time. */
 const pixelDimension = z.number().int().min(0).max(32768).optional()
 
 const deviceEnvStaticFields = {
@@ -269,7 +241,6 @@ const deviceEnvStaticFields = {
 const deviceEnvDynamicFields = {
   viewportW: pixelDimension,
   viewportH: pixelDimension,
-  /** Dynamic: dragging the window to another monitor changes it. */
   dpr: z.number().min(0).max(10).optional(),
   colorScheme: z.enum(['dark', 'light']).optional(),
   reducedMotion: z.boolean().optional(),
@@ -279,15 +250,6 @@ const deviceEnvDynamicFields = {
   netSaveData: z.boolean().optional(),
 }
 
-/**
- * Client device-environment beacon: one beacon per page view, keyed by the event
- * id published in the loader data, landing in `device_env_client`. Static fields
- * (screen geometry, touch capability, locale, hardware) are sent only once per
- * browser session — `hasStatic` tells the panels which rows carry them, so static
- * dimensions aggregate over the beacon-covered subset. Every dimension is
- * optional (the client reports what the browser exposes) and raw (panels bucket
- * at query time).
- */
 export const deviceEnvBeaconSchema = z.object({
   eventId: z.uuid(),
   hasStatic: z.boolean(),
@@ -297,8 +259,6 @@ export const deviceEnvBeaconSchema = z.object({
 
 export type DeviceEnvBeacon = z.infer<typeof deviceEnvBeaconSchema>
 
-// `search` carries the raw query string; the URL grammar (`parseAnalyticsSearch`)
-// stays server-side in the analytics domain (`domains/analytics/services/query-input`).
 export const adminAnalyticsSearchInputSchema = z.object({
   search: z.string().max(16_384),
 })
@@ -310,8 +270,6 @@ export const adminAnalyticsMentionsOutputSchema = z.object({
   referers: z.custom<MetricRow[]>(),
 })
 
-// Per-post analytics payload: the admin post DTO plus the overview
-// fan-out scoped to that post.
 export const adminPostAnalyticsInputSchema = z.object({
   postId: z.number().int().positive(),
   search: z.string().max(16_384),

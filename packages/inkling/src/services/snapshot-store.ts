@@ -1,11 +1,3 @@
-/**
- * The snapshot store — the getSnapshot/subscribe/emit skeleton every headless state module
- * publishes through (React subscribes via useSyncExternalStore). The unsubscribe contract is
- * two-layered: `subscribe`'s return detaches ONE listener, `dispose` drops every listener at
- * owner teardown; like the request track, the store stays usable after dispose (StrictMode
- * remounts reuse the instance and re-subscribe).
- */
-
 export type SnapshotListener<TSnapshot> = (snapshot: TSnapshot) => void
 
 export interface SnapshotStore<TSnapshot> {

@@ -1,9 +1,3 @@
-// AST scanner behind tests/unit/arch/ui-i18n-literals.test.ts.
-// AST rather than regex: a text grep would miss copy or drown in false positives.
-// Template literals are inspected with each interpolation replaced by a marker,
-// so `保存 ${name}` is still copy; a `=== 'admin'` comparison operand is not.
-// Exemptions are file/rule/snippet exact — never a blanket directory skip.
-
 import { isKnownLocaleValue } from '@kobato/i18n/locales.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -51,25 +45,19 @@ export interface ScanResult {
   skippedFiles: string[]
 }
 
-/** Latin letters, accented Latin, Greek/Cyrillic, Han, Kana, Hangul. */
 const COPY_TEXT =
   /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/
 
 const HAN_TEXT = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
-// Copy stores: string values ARE the localized catalog. The prefixes stay in the
-// parse set for keys and identifiers, but `han-literal` is off by design.
 const COPY_STORE_PREFIXES = [
   'packages/shared/i18n/src/messages/',
   'packages/shared/i18n/src/inkling-labels/',
   'packages/web/client/src/editor/inkling-labels/',
 ]
 
-// Whole-file content libraries: every string is data, so skip before reading or
-// parsing — a 1.3 MB quote bank must not cost an AST walk or thousands of findings.
 const COPY_STORE_FILES = new Set(['packages/shared/i18n/src/fallback-messages.ts'])
 
-/** Whether `file` is a whole-file content library the scanner never parses. */
 export function isContentStoreFile(file: string): boolean {
   return COPY_STORE_FILES.has(file)
 }
@@ -80,7 +68,6 @@ function isHanCopyStore(file: string): boolean {
 
 const COPY_ATTRIBUTES = new Set(['aria-label', 'placeholder', 'title', 'alt'])
 
-/** Dotted message id (`meta.title.admin.dashboard`) — the only accepted titleMeta() argument. */
 const MESSAGE_ID = /^[a-z][A-Za-z0-9]*(\.[A-Za-z0-9]+)+$/
 
 interface AstNode {
@@ -94,7 +81,6 @@ function isNode(value: unknown): value is AstNode {
   return value !== null && typeof value === 'object' && typeof (value as AstNode).type === 'string'
 }
 
-/** Offsets of every line start: index 0 is line 1, index i is line i + 1. */
 function lineStartOffsets(source: string): number[] {
   const starts = [0]
   let newline = source.indexOf('\n')
@@ -105,7 +91,6 @@ function lineStartOffsets(source: string): number[] {
   return starts
 }
 
-/** 1-based line/column from the line-start index — O(log lines), not O(offset). */
 function positionAt(starts: readonly number[], offset: number): { line: number; column: number } {
   let low = 0
   let high = starts.length - 1
@@ -130,7 +115,6 @@ function identifierName(node: unknown): string | null {
   return null
 }
 
-/** Placeholder inserted for an interpolation so copy around it stays visible. */
 const INTERPOLATION_MARKER = '\u2026'
 
 interface TemplateQuasis {
@@ -155,7 +139,6 @@ function templateQuasis(node: AstNode): TemplateQuasis | null {
   }
 }
 
-/** The literal copy a node carries: verbatim string, markered template, or the JSX wrapper. */
 function literalText(node: unknown): string | null {
   if (!isNode(node)) {
     return null
@@ -172,7 +155,6 @@ function literalText(node: unknown): string | null {
   return null
 }
 
-/** Exact text only when the node carries no interpolation: `zh-${x}` must never match. */
 function exactText(node: unknown): string | null {
   if (!isNode(node)) {
     return null
@@ -187,10 +169,6 @@ function exactText(node: unknown): string | null {
   return null
 }
 
-/**
- * Copy-bearing strings inside a JSX child expression. Branches are followed so
- * neither arm of a conditional hides copy; comparison operands are not copy.
- */
 function expressionCopyTexts(node: unknown, out: string[] = []): string[] {
   if (!isNode(node)) {
     return out
@@ -231,7 +209,6 @@ function expressionCopyTexts(node: unknown, out: string[] = []): string[] {
   }
 }
 
-/** `toLocale*()` with no meaningful locale: omitted, `undefined`, `void 0`, or `[]`. */
 function isAbsentLocaleArgument(argument: unknown): boolean {
   if (!isNode(argument)) {
     return true
@@ -263,11 +240,8 @@ interface VisitContext {
   lineStarts: readonly number[]
   file: string
   violations: ScanViolation[]
-  /** Set while descending into a JSX position already covered by jsx-text/jsx-attribute. */
   jsxCopyCovered?: boolean
-  /** Nodes already reported by a position-specific rule (toast/DomainError/titleMeta). */
   hanCoveredNodes: WeakSet<object>
-  /** The file is a copy-store prefix — `han-literal` does not apply. */
   hanCopyStore: boolean
 }
 
@@ -284,7 +258,6 @@ function visit(node: AstNode, ctx: VisitContext): void {
     }
     case 'JSXElement':
     case 'JSXFragment': {
-      // Children only — attributes are handled by JSXAttribute, so no double report.
       const children = node.children
       if (Array.isArray(children)) {
         for (const child of children) {
@@ -302,7 +275,6 @@ function visit(node: AstNode, ctx: VisitContext): void {
       if (name === null || !COPY_ATTRIBUTES.has(name)) {
         break
       }
-      // The expression helper covers every branch and filters non-copy text.
       const value = node.value
       const expression = isNode(value) && value.type === 'JSXExpressionContainer' ? value.expression : value
       for (const text of expressionCopyTexts(expression)) {
@@ -315,7 +287,6 @@ function visit(node: AstNode, ctx: VisitContext): void {
       const callee = node.callee
       const calleeName = identifierName(callee)
       if (calleeName === 'titleMeta') {
-        // Static titles are message ids; any other literal is unlocalized copy.
         const text = literalText(args[0])
         if (text !== null && !MESSAGE_ID.test(text.trim())) {
           report(ctx, 'title-meta', node, text)
@@ -362,21 +333,16 @@ function visit(node: AstNode, ctx: VisitContext): void {
       if (isKnownLocaleValue(node.value) && node.value.trim() !== '') {
         report(ctx, 'hardcoded-locale', node, node.value)
       }
-      // JSX copy is reported by the JSX rules above; this catches registries,
-      // Zod messages and any other plain string literal.
       if (!hanCopyStore && ctx.jsxCopyCovered !== true && !ctx.hanCoveredNodes.has(node) && HAN_TEXT.test(node.value)) {
         report(ctx, 'han-literal', node, node.value)
       }
       break
     }
     case 'TemplateLiteral': {
-      // Only an interpolation-free template is an exact locale literal.
       const text = exactText(node)
       if (text !== null && text.trim() !== '' && isKnownLocaleValue(text)) {
         report(ctx, 'hardcoded-locale', node, text)
       }
-      // Interpolated templates are still copy: inspect the quasi text rather
-      // than requiring an exact literal.
       const rendered = templateQuasis(node)?.text ?? null
       if (
         !hanCopyStore &&
@@ -391,7 +357,6 @@ function visit(node: AstNode, ctx: VisitContext): void {
     }
   }
 
-  // Mark the JSX subtree so han-literal does not double-report.
   const childCtx: VisitContext =
     node.type === 'JSXElement' || node.type === 'JSXFragment' || node.type === 'JSXAttribute'
       ? { ...ctx, jsxCopyCovered: true }
@@ -412,14 +377,11 @@ function visit(node: AstNode, ctx: VisitContext): void {
   }
 }
 
-/** Scan one source text; `file` selects the parser dialect, reported path and content-store skip. */
 export function scanSourceForI18nLiterals(source: string, file: string): ScanViolation[] {
   if (isContentStoreFile(file)) {
     return []
   }
   const violations: ScanViolation[] = []
-  // `parseAst` throws on a syntax error — a scan that silently skipped a file
-  // would be worse than no scan at all.
   const program = parseAst(source, { lang: file.endsWith('.tsx') ? 'tsx' : 'ts' }, file)
   visit(program as unknown as AstNode, {
     lineStarts: lineStartOffsets(source),
@@ -461,7 +423,6 @@ function isScannableFile(path: string): boolean {
   return /\.(ts|tsx)$/.test(path) && !path.endsWith('.d.ts')
 }
 
-/** Expand one root — a directory (recursive) or a single file — into repo-relative paths. */
 function collectFiles(root: string, cwd: string): string[] {
   const absolute = join(cwd, root)
   if (statSync(absolute).isFile()) {
@@ -484,7 +445,6 @@ function collectFiles(root: string, cwd: string): string[] {
   return found
 }
 
-/** Scan every production source file under `roots`. */
 export function scanI18nLiterals(options: ScanOptions): ScanResult {
   const cwd = process.cwd()
   const discovered = [...new Set(options.roots.flatMap((root) => collectFiles(root, cwd)))].sort()

@@ -61,7 +61,6 @@ import {
   setRestartRefreshSettings,
   setServerPhase,
 } from '@kobato/server/infra/lifecycle.ts'
-// Load-bearing: each batcher module self-registers on the registry at import time.
 import '@kobato/server/domains/analytics/services/batcher.ts'
 import '@kobato/server/domains/analytics/services/pv-batcher.ts'
 import '@kobato/server/domains/audit/services/batcher.ts'
@@ -69,9 +68,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 import { seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
-
-// HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
-// The engine owns the 'handle' slot; this module owns only 'migrationsRan'.
 
 function migrationsRanInHmr(): boolean {
   const data: unknown = import.meta.hot?.data
@@ -121,16 +117,9 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
       actionUrl: '/admin/tasks',
     })
   })
-  // Background jobs share one lazy handle getter (invoked at fire/evaluate
-  // time, so a reopened handle is picked up); the job registry owns their
-  // boot start-up.
   setJobHandleGetter({ getDatabaseHandle: () => engine.get() })
   wireBackupSnapshots({ snapshotAnalyticsTo })
   wireBackupEncryption({
-    // Live read at backup time: toggling the settings card takes effect on the next
-    // backup without a restart. Missing bundle/section (tests) or encryption off = no
-    // password. Enabled-but-passwordless fails CLOSED — a plaintext archive must never
-    // be written while the UI claims encryption.
     resolveEncryptionPassword: () => {
       const encryption = getBlogSettingsBundleSync()?.backup?.encryption
       if (encryption?.enabled !== true) {
@@ -146,9 +135,6 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   wireWebmentionPostPublishHook()
   wireS3Migration({
     persistFlippedStorage: async (db, storage) => {
-      // Send the FULL section (asset/upload carried over) — the assets section
-      // ships no defaults, so a storage-only patch cannot validate without a
-      // stored row. The override flag is reserved for this migration task.
       const current = requireBlogSettingsSection('assets')
       await updateBlogSettingsSection(db, 'assets', { asset: current.asset, upload: current.upload, storage }, null, {
         allowStorageConfigOverride: true,
@@ -164,16 +150,9 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
 
 async function initDatabase(): Promise<void> {
   const handle = wireDatabase(await engine.init())
-  // Crash recovery, boot ONLY: sweep `job_run` rows left `running` by a dead
-  // process. The restore rewiring (reopenDatabase → wireDatabase) skips this
-  // on purpose — this process's in-flight jobs hold legit `running` rows.
   sweepOrphanedJobRuns(handle.db)
 }
 
-// Crash recovery for the restore swap window, BEFORE any engine opens:
-// a `.pre-restore` sibling whose live target is missing means the process
-// died mid-swap — put the original back before openDatabase would create
-// an empty file masquerading as a healthy target.
 if (!isVitest()) {
   await recoverPreRestoreFiles()
 }
@@ -185,13 +164,7 @@ startQueryDiagnostics()
 if (!isVitest()) {
   await initAnalyticsDatabase(getDb())
   void replayAllDeadLetters()
-  // Awaited, not fire-and-forget: these sweeps must finish before the
-  // server accepts requests — a late readdir could otherwise sweep a temp
-  // dir a fresh restore just parked, and a stale `.pre-restore` could be
-  // deleted mid-swap by a restore that started milliseconds after boot.
   await sweepStaleRestoreDirs()
-  // recoverPreRestoreFiles already ran before the engines opened (it owns
-  // the mid-swap crash window).
 }
 
 wireRestoreMachine({
@@ -205,9 +178,6 @@ wireRestoreMachine({
     reopenDatabase,
     getDb,
     migrateDatabase: migrateContentDatabase,
-    // Regardless of wipe outcome, the registry wrapper drops the process-local
-    // generation memo so the next counter read re-reads `_generation`. A
-    // partial wipe can still leave residual entries that age out by TTL.
     wipeCache: wipeCacheForRestore,
     notifyCacheWipeFailed: () => {
       notifyAdmins(getDb(), {
@@ -218,8 +188,6 @@ wireRestoreMachine({
   }),
 })
 
-// inert. A save advances the snapshot revision, so the previous localized renders are
-// unreachable by construction; these handlers only RECLAIM the orphaned entries
 const reclaimLocalizedOutputs = () => clearLocalizedOutputs()
 registerSectionChangeHandler('general', reclaimLocalizedOutputs)
 registerSectionChangeHandler('content', reclaimLocalizedOutputs)
@@ -248,13 +216,11 @@ if (!isVitest()) {
   })()
 }
 
-/** Flush every batcher BEFORE the handle closes (rows land in the pre-swap DB, not dead-letter), then reset and close. */
 export async function prepareDatabaseForRestore(): Promise<void> {
   await flushAllBatchers()
   await resetAllBatchers()
   resetLikeTokenSweep()
   await engine.closeForSwap()
-  // Close the sidecar after the flush so buffered access events land first.
   await closeAnalyticsForRestore()
 }
 

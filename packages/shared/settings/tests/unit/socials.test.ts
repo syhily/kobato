@@ -34,10 +34,8 @@ describe('settings/socials — SOCIAL_NETWORK_META', () => {
   })
 
   it('keeps the pre-i18n seed names untouched (stored content compatibility)', () => {
-    // `defaultName` seeds `socials[].name`; it must never follow the UI locale.
     expect(SOCIAL_NETWORK_META.weibo.defaultName).toBe('微博')
     expect(SOCIAL_NETWORK_META.wechat.defaultName).toBe('微信')
-    // The machine/validation spelling stays locale-neutral.
     expect(SOCIAL_NETWORK_META.weibo.brandName).toBe('Weibo')
     expect(SOCIAL_NETWORK_META.wechat.brandName).toBe('WeChat')
   })

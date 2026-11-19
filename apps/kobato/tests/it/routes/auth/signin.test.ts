@@ -18,8 +18,6 @@ import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Real engine; only the request-context seam and email delivery are mocked.
-
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendSignInOtp: vi.fn<any>(),
@@ -90,11 +88,9 @@ let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // Init batchers first: a pending event must not reference a row clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   await seedGateAdmin()
-  // The rate limiter is a process-level Map; earlier tests (same email/IP) exhaust the budgets.
   __resetRateLimitsForTests()
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
@@ -233,7 +229,6 @@ function emailFormData(email: string) {
   return withCsrf(fd)
 }
 
-// `redirect()` returns a real Response; `data()` keeps headers under `.init` (DataWithResponseInit).
 function getSetCookie(result: Response & { data?: any }): string | null {
   if (result.headers instanceof Headers) {
     return result.headers.get('Set-Cookie')

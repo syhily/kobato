@@ -13,9 +13,6 @@ export interface CompressImageOptions {
 // Matches the pooled upload path's cap (infra/image/process-worker).
 const MAX_INPUT_PIXELS = 50_000_000
 
-/** Pixel width of an encoded image, or `undefined` when the buffer is not
- *  a decodable image at all. The avatar pipeline uses this to spot mirror
- *  placeholders served inline at the wrong size. */
 export async function imageWidth(buf: Buffer): Promise<number | undefined> {
   try {
     const meta = await sharp(buf, { limitInputPixels: MAX_INPUT_PIXELS }).metadata()

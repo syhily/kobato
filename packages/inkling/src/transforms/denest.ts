@@ -8,15 +8,6 @@ import { $createParagraphNode, $getRoot, $isLineBreakNode, $isRootNode, $isTextN
 
 export type CreateNodeFn<T extends LexicalNode> = (originalNode: T) => T
 
-// Pasting or importing HTML can leave nested element nodes: headings, image
-// decorators, lists or large content runs inside paragraphs. Only "card"
-// decorators are supported at the top level, so nested element nodes confuse
-// selection and deletion, and the renderer does not expect them.
-//
-// The transform detects invalid nesting and pulls non-inline children out,
-// inserting them after the node's top-level parent. Nodes are moved, never
-// removed, so no pasted or imported content is lost.
-
 function $isInvalidListNode(node: LexicalNode) {
   if (!$isListNode(node)) {
     return false
@@ -67,8 +58,6 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     return
   }
 
-  // a temporary detached node holds the moved nodes; without it each child
-  // move re-triggers the transform, looping forever
   const tempParagraph = $createParagraphNode()
 
   let currentElementNode = createNode(node)
@@ -93,8 +82,6 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
     parent = parent.getParentOrThrow()
   }
 
-  // iterate in reverse: insertAfter places each child directly after the
-  // parent, so the first child must be inserted last to keep its order
   const movedChildren = tempParagraph.getChildren()
   for (let index = movedChildren.length - 1; index >= 0; index -= 1) {
     const child = movedChildren[index]

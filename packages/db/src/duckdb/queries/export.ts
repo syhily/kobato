@@ -6,7 +6,6 @@ import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter.ts'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { sql } from 'kysely'
 
-/** One aggregated export row: per-path views, distinct visitors, distinct referer hosts. */
 export interface AnalyticsExportRow {
   path: string
   views: number
@@ -14,7 +13,6 @@ export interface AnalyticsExportRow {
   referers: number
 }
 
-/** CSV export rows grouped by path — the CSV assembly (headers, escaping, CRLF) stays in `@kobato/server`. */
 export async function queryExportRows(
   reader: AnalyticsReader,
   input: ResolvedAnalyticsQuery,
@@ -26,7 +24,6 @@ export async function queryExportRows(
       .where(buildAnalyticsFilter(input))
       .groupBy('path')
       .orderBy('views', 'desc')
-      // The wire schema already clamps `limit` to ≤500.
       .limit(input.limit ?? 500),
     'export',
   )

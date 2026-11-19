@@ -49,12 +49,6 @@ export function updateEditor(
   })
 }
 
-/**
- * Vitest `it` body wrapper: runs testFn inside editor.update, rejecting on a
- * body-thrown error (otherwise an assertion failure surfaces only through
- * onError). The editor is read lazily through getEditor because `it` bodies are
- * collected before the spec's beforeEach assigns the editor.
- */
 export function editorTest(getEditor: () => LexicalEditor, testFn: () => void | Promise<void>): () => Promise<void> {
   return function (): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -76,12 +70,6 @@ export function tick(): Promise<void> {
   })
 }
 
-/**
- * Awaits the outer commit, then drains the listener-enqueued commit: work
- * scheduled from an update listener begins only after the outer commit's
- * deferred callbacks (the $triggerEnqueuedUpdates tail) and commits in a later
- * microtask, so the macrotask hop flushes both.
- */
 export async function drainEnqueuedUpdates(
   editor: LexicalEditor,
   updateFn: () => void,

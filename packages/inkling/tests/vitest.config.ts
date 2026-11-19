@@ -13,17 +13,11 @@ export default defineConfig({
     name: 'inkling',
     globals: false,
     silent: 'passed-only',
-    // Cap worker processes: the default forks pool spawns one worker per CPU
-    // core, which starves the host on high-core machines.
     maxWorkers: 4,
     environment: 'jsdom',
     setupFiles: ['./setup.ts'],
     server: {
       deps: {
-        // @testing-library/jest-dom's vitest entry imports 'vitest' — if it
-        // is externalized, Node resolves that import outside vitest's own
-        // plugin resolver, splitting the snapshot/expect singletons and
-        // breaking every toMatchSnapshot. Keep it inlined.
         inline: ['@testing-library/jest-dom'],
       },
     },

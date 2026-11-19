@@ -14,9 +14,6 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// `adminUploadRoute` against the real engine: real CSRF guard, real record → batcher → `audit_log`
-// write (asserted on the flushed row). No module mocks; the handler is inlined per its design.
-
 const db = getTestDb()
 const CSRF_TOKEN = 'test-csrf-token'
 
@@ -67,14 +64,12 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the table wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
 
 describe('adminUploadRoute', () => {
   it('owns parsing, file validation, audit context, logging, and success response', async () => {
-    // The audit row's actorId FK needs the real user the viewer ('1') stands for.
     await db.insert(userTable).values({ id: 1, name: 'admin', email: 'admin@example.com', password: 'hashed' })
     const form = new FormData()
     form.append('kind', 'avatar')
@@ -85,7 +80,6 @@ describe('adminUploadRoute', () => {
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({ kind: 'avatar', size: 3 })
 
-    // The audit write landed through the real batcher, attributed from the request context.
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'test_uploaded'))
     expect(rows).toHaveLength(1)

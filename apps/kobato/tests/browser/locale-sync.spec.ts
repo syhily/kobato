@@ -28,8 +28,6 @@ test('a failed dirty-card flush vetoes the locale switch', async ({ adminPage: p
   const failedFlush = new Promise<void>((resolve) => {
     releaseFailedFlush = resolve
   })
-  // Let the locale field commit through (it must never be sent) and fail every
-  // other general-section write, forcing the panel flush to report false.
   await page.route('**/rpc/admin/settings/update', async (route) => {
     const body = route.request().postData() ?? ''
     updateBodies.push(body)
@@ -51,9 +49,6 @@ test('a failed dirty-card flush vetoes the locale switch', async ({ adminPage: p
 
   await switchLocale(page, 'zh-TW')
   await failedFlush
-  // The flush retries settle within a few local aborts; give the transaction
-  // window time to close before asserting the veto (the rollback/focus restore
-  // runs on a later frame).
   await page.waitForTimeout(1_000)
 
   await expect(page.locator('#general-locale')).not.toHaveAttribute('aria-busy', 'true')

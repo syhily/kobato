@@ -10,7 +10,6 @@ import { isRecord } from '@kobato/utils/type-guards.ts'
 const log = getLogger('settings.zeabur-mail-cleanup')
 const [ZEABUR_MAIL_CLEANUP_SOURCE] = NOTIFICATION_SOURCES
 
-/** Durable one-shot flag: a `system.`-scoped `setting` row (hydration reads `blog.*` only). */
 const BOOT_FLAG_SCOPE = 'system.zeabur-mail-cleanup'
 
 export interface ZeaburMailCleanupNotify {

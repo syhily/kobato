@@ -8,8 +8,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
-// A real config file on disk stands in for the env-converged kobato.config.json
-// — under VITEST the resolver would otherwise report the env-only null.
 const holder = vi.hoisted(() => ({ configPath: null as string | null, configDir: null as string | null }))
 
 vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => ({
@@ -48,7 +46,6 @@ describe('createBackup — config file in the archive', () => {
 
     const stored = mem.store.get(`backup/${result.fileName}`)
     expect(stored).toBeDefined()
-    // The it env runs the analytics sidecar in-memory, so no duckdb entry.
     const entries = unpackTar(extractBackupFile(stored!.body))
     expect(entries.map((entry) => entry.name)).toEqual(['kobato.db', 'kobato.config.json'])
     const configEntry = entries.find((entry) => entry.name === 'kobato.config.json')!

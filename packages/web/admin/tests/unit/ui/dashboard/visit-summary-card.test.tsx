@@ -9,10 +9,6 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Post-hydration VisitSummaryCard trend behavior: react-query is mocked so
-// the client-timezone-aware query resolves straight from the fixture DTO.
-// The SSR skeleton branch is covered by the welcome snapshot tests.
-
 const control = mockTanstackQuery()
 
 const SUMMARY = { visits: 0, visitors: 0, referers: 0 }
@@ -54,7 +50,6 @@ describe('ui/admin/welcome/VisitSummaryCard trend block', () => {
       unit: 'hour',
       clientTimezone: 'Asia/Shanghai',
       points: [
-        // Hour-unit labels still aggregate onto the same day key.
         { time: '2024-01-10 02', visits: 10, visitors: 5 },
         { time: '2024-01-10 08', visits: 20, visitors: 8 },
       ],

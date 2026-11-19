@@ -12,9 +12,6 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `imagesRouter` outcome mapping against the real engine (seeded rows, live gate,
-// rate limiter, file cache, real serveCalendar); seams: avatar fetch, OG canvas, calendar renderer.
-
 vi.mock('@kobato/server/render/calendar/render.ts', () => ({
   renderCalendar: vi.fn(),
 }))
@@ -47,7 +44,6 @@ function requestImages(url: string, headers?: Record<string, string>) {
   })
   app.route('/', imagesRouter)
   app.onError(onErrorHandler)
-  // Sentinel SSR-style route that must never count against the images bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
   return app.request(url, { headers })
 }
@@ -97,10 +93,8 @@ describe('images resource', () => {
   beforeEach(async () => {
     await clearAllTables(db)
     vi.clearAllMocks()
-    // Clean counter — earlier cases already spend resource/avatar attempts from 127.0.0.1.
     __resetRateLimitsForTests()
     ;(renderCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('cal'))
-    // Default: "no avatar" — redirect mapping tests override per case.
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
   })
 
@@ -122,7 +116,6 @@ describe('images resource', () => {
   })
 
   it('never counts public non-image requests against the images bucket', async () => {
-    // Only the image routes may draw from the images bucket — never SSR pages.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -130,11 +123,9 @@ describe('images resource', () => {
         resource: { windowSeconds: 60, maxAttempts: 1 },
       },
     })
-    // Several hits past the bucket ceiling — none may count against it.
     for (let i = 0; i < 3; i++) {
       expect((await requestImages('http://localhost/sitemap.xml')).status).toBe(200)
     }
-    // Image routes still draw from the bucket — the next hit inside the window trips it.
     expect((await requestImages('http://localhost/images/og/missing.png')).status).toBe(302)
     const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(429)
@@ -159,7 +150,6 @@ describe('images resource', () => {
   })
 
   it('answers 304 for a matching calendar If-None-Match from cache without re-rendering', async () => {
-    // Production cache semantics (the dev bypass re-runs the loader by design).
     const env = import.meta.env as unknown as Record<string, unknown>
     const previousProd = env.PROD
     env.PROD = true
@@ -167,7 +157,6 @@ describe('images resource', () => {
       const first = await requestImages('http://localhost/images/calendar/2026/0424.png')
       const etag = first.headers.get('ETag')!
       expect(renderCalendar).toHaveBeenCalledTimes(1)
-      // The miss write is fire-and-forget; wait for the cache entry before revalidating.
       await vi.waitFor(async () => {
         expect(await countEntryFiles('calendar')).toBe(1)
       })
@@ -179,7 +168,6 @@ describe('images resource', () => {
       expect(cached.headers.get('ETag')).toBe(etag)
       expect(cached.headers.get('Content-Language')).toBe('zh-CN')
       expect(cached.headers.get('Cache-Control')).toBe('public, no-cache')
-      // The cached bytes carry the tag; no localized re-render happens.
       expect(renderCalendar).toHaveBeenCalledTimes(1)
     } finally {
       env.PROD = previousProd
@@ -212,14 +200,11 @@ describe('images resource', () => {
   })
 
   it('rejects an invalid MMdd calendar date with a 404 (real serveCalendar date validation)', async () => {
-    // MM 13 passes the shape regex but fails the date-fns round-trip check → 404.
     const res = await requestImages('http://localhost/images/calendar/2026/1332.png')
     expect(res.status).toBe(404)
   })
 
   it('rejects a calendar year outside the supported window with a 404', async () => {
-    // The PNG render is expensive and cache-keyed by date — the year window
-    // bounds how many distinct renders a client can ask for.
     expect((await requestImages('http://localhost/images/calendar/1969/0424.png')).status).toBe(404)
     expect((await requestImages('http://localhost/images/calendar/dark/2101/0424.png')).status).toBe(404)
   })
@@ -246,7 +231,6 @@ describe('images resource', () => {
     expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 256)
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockClear()
     await requestImages('http://localhost/images/avatar/abc.png')
-    // No `?s=` → DEFAULT_AVATAR_SIZE (120) rounded up to its bucket.
     expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 128)
   })
 })

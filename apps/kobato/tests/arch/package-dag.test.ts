@@ -1,22 +1,3 @@
-/**
- * Package-boundary DAG guard.
- *
- * The workspace layout enforces most of the direction rules structurally:
- * cross-package code physically lives in `packages/*` and resolves through
- * `@kobato/*` package specifiers, so the rules collapse into five small
- * checks over package.json manifests and import specifiers:
- *
- *  a. every package's declared `@kobato/*` dependencies fit the allowed DAG;
- *  b. every `src/**` file imports `@kobato/*` only along the DAG (tests-only
- *     edges live in `tests/**`, never in `src/**`);
- *  c. no relative import escapes its package (`../../packages/…` shapes
- *     cross package boundaries without a specifier);
- *  d. the `@/` app alias resolves to `apps/kobato/src` (root tsconfig), so it
- *     may appear only inside the app package itself;
- *  e. inkling is reached only through its public entry specifiers — its own
- *     source/tests use the private @kobato/inkling-internal alias;
- *  f. source trees use package-root imports instead of relative traversal.
- */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
@@ -95,12 +76,6 @@ const REPO_PACKAGES = [
 
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
-/**
- * Declared-dependency DAG (package.json `@kobato/*` entries, dev or not —
- * the workspace is private, so everything is a devDependency). Entries beyond
- * the runtime DAG exist for a package's TEST tree only; `src/**` is held to
- * the stricter SRC_TARGETS map.
- */
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/inkling': ['@kobato/inkling', '@kobato/lexical', '@kobato/test'],
 
@@ -359,31 +334,14 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/i18n-tools': INTERNAL_SCOPES,
 }
 
-/**
- * Documented src-tree exceptions to SRC_TARGETS — every one type-only, so no
- * runtime graph ever crosses the DAG backwards:
- *  · web's api client needs the router type to build the typed RouterClient —
- *    the single sanctioned web→server channel.
- */
 const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []
 
-/**
- * The ONLY relative import allowed to cross a package boundary: the SEA server
- * entry pulls the app's built bundle into the single-file Vite build, and a
- * build output has no package specifier to import by.
- */
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
   'tools/pack/src/sea/server-entry.ts:../../../../apps/kobato/build/server/index.js',
 
   'tools/pack/src/sea/vfs-capabilities.ts:./lib/greet.mjs',
 ])
 
-/**
- * Whole-file exemptions from the absolute-import rule. Each file either loads
- * before a tsconfig-path resolver exists (Vitest configs, Playwright runner) or
- * deliberately quotes relative specifiers as fixtures for an import scanner.
- * Normal source/test files must add a specifier-level reason instead.
- */
 const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'apps/kobato/tests/arch/client-bundle.test.ts',
   'packages/inkling/tests/unit/nodes/card-layering-imports.test.ts',
@@ -451,7 +409,6 @@ function sourceFiles(...roots: string[]): string[] {
   return files.sort()
 }
 
-// Comments may quote specifiers; only real import statements count.
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }

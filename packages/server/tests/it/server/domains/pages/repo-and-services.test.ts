@@ -7,8 +7,6 @@ import { adminUser } from '@kobato/test/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Spy mode keeps the originals — the race-window cases stub the reserve
-// lookup once so a real `page_slug_key` violation reaches the catch.
 vi.mock('@kobato/server/domains/pages/repo.ts', { spy: true })
 vi.mock('@kobato/server/domains/pages/services/public-query.ts', { spy: true })
 
@@ -49,8 +47,6 @@ async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'pu
       ownerId,
       revisionNo: 1,
       status,
-      // Rows seeded here are read through the admin revision projection,
-      // which expects a Lexical body.
       body: body ?? emptyLexicalBody(),
       imageSources: [],
       headings: [],
@@ -272,7 +268,7 @@ describe('pages/services/mutate — createPage', () => {
   })
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
-    await seedPage({ slug: 'raced', title: 'Existing' }) // meta row only, no registry row
+    await seedPage({ slug: 'raced', title: 'Existing' })
     vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValueOnce(null)
     await expect(mutate.createPage(db, { slug: 'raced', title: 'New' }, null)).rejects.toMatchObject({
       code: 'CONFLICT',
@@ -309,7 +305,7 @@ describe('pages/services/mutate — updatePageMeta', () => {
   })
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
-    await seedPage({ slug: 'raced-taken', title: 'Existing' }) // meta row only, no registry row
+    await seedPage({ slug: 'raced-taken', title: 'Existing' })
     const p = await seedPage({ slug: 'raced-orig', title: 'Orig' })
     vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValueOnce(null)
     await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'raced-taken', title: 'Orig' })).rejects.toMatchObject({
@@ -392,9 +388,6 @@ describe('pages/services/admin-query — getPageDetailForAdmin', () => {
 
 describe('pages/services/admin-query — listRevisionsForAdmin', () => {
   it('throws NOT_FOUND for unknown page', async () => {
-    // Unified with the posts mirror (and pages' own getPageDetailForAdmin):
-    // a missing entity surfaces the service-level NOT_FOUND instead of an
-    // empty revision list.
     await expect(adminQuery.listRevisionsForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 

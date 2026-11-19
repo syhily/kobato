@@ -25,10 +25,6 @@ queryMocks.query = {
   refetch: vi.fn(),
 }
 
-// PostsView's option-list queries (categories/tags/users) and the infinite list are
-// stubbed so SSR renders without the network; the view seeds from useLocation, so mount
-// under a memory router at /admin/posts.
-
 describe('snapshot: PostsView', () => {
   it('renders list chrome and skeleton while the initial query is pending', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
@@ -40,7 +36,6 @@ describe('snapshot: PostsView', () => {
   it('renders the pill-bar trigger and the sort select while loading', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('筛选')
-    // The sort select is not a filter pill — it stays in the header.
     expect(html).toContain('最新发布')
   })
 

@@ -15,11 +15,6 @@ import katex from 'katex'
 
 const log = getLogger('lexical.prerender')
 
-// Fills the host-owned artifact slots at save time so SSR never pays the Shiki/KaTeX
-// bootstrap. Mutates in place; only EMPTY slots are recomputed — canonicalize strips
-// client-supplied artifacts first, so a filled slot here is always server-computed.
-// `svg` stays stripped and is never recomputed.
-
 interface MathNodeView extends LexicalNodeJson {
   tex: string
   mathml: string
@@ -39,7 +34,6 @@ export async function prerenderLexicalEditorState(state: LexicalEditorState): Pr
 
   visitLexicalNodes(state, (node) => {
     if (node.type === 'math' || node.type === 'math-inline') {
-      // The schema pins tex/mathml/svg as required strings on both math variants.
       const view = unsafeCast<MathNodeView>(node)
       if (view.tex !== '' && view.mathml === '') {
         if (node.type === 'math') {
@@ -51,7 +45,6 @@ export async function prerenderLexicalEditorState(state: LexicalEditorState): Pr
       return
     }
     if (node.type === 'codeblock') {
-      // Same story: code/language/highlightedHtml are required on codeblock nodes.
       const view = unsafeCast<CodeblockNodeView>(node)
       if (view.code !== '' && view.highlightedHtml === '') {
         codeblocks.push(view)
@@ -69,7 +62,6 @@ export async function prerenderLexicalEditorState(state: LexicalEditorState): Pr
   return state
 }
 
-// Process-wide singleton; single-flight, and a failed bootstrap is retried on the next save.
 const getShikiHighlighter = createPromiseMemo(() => createShikiHighlighter())
 
 async function runShikiPasses(blocks: CodeblockNodeView[]): Promise<void> {
@@ -106,7 +98,6 @@ function runKatexPasses(blocks: MathNodeView[], inlines: MathNodeView[]): void {
     try {
       node.mathml = katex.renderToString(node.tex, { ...KATEX_OPTIONS, displayMode: true })
     } catch (err) {
-      // Leave mathml empty; the renderer falls back to raw TeX.
       log.warn('katex block render failed', { error: String(err) })
     }
   }

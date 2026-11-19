@@ -16,13 +16,6 @@ import {
   FORMAT_TEXT_COMMAND,
 } from 'lexical'
 
-/**
- * The keyboard-shortcut table: each entry owns one key shape. `matches` is the
- * pure key-shape test; `run` is the editor surgery and may decline by returning
- * false, letting the browser type the key normally. The registration loop stops
- * at the first matching entry, so `matches` predicates must stay mutually
- * exclusive.
- */
 export interface KeyboardShortcut {
   matches: (event: KeyboardEvent) => boolean
   run: (editor: LexicalEditor, event: KeyboardEvent) => boolean
@@ -71,7 +64,6 @@ const documentEdgeJump: KeyboardShortcut = {
 const quoteAsideCycle: KeyboardShortcut = {
   matches: ({ ctrlKey, code }) => ctrlKey && code === 'KeyQ',
   run: (_editor, event) => {
-    // prevent the browser's quit binding
     event.preventDefault()
 
     const selection = $getSelection()
@@ -123,7 +115,6 @@ const codeSelectionBacktick: KeyboardShortcut = {
   },
 }
 
-/** ctrl+alt+U strikethroughs (cmd+alt+U launches the browser source view). */
 const strikethroughFormat: KeyboardShortcut = {
   matches: ({ ctrlKey, altKey, code }) => ctrlKey && altKey && code === 'KeyU',
   run: (editor) => {
@@ -160,7 +151,6 @@ const listToggle: KeyboardShortcut = {
           const pNode = $createParagraphNode()
           $setBlocksType(selection, () => pNode)
 
-          // Lexical auto-indents the paragraph to the list item's level; indented paragraphs are not allowed
           pNode.setIndent(0)
         })
       } else if (event.altKey) {

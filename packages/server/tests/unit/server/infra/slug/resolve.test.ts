@@ -11,8 +11,6 @@ function expectSlugFailure(fn: () => unknown): DomainError {
     expect(e).toBeInstanceOf(DomainError)
     const err = e as DomainError
     expect(err.code).toBe('BAD_REQUEST')
-    // EVERY failure carries the zod-style issues array pinned to the
-    // `slug` field so editor errors attach to the input.
     expect(err.issues).toBeDefined()
     expect(err.issues!.length).toBeGreaterThan(0)
     expect(err.issues![0].path).toEqual(['slug'])

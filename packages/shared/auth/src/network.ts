@@ -1,7 +1,3 @@
-// Network-boundary security primitives shared by the server and admin UI.
-// SSRF host checks and passkey RP validation are security policy, not generic
-// URL formatting: they live with the auth/identity primitives.
-
 const IPV4_PRIVATE = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
 
 /** One dotted-quad segment per the WHATWG IPv4 rules: decimal by
@@ -47,7 +43,6 @@ function parseIpv4(host: string): number | null {
     }
     numbers.push(value)
   }
-  // The last segment fills all remaining bytes, the rest must fit in one.
   const last = numbers[numbers.length - 1]
   if (last >= 256 ** (5 - numbers.length)) {
     return null
@@ -64,19 +59,17 @@ function parseIpv4(host: string): number | null {
   return ip
 }
 
-/** IPv4 ranges an outbound fetch must never target. Per-entry comments name
- *  each range; the two cloud-metadata addresses are called out there. */
 const BLOCKED_IPV4_CIDRS: ReadonlyArray<{ base: number; prefix: number }> = [
-  { base: 0x00000000, prefix: 8 }, // 0.0.0.0/8 this network
-  { base: 0x0a000000, prefix: 8 }, // 10.0.0.0/8
-  { base: 0x64400000, prefix: 10 }, // 100.64.0.0/10 CGNAT (cloud metadata: 100.100.100.200)
-  { base: 0x7f000000, prefix: 8 }, // 127.0.0.0/8 loopback
-  { base: 0xa9fe0000, prefix: 16 }, // 169.254.0.0/16 link-local (169.254.169.254 metadata)
-  { base: 0xac100000, prefix: 12 }, // 172.16.0.0/12
-  { base: 0xc0000000, prefix: 24 }, // 192.0.0.0/24 IETF protocol assignments
-  { base: 0xc0a80000, prefix: 16 }, // 192.168.0.0/16
+  { base: 0x00000000, prefix: 8 },
+  { base: 0x0a000000, prefix: 8 },
+  { base: 0x64400000, prefix: 10 },
+  { base: 0x7f000000, prefix: 8 },
+  { base: 0xa9fe0000, prefix: 16 },
+  { base: 0xac100000, prefix: 12 },
+  { base: 0xc0000000, prefix: 24 },
+  { base: 0xc0a80000, prefix: 16 },
   { base: 0xc6120000, prefix: 15 }, // 198.18.0.0/15 benchmarking
-  { base: 0xe0000000, prefix: 3 }, // 224.0.0.0/3 multicast + reserved + broadcast
+  { base: 0xe0000000, prefix: 3 },
 ]
 
 function ipv4InCidr(ip: number, base: number, prefix: number): boolean {
@@ -91,8 +84,6 @@ function isPrivateIpv4Number(ip: number): boolean {
   return BLOCKED_IPV4_CIDRS.some(({ base, prefix }) => ipv4InCidr(ip, base, prefix))
 }
 
-/** One side of a (possibly `::`-compressed) IPv6 address into hextets;
- *  a dotted IPv4 tail is only allowed as the final group. */
 function parseIpv6Hextets(groups: string[], allowIpv4Tail: boolean): number[] | null {
   const hextets: number[] = []
   for (const [index, group] of groups.entries()) {
@@ -115,9 +106,6 @@ function parseIpv6Hextets(groups: string[], allowIpv4Tail: boolean): number[] | 
   return hextets
 }
 
-/** IPv6 literal (compressed or full, with optional IPv4 tail) → its 8
- *  hextets; null for malformed input. A zone-ID suffix is stripped
- *  first — the address alone decides the private/reserved verdict. */
 function parseIpv6(host: string): number[] | null {
   const zoneIndex = host.indexOf('%')
   const address = zoneIndex === -1 ? host : host.slice(0, zoneIndex)
@@ -142,14 +130,6 @@ function parseIpv6(host: string): number[] | null {
   return [...headHextets, ...Array.from<number>({ length: zeros }).fill(0), ...tailHextets]
 }
 
-/** Private/reserved check on parsed IPv6 hextets: loopback `::1`,
- *  unspecified `::`, ULA fc00::/7, link-local fe80::/10, multicast
- *  ff00::/8 (an outbound fetch must never target a multicast group),
- *  the IPv4-mapped `::ffff:a.b.c.d` range (inner IPv4 goes through the
- *  same private check), and the two IPv4-embedding transition
- *  prefixes — NAT64 `64:ff9b::/96` (`64:ff9b::a9fe:a9fe` is
- *  169.254.169.254) and 6to4 `2002::/16` (`2002:7f00:1::` is
- *  127.0.0.1). */
 function isPrivateIpv6(hextets: number[]): boolean {
   const first = hextets[0]
   if ((first & 0xff00) === 0xff00) {
@@ -175,8 +155,6 @@ function isPrivateIpv6(hextets: number[]): boolean {
   return hextets.every((h, i) => h === (i === 7 ? 1 : 0)) || hextets.every((h) => h === 0)
 }
 
-/** SSRF guard: hostnames that must never be the target of an
- *  admin-influenced outbound fetch. */
 export function isBlockedFetchHost(hostname: string): boolean {
   const host = hostname.toLowerCase()
   if (host === 'localhost' || host === '0.0.0.0' || host === '::1' || host === '[::1]' || host.endsWith('.localhost')) {
@@ -185,9 +163,6 @@ export function isBlockedFetchHost(hostname: string): boolean {
   return isPrivateIp(host)
 }
 
-/** Private/reserved IP check — domain names are never flagged. Literal regex
- *  first (also catches names like `127.0.0.1.nip.io`), then the parser
- *  spellings the regex cannot see; handles bracketed IPv6. */
 export function isPrivateIp(hostname: string): boolean {
   const h = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
   if (IPV4_PRIVATE.test(h)) {
@@ -201,8 +176,6 @@ export function isPrivateIp(hostname: string): boolean {
   return v4 !== null && isPrivateIpv4Number(v4)
 }
 
-/** Passkey RP requirements: HTTPS + public hostname (no localhost /
- *  private IP / IPv6 ULA). */
 export function isValidPasskeyDomain(website: string): boolean {
   try {
     const url = new URL(website)

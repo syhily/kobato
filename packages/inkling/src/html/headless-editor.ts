@@ -15,12 +15,6 @@ import { createHeadlessEditor } from '@lexical/headless'
 // - 'wholesale' (importer): the caller's editorConfig replaces the defaults
 //   — nothing is merged. Do NOT unify these.
 
-/**
- * The headless surface's default error sink: swallows errors (the renderer's
- * pinned behavior) instead of falling back to upstream's console.error. Every
- * leg applies it unless the caller passes its own onError — server callers
- * should pass one and fail fast.
- */
 export function defaultOnError(error: Error) {
   void error
 }

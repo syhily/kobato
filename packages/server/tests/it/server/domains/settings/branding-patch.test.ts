@@ -7,11 +7,7 @@ import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Section-change dispatch is covered by the unit tests; keep the schedulers out.
 const db = getTestDb()
-
-// Settings PATCH only: robots.txt inline storage + preserved ObjectRefs;
-// uploads need real S3 and stay with the unit tests.
 
 const ASSETS_BASE = {
   asset: { host: 'cdn.example.com', scheme: 'https' as const },
@@ -110,7 +106,6 @@ describe('integration / branding settings', () => {
       ctx,
     )
     expect(updateRes.status).toBe(200)
-    // Admin-projected section (mask included) — the client never refetches.
     const updateBody = await parseRpcJson<{
       section: { asset: { host: string }; secretAccessKeyMask: string | null }
     }>(updateRes)

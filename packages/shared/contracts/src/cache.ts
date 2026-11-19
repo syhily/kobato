@@ -12,20 +12,11 @@ const cacheBucketStatsDto = z.object({
   prefix: z.string(),
   ttlSeconds: z.number().int().nonnegative(),
   pattern: z.string(),
-  /** Live entry count: a valid `KBC1` envelope that is not expired. */
   keyCount: z.number().int().nonnegative(),
-  /**
-   * On-disk bytes of every entry file in the bucket's shards, envelope
-   * included. Expired and malformed entries still occupy disk, so they count
-   * here even though `keyCount` excludes them; `_generation`, `_tmp` and trash
-   * directories are excluded.
-   */
   byteSize: z.number().int().nonnegative(),
 })
 export type CacheBucketStats = z.infer<typeof cacheBucketStatsDto>
 
-// Reserved buckets have no key prefix — sessions live in the `session` table and
-// rate-limit counters are in-process, so only a live count is reported.
 const reservedCacheBucketStatsDto = z.object({
   id: reservedCacheBucketId,
   label: z.string(),
@@ -54,9 +45,6 @@ export const clearCacheResultDto = z.object({
   refreshedStats: adminCacheStatsDto,
 })
 export type ClearCacheResultDto = z.infer<typeof clearCacheResultDto>
-
-// Admin cache wire inputs — the single Zod source the `@kobato/api` cache
-// contract composes and the server validates against.
 
 export const adminCacheGetStatsInput = z.object({})
 export type AdminCacheGetStatsInput = z.infer<typeof adminCacheGetStatsInput>

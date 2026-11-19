@@ -6,10 +6,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `updateOwnComment` at the persistence seam against the real engine;
-// the grace-window decision itself is pinned in the unit policy test.
-// Only the outbound admin email is mocked; canonicalize is real.
-
 vi.mock('@kobato/server/domains/comments/services/email.ts', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
@@ -128,7 +124,6 @@ describe('updateOwnComment — persistence edges', () => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
     const id = await seedComment({ userId: uid, ownerId: pid, createdAt: tenMinutesAgo })
 
-    // Both reads see the same updated_at, so one write wins and the other rejects CONFLICT.
     const OTHER_BODY = makeCommentBody('edited concurrently')
     const results = await Promise.allSettled([
       updateOwnComment(db, String(id), NEW_BODY),

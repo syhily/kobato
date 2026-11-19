@@ -3,7 +3,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// sendAuthorInvite (SMTP/HTTP side effect) is stubbed at the module boundary.
 const sendAuthorInvite = vi.hoisted(() => vi.fn())
 
 vi.mock('@kobato/server/infra/email/sender.ts', () => ({
@@ -12,10 +11,6 @@ vi.mock('@kobato/server/infra/email/sender.ts', () => ({
   invalidateMailTransportCache: vi.fn(),
 }))
 
-// issueSetupToken is wrapped so tests can make it throw mid-transaction; defaults to the real implementation.
-// The factory is async (importOriginal): db-lifecycle's scheduler wiring pulls the real
-// verification-tokens module into this file's static import graph, so a top-level
-// `await vi.importActual` in the file body would fire too late (TDZ).
 const setupTokenMocks = vi.hoisted(() => ({
   issueSetupToken: vi.fn(),
   realIssueSetupToken:
@@ -32,7 +27,6 @@ vi.mock('@kobato/server/domains/auth/verification-tokens.ts', async (importOrigi
   }
 })
 
-// Import the service AFTER the mocks so the bindings propagate.
 const { inviteAuthorWithRollback } = await import('@kobato/server/domains/users/services/admin.ts')
 
 const db = getTestDb()
@@ -106,7 +100,6 @@ describe('integration / inviteAuthorWithRollback', () => {
   })
 
   it('rolls back the token if the user insert hits a unique-constraint error', async () => {
-    // The CONFLICT error throws before the transaction opens — no token row is created.
     sendAuthorInvite.mockResolvedValueOnce({ ok: true })
     await inviteAuthorWithRollback(db, 'First Author', 'dup@example.com', 'https://blog.example.com', 'Admin')
 
@@ -122,13 +115,11 @@ describe('integration / inviteAuthorWithRollback', () => {
     expect(row).not.toBeNull()
     expect(row!.id).toBe(existing!.id)
 
-    // Token count unchanged: the duplicate attempt never opened a transaction.
     const tokensAfter = await countSetupTokensFor(existing!.id)
     expect(tokensAfter).toBe(tokensBefore)
   })
 
   it('preserves atomicity when issueSetupToken fails mid-transaction', async () => {
-    // Rollback must discard the insertAuthor write and never run sendAuthorInvite.
     setupTokenMocks.issueSetupToken.mockImplementationOnce(() => {
       throw new Error('token store down')
     })

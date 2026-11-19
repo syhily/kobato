@@ -29,11 +29,6 @@ vi.mock('@kobato/inkling-internal/utils', async (importActual) => {
   return { ...actual, countWords: vi.fn(actual.countWords) }
 })
 
-// Deterministic harness for the headless word counter: the throttle port is a
-// synchronous passthrough, so flushes run inside the update that triggered
-// them — no wall-clock sleeps. The React adapter is covered by
-// WordCountPlugin.test.tsx.
-
 const synchronousThrottle: WordCounterThrottle = (fn) => Object.assign(() => fn(), { cancel: () => {} })
 
 function attachCounter(editor: LexicalEditor, onChange: (count: number) => void) {

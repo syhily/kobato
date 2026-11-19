@@ -4,10 +4,6 @@ import { renderHookWithI18n } from '@kobato/test/i18n-render.tsx'
 import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// Save-warning surfacing: the shell must surface a save
-// warning instead of swallowing it. Mutation slots follow persist call
-// order: 0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
-
 interface MutationSlot {
   onSuccess?: (data: never) => void
   onError?: (error: Error) => void
@@ -65,7 +61,6 @@ import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-
 import { emptyLexicalBody } from '@kobato/test/lexical.ts'
 import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
 
-// The editor shell hooks call `useI18n()`, so every render needs the provider.
 const renderHook = renderHookWithI18n
 
 const WARNING = '图片库同步失败，部分图片可能无法正常显示。'
@@ -138,7 +133,6 @@ describe('ui/admin/editor-shell/useEditorShellState — save-result warnings', (
     act(() => slots[1]?.onSuccess?.(payload as never))
 
     expect(result.current.sidebar.saveStatus).toEqual({ kind: 'warning', message: WARNING })
-    // The save still landed: the revision token advanced.
     expect(result.current.sidebar.expectedToken).toBe('tok-1')
   })
 
@@ -146,7 +140,6 @@ describe('ui/admin/editor-shell/useEditorShellState — save-result warnings', (
     const { result } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     const payload: SaveBodyOutput = { status: 'saved', revision: makeRevision(), warning: WARNING }
 
-    // A concurrent meta-leg success must not clobber the body-leg warning.
     act(() => slots[1]?.onSuccess?.(payload as never))
     act(() =>
       slots[0]?.onSuccess?.({

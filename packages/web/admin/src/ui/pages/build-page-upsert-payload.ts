@@ -10,11 +10,8 @@ export function buildPageUpsertPayload({
 }: {
   meta: PageMetaDraft
   id?: string
-  /** ISO to set; `null` = cancel schedule; `undefined` = leave untouched. */
   publishedAt?: string | null
 }): UpsertPageMetaInput {
-  // An unparseable tag is never sent: the server would reject the whole save
-  // (including an unrelated body/meta edit) and the field already shows the inline error.
   const contentLanguage = meta.contentLanguage.trim()
   return {
     ...(id !== undefined ? { id } : {}),

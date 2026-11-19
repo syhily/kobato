@@ -21,8 +21,6 @@ interface MenuItemBase {
   shortcut?: string
   isHidden?: (args: { config: MenuBuildConfig | undefined }) => boolean
   section?: string
-  // closed discriminant: menu items are cards (the default) or snippets —
-  // CardMenu renders anything else as null, so a typo must not compile
   type?: 'card' | 'snippet'
   onRemove?: () => void
   queryParams?: readonly string[]
@@ -108,9 +106,6 @@ export function buildCardMenu(
       resolvedItem.desc = resolveLabel?.(`menu.${item.labelKey}.desc`, resolvedItem.desc) ?? resolvedItem.desc
     }
 
-    // sections group by the DECLARED name so a localized label can't fork the
-    // grouping or break the primary-first sort below; the label resolves at
-    // the sections-mapping stage
     const section = resolvedItem.section || 'Primary'
 
     const sectionItems = menu.get(section) ?? []

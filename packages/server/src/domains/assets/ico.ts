@@ -1,5 +1,5 @@
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-const IHDR_TYPE = 0x49484452 // 'IHDR'
+const IHDR_TYPE = 0x49484452
 const ICONDIR_HEADER_SIZE = 6
 const ICONDIRENTRY_SIZE = 16
 const MAX_ICON_SIZE = 256
@@ -12,7 +12,6 @@ function pngDimensions(png: Buffer): { width: number; height: number } {
   return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) }
 }
 
-/** Each image must be at most 256×256 (ICO's hard ceiling; 256 is stored as 0). */
 export function encodeIco(images: Buffer[]): Buffer {
   if (images.length === 0) {
     throw new Error('encodeIco: at least one image is required')
@@ -26,8 +25,8 @@ export function encodeIco(images: Buffer[]): Buffer {
   }
 
   const header = Buffer.alloc(ICONDIR_HEADER_SIZE)
-  header.writeUInt16LE(0, 0) // reserved, always 0
-  header.writeUInt16LE(1, 2) // type: 1 = icon (ICO)
+  header.writeUInt16LE(0, 0)
+  header.writeUInt16LE(1, 2)
   header.writeUInt16LE(images.length, 4)
 
   const directory = Buffer.alloc(ICONDIRENTRY_SIZE * images.length)
@@ -35,12 +34,12 @@ export function encodeIco(images: Buffer[]): Buffer {
   images.forEach((png, index) => {
     const { width, height } = dimensions[index]!
     const base = index * ICONDIRENTRY_SIZE
-    directory.writeUInt8(width % 256, base) // 0 encodes 256
+    directory.writeUInt8(width % 256, base)
     directory.writeUInt8(height % 256, base + 1)
-    directory.writeUInt8(0, base + 2) // palette size: 0 = no palette
-    directory.writeUInt8(0, base + 3) // reserved
-    directory.writeUInt16LE(1, base + 4) // color planes
-    directory.writeUInt16LE(32, base + 6) // bits per pixel
+    directory.writeUInt8(0, base + 2)
+    directory.writeUInt8(0, base + 3)
+    directory.writeUInt16LE(1, base + 4)
+    directory.writeUInt16LE(32, base + 6)
     directory.writeUInt32LE(png.length, base + 8)
     directory.writeUInt32LE(offset, base + 12)
     offset += png.length

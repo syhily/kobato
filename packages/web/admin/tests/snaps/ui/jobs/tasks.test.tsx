@@ -81,7 +81,6 @@ function makeJobsList(overrides: Partial<JobsListDto> = {}): JobsListDto {
         label: 'admin.tasks.task.scheduledPublish.label',
         group: 'content',
         scheduleHint: 'admin.tasks.task.scheduledPublish.schedule',
-        // No scheduled content → nextDelayMs() returns null → suspended.
         liveState: { suspended: true, nextRunAt: null, running: false },
       }),
       makeTask({
@@ -165,7 +164,6 @@ describe('snapshot: TasksView', () => {
     expect(html).toContain('去审核')
     expect(html).toContain('发起新迁移')
     expect(html).toContain('href="/admin/settings"')
-    // 5 non-queue tasks → 5 history triggers; queue tasks never record history.
     expect(html.match(/执行历史/g)).toHaveLength(5)
     expect(html).not.toContain('取消迁移')
     expect(html).not.toContain('从断点继续')

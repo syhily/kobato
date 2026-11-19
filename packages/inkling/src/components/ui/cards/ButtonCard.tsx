@@ -15,15 +15,9 @@ export function ButtonCard({
   buttonText,
   buttonPlaceholder,
   buttonUrl,
-  handleAlignmentChange = () => {
-    /* noop */
-  },
-  handleButtonTextChange = () => {
-    /* noop */
-  },
-  handleButtonUrlChange = () => {
-    /* noop */
-  },
+  handleAlignmentChange = () => undefined,
+  handleButtonTextChange = () => undefined,
+  handleButtonUrlChange = () => undefined,
   isEditing,
 }: {
   alignment?: string

@@ -52,13 +52,6 @@ function getTopPosition(elem: Element, positioningParent: HTMLElement): number {
   return placement.top ?? 0
 }
 
-/**
- * The positioning parent's viewport-to-local scale. getBoundingClientRect
- * reflects CSS `zoom` (the page-editor canvas runs at 2/3) while offset*
- * lengths stay in the element's unscaled local space, so their ratio IS the
- * effective zoom — wherever in the ancestor chain it is declared. 1 when the
- * parent is unmeasurable (display:none).
- */
 function resolveCoordinateScale(positioningParent: HTMLElement): number {
   const localWidth = positioningParent.offsetWidth
   if (localWidth <= 0) {
@@ -108,12 +101,6 @@ export function CardMenuPopup({
     return anchorNode instanceof HTMLElement ? anchorNode : null
   }, [])
 
-  // the popup containers position absolutely against the `.inkling-lexical`
-  // wrapper — its `position: relative` is their containing block. Resolve it
-  // from the mounted popup's offsetParent when possible (ground truth); the
-  // editor root's closest() is the pre-mount fallback (the button chrome's
-  // top is computed from a verdict before the popup mounts), and the anchor's
-  // own parent covers wrapper-less compositions (useDefaultClasses: false).
   const getPositioningParent = React.useCallback(
     (anchorFallback?: Element | null): HTMLElement | null => {
       const mountedParent = containerRef.current?.offsetParent
@@ -269,10 +256,6 @@ export function CardMenuPopup({
     return registerMenuArrowsClose({ isOpen: () => isOpen, close: closeMenu })
   }, [isSlash, isOpen, closeMenu])
 
-  // reset the keyboard selection whenever the menu rebuilds — cardMenu is the
-  // rebuild signal, but the effect body never reads it, so listing it as a
-  // dependency is an every-render fire; compare identities against a ref in
-  // an every-render effect instead (mount counts as a rebuild)
   const previousCardMenuRef = React.useRef<typeof cardMenu | null>(null)
   React.useEffect(() => {
     if (previousCardMenuRef.current === cardMenu) {

@@ -7,15 +7,12 @@ import { makeAuthedCtx, makePublicCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Section-change dispatch is covered by the unit tests; keep the schedulers out.
 const db = getTestDb()
 
 beforeEach(async () => {
   __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
-  // Evict the snapshot so tests don't reuse a stale hydration promise.
   resetBlogSettingsForTests()
-  // Seed the three rows hydrateBlogSettings treats as the installed baseline.
   await db.insert(setting).values([
     {
       scope: 'blog.general',
@@ -80,7 +77,6 @@ describe('integration / admin settings', () => {
       ctx,
     )
     expect(updateRes.status).toBe(200)
-    // The response is authoritative — the client adopts it without refetching.
     const updateBody = await parseRpcJson<{ section: { maxRequestBodySize: number } }>(updateRes)
     expect(updateBody.section.maxRequestBodySize).toBe(5 * 1024 * 1024)
 

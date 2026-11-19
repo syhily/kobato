@@ -8,8 +8,6 @@ import {
 } from '@kobato/contracts/observability.ts'
 import { oc } from '@orpc/contract'
 
-// Admin observability RPC contract — admin base on the server. Connection
-// test, (re)provisioning and the read-only status projection.
 export const adminObservabilityContract = {
   testConnection: oc
     .route({ method: 'POST', path: '/admin/observability/test-connection' })

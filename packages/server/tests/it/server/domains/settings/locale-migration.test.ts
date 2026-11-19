@@ -86,7 +86,6 @@ describe('server/domains/settings/services/locale-migration', () => {
       expect(bundle).not.toBeNull()
       expect(bundle?.siteIdentity).not.toBeNull()
       expect(bundle?.siteIdentity?.locale).toBe('zh-CN')
-      // The rewrite is persisted, not just projected.
       expect(findSettingByScope(db, 'blog.general')?.data).toMatchObject({ locale: 'zh-CN' })
     })
 

@@ -5,10 +5,6 @@ import { makePublicCtx } from '@kobato/test/mock-ctx.ts'
 import { parseRpcJson } from '@kobato/test/rpc-call.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The avatar fetch + base64 inlining lives in the comments domain (pinned in
-// tests/it/server/domains/comments/services/avatar.test.ts); the controller maps the real
-// service result onto the wire shape.
-
 const { RPCHandler } = await import('@orpc/server/fetch')
 const handler = new RPCHandler(githubRouter)
 
@@ -37,7 +33,6 @@ describe('github controller', () => {
   })
 
   it('avatar returns the data URL produced by the domain service', async () => {
-    // PNG magic bytes → 'iVBORw==' in base64.
     mockFetch.enqueue(
       /avatars\.githubusercontent\.com/,
       new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {

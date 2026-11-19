@@ -1,8 +1,3 @@
-// The one media-load wait: every metadata loader is a thin config over this primitive.
-// `start` runs after the listeners attach so the load cannot race ahead of them; listing
-// several events covers loads whose signals arrive in one task (a local blob's
-// `loadedmetadata` + `canplay`).
-
 export const MEDIA_LOAD_TIMEOUT_MS = 15_000
 
 export interface AwaitMediaEventsOptions {

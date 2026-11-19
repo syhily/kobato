@@ -5,7 +5,6 @@ export const seoSchema = z.object({
     minHeadingLevel: z.coerce.number().int().min(1).max(6),
     maxHeadingLevel: z.coerce.number().int().min(1).max(6),
   }),
-  // Bounds follow platform card limits (Facebook ≥600×315, X ≤4096×4096).
   og: z.object({
     width: z.coerce.number().int().min(600).max(4096),
     height: z.coerce.number().int().min(315).max(4096),

@@ -38,9 +38,6 @@ const deleteOne = impl.delete.handler(async ({ input, context }) => {
   })
 })
 
-// Moderator edit: rewrites in place and never re-queues — the commenter-facing
-// own-edit policy (grace window, delete fence, reply lock) is deliberately
-// not applied here.
 const editOne = impl.edit.handler(async ({ input, context }) => {
   const updated = await updateComment(context.db, input.commentId, input.body)
   if (!updated) {
@@ -93,9 +90,7 @@ const searchAuthors = impl.searchAuthors.handler(async ({ input, context }) => {
       }
       try {
         out.push(idFromString(trimmed))
-      } catch {
-        /* noop */
-      }
+      } catch {}
     }
     return out.length > 0 ? out : undefined
   }

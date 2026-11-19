@@ -7,10 +7,6 @@ import { createServer } from 'node:http'
 import { Agent, fetch as undiciFetch } from 'undici'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Unit surface for the SSRF invariant: allowlist, per-hop host revalidation, redirect
-// budget, timeout, size cap.
-// `isBlockedFetchHost` stays real — only `fetch` is stubbed; DNS defaults to a public address.
-
 interface DnsAddress {
   address: string
   family: number
@@ -20,7 +16,6 @@ vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async (): Promise<DnsAddress[]> => [{ address: '93.184.216.34', family: 4 }]),
 }))
 
-// `lookup` is overloaded; the cast re-types it to the `{ all: true }` shape.
 const lookupMock = lookup as unknown as Mock<(hostname: string, options?: unknown) => Promise<DnsAddress[]>>
 
 const publicDns = [{ address: '93.184.216.34', family: 4 }]
@@ -51,7 +46,6 @@ describe('infra/safe-fetch — initial URL guard', () => {
     const fn = mockFetch(() => new Response(null, { status: 200 }))
     const result = await safeFetch('ftp://example.com/x')
     expect(result).toMatchObject({ ok: false, reason: 'bad-protocol' })
-    // The trusted-origin exemption never bypasses the protocol gate.
     await expect(safeFetch('ftp://example.com/x', { trustedOrigin: 'ftp://example.com' })).resolves.toMatchObject({
       ok: false,
       reason: 'bad-protocol',
@@ -115,7 +109,6 @@ describe('infra/safe-fetch — initial URL guard', () => {
     ).resolves.toMatchObject({ ok: true })
     expect(fn).toHaveBeenCalledTimes(1)
 
-    // A different origin (even the same loopback host on another port) stays blocked.
     await expect(
       safeFetch('http://127.0.0.1:5081/healthz', { trustedOrigin: 'http://127.0.0.1:5080' }),
     ).resolves.toMatchObject({ ok: false, reason: 'bad-port' })
@@ -232,10 +225,6 @@ describe('infra/safe-fetch — dial-time DNS binding', () => {
   })
 
   it('aborts the connection when the dial-time lookup resolves a blocked address', async () => {
-    // Real socket, real undici Agent — only `node:dns/promises` is mocked.
-    // The validating lookup is exercised directly: safeFetch's own port
-    // allowlist would reject the test server's ephemeral port at the
-    // pre-check, before any dial could happen.
     let hits = 0
     const server = createServer((_req, res) => {
       hits += 1
@@ -245,8 +234,6 @@ describe('infra/safe-fetch — dial-time DNS binding', () => {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
     const port = (server.address() as AddressInfo).port
     try {
-      // DNS answers loopback at connect time — the dial must refuse even
-      // though the host:port combination is perfectly reachable.
       lookupMock.mockResolvedValue([{ address: '127.0.0.1', family: 4 }])
       const agent = new Agent({ connect: { lookup: createDialLookup() } })
       let thrown: unknown
@@ -257,9 +244,6 @@ describe('infra/safe-fetch — dial-time DNS binding', () => {
       } finally {
         await agent.destroy().catch(() => undefined)
       }
-      // The dial itself must have rejected the blocked address — not a
-      // generic "unresolvable host" failure (undici wraps the connect error
-      // in a cause chain, so walk it).
       let chain = ''
       for (let cur = thrown; cur instanceof Error; cur = cur.cause) {
         chain += `${cur.message}|`
@@ -304,7 +288,6 @@ describe('infra/safe-fetch — redirect loop', () => {
     const fn = mockFetch((url) => new Response(null, { status: 302, headers: { location: `${url}?hop` } }))
     const result = await safeFetch('https://cdn.example.com/a', { maxRedirects: 2 })
     expect(result).toMatchObject({ ok: false, reason: 'too-many-redirects' })
-    // budget 2 → the third 3xx response trips the cap
     expect(fn).toHaveBeenCalledTimes(3)
   })
 
@@ -439,7 +422,6 @@ describe('infra/safe-fetch — size cap', () => {
       start(controller) {
         controller.enqueue(new Uint8Array(6))
         controller.enqueue(new Uint8Array(6))
-        // never closed: the guard must stop the read before the stream ends
       },
       cancel() {
         cancelled = true

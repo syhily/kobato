@@ -7,7 +7,6 @@ import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 
 const log = getLogger('backup.scheduler')
 
-// Read the db at fire time so a recreated handle (restore) is picked up.
 async function runBackupJob(): Promise<void> {
   try {
     const db = jobDb()
@@ -20,7 +19,6 @@ async function runBackupJob(): Promise<void> {
       await cleanupOldBackups(db, backupSettings.retention.days)
     }
   } catch (error) {
-    // Another backup holds the single-flight slot — skipping is expected.
     if (error instanceof DomainError && error.code === 'CONFLICT') {
       log.info('Scheduled backup skipped; another backup is in progress')
       return
@@ -32,8 +30,6 @@ async function runBackupJob(): Promise<void> {
 function nextBackupDelayMs(): number | null {
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
-    // Settings not hydrated yet (boot-time race) — suspend. A numeric delay
-    // here would FIRE the backup on every retry tick.
     log.warn('Settings not hydrated; backup schedule suspended')
     return null
   }

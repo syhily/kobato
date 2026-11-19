@@ -2,10 +2,6 @@ import { __TOKENS_FOR_TESTS } from '@kobato/ui/lib/cn.ts'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Contract: cn.ts's hand-written `cn` extension tables must mirror the
-// @theme inline tokens in tailwind.css exactly — the merge engine cannot
-// parse those blocks, so drift silently re-collapses token namespaces.
-
 interface ParsedThemeBlocks {
   byNamespace: Map<string, Set<string>>
 }
@@ -58,7 +54,6 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
   return { byNamespace }
 }
 
-// Namespaces cn() never composes, or non-utility values read by arbitrary-value utilities.
 const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'ring', 'size', 'width', 'z'])
 
 const CSS_PATH = 'packages/ui/src/styles/tailwind.css'

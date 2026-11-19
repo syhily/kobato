@@ -2,8 +2,6 @@ import { defineCard, type DecoratorNodeProperty, generateDecoratorNode } from '@
 
 const musicPlayerProperties = [{ name: 'src', default: '' }] as const satisfies readonly DecoratorNodeProperty[]
 
-// Host-side base node built through the same generateDecoratorNode entry the built-in cards use; a stub
-// defaultRenderFn keeps the exportDOM contract honest without vendoring a renderer.
 const BaseMusicPlayerNode = generateDecoratorNode({
   nodeType: 'musicPlayer',
   properties: musicPlayerProperties,

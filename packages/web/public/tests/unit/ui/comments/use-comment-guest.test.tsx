@@ -32,8 +32,6 @@ function makeStorage(initial: Record<string, string> = {}) {
 
 type StorageLike = ReturnType<typeof makeStorage>
 
-// Node defines no `window`; `readProfile` guards with `typeof window`,
-// so each test installs a fake window + localStorage to reach its storage paths.
 interface FakeWindow {
   localStorage: StorageLike
 }
@@ -147,7 +145,6 @@ describe('useCommentGuest clearProfile (removeProfile)', () => {
     const fake = installWindow({ [STORAGE_KEY]: JSON.stringify(VALID_PROFILE) })
     const result = renderHook(() => useCommentGuest())
     result.clearProfile()
-    // No re-render happens under the SSR runner — assert the storage side-effect.
     expect(fake.localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY)
   })
 })

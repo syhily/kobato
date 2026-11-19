@@ -1,7 +1,3 @@
-// Install-time seed of every settings section — the strict counterpart to hydrate's lazy
-// backfill: all 19 rows validated BEFORE any write, then persisted on the caller's
-// transaction so they commit atomically with the first admin row.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { SettingsSection } from '@kobato/settings/sections.ts'
@@ -65,8 +61,6 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
     const meta = SECTION_REGISTRY[section]
     const check = meta.schema.safeParse(payload)
     if (!check.success) {
-      // Registry-drift diagnostic: interpolate the offending path and the
-      // issue's English fallback (never a raw catalog id) into the copy.
       const first = check.error.issues[0]
       const path = first ? first.path.join('.') : '<unknown>'
       return {
@@ -83,10 +77,6 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
   return { ok: true, rows }
 }
 
-/**
- * Persist pre-validated rows in order on the caller's handle — the install flow passes
- * the transaction that also inserts the admin row, so all upserts commit atomically.
- */
 export function seedInstallSections(db: Database, rows: InstallSectionRow[], updatedBy: number | null): void {
   for (const { scope, payload } of rows) {
     upsertSetting(db, payload, updatedBy, scope)

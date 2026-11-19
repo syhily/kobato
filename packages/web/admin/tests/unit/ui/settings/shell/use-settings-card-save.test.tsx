@@ -5,7 +5,6 @@ import type { ReactElement } from 'react'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
@@ -45,7 +44,6 @@ function makeCardProps(source: Source, schema?: z.ZodType<State, any>) {
   }
 }
 
-// Two event-loop turns settle every pending microtask-driven save chain.
 const settleSaveChains = async () => {
   await new Promise((resolve) => setImmediate(resolve))
   await new Promise((resolve) => setImmediate(resolve))
@@ -59,7 +57,6 @@ describe('useSettingsCard — schema-aware save baseline', () => {
   })
 
   it('stays clean after saving a value the schema trims — no repeat PATCH on later flushes', async () => {
-    // The baseline stores raw values — parsed ones would keep the card permanently dirty.
     function Harness({ source }: { source: Source }) {
       const { form, flushOnBlur } = useSettingsCard<Source, State>(
         makeCardProps(source, z.object({ title: z.string().trim().min(1) })),
@@ -110,8 +107,6 @@ describe('useSettingsCard — schema-aware save baseline', () => {
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
     expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '请填写站点标题' }])
     expect(commit).not.toHaveBeenCalled()
-    // A failed save never discards what the admin typed — the value and the
-    // field error stay on screen so the failure is actionable.
     expect(input).toHaveValue('')
     expect(screen.getByTestId('error')).toHaveTextContent('请填写站点标题')
   })
@@ -137,8 +132,6 @@ describe('useSettingsCard — schema-aware save baseline', () => {
 
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
     expect(commit).not.toHaveBeenCalled()
-    // Blur is how a locale pick starts (focus leaves the input first) — it must
-    // not silently reset the invalid draft back to the committed baseline.
     expect(input).toHaveValue('A')
     expect(screen.getByTestId('error')).toHaveTextContent('太短')
   })
@@ -179,8 +172,6 @@ describe('useSettingsCard — schema-aware save baseline', () => {
     fireEvent.click(screen.getByRole('button', { name: 'save' }))
 
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
-    // The issue's `params` bag reaches localizeMessage — never the token name
-    // and never the raw ICU template.
     expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '开启 S3 上传时「Bucket」必填' }])
     expect(input).toHaveValue('bad')
   })
@@ -243,8 +234,6 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
 
     fireEvent.blur(input)
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
-    // The switch's field commit already advanced `enabled`, so the whole-card
-    // flush posts the text edit alone — never a full fromState re-send.
     expect(commit.mock.calls[1]![1]).toEqual({ title: 'Half typed' })
   })
 
@@ -313,12 +302,9 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
 
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(commit.mock.calls[0]![1]).toEqual({ enabled: true })
-    // The rejected value must never keep rendering as if it were persisted.
     await waitFor(() => expect(screen.getByTestId('enabled')).toHaveTextContent('false'))
     expect(input).toHaveValue('Half typed')
 
-    // The next whole-card flush posts only what still differs from the
-    // baseline: the rolled-back `enabled` equals it, so it is left out entirely.
     commit.mockResolvedValueOnce({ ok: true, section: {} })
     fireEvent.blur(input)
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
@@ -359,7 +345,6 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
-    // The admin flips the control back while the rejected request is in flight.
     fireEvent.click(screen.getByRole('button', { name: 're-edit' }))
     gate.resolve({ ok: false })
     await settleSaveChains()
@@ -493,19 +478,15 @@ describe('useSettingsCard — awaitable flush + per-card serialization', () => {
     const results: boolean[] = []
     renderUi(<FlushHarness source={{ title: 'Hello', other: 'x' }} results={results} />)
 
-    // A control-triggered field save goes in flight…
     fireEvent.click(screen.getByRole('button', { name: 'save-other' }))
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
-    // …and the admin keeps editing another field.
     fireEvent.change(screen.getByRole('textbox', { name: 'title' }), { target: { value: 'Typed' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'flush' }))
-    // The flush must not treat "field save succeeded" as "card is clean".
     expect(commit).toHaveBeenCalledOnce()
 
     gate.resolve({ ok: true, section: {} })
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
-    // Only the field that still differs from the baseline is posted.
     expect(commit.mock.calls[1]![1]).toEqual({ title: 'Typed' })
     commit.mockResolvedValue({ ok: true, section: {} })
     await waitFor(() => expect(results).toEqual([true]))
@@ -522,13 +503,11 @@ describe('useSettingsCard — awaitable flush + per-card serialization', () => {
     fireEvent.click(screen.getByRole('button', { name: 'flush' }))
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
 
-    // Typed while the request is in flight — this input was NOT part of the POST.
     fireEvent.change(input, { target: { value: 'Second' } })
     first.resolve({ ok: true, section: {} })
     commit.mockResolvedValue({ ok: true, section: {} })
 
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
-    // Each POST carries only what moved since the acknowledged baseline.
     expect(commit.mock.calls[0]![1]).toEqual({ title: 'First' })
     expect(commit.mock.calls[1]![1]).toEqual({ title: 'Second' })
     await waitFor(() => expect(results).toEqual([true]))
@@ -545,7 +524,6 @@ describe('useSettingsCard — awaitable flush + per-card serialization', () => {
 
     await waitFor(() => expect(results).toEqual([false]))
     expect(commit).not.toHaveBeenCalled()
-    // The panel flush keeps the dirty input and its error (no rollback).
     expect(input).toHaveValue('A')
     expect(toastMock.error).toHaveBeenCalledOnce()
   })

@@ -21,26 +21,6 @@ import { type FileHandle, mkdir, open, readFile, readdir, rename, rm, stat, unli
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-/**
- * Filesystem file-access plane for `@/server/infra/cache/registry`.
- *
- * One entry = one file under `<storage.data>/cache/<bucket>/<h[0:2]>/<h[2:]>`,
- * `h = sha256(fullKey)` — keys never reach a filename, so PII in avatar keys
- * stays out of directory listings. Envelope: `[4B "KBC1"][8B BE expiresAtMs,
- * 0 = never][payload]`; JSON payloads are UTF-8 text, binary payloads raw bytes.
- *
- * Every operation here may throw — the registry's best-effort handlers own
- * degradation (failed read = miss, failed write = skipped warmth). Reads are
- * lazy-TTL: expired entries are unlinked here; ENOENT reads as a miss. Writes
- * go to `<bucket>/_tmp/<pid>-<random>` and rename into the shard, so a torn
- * payload is never visible. No fsync: a crash loses recent warmth, which
- * regenerates. A concurrent clear can remove the tree between mkdir and
- * rename; the write recreates the directories once and retries.
- *
- * `KOBATO_CACHE_DIR` (the SEA natives dir) is deliberately never consulted —
- * this cache is scoped to the instance's `storage.data`.
- */
-
 const MAGIC = Buffer.from('KBC1', 'latin1')
 const HEADER_SIZE = MAGIC.length + 8
 const TMP_DIR_NAME = '_tmp'
@@ -57,8 +37,6 @@ export interface FileStoreSetOptions {
   expiresAtMs?: number
 }
 
-// Vitest runs on `:memory:` and must not share `/tmp/kobato-data` with other
-// test files; one throwaway root per process/module instance.
 let inMemoryRoot: string | undefined
 
 export function resolveCacheRoot(): string {
@@ -70,7 +48,6 @@ export function resolveCacheRoot(): string {
 }
 
 function assertBucketId(bucket: string): void {
-  // The id becomes a path segment; reject traversal/empty segments outright.
   if (!BUCKET_ID_PATTERN.test(bucket)) {
     throw new TypeError(`invalid cache bucket id: ${bucket}`)
   }
@@ -90,13 +67,10 @@ function isErrnoCode(error: unknown, code: string): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === code
 }
 
-// Best-effort: a concurrent clear or sweep may have already removed the file.
 async function discard(file: string): Promise<void> {
   try {
     await unlink(file)
-  } catch {
-    // The entry is a miss either way; eviction is opportunistic.
-  }
+  } catch {}
 }
 
 function expiryFrom(opts: FileStoreSetOptions): number {
@@ -154,7 +128,6 @@ async function writeOnce(shardDir: string, tmpDir: string, file: string, bytes: 
   const tmpFile = path.join(tmpDir, `${process.pid}-${randomBytes(6).toString('hex')}.tmp`)
   try {
     await writeFile(tmpFile, bytes)
-    // Same bucket tree, same filesystem — atomic replacement, never a torn entry.
     await rename(tmpFile, file)
   } catch (error) {
     await discard(tmpFile)
@@ -173,14 +146,10 @@ async function writePayload(bucket: string, fullKey: string, payload: Buffer, op
     if (!isErrnoCode(error, 'ENOENT')) {
       throw error
     }
-    // A concurrent clear removed the bucket tree after mkdir; recreate once.
     await writeOnce(shardDir, tmpDir, file, bytes)
   }
 }
 
-/** A live payload plus the deadline it was written with (`0` = never); the
- *  registry mirrors the value into L1 under this same deadline, so the memory
- *  copy can never outlive the file. */
 export interface StoredEntry<T> {
   value: T
   expiresAtMs: number
@@ -193,8 +162,6 @@ export async function getItemWithExpiry<T>(bucket: string, fullKey: string): Pro
     : { value: unsafeCast<T>(JSON.parse(envelope.payload.toString('utf8'))), expiresAtMs: envelope.expiresAtMs }
 }
 
-/** JSON write; returns the exact text stored so a caller mirroring the value
- *  into a memory tier can reuse it instead of serializing twice. */
 export async function setItem(
   bucket: string,
   fullKey: string,
@@ -224,7 +191,6 @@ export async function removeItem(bucket: string, fullKey: string): Promise<void>
   try {
     await unlink(entryPath(bucket, fullKey))
   } catch (error) {
-    // Removing an absent entry (or one a concurrent clear already dropped) is a no-op.
     if (isErrnoCode(error, 'ENOENT')) {
       return
     }
@@ -241,7 +207,6 @@ function parseGeneration(text: string): number {
   return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed
 }
 
-/** Async read (registry memoizes it). Missing/corrupt file reads as generation 0. */
 export async function readGeneration(bucket: string): Promise<number> {
   try {
     return parseGeneration(await readFile(generationPath(bucket), 'utf8'))
@@ -253,10 +218,6 @@ export async function readGeneration(bucket: string): Promise<number> {
   }
 }
 
-/**
- * Synchronous read-modify-write bump (the invalidation verbs run inside entity
- * transactions). tmp-file + rename, no fsync: a lost bump regenerates warmth.
- */
 export function bumpGeneration(bucket: string): number {
   const dir = bucketDir(bucket)
   const file = path.join(dir, GENERATION_FILE)
@@ -279,15 +240,12 @@ export function bumpGeneration(bucket: string): number {
   } catch (error) {
     try {
       unlinkSync(tmpFile)
-    } catch {
-      // Best-effort cleanup; the sweep reaps aged tmp files.
-    }
+    } catch {}
     throw error
   }
   return next
 }
 
-/** Two-hex-char shard directories only — `_tmp`, `_generation`, and trash dirs never qualify. */
 function listShardDirsSync(bucket: string): string[] {
   const dir = bucketDir(bucket)
   let entries
@@ -304,9 +262,6 @@ function listShardDirsSync(bucket: string): string[] {
     .map((entry) => path.join(dir, entry.name))
 }
 
-/** Small-bucket synchronous clear (ordinary content invalidation, single-digit
- *  file counts); large buckets go through `trashBucketSync`. Returns the
- *  number of unlinked entries. */
 export function unlinkBucketEntriesSync(bucket: string): number {
   let removed = 0
   let failure: unknown
@@ -341,9 +296,6 @@ export function unlinkBucketEntriesSync(bucket: string): number {
   return removed
 }
 
-/** O(1) rename-to-trash for a large bucket; the async reap's rejection is
- *  swallowed (the sweep reclaims a leftover trash dir after an hour). A
- *  concurrent writer recreates the bucket tree and lands on its own (old) key. */
 export function trashBucketSync(bucket: string): void {
   const dir = bucketDir(bucket)
   const trash = path.join(resolveCacheRoot(), `${bucket}${TRASH_INFIX}${process.pid}-${randomBytes(6).toString('hex')}`)
@@ -355,17 +307,11 @@ export function trashBucketSync(bucket: string): void {
     }
     throw error
   }
-  // `rename` preserves the source dir's mtime; stamp the reclamation time so
-  // the sweep's one-hour floor measures the trash, not the bucket's history.
   try {
     const seconds = Date.now() / 1000
     utimesSync(trash, seconds, seconds)
-  } catch {
-    // Advisory only — a stale mtime just reaps the trash sooner.
-  }
-  void rm(trash, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }).catch(() => {
-    // A leftover is reaped by the hourly sweep; never surface an unhandled rejection.
-  })
+  } catch {}
+  void rm(trash, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }).catch(() => undefined)
 }
 
 async function listShardDirs(bucket: string): Promise<string[]> {
@@ -418,9 +364,6 @@ export interface CacheBucketUsage {
   byteSize: number
 }
 
-/** Admin stats in one shard walk: per entry file, `stat` for size plus a
- *  12-byte header read for liveness; `_generation`, `_tmp`, and directories
- *  stay outside the walk. */
 export async function statBucket(bucket: string, now: number = Date.now()): Promise<CacheBucketUsage> {
   let keyCount = 0
   let byteSize = 0
@@ -461,7 +404,6 @@ export async function statBucket(bucket: string, now: number = Date.now()): Prom
   return { keyCount, byteSize }
 }
 
-/** Admin clear count: every entry file, expired and malformed included. */
 export async function countEntryFiles(bucket: string): Promise<number> {
   let total = 0
   for (const shardDir of await listShardDirs(bucket)) {
@@ -479,16 +421,12 @@ export async function countEntryFiles(bucket: string): Promise<number> {
   return total
 }
 
-/** Admin clear: count first (the result DTO reports removals), then async rm the bucket. */
 export async function clearBucketDir(bucket: string): Promise<number> {
   const removed = await countEntryFiles(bucket)
   await rm(bucketDir(bucket), { recursive: true, force: true, maxRetries: 5, retryDelay: 20 })
   return removed
 }
 
-/** Admin clear for a counter bucket: drop every entry shard and `_tmp`, keep
- *  the already-bumped `_generation` — late writes under the old generation
- *  land in a recreated shard and stay unreachable. */
 export async function clearBucketEntries(bucket: string): Promise<number> {
   const dir = bucketDir(bucket)
   const removed = await countEntryFiles(bucket)
@@ -503,10 +441,6 @@ function isSkippableSweepError(error: unknown): boolean {
   return isErrnoCode(error, 'ENOENT') || isErrnoCode(error, 'EPERM') || isErrnoCode(error, 'EBUSY')
 }
 
-/** Hourly leg: unlink expired entries (header read only), reap `_tmp` files
- *  and `<bucket>.trash-*` dirs older than an hour (crash between rename and
- *  reap). Per-file races are skipped; the first unexpected error aborts this
- *  bucket only. */
 export async function sweepBucket(bucket: string, now: number = Date.now()): Promise<void> {
   const dir = bucketDir(bucket)
   let failure: unknown
@@ -596,23 +530,14 @@ export async function sweepBucket(bucket: string, now: number = Date.now()): Pro
   }
 }
 
-/**
- * Remove and recreate the cache root — restore completion and test isolation.
- * Callers own the registry's generation memo (the file store never caches it).
- */
 export async function wipeCache(): Promise<void> {
   const root = resolveCacheRoot()
   const rmOptions = { recursive: true, force: true, maxRetries: 5, retryDelay: 20 } as const
   try {
-    // Fire-and-forget writes may create files while the walk runs; retry the
-    // transient ENOTEMPTY instead of failing test isolation.
     await rm(root, rmOptions)
     await mkdir(root, { recursive: true })
     return
-  } catch {
-    // Fall through: a whole-root failure must not report a partial wipe as
-    // success; each declared bucket is reclaimed independently.
-  }
+  } catch {}
 
   const failures: unknown[] = []
   try {
@@ -631,7 +556,6 @@ export async function wipeCache(): Promise<void> {
     }
   }
 
-  // Leave the root present even when individual buckets failed.
   try {
     await mkdir(root, { recursive: true })
   } catch (error) {

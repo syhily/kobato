@@ -11,11 +11,6 @@ import katex from 'katex'
 
 interface RenderMathOutput {
   mathml: string
-  /**
-   * Failure descriptor: `admin.editor.math.renderFailed` for the non-Error
-   * fallback, `error.api.rawMessage` carrying KaTeX's own technical text.
-   * The client's render-math adapter resolves it with the active locale.
-   */
   error: ErrorMessageDescriptor | null
 }
 
@@ -29,9 +24,6 @@ const math = impl.math.handler(async ({ input }): Promise<RenderMathOutput> => {
     const mathml = katex.renderToString(input.tex, { ...KATEX_OPTIONS, displayMode: input.display ?? false })
     return { mathml, error: null }
   } catch (err) {
-    // KaTeX's own message is technical text: wrap it in the raw passthrough
-    // descriptor so the client can still localize the envelope. A non-Error
-    // throw uses the typed fallback instead of a hardcoded sentence.
     return {
       mathml: '',
       error: err instanceof Error ? rawMessageDescriptor(err.message) : descriptorFor('admin.editor.math.renderFailed'),

@@ -15,8 +15,6 @@ type FakeProvider = {
 function createFakeWebsocketProvider(): FakeProvider {
   const handlers = new Map<string, Set<(event: unknown) => void>>()
   return {
-    // adaptWebsocketProvider runtime-guards the six ProviderAwareness
-    // members before passing awareness through, so the fake carries them
     awareness: {
       fakeAwareness: true,
       getLocalState: () => null,

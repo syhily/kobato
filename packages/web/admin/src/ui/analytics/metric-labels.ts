@@ -29,8 +29,6 @@ export const HEATMAP_METRIC_LABEL_IDS: Record<HeatmapMetricKey, UiMessageId> = {
   visitors: 'admin.analytics.metric.visitors',
 }
 
-/** Locale-neutral bucket tokens from the server dimension expressions; the token stays
- *  the wire/filter value so a clicked row round-trips. */
 export const METRIC_VALUE_LABEL_IDS: Partial<Record<MetricType, Record<string, UiMessageId>>> = {
   dpr: { other: 'admin.analytics.metrics.value.other' },
   touch: {

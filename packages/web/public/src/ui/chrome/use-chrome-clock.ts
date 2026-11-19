@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
-// Day-granularity consumers only need a minute-scale refresh to roll over at midnight / New-Year.
 const REFRESH_MS = 60_000
 
 /**
@@ -10,8 +9,6 @@ const REFRESH_MS = 60_000
  */
 export function useChromeClock(): Date {
   const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso
-  // Router-less renders (tests) have no loader clock — anchor on a mount-time
-  // reading instead (the lazy initializer keeps render pure).
   const [fallbackNow] = useState(() => new Date())
   const [mountedNow, setMountedNow] = useState<Date | null>(null)
   useEffect(() => {

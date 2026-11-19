@@ -30,9 +30,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  // Restore the global fixture installed by `tests/setup.ts` so the
-  // next test in this file (and other files reusing the worker) sees a
-  // hydrated snapshot.
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   vi.unstubAllGlobals()
 })
@@ -64,9 +61,6 @@ describe('email/admin-notification — sendAdminNotification', () => {
 })
 
 describe('email/admin-notification — fireAndForgetNotify', () => {
-  // The send promise's rejection/resolution handler is a plain microtask
-  // chain — the event loop drains it fully before the next macrotask, so
-  // one setImmediate turn settles fireAndForgetNotify deterministically.
   const settleNotify = () => new Promise((resolve) => setImmediate(resolve))
 
   it('swallows rejections and logs them through the given logger', async () => {

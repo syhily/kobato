@@ -4,7 +4,6 @@ import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { sql } from 'kysely'
 
-/** Blob slots store '' for "no data" — the row shape keeps null semantics. */
 function emptyToNull(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null
 }

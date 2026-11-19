@@ -18,8 +18,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Real repo layer (repo assertions read table state); the entity adapter stays fake —
-// the SUT's declared seam. image-sync is spied to force one rejection no real state produces.
 vi.mock('@kobato/server/domains/content/services/image-sync.ts', { spy: true })
 vi.mock('@kobato/server/domains/content/revisions.ts', { spy: true })
 vi.mock('@kobato/server/infra/lexical/lexical-projection.ts', { spy: true })
@@ -91,7 +89,6 @@ async function seedRevision(
       ownerId,
       revisionNo: 1,
       status: 'published',
-      // Conflict results project the latest row through the admin revision DTO, which reads a Lexical body.
       body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
@@ -162,7 +159,6 @@ describe('content/lifecycle — saveBody degraded sync', () => {
 describe('content/lifecycle — saveBody force overwrite', () => {
   it('records the overwrite against the latest revision when tokens mismatch', async () => {
     const meta = await seedPost()
-    // The overwrite context comes from the latest revision of ANY status, not the latest draft.
     const overwritten = await seedRevision(meta.id, {
       revisionNo: 9,
       status: 'published',
@@ -368,7 +364,6 @@ describe('content/lifecycle — body projections', () => {
   it('writes the feed-degraded variant for math and code blocks', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
-    // Canonicalize fills the TeX/code slots before projection, so the two HTML columns diverge exactly on them.
     const body = lexicalBodyWith([
       { type: 'math', version: 1, tex: 'E=mc^2', mathml: '', svg: '' },
       { type: 'codeblock', version: 1, code: 'const a = 1', language: 'typescript', caption: '', highlightedHtml: '' },
@@ -385,7 +380,6 @@ describe('content/lifecycle — body projections', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows[0]!.bodyHtml).toContain('<math')
     expect(rows[0]!.bodyHtml).toContain('shiki')
-    // Feed: escaped TeX + plain pre/code (rssMode parity).
     expect(rows[0]!.bodyHtmlFeed).toContain('<pre><code>E=mc^2</code></pre>')
     expect(rows[0]!.bodyHtmlFeed).toContain('<pre><code class="language-typescript">const a = 1</code></pre>')
     expect(rows[0]!.bodyHtmlFeed).not.toContain('<math')
@@ -423,8 +417,6 @@ describe('content/lifecycle — body projections', () => {
 
   it('skips the projection computation entirely on the no-op save path', async () => {
     const meta = await seedPost()
-    // Seed the published revision with the CANONICAL form of the body the
-    // save will carry, so the repo's equivalence short-circuit fires.
     const canonical = await canonicalizeLexicalEditorState(VALID_BODY)
     await seedRevision(meta.id, {
       status: 'published',
@@ -481,7 +473,6 @@ describe('content/lifecycle — host card projections', () => {
       lexicalMusicPlayer('p1'),
       lexicalParagraph('after'),
     ])
-    // The save-time snapshot fills meta keys from the resolver, so the projection renders a resolved player.
     const music = stubMusicResolver({
       p1: {
         id: 'p1',
@@ -503,7 +494,6 @@ describe('content/lifecycle — host card projections', () => {
 
     expect(result.status).toBe('saved')
     const rows = await revisionsOf(meta.id)
-    // Real card markup: the projection registers the card classes, so the substitution fallback never fires.
     expect(rows[0]!.bodyHtml).toContain('solution-begin')
     expect(rows[0]!.bodyHtml).toContain('<p>答案 42</p>')
     expect(rows[0]!.bodyHtml).toContain('data-pt-two-column=""')
@@ -511,12 +501,10 @@ describe('content/lifecycle — host card projections', () => {
     expect(rows[0]!.bodyHtml).toContain('class="aplayer"')
     expect(rows[0]!.bodyHtml).toContain('data-name="Song"')
     expect(rows[0]!.bodyHtml).toContain('data-url="/storage/music/song.mp3"')
-    // Feed: solution unwraps, two-column flattens, music renders the rssMode figure.
     expect(rows[0]!.bodyHtmlFeed).toContain('<p>答案 42</p>')
     expect(rows[0]!.bodyHtmlFeed).not.toContain('solution-begin')
     expect(rows[0]!.bodyHtmlFeed).toContain('<p>左栏</p><p>右栏</p>')
     expect(rows[0]!.bodyHtmlFeed).toContain('<figcaption>🎵 Song — Artist</figcaption>')
-    // Plain text: card content joins the search corpus.
     expect(rows[0]!.bodyText).toContain('答案 42')
     expect(rows[0]!.bodyText).toContain('左栏\n右栏')
     expect(rows[0]!.bodyText).toContain('Song\nArtist')
@@ -530,8 +518,6 @@ describe('content/lifecycle — KobatoImage closed loop', () => {
     const body = lexicalBodyWith([
       lexicalParagraph('before'),
       { ...lexicalParagraph('Centered line'), format: 'center' },
-      // The four kobato-owned keys the stock inkling ImageNode declaration silently drops;
-      // imageId '42' matches no library row, so the save-time relink leaves the node untouched.
       lexicalImage({
         src: '/storage/posts/cover.png',
         thumbhash: 'THUMB',
@@ -558,9 +544,6 @@ describe('content/lifecycle — KobatoImage closed loop', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
 
-    // Reread the stored JSON: canonicalize + the JSON column must not strip host keys,
-    // card datasets, or block alignment. The row's body column is `unknown` at the type
-    // level; the zod save gate already validated the shape on the way in.
     const savedBody = unsafeCast<{ root: { children: Record<string, unknown>[] } }>(rows[0]!.body)
     const children = savedBody.root.children
     const image = children.find((node) => node.type === 'image')
@@ -577,7 +560,6 @@ describe('content/lifecycle — KobatoImage closed loop', () => {
     const centered = children.find((node) => node.type === 'paragraph' && node.format === 'center')
     expect(centered).toBeDefined()
 
-    // Derived columns: storagePath feeds imageSources; data-thumbhash / data-layout ride the full-fidelity figure.
     expect(rows[0]!.imageSources).toEqual(['posts/cover.png'])
     expect(rows[0]!.bodyHtml).toContain('data-thumbhash="THUMB"')
     expect(rows[0]!.bodyHtml).toContain('data-layout="right"')
@@ -603,8 +585,6 @@ describe('content/lifecycle — compact storage dialect', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
 
-    // The stored row omits serializer-default keys (the fixture roots at direction 'ltr', a
-    // non-default value, so it stays)…
     const stored = unsafeCast<{ root: Record<string, unknown> }>(rows[0]!.body)
     expect(stored.root).not.toHaveProperty('version')
     expect(stored.root).not.toHaveProperty('format')
@@ -613,8 +593,6 @@ describe('content/lifecycle — compact storage dialect', () => {
     expect(paragraph).not.toHaveProperty('indent')
     expect((paragraph.children as Record<string, unknown>[])[0]).not.toHaveProperty('detail')
 
-    // …and the schema's normalize preprocess heals it back to the full dialect, so the
-    // save no-op short-circuit and revision DTOs are dialect-blind.
     expect(lexicalEditorStateSchema.parse(rows[0]!.body)).toEqual(lexicalEditorStateSchema.parse(VALID_BODY))
   })
 })

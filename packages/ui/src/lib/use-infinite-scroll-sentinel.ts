@@ -2,13 +2,6 @@ import type { FragmentInstance, RefCallback, RefObject } from 'react'
 
 import { useCallback, useEffect, useState } from 'react'
 
-// Arming follows the fragment's ACTUAL mount through a callback ref (not
-// just the effect deps): a tail that mounts a commit after the gating deps
-// settle — the justified image grid renders a skeleton until its container
-// width measures — must still arm once the fragment appears. `tailKey`
-// identifies the currently observed tail item — when a page fetch lands
-// and the tail moves to a new item, the effect re-arms against the new
-// fragment instance.
 export function useInfiniteScrollSentinel({
   hasNextPage,
   isFetchingNextPage,
@@ -20,7 +13,6 @@ export function useInfiniteScrollSentinel({
   hasNextPage: boolean
   isFetchingNextPage: boolean
   fetchNextPage: () => unknown
-  /** Intersection root (defaults to the viewport); read at arm time so late-mounting scroll containers work. */
   root?: RefObject<Element | null>
   rootMargin?: string
   tailKey: unknown

@@ -1,5 +1,3 @@
-// Shared HTML-rendering helpers for the nodes-base suites. The `html` tag
-// PRETTIFIES (parser 'html') — a deliberate policy for these snapshots.
 import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import Prettier from '@prettier/sync'
 import { minify } from 'html-minifier-terser'

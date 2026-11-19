@@ -1,10 +1,7 @@
-// Shared paths for the SEA (single executable) build pipeline.
-
 import { resolve } from 'node:path'
 
 export const repoRoot = resolve(import.meta.dirname, '..', '..', '..', '..')
 
-/** Server-owned OpenObserve provisioning assets embedded by SEA and read by DEV tooling. */
 export const OBSERVABILITY_SOURCE_ASSETS_DIR = 'packages/server/src/domains/observability/assets'
 
 export function observabilitySourceAssetsDir(): string {
@@ -39,12 +36,10 @@ export function seaManifestPath() {
   return resolve(seaIntermediatesDir(), 'manifest.json')
 }
 
-/** Compressed asset payloads, laid out by asset key (`packed/<key>`). */
 export function seaPackedAssetsDir() {
   return resolve(seaIntermediatesDir(), 'packed')
 }
 
-/** Staging area for the rpath-patched native libraries (never the node_modules originals). */
 export function seaStagedNativesDir() {
   return resolve(seaIntermediatesDir(), 'staged-natives')
 }

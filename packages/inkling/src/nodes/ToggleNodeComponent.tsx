@@ -42,9 +42,6 @@ export function ToggleNodeComponent({
 }
 
 export function renderToggleCard(node: ToggleNode) {
-  // Same headless-round-trip invariant as callout's nested editor: null only
-  // inside the headless markdown round-trip editor, which never reconciles
-  // decorators — guard so the field type stays honest.
   if (!node.__titleEditor || !node.__contentEditor) {
     return null
   }

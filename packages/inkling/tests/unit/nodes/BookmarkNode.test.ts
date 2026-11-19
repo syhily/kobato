@@ -65,8 +65,6 @@ describe('BookmarkNode', () => {
     })
   })
 
-  // the constructor always creates and populates the nested caption editor,
-  // so export re-serializes a raw caption string into normalized caption HTML
   it('re-serializes a raw caption through the nested caption editor on export', async () => {
     await updateEditor(editor, () => {
       const node = $createBookmarkNode({ caption: 'Raw caption' })

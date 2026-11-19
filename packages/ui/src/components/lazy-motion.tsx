@@ -38,7 +38,6 @@ const ANIMATION_ONLY_PROPS = new Set([
 
 type FallbackTag = 'div' | 'button' | 'span' | 'h1' | 'p'
 
-// `props` is a plain object at runtime, so the string-map narrowing is shape-safe.
 function staticFallback(tag: FallbackTag, props: object, children: ReactNode): ReactNode {
   const source = unsafeCast<Record<string, unknown>>(props)
   const domProps: Record<string, unknown> = {}
@@ -58,10 +57,8 @@ function staticFallback(tag: FallbackTag, props: object, children: ReactNode): R
   return createElement(tag, domProps, children)
 }
 
-// Static fallback cannot render MotionValue children; no consumer passes them.
 type LazyMotionElementProps<Props> = Omit<Props, 'children'> & {
   children?: ReactNode
-  /** Styles applied only to the static fallback; ignored once motion takes over. */
   fallbackStyle?: CSSProperties
 }
 

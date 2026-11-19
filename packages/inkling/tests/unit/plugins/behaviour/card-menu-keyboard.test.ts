@@ -46,8 +46,6 @@ describe('registerMenuKeyboardNavigation', () => {
   })
 
   function key(command: AnyLexicalCommand, keyName: string): KeyboardEvent {
-    // cancelable: true so preventDefault() sets defaultPrevented (jsdom's
-    // KeyboardEvent is non-cancelable by default)
     return new KeyboardEvent('keydown', { key: keyName, cancelable: true })
   }
 

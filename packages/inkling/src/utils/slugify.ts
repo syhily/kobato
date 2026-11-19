@@ -30,8 +30,6 @@ export default function slugify(
       .replace(/-{2,}/g, '-')
       .toLowerCase()
   }
-  // 4.0 slugs: encodeURIComponent keeps non-ASCII chars in the source while browsers
-  // show them decoded in the URL bar.
   return encodeURIComponent(
     inputString
       .trim()

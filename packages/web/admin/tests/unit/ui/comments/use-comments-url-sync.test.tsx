@@ -10,8 +10,6 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The controller's list query and the pills' autocomplete queries hit the
-// oRPC client; mocked at the same seam use-comments-actions.test.tsx uses.
 const api = vi.hoisted(() => ({
   loadAll: vi.fn(),
   approve: vi.fn(),
@@ -49,11 +47,7 @@ type Pills = ReturnType<typeof useFilterPills<CommentFilterFieldKey>>
 type Controller = ReturnType<typeof useCommentsController>
 type Sink = { current: { pills: Pills; controller: Controller } | null }
 
-// Renders the pills + controller exactly the way CommentsView wires them,
-// inside a real memory router so Back/Forward navigations are drivable.
-// The latest render's hook results are parked on `sink` for assertions.
 function Harness({ sink }: { sink: Sink }) {
-  // Mirror the route's mount seed: parse the shared URL once per mount.
   const [searchParams] = useSearchParams()
   const [initial] = useState(() => parseCommentFiltersFromSearchParams(searchParams, tZhCN))
   const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial })
@@ -75,7 +69,6 @@ function setup(initialPath: string) {
   const router = createMemoryRouter([{ path: '*', element: <Harness sink={sink} /> }], {
     initialEntries: [initialPath],
   })
-  // The controller reads `useI18n()`; the provider is mounted as a render wrapper.
   const render = (ui: ReactElement) =>
     rtlRender(ui, { wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children) })
   render(
@@ -86,8 +79,6 @@ function setup(initialPath: string) {
   return { router, sink }
 }
 
-// Let the 300ms URL-sync debounce fire (and any stale timer with it) on
-// the fake clock — no real-time wait.
 const settleUrlSync = () => act(async () => vi.advanceTimersByTimeAsync(400))
 
 beforeEach(() => {
@@ -112,7 +103,6 @@ afterEach(() => {
 describe('useCommentsController URL sync', () => {
   it('Back restores the previous filters and the debounced write-back does not overwrite the popped URL', async () => {
     const { router, sink } = setup('/comments')
-    // Push the same route so Back has an entry to pop to.
     await act(async () => {
       await router.navigate('/comments')
     })
@@ -120,7 +110,6 @@ describe('useCommentsController URL sync', () => {
     act(() => {
       sink.current!.pills.dispatch({ type: 'addFilter', field: 'status', value: 'pending', label: '待审核' })
     })
-    // The debounced write-back mirrors the pill into the URL.
     await settleUrlSync()
     expect(router.state.location.search).toBe('?status=pending')
 
@@ -128,9 +117,7 @@ describe('useCommentsController URL sync', () => {
       await router.navigate(-1)
     })
     expect(router.state.location.search).toBe('')
-    // The pills reseed from the restored URL…
     expect(sink.current!.pills.filters).toEqual([])
-    // …and the stale write-back leaves the popped URL alone.
     await settleUrlSync()
     expect(router.state.location.search).toBe('')
   })
@@ -144,7 +131,6 @@ describe('useCommentsController URL sync', () => {
     await settleUrlSync()
     expect(router.state.location.search).toBe('?status=pending')
 
-    // Push forward and filter differently, then pop back to the first entry.
     await act(async () => {
       await router.navigate('/comments')
     })
@@ -166,7 +152,6 @@ describe('useCommentsController URL sync', () => {
   it('keeps the URL-seeded filters from a shared link (mount seeding preserved)', async () => {
     const { router, sink } = setup('/comments?status=approved')
     expect(sink.current!.pills.filters).toEqual([{ field: 'status', value: 'approved', label: '已审核' }])
-    // The write-back round-trips the same params — the shared URL stays put.
     await settleUrlSync()
     expect(router.state.location.search).toBe('?status=approved')
     expect(sink.current!.pills.filters).toHaveLength(1)

@@ -1,21 +1,3 @@
-// The kobato image node: a subclass of the barrel's assembled `ImageNode` that
-// persists the four kobato-owned dataset keys the stock declaration drops —
-// `thumbhash` / `storagePath` / `imageId` (the image-library pass-through keys,
-// consumed by the save-time `syncLibraryImageBlocks` relink) and `layout` (the
-// legacy float vocabulary `cardWidth` has no equivalent of). The shared React-free spec
-// (`@kobato/lexical/cards/kobato-image`) owns the property list, the exportDOM
-// renderer, and the import spec; the server projection builds its own class from it.
-//
-// Subclassing instead of re-declaring keeps the assembled class's caption nested
-// editor, its upload transient props (`__initialFile`, `__previewSrc`,
-// `__triggerFileDialog`), and the `decorate()` wiring; re-declaring those from the
-// spec would fork the upload flow.
-//
-// The composer registers THIS class for node type `image`, never alongside the
-// stock class (Lexical keys registrations by type). Stock image behaviour is either
-// type-gated or `instanceof BaseImageNode`-gated, so only the two CLASS-identity
-// gates stand down and `image-insert-override` re-supplies them.
-
 import type { CardRenderOutput } from '@kobato/lexical/cards/card-html.ts'
 
 import { createRenderContext, type ExportDOMOptions, ImageNode, type LexicalEditor } from '@kobato/inkling'
@@ -34,9 +16,6 @@ export class KobatoImageNode extends ImageNode {
 
   constructor(dataset: Record<string, unknown> = {}, key?: string) {
     super(dataset, key)
-    // Fields are assigned directly (as the generated importJSON does), so a
-    // host-filled value survives deserialization and cloning; the artifact-slot
-    // edit-invalidation invariant governs setters only.
     this.__thumbhash = typeof dataset.thumbhash === 'string' ? dataset.thumbhash : ''
     this.__storagePath = typeof dataset.storagePath === 'string' ? dataset.storagePath : ''
     this.__imageId = typeof dataset.imageId === 'string' ? dataset.imageId : ''
@@ -119,7 +98,6 @@ export class KobatoImageNode extends ImageNode {
   }
 }
 
-/** The card write seam's guard (`useCardChrome`) for the image variant. */
 export function isKobatoImageNode(node: unknown): node is KobatoImageNode {
   return node instanceof KobatoImageNode
 }

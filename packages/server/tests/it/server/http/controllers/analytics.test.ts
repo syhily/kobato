@@ -15,9 +15,6 @@ import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// analyticsRouter against the real engine: a per-run DuckDB sidecar is adopted into the
-// analytics lifecycle (no module mocks); every procedure runs real aggregation SQL.
-
 const db = getTestDb()
 
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
@@ -25,7 +22,6 @@ __adoptAnalyticsHandleForTests(analyticsHandle)
 
 const { analyticsRouter } = await import('@kobato/server/http/controllers/analytics.controller.ts')
 
-// Explicit epoch range keeps range resolution off the clock; events land in [1000, 2000).
 const rangeInput = { startAt: 1000, endAt: 2000 }
 
 beforeEach(async () => {
@@ -37,7 +33,6 @@ afterAll(async () => {
   await closeTestAnalyticsDb(analyticsHandle)
 })
 
-/** Three views from two visitors, one referer — the shared seed shape. */
 async function seedViews() {
   await seedAccessEvents(analyticsHandle, [
     {
@@ -80,7 +75,6 @@ describe('analyticsRouter.counters', () => {
       visitors: number
       referers: number
     }
-    // visits = row count; visitors = distinct blob5; referers = distinct non-empty blob3.
     expect(res).toEqual({ visits: 3, visitors: 2, referers: 1 })
   })
 
@@ -114,7 +108,6 @@ describe('analyticsRouter.views', () => {
       clientTimezone: string
       points: { time: string; visits: number; visitors: number }[]
     }
-    // The three events sit in three distinct 1-minute buckets.
     expect(res.unit).toBe('minute')
     expect(res.clientTimezone).toBe('Etc/UTC')
     expect(res.points).toHaveLength(3)

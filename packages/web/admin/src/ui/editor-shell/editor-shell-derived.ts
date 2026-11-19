@@ -32,8 +32,6 @@ export function derivePublishState(
   }
 }
 
-// Baseline = latest revision, else the published one — single owner; every
-// consumer (body seed, bodyKey, expected token) derives from these projections.
 export function deriveBaselineRevision<TEntity extends EntityLike>(
   detail: EditorShellDetail<TEntity> | undefined,
 ): RevisionLike | null {
@@ -43,8 +41,6 @@ export function deriveBaselineRevision<TEntity extends EntityLike>(
   return detail.latestRevision ?? detail.publishedRevision
 }
 
-// Baseline revision's ms-since-epoch, falling back to the entity row's own
-// `updatedAt` when no revision exists yet.
 export function deriveBaselineUpdatedAtMs<TEntity extends EntityLike>(
   detail: EditorShellDetail<TEntity> | undefined,
 ): number | null {

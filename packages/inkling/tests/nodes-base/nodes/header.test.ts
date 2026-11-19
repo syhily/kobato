@@ -456,7 +456,6 @@ describe('BaseHeaderNode', function () {
             node.subheader = null as unknown as string
             node.buttonEnabled = false
             const { element } = node.exportDOM(editor, exportOptions)
-            // v2 renderer has no empty check — it always returns a card element
             expect(element).not.toBeNull()
             expect((element as HTMLElement).querySelector('.inkling-header-card-heading') ?? null).toBeNull()
             expect((element as HTMLElement).querySelector('.inkling-header-card-subheading') ?? null).toBeNull()

@@ -55,8 +55,6 @@ vi.mock('@kobato/server/infra/db/batcher-registry.ts', () => ({
   resetAllBatchers: (...args: unknown[]) => resetAllBatchers(...args),
 }))
 
-// db-lifecycle imports the batcher modules only for their registration
-// side effect; the mocked registry absorbs the lifecycle calls.
 vi.mock('@kobato/server/domains/analytics/services/batcher.ts', () => ({}))
 vi.mock('@kobato/server/domains/analytics/services/pv-batcher.ts', () => ({}))
 vi.mock('@kobato/server/domains/audit/services/batcher.ts', () => ({}))
@@ -128,8 +126,6 @@ describe('db-lifecycle', () => {
   })
 
   it('reopens a closed handle, reinitializes batchers, and stays idempotent', async () => {
-    // The prior case left the engine closed (module state persists across cases) — reopen
-    // before exercising the cycle, and discount that wiring from the counts.
     await reopenDatabase()
     initAllBatchers.mockClear()
     const handle = getDatabaseHandle()
@@ -142,10 +138,9 @@ describe('db-lifecycle', () => {
     expect(initAllBatchers).toHaveBeenCalled()
     expect(startLikeTokenSweep).toHaveBeenCalledWith(dbMock)
 
-    // Second call on an open handle: no re-wiring, same instance.
     const again = await reopenDatabase()
     expect(again).toBe(instance)
-    expect(initAllBatchers).toHaveBeenCalledTimes(1) // the reopen (boot wiring was cleared in beforeEach)
+    expect(initAllBatchers).toHaveBeenCalledTimes(1)
   })
 
   it('handles successful restore completion', async () => {

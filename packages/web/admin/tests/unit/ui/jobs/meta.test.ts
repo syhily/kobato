@@ -13,9 +13,6 @@ import { describe, expect, it } from 'vitest'
 const tZhCN = makeTranslator('zh-CN')
 const tEnUS = makeTranslator('en-US')
 
-// The task display maps are NEUTRAL registries: variant/status/progress shape
-// stays here, every label is a message id resolved by the view.
-
 describe('ui/admin/tasks/meta — message-id registries', () => {
   it('resolves every status label in zh-CN and en-US', () => {
     for (const meta of [...Object.values(STATUS_META), ...Object.values(RUN_STATUS_META)]) {

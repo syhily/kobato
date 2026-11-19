@@ -6,12 +6,6 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
-/**
- * Custom validation-rule messages are typed UI-catalog ids, never prose: the server maps
- * them into wire descriptors at the boundary (`zodIssuesToWire`, `authFlowValidationError`).
- * The password-rule ids live with the shared `newPasswordSchema` factory in
- * `@kobato/contracts/users.ts` (`passwordValidationMessages`).
- */
 export const authValidationMessages = {
   siteNameRequired: 'auth.validation.siteNameRequired',
   nameRequired: 'auth.validation.nameRequired',

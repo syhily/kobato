@@ -13,10 +13,6 @@ import type {
 import { BUNDLE_KEYS } from '@kobato/settings/sections.ts'
 import { createContext, type Context, type ReactNode, use } from 'react'
 
-// Per-section React contexts. Adding a section = create the context and
-// add it to `SECTION_CONTEXTS_ANY`. Per-section (not one bundle context):
-// a save to one section never invalidates subscribers of another.
-
 function makeCtx<T>(displayName: string): Context<T | undefined> {
   const ctx = createContext<T | undefined>(undefined)
   ctx.displayName = displayName
@@ -31,8 +27,6 @@ const contentContext = makeCtx<ContentSettings>('contentContext')
 const sidebarContext = makeCtx<SidebarSettings>('sidebarContext')
 const seoContext = makeCtx<SeoSettings>('seoContext')
 
-// Only sections with a live hook below get a context — the provider wraps
-// the tree in exactly these, nothing more.
 const SECTION_CONTEXTS_ANY: Partial<Record<BundleKey, Context<any>>> = {
   siteIdentity: siteIdentityContext,
   assets: assetsContext,
@@ -44,7 +38,6 @@ const SECTION_CONTEXTS_ANY: Partial<Record<BundleKey, Context<any>>> = {
 }
 
 interface BlogSettingsProviderProps {
-  /** Live settings bundle from the root loader; `undefined` = pre-install deployment. */
   value: BlogSettingsBundle | undefined
   children: ReactNode
 }
@@ -54,7 +47,6 @@ function getSlice(value: BlogSettingsBundle | undefined, key: BundleKey): Slice 
   return value === undefined ? undefined : ((value[key] ?? undefined) as Slice | undefined)
 }
 
-/** Root provider split into one context per section so a save to one section does not invalidate unrelated public chrome. */
 export function BlogSettingsProvider({ value, children }: BlogSettingsProviderProps) {
   let tree: ReactNode = children
   for (const key of BUNDLE_KEYS) {
@@ -71,11 +63,6 @@ export function BlogSettingsProvider({ value, children }: BlogSettingsProviderPr
   }
   return tree
 }
-
-// Per-section accessors; strict variants throw when the section isn't
-// seeded, `…Optional` degrade. The contexts are module-private, so a new
-// `Optional` variant means adding an exported hook here, not consuming a
-// context from outside.
 
 function useSection<T>(name: string, context: Context<T | undefined>): T {
   const slice = use(context)

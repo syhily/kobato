@@ -1,11 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// Database backups — a `VACUUM INTO` snapshot uploaded through the storage
-// abstraction; this table is the source of truth and every backup op
-// dispatches on `storage_driver`. `timestamp` is the backup id from the key
-// (`backup/backup-<timestamp>-<random>.db.tar.gz`; pre-suffix rows carry the
-// bare ISO-ish timestamp).
 export const backup = sqliteTable(
   'backup',
   {

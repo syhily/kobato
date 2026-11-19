@@ -60,7 +60,6 @@ export function getEventProvenance(event: KeyboardEvent | null | undefined): Nes
   return null
 }
 
-// Set by Lexical's LexicalTypeaheadMenuPlugin itself — the id is Lexical's runtime contract, not this markup.
 const TYPEAHEAD_MENU_ID = 'typeahead-menu'
 
 export function isTypeaheadMenuOpen(): boolean {
@@ -74,7 +73,6 @@ export function registerNestedEnterHandoff(
   return editor.registerCommand(
     KEY_ENTER_COMMAND,
     (event) => {
-      // an open menu handles Enter itself; priority cannot express this
       if (isTypeaheadMenuOpen()) {
         return false
       }

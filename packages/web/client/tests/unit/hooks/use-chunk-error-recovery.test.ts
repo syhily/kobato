@@ -3,9 +3,6 @@ import { subscribeChunkReload, useReloadOnChunkError } from '@kobato/web-client/
 import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The hooks attach listeners in useEffect, which the SSR harness does
-// not fire; the exported helpers are testable in isolation.
-
 describe('client/lib/chunk-error — isChunkLoadError', () => {
   it('returns false for null / undefined', () => {
     expect(isChunkLoadError(null)).toBe(false)
@@ -68,12 +65,9 @@ describe('client/hooks/use-chunk-error-recovery — subscribeChunkReload', () =>
 })
 
 describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
-  // The module-level latch is reset per case via vi.resetModules() + fresh import.
-
   beforeEach(() => {
     vi.stubGlobal('window', {
       location: { reload: vi.fn() },
-      // No sessionStorage -> the storage guard branch is skipped.
       sessionStorage: undefined,
       requestAnimationFrame: undefined,
       setTimeout: vi.fn(() => 0 as unknown as NodeJS.Timeout),
@@ -149,13 +143,11 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
     })
     const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery.ts')
     mod.triggerChunkReload()
-    // rAF is double-nested in the source — assert at least one call.
     expect(raf).toHaveBeenCalled()
   })
 })
 
 describe('client/hooks/use-chunk-error-recovery — useReloadOnChunkError', () => {
-  // The hook's effect never fires under the SSR harness — these cases pin the undefined return.
   it('returns undefined for a chunk-load error', () => {
     const result = renderHook(() => useReloadOnChunkError(new Error('Loading chunk 5 failed.')))
     expect(result).toBeUndefined()

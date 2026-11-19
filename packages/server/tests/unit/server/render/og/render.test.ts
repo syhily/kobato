@@ -33,7 +33,6 @@ describe('services/images/og — drawOpenGraph', () => {
     })
 
     expect(Buffer.isBuffer(output)).toBe(true)
-    // PNG magic bytes (89 50 4E 47 0D 0A 1A 0A)
     expect(output[0]).toBe(0x89)
     expect(String.fromCharCode(output[1], output[2], output[3])).toBe('PNG')
   })
@@ -46,13 +45,8 @@ describe('services/images/og — drawOpenGraph', () => {
       cover: `data:image/png;base64,${cover.toString('base64')}`,
     })
     const meta = await sharp(output).metadata()
-    // Dimensions come from the seo.og settings section (typically 1200×630).
-    // Reading from sharp avoids importing config in this test (which would
-    // drag the catalog in).
     expect(meta.width).toBeGreaterThan(0)
     expect(meta.height).toBeGreaterThan(0)
-    // Verify aspect ratio matches the typical OG card (~1.9). If a future
-    // refactor sets a square OG image this test will surface it.
     expect(meta.width! / meta.height!).toBeCloseTo(1.9, 0)
   })
 
@@ -82,8 +76,6 @@ describe('services/images/og — drawOpenGraph', () => {
   )
 
   it('refuses a cover that is neither a site-owned path nor http(s)', { timeout: 30_000 }, async () => {
-    // A raw string must never reach `loadImage`: it treats existing paths as
-    // local files (file read) and everything else as an unbounded HTTP GET.
     await expect(drawOpenGraph({ title: 't', summary: 's', cover: 'file:///etc/passwd' })).rejects.toThrow(
       /OG cover is not/,
     )
@@ -107,10 +99,8 @@ describe('services/images/og — drawOpenGraph', () => {
       bundled('Zulu Site', 1200, 630),
     )
 
-    // Same card inputs, different pinned site identity → different bytes.
     expect(alpha.equals(zulu)).toBe(false)
 
-    // The pinned seo.og dimensions drive the canvas, not the global snapshot.
     const square = await drawOpenGraph(
       { title: 'Card', summary: 'summary', cover: coverRef },
       bundled('Alpha Site', 1200, 1200),

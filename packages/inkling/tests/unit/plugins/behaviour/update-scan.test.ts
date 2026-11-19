@@ -143,8 +143,6 @@ describe('registerUpdateScan', () => {
     editor.registerUpdateListener(({ tags }) => {
       passes.push([...tags])
     })
-    // a scan body that dirties a node, so its own tagged commit would
-    // re-trigger the gate were the history-push skip not in place
     const { scan } = registerScan({ tag: HISTORY_PUSH_TAG })
     scan.mockImplementation((dirtyLeaves) => {
       dirtyLeaves.forEach((key) => {

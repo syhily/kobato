@@ -6,9 +6,6 @@ import { act } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The player module pulls in audio element wiring; stub the dynamic import
-// target — the hook's contract is mount-point selection, fallback removal,
-// attribute → props mapping, and root lifecycle.
 vi.mock('@kobato/web-public/ui/music-player/music-player.tsx', () => ({
   MusicPlayerCard: ({ url, name, cover, lrc }: { url: string; name?: string; cover?: string; lrc?: string }) => (
     <div data-stub-player="" data-url={url} data-cover={cover ?? ''} data-lrc={lrc ?? ''}>
@@ -117,7 +114,6 @@ describe('useMusicPlayers', () => {
     const html = '<div class="aplayer" data-name="Song" data-url="https://cdn/x.mp3"></div>'
     const { container, ref } = mountContainer(html)
     await act(async () => {
-      // The re-scan key intentionally carries no 'class="aplayer"' marker.
       renderHookWithI18n(() => useMusicPlayers(ref, 'rescan-key'))
       await Promise.resolve()
     })
@@ -140,8 +136,6 @@ describe('useMusicPlayers', () => {
     })
     expect(container.querySelector('[data-stub-player]')?.getAttribute('data-url')).toBe('https://cdn/old.mp3')
 
-    // Client-side navigation swaps the container's innerHTML while the div
-    // itself (and the ref) is reused — the hook must re-scan on the new key.
     container.innerHTML = htmlB
     await act(async () => {
       rerender({ html: htmlB })

@@ -12,9 +12,6 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Composition-root pin: importing the lifecycle graph (through the integration
-// helper) installs the REAL section handlers. The test never registers its own
-// copies — deleting a registration turns this file red.
 const db = getTestDb()
 
 function revisions() {
@@ -40,7 +37,6 @@ const PAGE_SCOPES = ['detail', 'listing'] as const
 
 const INSTALL_INPUT = { title: 'Test Blog', name: 'Admin', email: 'admin@example.com', hostname: 'localhost' }
 
-/** A stored `blog.general` row is the merge base a real admin save patches. */
 function seedInstalledSite(): void {
   const built = buildInstallSectionRows(INSTALL_INPUT)
   if (!built.ok) {
@@ -54,8 +50,6 @@ function seedInstalledSite(): void {
 beforeEach(async () => {
   await clearAllTables(db)
   seedInstalledSite()
-  // Refresh (not hydrate — that could reuse the previous test's single-flight)
-  // so `revisions()` starts from the seeded bundle's content hashes.
   await refreshBlogSettings(db)
 })
 
@@ -183,7 +177,6 @@ describe('settings sections — section-scoped representation generations', () =
     const after = feedParams()
     expect(after.settingsRevision).not.toBe(before.settingsRevision)
     expect(await get('feed', after)).toBeNull()
-    // The section handler reclaimed the previous generation's rows too.
     expect(await get('feed', before)).toBeNull()
   })
 
@@ -216,7 +209,6 @@ describe('settings sections — section-scoped representation generations', () =
       Buffer.from('png'),
     )
     await set('sitemap', { settingsRevision: revisions().sitemap }, '<urlset/>')
-    // An unrelated bucket must survive the save.
     await set('searchResult', { generation: 1, parts: ['hit'] }, ['tag:1'])
 
     const result = await updateBlogSettingsSection(db, 'general', { locale: 'zh-TW' }, null)
@@ -246,21 +238,18 @@ describe('settings sections — section-scoped representation generations', () =
       return { rss: '<stale/>', atom: '<stale/>' }
     })
 
-    // The save completes while the render is still parked — no drain.
     const result = await updateBlogSettingsSection(db, 'general', { locale: 'zh-TW' }, null)
     expect(result.warnings).toEqual([])
     expect(settled).toBe(false)
 
     release()
     await pendingFeed
-    // The write is fire-and-forget — wait for the late entry to land.
     await vi.waitFor(async () => {
       expect(await get('feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
     })
 
     const after = feedParams()
     expect(after.settingsRevision).not.toBe(before.settingsRevision)
-    // The stale render wrote its own (old) generation key; the new one stays empty.
     expect(await get('feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
     expect(await get('feed', after)).toBeNull()
   })

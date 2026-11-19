@@ -38,8 +38,6 @@ function FileNodeComponent({
 }: FileNodeComponentProps) {
   const { editor, write } = useCardChrome(nodeKey, $isFileNode)
   const labels = useInklingLabels()
-  // populated is a latch (below); a card MOUNTED with a complete file never
-  // transitions, so the initial state must start populated
   const [isPopulated, setIsPopulated] = React.useState<boolean>(() => !!(fileSrc && fileSize && fileName))
   const isEditing = useCardIsEditing(nodeKey)
 
@@ -70,9 +68,6 @@ function FileNodeComponent({
       }),
   })
 
-  // populated is a latch: once the card has a complete file it stays populated
-  // (a later picker change clears src again, but the card must not flip back).
-  // Adjusted during render — React re-renders immediately, before committing
   const isComplete = !!(fileSrc && fileSize && fileName)
   const [prevComplete, setPrevComplete] = React.useState(isComplete)
   if (prevComplete !== isComplete) {

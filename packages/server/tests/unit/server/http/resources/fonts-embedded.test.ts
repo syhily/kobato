@@ -6,8 +6,6 @@ import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Point the route + `resolveLocalPath` at a fresh temp directory. The mock
-// factory runs before any import of the route, so STORAGE_DIR is set first.
 const tmp = vi.hoisted(() => ({ root: '' }))
 
 vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
@@ -21,9 +19,6 @@ vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
 
 const { fontsEmbeddedRouter } = await import('@kobato/server/http/resources/fonts-embedded.ts')
 
-// The route reads the perimeter-derived `requestContext` (locale for the 503
-// branch); a direct `router.request` has no middleware chain, so mirror the
-// production perimeter with the canonical stub.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', makeRequestContext({ request: c.req.raw }))
@@ -31,8 +26,6 @@ app.use('*', async (c, next) => {
 })
 app.route('/', fontsEmbeddedRouter)
 
-// The default test bundle enables a complete S3 config — override the toggle
-// per suite: OFF streams local bytes, ON exercises the 302 branch.
 function seedStorageEnabled(enabled: boolean) {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -43,11 +36,9 @@ function seedStorageEnabled(enabled: boolean) {
   })
 }
 
-// Any 64-char lowercase hex string satisfies the route's sha256 shape check.
 const HASH = 'a'.repeat(64)
 const MISSING_HASH = 'b'.repeat(64)
 
-// File contents are irrelevant — what matters is which URL shapes reach the filesystem.
 beforeAll(() => {
   mkdirSync(`${tmp.root}/fonts/${HASH}`, { recursive: true })
   writeFileSync(`${tmp.root}/fonts/${HASH}/result.css`, '@font-face{}')
@@ -60,8 +51,6 @@ afterAll(() => {
 })
 
 describe('fonts-embedded public route (local driver)', () => {
-  // Streaming paths run with S3 OFF; the shared setup resets the snapshot per
-  // test, so the toggle reseeds in beforeEach.
   beforeEach(() => {
     seedStorageEnabled(false)
   })
@@ -107,7 +96,6 @@ describe('fonts-embedded public route (local driver)', () => {
   })
 })
 
-// Default bundle (S3 enabled + complete) drives the redirect branch.
 describe('fonts-embedded public route — s3 redirect', () => {
   it('302s to the raw storage key on the current public base, preserving the query string', async () => {
     const res = await app.request(`/fonts/embedded/${HASH}/result.css?v=3735928559`)

@@ -1,18 +1,3 @@
-// The composer `fileUploader` slot: inkling routes paste, file-drop, and the image
-// card's file dialog through `useFileUpload`, so kobato's image pipeline plugs in
-// here. Only the 'image' channel exists — no other media card is registered in the
-// page editor's node set.
-//
-// Identity contract: the composer requires `useFileUpload` (and the returned
-// `upload`) to stay identity-stable for the editor's lifetime — the hook lives at
-// module scope, and `upload` is memoized on the translator identity so it only
-// changes when the locale does.
-//
-// `UploadResultItem` carries only `{ url, fileName }`, so upload-inserted images
-// persist src/width/height (inkling reads the dimensions from the File) but NOT
-// thumbhash/storagePath/imageId; the library pick path carries all four. The url is
-// the site-owned `/storage/<key>` form.
-
 import type { FileUploader } from '@kobato/inkling'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
@@ -22,9 +7,6 @@ import { orpc } from '@kobato/web-client/api/client.ts'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 
-// Mirrors the server's ALLOWED_IMAGE_MIME_TYPES
-// (src/server/domains/images/services/upload.ts) — a picker hint only; the server
-// re-validates authoritatively.
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
 
 async function uploadImageFiles(

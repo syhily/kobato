@@ -21,19 +21,12 @@ import { idFromString } from '@kobato/utils/id.ts'
 
 const log = getLogger('webmentions.reverify')
 
-// Daily re-verification cycle: approved/pending rows are re-checked per 24h
-// waterline; the 7th consecutive failure of an `approved` OR `pending` row
-// flips it to `hidden`, which only the admin's manual re-verification can
-// recover. Non-approved rows therefore leave the fetch schedule too.
-
 export const REVERIFY_BATCH_SIZE = 10
 
 type VerifySuccess = { ok: true; meta: SourceMetadata; type: WebmentionType }
 type VerifyFailure = { ok: false; error: string }
 type VerifyOutcome = VerifySuccess | VerifyFailure
 
-/** One row's check: a missing target is a permanent failure (counts toward
- *  the hide streak); one attempt per day by design. */
 async function checkRow(db: Database, row: WebmentionRow): Promise<VerifyOutcome> {
   const target = await resolveWebmentionTarget(db, row.targetUrl)
   if (target === null) {
@@ -65,9 +58,6 @@ async function applyDailyOutcome(db: Database, row: WebmentionRow, outcome: Veri
   }
 }
 
-/** The scheduler's batch: sweep already-exhausted pending rows (legacy
- *  rows at the threshold are excluded by the picker), then one check +
- *  outcome per due row. */
 export async function runWebmentionReverifyBatch(db: Database): Promise<number> {
   const swept = await hideExhaustedPendingWebmentions(db)
   if (swept > 0) {
@@ -81,10 +71,6 @@ export async function runWebmentionReverifyBatch(db: Database): Promise<number> 
   })
 }
 
-/**
- * Admin manual re-verification — the only recovery path for `hidden`
- * (`rejected` is terminal); failure records but does not touch streak/waterline.
- */
 export async function reverifyWebmention(db: Database, id: string): Promise<WebmentionRow> {
   const row = await findWebmentionById(db, idFromString(id))
   if (row === null) {

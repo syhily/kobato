@@ -125,9 +125,6 @@ describe('MarkdownShortcutPlugin transformers', () => {
   })
 
   it('does not import code fences as code blocks (fence regexp requires trailing whitespace)', () => {
-    // The CODE_BLOCK regExp /^```(\w{1,10})?\s/ only matches once a space is
-    // typed after the fence, so $convertFromMarkdownString leaves the fence as
-    // plain text.
     const editor = importMarkdown('```js\nconst x = 1\n```')
     editor.getEditorState().read(() => {
       expect(
@@ -158,9 +155,6 @@ describe('MarkdownShortcutPlugin transformers', () => {
 
     for (const char of '```js ') {
       editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, char)
-      // Headless editors defer non-discrete commits: flush per keystroke so each
-      // one lands as its own update, the way real typing reaches the shortcut
-      // listener.
       await tick()
     }
 

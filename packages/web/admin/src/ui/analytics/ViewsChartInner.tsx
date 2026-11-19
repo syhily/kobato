@@ -9,8 +9,6 @@ import { getClientTimezone } from '@kobato/web-admin/ui/analytics/use-analytics-
 import { VisArea, VisAxis, VisCrosshair, VisGroupedBar, VisLine, VisTooltip, VisXYContainer } from '@unovis/react'
 import { useId, useMemo } from 'react'
 
-// CLIENT ONLY: lazy-mounted behind the hydration gate in ViewsChart.tsx — never import statically from an SSR-rendered module.
-
 interface ChartDatum {
   x: number
   label: string
@@ -29,7 +27,6 @@ export interface ViewsChartInnerProps {
 
 export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProps) {
   const { locale, t } = useI18n()
-  // Bucket labels are browser-zoned analytics data — pass the browser zone explicitly.
   const timeZone = getClientTimezone()
   const summaryId = `trend-summary-${useId()}`
   const data = useMemo<ChartDatum[]>(
@@ -45,7 +42,6 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
     [points, unit],
   )
 
-  // Area/line for a multi-point series; grouped bars for a lone bucket or dense minute buckets.
   const isAreaMode = data.length > 1 && unit !== 'minute'
 
   const totalVisits = data.reduce((sum, d) => sum + d.visits, 0)
@@ -68,7 +64,6 @@ export function ViewsChartInner({ points, unit, className }: ViewsChartInnerProp
   const yVisits = (d: ChartDatum) => d.visits
   const yVisitors = (d: ChartDatum) => d.visitors
 
-  // The tooltip template is raw HTML — escape every interpolated value.
   const tooltipTemplate = (d: ChartDatum) => `
     <div class="min-w-[150px] rounded-xl border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
       <div class="font-medium">${escapeHtml(formatTimeLabel(unit, d.label, { locale, timeZone }))}</div>

@@ -28,20 +28,12 @@ import { Hono } from 'hono'
 
 const log = getLogger('rum.intake')
 
-/** Backoff hints for the SDK: the intake bucket is a 60 s fixed window; an
- *  upstream outage merits a short pause. Best-effort — the slim SDK may ignore
- *  them, they cost nothing when it does. */
 const RATE_LIMIT_RETRY_AFTER_SECONDS = 60
 const UPSTREAM_FAILURE_RETRY_AFTER_SECONDS = 5
 
-/** `/rum/v1/<one segment>/rum` — the captured segment is then grammar-checked
- *  against the organization pattern; a `/` inside it cannot occur by construction. */
 const RUM_TRACK_PATTERN = /^\/rum\/v1\/([^/]+)\/rum$/
 
-/** A slim-SDK batch is a handful of newline-delimited events; anything past
- *  this is not a RUM flush. */
 const MAX_BATCH_BYTES = 1024 * 1024
-/** The relayed query carries only the SDK's own intake parameters. */
 const MAX_QUERY_BYTES = 4096
 /** The upstream answers an empty/`{"code":200}` body; cap what we buffer. */
 const MAX_UPSTREAM_RESPONSE_BYTES = 64 * 1024
@@ -56,10 +48,6 @@ function relayContentType(raw: string | undefined): string {
   return mediaType === 'application/json' ? 'application/json' : 'text/plain;charset=UTF-8'
 }
 
-/**
- * Stream the batch body with an early byte cap: a length-less or lying client
- * is cut at MAX_BATCH_BYTES during the read instead of being buffered whole.
- */
 async function readBatchBody(raw: Request): Promise<{ body: string; oversized: boolean }> {
   const stream = raw.body
   if (stream === null) {
@@ -79,9 +67,7 @@ async function readBatchBody(raw: Request): Promise<{ body: string; oversized: b
       if (received > MAX_BATCH_BYTES) {
         try {
           await reader.cancel()
-        } catch {
-          // The stream is already torn down; the cap decision stands.
-        }
+        } catch {}
         return { body: '', oversized: true }
       }
       chunks.push(decoder.decode(value, { stream: true }))
@@ -101,10 +87,6 @@ export const rumIntakeRouter = new Hono<Env>().post(`${RUM_INTAKE_PATH}/*`, asyn
     return c.json({ error: { message: 'RUM intake is disabled' } }, 404)
   }
 
-  // Fail closed on the track shape: `/rum/v1/<org-segment>/rum` with one
-  // organization-grammar segment. Replay and every other track stay disabled;
-  // the segment itself is discarded — the upstream always uses the configured
-  // organization.
   const subPath = c.req.path.slice(RUM_INTAKE_PATH.length)
   const track = RUM_TRACK_PATTERN.exec(subPath)
   if (track === null || !OBSERVABILITY_ORGANIZATION_PATTERN.test(track[1]!)) {
@@ -116,7 +98,6 @@ export const rumIntakeRouter = new Hono<Env>().post(`${RUM_INTAKE_PATH}/*`, asyn
     return c.json({ error: { message: 'Query too long' } }, 414)
   }
 
-  // Check the declared length first: never read an unbounded body.
   const declared = Number(c.req.header('content-length') ?? Number.NaN)
   if (Number.isFinite(declared) && declared > MAX_BATCH_BYTES) {
     recordRumRelayOutcome('oversized')
@@ -145,16 +126,10 @@ export const rumIntakeRouter = new Hono<Env>().post(`${RUM_INTAKE_PATH}/*`, asyn
     return c.json({ error: { message: 'Batch too large' } }, 413)
   }
 
-  // The browser only ever knows the placeholder token: drop every inbound
-  // `o2-api-key` (all duplicates included) and attach the provisioned one.
   const parameters = new URLSearchParams(rawQuery)
   parameters.delete('o2-api-key')
   parameters.append('o2-api-key', relay.clientToken)
 
-  // `forward` mode: attach the trusted-proxy-resolved client address and the
-  // original User-Agent so OpenObserve enriches geo/UA dimensions from the
-  // visitor (ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor). The VRL pipeline
-  // still drops the raw address and UA versions upstream.
   const headers: Record<string, string> = { 'content-type': relayContentType(c.req.header('content-type')) }
   if (relay.clientIdentity === 'forward') {
     headers['x-forwarded-for'] = c.var.requestContext.clientAddress
@@ -175,7 +150,6 @@ export const rumIntakeRouter = new Hono<Env>().post(`${RUM_INTAKE_PATH}/*`, asyn
     operation: 'observability.rum.relay',
   })
   if (!result.ok) {
-    // Closed reason + status only — never the upstream URL or a credential.
     log.warn('OpenObserve RUM relay failed', { reason: result.reason, status: result.status })
     recordRumRelayOutcome('upstream_error')
     c.header('Retry-After', String(UPSTREAM_FAILURE_RETRY_AFTER_SECONDS))

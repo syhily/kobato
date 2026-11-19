@@ -4,16 +4,6 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { mergeRegister, COMMAND_PRIORITY_HIGH, PASTE_COMMAND } from 'lexical'
 import React from 'react'
 
-/**
- * Paragraphs-only enforcement: any update strips decorator nodes (below) and
- * truncates the document to `paragraphs` paragraphs. That behaviour *is* the
- * contract — this plugin cannot express "render but don't insert": pointing
- * it at a surface that renders existing rich content deletes the existing
- * cards on the first edit. A render-but-don't-insert surface is pure
- * composition instead — compose only the whitelisted node classes into
- * `<InklingComposer nodes>` and omit the feature plugins that carry the
- * menus/insert registrations.
- */
 export const RestrictContentPlugin = ({ paragraphs, allowBr }: { paragraphs: number; allowBr?: boolean }) => {
   const [editor] = useLexicalComposerContext()
 

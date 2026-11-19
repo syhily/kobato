@@ -7,7 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// Audit log filter/export validation across all four locales.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

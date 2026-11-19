@@ -34,16 +34,6 @@ import { createHash } from 'node:crypto'
 
 const log = getLogger('cache')
 
-/**
- * The cache behavior plane — the only module reading/writing cache entries:
- * an L1 (`memory-store`) in front of the on-disk plane (`file-store`). Reads
- * try L1, fall back to disk, backfill L1 under the envelope's own deadline;
- * writes mirror into L1 only after the disk write succeeds; every invalidation
- * evicts L1 synchronously before its filesystem leg. Best-effort throughout:
- * failures degrade to a miss / a skipped write — the cache must never fail the
- * request it serves; loader errors propagate.
- */
-
 interface CacheParamsMap {
   og: { slug: string; title: string; summary: string; cover: string; settingsRevision: string }
   calendar: {
@@ -63,25 +53,16 @@ interface CacheParamsMap {
 
 interface CacheBehavior<P> {
   kind: 'json' | 'binary'
-  /** Key shape WITHOUT the prefix — the module prepends the resolved slot prefix. */
   key: (params: P) => string
-  /** Forward-compat eviction for json entries: a stale shape reads as a miss. */
   schema?: ZodType
   encode?: (value: unknown) => Buffer
   decode?: (raw: Buffer) => unknown
   cacheWhen?: (value: unknown) => boolean
-  /** Per-value TTL override (seconds); `undefined` falls back to the slot TTL.
-   *  Lets one bucket cache failures briefly while successes ride the full TTL. */
   ttlFor?: (value: unknown) => number | undefined
-  /** Dev mode re-runs the loader but still writes. */
   devBypass?: boolean
-  /** Declares the bucket's `_generation` counter file. */
   counter?: boolean
 }
 
-// Byte 0 is the status sentinel: `HAVE_AVATAR` (0) = payload follows,
-// `NO_AVATAR` (1) = negative, payload-less entry. The enum IS the
-// persisted byte protocol — consumers import it from here.
 export enum AvatarStatus {
   HAVE_AVATAR = 0,
   NO_AVATAR = 1,
@@ -93,7 +74,6 @@ export interface AvatarEntry {
 }
 
 function encodeAvatar(value: unknown): Buffer {
-  // The avatar declaration only ever stores AvatarEntry values.
   const entry = unsafeCast<AvatarEntry>(value)
   if (entry.status === AvatarStatus.NO_AVATAR || entry.buffer === null) {
     return Buffer.from([AvatarStatus.NO_AVATAR])
@@ -113,7 +93,6 @@ function decodeAvatar(raw: Buffer): AvatarEntry | null {
     return { status: AvatarStatus.NO_AVATAR, buffer: null }
   }
   if (sentinel === AvatarStatus.HAVE_AVATAR) {
-    // subarray shares the backing Buffer — the cast only re-narrows the type.
     return { status: AvatarStatus.HAVE_AVATAR, buffer: unsafeCast<Buffer>(raw.subarray(1)) }
   }
   return null
@@ -123,21 +102,15 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   og: {
     kind: 'binary',
     devBypass: true,
-    // Hash of every render input (title/summary/cover) + settings generation:
-    // a settings save must land on a fresh key, never a stale render.
     key: ({ slug, title, summary, cover, settingsRevision }) =>
       `${settingsRevision}:${slug}-${createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)}`,
   },
   calendar: {
     kind: 'binary',
     devBypass: true,
-    // Locale + version + settings generation: the same date renders a different
-    // PNG per language, release, and settings generation. `-dark` keeps the
-    // themes apart.
     key: ({ date, theme, locale, version, settingsRevision }) =>
       `${locale}:${version}:${settingsRevision}:${date}${theme === 'dark' ? '-dark' : ''}`,
   },
-  // Size is part of the key — a cached entry must never serve a different `?s=` request.
   avatar: {
     kind: 'binary',
     key: ({ size, email }) => `${size}:${email}`,
@@ -147,32 +120,21 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   searchResult: {
     kind: 'json',
     counter: true,
-    // Every key carries the generation; bumping orphans older entries (they expire by TTL).
     key: ({ generation, parts }) => `${generation}:${createHash('sha256').update(parts.join('|')).digest('hex')}`,
-    // Empty result lists are never cached — a later corpus match must not be shadowed.
     cacheWhen: (value) => Array.isArray(value) && value.length > 0,
   },
   feed: {
     kind: 'json',
-    // Locale + version + settings generation: the feed body is localized
-    // (`language` / `xml:lang`) and a release or settings save must land on a
-    // new key.
     key: ({ scope, locale, version, settingsRevision }) => `${locale}:${version}:${settingsRevision}:${scope}`,
   },
   sitemap: {
     kind: 'json',
-    // Every <loc> embeds the site origin: a general-settings save lands on a
-    // fresh key instead of serving the previous domain until max-age expires.
     key: ({ settingsRevision }) => settingsRevision,
   },
-  // Key carries the full request target — a repo or endpoint change can't serve a stale hit.
   githubRelease: {
     kind: 'json',
     key: ({ owner, repo, endpoint }) => `${owner}/${repo}/${endpoint}`,
   },
-  // One fixed key; the loader resolves '' on failure. Failures are cached
-  // too — a GitHub outage would otherwise turn every call into a 30s-timeout
-  // upstream fetch — but ride a 5-minute TTL so recovery shows quickly.
   githubAvatar: {
     kind: 'json',
     key: () => '',
@@ -187,8 +149,6 @@ interface ResolvedSlot {
   ttlSeconds: number
 }
 
-// Null-tolerant: pre-hydration callers fall back to the declared defaults;
-// tunable buckets read the live snapshot, so an admin retune applies next access.
 export function resolveCacheSlot(id: CacheBucketId): ResolvedSlot {
   const declaration = DECLARATION_BY_ID.get(id)
   if (declaration === undefined) {
@@ -213,9 +173,6 @@ function keyFor<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): { ke
   return { key: `${slot.prefix}${BEHAVIORS[id].key(params)}`, slot }
 }
 
-/** Decode a binary payload and mirror the decoded shape into L1 so both planes
- *  publish what a disk read would return. Codec rejection (`null`) is a miss,
- *  never an L1 entry. */
 function decodeAndMirrorBinary(
   id: CacheBucketId,
   key: string,
@@ -226,8 +183,6 @@ function decodeAndMirrorBinary(
   const decodeFn = decode ?? ((blob: Buffer) => blob)
   const value = decodeFn(encoded)
   if (value !== null) {
-    // The encoded payload size is the honest estimate for a decoded shape whose
-    // Buffer members serialize as byte arrays.
     setMemoryItem(id, key, value, { expiresAtMs, bytes: encoded.byteLength })
   }
   return value
@@ -235,8 +190,6 @@ function decodeAndMirrorBinary(
 
 async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
   const behavior = BEHAVIORS[id]
-  // Miss sentinels: the disk plane answers `null`, memory `undefined` (never
-  // stored) — `readEntry` normalizes both to `null`.
   const memoryHit = getMemoryItem(id, key)
   if (memoryHit !== undefined) {
     return memoryHit
@@ -253,7 +206,6 @@ async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
     if (stored === null) {
       return null
     }
-    // A literal `null` payload is a miss.
     const parsed = stored.value
     if (parsed === null) {
       return null
@@ -275,19 +227,11 @@ async function readEntry(id: CacheBucketId, key: string): Promise<unknown> {
   }
 }
 
-/**
- * Best-effort write: ttl resolution, codec, and filesystem failures are all
- * swallowed so `void writeEntry(...)` can never surface an unhandled rejection.
- */
 async function writeEntry(id: CacheBucketId, key: string, slot: ResolvedSlot, value: unknown) {
   const behavior = BEHAVIORS[id]
   try {
     const ttlSeconds = behavior.ttlFor?.(value) ?? slot.ttlSeconds
-    // ONE deadline, derived here and handed to both planes: the envelope stores
-    // it verbatim, and L1 expires on the same instant.
     const expiresAtMs = ttlSeconds ? Math.round(Date.now() + ttlSeconds * 1000) : 0
-    // A schema bucket only fills L1 from the validated READ path, never from the
-    // loader's raw write value; no bucket declares a schema currently.
     const schemaValidated = behavior.schema !== undefined
     if (behavior.kind === 'binary') {
       const encode = behavior.encode ?? ((blob: unknown) => unsafeCast<Buffer>(blob))
@@ -298,9 +242,6 @@ async function writeEntry(id: CacheBucketId, key: string, slot: ResolvedSlot, va
       }
       return
     }
-    // `setItem` returns the exact text it wrote. Parsing THAT keeps L1's value
-    // identical to a disk read (undefined fields disappear, Dates become
-    // strings, NaN becomes null) and sizes it without a second stringify.
     const text = await setItem(id, key, unsafeCast<JsonValue>(value), { expiresAtMs })
     if (!schemaValidated) {
       setMemoryItem(id, key, unsafeCast<JsonValue>(JSON.parse(text)), {
@@ -313,15 +254,8 @@ async function writeEntry(id: CacheBucketId, key: string, slot: ResolvedSlot, va
   }
 }
 
-// Process-wide coalescer: concurrent loads for the same key share one promise.
-// Keys are namespaced by bucket id — a renamed prefix can't merge two caches.
 const inflight = createInflight<unknown>()
 
-/**
- * Cache-aside with inflight coalescing. `devBypass` caches skip the read in dev
- * but still write. The write is fire-and-forget: the loader's value is returned
- * without waiting for filesystem warmth (the write swallows its own errors).
- */
 export async function through<K extends CacheBucketId, V>(
   id: K,
   params: CacheParamsMap[K],
@@ -345,11 +279,8 @@ export async function through<K extends CacheBucketId, V>(
           return unsafeCast<V>(hit)
         }
       }
-      // A join shares another caller's load; the cache is still a miss for
-      // this lookup (the entry was absent on this call's direct read).
       coalesced = inflight.has(joinKey)
       const value = await inflight(joinKey, async () => {
-        // Double-check: a concurrent request may have warmed the entry while we waited.
         if (!bypassRead) {
           const hit = await readEntry(id, key)
           if (hit !== null) {
@@ -397,12 +328,6 @@ export async function set<K extends CacheBucketId>(id: K, params: CacheParamsMap
   await writeEntry(id, key, slot, value)
 }
 
-/**
- * Best-effort whole-bucket clear for ordinary content invalidation. Small
- * buckets only (feed/sitemap): L1 drops synchronously
- * (the invalidation contract holds even if the unlink then fails), then the
- * entry files are unlinked in place.
- */
 export function clear(id: CacheBucketId): void {
   clearMemoryBucket(id)
   try {
@@ -412,31 +337,17 @@ export function clear(id: CacheBucketId): void {
   }
 }
 
-/**
- * L1-only synchronous eviction, for the admin clear path in `buckets.ts`: its
- * filesystem leg is async, but the memory tier must go cold before it starts.
- */
 export function evictBucketMemory(id: CacheBucketId): void {
   clearMemoryBucket(id)
 }
 
-/**
- * Reclaim the storage behind the settings-derived render buckets (`feed`,
- * `calendar`, `og`, `sitemap`) after a settings save. Strict (a
- * failure reaches the section-change warning channel); each bucket renames to
- * trash in O(1) and is deleted async. Correctness NEVER depends on this
- * delete: the snapshot-revision advance has already orphaned the old keys, and
- * an in-flight render writes its own old-revision key.
- */
 export function clearLocalizedOutputs(): void {
   let failure: unknown
   for (const id of ['feed', 'calendar', 'og', 'sitemap'] as const) {
-    // L1 goes cold first — a trash failure must not keep a stale render servable.
     clearMemoryBucket(id)
     try {
       trashBucketSync(id)
     } catch (error) {
-      // Attempt ALL buckets — a feed failure must not strand the calendar entries.
       failure ??= error
     }
   }
@@ -445,8 +356,6 @@ export function clearLocalizedOutputs(): void {
   }
 }
 
-// Generation is read once per process and cached; failed reads fall back to 0 and
-// are NOT cached (the next search retries). Single-instance: only this process bumps.
 const counterMemo = new Map<CacheBucketId, Promise<number>>()
 
 function assertCounter(id: CacheBucketId): void {
@@ -473,12 +382,6 @@ export function getCounter(id: CacheBucketId): Promise<number> {
   return memo
 }
 
-/**
- * Bump the generation, orphaning entries with older stamps. Fire-and-forget:
- * failures are logged and swallowed here. Sync — a tmp-file + rename, no fsync.
- * Returns the new generation, or `null` on failure so a strict caller (admin
- * clear) can abort instead of continuing on a stale generation.
- */
 export function bumpCounter(id: CacheBucketId): number | null {
   assertCounter(id)
   try {
@@ -496,14 +399,6 @@ export function isCounterBucket(id: CacheBucketId): boolean {
   return BEHAVIORS[id].counter === true
 }
 
-/**
- * Restore-completion wipe: clear the cache tree and both process-local planes.
- * L1 is dropped FIRST — even a partial file wipe must never leave pre-restore
- * values servable — and the generation memo is dropped in a `finally` so the
- * next counter read re-reads the file. A partial wipe can leave pre-restore
- * entries on disk reachable until their TTL; the caller's warning path owns
- * that residual window.
- */
 export async function wipeCacheForRestore(): Promise<void> {
   wipeMemoryCache()
   try {

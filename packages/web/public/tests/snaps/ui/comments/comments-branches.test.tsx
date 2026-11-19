@@ -10,10 +10,6 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
-// Extra render-path branches of the public Comments orchestrator: nested recursion,
-// load-more states, reply slot, failure early-return. Mutations are a hoisted singleton
-// so the load-more isPending flag is flippable.
-
 const commentsData = (count: number, roots: number): CommentsData => ({
   count,
   roots_count: roots,

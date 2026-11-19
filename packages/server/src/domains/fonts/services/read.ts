@@ -25,7 +25,6 @@ export async function listFonts(db: Database): Promise<AdminFontDto[]> {
   return rows.map(toAdminFontDto)
 }
 
-/** Batched id→row lookup. Unknown ids are silently dropped; result order is unspecified — callers re-sort via `resolveSlotOrder`. */
 export async function findFontsByIds(db: Database, ids: readonly string[]): Promise<Map<string, FontRow>> {
   if (ids.length === 0) {
     return new Map()

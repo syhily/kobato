@@ -15,8 +15,6 @@ queryMocks.query = {
   refetch: vi.fn(),
 }
 
-// RevisionsDrawer's Sheet body mounts only after open.
-
 const noop = () => undefined
 
 describe('snapshot: RevisionHistoryDrawer', () => {
@@ -53,7 +51,6 @@ describe('snapshot: RevisionHistoryDrawer', () => {
   })
 
   it('renders the revision rows inside the sheet body when the query resolves', () => {
-    // Closed sheet emits just the trigger; if the portal emits we additionally see the row copy.
     const revisions = [
       makeRevision({ id: 'r1', revisionNo: 3, status: 'published', clientRevisionToken: 'tok-3' }),
       makeRevision({ id: 'r2', revisionNo: 2, status: 'draft', clientRevisionToken: 'tok-2' }),
@@ -71,7 +68,6 @@ describe('snapshot: RevisionHistoryDrawer', () => {
       ),
     )
     expect(html).toContain('历史版本')
-    // Row labels live behind the portal — assert only if it emitted.
     if (html.includes('R3')) {
       expect(html).toContain('R3 · 已发布')
       expect(html).toContain('当前')

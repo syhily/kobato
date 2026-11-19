@@ -8,7 +8,6 @@ import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// search-index is wrapped, not replaced: real writes, one-shot failures injected.
 vi.mock('@kobato/server/domains/posts/services/search-index.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/server/domains/posts/services/search-index.ts')>()
   return {
@@ -18,7 +17,6 @@ vi.mock('@kobato/server/domains/posts/services/search-index.ts', async (importOr
   }
 })
 
-// Same wrap-don't-replace pattern: the spy pins which mutations knock.
 vi.mock('@kobato/server/domains/content/invalidate.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/server/domains/content/invalidate.ts')>()
   return { invalidateContent: vi.fn(actual.invalidateContent) }
@@ -153,7 +151,6 @@ describe('posts/services/mutate — updatePostMeta', () => {
   })
 
   it('keeps the original pinnedAt when an already-pinned post is re-saved with a fresh stamp', async () => {
-    // Every editor save carries a fresh stamp; applying it would reshuffle the pinned order.
     const { postId } = await seedPublishedPost('pinned')
     const original = new Date('2026-01-15T08:00:00.000Z')
     await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
@@ -179,12 +176,10 @@ describe('posts/services/mutate — updatePostMeta', () => {
     const original = new Date('2026-01-15T08:00:00.000Z')
     await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
 
-    // omitted → untouched
     await updatePostMeta(db, { id: postId, slug: 'pin-cycle', title: 'Post pin-cycle' })
     let meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.pinnedAt?.getTime()).toBe(original.getTime())
 
-    // null → unpinned
     await updatePostMeta(db, { id: postId, slug: 'pin-cycle', title: 'Post pin-cycle', pinnedAt: null })
     meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.pinnedAt).toBeNull()
@@ -195,7 +190,6 @@ describe('posts/services/mutate — updatePostMeta', () => {
 
     await updatePostMeta(db, { id: postId, slug: 'old', title: 'Renamed', tags: [] })
 
-    // Published meta edits invalidate and re-index from the published revision.
     expect(invalidateContentMock).toHaveBeenCalledWith({ entity: 'post' })
     expect(indexPostFromRevisionMock).toHaveBeenCalledTimes(1)
     expect(indexPostFromRevisionMock.mock.calls[0]?.[2]).toBe('Renamed')
@@ -224,7 +218,6 @@ describe('posts/services/mutate — updatePostMeta', () => {
     expect(dto.published).toBe(false)
     const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.published).toBe(false)
-    // Future timestamp reset to cancel time — the live gate stays closed.
     expect(meta[0]?.publishedAt.getTime()).toBeLessThanOrEqual(Date.now())
     expect(
       isLive({

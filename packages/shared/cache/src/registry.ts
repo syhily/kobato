@@ -1,11 +1,5 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
-// Cache declaration registry: one declaration per bucket, and every derived
-// enumeration reads this table, so adding a cache never requires a second
-// list. `id` is the stable directory name under `<storage.data>/cache`.
-// Labels and key-shape descriptions are UI message ids, not copy — the admin
-// surface resolves them (`{prefix}` is the live bucket prefix) — so the
-// registry stays locale-free and importable from both bundles.
 export interface CacheDeclaration {
   /** Stable discriminator — also the cache directory name. */
   readonly id: string
@@ -87,11 +81,6 @@ export const CACHE_DECLARATIONS = [
   },
 ] as const satisfies readonly CacheDeclaration[]
 
-/**
- * Default prefixes of the non-tunable declarations — reserved by the
- * settings schema: renaming a tunable bucket onto one would merge two
- * namespaces under a single prefix.
- */
 export const FIXED_CACHE_PREFIXES: readonly string[] = CACHE_DECLARATIONS.filter((entry) => !entry.tunable).map(
   (entry) => entry.defaultPrefix,
 )

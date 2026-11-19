@@ -17,10 +17,6 @@ export interface PagePreviewResult {
   draftMarker: DraftMarker
 }
 
-// Page-detail pipeline for `content.pages.bySlug`: plain HTTP facts in,
-// thrown Responses out (translated by the controller). Revalidation happens
-// in the controller AFTER the payload is assembled; draft previews never
-// carry a published ETag at all.
 export async function loadPagePreview({
   db,
   slug,
@@ -34,7 +30,6 @@ export async function loadPagePreview({
 }): Promise<PagePreviewResult> {
   const postMeta = findPublicPostMetaBySlug(db, slug)
 
-  // Live post slug → canonical 301 (only live posts appear in the catalog).
   if (postMeta !== null && isLive(postMeta)) {
     redirectPermanent(`/posts/${slug}`)
   }

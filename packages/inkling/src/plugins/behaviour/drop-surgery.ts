@@ -19,15 +19,6 @@ import {
   type NodeKey,
 } from 'lexical'
 
-// Drop surgery — the headless $-surgeries behind DragDropReorderPlugin. The
-// reorder rules own the drop decisions (allowance, insertIndex derivation,
-// drop-time verification); this module owns applying a resolved drop to the
-// editor tree: relocating a dragged card, merging an image dropped onto an
-// image into a gallery, inserting a gallery-dragged image, and the
-// source-removal policy for cross-card drops. Rules decide, surgeries apply.
-//
-// The $-functions must run inside editor.update()/editor.read().
-
 export function $relocateCard(nodeKey: NodeKey | undefined, droppables: HTMLElement[], insertIndex: number): boolean {
   const draggedNode = nodeKey ? $getNodeByKey(nodeKey) : null
   if (!draggedNode) {
@@ -67,8 +58,6 @@ export function $insertDraggedImage(
     return null
   }
 
-  // a registry key could resolve to a non-image class (a host replaced it) —
-  // check the constructed node instead of asserting
   const imageNode = new ImageNodeClass(dataset)
   if (!$isImageNode(imageNode)) {
     return null
@@ -97,25 +86,17 @@ export function $mergeImagesIntoGallery(
   if (!GalleryNodeClass) {
     return false
   }
-  // a registry key could resolve to a non-gallery class (a host replaced it) —
-  // check the constructed node instead of asserting
   const galleryNode = new GalleryNodeClass({})
   if (!$isGalleryNode(galleryNode)) {
     return false
   }
 
-  // `||` over `??` is deliberate: an empty-string fileName is as useless as a
-  // missing one, and datasetToGalleryImage applies the same fallback. The copy
-  // keeps the caller's object unmutated.
   const draggedFileName = typeof draggedDataset.fileName === 'string' ? draggedDataset.fileName : undefined
   const filledDraggedDataset = {
     ...draggedDataset,
     fileName: draggedFileName || getImageFilenameFromSrc(String(draggedDataset.src)),
   }
 
-  // the shared fill policy carries the fields addImages persists
-  // (ALLOWED_IMAGE_PROPS) instead of casting the whole dataset; a src-less
-  // dataset is not an image and rejects the merge
   const targetImage = datasetToGalleryImage(targetImageNode.getDataset())
   const draggedImage = datasetToGalleryImage(filledDraggedDataset)
   if (!targetImage || !draggedImage) {
@@ -148,12 +129,6 @@ export function applyImageCardDrop(editor: LexicalEditor, targetNodeKey: NodeKey
   })
 }
 
-/**
- * The source-removal policy for cross-card drops: the dragged card's source
- * node is removed only when the drop succeeded in another container (success
- * without sourceHandled) — a same-container reorder reports sourceHandled, and
- * a failed drop removes nothing.
- */
 export function shouldRemoveDropSource(success: boolean, sourceHandled: boolean): boolean {
   return !sourceHandled && success
 }

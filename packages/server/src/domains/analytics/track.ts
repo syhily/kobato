@@ -22,7 +22,6 @@ async function enrichAndPush(raw: RawAccessEvent): Promise<void> {
     const event = await enrichEvent(raw)
     pushAccessEvent({ event, envServer: buildDeviceEnvServerRow(raw) })
   } catch (err) {
-    // An analytics failure must never break the user-facing request.
     log.error('trackPageView failed', { err: err instanceof Error ? err.message : String(err) })
   }
 }
@@ -33,7 +32,6 @@ function schedule(raw: RawAccessEvent): void {
   void pending.finally(() => inflightTracks.delete(pending))
 }
 
-/** Test seam: await every in-flight enrich → push chain. */
 export async function flushTrackedEvents(): Promise<void> {
   while (inflightTracks.size > 0) {
     await Promise.allSettled(inflightTracks)
@@ -48,10 +46,6 @@ export interface TrackPageViewOptions {
   clientAddress?: string
 }
 
-/**
- * A bot filtered by the bot gate gets `null` even though the counter may
- * already have bumped.
- */
 export function trackPageView(
   facts: RequestFacts,
   target: EntityTarget | null,
@@ -75,8 +69,6 @@ export function trackPageView(
     const ip = options.clientAddress ?? 'unknown'
     const ua = facts.userAgent ?? ''
 
-    // Bot gate BEFORE enrichment: rows `keepBotRows` would drop anyway must
-    // not pay for the GeoIP lookup + salted IP hash.
     if (isBot(ua) && !analytics.keepBotRows && !options.skipBotFilter) {
       return null
     }

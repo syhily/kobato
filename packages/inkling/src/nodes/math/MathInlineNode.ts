@@ -63,9 +63,6 @@ export class MathInlineNode extends DecoratorNode<null> {
     return this.getLatest().__tex
   }
 
-  // The artifact-slot invariant the generated nodes keep as spec data, shared
-  // with this hand-written node: construction/importJSON assign the private
-  // fields directly, so host-filled slots survive; only edits clear them.
   set tex(value: string) {
     const writable = this.getWritable()
     applyArtifactSlotInvalidation(writable.__tex !== value, writable, ['__mathml', '__svg'])

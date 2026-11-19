@@ -5,7 +5,6 @@ import { cn } from '@kobato/ui/lib/cn.ts'
 import { CheckIcon } from 'lucide-react'
 
 function Checkbox({ className, ...props }: ComponentProps<typeof BaseCheckbox.Root>) {
-  // Base UI renders `<span role="checkbox">`, so `inline-flex` gives `size-4` a formatting context.
   return (
     <BaseCheckbox.Root
       data-slot="checkbox"

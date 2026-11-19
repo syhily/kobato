@@ -10,8 +10,6 @@ export default defineConfig({
     name: 'app-snaps',
     globals: false,
     silent: 'passed-only',
-    // Cap worker processes: the default forks pool spawns one worker per CPU
-    // core, which starves the host on high-core machines.
     maxWorkers: 4,
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],

@@ -1,8 +1,3 @@
-// The owned local-draft session + conflict-detection slice of the persist
-// module: the IndexedDB draft key embeds the owned revision token, so the stored
-// draft rotates with every clean save; a stored draft diverging from the opening
-// body surfaces as the `local` autosave freeze leg until the dialog resolves it.
-
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
 
@@ -18,11 +13,9 @@ export interface EditorShellLocalConflict {
 export function useEditorShellPersistConflict(args: {
   localDraftConfig: LocalDraftConfig<LexicalEditorState>
   entityId: string | null
-  /** The owned revision token — part of the draft key. */
   clientRevisionToken: string | null
   body: LexicalEditorState
   disabled: boolean
-  /** Opening body the server holds — the local-conflict baseline. */
   initialBody: LexicalEditorState
 }) {
   const { localDraftConfig, entityId, clientRevisionToken, body, disabled, initialBody } = args
@@ -34,9 +27,6 @@ export function useEditorShellPersistConflict(args: {
     disabled,
   })
 
-  // Owned local-conflict detection (render-phase state adjustment,
-  // react-compiler-safe): a stored draft diverging from the opening body
-  // freezes autosave until the dialog resolves it.
   const [conflict, setConflict] = useState<EditorShellLocalConflict | null>(null)
   const [conflictResolved, setConflictResolved] = useState(false)
   const [lastConflictCheck, setLastConflictCheck] = useState({
@@ -59,8 +49,6 @@ export function useEditorShellPersistConflict(args: {
     }
   }
 
-  // The dialog-resolution latch: clears the conflict and pins it resolved so
-  // a later identical draft load never re-raises it.
   const resolveConflict = useCallback(() => {
     setConflict(null)
     setConflictResolved(true)

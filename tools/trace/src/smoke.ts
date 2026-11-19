@@ -88,7 +88,6 @@ function assert(condition: unknown, message: string): asserts condition {
   }
 }
 
-/** The harness stop returns a verdict; the smoke's contract is fail-fast. */
 async function stopDevServerOrFail(server: DevServer): Promise<void> {
   if ((await stopDevServer(server, SHUTDOWN_TIMEOUT_MS)) === 'timeout') {
     fail(`DEV server did not stop within ${SHUTDOWN_TIMEOUT_MS / 1000}s`)
@@ -124,7 +123,6 @@ function fixtures(): SmokeFixtures {
   }
 }
 
-/** Every synthetic fixture string, labelled by field so a failure never echoes a secret. */
 function fixtureNeedles(fx: SmokeFixtures): Array<{ field: string; value: string }> {
   return Object.entries(fx).map(([field, value]) => ({ field, value: String(value) }))
 }
@@ -153,12 +151,6 @@ interface ObservabilityTestConnectionResult {
     | { status: 'failed'; descriptor: { messageKey: string } }
 }
 
-/**
- * Save a sparse `observability` patch through the REAL admin settings
- * procedure (`POST /rpc/admin/settings/update`). This is the same call the
- * settings panel makes, so the smoke exercises the write schema, the secret
- * encryption, and the section-change handler.
- */
 async function saveObservabilitySettings(session: AdminSession, patch: Record<string, unknown>): Promise<void> {
   const result = await callE2eRpc<{ section: unknown; warnings: string[] }>(
     session.client,
@@ -170,7 +162,6 @@ async function saveObservabilitySettings(session: AdminSession, patch: Record<st
   assert(result.json.warnings.length === 0, `observability save returned warnings: ${result.json.warnings.join('; ')}`)
 }
 
-/** Read the read-only status projection (`GET /rpc/admin/observability/status`). */
 async function readObservabilityStatus(session: AdminSession): Promise<ObservabilityStatus> {
   // oRPC's GET transport carries the serialized request envelope in `data`,
   // not the bare input: `{"json":{}}` (empty query input).
@@ -183,7 +174,6 @@ async function readObservabilityStatus(session: AdminSession): Promise<Observabi
   return body.json
 }
 
-/** The runtime apply is async (serialized queue) — poll until the phase settles. */
 async function waitForRuntimePhase(
   session: AdminSession,
   expected: ObservabilityStatus['runtime']['phase'],
@@ -203,13 +193,6 @@ async function waitForRuntimePhase(
   )
 }
 
-/**
- * Configure observability exactly as an admin would: save the connection
- * fields, test the connection (which verifies the fingerprint AND provisions
- * the RUM token / privacy pipeline / dashboards), wait for the runtime to
- * start, then flip the reporting switches (a runtime-fingerprint change that
- * keeps the verified connection) and wait for the browser gate.
- */
 async function configureObservability(
   session: AdminSession,
   state: TraceState,
@@ -246,8 +229,6 @@ async function configureObservability(
   assert(running.verified, 'runtime is running but the connection is not verified')
   assert(running.provisioned && running.provisionedCurrent, 'provisioned assets are missing or stale')
 
-  // Switch flips AFTER verification: the connection fingerprint excludes them,
-  // so the runtime restarts without losing the verified state.
   await saveObservabilitySettings(session, {
     logs: { enabled: true },
     frontend: { enabled: true, sessionSampleRate: 100 },
@@ -282,8 +263,6 @@ async function stagePost(origin: string, fx: SmokeFixtures): Promise<{ session: 
     {
       title: fx.title,
       summary: `Synthetic summary ${fx.sqlValue}`,
-      // Site-owned cover: the editor's OG preview asks the renderer for a card,
-      // and a cover-less post's empty cover is not renderable.
       cover: '/images/open-graph.png',
       slug: fx.slug,
       published: true,
@@ -312,8 +291,6 @@ async function stagePost(origin: string, fx: SmokeFixtures): Promise<{ session: 
   return { session: { client, csrfToken: csrf }, post: upsert.json.post }
 }
 
-/** Stage a second post that becomes due during the run, so the scheduler fires
- *  the real `content.scheduled-publish` job and emits a `job.run` span. */
 async function stageScheduledPost(session: AdminSession, fx: SmokeFixtures): Promise<string> {
   const slug = `${fx.slug}-scheduled`
   const publishedAt = new Date(Date.now() + 8000).toISOString()
@@ -354,8 +331,6 @@ async function stageScheduledPost(session: AdminSession, fx: SmokeFixtures): Pro
 }
 
 async function makeLargeJpeg(): Promise<Buffer> {
-  // Large enough for the inline DEV sharp transform to be a measurable slow
-  // operation; a solid fill keeps the encoded upload far below the 8 MB cap.
   return sharp({
     create: { width: 6000, height: 4000, channels: 3, background: { r: 70, g: 110, b: 150 } },
   })
@@ -475,9 +450,6 @@ async function scanForbiddenFields(ctx: O2Context, startTimeMs: number): Promise
     /^action_/,
     /^graphql_/,
   ]
-  // The VRL deliberately keeps these coarse identity dimensions (country/ISO
-  // geo, UA/OS/device family) for `forward`-mode deployments; every finer
-  // geo_info_*/user_agent_* field stays forbidden.
   const allowed = new Set([
     'geo_info_country',
     'geo_info_country_iso_code',
@@ -744,7 +716,6 @@ async function restartOpenObserve(state: TraceState): Promise<void> {
   try {
     await waitForOpenObserve(state.endpoint, 90_000)
   } catch {
-    // A stopped container occasionally needs a full restart under load.
     docker(['restart', state.containerName])
     await waitForOpenObserve(state.endpoint, 180_000)
   }
@@ -771,11 +742,6 @@ function rumRowSignature(rows: RumRow[]): string {
   return `${rows.length}:${latest}`
 }
 
-/**
- * Wait until no new `_rumdata` rows (count or latest `_timestamp`) arrive for
- * `quietMs`. A consent revocation may flush one final batch; quiescence proves
- * that flush finished without assuming it never happened.
- */
 async function waitForRumQuiescence(
   ctx: O2Context,
   sinceMs: number,
@@ -834,9 +800,7 @@ async function waitForRumStatus(origin: string, expected: boolean, timeoutMs = 3
           return
         }
       }
-    } catch {
-      // keep polling until the deadline
-    }
+    } catch {}
     await sleep(500)
   }
   throw new Error(`RUM status did not become ${String(expected)} within ${timeoutMs / 1000}s`)
@@ -883,8 +847,6 @@ async function main(): Promise<void> {
     server = null
 
     log('==> seeding synthetic admin and settings')
-    // The seeded site must point at the running DEV origin: a cover-less
-    // post's default OG cover is fetched from `<website>/images/open-graph.png`.
     await seedInstalledInstance(
       join(dataDir, 'kobato.db'),
       { email: fx.adminEmail, passwordHash: bcrypt.hashSync(fx.adminPassword, 4) },
@@ -920,18 +882,15 @@ async function main(): Promise<void> {
       failedResources.push(`${request.url()} ${request.failure()?.errorText ?? 'failed'}`)
     })
 
-    // Initial hard navigation with every forbidden fixture in the raw URL.
     await page.goto(
       `/?email=${encodeURIComponent(fx.email)}&token=${encodeURIComponent(fx.token)}&raw=${encodeURIComponent(fx.rawUrl)}&q=${encodeURIComponent(fx.sqlValue)}`,
       { waitUntil: 'networkidle' },
     )
     await page.waitForFunction(() => typeof window !== 'undefined')
 
-    // Keep Web Vitals realistic: interact and give the observers a moment.
     await page.mouse.move(100, 100)
     await page.waitForTimeout(1500)
 
-    // SPA navigation carrying the search/SQL fixture in the path and query.
     const searchPath = `/search/${encodeURIComponent(fx.search)}?q=${encodeURIComponent(fx.sqlValue)}`
     await page.evaluate((path: string) => {
       window.history.pushState({}, '', path)
@@ -960,7 +919,6 @@ async function main(): Promise<void> {
     }, csrfToken)
     assert(rpcStatus === 200, `browser oRPC bootstrap returned HTTP ${rpcStatus}`)
 
-    // A real uncaught browser error; the fixture must never leave the browser.
     await page.evaluate((marker: string) => {
       setTimeout(() => {
         throw new Error(marker)
@@ -968,8 +926,6 @@ async function main(): Promise<void> {
     }, fx.error)
     await page.waitForTimeout(1500)
 
-    // A second hard load with the indexed public post, so the RUM document
-    // view and the server trace are both present for the run.
     await page.goto(`/posts/${encodeURIComponent(fx.slug)}?raw=${encodeURIComponent(fx.rawUrl)}`, {
       waitUntil: 'networkidle',
     })
@@ -990,8 +946,6 @@ async function main(): Promise<void> {
     })
     assert(failedResponse?.status() === 404, `missing post returned ${failedResponse?.status() ?? 'no response'}`)
 
-    // Telemetry-on timing samples. These are the same origin and document as
-    // the telemetry-off phase; three browser navigations keep the cost bounded.
     log('==> collecting telemetry-on timing samples')
     await fetch(origin).then((res) => res.text())
     const onWarmup = await context.newPage()
@@ -1066,9 +1020,7 @@ async function main(): Promise<void> {
         runStart,
         (rows) => rows.length > 0,
       )
-    } catch {
-      // Recorded by the page-level metrics check below.
-    }
+    } catch {}
     try {
       metricRows = await waitForRows(
         ctx,
@@ -1077,15 +1029,9 @@ async function main(): Promise<void> {
         runStart,
         (rows) => rows.length > 0,
       )
-    } catch {
-      // The panel-level verification below records the specific failure.
-    }
+    } catch {}
     const metricTables = await listStreams(ctx, 'metrics')
 
-    // Hard probe: the DEV server's log pipeline must have created the
-    // independent `kobato_logs` stream (v1.1.2 honours the OTLP `stream-name`
-    // header for logs). The projected columns below are the real flattened
-    // names observed in OpenObserve, not assumptions.
     const logStreams = await listStreams(ctx, 'logs')
     assert(
       logStreams.some((stream) => stream.name === LOG_STREAM),
@@ -1133,11 +1079,6 @@ async function main(): Promise<void> {
         view_loading_type: 'initial_load',
         _o2: { format_version: 2 },
       }
-      // The browser never learns the configured organization — the slim SDK
-      // posts `organizationIdentifier ?? 'default'`. Probe with a deliberately
-      // foreign segment: the relay must validate only the track shape and
-      // rewrite the upstream org (the row lands in the CONFIGURED org's
-      // stream, searched below through `ctx`).
       const res = await fetch(
         `${origin}/api/rum/intake/rum/v1/foreign-sdk-org/rum?o2source=browser&o2-api-key=kobato-relay&batch_time=${Date.now()}`,
         {
@@ -1347,10 +1288,6 @@ async function main(): Promise<void> {
       assert(sums.length <= 5, `image execution sum has ${sums.length} points; looks cumulative`)
       const totalExecutions = counts.reduce((total, value) => total + value, 0)
       assert(totalExecutions <= 20, `image execution count total ${totalExecutions}; looks cumulative`)
-      // The observable gauge emits one point per collection, so it counts the
-      // collection windows without any fragile wall-clock scheduling. Delta
-      // image points must be strictly fewer than that; cumulative points would
-      // approach one per collection after the first transform.
       const collectionWindows = (gauge.hits ?? []).length
       if (collectionWindows >= 2) {
         assert(
@@ -1404,9 +1341,6 @@ async function main(): Promise<void> {
       assert(correlated !== undefined, 'no HTTP log row shares trace_id AND span_id with an http.server span')
       const span = serverSpans.get(`${String(correlated?.trace_id)}:${String(correlated?.span_id)}`)!
       assert(correlated?.service_name === span.service_name, 'log service_name differs from the trace resource')
-      // O2 flattens the trace resource's `service.version`/`deployment.environment`
-      // as `service_service_version`/`service_deployment_environment`, while the
-      // log stream stores `service_version`/`deployment_environment`.
       const traceVersion = span.service_service_version ?? span.service_version
       const traceEnvironment = span.service_deployment_environment ?? span.deployment_environment
       assert(
@@ -1467,8 +1401,6 @@ async function main(): Promise<void> {
     })
 
     await check('retention is 1 day on every relevant stream (dev tooling policy)', async () => {
-      // Retention is the one OpenObserve policy the dev tooling owns in dev; the
-      // server applies it only when the admin opts in (`retentionDays`, default 0).
       const first = await applyRetention(ctx)
       assert(first.streams.length > 0, 'no relevant streams found')
       assert(
@@ -1575,8 +1507,6 @@ async function main(): Promise<void> {
         'sv-log-severity',
         'sv-log-scope',
       ])
-      // No 5xx and possibly no outbound traffic in a synthetic run; these
-      // panels must still execute, but an empty result is explicitly allowed.
       const allowedEmpty = new Set(['ov-errors', 'sv-outbound'])
       const failures: string[] = []
       let ran = 0
@@ -1607,8 +1537,6 @@ async function main(): Promise<void> {
               size: 100,
             })
             if ((result.hits ?? []).length === 0 && required.has(panel.id) && !allowedEmpty.has(panel.id)) {
-              // One short retry covers the WAL/metric flush lag between a
-              // successful broad read and a panel's narrower query.
               await sleep(1500)
               result = await search(ctx, { type, sql: query.query, startTimeMs: runStart, size: 100 })
             }
@@ -1657,10 +1585,7 @@ async function main(): Promise<void> {
             size: 1000,
           })
           haystacks.push(stringifyAll(result.hits ?? []))
-        } catch {
-          // A histogram base stream has no rows in OpenObserve; its _count/
-          // _sum/_bucket siblings carry the data and are scanned separately.
-        }
+        } catch {}
       }
       for (const { field, value } of fixtureNeedles(fx)) {
         for (const haystack of haystacks) {
@@ -1671,13 +1596,10 @@ async function main(): Promise<void> {
     })
 
     await check('browser console produced no unexpected error', () => {
-      // The deliberate thrown error and the intentional 404 are expected.
       const unexpected = consoleErrors.filter(
         (line) =>
           !line.includes('smoke-secret-error') &&
           !line.includes('status of 404') &&
-          // The synthetic seeded asset settings point at a non-existent
-          // 127.0.0.1 image host; that fallback is unrelated to telemetry.
           !/127\.0\.0\.1(?::\d+)?\/images\//.test(line) &&
           !/127\.0\.0\.1(?::\d+)?\/storage\//.test(line),
       )
@@ -1804,8 +1726,6 @@ async function main(): Promise<void> {
       await waitForRumStatus(origin, true, 30_000)
       const openPage = browser.contexts()[0]?.pages()[0] ?? null
       assert(openPage !== null, 'open browser page unavailable')
-      // Park the open tab on an editor with unsaved input. Recovery must resume
-      // in this same document: no goto/reload/navigation is allowed below.
       await openPage.goto(`${origin}/editor/post/${staged.post.id}`, { waitUntil: 'networkidle' })
       const unsavedInput = openPage.locator('input[aria-label*="标题"], input[aria-label*="title"]').first()
       await unsavedInput.waitFor({ state: 'visible', timeout: 20_000 })
@@ -1822,16 +1742,11 @@ async function main(): Promise<void> {
       const verificationCtx = o2Context(state)
       await upsertFunction(verificationCtx, {
         name: RUM_PRIVACY_FUNCTION_NAME,
-        // Preserve every event field (so the browser/flush behavior is real)
-        // while changing the stored function body, which fails the server's
-        // hash verification and closes the gate.
         function: '# tampered allowlist — preserve fields, invalid stored hash\n. = .',
         transType: 0,
       })
       await waitForRumStatus(origin, false, 30_000)
       const stoppedAt = Date.now()
-      // Wait for the open page to observe the revoked consent. A final batch
-      // flush is allowed; quiescence proves no further rows arrive.
       await waitForBrowserRumConsent(openPage, 'not-granted', 30_000)
       const quiescence = await waitForRumQuiescence(ctx, stoppedAt, 60_000)
       await sleep(5000)
@@ -1841,8 +1756,6 @@ async function main(): Promise<void> {
         `RUM rows arrived after quiescence (${quiescence.signature} → ${rumRowSignature(afterQuiesce)})`,
       )
 
-      // Restore through the PRODUCT path: the admin provision procedure
-      // re-installs the privacy pipeline idempotently and re-applies the runtime.
       const restore = await callE2eRpc<{ provisionedFingerprint: string }>(
         staged.session.client,
         '/admin/observability/provision',
@@ -1903,9 +1816,6 @@ async function main(): Promise<void> {
     })
 
     await check('telemetry on/off overhead comparison recorded', async () => {
-      // Flip the PRODUCT switch instead of rewriting a config file: the runtime
-      // stops exporting without a server restart, then restarts from the SAME
-      // verified settings (the connection fingerprint excludes `enabled`).
       await saveObservabilitySettings(staged.session, { enabled: false })
       await waitForRuntimePhase(staged.session, 'disabled')
       await waitForRumStatus(origin, false, 30_000)
@@ -1956,9 +1866,7 @@ async function main(): Promise<void> {
     if (process.env.KOBATO_TRACE_SMOKE_KEEP !== '1') {
       try {
         stopOpenObserve(state.containerName, true, state.volumeName)
-      } catch {
-        // A partial docker run must not mask the smoke result.
-      }
+      } catch {}
     }
     if (process.env.KOBATO_TRACE_SMOKE_KEEP === '1') {
       warn(

@@ -47,7 +47,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { toggle, close, load } = useMusicPlayerActions()
 
-  // The limit feeds both the hook and the disabled per-page select's display.
   const searchLimit = 10
   const {
     results,
@@ -60,7 +59,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     reset,
   } = useMetingMusicSearch({ limit: searchLimit })
 
-  // Infinite scroll in the dialog's scroll container, disarmed while a page is in flight.
   const sentinelRef = useInfiniteScrollSentinel({
     hasNextPage: open && hasMore,
     isFetchingNextPage: isLoadingMore,
@@ -97,8 +95,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     }
   }
 
-  // Stop the preview player on close — an ancestor setState, so it must run in an
-  // effect (gated on the open→closed transition), not in the render-adjust block above.
   const wasOpenRef = useRef(open)
   useEffect(() => {
     const wasOpen = wasOpenRef.current

@@ -9,8 +9,6 @@ export interface TimeZoneItem {
   label: string
 }
 
-// Client-only validation copy: message IDS (typed against the UI catalog), never
-// prose. `useSettingsCard` localizes them before they reach RHF errors.
 const MSG = {
   titleRequired: 'admin.settings.validation.titleRequired',
   separatorRequired: 'admin.settings.validation.separatorRequired',
@@ -35,7 +33,6 @@ const MSG = {
 
 export const TIME_FORMAT_AUTO = 'auto'
 export const TIME_FORMAT_CUSTOM = 'custom'
-/** Seed used when an admin switches from "follow the locale" to a custom pattern. */
 export const DEFAULT_TIME_FORMAT_PATTERN = 'yyyy-LL-dd HH:mm'
 
 export const generalFormSchema = z.object({

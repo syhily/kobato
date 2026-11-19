@@ -63,7 +63,6 @@ const MASKS = {
 
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 
-// Routes that read no loaderData still get an empty object — RR7's ComponentProps requires it.
 const emptyLoaderData: Record<string, unknown> = {}
 
 const testQueryClient = new QueryClient({
@@ -220,8 +219,6 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('library/music/detail renders the MusicDetailView with the seeded music', () => {
-      // Seed the shared query cache (same queryOptions the view uses) so SSR
-      // renders real detail chrome instead of the skeleton.
       testQueryClient.setQueryData(orpcQuery.admin.music.get.queryOptions({ input: { id: 'abc' } }).queryKey, {
         music: {
           id: 'abc',

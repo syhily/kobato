@@ -21,8 +21,6 @@ export const WordCountPlugin = ({
   const documentCounterRef = React.useRef<WordCounter | null>(null)
   const selectionCounterRef = React.useRef<WordCounter | null>(null)
   const languageRef = React.useRef(resolvedLanguage)
-  // Declared first so the ref is current when either mount effect constructs
-  // its counter. Language swaps keep counter identity.
   React.useLayoutEffect(() => {
     languageRef.current = resolvedLanguage
     documentCounterRef.current?.setLanguage(resolvedLanguage)

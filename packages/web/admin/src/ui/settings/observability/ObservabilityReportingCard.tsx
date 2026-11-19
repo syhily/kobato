@@ -36,7 +36,6 @@ const PHASE_MESSAGE_IDS = {
   failed: 'admin.settings.observability.reporting.phase.failed',
 } as const satisfies Record<ObservabilityStatusOutput['runtime']['phase'], UiMessageId>
 
-/** Operational timestamp in the operator's own zone; falls back to UTC on an unreadable one. */
 function formatExportErrorTime(at: number, locale: AppLocale): string {
   try {
     return formatDateTime(new Date(at), { locale, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
@@ -162,7 +161,6 @@ export function ObservabilityReportingCard({
         },
       },
     }),
-    // Toggle changes restart the runtime — refresh the phase/lastError projection.
     onSaved: onStatusInvalidated,
   })
 

@@ -132,8 +132,6 @@ describe('galleryUploadIntent', () => {
     vi.mocked(getImageDimensions).mockImplementation(
       (src: string) =>
         new Promise((resolve) => {
-          // the first file's decode lands LAST — the overlay order must still
-          // follow the file order (map preserves it)
           setTimeout(() => resolve({ width: 100, height: 50 }), src === 'blob://preview-a.jpg' ? 20 : 0)
         }),
     )

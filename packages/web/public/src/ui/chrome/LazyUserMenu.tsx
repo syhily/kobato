@@ -15,22 +15,15 @@ const UserMenu = lazy(() =>
   import('@kobato/web-public/ui/chrome/UserMenu.tsx').then((module) => ({ default: module.UserMenu })),
 )
 
-// Hover-intent prefetch; the browser dedupes this against the lazy boundary's own import.
 export const warmUserMenuChunk = () => void import('@kobato/web-public/ui/chrome/UserMenu.tsx')
 
 interface LazyUserMenuProps {
   currentUser: HeaderCurrentUser
   logoutRedirectTo: string
-  /** Owned by BaseLayout (the public shell's one subscriber) — never re-subscribe here.
-   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpenNotifications: () => void
 }
 
-// Interaction-gated mount, latching on the first click so open/close state survives later
-// toggles. Activation rides onClick, not pointerdown: a pointerdown-then-mount sequence lets
-// the browser's follow-up click land on the REAL trigger and toggle the just-opened menu
-// closed. No focus handoff is needed — `defaultOpen` makes Base UI move focus onto the popup.
 export function LazyUserMenu(props: LazyUserMenuProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -46,13 +39,10 @@ export function LazyUserMenu(props: LazyUserMenuProps) {
 
 interface UserMenuTriggerProps {
   currentUser: HeaderCurrentUser
-  /** `null` = unknown — renders like zero, as in UserMenu. */
   unreadCount: number | null
   onClick?: (event: React.MouseEvent) => void
 }
 
-/** Static stand-in for UserMenu's trigger: the same avatar button without the dropdown
- *  wiring, so the swap on mount is visually invisible. */
 function UserMenuTrigger({ currentUser, unreadCount, onClick }: UserMenuTriggerProps) {
   const { t } = useI18n()
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()

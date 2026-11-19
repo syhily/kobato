@@ -1,9 +1,6 @@
 import { buildDeviceEnvBeacon, collectDynamicEnv, collectStaticEnv } from '@kobato/web-client/lib/device-env.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Pure collection against stubbed browser globals: present APIs map onto the
-// wire fields, absent / non-finite ones are omitted (never sent as null).
-
 type MediaMap = Record<string, boolean>
 
 function matchMediaStub(map: MediaMap) {
@@ -60,7 +57,6 @@ describe('collectStaticEnv', () => {
       locale: 'zh-CN',
       hardwareConcurrency: 10,
       deviceMemory: 16,
-      // The timezone comes from Intl, so it is present whenever the runtime has it.
       timezone: expect.any(String),
     })
   })

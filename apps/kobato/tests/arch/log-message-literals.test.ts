@@ -5,19 +5,10 @@ import {
 } from '@kobato/test/log-message-literals.ts'
 import { describe, expect, it } from 'vitest'
 
-// The three designed indirections: an options property forwarded to a logger.
-// Each is allowed at its single call site, and the property itself is held to
-// a static literal by the dynamic-option-message rule.
 const ALLOWLIST: readonly LogMessageAllowlistEntry[] = [
   { path: 'packages/server/src/http/resources/admin-upload-route.ts', text: 'options.logMessage' },
   { path: 'packages/server/src/domains/webmentions/queue-scheduler.ts', text: 'options.rowThrewMessage' },
-  // `formatTraceDiagnostic` renders DIAGNOSTIC_MESSAGES (all literals) and is
-  // filtered from the outbound pipeline by the `trace` scope drop.
   { path: 'packages/server/src/infra/trace/config.ts', text: 'message' },
-  // The logger implementation itself: pino's child calls take `(context, msg)`,
-  // and the forwarded `msg` is the facade's typed string parameter. Scoped to
-  // the exact `wrap(ctx)` context argument so any new dynamic message in this
-  // file is still reported.
   { path: 'packages/server/src/infra/logger.ts', rule: 'dynamic-message', text: 'wrap(ctx)' },
 ]
 
@@ -37,8 +28,6 @@ describe('server log messages are static', () => {
     expect(result.scannedFiles).toContain('apps/kobato/src/entry.server.tsx')
     expect(result.scannedFiles).toContain('apps/kobato/src/server.ts')
     expect(result.scannedFiles.some((file) => file.startsWith('packages/server/src/'))).toBe(true)
-    // The exemption surface stays exactly these files: no other file may hide
-    // a dynamic message behind the allowlist.
     expect([...new Set(result.allowlisted.map((violation) => `${violation.file}:${violation.rule}`))]).toEqual([
       'packages/server/src/domains/webmentions/queue-scheduler.ts:dynamic-message',
       'packages/server/src/http/resources/admin-upload-route.ts:dynamic-message',
@@ -90,8 +79,6 @@ describe('tripwires', () => {
       expect.objectContaining({ rule: 'dynamic-message', text: 'message', line: 4 }),
       expect.objectContaining({ rule: 'dynamic-message', text: '{ err }', line: 7 }),
       expect.objectContaining({ rule: 'dynamic-message', text: '`port ${port}`', line: 8 }),
-      // An unresolved identifier could be pino's merge object: fail closed,
-      // never let `(dynamic, 'static')` pass as a message pair.
       expect.objectContaining({ rule: 'dynamic-message', text: 'context', line: 9 }),
     ])
   })

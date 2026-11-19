@@ -24,14 +24,11 @@ const engine = new ManagedEngine<AnalyticsHandle>(
   'analyticsHandle',
 )
 
-// Lazy writer getter so the domain batchers never import this module back.
 wireAccessLogBatcher({ getWriter: () => engine.get().writer })
 wireDeviceEnvBeaconBatcher({ getWriter: () => engine.get().writer })
 
 let maintenanceJob: ScheduledJob | null = null
 
-// Serialize the backup (CHECKPOINT+copy) and retention (DELETE) windows: copyFile is
-// external to the writer, so a mid-copy DELETE would archive a straddled file.
 let analyticsMutationLock: Promise<void> = Promise.resolve()
 
 async function withAnalyticsMutationLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -67,12 +64,8 @@ export function scheduleNextAnalyticsMaintenance(): void {
 }
 
 export async function initAnalyticsDatabase(db: Database): Promise<void> {
-  // Wired here (before engine.init) rather than at import time: importing this
-  // module must stay side-effect-free.
   wireAnalyticsQueryTelemetry()
   await engine.init()
-  // Legacy `access_log` → `access_events` conversion: once per database, before the
-  // maintenance scheduler arms and before requests can push into the batcher.
   await withAnalyticsMutationLock(() =>
     runAnalyticsBlobMigrationAtBoot(db, engine.get(), getLogger('analytics.blob-migration')),
   )

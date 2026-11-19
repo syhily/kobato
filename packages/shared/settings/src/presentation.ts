@@ -33,11 +33,6 @@ export function extractXHandle(socials: Array<{ network: SocialNetwork; link: st
   }
 }
 
-// Per-slot cache-buster suffix from the branding ref's `updatedAt`, appended to
-// the fixed branding asset paths (`/favicon.svg`, `/logo.svg`, …) so a re-upload
-// changes the URL and browsers skip the stale copy. No ref (bundled default
-// asset) → '' — the bare path serves. Matches `resolveAssetUrl`'s `?v=<ms>`
-// convention for /storage/ URLs.
 export function brandingVersionSuffix(ref: BrandingObjectRef | undefined | null): string {
   const ms = ref?.updatedAt ? Date.parse(ref.updatedAt) : Number.NaN
   return Number.isFinite(ms) ? `?v=${ms}` : ''
@@ -45,7 +40,6 @@ export function brandingVersionSuffix(ref: BrandingObjectRef | undefined | null)
 
 export const DEFAULT_FOOTNOTES_SECTION_TITLE = '尾声礼记'
 
-/** Visible `<h3>` above the Lexical footnotes list (`blog.content.footnotes.sectionTitle`). */
 export function resolveFootnotesSectionTitle(content: ContentSettings): string {
   const title = content.footnotes?.sectionTitle?.trim()
   return title !== undefined && title.length > 0 ? title : DEFAULT_FOOTNOTES_SECTION_TITLE

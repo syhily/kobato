@@ -190,7 +190,6 @@ describe('tencent provider resolveAudioUrl', () => {
             text: () => Promise.resolve(''),
           }
         }
-        // Vkey response: only the 128 tier carries a key.
         return {
           ok: true,
           json: () =>

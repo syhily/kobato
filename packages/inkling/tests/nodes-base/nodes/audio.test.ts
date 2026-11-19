@@ -349,8 +349,6 @@ describe('BaseAudioNode', function () {
           const { element } = audioNode.exportDOM(editor, exportOptions)
           const card = getHTMLElement(element)
 
-          // the wire format is m:ss, matching the import spec's minutes*60+seconds
-          // parse — raw seconds would reimport 60x too large
           expect(card.querySelector('.inkling-audio-duration')!.textContent).toBe('2:05')
 
           const document = createDocument(card.outerHTML)

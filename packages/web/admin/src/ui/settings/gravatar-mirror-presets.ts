@@ -1,8 +1,3 @@
-// The admin-only label registry for the Gravatar mirror presets. Preset URLs
-// live in `@kobato/assets/gravatar` (the public avatar graph imports it, so it
-// must not carry workspace catalog ids); `satisfies Record<GravatarMirrorUrl, …>`
-// keeps the mapping exhaustive — a new preset URL without its label fails `pnpm run type`.
-
 import type { GravatarMirrorUrl } from '@kobato/assets/gravatar.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
@@ -27,6 +22,5 @@ const MIRROR_LABEL_KEYS = {
   'https://use.sevencdn.com/avatar': 'admin.settings.comments.avatar.mirrorPreset.sevenCdn',
 } as const satisfies Record<GravatarMirrorUrl, UiMessageId>
 
-/** Preset URLs paired with their catalog labels, in display order. */
 export const GRAVATAR_MIRROR_PRESETS: ReadonlyArray<{ value: GravatarMirrorUrl; labelKey: UiMessageId }> =
   GRAVATAR_MIRROR_URLS.map((value) => ({ value, labelKey: MIRROR_LABEL_KEYS[value] }))

@@ -4,9 +4,6 @@ import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigation } from 'react-router'
 
-// Global navigation splash for slow route transitions. Watches `useNavigation()` only —
-// mutation flows own their own pending UI — and renders null during SSR, where it is idle.
-
 const THRESHOLD_MS = 300
 const MIN_VISIBLE_MS = 300
 const FADE_OUT_MS = 250

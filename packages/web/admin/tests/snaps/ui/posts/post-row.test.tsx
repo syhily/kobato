@@ -80,7 +80,6 @@ describe('snapshot: PostRow', () => {
       ),
     )
     expect(html).toContain('life')
-    // SSR never clicks — the callback stays unfired.
     expect(filtered).toBeNull()
   })
 })

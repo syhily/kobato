@@ -54,10 +54,6 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
   }, [editor, nodeKey, cardSelectionStore])
 
   React.useEffect(() => {
-    // On card removal, drop history entries owned by the card's dying nested
-    // editors so the next undo cannot pop an entry that applies nowhere.
-    // Their root elements are already detached when this cleanup runs; on a
-    // StrictMode effect replay the roots stay attached and this is a no-op.
     return () => {
       purgeDeadEditorHistoryEntries(historyState, editor)
     }

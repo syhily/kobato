@@ -45,7 +45,6 @@ export function createLocaleSyncOrigin(): string {
   return randomOrigin()
 }
 
-/** Announce a successfully committed locale. No-op when the API is unavailable. */
 export function publishLocaleChange(locale: AppLocale, origin: string, revision?: string): void {
   if (typeof BroadcastChannel === 'undefined') {
     return
@@ -76,7 +75,6 @@ function parseAnnouncement(data: unknown, origin: string): LocaleChangeAnnouncem
   if (message.kind !== MESSAGE_KIND) {
     return null
   }
-  // Own echo — this provider is the one that published.
   if (typeof message.source !== 'string' || message.source === origin) {
     return null
   }
@@ -90,26 +88,18 @@ function parseAnnouncement(data: unknown, origin: string): LocaleChangeAnnouncem
   }
 }
 
-/**
- * Listen for peer announcements. Returns an unsubscribe function; a missing or
- * blocked `BroadcastChannel` yields a no-op unsubscribe (never a throw).
- */
 export function subscribeLocaleChange(
   origin: string,
   onLocaleChange: (announcement: LocaleChangeAnnouncement) => void,
 ): () => void {
   if (typeof BroadcastChannel === 'undefined') {
-    return () => {
-      /* nothing to tear down */
-    }
+    return () => undefined
   }
   let channel: BroadcastChannel | null = null
   try {
     channel = new BroadcastChannel(SETTINGS_LOCALE_CHANNEL)
   } catch {
-    return () => {
-      /* nothing to tear down */
-    }
+    return () => undefined
   }
   const open = channel
   const listener = (event: MessageEvent<unknown>) => {

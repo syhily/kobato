@@ -1,9 +1,3 @@
-// Statement timing via the 'sqlite.db.query' diagnostics channel. The channel
-// publishes the EXPANDED SQL with bound values inlined, so it is redacted back
-// to placeholders before logging — bound parameter values never reach the log.
-// Subscription is gated on the debug log level (zero overhead at info+ in
-// production) and is a no-op under vitest unless a test opts in explicitly.
-
 import { isVitest } from '@kobato/server/infra/config.ts'
 import { getLogger, root } from '@kobato/server/infra/logger.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
@@ -13,12 +7,6 @@ const log = getLogger('db.query')
 
 const SQLITE_QUERY_CHANNEL = 'sqlite.db.query'
 
-/**
- * Redact every literal the expanded SQL carries: single-quoted strings (with
- * '' escapes), X'..' blob literals, and bare numeric literals become `?`.
- * Double-quoted identifiers pass through verbatim. Heuristic by design — it
- * errs toward removing data, not preserving the exact source shape.
- */
 export function redactBoundValues(expanded: string): string {
   let out = ''
   let segment = ''
@@ -65,7 +53,6 @@ export function redactBoundValues(expanded: string): string {
       continue
     }
     if ((ch === 'x' || ch === 'X') && expanded[i + 1] === "'") {
-      // Blob literal prefix — the quote branch below consumes the body.
       i++
       continue
     }
@@ -85,18 +72,11 @@ function onQuery(message: unknown): void {
       sql: redactBoundValues(message.sql),
       durationMs: Math.round(message.duration / 1e3) / 1e3,
     })
-  } catch {
-    // A throwing subscriber would break statement completion — never propagate.
-  }
+  } catch {}
 }
 
 let subscribed = false
 
-/**
- * Subscribe and forward timings to the logger at debug level. Idempotent.
- * No-op under vitest or above the debug log level unless `enabledInTests`
- * opts in (the test seam — the suite runs the logger at 'silent').
- */
 export function startQueryDiagnostics(options?: { enabledInTests?: boolean }): void {
   if (subscribed) {
     return
@@ -120,8 +100,6 @@ export function stopQueryDiagnostics(): void {
   subscribed = false
 }
 
-// HMR re-evaluates the bootstrap graph; drop the old subscription so the
-// re-run does not double-subscribe with a stale closure.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     stopQueryDiagnostics()

@@ -173,8 +173,6 @@ export function CommentReplyForm({
               onBodyChange={setBody}
               disabled={isPending}
               className={cn(isReplying && 'pt-10')}
-              // Clicking the reply button is the interaction, so the inline form lands
-              // mounted and focused; the top-level form stays interaction-gated.
               eager={isReplying}
               focusOnMount={isReplying}
             />
@@ -254,7 +252,6 @@ function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
   )
 }
 
-/** Off-screen honeypot: humans never see it; bots that fill every input trip schema validation. */
 function CommentFormHoneypot() {
   return (
     <div className="absolute left-[-10000px] size-px overflow-hidden" aria-hidden="true">

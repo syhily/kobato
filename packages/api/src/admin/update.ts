@@ -8,7 +8,6 @@ import {
 } from '@kobato/contracts/update.ts'
 import { oc } from '@orpc/contract'
 
-// Admin self-update RPC contract — admin base on the server.
 export const adminUpdateContract = {
   check: oc
     .route({ method: 'GET', path: '/admin/update/check' })

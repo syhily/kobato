@@ -126,15 +126,11 @@ export async function saveBody<TMeta, TPreview>(
   const imageSources = collectLexicalImageStoragePaths(body)
   const headings = collectLexicalHeadings(body)
 
-  // Audit context = the latest revision of any status. A read error here
-  // propagates and aborts the save rather than drop the overwrite's audit row.
   const overwriteContext =
     input.force === true ? await findLatestRevision(db, adapter.entityType, adapter.getId(meta)) : null
 
   const repoInput = {
     ownerId: adapter.getId(meta),
-    // Stored in the compact dialect; every read heals through the schema's normalize
-    // preprocess, so the no-op short-circuit and revision DTOs see the full dialect.
     body: compactLexicalEditorState(body),
     imageSources,
     headings,
@@ -143,11 +139,6 @@ export async function saveBody<TMeta, TPreview>(
     force: input.force,
   }
 
-  // Save-time projections of the three body_html*/body_text columns. Skipped when
-  // the repo's no-op short-circuit will fire anyway: the pre-check mirrors
-  // `isEquivalentToPublishedLatest` so an equivalent save never re-pays the jsdom
-  // render. The repo re-checks under lock; a raced flip only leaves the columns
-  // stale, which the nullable schema tolerates. Best-effort — the save must succeed.
   const latestForProjectionCheck =
     overwriteContext ??
     (mode === 'draft' ? ((await findLatestRevision(db, adapter.entityType, adapter.getId(meta))) ?? undefined) : null)
@@ -191,11 +182,8 @@ export async function saveBody<TMeta, TPreview>(
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    // The publish transaction rewrote the meta row — re-read it so
-    // afterPublish sees post-publish state (mentions read `publishedAt`).
     const publishedMeta = adapter.findMetaById(db, input.entityId) ?? meta
     await adapter.afterPublish(db, publishedMeta, body, warnings)
-    // A publish can schedule into the future — re-arm the timer (no-op until started).
     rescheduleScheduledPublish()
   }
   return { ...projectSaveResult(result), warningDescriptors: warnings }

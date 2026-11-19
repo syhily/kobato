@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-// UI filter state only — server rows live in the TanStack cache (UsersView).
 export type RoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 export type SortOrder = 'recent' | 'commentCount'
 

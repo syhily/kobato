@@ -64,7 +64,6 @@ describe('ui/admin/posts/buildPostFilterFields — toQuery projections', () => {
     const status = fieldSpec('status')
     expect(status.toQuery('published')).toEqual({ deletedStatus: 'normal', published: true, visible: true })
     expect(status.toQuery('draft')).toEqual({ deletedStatus: 'normal', published: false })
-    // The posts-only unlisted leg.
     expect(status.toQuery('unlisted')).toEqual({ deletedStatus: 'normal', published: true, visible: false })
     expect(status.toQuery('deleted')).toEqual({ deletedStatus: 'deleted' })
   })

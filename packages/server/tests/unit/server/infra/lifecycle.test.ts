@@ -116,7 +116,6 @@ describe('lifecycle', () => {
   })
 
   it('detaches the server on close so a second close is a no-op', async () => {
-    // Close must be idempotent after the self-update restart's own close.
     const closeFn = vi.fn((cb: (err?: Error) => void) => cb())
     const fakeServer = Object.create(NodeHttpServer.prototype)
     fakeServer.close = closeFn
@@ -169,7 +168,6 @@ describe('lifecycle', () => {
     requestShutdown('first')
     requestShutdown('second')
     expect(getServerPhase()).toBe('shutting-down')
-    // Second requestShutdown is a no-op: exit fires exactly once.
     await new Promise((resolve) => setImmediate(resolve))
     expect(exitSpy).toHaveBeenCalledOnce()
     expect(exitSpy).toHaveBeenCalledWith(0)
@@ -192,8 +190,6 @@ describe('lifecycle', () => {
   })
 
   it('logs unhandled rejections loudly instead of crashing', () => {
-    // A streamed loader rejection must not take the process down; the `process.on`
-    // registration is not touched here to avoid polluting the global.
     clearLogCapture()
     handleUnhandledRejection(new Error('comments query failed'))
 

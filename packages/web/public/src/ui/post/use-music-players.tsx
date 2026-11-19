@@ -6,10 +6,6 @@ import { type RefObject, useContext, useEffect, useEffectEvent } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { IntlContext } from 'react-intl'
 
-// Defense-in-depth for the hydrated mount points: `data-url` / `data-cover` reach body_html
-// sanitized, but this hook assigns them to `audio.src` / `<img src>` directly. Accept only
-// http(s) URLs and same-origin relative paths (`/…`, never `//host`); anything else skips the
-// card and leaves its static fallback in place.
 export function safeMediaSrc(value: string | null | undefined): string | undefined {
   if (value === null || value === undefined) {
     return undefined
@@ -24,17 +20,6 @@ export function safeMediaSrc(value: string | null | undefined): string | undefin
   return isHttpUrl(trimmed) ? trimmed : undefined
 }
 
-// Music-player cards export a static mount point (`<div class="aplayer" data-url …>` wrapping
-// a static fallback card); this hook upgrades every mount point with a URL to the real player
-// after hydration. Mount points without `data-url` (missing music meta at save time) keep
-// their placeholder. The mount-point markup comes from the shared card spec
-// (`@kobato/lexical/cards/music-player`), and the fallback mirrors the player's paused
-// initial render so the swap does not shift layout.
-//
-// `bodyHtml` is the effect's re-scan key: the container div is REUSED across client
-// navigations (only its innerHTML swaps), so without it the previous article's React roots
-// would keep playing audio on detached nodes and new mount points would stay static
-// fallbacks. The cleanup unmounts those roots; the playback hook pauses the audio itself.
 export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   const intl = useContext(IntlContext)
   const { locale } = useI18n()
@@ -71,7 +56,6 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
           cover: safeMediaSrc(mount.getAttribute('data-cover')),
           lrc: mount.getAttribute('data-lrc') || undefined,
         }
-        // Drop the static fallback card before React takes over the node.
         mount.replaceChildren()
         const root = createRoot(mount)
         root.render(
@@ -85,8 +69,6 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
 
     return () => {
       cancelled = true
-      // root.unmount() is synchronous; running it while React is mid-render races the
-      // in-flight render (React warns and may drop the unmount), so defer past the commit.
       setTimeout(() => {
         for (const root of roots) {
           root.unmount()

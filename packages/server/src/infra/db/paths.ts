@@ -5,7 +5,6 @@ export function resolveEnginePath(configured: string, fallbackName: string): str
   return resolveStoragePath(configured, fallbackName, serverConfig.storage.data)
 }
 
-/** The content DB path (one shared in-memory DB per process when `:memory:`). */
 export function resolveDatabasePath(): string {
   return resolveEnginePath(serverConfig.storage.database, 'kobato.db')
 }

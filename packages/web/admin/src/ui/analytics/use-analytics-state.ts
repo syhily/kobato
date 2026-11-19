@@ -11,8 +11,6 @@ import {
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 
-// URL-synced dashboard state; writes delete the legacy `filters` JSON param so old links clean themselves up.
-
 export type AnalyticsViewMode = 'trend' | 'heatmap'
 export type HeatmapMetric = 'visits' | 'visitors'
 
@@ -55,7 +53,6 @@ export function useAnalyticsState(): AnalyticsState {
     return false
   }, [startAt, endAt])
 
-  // `null` marks a custom (explicit startAt/endAt) range; absent params fall back to the last-7d preset.
   const preset = useMemo<PresetKey | null>(() => {
     if (hasExplicitRange) {
       return null
@@ -247,7 +244,6 @@ export function useAnalyticsState(): AnalyticsState {
   )
 }
 
-/** IANA zone sent as `clientTimezone`; falls back to Etc/UTC when Intl is unavailable. */
 export function getClientTimezone(): string {
   if (typeof Intl === 'undefined') {
     return 'Etc/UTC'
@@ -255,10 +251,8 @@ export function getClientTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC'
 }
 
-/** Wire input shape of every analytics procedure (coerced numeric fields accept numbers or numeric strings). */
 export type AnalyticsQueryInput = z.input<typeof analyticsQuerySchema>
 
-/** Flat oRPC input for analytics: URL state expanded into wire fields plus client-side derivations the server cannot know. */
 export function buildAnalyticsInput(
   state: Pick<AnalyticsState, 'preset' | 'range' | 'filters' | 'includeUnknown'>,
   options: { scope?: AnalyticsScope; unit?: TimeUnit; limit?: number } = {},

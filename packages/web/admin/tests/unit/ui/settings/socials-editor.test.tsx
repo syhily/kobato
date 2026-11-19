@@ -5,7 +5,6 @@ import type { ReactElement } from 'react'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }

@@ -15,13 +15,10 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// update against the real engine (section write, encryption, snapshot,
-// projection); section-change dispatch stays unregistered (unit-covered).
 const db = getTestDb()
 
 let adminId = 0
 
-// `refreshBlogSettings` refuses a bundle until the setup-owned sections are seeded.
 async function seedBaselineSettings(): Promise<void> {
   await db.insert(setting).values([
     { scope: 'blog.general', data: TEST_BLOG_SETTINGS_BUNDLE.siteIdentity },
@@ -29,7 +26,6 @@ async function seedBaselineSettings(): Promise<void> {
   ])
 }
 
-// audit_log.actor_id references user.id: the editor must be a real row for the FK.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -42,7 +38,6 @@ function adminCtx() {
   return makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
 }
 
-/** Pin the request locale so the translated message is deterministic. */
 function withLocale<T extends ReturnType<typeof adminCtx>>(context: T, locale: AppLocale): T {
   return { ...context, localization: { locale, timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' } }
 }
@@ -58,7 +53,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
-  // The real update refreshes the in-process snapshot; the it setup re-seeds it.
 })
 
 describe('adminSettingsRouter.update', () => {
@@ -74,7 +68,6 @@ describe('adminSettingsRouter.update', () => {
       { context: adminCtx() },
     )
 
-    // Admin display shape: secrets redacted to the last-4 mask.
     expect(res.section).toMatchObject({
       mail: {
         enabled: false,
@@ -84,7 +77,6 @@ describe('adminSettingsRouter.update', () => {
     })
     expect((res.section as { mail: Record<string, unknown> }).mail).not.toHaveProperty('smtpPass')
 
-    // The secret rests encrypted in the stored row.
     const [row] = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
     expect((row.data as { mail: { smtpPass: string } }).mail.smtpPass).toMatch(/^enc2:/)
 
@@ -148,7 +140,6 @@ describe('adminSettingsRouter.update', () => {
       ),
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
-      // The server folds the localized issue into the top-level message.
       message: '设置数据无效：signIn.windowSeconds：时间窗口不能小于 60 秒',
       data: {
         descriptor: { messageKey: 'admin.settings.errors.invalid', fallbackMessage: 'The settings data is invalid' },
@@ -202,8 +193,6 @@ describe('adminSettingsRouter.update', () => {
   })
 
   it('rejects storage patches with CONFLICT while a migration is in flight', async () => {
-    // The lock probe is injected by the controller from the storage domain —
-    // this exercises the real perimeter wiring, not a stubbed predicate.
     const now = new Date()
     await db.insert(storageMigration).values({
       id: 1,

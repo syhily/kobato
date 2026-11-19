@@ -4,8 +4,6 @@ import { setting } from '@kobato/db/schema/config.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
 import { computeSecretMasks } from '@kobato/server/domains/settings/services/masks.ts'
-// Only seams: section-change handlers (real registry, no schedulers) and
-// the logger capture ring; everything else runs on the real engine.
 import {
   __clearSectionChangeHandlersForTests,
   registerSectionChangeHandler,
@@ -27,7 +25,6 @@ beforeEach(async () => {
   resetBlogSettingsForTests()
   __clearSectionChangeHandlersForTests()
   __clearLogCaptureForTests()
-  // Seed the installed baseline (general + assets) so the refresh returns a bundle.
   await db.insert(setting).values([
     {
       scope: 'blog.general',
@@ -65,8 +62,6 @@ beforeEach(async () => {
 
 describe('server/domains/settings/services/core', () => {
   it('rejects the write through the shared defaults validator when the section seed is corrupt', async () => {
-    // No stored row → merge base falls back to registry defaults; the
-    // message must match the hydration backfill's.
     const mutableRegistry = SECTION_REGISTRY as unknown as Record<string, { defaults: unknown }>
     const original = SECTION_REGISTRY.limits
     mutableRegistry.limits = { ...original, defaults: { maxRequestBodySize: 'ten' } }
@@ -99,7 +94,6 @@ describe('server/domains/settings/services/core', () => {
   })
 
   it('surfaces a section change handler failure as a save warning', async () => {
-    // The row commits before the handler runs, so failures surface as warnings, not errors.
     registerSectionChangeHandler('limits', () => {
       throw new Error('reschedule blew up')
     })
@@ -212,8 +206,6 @@ describe('server/domains/settings/services/core — assets write-path URL rules'
   })
 
   it('keeps hydrating a stored http:// endpoint (the rule is write-only)', async () => {
-    // A legacy install's row must not fall back to section defaults on
-    // boot — hydration deliberately skips the write schema.
     await db
       .update(setting)
       .set({
@@ -253,7 +245,6 @@ describe('computeSecretMasks', () => {
 
     const masks = computeSecretMasks(bundle)
 
-    // Every SECRET_FIELDS entry must produce a mask — a new row can't silently miss the output.
     for (const { maskKey } of SECRET_FIELDS) {
       expect(masks[maskKey]).not.toBeNull()
     }

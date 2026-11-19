@@ -1,8 +1,5 @@
 export type LrcLine = [time: number, text: string]
 
-/** Parses LRC text into sorted `[seconds, text]` lines (multi-timestamp lines
- *  fan out; `<mm:ss.xx>` word-timing tags are stripped). Null, undefined, and
- *  empty input all parse to `[]`. */
 export function parseLrc(lrcInput?: string | null): LrcLine[] {
   if (!lrcInput) {
     return []

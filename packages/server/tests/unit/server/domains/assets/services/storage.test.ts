@@ -11,14 +11,11 @@ import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@ko
 import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The registry's 's3' backend is swapped for the shared in-memory one; spies only inject
-// failures the store cannot produce, and assertions stay on observable state.
 const mem = makeMemoryBackend()
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const svgBuffer = Buffer.from('<?xml version="1.0"?><svg></svg>')
 
-/** The `descriptor.messageKey` of the error `fn` throws, or `undefined` when it does not throw. */
 function descriptorKey(fn: () => unknown): string | undefined {
   try {
     fn()
@@ -100,7 +97,6 @@ describe('assets storage', () => {
     const buffer = await fetchBrandingObject('icon192', ref)
     expect(buffer).toBe(pngHeader)
 
-    // Stored object dropped — the second call must hit the in-process cache.
     mem.store.delete('branding/icon-192.png')
     const cached = await fetchBrandingObject('icon192', ref)
     expect(cached).toBe(pngHeader)
@@ -116,12 +112,10 @@ describe('assets storage', () => {
       driver: 's3',
     })
     expect(buffer).toBeNull()
-    // Only the seam's typed `StorageObjectNotFound` triggers the legacy-key probe.
     expect(getSpy).toHaveBeenCalledTimes(1)
   })
 
   it('auto-migrates from legacy extensionless key when new key is not found', async () => {
-    // Only the legacy extensionless key exists, so the fetch migrates it.
     mem.store.set('branding/icon-192', { body: pngHeader, contentType: 'image/png' })
 
     const buffer = await fetchBrandingObject('icon192', {

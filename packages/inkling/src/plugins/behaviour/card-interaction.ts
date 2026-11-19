@@ -5,37 +5,11 @@ import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
 import { EDIT_CARD_COMMAND, SELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { $getNodeByKey, CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
 
-// Card interaction — the headless select→edit choreography behind
-// InklingCardWrapper. One registration per card nodeKey: the editor-level
-// CLICK_COMMAND handler (editor-level so the card can prevent the editor's
-// default click behaviour without preventing React components inside the
-// card from handling their own) and the container's mousedown
-// select-and-swallow. Selection/edit truth is read from the card selection
-// store AT EVENT TIME, so the registration is stable for the card's
-// lifetime — no re-registration per render.
-
-// InklingCardWrapper is only rendered for generated card nodes (decorateCard
-// throws otherwise), but the type system can't see that — $isInklingCard's
-// runtime marker check is the discriminator (no asserting).
-
 export interface CardInteractionPorts {
   store: CardSelectionStore
   getContainer: () => HTMLElement | null
 }
 
-/**
- * Registers one card's click choreography. Returns the teardown.
- *
- * Click policy: a click inside the container (that wasn't swallowed by the
- * mousedown path) enters edit mode when the card is selected, has an edit
- * mode, and the click missed the click-through and settings-panel zones;
- * otherwise it selects the card. A click landing while the card's node is
- * gone (a different editor's card re-rendered over the event) is not
- * consumed. Mousedown policy: an unselected, non-editing card selects on
- * mousedown and swallows the follow-up click (so it doesn't instantly
- * enter edit mode), preventing the editor's caret move except over
- * inputs/textareas and click-through zones.
- */
 export function registerCardInteraction(
   editor: LexicalEditor,
   nodeKey: NodeKey,
@@ -79,11 +53,6 @@ export function registerCardInteraction(
 
   getContainer()?.addEventListener('mousedown', handleMousedown)
 
-  // skipClick may only swallow the click that immediately follows its
-  // mousedown; when that click never comes (drag aborted, released
-  // elsewhere) the flag would stick and swallow a later, unrelated click.
-  // Release it on mouseup — deferred, because the gesture's own click is
-  // dispatched right after mouseup and must still be swallowed.
   const releaseSkipClick = () => {
     if (skipClick) {
       setTimeout(() => {

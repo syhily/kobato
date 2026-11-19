@@ -46,5 +46,4 @@ export const SECTION_TO_BUNDLE_KEY = {
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
 
-/** Stable iteration order for bundle keys (mirrors `SETTINGS_SECTIONS`). */
 export const BUNDLE_KEYS = SETTINGS_SECTIONS.map((section) => SECTION_TO_BUNDLE_KEY[section]) as readonly BundleKey[]

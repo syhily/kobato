@@ -7,8 +7,6 @@ import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/Adm
 import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
 import { createElement } from 'react'
 
-/** Fire-and-forget admin notification when a mention lands in pending; a
- *  mail hiccup must never fail the mention. `updated` marks the demote case. */
 export async function sendNewWebmention(
   mention: WebmentionRow,
   target: { title: string; canonicalUrl: string },

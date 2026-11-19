@@ -5,10 +5,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Sessions service against the real session/user tables; this file owns
-// the branches auth-sessions/auth-coverage do not: except-session
-// revocation, deleted-user fallback, and the 10k soft cap.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -20,8 +16,6 @@ async function seedUser(role: 'admin' | 'visitor' = 'admin', email = 'a@example.
   return u!
 }
 
-/** Insert a live session row with the login meta stamped inline — the same
- * columns `recordSessionLogin` writes, batched here so bulk seeds stay cheap. */
 function liveSessionRow(sid: string, userId: number, opts: { ip?: string; userAgent?: string } = {}) {
   const now = new Date()
   return {
@@ -81,7 +75,6 @@ describe('auth/services/sessions — listAllSessions', () => {
   it('uses the deleted-user fallback when no user row matches the session owner', async () => {
     const u = await seedUser('admin', 'gone@example.com')
     await db.insert(sessionTable).values(liveSessionRow('sid-orphan', u.id, { ip: '3.3.3.3' }))
-    // Drop the user with FK checks off — dangling owners cascade otherwise.
     db.run(sql`PRAGMA foreign_keys = OFF`)
     try {
       await db.delete(user)
@@ -92,7 +85,6 @@ describe('auth/services/sessions — listAllSessions', () => {
     const list = await listAllSessions(db)
 
     expect(list).toHaveLength(1)
-    // The service leaves the placeholder to the caller (which localizes it).
     expect(list[0]!.userName).toBe('')
     expect(list[0]!.userEmail).toBe('')
     expect(list[0]!.userRole).toBeNull()

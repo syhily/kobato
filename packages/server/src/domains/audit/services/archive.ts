@@ -17,7 +17,6 @@ const ARCHIVE_PAGE_SIZE = 5000
 // Keep IN lists under SQLite's bound-parameter limit (32766).
 const DELETE_BATCH_SIZE = 5000
 
-// Strict `isAvailable()` gate: a half-configured bucket falls back to purge-only.
 function s3ArchiveAvailable(): boolean {
   try {
     return backendFor('s3').isAvailable()
@@ -82,7 +81,6 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
         day,
         err: err instanceof Error ? err.message : String(err),
       })
-      // One bad day must not block the rest of the archive.
       continue
     }
   }
@@ -107,7 +105,6 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
   let cursorId: number | undefined
   const archivedIds: number[] = []
 
-  // Cursor by id — createdAt is not unique.
   for (;;) {
     const conditions = [gte(auditLog.createdAt, dayStart), lt(auditLog.createdAt, dayEnd)]
     if (cursorId) {
@@ -167,7 +164,6 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
 
   await backendFor('s3').put({ key, body: buffer, contentType: 'application/gzip', visibility: 'private' })
 
-  // Delete only after a successful upload, by the exact collected IDs.
   return deleteArchivedRows(db, archivedIds)
 }
 

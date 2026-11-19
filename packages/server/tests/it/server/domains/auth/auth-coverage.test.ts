@@ -41,13 +41,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
-// Wire the audit batcher so establishLoginSession's fire-and-forget
-// events land; flush before clearAllTables truncates referenced rows.
 beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // The invalidation flag is a process-level fast-path — reset it per test.
   __resetSetupTokenForTests()
 })
 
@@ -62,8 +59,6 @@ async function seedUser(role: 'admin' | 'visitor' | 'author' = 'admin', email = 
   return u
 }
 
-/** Seed a bare session row — `recordSessionLogin` is UPDATE-only, so the
- * row must already exist with its owner stamped. */
 async function seedSessionRow(sid: string, userId: number | null, expiresAt?: Date) {
   await db.insert(sessionTable).values({
     id: sid,
@@ -349,13 +344,11 @@ describe('auth/repo — session meta', () => {
   it('recordSessionActivity is a void fire-and-forget that bumps lastActiveAt and expiresAt', async () => {
     const u = await seedUser('admin', 'activity@example.com')
     const sid = 'sid-activity'
-    // Seed a short-lived row so the sliding-refresh bump is observable.
     const seededExpiry = new Date(Date.now() + 60 * 60 * 1000)
     await seedSessionRow(sid, u.id, seededExpiry)
     const staleLogin = new Date('2024-01-01T00:00:00Z')
     await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1', loginAt: staleLogin })
     recordSessionActivity(db, sid)
-    // One event-loop turn drains the fire-and-forget UPDATE deterministically.
     await new Promise((resolve) => setImmediate(resolve))
     const meta = await findSessionMeta(db, sid)
     expect(meta).not.toBeNull()
@@ -534,7 +527,6 @@ describe('auth/otp-flow — handleOtpCancel', () => {
     }
     expect(session.get('pendingOtpUser')).toBeUndefined()
     expect(session.get('otpFailCount')).toBeUndefined()
-    // The domain only marks dirty — the boundary middleware commits the session.
     expect(markSessionDirty).toHaveBeenCalledTimes(1)
     expect(result).not.toHaveProperty('setCookie')
   })

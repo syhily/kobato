@@ -3,16 +3,6 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults.ts'
 import { z } from 'zod'
 
-// One rate-limit bucket's validation schema — the single source shared by the
-// server section schema (`server/domains/settings/sections/rate-limit`) and the
-// admin form's client-side mirror (`ui/admin/settings/ThresholdForm`), so an
-// out-of-range value is rejected with the SAME reason on both sides.
-//
-// Messages are typed UI-catalog ids, never prose: the client's settings card
-// localizes ids through `useI18n().localizeMessage` (interpolating `{min}`/`{max}`
-// from the Zod issue), and the server boundary maps an id into an
-// `ErrorMessageDescriptor` before the issue leaves the process. A raw id must
-// never reach a client that cannot translate it.
 export const rateLimitBucketMessages = {
   windowInteger: 'admin.settings.rateLimit.error.windowInteger',
   windowMin: 'admin.settings.rateLimit.error.windowMin',
@@ -35,9 +25,6 @@ export const rateLimitBucketSchema = z.object({
     .max(rateLimitBounds.maxAttempts.max, rateLimitBucketMessages.attemptsMax),
 })
 
-// Legacy per-dimension twins → merged scenario bucket. Rows stored before the
-// merge still carry the old keys; the section schema preprocesses them through
-// this upgrade, which persists as the new shape on the next save.
 const LEGACY_BUCKET_TWINS: Record<string, readonly string[]> = {
   signIn: ['signInIp', 'signInEmail'],
   otpSend: ['otpSendIp', 'otpSendEmail'],
@@ -59,7 +46,6 @@ function isLegacyBucket(value: unknown): value is { windowSeconds: number; maxAt
   return isRecord(value) && typeof value.windowSeconds === 'number' && typeof value.maxAttempts === 'number'
 }
 
-// The stricter twin survives: fewer attempts wins; ties go to the longer window.
 function stricterBucket(
   a: { windowSeconds: number; maxAttempts: number },
   b: { windowSeconds: number; maxAttempts: number },
@@ -70,9 +56,6 @@ function stricterBucket(
   return a.windowSeconds >= b.windowSeconds ? a : b
 }
 
-/** Map legacy per-dimension keys onto the merged scenario keys (new keys win when
- *  both are present; legacy keys are left for the object schema to strip).
- *  Identity on already-current rows. */
 export function upgradeLegacyRateLimitBuckets(raw: unknown): unknown {
   if (!isRecord(raw)) {
     return raw

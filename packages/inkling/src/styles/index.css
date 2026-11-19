@@ -22,12 +22,6 @@
 
 /* The dark variant is package-owned and imported above before utility generation. */
 
-/* Theme token defaults, scoped to the editor container. Hosts override any
-   token by re-declaring it under `.inkling-lexical` (see ./theme.css — the
-   theming contract's single source of truth); the declarations live in
-   `@layer theme` so unlayered host styles always win. Keep this block in
-   name/value parity with ./theme.css — the parity is pinned by
-   tests/inkling/unit/theme-tokens.test.ts. */
 @layer theme {
   .inkling-lexical {
     --color-accent: var(--inkling-accent-color, #ff0095);
@@ -203,9 +197,6 @@
 
     --breakpoint-xs: 500px;
 
-    /* Plain variables are aliases of the theme tokens: the `--color-*`
-       tokens are the single override point and the two systems cannot
-       drift apart. */
     --white: var(--color-white);
 
     --grey-50: var(--color-grey-50);

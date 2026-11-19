@@ -18,7 +18,6 @@ beforeEach(async () => {
   await bumpCounter('searchResult')
 })
 
-/** The same caller-supplied live gate the production search loader passes. */
 function liveWhere() {
   return liveContentWhere({
     deletedAt: post.deletedAt,
@@ -70,7 +69,6 @@ describe('likeEscape — direct SQL against database', () => {
   })
 
   it('treats backslash as a literal character when escaped', async () => {
-    // Single backslash in DB value
     await db.insert(user).values([
       { name: 'a\\b', email: 'a@test.com', password: 'x' },
       { name: 'ab', email: 'b@test.com', password: 'x' },

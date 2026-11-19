@@ -24,14 +24,12 @@ beforeEach(async () => {
   __resetCacheCountersForTests()
 })
 
-/** Fire-and-forget writes land asynchronously; wait for the observable entry. */
 async function waitForEntry<T>(read: () => Promise<T | null>, expected: T): Promise<void> {
   await vi.waitFor(async () => {
     expect(await read()).toEqual(expected)
   })
 }
 
-/** A feed-relevant settings change: content.feed is in the feed scope's deps. */
 function withChangedFeedSettings() {
   const content = TEST_BLOG_SETTINGS_BUNDLE.content!
   return {
@@ -40,7 +38,6 @@ function withChangedFeedSettings() {
   }
 }
 
-/** An UNRELATED settings change: security is not rendered by any scope. */
 function withChangedSecuritySettings() {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -51,7 +48,6 @@ function withChangedSecuritySettings() {
   }
 }
 
-/** Feed params for the CURRENT content-addressed feed generation. */
 function feedParams(overrides: { scope?: string; locale?: AppLocale; settingsRevision?: string } = {}) {
   return {
     scope: overrides.scope ?? 'all',
@@ -101,8 +97,6 @@ describe('cache registry (integration)', () => {
     expect(await through('feed', after, loader)).toEqual({ rss: '<new/>', atom: '<new/>' })
     expect(loader).toHaveBeenCalledTimes(1)
 
-    // The old generation's bytes are still on disk (TTL reaps them) but no
-    // request can address them any more.
     expect(await get('feed', before)).toEqual({ rss: '<old/>', atom: '<old/>' })
   })
 
@@ -112,7 +106,6 @@ describe('cache registry (integration)', () => {
     await through('feed', params, loader)
     await waitForEntry(() => get('feed', params), { rss: '<rss/>', atom: '<atom/>' })
 
-    // security is not in the feed scope's dependency list.
     setBlogSettingsBundleForTests(withChangedSecuritySettings())
     expect(feedParams().settingsRevision).toBe(params.settingsRevision)
 
@@ -132,17 +125,12 @@ describe('cache registry (integration)', () => {
       return { rss: '<stale/>', atom: '<stale/>' }
     })
 
-    // A feed-relevant settings save lands while the render is still running; a
-    // new request now addresses the new generation.
     setBlogSettingsBundleForTests(withChangedFeedSettings())
     const after = feedParams()
     const fresh = await through('feed', after, async () => ({ rss: '<fresh/>', atom: '<fresh/>' }))
     expect(fresh).toEqual({ rss: '<fresh/>', atom: '<fresh/>' })
-    // The fresh write is fire-and-forget; let it land before reclamation so the
-    // only possible post-clear writer is the parked stale render.
     await waitForEntry(() => get('feed', after), fresh)
 
-    // Storage reclamation runs immediately — no drain, no wait.
     clearLocalizedOutputs()
 
     release()
@@ -151,11 +139,8 @@ describe('cache registry (integration)', () => {
       expect(await get('feed', before)).toEqual({ rss: '<stale/>', atom: '<stale/>' })
     })
 
-    // The late write lands on the OLD key only; the new generation stays empty
-    // rather than being polluted by the stale render.
     expect(await get('feed', after)).toBeNull()
 
-    // A fresh request re-renders its own generation.
     const retry = vi.fn().mockResolvedValue({ rss: '<fresh-2/>', atom: '<fresh-2/>' })
     expect(await through('feed', after, retry)).toEqual({ rss: '<fresh-2/>', atom: '<fresh-2/>' })
     expect(retry).toHaveBeenCalledTimes(1)
@@ -173,8 +158,6 @@ describe('cache registry (integration)', () => {
       return { rss: '<late/>', atom: '<late/>' }
     })
 
-    // Synchronous and immediate: the call returns while the render is still
-    // parked on its gate. Correctness never depends on this delete.
     clearLocalizedOutputs()
     expect(settled).toBe(false)
 
@@ -195,7 +178,6 @@ describe('cache registry (integration)', () => {
     bumpCounter('searchResult')
     expect(await getCounter('searchResult')).toBe(1)
 
-    // An out-of-band writer edits the generation file directly.
     const { writeFileSync } = await import('node:fs')
     const path = await import('node:path')
     const { resolveCacheRoot } = await import('@kobato/server/infra/cache/file-store.ts')

@@ -35,12 +35,7 @@ export function FootnoteDefinitionNodeComponent({
     if (focusRequest?.targetKey !== targetKey) {
       return
     }
-    contentEditor.focus(
-      () => {
-        /* noop */
-      },
-      { defaultSelection: 'rootEnd' },
-    )
+    contentEditor.focus(() => undefined, { defaultSelection: 'rootEnd' })
     footnoteHandle.setState({ focusRequest: null })
   }, [focusRequest, targetKey, contentEditor, footnoteHandle])
   const handleDelete = React.useCallback(
@@ -85,9 +80,6 @@ export function FootnoteDefinitionNodeComponent({
 }
 
 export function renderFootnoteDefinitionCard(node: FootnoteDefinitionNode) {
-  // Same headless-round-trip invariant as toggle's nested editors: null only
-  // inside an editor that never reconciles decorators — guard so the field
-  // type stays honest.
   if (!node.__contentEditor) {
     return null
   }

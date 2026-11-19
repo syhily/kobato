@@ -7,7 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate.ts'
 
-// Semver-lite: numeric `x.y.z` triples, pre-release suffixes ignored.
 function parseTriple(version: string): [number, number, number] {
   const core = version.replace(/^v/, '').split('-', 2)[0] ?? ''
   const parts = core.split('.')
@@ -46,14 +45,11 @@ export async function checkForUpdate(): Promise<UpdateCheckResult> {
 }
 
 export async function applyUpdate(): Promise<{ fromVersion: string; toVersion: string }> {
-  // Re-check at apply time: the UI's earlier `check` result may be stale.
   const check = await checkForUpdate()
   if (!check.updateAvailable) {
     throw new DomainError('CONFLICT', descriptorFor('update.error.alreadyLatest'))
   }
   if (!check.canSelfUpdate) {
-    // The summary stays one typed message; each refusal rides `issues` so the
-    // transport folds in the locale's own separator and wording.
     throw new DomainError('FORBIDDEN', descriptorFor('update.error.gateBlocked'), check.reasons)
   }
   startUpdateJob(check.tagName)

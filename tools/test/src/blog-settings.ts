@@ -1,6 +1,3 @@
-// Shared blog settings fixtures. Seed the in-process snapshot before the
-// import chain reaches `requireBlogSettingsSection()`. Registry-identical
-// sections are imported from the seeds, the rest frozen for snapshot stability.
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { CACHE_BUCKET_FALLBACKS } from '@kobato/cache/types.ts'
@@ -30,7 +27,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     initialYear: 2011,
     icpNo: '皖ICP备2021002315号-2',
   },
-  // Uploads enabled by default so render suites exercise the enabled path.
   assets: {
     asset: { host: 'assets.example.com', scheme: 'https' },
     storage: {
@@ -111,7 +107,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },
   },
-  // Rate-limit thresholds suites assert against; override per test when needed.
   rateLimit: rateLimitDefaults,
   fonts: {
     og: { family: '' },
@@ -123,7 +118,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   backup: backupDefaults,
   limits: limitsDefaults,
   analytics: analyticsDefaults,
-  // Spread readonly seed arrays — `as const` slots won't assign to mutable DTO arrays.
   security: {
     ...securityDefaults,
     csrf: { ...securityDefaults.csrf, exemptPaths: [...securityDefaults.csrf.exemptPaths] },
@@ -132,8 +126,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   observability: observabilityDefaults,
 }
 
-/** Seed (or clear) the snapshot. Custom bundles are cloned + frozen; the shared fixture
- *  keeps identity (`toBe`). `undefined` = no hydration, `null` = "no settings". */
 export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
   const frozen =
     value == null ? value : value === TEST_BLOG_SETTINGS_BUNDLE ? deepFreeze(value) : deepFreeze(structuredClone(value))
@@ -141,7 +133,6 @@ export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null |
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(frozen === undefined ? undefined : Promise.resolve(frozen ?? null))
 }
 
-/** Clear the snapshot so the next hydrate re-reads from the DB. */
 export function resetBlogSettingsForTests(): void {
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)

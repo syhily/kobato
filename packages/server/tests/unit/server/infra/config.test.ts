@@ -15,9 +15,6 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Under VITEST without --config, loadConfig never touches the filesystem;
-// file-behavior tests pass --config at a temp dir. process.exit is stubbed.
-
 const tmpDirs: string[] = []
 const realArgv = process.argv
 
@@ -80,7 +77,6 @@ describe('infra/config — loadConfig', () => {
     expect(written.storage.database).toBe('')
     expect(written.security.sessionSecret).toBe('')
 
-    // '' means "unset" — the auto-created file must pass its own schema on reload.
     expect(() => loadConfig()).not.toThrow()
   })
 
@@ -92,7 +88,7 @@ describe('infra/config — loadConfig', () => {
 
     const env = loadConfig()
     expect(env['storage.database']).toBe('/data/from-file.db')
-    expect(env['server.port']).toBeUndefined() // not in file, no env → schema default later
+    expect(env['server.port']).toBeUndefined()
   })
 
   it('env vars override the file and are written back', () => {
@@ -109,7 +105,6 @@ describe('infra/config — loadConfig', () => {
 
     const written = JSON.parse(readFileSync(path, 'utf-8'))
     expect(written.storage.database).toBe('/data/from-env.db')
-    // parseValues: numeric strings land as native JSON numbers
     expect(written.server.port).toBe(5000)
   })
 
@@ -133,7 +128,6 @@ describe('infra/config — loadConfig', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
     writeConfig(path, { storage: { database: '/data/from-file.db' } })
-    // tmp+rename write-back fails only on a read-only directory, not a read-only file.
     chmodSync(dir, 0o500)
     withConfigArg(path)
     vi.stubEnv('storage__database', '/data/from-env.db')
@@ -154,11 +148,9 @@ describe('infra/config — loadConfig', () => {
     writeConfig(path, { security: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' } })
     withConfigArg(path)
 
-    // loadConfig returns the raw value; the string → string[] transform runs once, in loadServerConfig.
     const env = loadConfig()
     expect(env['security.sessionSecret']).toBe('a-secret-that-is-at-least-32-characters-long')
 
-    // An env override writes a raw string back — never the transformed shape.
     vi.stubEnv('security__sessionSecret', 'another-secret-that-is-at-least-32-chars')
     loadConfig()
     const written = JSON.parse(readFileSync(path, 'utf-8'))
@@ -168,8 +160,6 @@ describe('infra/config — loadConfig', () => {
   it('rejects a config file whose comma-joined sessionSecrets are individually under 32 chars', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    // 20+20: the joined string clears min(32) but each secret does not — the floor applies
-    // after the split.
     writeConfig(path, { security: { sessionSecret: `${'a'.repeat(20)},${'b'.repeat(20)}` } })
     withConfigArg(path)
 
@@ -213,7 +203,6 @@ describe('infra/config — loadConfig', () => {
   })
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
-    // Scratch cwd keeps the assertion independent of a repo-level config file.
     const dir = makeTmpDir()
     const realCwd = process.cwd()
     process.chdir(dir)
@@ -234,7 +223,6 @@ describe('infra/config — loadConfig', () => {
     const path = configPathIn(dir)
     writeConfig(path, { storage: { database: '/from-file.db' } })
     withConfigArg(path)
-    // The legacy flat name must NOT take effect.
     vi.stubEnv('DATABASE_URL', 'postgres://legacy-flat/db')
 
     expect(loadConfig()['storage.database']).toBe('/from-file.db')
@@ -243,7 +231,6 @@ describe('infra/config — loadConfig', () => {
   it('migrates legacy keys on load, rewrites the file, and keeps booting', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    // Legacy shape: old sections plus a redis block.
     writeConfig(path, {
       database: { url: 'postgres://from-file/db' },
       auth: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' },
@@ -260,7 +247,6 @@ describe('infra/config — loadConfig', () => {
     expect(env['storage.defaultFont']).toBe('/usr/share/fonts/x.ttf')
     expect(env['server.loggingLevel']).toBe('debug')
 
-    // One Chinese summary line naming every applied migration.
     expect(stderr).toHaveBeenCalledWith(
       expect.stringContaining(
         `已迁移配置文件 ${path} 中的旧配置项:auth.sessionSecret → security.sessionSecret, paths.data → storage.data, paths.defaultFont → storage.defaultFont, logging.level → server.loggingLevel, redis(已删除)`,
@@ -274,7 +260,6 @@ describe('infra/config — loadConfig', () => {
       server: { loggingLevel: 'debug' },
     })
 
-    // The rewritten file loads clean: strict schema passes, no re-migration.
     stderr.mockClear()
     expect(() => loadConfig()).not.toThrow()
     expect(stderr).not.toHaveBeenCalledWith(expect.stringContaining('已迁移配置文件'))
@@ -329,8 +314,6 @@ describe('infra/config — loadServerConfig', () => {
 
   it('rejects a sessionSecret list whose individual secrets are under 32 chars', () => {
     stubRequiredEnv()
-    // 20+20: the joined string clears min(32) but each secret does not — validate after
-    // the split.
     vi.stubEnv('security__sessionSecret', `${'a'.repeat(20)},${'b'.repeat(20)}`)
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
 
@@ -591,7 +574,6 @@ describe('infra/config — parseConfigFileJson (the boot schema, without exiting
   it('accepts a partial config, stripping empty-string values', () => {
     const parsed = parseConfigFileJson('{ "server": { "port": 8080 }, "security": { "sessionSecret": "" } }')
     expect(parsed.data.server).toEqual({ port: 8080 })
-    // '' means unset — stripped before validation, exactly as at boot.
     expect(parsed.data.security).toEqual({})
     expect(parsed.migrated).toBe(false)
   })
@@ -617,7 +599,6 @@ describe('infra/config — parseConfigFileJson (the boot schema, without exiting
 
     expect(kindOf('not json')).toBe('json')
     expect(kindOf('[1, 2, 3]')).toBe('shape')
-    // Unknown keys and values the strict schema rejects both land in `schema`.
     expect(kindOf(JSON.stringify({ nope: true }))).toBe('schema')
     expect(kindOf(JSON.stringify({ security: { encryptionKey: 'short' } }))).toBe('schema')
   })
@@ -642,8 +623,6 @@ describe('infra/config — parseRestorableConfigJson (boot-equivalence for resto
   })
 
   it('rejects a config missing a required value the all-optional file schema alone would pass', () => {
-    // No sessionSecret in the file NOR the env — the file schema accepts
-    // this, but the next boot would exit(1) AFTER the restore's engine swap.
     vi.stubEnv('security__sessionSecret', '')
     vi.stubEnv('security__encryptionKey', '')
 
@@ -669,7 +648,6 @@ describe('infra/config — CONFIG_TABLE', () => {
   })
 
   it('declares each dotted path exactly once', () => {
-    // A duplicate path would silently shadow itself in buildFileSchema and defaultFileContents.
     const paths = CONFIG_TABLE.map((entry) => entry.path.join('.'))
     expect(new Set(paths).size).toBe(paths.length)
   })

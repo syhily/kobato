@@ -2,9 +2,6 @@ import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { createMiddleware } from 'hono/factory'
 
-// WordPress probe detector: the real admin borrows WP URL shapes; everything else that
-// looks like a WP install gets a custom 404 whose `statusText` the root boundary switches on.
-
 const LEGIT_WP_PATHS = new Set(['/admin/signin', '/admin', '/admin/', '/admin/setup'])
 
 export function isWordPressDecoyPath(pathname: string): boolean {
@@ -12,7 +9,6 @@ export function isWordPressDecoyPath(pathname: string): boolean {
     return false
   }
 
-  // No `/admin/*` blanket rule — the real SPA shell serves clean paths there; probes are `.php`.
   if (pathname.startsWith('/wp-content/')) {
     return true
   }

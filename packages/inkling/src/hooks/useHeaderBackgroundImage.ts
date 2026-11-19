@@ -64,9 +64,6 @@ export function useHeaderBackgroundImage({
     setImageRemoved(false)
   }
 
-  // layout transition, visibility half: a non-split layout re-derives
-  // visibility from the node src, and the split-restore transition shows the
-  // image — adjusted during render (React re-renders before committing)
   const [prevLayout, setPrevLayout] = useState(layout)
   if (prevLayout !== layout) {
     setPrevLayout(layout)
@@ -77,9 +74,6 @@ export function useHeaderBackgroundImage({
     }
   }
 
-  // layout transition, side-effect half: switching TO `split` with no src but
-  // a remembered image restores through the write seam (or opens the file
-  // dialog when the removal was deliberate) — node writes stay in an effect
   useEffect(() => {
     if (layout === 'split' && !backgroundImageSrc && lastBackgroundImage) {
       if (!imageRemoved) {

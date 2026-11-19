@@ -13,7 +13,6 @@ const CONTENT_TYPES = {
   atom: 'application/atom+xml; charset=utf-8',
 } as const
 
-/** Stored but revalidated before every reuse: a locale switch must never serve the old language. */
 export const FEED_CACHE_CONTROL = 'public, no-cache'
 
 interface FeedScope {
@@ -21,7 +20,6 @@ interface FeedScope {
   tag?: string
 }
 
-// Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed. The scope segment is composed with locale/version/settings-revision inside the registry declaration.
 function cacheKeyFor(scope: FeedScope): string {
   if (scope.category !== undefined) {
     return `cat:${scope.category}`
@@ -33,8 +31,6 @@ function cacheKeyFor(scope: FeedScope): string {
 }
 
 async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope: FeedScope = {}) {
-  // ONE lazy capture pins the settings bundle, the locale and the settings
-  // revision: the renderer's inputs and the cache key can never disagree.
   const { db, settings, localization } = c.var.requestContext
   const { locale, revisions } = localization
   const feed = await through(
@@ -43,8 +39,6 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope: F
     () => generateFeeds(db, { ...scope, locale, settings }),
   )
   const body = kind === 'rss' ? feed.rss : feed.atom
-  // ETag over the SERVED bytes: the cached body carries its own `updated`
-  // timestamp, so hashing the buffer (not the inputs) stays stable on a hit.
   const etag = contentEtag(body)
   c.header('Content-Type', CONTENT_TYPES[kind])
   c.header('Cache-Control', FEED_CACHE_CONTROL)
@@ -56,9 +50,6 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope: F
   return c.body(body)
 }
 
-// Scope is known at compile time per handler; the per-IP resource limiter
-// guards all feeds. Passed per route, NEVER router-level `.use()` — mounted
-// at `/`, a bare `.use()` would count every SSR page view against the bucket.
 const feedRateLimit = rateLimitByIp('feed', 'resource')
 
 export const feedRouter = new Hono<Env>()

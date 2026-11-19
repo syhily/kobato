@@ -1,12 +1,3 @@
-// Process-wide frontend RUM verification gate.
-//
-// Configuration parsing produces a CANDIDATE browser bootstrap plus a
-// server-only relay target. The root loader may only expose the bootstrap — and
-// the intake relay may only forward — after the runtime has queried OpenObserve
-// and verified the allowlist pipeline. The token guard keeps cleanup
-// runtime-scoped: an HMR-disposed runtime can never clear the gate installed by
-// its replacement.
-
 import type { FrontendRumRelay } from '@kobato/server/infra/trace/config.ts'
 import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 

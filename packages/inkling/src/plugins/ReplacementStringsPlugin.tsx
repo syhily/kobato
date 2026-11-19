@@ -8,8 +8,6 @@ function useReplacementStrings(editor: LexicalEditor) {
   useEffect(() => {
     const removeTextTransform = editor.registerNodeTransform(TextNode, $replacementStringTransform)
 
-    // Only register ExtendedTextNode transform if the editor has it registered
-    // (nested editors may not have ExtendedTextNode in their node list)
     let removeExtendedTextTransform: (() => void) | undefined
     if (editor.hasNode(ExtendedTextNode)) {
       removeExtendedTextTransform = editor.registerNodeTransform(ExtendedTextNode, $replacementStringTransform)

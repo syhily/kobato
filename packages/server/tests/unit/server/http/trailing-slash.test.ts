@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 async function createApp(): Promise<Hono<Env>> {
   const app = new Hono<Env>()
   app.use(trailingSlashNormaliser)
-  // Any request that survives the middleware should land here.
   app.all('*', (c) => c.json({ path: c.req.path, method: c.req.method }, 200))
   return app
 }

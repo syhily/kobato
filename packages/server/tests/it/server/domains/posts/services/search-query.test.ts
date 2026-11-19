@@ -19,7 +19,6 @@ const { liveContentWhere } = await import('@kobato/server/domains/content/schema
 const { setBlogSettingsBundleForTests } = await import('@kobato/test/blog-settings.ts')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/test/blog-settings.ts')
 
-/** The same caller-supplied live gate the production search loader passes. */
 function liveWhere() {
   return liveContentWhere({
     deletedAt: post.deletedAt,
@@ -32,7 +31,6 @@ function liveWhere() {
 beforeEach(async () => {
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // Drop the process-wide memo so each test re-reads the cleared cache root.
   __resetCacheCountersForTests()
   __clearLogCaptureForTests()
 })
@@ -89,7 +87,6 @@ describe('services/search — searchPosts', () => {
 
     const result = await searchPosts(db, liveWhere(), 'test', 2, 1)
 
-    // publishedAt DESC, offset=1 → post-b, post-a.
     expect(result.hits).toEqual(['post-b', 'post-a'])
     expect(result.page).toBe(1)
     expect(result.totalPages).toBe(2)
@@ -124,7 +121,6 @@ describe('services/search — search result cache invalidation', () => {
   it('serves fresh results after the search generation is bumped', async () => {
     await seedPost({ slug: 'cache-alpha', title: 'Cache Alpha' })
 
-    // First query populates the result cache; a corpus change stays invisible while the entry lives.
     const first = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(first.hits).toEqual(['cache-alpha'])
     await waitForCachedSearch('cache', 0)
@@ -152,13 +148,11 @@ describe('services/search — searchResult cache rows (real registry)', () => {
   it('stamps cached entries with the current generation and never writes the counter on reads', async () => {
     await seedPost({ slug: 'gen-post', title: 'Generation Probe' })
 
-    // The counter starts at 0 — a read must NOT create the row.
     expect(await getCounter('searchResult')).toBe(0)
 
     const result = await searchPosts(db, liveWhere(), 'generation', 10)
     expect(result.hits).toEqual(['gen-post'])
 
-    // Generation 0 was stamped into the key; reads never create the counter file.
     await vi.waitFor(async () => {
       expect(await get('searchResult', { generation: 0, parts: likeCacheKeyParts('generation') })).not.toBeNull()
     })
@@ -188,7 +182,6 @@ describe('services/search — searchResult cache rows (real registry)', () => {
     await seedPost({ slug: 'hit-post', title: 'Hit Probe' })
 
     await searchPosts(db, liveWhere(), 'hit probe', 10)
-    // The miss write is fire-and-forget; wait for it before the repeat read.
     await vi.waitFor(async () => {
       expect(await get('searchResult', { generation: 0, parts: likeCacheKeyParts('hit probe') })).not.toBeNull()
     })

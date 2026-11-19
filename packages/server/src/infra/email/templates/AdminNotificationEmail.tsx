@@ -6,8 +6,6 @@ import { EmailLayout } from '@kobato/server/infra/email/templates/layout/EmailLa
 import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 
-// One card line: text rows render `{label}{value}` (first emphasised, rest muted);
-// `html` rows carry a pre-sanitised comment body — see `RawEmailHtml`.
 export type AdminNotificationRow = { label?: string; value: string } | { html: string }
 
 interface Props {
@@ -22,8 +20,6 @@ interface Props {
   footerNote?: string
 }
 
-// The single layout all admin notification emails render through — a new
-// notification type is one data-mapping function, not a new template.
 export function AdminNotificationEmail({
   t,
   receiver,

@@ -10,9 +10,6 @@ import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
  * normalization provides the empty-node filtering (facebook/lexical#2807).
  */
 export function $insertHtmlDocument(editor: LexicalEditor, doc: Document): void {
-  // reset the root to a single scaffold paragraph so the insert's anchor is
-  // deterministic — appended after existing content, $insertGeneratedNodes
-  // would leave a leading empty paragraph behind on mounted editors
   const paragraph = $createParagraphNode()
   $getRoot().clear()
   $getRoot().append(paragraph)

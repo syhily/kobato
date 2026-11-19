@@ -30,9 +30,6 @@ export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
   return (SVG_SLOTS as readonly string[]).includes(slot)
 }
 
-// SVG uploads are served AS-IS — no sanitization (accepted risk; the
-// dangerous-construct rejection in `validateSvg` is the only guard).
-
 export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
   faviconSvg: 'image/svg+xml',
   logoSvg: 'image/svg+xml',
@@ -50,7 +47,6 @@ export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
   defaultMusicCover: 'image/png',
 }
 
-// Per-slot byte ceiling so an oversized upload can't blow up the S3 bill.
 export const SLOT_MAX_BYTES: Readonly<Record<BrandingSlot, number>> = {
   faviconSvg: 50 * 1024,
   logoSvg: 100 * 1024,
@@ -68,7 +64,6 @@ export const SLOT_MAX_BYTES: Readonly<Record<BrandingSlot, number>> = {
   defaultMusicCover: 100 * 1024,
 }
 
-// SVG patterns with side-effects when opened directly (e.g. in a tab) — reject up-front.
 const SVG_DANGEROUS = [
   /<script\b/i,
   /\son[a-z]+\s*=/i,
@@ -93,7 +88,6 @@ function validateSvg(buffer: Buffer): void {
   }
 }
 
-// Magic-byte sniff — never serve `200 image/png` for an HTML page or zip.
 function detectBinaryContentType(buffer: Buffer): 'image/png' | 'image/x-icon' | null {
   if (
     buffer.length >= 8 &&
@@ -150,7 +144,6 @@ function slotToKebab(slot: BrandingSlot): string {
   return slotBaseName(slot).replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
 }
 
-// Extension per Content-Type — extensionless keys break Content-Type detection in the local-storage router.
 const EXT_BY_CONTENT_TYPE: Record<string, string> = {
   'image/svg+xml': '.svg',
   'image/x-icon': '.ico',
@@ -203,7 +196,6 @@ export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDr
   const key = s3KeyForSlot(slot)
   const legacyKey = legacyKeyForSlot(slot)
 
-  // Delete current and legacy keys — an old upload may live on a different driver.
   const results = await Promise.allSettled([backend.delete(key), backend.delete(legacyKey)])
   for (const [i, k] of [key, legacyKey].entries()) {
     const r = results[i]
@@ -221,7 +213,6 @@ export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDr
   }
 }
 
-// Per-(slot, etag) byte cache, bounded FIFO — etag-keyed so re-uploads miss deterministically.
 const bufferCache = createBoundedMap<string, Buffer>(64)
 
 function cacheSet(slot: BrandingSlot, etag: string, buffer: Buffer): void {
@@ -232,8 +223,6 @@ function cacheGet(slot: BrandingSlot, etag: string): Buffer | undefined {
   return bufferCache.get(`${slot}:${etag}`)
 }
 
-// Returns `null` (not throw) so the route falls back to the bundled default;
-// auto-migrates legacy extensionless keys.
 export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjectRef): Promise<Buffer | null> {
   const cached = cacheGet(slot, ref.etag)
   if (cached !== undefined) {
@@ -252,7 +241,6 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
       const legacyKey = legacyKeyForSlot(slot)
       try {
         const legacyBuffer = await backend.get(legacyKey)
-        // Copy first, delete after — a failed copy leaves the legacy object retryable.
         await backend.put({
           key,
           body: legacyBuffer,

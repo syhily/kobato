@@ -2,9 +2,6 @@ import type { UserConfig } from 'vite'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Stub the Hono dev-server factory and `node:fs` so the entry-resolution +
-// configureServer paths run deterministically without a real Vite project.
-
 const honoDevServerMock = vi.hoisted(() => vi.fn((..._args: unknown[]) => ({ configureServer: vi.fn() })))
 const nodeAdapterMock = vi.hoisted(() => ({ __esModule: true, default: vi.fn() }))
 const existsSyncMock = vi.hoisted(() => vi.fn((_path: string) => false))
@@ -35,8 +32,6 @@ function restoreStderr() {
   process.stderr.write = originalStderrWrite
 }
 
-// appDirectory/buildDirectory must be absolute under rootDirectory so
-// `path.relative(rootDirectory, appDirectory)` yields 'app'.
 function reactRouterContext(overrides: Record<string, unknown> = {}) {
   return {
     __reactRouterPluginContext: {
@@ -193,7 +188,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
         getModuleInfo: () => ({ importers: ['app/server.ts'] }),
       }
       expect(output.manualChunks('node_modules/foo/index.ts', meta)).toBe('index')
-      // Unrelated importer -> undefined.
       const meta2 = {
         getModuleInfo: () => ({ importers: ['some/other.ts'] }),
       }
@@ -218,14 +212,12 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
       expect(result.environments).toBeDefined()
-      expect(result.build).toBeUndefined() // not flattened into top-level build.
+      expect(result.build).toBeUndefined()
     })
   })
 
   describe('findDefaultServerEntry (via config)', () => {
     it('picks app/server.ts when it exists', async () => {
-      // fs probes resolve against the vite root ('/project' in this fixture),
-      // never the process cwd.
       existsSyncMock.mockImplementation((p: string) => p === '/project/app/server.ts')
       const plugin = reactRouterHonoServer()
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
@@ -244,8 +236,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
     })
 
     it('uses the virtual module + warns once when no entry exists', async () => {
-      // The `warned` module-level flag is sticky, so reset modules to get a
-      // fresh copy and assert the warning is actually emitted to stderr.
       vi.resetModules()
       existsSyncMock.mockReturnValue(false)
       stderrWriteMock.mockClear()
@@ -261,7 +251,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
     })
 
     it('honours an explicit serverEntryPoint option over file discovery', async () => {
-      existsSyncMock.mockReturnValue(true) // would otherwise pick app/server.ts
+      existsSyncMock.mockReturnValue(true)
       const plugin = reactRouterHonoServer({ serverEntryPoint: 'custom/server.ts' })
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
@@ -298,13 +288,11 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const plugin = reactRouterHonoServer()
       const configureServer = plugin.configureServer as (server: unknown) => Promise<void>
       const { server } = fakeServer()
-      // No React Router context was set, so pluginConfig is null.
       await configureServer(server)
       expect(honoDevServerMock).not.toHaveBeenCalled()
     })
 
     it('injects remote-address/port/family headers and wires the hono dev server plugin', async () => {
-      // Seed pluginConfig by running config() once with a context.
       const plugin = reactRouterHonoServer({ dev: { exclude: [/^\/custom/] } })
       const cfg = viteUserConfig(reactRouterContext())
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
@@ -314,11 +302,9 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       honoDevServerMock.mockReturnValueOnce(honoPlugin)
       const configureServer = plugin.configureServer as (server: unknown) => Promise<void>
       const built = fakeServer()
-      // Attach the socket to the *request* object the middleware sees.
       const req = { socket: built.socket, rawHeaders: [] as string[] }
       await configureServer(built.server)
 
-      // The first middleware pushed is the remote-address injector.
       const injected = built.middlewares[0]!.fn as (req: unknown, _res: unknown, next: () => void) => void
       const next = vi.fn()
       injected(req, undefined, next)
@@ -346,8 +332,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       await configureServer(fakeServer().server)
 
       const options = honoDevServerMock.mock.calls[0]![0] as { exclude: Array<RegExp | string> }
-      // String entries are glob-ish patterns targeting the appDirectory
-      // (asserted separately); RegExp entries evaluate directly.
       const regexes = options.exclude.filter((pattern): pattern is RegExp => pattern instanceof RegExp)
       const strings = options.exclude.filter((pattern): pattern is string => typeof pattern === 'string')
       for (const pattern of strings) {

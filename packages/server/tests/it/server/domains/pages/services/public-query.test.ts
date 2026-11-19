@@ -13,9 +13,6 @@ import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// pages services/public-query against the real engine: the live gate,
-// slim projections, and the revision join via real query results.
-
 const db = getTestDb()
 
 beforeEach(async () => {

@@ -23,7 +23,6 @@ import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('friends.service')
 
-// Public projection matching `Friend` in `@kobato/catalog/catalog`.
 export interface PublicFriend {
   website: string
   description?: string
@@ -40,8 +39,6 @@ export function toPublicFriend(row: FriendRow): PublicFriend {
   }
 }
 
-// Wire-format DTO returned by every admin friend endpoint. Bigint id
-// stringified so the browser bundle never touches BigInt.
 export function toAdminFriendDto(row: FriendRow): AdminFriendDto {
   return {
     id: String(row.id),
@@ -67,7 +64,6 @@ export interface AdminFriendsListResult {
   hasMore: boolean
 }
 
-// `total` is the full filtered count, independent of `offset`/`limit`.
 export async function listFriendsForAdmin(
   db: Database,
   filters: AdminFriendsListFilters,
@@ -94,8 +90,6 @@ export interface UpsertFriendInputs {
   visible: boolean
 }
 
-// Duplicate `homepage` is a soft check: reject other rows with the same URL,
-// allow protocol/trailing-slash variants.
 export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs): Promise<AdminFriendDto> {
   const description = normaliseNullable(input.description)
   const rssUrl = normaliseNullable(input.rssUrl)
@@ -167,7 +161,6 @@ export async function applyFriend(db: Database, input: ApplyFriendInputs): Promi
     website: input.website,
     description: normaliseNullable(input.description),
     homepage: input.homepage,
-    // Store '' — the admin upsert schema still requires a valid poster URL.
     poster: input.poster ?? '',
     rssUrl: normaliseNullable(input.rssUrl),
     visible: false,
@@ -175,7 +168,6 @@ export async function applyFriend(db: Database, input: ApplyFriendInputs): Promi
   fireAndForgetNotify(sendNewFriendApplication(row), log, 'friend application')
 }
 
-// Trim; collapse '' to `null` — the DB never stores "" as a sentinel.
 function normaliseNullable(value: string | null | undefined): string | null {
   if (value === null || value === undefined) {
     return null

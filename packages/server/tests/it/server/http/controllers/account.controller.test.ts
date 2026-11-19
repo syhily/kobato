@@ -18,8 +18,6 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The account controller against the real engine (rate limiter, settings gates, audit
-// batcher); only stub: `@simplewebauthn/server` — attestation crypto is a true external.
 const swaMocks = vi.hoisted(() => ({
   generateRegistrationOptions: vi.fn(),
   verifyRegistrationResponse: vi.fn(),
@@ -265,7 +263,6 @@ describe('account controller', () => {
       const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
       const ip = nextIp()
 
-      // First attempt consumes the single-slot budget and succeeds.
       await call(
         accountRouter.updatePassword,
         { oldPassword: 'OldPass1234', newPassword: 'NewPassword1' },
@@ -279,7 +276,6 @@ describe('account controller', () => {
         ),
       ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
 
-      // The rejected attempt never reached the password change.
       expect(await bcrypt.compare('NewPassword1', (await userRow(id)).password)).toBe(true)
     })
 
@@ -431,7 +427,6 @@ describe('account controller', () => {
       const id = await seedUser()
       const ip = nextIp()
 
-      // First attempt burns the budget on the missing challenge; the second hits the limiter.
       await expect(
         call(accountRouter.passkeyRegisterFinish, validFinish, { context: ctxFor(id, { ip }) }),
       ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
@@ -483,7 +478,6 @@ describe('account controller', () => {
       expect(creds[0]!.credentialId).toBe('cred-1')
       expect(creds[0]!.deviceName).toBe('Phone')
       expect(creds[0]!.backedUp).toBe(true)
-      // The one-shot challenge is gone — no replay.
       expect(await db.select().from(oneTimeToken)).toHaveLength(0)
       expect(await auditRowsFor('passkey_registered')).toHaveLength(1)
     })

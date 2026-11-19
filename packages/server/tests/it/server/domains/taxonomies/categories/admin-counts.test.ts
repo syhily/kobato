@@ -23,7 +23,6 @@ describe('listCategoriesForAdmin', () => {
     const past = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
     await db.insert(post).values([
-      // counted: visible, published, past
       {
         slug: 'tech-visible',
         title: 'Tech Visible',
@@ -35,7 +34,6 @@ describe('listCategoriesForAdmin', () => {
         publishedAt: past,
         publishedRevisionId: 1,
       },
-      // counted: hidden but includeHidden=true
       {
         slug: 'tech-hidden',
         title: 'Tech Hidden',
@@ -47,7 +45,6 @@ describe('listCategoriesForAdmin', () => {
         publishedAt: past,
         publishedRevisionId: 2,
       },
-      // counted: future-dated but includeScheduled=true
       {
         slug: 'tech-future',
         title: 'Tech Future',
@@ -59,7 +56,6 @@ describe('listCategoriesForAdmin', () => {
         publishedAt: future,
         publishedRevisionId: 3,
       },
-      // not counted: published but no published revision (a draft state)
       {
         slug: 'tech-norev',
         title: 'Tech NoRev',
@@ -70,7 +66,6 @@ describe('listCategoriesForAdmin', () => {
         published: true,
         publishedAt: past,
       },
-      // not counted: draft
       {
         slug: 'tech-draft',
         title: 'Tech Draft',
@@ -81,7 +76,6 @@ describe('listCategoriesForAdmin', () => {
         published: false,
         publishedAt: past,
       },
-      // not counted: deleted
       {
         slug: 'tech-deleted',
         title: 'Tech Deleted',
@@ -93,7 +87,6 @@ describe('listCategoriesForAdmin', () => {
         publishedAt: past,
         deletedAt: new Date(),
       },
-      // counted: different category
       {
         slug: 'life-post',
         title: 'Life Post',
@@ -105,7 +98,6 @@ describe('listCategoriesForAdmin', () => {
         publishedAt: past,
         publishedRevisionId: 4,
       },
-      // not counted: no category
       {
         slug: 'uncategorized',
         title: 'Uncategorized',
@@ -139,7 +131,6 @@ describe('listCategoriesForAdmin', () => {
     expect(result.categories[0]?.postCount).toBe(0)
   })
 
-  // List and upsert counts share one live-gate definition.
   it('list count and upsert-returned count agree (both exclude drafts)', async () => {
     const [cat] = await db
       .insert(category)

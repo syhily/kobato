@@ -38,8 +38,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 
-// The inbox row renders a two-line preview; the detail pane reads the full
-// body from the thread query. Capping keeps the list wire small.
 const LIST_BODY_PREVIEW_LENGTH = 200
 
 function toNotificationDto(
@@ -48,7 +46,6 @@ function toNotificationDto(
   read: boolean,
   t: ServerTranslator,
 ): NotificationDto {
-  // Preview and detail share ONE resolved message — the list only truncates it.
   const resolved = resolveNotificationMessage(row, t)
   return {
     id: String(row.id),
@@ -76,23 +73,15 @@ function createAndFanOut(
   recipientIds: readonly number[],
   options?: { readRecipientIds?: readonly number[] },
 ): NotificationRow {
-  // A message with zero recipients would be invisible forever — a producer bug.
   if (recipientIds.length === 0) {
     throw new DomainError('INTERNAL', descriptorFor('notifications.error.noRecipients'))
   }
   return createNotificationWithRecipients(db, data, [...new Set(recipientIds)], options)
 }
 
-/**
- * System → all current admins (boot cleanups, background-job results). Never
- * replyable. Takes an i18n descriptor (never prose): the row stores the English
- * fallback plus the key/params, and every reader sees its own locale.
- */
 export function notifyAdmins(db: Database, message: SystemNotificationMessage): NotificationRow | null {
   const adminIds = listRecipientUserIds(db, { adminsOnly: true })
   if (adminIds.length === 0) {
-    // Pre-install boot: nobody to notify yet, and no admin ever sees the
-    // pre-install state — skipping is honest.
     return null
   }
   const descriptor = encodeNotificationDescriptor(message)
@@ -131,13 +120,6 @@ export function sendDirectMessage(
   return row
 }
 
-/**
- * Admin → all users; the ONLY replyable broadcast flavor. The author gets a
- * self-row, pre-marked read: recall needs the author to see their own
- * broadcast, and it makes the inbox the single surface for "what did I
- * send". The empty-audience gate still counts OTHER users — a single-admin
- * site cannot send an announcement nobody would receive.
- */
 export function sendBroadcast(
   db: Database,
   senderId: number,
@@ -163,11 +145,6 @@ export interface RecalledMessage {
   newlyRecalled: boolean
 }
 
-/**
- * Recall an announcement or a system alert. `direct` messages are
- * deliberately NOT recallable — private threads between people stay honest.
- * Idempotent: a second call returns the existing state without re-stamping.
- */
 export function recallMessage(db: Database, id: number): RecalledMessage {
   const existing = findNotificationById(db, id)
   if (existing === null) {
@@ -255,14 +232,6 @@ function assertParticipant(db: Database, threadId: number, userId: number): void
   }
 }
 
-/**
- * The reply gate the list DTO's `replyable` mirrors. Direct threads are
- * always answerable. A broadcast root can only be answered by a NON-ADMIN
- * recipient (system broadcasts ride senderId NULL and can never be
- * answered) — admins answer inside the forked per-replier threads instead.
- * A recalled root accepts no NEW replies — defense in depth behind the
- * hidden UI entry; existing forks stay answerable.
- */
 function canReplyInThread(root: NotificationRow, viewer: SessionUser): boolean {
   if (root.recalledAt !== null) {
     return false
@@ -287,8 +256,6 @@ export async function getThread(
   const userId = Number(viewer.id)
   const messages = await loadThread(db, threadId)
   const root = messages[0]!
-  // A recalled thread answers exactly like a missing one — existence is not
-  // leaked to recipients, admins, or outsiders.
   if (root.recalledAt !== null) {
     throw new DomainError('NOT_FOUND', descriptorFor('notifications.error.messageNotFound'))
   }
@@ -310,16 +277,6 @@ export async function getThread(
   }
 }
 
-/**
- * Reply routing. Direct threads answer the thread's participants minus the
- * replier (admin ↔ user conversation). A non-admin's reply in a replyable
- * admin-created broadcast FORKS a new private thread: the reply becomes its
- * own thread root (kind 'direct'), delivered to all current admins, with the
- * replier's own recipient row pre-marked read so the conversation is visible
- * in their inbox without inflating their badge. Admins answer inside the
- * fork, which keeps user feedback private to the admin team — the broadcast
- * root thread only ever contains the announcement itself.
- */
 export async function replyToThread(
   db: Database,
   viewer: SessionUser,
@@ -333,7 +290,6 @@ export async function replyToThread(
     throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.notReplyable'))
   }
   if (root.kind === 'broadcast') {
-    // The role gate upstream refuses admins, so the replier is never in the list.
     const recipients = listRecipientUserIds(db, { adminsOnly: true })
     if (recipients.length === 0) {
       throw new DomainError('BAD_REQUEST', descriptorFor('notifications.error.noAdminRecipients'))
@@ -344,8 +300,6 @@ export async function replyToThread(
       [...recipients, userId],
       { readRecipientIds: [userId] },
     )
-    // The replier's own pre-read row gets no mail; the admins receiving the
-    // fork do — the fork is the admin-facing half of a reply.
     queueNotificationEmail(db, row, recipients)
     return {
       message: {
@@ -355,7 +309,6 @@ export async function replyToThread(
         mine: true,
         createdAt: row.createdAt.toISOString(),
       },
-      // The fork's own thread — never the broadcast root the user replied to.
       threadId: row.threadId,
     }
   }

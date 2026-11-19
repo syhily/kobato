@@ -20,8 +20,6 @@ export function CategoryField({ value, onChange, disabled }: CategoryFieldProps)
       <Label htmlFor="post-category">{t('admin.posts.meta.category')}</Label>
       <Select value={value} onValueChange={(v) => onChange(v ?? '')} disabled={disabled}>
         <SelectTrigger id="post-category" className="w-full">
-          {/* Base UI's `<Select.Value>` renders the raw `value` by default —
-              resolve the category name here, mirroring `AlignSelect`. */}
           <SelectValue placeholder={t('admin.posts.meta.noCategory')}>
             {(selected) => {
               const match = categories.find((cat) => cat.id === selected)

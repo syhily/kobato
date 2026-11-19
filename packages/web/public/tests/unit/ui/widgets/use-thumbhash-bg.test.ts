@@ -1,14 +1,9 @@
 import { renderHook } from '@kobato/test/hook.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The hook uses `useSyncExternalStore`; the SSR harness fires one server
-// render pass whose snapshot always returns `undefined`, which covers the
-// early-return and decode-failure fallback paths.
-
 const VALID_THUMBHASH_A = 'cucFBwBdaXiMlnV7h/h3toZnxfXGTF8M'
 const VALID_THUMBHASH_B = '3AcWDwBnh3d/h3iMeJeHd4h3Z/SoBHAE'
 
-// Reset the module registry so the module-level cache and decoder mocks start clean.
 beforeEach(() => {
   vi.resetModules()
 })
@@ -32,7 +27,6 @@ describe('client/hooks/useThumbhashBackground — initial-return gating', () => 
     expect(style).toBeUndefined()
   })
 
-  // NOTE: decode-success/cache-hit paths are unreachable — the server snapshot always returns `undefined`.
   it('returns undefined for a valid thumbhash on first server render', async () => {
     const { useThumbhashBackground } = await importModule()
     const style = renderHook(() => useThumbhashBackground(VALID_THUMBHASH_A))
@@ -58,7 +52,6 @@ describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
 })
 
 describe('client/hooks/useThumbhashBackground — decode-failure fallback', () => {
-  // thumbHashToDataURL throwing is contained by the hook's try/catch (returns undefined).
   afterEach(() => {
     vi.doUnmock('@kobato/utils/thumbhash.ts')
   })
@@ -86,7 +79,6 @@ describe('client/hooks/useThumbhashBackground — input transitions', () => {
   })
 })
 
-// Re-import so each test gets a fresh module instance and module-level cache.
 async function importModule() {
   return import('@kobato/web-public/ui/widgets/use-thumbhash-bg.ts')
 }

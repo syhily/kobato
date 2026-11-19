@@ -92,7 +92,6 @@ export function EditorScreen<
   const { getEntity, getLatestRevision, getPublishedRevision } = adapter
   const entity = isEditing ? getEntity(detail) : undefined
 
-  // Loader-stable detail object: memoizing on it keeps the state hook's memos from recomputing every render.
   const editorDetail = useMemo(
     () =>
       detail !== undefined

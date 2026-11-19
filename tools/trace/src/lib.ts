@@ -1,12 +1,3 @@
-// Shared plumbing for the OpenObserve development container.
-// Everything here is explicit dev tooling: `pnpm dev`, `pnpm test`, and the
-// production build never import this module and never require Docker. The
-// scripts own a single loopback container, a dedicated volume, a state file in
-// the worktree's ignored `tmp/openobserve/` tree (mode 0600), and the dev-only
-// 1-day retention policy. They never provision OpenObserve assets: the RUM
-// token, privacy pipeline, and dashboards are installed by the SERVER during
-// the admin connection test.
-
 import { OBSERVABILITY_SOURCE_ASSETS_DIR } from '@kobato/pack/sea/paths.ts'
 import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
 import { isTraceMetricStreamName } from '@kobato/telemetry/metrics.ts'
@@ -29,19 +20,14 @@ export const DEFAULT_O2_PORT = 5080
 export const DEFAULT_APP_PORT = 4321
 export const DEFAULT_APPLICATION_ID = 'kobato-dev'
 export const RETENTION_DAYS = 1
-/** The RUM intake stream, owned by `@kobato/telemetry/pipeline.ts`. */
 export const RUM_STREAM = RUM_STREAM_NAME
 export const TRACE_STREAM = 'default'
-/** The application log stream, owned by `@kobato/telemetry/logs.ts`. */
 export const LOG_STREAM = TRACE_LOG_STREAM
 
-/** Streams this tooling owns for retention/status: RUM, traces, server logs, metric streams. */
 export function isRelevantTraceStream(name: string): boolean {
   return name === RUM_STREAM || name === TRACE_STREAM || name === LOG_STREAM || isTraceMetricStreamName(name)
 }
 
-// Closed ownership grammar. Arbitrary names from config/state must never reach
-// a `docker rm`/`volume rm` call.
 export const TRACE_CONTAINER_PATTERN = /^kobato-(?:openobserve-dev|trace-smoke-[a-f0-9]{8})$/
 export const TRACE_VOLUME_PATTERN = /^kobato-(?:openobserve-dev-data|trace-smoke-[a-f0-9]{8}-data)$/
 
@@ -105,8 +91,6 @@ export interface OpenObserveInstance {
 }
 
 export function stateDirectory(): string {
-  // Default inside the worktree's already-ignored `tmp/` tree. Nothing is
-  // written under the user's home unless KOBATO_TRACE_STATE_DIR says so.
   return process.env.KOBATO_TRACE_STATE_DIR ?? resolve(import.meta.dirname, '..', '..', '..', 'tmp', 'openobserve')
 }
 
@@ -138,7 +122,6 @@ export function basicAuthorization(email: string, password: string): string {
 }
 
 export function generatePassword(): string {
-  // OpenObserve requires a non-trivial root password. Keep it out of every log.
   return `Kobato-${randomBytes(24).toString('base64url')}`
 }
 
@@ -180,7 +163,6 @@ export interface StateDefaults {
   port?: number
 }
 
-/** Build a state object; every mutable value has an explicit env override. */
 export function buildState(overrides: StateDefaults = {}): TraceState {
   const port = overrides.port ?? Number(process.env.KOBATO_TRACE_PORT ?? DEFAULT_O2_PORT)
   const containerName = overrides.containerName ?? process.env.KOBATO_TRACE_CONTAINER ?? DEFAULT_CONTAINER
@@ -280,8 +262,6 @@ function corsOrigins(): string {
     return configured
   }
   const appPort = Number(process.env.KOBATO_TRACE_APP_PORT ?? DEFAULT_APP_PORT)
-  // Exact origins only — never a wildcard. Both loopback spellings map to the
-  // same development server; OpenObserve matches the Origin header verbatim.
   return [`http://localhost:${appPort}`, `http://127.0.0.1:${appPort}`].join(',')
 }
 
@@ -377,20 +357,12 @@ export function startOpenObserve(state: TraceState, options: { corsOrigins?: str
     'ZO_DATA_DIR=/data',
     '-e',
     'ZO_TELEMETRY=false',
-    // The smoke and local stack never inspect GeoIP fields; O2 otherwise
-    // downloads ~59 MB of MaxMind data on startup and blocks `/healthz` until it
-    // finishes, which makes the restart health wait flaky.
     '-e',
     'ZO_MMDB_DISABLE_DOWNLOAD=true',
-    // Resolve the RUM intake IP from the rightmost X-Forwarded-For hop (the
-    // address Kobato's relay writes) instead of the TCP peer, mirroring the
-    // production `forward` deployment.
     '-e',
     'ZO_HTTP_REAL_IP_SOURCE=RightmostXForwardedFor',
     '-e',
     `ZO_CORS_ALLOWED_ORIGINS=${options.corsOrigins ?? corsOrigins()}`,
-    // Local development wants WAL data queryable in seconds, not the 10-minute
-    // default. Retention remains day-granular (1 day, the OSS minimum).
     '-e',
     'ZO_MAX_FILE_RETENTION_TIME=10',
     '-e',
@@ -429,7 +401,6 @@ export interface TraceDockerBoundary {
   removeVolume(name: string): void
 }
 
-/** Injectable ownership/removal logic (unit-tested without Docker). */
 export function removeOwnedTraceResources(
   name: string,
   removeVolume: boolean,
@@ -694,12 +665,10 @@ export function resolveFromRepo(relative: string): string {
   return resolve(import.meta.dirname, '../../..', relative)
 }
 
-/** Versioned dashboards + the RUM privacy VRL, shared with the server provisioner. */
 export function observabilityAssetDirectory(): string {
   return resolveFromRepo(OBSERVABILITY_SOURCE_ASSETS_DIR)
 }
 
-/** One bundled OpenObserve v8 dashboard by file name (e.g. `overview.json`). */
 export function observabilityDashboardPath(file: string): string {
   return join(observabilityAssetDirectory(), 'dashboards', file)
 }

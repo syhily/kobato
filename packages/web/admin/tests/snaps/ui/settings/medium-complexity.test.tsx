@@ -233,8 +233,6 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('Gravatar 镜像')
     expect(html).toContain('匿名评论 Token')
     expect(html).toContain('gravatar.loli.net')
-    // The sortable source rows render in the configured order — compare
-    // label positions inside the sources block, after the '获取顺序' label.
     const sourcesBlock = html.slice(html.indexOf('获取顺序'))
     const qqAt = sourcesBlock.indexOf('QQ 邮箱')
     const githubAt = sourcesBlock.indexOf('GitHub')

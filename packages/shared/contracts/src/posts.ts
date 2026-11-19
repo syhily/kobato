@@ -3,9 +3,6 @@ import { idString, isoDateTime, safeBoolean } from '@kobato/contracts/primitives
 import { adminRevisionDto } from '@kobato/contracts/revision.ts'
 import { z } from 'zod'
 
-// Admin posts wire inputs — the single Zod source the `@kobato/api` posts
-// contract composes and the server validates against.
-
 export const adminPostIdInput = z.object({ id: z.string().min(1) })
 export type AdminPostIdInput = z.infer<typeof adminPostIdInput>
 
@@ -49,7 +46,6 @@ export const adminPostDto = adminMetaBaseDto.extend({
   tags: z.array(z.string()),
   alias: z.array(z.string()),
   pinnedAt: isoDateTime.nullable(),
-  /** Null until the first successful publish. */
   firstPublishedAt: isoDateTime.nullable(),
 })
 export type AdminPostDto = z.infer<typeof adminPostDto>
@@ -79,15 +75,12 @@ export const listPostRevisionsOutputDto = z.object({
 })
 export type ListPostRevisionsOutput = z.infer<typeof listPostRevisionsOutputDto>
 
-/** The dashboard card shape shared by the wire output and the server projection. */
 export interface DraftSummary {
   id: string
   title: string
   updatedAtIso: string
 }
 
-// Draft/published counts + the two recent-5 lists the dashboard cards
-// consume (projected to `DraftSummary`, identical to `loaders/dashboard.ts`).
 export const adminPostsMySummaryOutputSchema = z.object({
   draftCount: z.number().int().nonnegative(),
   publishedCount: z.number().int().nonnegative(),

@@ -21,7 +21,6 @@ export interface I18nTestOptions {
   messages?: UiMessages
 }
 
-/** Wrap client components that call `useI18n()` for RTL/SSR tests. */
 export function wrapWithI18n(node: ReactNode, options: I18nTestOptions = {}): ReactElement {
   const locale = options.locale ?? 'zh-CN'
   return (
@@ -39,7 +38,6 @@ export interface RenderHookWithI18nOptions<Props> extends Omit<RenderHookOptions
   locale?: AppLocale
 }
 
-/** `renderHook` under a catalog provider (zh-CN unless `locale` says otherwise). */
 export function renderHookWithI18n<Result, Props>(
   callback: (initialProps: Props) => Result,
   options: RenderHookWithI18nOptions<Props> = {},

@@ -11,7 +11,6 @@ const baseConfig: MailgunConfig = {
   sender: 'noreply@mg.example.com',
 }
 
-// The transport talks to the Mailgun v3 API with native fetch — stub the global.
 const fetchMock = vi.fn()
 
 function formDataEntries(body: unknown): Record<string, string[]> {
@@ -28,7 +27,6 @@ describe('MailgunTransport', () => {
   beforeEach(() => {
     fetchMock.mockReset()
     vi.stubGlobal('fetch', fetchMock)
-    // The dispatcher logs every failure; silence those in test output.
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
   afterEach(() => {
@@ -145,7 +143,6 @@ describe('MailgunTransport', () => {
       if (result.ok === false && result.reason === 'upstream') {
         expect(result.status).toBe(400)
         expect(result.message).toContain('400')
-        // The upstream body never leaks into the user-facing message.
         expect(result.message).not.toContain('invalid from')
       } else {
         throw new Error(`expected reason=upstream, got ${JSON.stringify(result)}`)

@@ -9,10 +9,6 @@ import {
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The "Secret field" pattern's write path: an empty or whitespace-only input
-// omits the key from the patch (the server's deep-merge then preserves the
-// stored secret); any real input replaces it, trimmed.
-
 describe('ui/admin/settings/shell/secretFieldPatch', () => {
   it('omits the field when the input is empty', () => {
     expect(secretFieldPatch('', 'apiKey')).toEqual({})

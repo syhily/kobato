@@ -1,42 +1,26 @@
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx'
 // @vitest-environment happy-dom
-/**
- * Public comment composer labels: the public bootstrap carries NO
- * Inkling label table, so the interaction-gated wrapper loads exactly the
- * ACTIVE locale's table after activation and only then mounts the composer.
- * Workspace documents keep their payload table and never fetch a chunk. The
- * unloaded placeholder is unchanged — SSR and the client's first render agree
- * whether or not a workspace payload exists. (The per-locale chunk mapping
- * itself is pinned by `client/editor/inkling-labels-load.test.ts`.)
- */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-/** A workspace bootstrap table — distinct text so the source is observable. */
 const PAYLOAD_LABELS = { 'placeholder.editor': 'PAYLOAD labels' }
 
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
 const zoomLock = vi.hoisted(() => ({ acquire: vi.fn(), release: vi.fn() }))
 
-// Keep the real payload hook; record/stub only the on-demand table load.
 vi.mock('@kobato/web-client/editor/inkling-labels.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels.ts')>()
   return { ...actual, loadInklingLabels: loader.load }
 })
 
-// The zoom lock is iOS-gated against the real UA — assert the choreography
-// through spies instead (held from activation intent, released one task
-// after the focus handoff).
 vi.mock('@kobato/web-client/lib/viewport-zoom-lock.ts', () => ({
   acquireViewportZoomLock: zoomLock.acquire,
   releaseViewportZoomLock: zoomLock.release,
 }))
 
-// The composer chunk itself is out of scope; labels are the observable input.
-// contentEditable makes the mount observable through document.activeElement.
 vi.mock('@kobato/web-public/ui/comments/CommentBodyEditor.tsx', () => ({
   CommentBodyEditor: ({ labels }: { labels?: Record<string, string> }) => (
     <div data-testid="composer" contentEditable suppressContentEditableWarning>
@@ -87,7 +71,6 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
 
     await waitFor(() => expect(screen.getByTestId('composer')).toBeTruthy())
     expect(screen.getByTestId('composer').textContent).toBe('zh-CN labels')
-    // Prefetch + the mount effect may both ask; only the active locale is ever fetched.
     expect(loader.load.mock.calls.every(([locale]) => locale === 'zh-CN')).toBe(true)
     expect(loader.load).toHaveBeenCalledWith('zh-CN')
   })
@@ -193,11 +176,9 @@ describe('LazyCommentBodyEditor — iOS zoom lock around the focus handoff', () 
     render(<RouterProvider router={makeRouter()} />)
 
     fireEvent.pointerDown(screen.getByRole('textbox'))
-    // Locked at the activation intent — before any chunk resolves.
     expect(zoomLock.acquire).toHaveBeenCalledTimes(1)
 
     const composer = await waitFor(() => screen.getByTestId('composer'))
-    // Released only after the contenteditable took focus (next task).
     await waitFor(() => expect(zoomLock.release).toHaveBeenCalledTimes(1))
     expect(document.activeElement).toBe(composer)
     expect(zoomLock.acquire.mock.invocationCallOrder[0]).toBeLessThan(zoomLock.release.mock.invocationCallOrder[0])

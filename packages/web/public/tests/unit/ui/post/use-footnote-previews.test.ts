@@ -80,7 +80,6 @@ describe('useFootnotePreviews', () => {
   it('scans the container for footnote refs rather than gating on a bodyHtml substring', () => {
     const { container, ref } = mountContainer(BODY)
 
-    // The re-scan key intentionally carries no '#user-content-fn-' marker.
     renderHook(() => useFootnotePreviews(ref, 'rescan-key'))
 
     container.querySelector<HTMLAnchorElement>('sup a')!.dispatchEvent(new Event('mouseenter'))
@@ -99,7 +98,6 @@ describe('useFootnotePreviews', () => {
 
     anchor.dispatchEvent(new Event('mouseenter'))
     const popover = document.body.querySelector<HTMLDivElement>('.footnote-preview')!
-    // left = 406 - 50 = 356; arrow x = 406 - 356 = 50; top = 200 - 40 - 8 = 152.
     expect(popover.dataset.side).toBe('top')
     expect(popover.style.getPropertyValue('--footnote-arrow-x')).toBe('50px')
     expect(popover.style.top).toBe('152px')
@@ -120,8 +118,6 @@ describe('useFootnotePreviews', () => {
     renderHook(() => useFootnotePreviews(ref, BODY))
 
     const anchor = container.querySelector<HTMLAnchorElement>('sup a')!
-    // Trigger center at x=6: the popover left clamps to 8, so the raw arrow
-    // offset (-2px) would fall outside the popover.
     anchor.getBoundingClientRect = () =>
       ({ top: 200, bottom: 212, left: 0, width: 12, right: 12, height: 12, x: 0, y: 200 }) as DOMRect
 

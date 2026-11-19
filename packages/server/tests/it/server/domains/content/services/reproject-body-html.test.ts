@@ -7,10 +7,6 @@ import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Real in-memory DB + real jsdom projections: drift repair, write scope
-// (projection columns only — never updatedAt / clientRevisionToken),
-// unreadable-row failure, batch pagination.
-
 const db = getTestDb()
 
 const BODY = lexicalBodyWith([lexicalParagraph('你好，世界')])

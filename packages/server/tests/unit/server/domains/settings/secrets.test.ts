@@ -7,8 +7,6 @@ import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// Look a declaration up by its mask key — never by array position, so a
-// reordered or extended SECRET_FIELDS cannot silently rebind an assertion.
 const secretBy = (maskKey: SecretFieldConfig['maskKey']) => SECRET_FIELDS.find((c) => c.maskKey === maskKey)!
 
 function bundleWithSecrets(): BlogSettingsBundle {
@@ -75,7 +73,6 @@ describe('derived read/redact accessors', () => {
     bundle.assets!.storage.secretAccessKey = ''
     expect(secretBy('mailSmtpPassMask').read(bundle)).toBeUndefined()
     expect(secretBy('mailMailgunApiKeyMask').read(bundle)).toBeUndefined()
-    // A blank slot reads back as '' (the mask story is "unset", not "absent").
     expect(secretBy('assetsSecretAccessKeyMask').read(bundle)).toBe('')
   })
 
@@ -91,7 +88,6 @@ describe('derived read/redact accessors', () => {
 
     expect(redacted).not.toBe(bundle)
     expect(redacted.mail?.mail.smtpPass).toBe('')
-    // The other secrets and sibling fields survive untouched.
     expect(redacted.mail?.mail.mailgunApiKey).toBe('mg-cc33')
     expect(redacted.mail?.mail.smtpHost).toBe(bundle.mail?.mail.smtpHost)
     expect(bundle.mail?.mail.smtpPass).toBe('pass-bb22')

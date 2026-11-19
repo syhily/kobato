@@ -119,9 +119,6 @@ describe('users/repos/admin-query — listAdminUsers', () => {
   })
 
   it('orders by recent by default', async () => {
-    // Stamp createdAt explicitly — 'recent' sorts by created_at DESC, and
-    // two inserts within the same wall-clock tick must not leave the
-    // ordering to chance.
     const older = await seedUser({ name: 'Older', email: 'o@example.com', createdAt: new Date('2024-01-01T00:00:00Z') })
     const newer = await seedUser({ name: 'Newer', email: 'n@example.com', createdAt: new Date('2024-01-02T00:00:00Z') })
 
@@ -153,8 +150,6 @@ describe('users/repos/admin-query — listAdminUsers', () => {
   })
 
   it('aggregates comments only for the paginated users', async () => {
-    // The off-page user's comments must not leak into the page's stats —
-    // recency mode paginates users before aggregating.
     const offPage = await seedUser({
       name: 'OffPage',
       email: 'off@example.com',
@@ -543,7 +538,6 @@ describe('users/services/account — updateAccountPassword', () => {
 
     expect(await peekToken(db, token, 'password-reset')).toBeNull()
     expect(await peekToken(db, magicToken, 'signin-link')).toBeNull()
-    // The OTP row is gone too (it is keyed by purpose+userId, not by value).
     expect(await db.select().from(verification).where(eq(verification.purpose, 'signin-otp'))).toHaveLength(0)
   })
 
@@ -558,7 +552,6 @@ describe('users/services/account — updateAccountPassword', () => {
       counter: 0,
       transports: [],
     })
-    // A second account's passkey is untouched by the first account's rotation.
     const other = await seedUser({ name: 'O', email: 'other-pk@example.com', password: hashed, loginMethod: 'passkey' })
     await db.insert(passkeyCredential).values({
       userId: other.id,

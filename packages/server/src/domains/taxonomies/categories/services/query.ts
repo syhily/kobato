@@ -91,7 +91,6 @@ export async function findCategoryBySlug(db: Database, slug: string): Promise<Ca
   return rows[0] ?? null
 }
 
-// Feed-only: feed URLs accept a slug or legacy display name; public routes stay slug-only.
 export async function resolveCategoryBySlugOrName(db: Database, value: string): Promise<CategoryRow | null> {
   return (await findCategoryBySlug(db, value)) ?? (await findCategoryByName(db, value))
 }

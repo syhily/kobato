@@ -1,14 +1,8 @@
-// Comment bodies are stored as a Lexical editor state (`@kobato/lexical/comment-schema`).
-
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 
 import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/lexical/walk.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
-/**
- * Plain-text projection for snippets and the reply overlay. Lexical states walk
- * leaf-only, with decorator code/tex payloads standing in for their visible content.
- */
 export function commentBodyPlainText(body: unknown): string {
   const state = unsafeCast<LexicalEditorState>(body)
   const parts: string[] = []

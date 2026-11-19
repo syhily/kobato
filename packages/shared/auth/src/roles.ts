@@ -1,7 +1,3 @@
-// Isomorphic role primitives (no Node deps). The server adds the
-// throwing `requireRole` / `requireUserRole` guards in
-// `@/server/domains/auth/rbac`; UI consumers stick to `Role` + helpers.
-
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 
 export const ROLE_LEVELS = { visitor: 1, author: 2, admin: 3 } as const
@@ -17,10 +13,6 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
   return ROLE_LEVELS[role] >= ROLE_LEVELS[min]
 }
 
-/**
- * Message ids for the role names: the registry stays locale-free, and each
- * component resolves these with its own `t`.
- */
 export const ROLE_LABEL_KEYS = {
   admin: 'common.role.admin',
   author: 'common.role.author',

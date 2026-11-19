@@ -26,8 +26,6 @@ const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
 const CALENDAR_COMPONENTS = { Dropdown: CalendarDropdown }
 
-// Placeholder center for the pre-open year window — the calendar mounts only
-// once the popover opens, and the open handler re-anchors on the real year.
 const PRE_OPEN_YEAR = 2000
 
 export function DateTimePicker({ value, onChange, disabled, id }: DateTimePickerProps) {
@@ -36,9 +34,6 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   const parsed = parseLocalDateTimeInput(value)
   const triggerId = id ?? 'datetime-picker'
 
-  // "Now" is render-impure, so the calendar's year window anchors on the
-  // popover-open event instead of render; before the first open the calendar
-  // is not mounted and the placeholder window is never painted.
   const [openedYear, setOpenedYear] = useState<number | null>(null)
   const { startMonth, endMonth } = useMemo(() => {
     const currentYear = openedYear ?? parsed?.getFullYear() ?? PRE_OPEN_YEAR

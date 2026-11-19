@@ -1,8 +1,3 @@
-// Generic child-process primitives shared by every out-of-process harness
-// surface (the SEA binary lifecycle, the DEV-server smoke, the SMTP capture):
-// fail-fast reporting, free-port allocation, boot-polling fetches, env
-// scrubbing, and exit racing with a SIGKILL deadline.
-
 import type { ChildProcess } from 'node:child_process'
 
 import { createServer } from 'node:net'
@@ -18,7 +13,6 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** A free high port on loopback, race-prone by nature but fine for a smoke. */
 export function pickFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer()
@@ -39,13 +33,6 @@ export async function fetchManual(url: string): Promise<Response> {
   return fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
 }
 
-/**
- * Parent env minus config vars (`__`-suffixed — env > file) and KOBATO_*
- * runtime vars (a leaked KOBATO_NATIVES_DIR would redirect extraction away
- * from the per-run cache). Deliberate vars are re-injected per spawn. `drop`
- * adds case-specific exclusions (the DEV-server smoke also strips VITEST /
- * NODE_ENV so a vitest parent cannot leak in).
- */
 export function scrubbedParentEnv(options: { drop?: string[] } = {}): Record<string, string> {
   const drop = new Set(options.drop ?? [])
   return Object.fromEntries(
@@ -68,7 +55,6 @@ export interface ExitOutcome {
   timeout: boolean
 }
 
-/** Start tracking a child's exit into a mutable state object. */
 export function watchChildExit(child: ChildProcess): ExitState {
   const exitState: ExitState = { exited: false, code: null, signal: null }
   child.once('exit', (code, signal) => {
@@ -79,11 +65,6 @@ export function watchChildExit(child: ChildProcess): ExitState {
   return exitState
 }
 
-/**
- * Race the child's exit against a deadline; on timeout the child is SIGKILLed
- * and the outcome reported as `timeout: true`. Both promises resolve exactly
- * once, so the loser resolving into the void is harmless.
- */
 export async function raceChildExit(
   child: ChildProcess,
   exitState: ExitState,

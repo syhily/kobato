@@ -72,8 +72,6 @@ function mountEditor(editor: LexicalEditor) {
   document.body.appendChild(root)
   editor.setRootElement(root)
 
-  // jsdom does not always update document.activeElement on focus; ensure the
-  // keyboard handlers see the editor root as the active element.
   const activeElementSpy = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(root)
 
   // jsdom has no layout engine; provide a default rect so Lexical can sync
@@ -114,10 +112,6 @@ function mountEditor(editor: LexicalEditor) {
   }
 }
 
-/**
- * Build a fake native Selection whose single range reports the requested top.
- * Used to drive $isAtTopOfNode in jsdom where real layout rects are all zero.
- */
 function createNativeSelectionMock(opts: { anchorNode: Node; rangeTop: number }): Selection {
   const { anchorNode, rangeTop } = opts
   const rect: DOMRect = {

@@ -3,22 +3,6 @@ import type { LexicalEditor } from 'lexical'
 import { createComposerHandle, type ComposerHandle } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 import { isNestedEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 
-// Editor-side handle for the per-top-level-composer word-count channel, built on the
-// composer handle factory. Owns the callbacks handed to the top-level WordCountPlugin
-// so nested composers mount their own WordCountPlugin with the same callbacks.
-// `language` rides alongside so nested editors count with the top-level plugin's
-// language instead of dropping it; `null` means the host named no language and the
-// nested counter keeps Inkling's regex fallback. `onSelectionChange` is an independent
-// optional channel: a selection-only plugin publishes only that callback, so nested
-// composers mount a selection-only counter and pay for no document pass.
-//
-// Publishing is ownership-based per channel (onChange, onSelectionChange, language):
-// every publish pushes an entry onto that channel's stack, and a cleanup removes its own
-// token from wherever it sits, then republishes the new top. Channels never clear each
-// other, a same-channel replacement restores a still-mounted predecessor on teardown,
-// and an unmounted publisher cannot be resurrected. `language: null` is "no opinion" and
-// is not published, so a selection-only plugin cannot clear another's language.
-
 export interface WordCountHandleState {
   onChange: ((count: number) => void) | null
   onSelectionChange: ((count: number | null) => void) | null
@@ -55,8 +39,6 @@ function publishEntry<T>(handle: WordCountHandle, stack: PublishedEntry<T>[], va
   syncHandle(handle)
 
   return () => {
-    // Remove from wherever it sits, not just the top: unmount must never leave a
-    // callback behind to be resurrected later.
     const index = stack.findIndex((entry) => entry.token === token)
     if (index === -1) {
       return
@@ -93,9 +75,7 @@ export function publishWordCountCallback(
   },
 ): () => void {
   if (isNestedEditor(editor)) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
 
   const state = getPublisherState(handle)

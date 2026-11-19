@@ -103,10 +103,6 @@ describe('$enforceParagraphRestriction', () => {
   })
 
   it('unwraps a list whose item was splice-wrapped around a non-item child', async () => {
-    // ListNode.splice wraps any non-ListItem child in a ListItemNode on
-    // append, so the declaration's empty-paragraph fallback for a list
-    // without a list-item first child is unreachable through public
-    // construction — the wrapped item's content is what survives.
     await enforce(editor, 5, () => {
       $getRoot().append($createListNode('bullet').append($createParagraphNode().append($createTextNode('not an item'))))
     })

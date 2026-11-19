@@ -11,9 +11,6 @@ import { emptySession } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The seven perimeter middlewares run for real against the it harness;
-// seams: `createApiApp`, the resource routers, and the logging trio.
-
 vi.mock('@kobato/server/http/app.ts', () => ({
   createApiApp: vi.fn(() => new Hono()),
 }))
@@ -101,7 +98,6 @@ describe('buildCspHeader', () => {
   it('adds the asset host from the bundle (self-hosted fonts need no per-font origin)', () => {
     const header = buildCspHeader({
       bundle: {
-        // Font slots carry id lists, not external CSS URLs — no per-font origin is ever injected.
         fonts: { global: [], post: [], code: [] },
         assets: { asset: { host: 'cdn.example.com' } },
       } as never,
@@ -109,7 +105,6 @@ describe('buildCspHeader', () => {
       isDev: false,
     })
     expect(header).toContain('https://cdn.example.com')
-    // Self-hosted packages stay CSP-safe: 'self' or the asset host — no external origin.
     expect(header).not.toContain('fonts.example.com')
   })
 })
@@ -137,7 +132,6 @@ describe('RUM status mount', () => {
       configureMiddleware(app)
       const paths = app.routes.map((route) => route.path)
       expect(paths).toContain('/api/rum/status')
-      // The same-origin RUM intake relay rides the same gate.
       expect(paths).toContain('/api/rum/intake/*')
       expect(paths).not.toContain('/api/dev/rum/status')
     }
@@ -148,19 +142,16 @@ describe('dynamic CSP middleware', () => {
   it('keeps the static secureHeaders CSP when the real WP decoy short-circuits before the RequestContext is derived', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // wp-decoy 404s before requestContextMiddleware — the overwrite must skip on undefined context.
     const res = await app.request('/wp-login.php')
     expect(res.status).toBe(404)
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("default-src 'self'")
-    // Marker only present in the dynamic policy from buildCspHeader.
     expect(csp).not.toContain("base-uri 'self'")
   })
 
   it('overwrites with the dynamic policy once the real request-context middleware derived a RequestContext', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // /health reaches requestContextMiddleware (harness db), so the dynamic overwrite fires.
     const res = await app.request('/health')
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("base-uri 'self'")
@@ -169,7 +160,6 @@ describe('dynamic CSP middleware', () => {
   it('omits CSP on a 304 so the revalidated cache keeps the nonce that matches its stored body', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // Install-gate-exempt prefix (see the trustProxy probes below) so the 304 handler is reached.
     app.get('/favicon-csp-304-probe', (c) => c.body(null, 304))
     const res = await app.request('/favicon-csp-304-probe')
     expect(res.status).toBe(304)
@@ -197,7 +187,6 @@ describe('static fallback CSP script-src', () => {
     const res = await app.request('/wp-login.php')
     expect(res.status).toBe(404)
     const scriptSrc = staticScriptSrc(res.headers.get('Content-Security-Policy'))
-    // Markers only the static policy carries (the dynamic one adds base-uri).
     expect(scriptSrc).toBe("script-src 'self'")
   })
 
@@ -215,7 +204,6 @@ describe('readiness probe', () => {
   it('reports 503 with the real phase — the it harness never leaves booting', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // The harness never leaves booting — `setServerPhase('running')` is production-bootstrap only.
     const res = await app.request('/ready')
     expect(res.status).toBe(503)
     expect(await res.json()).toMatchObject({ status: 'booting' })
@@ -227,7 +215,6 @@ describe('anonymous session writes (P1-4)', () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
     const db = getTestDb()
-    // Bot-flood GETs must not persist a session row just to carry a CSRF token.
     const rowsBefore = await db.select({ id: sessionTable.id }).from(sessionTable)
     const res = await app.request('/health')
     const rowsAfter = await db.select({ id: sessionTable.id }).from(sessionTable)
@@ -235,7 +222,6 @@ describe('anonymous session writes (P1-4)', () => {
 
     const setCookies = res.headers.getSetCookie()
     expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
-    // The stateless double-submit cookie still covers SSR forms and /rpc mutations.
     expect(setCookies.some((v) => v.startsWith('__csrf='))).toBe(true)
   })
 
@@ -255,8 +241,6 @@ describe('anonymous session writes (P1-4)', () => {
 })
 
 describe('trustProxy scheme fix (real pipeline)', () => {
-  // The probe path hides under the install-gate-exempt /favicon prefix and
-  // echoes the derived RequestContext URL — post-rewrite if the fix fired.
   function probeApp() {
     const app = new Hono<Env>()
     configureMiddleware(app)
@@ -265,7 +249,7 @@ describe('trustProxy scheme fix (real pipeline)', () => {
   }
 
   it('rewrites to the proxy-reported scheme when the site URL is https', async () => {
-    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE) // website https://example.com
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     const res = await probeApp().request('http://yufan.me/favicon-scheme-probe', {
       headers: { 'x-forwarded-proto': 'https' },
     })
@@ -289,7 +273,6 @@ describe('trustProxy scheme fix (real pipeline)', () => {
 
 describe('buildLoadContext', () => {
   it('hydrates settings against the real database and returns a RouterContextProvider', async () => {
-    // Reset the worker's seeded bundle so the real hydrate reads the (empty) setting table.
     resetBlogSettingsForTests()
     const rc = makeRequestContext({ session: emptySession(), cspNonce: 'nonce', db: getTestDb() })
     const context = await buildLoadContext({

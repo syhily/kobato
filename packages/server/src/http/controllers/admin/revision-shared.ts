@@ -16,10 +16,6 @@ export interface RevisionRouterAudit {
   publishedAction: string
 }
 
-// The per-procedure implementer pair both content controllers hand in.
-// `implementAuthor` and `implementAdmin` return the same type — the role gate
-// differs at runtime only — so posts (author base) and pages (admin base)
-// both satisfy it.
 const revisionImplementer = implementAuthor<RevisionContract>
 type RevisionRouterImplementer = Pick<ReturnType<typeof revisionImplementer>, 'saveDraft' | 'publishLatest'>
 

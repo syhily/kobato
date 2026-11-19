@@ -124,7 +124,6 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 }
 
 beforeAll(async () => {
-  // Touch the subquery builder once so it registers as covered.
   targetSlugTitleSubquery(db)
 })
 
@@ -488,8 +487,6 @@ describe('comments/repos/public-query/digest — latestDistinctCommentIds', () =
   })
 
   it('pins the access path: deleted_at index search, no full table scan', () => {
-    // Pins the `idx_comment_deleted_at` index search; losing it degrades
-    // the window scan to a full table scan.
     const plan = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${latestDistinctCommentIdsQuery([1], 10)}`)
     const details = plan.map((r) => r.detail)
     expect(details.some((d) => d.includes('SEARCH comment USING INDEX idx_comment_deleted_at'))).toBe(true)

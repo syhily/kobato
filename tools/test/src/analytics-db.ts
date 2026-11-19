@@ -15,7 +15,6 @@ import { join } from 'node:path'
 const handles: AnalyticsHandle[] = []
 const dirs: string[] = []
 
-/** Open a fresh DuckDB analytics sidecar on a temp file (same idempotent DDL as production). */
 export async function createTestAnalyticsDb(): Promise<AnalyticsHandle> {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-duckdb-it-'))
   dirs.push(dir)
@@ -44,8 +43,6 @@ export function closeAllTestAnalyticsDbs(): void {
   }
 }
 
-/** Minimal access-events seed row: ts required, visitorHash/path default to constants,
- *  the rest optional. Mirrors `EnrichedAccessEvent` through the production mapping. */
 export interface SeedAccessEvent {
   /** Pin the primary key so a device_env_client row can join on it. */
   eventId?: string
@@ -72,7 +69,6 @@ export interface SeedAccessEvent {
   isBot?: boolean
 }
 
-/** Seed rows through the same Appender protocol the batcher uses. */
 export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAccessEvent[]): Promise<void> {
   const enriched: EnrichedAccessEvent[] = events.map((e) => ({
     eventId: e.eventId ?? randomUUID(),
@@ -101,12 +97,10 @@ export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAcce
   await appendAccessEvents(handle.writer, enriched)
 }
 
-/** Wipe the access_events table between cases. */
 export async function clearAccessEvents(handle: AnalyticsHandle): Promise<void> {
   await handle.writer.run('DELETE FROM access_events')
 }
 
-/** Minimal device_env_server seed: eventId + timestamp required, strings default to '', mobile to NULL. */
 export type SeedDeviceEnvServerRow = Pick<DeviceEnvServerRow, 'eventId' | 'timestamp'> &
   Partial<Omit<DeviceEnvServerRow, 'eventId' | 'timestamp'>>
 
@@ -129,7 +123,6 @@ export async function seedDeviceEnvServerRows(handle: AnalyticsHandle, rows: See
   )
 }
 
-/** Minimal device_env_client seed: eventId + timestamp required, numbers default to NULL, strings to ''. */
 export type SeedDeviceEnvClientRow = Pick<DeviceEnvClientRow, 'eventId' | 'timestamp'> &
   Partial<Omit<DeviceEnvClientRow, 'eventId' | 'timestamp'>>
 

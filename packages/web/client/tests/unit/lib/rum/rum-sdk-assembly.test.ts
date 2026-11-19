@@ -5,12 +5,6 @@ import { createRumEventPolicy } from '@kobato/web-client/lib/rum/rum-sanitizer.t
 import { createRequire } from 'node:module'
 import { describe, expect, it, vi } from 'vitest'
 
-// Real SDK 0.4.3 assembly path. `beforeSend` is invoked through
-// `limitModification`, which deep-clones the event, calls the policy on the
-// clone, and copies back ONLY the SDK's declared modifiable fields. It also
-// ignores `false` for view events. This suite pins that behavior instead of
-// trusting a unit test that calls `beforeSend` directly on the event.
-
 const require = createRequire(import.meta.url)
 const slimRequire = createRequire(require.resolve('@openobserve/browser-rum-slim'))
 
@@ -77,9 +71,6 @@ function runAssembly(rawRumEvent: Record<string, unknown>, beforeSend: RumBefore
 
 function realisticViewEvent(): Record<string, any> {
   const event = makeViewEvent()
-  // The real SDK never sets user/account context because Kobato never calls
-  // setUser/setAccount. Device/display/privacy ARE auto-collected and are
-  // non-modifiable (the O2 ingest allowlist owns them).
   delete event.usr
   delete event.account
   return event
@@ -92,8 +83,6 @@ describe('real SDK assembly: view events cannot be dropped', () => {
 
     expect(sent).toBeDefined()
     expect(sent!.type).toBe('view')
-    // Raw modifiable fields were never overwritten, so this is exactly the
-    // limitation the policy must compensate for.
     expect(sent!.view.url).toBe(raw.view.url)
   })
 
@@ -117,8 +106,6 @@ describe('real SDK assembly: view events cannot be dropped', () => {
     expect(serialized).not.toContain('secret-slug')
     expect(serialized).not.toContain('draft=true')
     expect(serialized).not.toContain('#body')
-    // SDK limitation: non-modifiable fields survive and belong to the O2
-    // ingest allowlist.
     expect(sent!.device).toBeDefined()
     expect(sent!.context).toBeUndefined()
   })

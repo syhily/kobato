@@ -23,7 +23,6 @@ export interface PostEditorShellProps {
   navigate: NavigateFunction
 }
 
-// Module-level accessor — stable identity so the memoized detail only recomputes when the loader DTO changes.
 const getEntity = (d: AdminPostDetailDto) => d.post
 
 const POST_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<

@@ -5,9 +5,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { formatNumber } from '@kobato/utils/format.ts'
 import { MetricName } from '@kobato/web-admin/ui/analytics/MetricName.tsx'
 
-// `total` is the caller-computed FULL-set visit sum, so the card's sliced
-// top-10 rows still show shares of the whole result.
-
 export interface MetricRowsProps {
   rows: MetricRow[]
   total: number

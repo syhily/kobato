@@ -1,12 +1,3 @@
-// Arch contract: a public route module that exports `ErrorBoundary` can become
-// the NEAREST boundary for a loader-thrown 304 (details are public routes).
-// React Router then rebuilds the document headers from the routes up to that
-// boundary and hands the thrown Response's headers to its `headers()` as
-// `errorHeaders`. If the module does not pass `documentHeaders` through, the
-// 304 silently loses ETag / Content-Language / Cache-Control — and
-// `entry.server.tsx` never runs for a no-body status, so nothing else restores
-// them. See packages/server/tests/unit/server/http/document-304-headers.test.ts
-// for the runtime (real RR `getDocumentHeaders`) proof.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { parseAst } from 'vite'
@@ -15,18 +6,6 @@ import { describe, expect, it } from 'vitest'
 const PROJECT_ROOT = process.cwd()
 const PUBLIC_ROUTES_DIR = join(PROJECT_ROOT, 'apps/kobato/src/routes/public')
 
-/**
- * Legitimate exceptions: NONE.
- *
- * Deliberately not an allowlist: every public boundary that can receive a
- * thrown 304 must forward it. Modules outside this scan are out of scope, not
- * exceptions —
- *  · `apps/kobato/src/root.tsx` is the outermost boundary (not under
- *    `routes/public`) and is pinned by
- *    `packages/server/tests/unit/server/http/document-304-headers.test.ts`;
- *  · the admin / auth / editor layouts export `ErrorBoundary` too, but no
- *    loader in those trees throws 304 (detail pages are public-only).
- */
 const LEGITIMATE_EXCEPTIONS: ReadonlySet<string> = new Set()
 
 interface AstNode {
@@ -57,8 +36,6 @@ function relativePath(absolutePath: string): string {
 }
 
 function parse(filePath: string, source: string): AstNode {
-  // `parseAst` throws on a syntax error — a scan that silently skipped a file
-  // would be worse than no scan at all.
   return parseAst(source, { lang: 'tsx' }, filePath) as unknown as AstNode
 }
 
@@ -160,7 +137,6 @@ function moduleExports(source: string, filePath: string): ModuleExports {
       }
       names.add(exported)
       if (exported === 'headers') {
-        // `export { documentHeaders as headers }` — the alias is the contract.
         const local = idName(specifier.local)
         const binding = local !== null ? locals.get(local) : undefined
         pushHeader(binding ?? local ?? '')

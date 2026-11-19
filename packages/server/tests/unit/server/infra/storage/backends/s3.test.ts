@@ -67,9 +67,6 @@ async function importBackend() {
   return mod.s3Backend
 }
 
-// `importBackend` resets the module registry, so the `StorageObjectNotFound`
-// the backend throws is a different class instance from any top-level
-// import. Re-import it from the reset registry for `instanceof` assertions.
 async function importNotFoundError() {
   const mod = await import('@kobato/server/infra/storage/backend.ts')
   return mod.StorageObjectNotFound
@@ -275,15 +272,12 @@ describe('storage/backends/s3 — get', () => {
     const stream = new Readable()
     stream.push(Buffer.alloc(50, 'x'))
     stream.push(null)
-    // ContentLength already over the cap → 413 before any streaming.
     sendMock.mockResolvedValue({ Body: stream, ContentLength: 101 * 1024 * 1024 })
     await expect(backend.get('key')).rejects.toMatchObject({ status: 413 })
   })
 
   it('rejects mid-stream when the body grows past MAX_OBJECT_BUFFER_SIZE', async () => {
     const backend = await importBackend()
-    // ContentLength unknown (chunked response) — the cap is enforced while
-    // streaming. One 60 MB buffer pushed twice crosses the 100 MB cap.
     const chunk = Buffer.alloc(60 * 1024 * 1024, 'x')
     const stream = new Readable()
     stream.push(chunk)
@@ -305,9 +299,6 @@ describe('storage/backends/s3 — get', () => {
 })
 
 describe('storage/backends/s3 — not-found normalization', () => {
-  // The SDK's three not-found shapes: an XML error name (`NoSuchKey` on
-  // GetObject, `NotFound` on HeadObject) or a bare 404 with no name from
-  // S3-compatible providers.
   const NOT_FOUND_CASES: [string, unknown][] = [
     ['NoSuchKey', Object.assign(new Error('The specified key does not exist.'), { name: 'NoSuchKey' })],
     ['NotFound', Object.assign(new Error('Not Found'), { name: 'NotFound' })],
@@ -357,11 +348,6 @@ describe('storage/backends/s3 — not-found normalization', () => {
 })
 
 describe('storage/backends/s3 — list', () => {
-  /**
-   * Server-emulating mock: paginates via ContinuationToken, serving at most
-   * `serverPageCap` keys per page even when the caller's MaxKeys allows more
-   * (real servers short-page at their own cap, e.g. S3's 1000).
-   */
   function mockPagedListing(keys: string[], serverPageCap = Number.POSITIVE_INFINITY) {
     const all = keys.map((key) => ({ Key: key, Size: 1, LastModified: new Date('2024-01-01') }))
     sendMock.mockImplementation((command) => {
@@ -387,7 +373,6 @@ describe('storage/backends/s3 — list', () => {
     const out = await backend.list('prefix')
     expect(out).toHaveLength(2)
     expect(out[0]).toMatchObject({ key: 'a', size: 10 })
-    // Default cap is sent server-side (one page of up to 1000).
     expect(commandInput(0).MaxKeys).toBe(1000)
   })
 
@@ -404,13 +389,11 @@ describe('storage/backends/s3 — list', () => {
 
   it('paginates with the remaining budget as per-page MaxKeys', async () => {
     const backend = await importBackend()
-    // Server short-pages at 3 keys per response.
     mockPagedListing(['k1', 'k2', 'k3', 'k4', 'k5'], 3)
 
     const out = await backend.list('prefix', { maxKeys: 4 })
 
     expect(out.map((o) => o.key)).toEqual(['k1', 'k2', 'k3', 'k4'])
-    // The cap lands mid-pagination: page 2 must ask only for the remaining budget.
     expect(commandInput(0).MaxKeys).toBe(4)
     expect(sendMock).toHaveBeenCalledTimes(2)
     expect(commandInput(1).MaxKeys).toBe(1)
@@ -525,7 +508,6 @@ describe('storage/backends/s3 — validateS3Config', () => {
     if (!result.ok) {
       expect(result.descriptor.messageKey).toBe('storage.error.credentialsInvalid')
     }
-    // HeadBucket 403 → ListObjectsV2 fallback probe → also rejected.
     expect(sendMock).toHaveBeenCalledTimes(2)
   })
 

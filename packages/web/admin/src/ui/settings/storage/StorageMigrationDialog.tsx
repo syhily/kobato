@@ -15,7 +15,6 @@ import { useState } from 'react'
 interface StorageMigrationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Current primary backend: S3 → migrate bucket / fall back to local; local → configure and enable S3. */
   s3Primary: boolean
 }
 
@@ -39,11 +38,6 @@ const EMPTY_TARGET: S3TargetForm = {
   urlTemplate: '',
 }
 
-/**
- * Migration wizard: pick a direction, fill the target S3 config when needed,
- * submit → `admin.storage.startMigration`. The server probes connectivity
- * before accepting; progress is shown by the page's migration card.
- */
 export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: StorageMigrationDialogProps) {
   const queryClient = useQueryClient()
   const { t } = useI18n()
@@ -78,7 +72,6 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
     } catch (error) {
       toastApiError(error, 'admin.toast.migrationStartFailed', t)
     }
-    // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
     setSubmitting(false)
   }
 

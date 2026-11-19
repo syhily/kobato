@@ -1,32 +1,3 @@
-/*
- * Inkling comment-editor surface styles. Imported ONLY by
- * `@kobato/web-public/ui/comments/CommentBodyEditor`, which the public comment form
- * lazy-loads. The package stylesheet is forced into the `inkling` layer,
- * pinned below `utilities` and above `base` by the `@layer` statements in
- * both entries (`public.css`, `admin.css`); host rules below are deliberately
- * UNLAYERED.
- *
- * No CSS zoom on this surface: zoom on a contenteditable breaks
- * Chromium/WebKit IME composition painting. Typography is owned by the
- * `typeset-comment` preset, the same preset the rendered `.comment-content`
- * uses, so the canvas is the render; card interiors opt out via
- * `.not-inkling-prose`.
- *
- * Inkling owns and compiles its own layer, dark variant, and utility scan.
- */
-
-/* Comment canvas: a compact bordered input, not an article column. The
-   min-height keeps the empty state tall; the bottom runway lets the floating
-   toolbar open without clipping against the form's edge. The box lives on the
-   contentEditable, NOT the `.inkling-lexical` wrapper: an empty editor is one
-   paragraph tall, so a wrapper-owned box leaves the rest of the visible area
-   as dead click zones.
-
-   The `.typeset-comment` anchor pins the canvas box to the TOP-LEVEL
-   contentEditable: nested editors also carry `.inkling-prose`, and a bare
-   descendant selector would hand them the min-height and padding. A child
-   combinator cannot express this pin because RichTextPlugin mounts an
-   unclassed wrapper between the two. */
 .kobato-comment-editor .inkling-lexical {
   width: 100%;
 }
@@ -36,30 +7,20 @@
   padding: 6.6px 8.8px 22px;
 }
 
-/* Design-token bridge — same contract as the page editor surface: punch
-   through the Inter/Georgia stacks inkling declares in its layer. The
-   typeset-comment preset consumes --font-serif on the contentEditable, so
-   the inherit bridge keeps canvas text on the rendered serif chain. */
 .kobato-comment-editor .inkling-lexical {
   --inkling-accent-color: var(--brand);
   --font-sans: var(--font-body);
   --font-serif: inherit;
 }
 
-/* Inkling sets 0.1px on the wrapper and the contentEditable inherits it; the
-   rendered comment has none, and letter-spacing on a contenteditable is a
-   known Chromium IME composition-caret drift factor. */
 .kobato-comment-editor .inkling-lexical > * {
   letter-spacing: normal;
 }
 
-/* Match the rendered comment's `leading-copy` (1.85) so canvas = render. */
 .kobato-comment-editor .typeset-comment {
   --typeset-leading: 1.85;
 }
 
-/* Cards render as div wrappers INSIDE the contentEditable, so their spacing
-   is padding-top on the FOLLOWING block, not margin on the card. */
 .kobato-comment-editor
   .inkling-lexical
   .inkling-prose
@@ -72,9 +33,6 @@
   padding-top: 28px;
 }
 
-/* Code card bodies: the display <pre> and CodeMirror's lines. The CM theme is
-   unlayered too, so this needs the extra `.cm-editor` class of specificity to
-   beat `.cm-editor .cm-line`; the package sizes them at 1.6rem / leading-9. */
 .kobato-comment-editor .inkling-lexical pre,
 .kobato-comment-editor .inkling-lexical .cm-editor .cm-line {
   font-size: 14px;
@@ -84,7 +42,6 @@
   font-size: 11.5px;
 }
 
-/* Card captions; the package sizes them at 1.4rem / 24px leading. */
 .kobato-comment-editor .inkling-lexical-caption > *,
 .kobato-comment-editor .inkling-lexical-caption p {
   font-size: 12px;

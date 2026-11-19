@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Server prerender products are deterministic sentinels marking server-recomputed bytes.
 vi.mock('katex', () => ({
   default: {
     renderToString: (tex: string, options?: { displayMode?: boolean }) =>
@@ -23,7 +22,6 @@ import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 
-// zod parse clones — always assert against the PARSED state's nodes.
 function parse(state: unknown) {
   return lexicalEditorStateSchema.parse(state)
 }

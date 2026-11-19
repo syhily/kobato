@@ -24,7 +24,6 @@ export default async function extractVideoMetadata(file: File): Promise<VideoMet
       errorMessage: 'Failed to load video metadata',
       start: () => {
         video.src = lease.url
-        // required for iPhone Safari to load the video contents for the thumbnail
         video.load()
       },
     })

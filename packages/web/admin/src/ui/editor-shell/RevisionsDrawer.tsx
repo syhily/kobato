@@ -120,10 +120,6 @@ export function RevisionHistoryDrawer({
               onSelect={setSelectedId}
               onRefresh={() => {
                 setRevisions(null)
-                // Settle from the refetch promise, not the render-phase
-                // guard above: with `staleTime: Infinity` an unchanged
-                // refetch returns the same data reference, so the guard
-                // never re-fires and the list would stick on the loading state.
                 void listQuery.refetch().then((result) => {
                   if (result.data) {
                     setRevisions(result.data.revisions)
@@ -277,7 +273,6 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
         </span>
       </div>
       <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">
-        {/* key-remount: switching revisions rebuilds both panes, which resets their scroll positions */}
         <RevisionPanes key={revision.id} diff={diff} />
       </div>
       <div className="flex items-center justify-between gap-2 rounded-xl border bg-card p-3 text-xs text-muted-foreground">
@@ -330,7 +325,6 @@ function RevisionPanes({ diff }: { diff: ReturnType<typeof diffBodies> }) {
       left.removeEventListener('scroll', onLeftScroll)
       right.removeEventListener('scroll', onRightScroll)
     }
-    // The panes are stable host elements — attach once; `diff` only swaps their children.
   }, [])
 
   return (

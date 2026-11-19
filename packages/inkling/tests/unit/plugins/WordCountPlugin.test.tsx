@@ -59,8 +59,6 @@ describe('WordCountPlugin', () => {
   })
 
   afterEach(() => {
-    // restore only the activeElement getters: vi.restoreAllMocks would also
-    // reset the module-level countWords spy implementation
     for (const spy of activeElementSpies.splice(0)) {
       spy.mockRestore()
     }
@@ -106,9 +104,6 @@ describe('WordCountPlugin', () => {
     return { wordCountHandle, ...result }
   }
 
-  // renderHook discards the callback's return value, so two mounted plugins
-  // need a real render; the provider stays identical across rerenders so the
-  // handle and its publisher stacks survive.
   function renderPluginSlots(initialProps: { a: PluginSlot | null; b: PluginSlot | null }) {
     mockComposerContext(editor)
     const wordCountHandle = createWordCountHandle()

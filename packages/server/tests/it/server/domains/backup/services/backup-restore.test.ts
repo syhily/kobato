@@ -23,7 +23,6 @@ import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { extractBackupFile, unpackBackupPayload } from '@kobato/test/backup-buffer.ts'
 
-// In-memory backend injected as 's3' (the active backend) — no real S3 or settings.
 const mem = makeMemoryBackend()
 
 const db = getTestDb()
@@ -31,7 +30,6 @@ const db = getTestDb()
 beforeEach(async () => {
   __setStorageBackendForTests('s3', mem.backend)
   analyticsHandle = await createTestAnalyticsDb()
-  // The real snapshotAnalyticsTo, wired by injection to the adopted handle.
   __resetAnalyticsEngineForTests()
   __adoptAnalyticsHandleForTests(analyticsHandle)
   wireBackupSnapshots({ snapshotAnalyticsTo })
@@ -163,9 +161,6 @@ describe('backup and restore integration', () => {
   })
 
   it('records the exact stored byte count and a complete gzip header (stream-pipeline regression)', async () => {
-    // The 20ms is WALL-CLOCK on purpose — must not become a fake timer: it lets
-    // the stream switch to flowing mode before the drain attaches, which is where
-    // a 'data' byte counter loses the first chunk.
     __setStorageBackendForTests('s3', {
       ...mem.backend,
       async putStream(input) {
@@ -196,7 +191,6 @@ describe('backup and restore integration', () => {
   })
 
   it('passes a legacy raw (ungzipped) SQLite file through as content-only', async () => {
-    // createTestDatabaseFile self-cleans through the harness registry.
     const fresh = createTestDatabaseFile()
     const { readFileSync } = await import('node:fs')
     const bytes: Buffer = readFileSync(fresh.path)

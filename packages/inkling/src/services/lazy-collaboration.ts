@@ -1,12 +1,3 @@
-/**
- * The lazy collaboration chunk's load session: the yjs/y-websocket module loads on demand
- * (dynamic import inside an effect, never during SSR, only while multiplayer is enabled),
- * so both published entries stay free of yjs; until it resolves, the context serves the
- * inert factory. This module owns the load's cancellation matrix — supersede-on-restart and
- * cancel-on-disable — behind the import port; the React adapter is
- * `useCollaborationProviderFactory`.
- */
-
 import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
 
 import { createRequestTrack } from '@kobato/inkling-internal/services/request-track'
@@ -38,10 +29,7 @@ export function createLazyProviderFactory(
             apply(createWebsocketProviderFactory)
           }
         })
-        // A failed chunk import (network/chunk error) leaves the factory inert — never an unhandled rejection.
-        .catch(() => {
-          /* noop */
-        })
+        .catch(() => undefined)
     },
     cancel: () => track.dispose(),
   }

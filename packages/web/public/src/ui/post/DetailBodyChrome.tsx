@@ -102,8 +102,6 @@ export function DetailBodyChrome({
   const publishedIso = date.toISOString()
   const updatedAt = updated ?? date
   const updatedIso = updatedAt.toISOString()
-  // Render boundary: storage keeps raw exportDOM HTML, so it is trusted only after the
-  // 'body' preset strips everything outside the inkling export contract.
   const cleanBodyHtml = useMemo(() => sanitizeHtml(bodyHtml, 'body'), [bodyHtml])
 
   return (

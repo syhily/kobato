@@ -5,8 +5,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// The admin cache card maps a rejected target back to a descriptor; the client
-// renders the localized sentence, never the raw key.
 const EXPECTED: Record<AppLocale, string> = {
   'en-US': 'Unknown cache group: nope',
   'zh-CN': '未知的缓存分组：nope',

@@ -1,10 +1,5 @@
 import { getParentScrollableElement } from '@kobato/inkling-internal/utils/draggable/draggable-utils'
 
-// Two named policies keep the scrollable-ancestor walks from silently diverging: 'floating'
-// checks overflowY only; 'drag-scroll' is position-aware (an absolutely positioned draggable
-// skips statically positioned ancestors). The inkling-card-gallery mirror keeps its own
-// vendored copy.
-
 export type ScrollAncestorPolicy = 'floating' | 'drag-scroll'
 
 export function getScrollAncestor(node: HTMLElement | null, policy: ScrollAncestorPolicy = 'floating'): HTMLElement {

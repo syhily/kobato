@@ -2,7 +2,6 @@ import { buildAdminListConditions } from '@kobato/server/domains/comments/repos/
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
 
-// Render SQL through the pg dialect so it matches what the real driver sends.
 const pgDialect = new PgDialect()
 
 function render(sqlObj: ReturnType<typeof buildAdminListConditions>[number]): { sql: string; params: unknown[] } {
@@ -17,7 +16,6 @@ function render(sqlObj: ReturnType<typeof buildAdminListConditions>[number]): { 
 describe('buildAdminListConditions — text filter', () => {
   it('does not add a text condition when `q` is empty', () => {
     const conditions = buildAdminListConditions({ q: '' })
-    // Only the deletedAt guard — no text predicate.
     expect(conditions).toHaveLength(1)
   })
 
@@ -60,7 +58,6 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: '50%' })
     expect(conditions).toHaveLength(2)
     const { params } = render(conditions[1]!)
-    // User `%` is escaped; wrapping wildcards come from the repo.
     expect(params).toEqual(['%50\\%%'])
   })
 
@@ -68,7 +65,6 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: 'C:\\Users' })
     expect(conditions).toHaveLength(2)
     const { params } = render(conditions[1]!)
-    // Backslashes are doubled so the LIKE matcher treats them as literal.
     expect(params).toEqual(['%C:\\\\Users%'])
   })
 })
@@ -76,25 +72,21 @@ describe('buildAdminListConditions — text filter', () => {
 describe('buildAdminListConditions — status filter', () => {
   it('stacks the pending predicate and excludes delete-requested rows', () => {
     const conditions = buildAdminListConditions({ status: 'pending' })
-    // deletedAt + isPending + deleteRequestedAt IS NULL
     expect(conditions).toHaveLength(3)
   })
 
   it('stacks the approved predicate and excludes delete-requested rows', () => {
     const conditions = buildAdminListConditions({ status: 'approved' })
-    // deletedAt + isPending=false + deleteRequestedAt IS NULL
     expect(conditions).toHaveLength(3)
   })
 
   it('stacks the delete-requested predicate', () => {
     const conditions = buildAdminListConditions({ status: 'deleteRequested' })
-    // deletedAt + deleteRequestedAt IS NOT NULL
     expect(conditions).toHaveLength(2)
   })
 
   it('stacks the text predicate alongside the pending-status predicate', () => {
     const conditions = buildAdminListConditions({ q: 'foo', status: 'pending' })
-    // deletedAt + isPending + deleteRequestedAt IS NULL + text
     expect(conditions).toHaveLength(4)
   })
 })
@@ -105,7 +97,6 @@ describe('buildAdminListConditions — date filter', () => {
 
   it('does not add a date condition when neither bound is set', () => {
     const conditions = buildAdminListConditions({})
-    // Only the deletedAt guard.
     expect(conditions).toHaveLength(1)
   })
 
@@ -133,7 +124,6 @@ describe('buildAdminListConditions — date filter', () => {
       createdBefore: before,
       q: 'foo',
     })
-    // deletedAt + gte + lte + ilike
     expect(conditions).toHaveLength(4)
   })
 
@@ -143,7 +133,6 @@ describe('buildAdminListConditions — date filter', () => {
       createdBefore: before,
       status: 'pending',
     })
-    // deletedAt + isPending + deleteRequestedAt IS NULL + gte + lte
     expect(conditions).toHaveLength(5)
   })
 })

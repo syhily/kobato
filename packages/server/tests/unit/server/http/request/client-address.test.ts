@@ -19,9 +19,6 @@ describe('server/http/request/client-address — getClientAddress', () => {
     expect(getClientAddress(buildRequest())).toBe('unknown')
   })
 
-  // With no remoteAddress but a remotePort, the caller keys on `port:<n>` (per-connection
-  // buckets). The non-IP peer is never loopback, so it passes through verbatim and proxy
-  // headers stay untrusted.
   it('passes a port-keyed direct peer through verbatim, ignoring proxy headers', () => {
     const req = buildRequest({ 'x-forwarded-for': '198.51.100.1' })
     expect(getClientAddress(req, 'port:43210')).toBe('port:43210')

@@ -6,8 +6,6 @@ import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Point the route + `resolveLocalPath` at a fresh temp directory. The mock
-// factory runs before any import of the route, so STORAGE_DIR is set first.
 const tmp = vi.hoisted(() => ({ root: '' }))
 
 vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
@@ -21,9 +19,6 @@ vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
 
 const { localStorageRouter } = await import('@kobato/server/http/resources/local-storage.ts')
 
-// The route reads the perimeter-derived `requestContext` (locale for the 503
-// branch); a direct `router.request` has no middleware chain, so mirror the
-// production perimeter with the canonical stub.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', makeRequestContext({ request: c.req.raw }))
@@ -31,8 +26,6 @@ app.use('*', async (c, next) => {
 })
 app.route('/', localStorageRouter)
 
-// The default test bundle enables a complete S3 config — override the toggle
-// per suite: OFF streams local bytes, ON exercises the 302 branch.
 function seedStorageEnabled(enabled: boolean, assetHost = 'assets.example.com') {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -44,7 +37,6 @@ function seedStorageEnabled(enabled: boolean, assetHost = 'assets.example.com') 
   })
 }
 
-// The allowlist is under test: file contents are irrelevant — only key reachability matters.
 beforeAll(() => {
   mkdirSync(`${tmp.root}/images`, { recursive: true })
   mkdirSync(`${tmp.root}/musics`, { recursive: true })
@@ -68,8 +60,6 @@ afterAll(() => {
 })
 
 describe('local-storage public route — namespace allowlist (local driver)', () => {
-  // Streaming paths run with S3 OFF so the local driver owns the response.
-  // beforeEach (not beforeAll): the shared setup resets the snapshot per test.
   beforeEach(() => {
     seedStorageEnabled(false)
   })
@@ -87,7 +77,6 @@ describe('local-storage public route — namespace allowlist (local driver)', ()
     expect(svg.status).toBe(200)
     expect(svg.headers.get('Content-Type')).toBe('image/svg+xml')
 
-    // `.flac` must map through the shared key policy, never to octet-stream.
     const flac = await app.request('/storage/musics/t.flac')
     expect(flac.status).toBe(200)
     expect(flac.headers.get('Content-Type')).toBe('audio/flac')
@@ -130,7 +119,6 @@ describe('local-storage public route — namespace allowlist (local driver)', ()
   })
 })
 
-// Default bundle (S3 enabled + complete) drives the redirect branch.
 describe('local-storage public route — s3 redirect', () => {
   it('302s an allowlisted key to the current public base, preserving the query string', async () => {
     const res = await app.request('/storage/images/a.jpg?v=123')

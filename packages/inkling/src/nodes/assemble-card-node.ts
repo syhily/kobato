@@ -59,9 +59,6 @@ export function assembleCardNode<
   class AssembledCardNode extends baseNode {
     static nestedEditors = declaration.nestedEditors
     static transientProps = declaration.transientProps
-    // Stamped at assembly, not inherited from the generated base: every card built
-    // through the declaration pipeline — built-in or host-defined, generated or
-    // hand-written base — passes the $isInklingCard gate with no per-class ceremony.
     isInklingCard(): true {
       return true
     }
@@ -91,20 +88,6 @@ export function assembleCardNode<
 // oxlint-disable-next-line no-var
 var assembledCardNodeCache: WeakMap<object, CardNodeClass<LexicalNode>> | undefined
 
-/**
- * The single-site card assembler: every caller — the wrapper-layer projection
- * (`card-wrappers`), the shim modules (`AudioNode` and friends), and `defineCard`
- * for host cards — assembles through this memoized helper, so exactly one class
- * object exists per declaration and importDOM/clone identity is coherent across
- * every consumer. Keyed on the declaration object itself: the declarations never
- * import the wrapper layer, so the same object reaches every caller.
- *
- * Memoization must live behind a hoisted function (never a module-level `const`
- * map read): the wrapper layer's import closure contains the React decorate tree,
- * whose components/plugins value-import the shim modules — when a shim is
- * evaluated mid-cycle it calls this function before the wrapper-layer module
- * bodies have run.
- */
 export function assembleCardNodeOnce<
   TNode extends LexicalNode,
   D extends CardAssemblyDeclaration = CardAssemblyDeclaration,

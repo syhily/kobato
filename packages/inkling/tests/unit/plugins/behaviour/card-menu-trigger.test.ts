@@ -156,9 +156,6 @@ describe('card-menu-trigger', () => {
   })
 
   describe('isSlashTriggerPress', () => {
-    // the grammar asks rootElement.matches(':focus'); a real focus() makes
-    // jsdom reconcile (and collapse) the editor's range selections, so the
-    // :focus answer is mocked instead
     let rootFocused: boolean
 
     beforeEach(() => {

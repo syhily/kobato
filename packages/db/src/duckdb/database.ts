@@ -4,14 +4,6 @@ import { mkdirSync } from 'node:fs'
 import { open, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
 
-/**
- * The embedded DuckDB analytics sidecar: one file, one instance, one
- * reader + one writer connection, hosting the analytics tables (schema
- * injected by the caller). Backups archive it with the content DB, but a
- * missing file is recreated empty — restore is a bonus. A pre-2.0 file is
- * upgraded to the 2.0 storage format at open, after which a rollback to a
- * pre-2.0 build can no longer read the sidecar.
- */
 export interface AnalyticsHandle {
   instance: DuckDBInstance
   /** Writer (batcher appends, retention deletes, DDL). */
@@ -24,11 +16,6 @@ export interface AnalyticsHandle {
   closed: boolean
 }
 
-/**
- * Structured logger seam for open-time diagnostics — the composition layer
- * injects its logger (mirrors `migrate.ts`'s `MigrationLogger`); this package
- * never reaches for one itself.
- */
 export interface DuckDBLogger {
   info(message: string, context?: Record<string, unknown>): void
   warn(message: string, context?: Record<string, unknown>): void
@@ -71,7 +58,6 @@ const quoteSqlString = (value: string): string => `'${value.replaceAll("'", "''"
  */
 async function upgradeStorageFormat(analyticsPath: string, logger: DuckDBLogger | undefined): Promise<void> {
   const tmpPath = `${analyticsPath}.v2-upgrade`
-  // A crashed earlier attempt leaves a partial copy behind — never copy into it.
   await rm(tmpPath, { force: true })
   const scratch = await DuckDBInstance.create()
   const connection = await scratch.connect()
@@ -90,9 +76,6 @@ async function upgradeStorageFormat(analyticsPath: string, logger: DuckDBLogger 
   logger?.info('Analytics sidecar upgraded to the DuckDB 2.0 storage format', { path: analyticsPath })
 }
 
-/** Open the sidecar and apply the caller's DDL statements (idempotent — a
- *  missing file is created empty). DDL is injected: this module owns no
- *  analytics schema. */
 export async function openAnalyticsDatabase(
   analyticsPath: string,
   ddl: string | string[],
@@ -107,7 +90,6 @@ export async function openAnalyticsDatabase(
       try {
         await upgradeStorageFormat(analyticsPath, logger)
       } catch (error) {
-        // 2.0 still reads the 1.x format — keep the original file and retry on the next boot.
         await rm(`${analyticsPath}.v2-upgrade`, { force: true })
         logger?.warn('Analytics sidecar storage upgrade failed; keeping the 1.x format', {
           error: error instanceof Error ? error.message : String(error),
@@ -129,7 +111,6 @@ export async function closeAnalyticsDatabase(handle: AnalyticsHandle): Promise<v
     return
   }
   handle.closed = true
-  // Fold the WAL so the on-disk state is one clean file.
   await handle.writer.run('CHECKPOINT')
   handle.writer.closeSync()
   handle.reader.closeSync()

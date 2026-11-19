@@ -4,14 +4,11 @@ import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials.t
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
 import { z } from 'zod'
 
-/** Custom validation messages: typed ids; provider names ride `params`, never translated. */
 export const socialsValidationMessages = {
   fixedType: 'admin.settings.socials.error.fixedType',
   duplicateNetwork: 'admin.settings.socials.error.duplicateNetwork',
 } as const satisfies Record<string, UiMessageId>
 
-// Schema-level guard: `type` is forced to the platform's canonical display mode and each
-// platform may appear at most once — a hand-crafted payload could otherwise mix or duplicate rows.
 export const socialsSchema = z
   .object({
     socials: z

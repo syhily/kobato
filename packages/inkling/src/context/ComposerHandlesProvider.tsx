@@ -12,10 +12,6 @@ import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-ha
 import { createWordCountHandle } from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 import React from 'react'
 
-// Owns the composer's handle stack: one instance per handle per mounted
-// provider (the useState initializers keep them stable), and nested composers
-// share the top-level handles. The providers never read each other's context,
-// so their nesting order carries no semantics.
 export function ComposerHandlesProvider({ children }: { children: React.ReactNode }) {
   const [dragDropHandle] = React.useState(createDragDropHandle)
   const [wordCountHandle] = React.useState(createWordCountHandle)

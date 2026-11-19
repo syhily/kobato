@@ -22,7 +22,6 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-// Discriminator: `null` = new friend, a friend = edit, `undefined` = closed.
 export interface EditFriendDialogProps {
   friend: AdminFriendDto | null | undefined
   onClose: () => void
@@ -38,8 +37,6 @@ const EMPTY_DRAFT = {
   visible: true,
 }
 
-// `admin.friends.upsert` wire input: `id` absent → create; present → update.
-// `visible` defaults to true on create; explicit values always override on update.
 interface UpsertFriendInput {
   id?: string
   website: string
@@ -69,15 +66,12 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   })
   const { mutate: submit, isPending } = upsertMutation
 
-  // Re-seed the form when the parent toggles the dialog (discriminator semantics above).
   if (friend !== lastFriend) {
     setLastFriend(friend)
-    if (friend === undefined) {
-      // closed — leave current draft for animation continuity
-    } else if (friend === null) {
+    if (friend === null) {
       setErrorMessage(null)
       setDraft(EMPTY_DRAFT)
-    } else {
+    } else if (friend !== undefined) {
       setErrorMessage(null)
       setDraft({
         website: friend.website,

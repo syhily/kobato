@@ -7,18 +7,10 @@ import { Globe, MonitorCheck } from 'lucide-react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-/** MetricName reads the UI translator; every render mounts the root provider. */
 function renderMetric(node: ReactElement): string {
   return renderToStaticMarkup(wrapWithI18n(node))
 }
 
-// Brand-icon / flag selection for metric rows (Slite's metrics/name/*
-// port). Referer rows render a local letter avatar — no third-party favicon
-// request (CSP img-src 'self' + referer-host privacy). Icon selection is
-// asserted through the component's own render path — there is no separate
-// lookup helper to pin.
-
-/** SSR markup of an icon exactly as MetricName renders it inline. */
 function iconMarkup(Icon: typeof SiGooglechrome): string {
   return renderToStaticMarkup(<Icon aria-hidden className="mt-0.5 size-4 shrink-0" />)
 }
@@ -53,7 +45,6 @@ describe('ui/admin/analytics/MetricName icon selection', () => {
     expect(regionDisplayName('CN', 'zh-CN')).toBe('中国')
     expect(regionDisplayName('US', 'zh-CN')).toBe('美国')
     expect(regionDisplayName('US', 'en-US')).toBe('United States')
-    // Unknown/invalid input comes back verbatim instead of throwing.
     expect(regionDisplayName('not-a-code', 'zh-CN')).toBe('not-a-code')
   })
 })
@@ -65,7 +56,6 @@ describe('ui/admin/analytics/MetricName bucket tokens', () => {
     expect(renderMetric(<MetricName name="1-5" type="touch" />)).toContain('1–5 点')
     expect(renderMetric(<MetricName name="6-10" type="touch" />)).toContain('6–10 点')
     expect(renderMetric(<MetricName name="many" type="touch" />)).toContain('超过 10 点')
-    // A real DPR bucket still renders verbatim (it is already locale-neutral).
     expect(renderMetric(<MetricName name="1.5x" type="dpr" />)).toContain('1.5x')
   })
 })
@@ -86,7 +76,6 @@ describe('ui/admin/analytics/MetricName rendering', () => {
     const html = renderMetric(<MetricName name="t.co" type="referer" />)
     expect(html).not.toContain('<img')
     expect(html).toContain('t.co')
-    // The avatar carries the host's first character (visually uppercased via CSS).
     expect(html).toContain('>t</span>')
   })
 

@@ -5,7 +5,6 @@ function rect(top: number, left: number, width: number, height: number): FitRect
   return { top, left, width, height }
 }
 
-// a 1000x800 viewport with a 10px gap on every edge
 const bounds = { top: 0, left: 0, right: 1000, bottom: 800 }
 
 function clamp(proposed: FitRect, gap: Parameters<typeof fitRectWithin>[0]['gap'] = 10) {

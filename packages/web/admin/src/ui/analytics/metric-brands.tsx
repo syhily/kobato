@@ -1,6 +1,3 @@
-// Brand glyphs vendored from Simple Icons (CC0) via createIcon — the
-// @icons-pack/react-simple-icons package (~60 MB on disk) ships thousands
-// of brands; MetricName needs only these 76.
 import type { LucideIcon } from '@kobato/ui/icons/types.ts'
 
 import { createIcon } from '@kobato/ui/icons/create-icon.tsx'

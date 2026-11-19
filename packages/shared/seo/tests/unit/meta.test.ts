@@ -17,9 +17,6 @@ import {
 import { setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// `routeMeta` and `pageTitle` read the site title / website / OG defaults
-// from the snapshot reader — there is no baked-in `DEFAULT_SETTINGS`, so
-// every test seeds an explicit fixture snapshot in `beforeEach`.
 const fixture: BlogSettingsBundle = {
   siteIdentity: {
     title: 'Test Blog',
@@ -175,8 +172,6 @@ beforeEach(() => {
   setBlogSettingsBundleForTests(fixture)
 })
 
-// routeMeta emits a heterogeneous list of `name`, `property`, and
-// `tagName: link` entries — treat it as a flat map and assert by predicate.
 type MetaEntry = MetaDescriptor & Record<string, unknown>
 
 function findByName(meta: MetaEntry[], name: string) {
@@ -260,7 +255,6 @@ describe('services/seo/meta — routeMeta', () => {
       },
     }) as MetaEntry[]
 
-    // An empty content="..." descriptor is not a section — omit the tag entirely.
     expect(findByProperty(meta, 'article:section')).toBeUndefined()
   })
 
@@ -331,7 +325,6 @@ describe('services/seo/meta — page variant and feedLinks', () => {
       variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
     }) as MetaEntry[]
 
-    // Never an empty section: the fallback module is the last-resort language source.
     expect(findByProperty(meta, 'article:section')?.content).toBe(fallbackMessages['meta.section.page'])
   })
 

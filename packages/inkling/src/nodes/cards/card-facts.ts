@@ -3,13 +3,6 @@ import { getHostCard, getHostCards, type HostCardRecord } from '@kobato/inkling-
 
 type BuiltinCardDeclaration = (typeof CARD_DECLARATIONS)[number]
 
-/**
- * One card's facts resolved across both card registries — the single home of the merge
- * policy every derived view shares: built-in declarations answer first, the host
- * registry is a fallback and never an override. Registry-layer only (imports the
- * declarations and the host registry, never the wrapper/decorate layers), so
- * cycle-sensitive derived views can read it safely.
- */
 export type CardFacts =
   | { source: 'builtin'; nodeType: string; declaration: BuiltinCardDeclaration }
   | { source: 'host'; nodeType: string; host: HostCardRecord }
@@ -27,11 +20,6 @@ export function resolveCardFacts(nodeType: string): CardFacts | undefined {
   return host === undefined ? undefined : { source: 'host', nodeType, host }
 }
 
-/**
- * The list form of the merge policy: built-ins in declaration order, then host cards
- * in registration order; list views derive from this so the ordering is stated once.
- * A live read, so host cards defined after module init still join.
- */
 export function resolveAllCardFacts(): CardFacts[] {
   return [
     ...CARD_DECLARATIONS.map((declaration): CardFacts => ({
@@ -44,7 +32,6 @@ export function resolveAllCardFacts(): CardFacts[] {
 }
 
 export function getCardToolbarLabel(nodeType: string | undefined | null): string | undefined {
-  // unknown is a first-class input, not a smuggled '' sentinel
   if (!nodeType) {
     return undefined
   }

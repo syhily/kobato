@@ -5,10 +5,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { tryPasskeyAuthBeginRateLimit } from '@kobato/server/infra/rate-limit.ts'
 
-/**
- * Public passkey endpoints. `authBegin` is CSRF-less: it only returns a
- * single-use 5-minute challenge — no data is read or mutated.
- */
 const authBegin = implementPublic(passkeyContract)
   .authBegin.use(passkeyGuard)
   .handler(async ({ input, context }) => {

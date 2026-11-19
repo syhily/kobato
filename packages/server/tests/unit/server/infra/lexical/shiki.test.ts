@@ -3,9 +3,6 @@ import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from 
 import { bundledLanguages, createHighlighter } from 'shiki'
 import { describe, expect, it } from 'vitest'
 
-// Real-shiki contract: the fine-grained registrations must produce byte-identical HTML to
-// the full bundle, and the language gate must match `lang in bundledLanguages`.
-
 const SAMPLES: { language: string; code: string }[] = [
   { language: 'typescript', code: 'const x: number = 42\n' },
   { language: 'bash', code: 'curl -fsSL https://example.com | sh\n' },

@@ -13,7 +13,6 @@ export interface AdminTagsListFilters {
   limit?: number
 }
 
-// Shared by the listing and its counter so both filter on the same predicate.
 function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
@@ -22,10 +21,8 @@ function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   return undefined
 }
 
-// Admin list view; `name ASC` matches the public listing. Without offset/limit the full filtered set is returned.
 export async function listAdminTagRows(db: Database, filters: AdminTagsListFilters = {}): Promise<TagRow[]> {
   const where = buildAdminTagWhere(filters)
-  // `0` is a legitimate offset — test `!== undefined`, not truthiness.
   const q = where
     ? db.select().from(tag).where(where).orderBy(asc(tag.name))
     : db.select().from(tag).orderBy(asc(tag.name))
@@ -59,7 +56,6 @@ export async function findTagByName(db: Database, name: string): Promise<TagRow 
   return rows[0] ?? null
 }
 
-// Sync (node:sqlite): called inside the upsert transaction.
 export function findTagsByNames(db: Database, names: string[]): TagRow[] {
   if (names.length === 0) {
     return []
@@ -90,7 +86,6 @@ export async function deleteTag(db: Database, id: number): Promise<boolean> {
   return result.length > 0
 }
 
-// Batch seeder insert, one round-trip. Sync (node:sqlite): called inside the upsert transaction.
 export function seedTagsIfMissing(db: Database, valuesList: NewTag[], tx = db): void {
   if (valuesList.length === 0) {
     return

@@ -4,8 +4,6 @@ import { requestContext } from '@kobato/server/http/request-context.ts'
 import { makeRequestContext } from '@kobato/test/request-context.ts'
 import { RouterContextProvider } from 'react-router'
 
-// Stand-in for the `RouterContextProvider` that `buildLoadContext`
-// populates in production, with the canonical RequestContext pre-loaded.
 export type MakeContextOptions = MakeRequestContextOptions
 
 export function makeRouteContext(options: MakeContextOptions = {}): RouterContextProvider {
@@ -14,7 +12,6 @@ export function makeRouteContext(options: MakeContextOptions = {}): RouterContex
   return context
 }
 
-// Convenience wrapper matching the typical `loader({ request, context, params })` signature.
 export function makeLoaderArgs(
   options: MakeContextOptions & { params?: Record<string, string | undefined> } = {},
 ): any {
@@ -23,7 +20,6 @@ export function makeLoaderArgs(
   return { request, context, params: options.params ?? {} }
 }
 
-/** React Router `data()` wraps the loader payload; unwrap for direct handler tests. */
 // Return-only T is the call-site typing API — `unwrapLoaderData<LoaderResult>(...)`.
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function unwrapLoaderData<T>(value: unknown): T {

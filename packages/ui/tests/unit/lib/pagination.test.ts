@@ -72,8 +72,6 @@ describe('computePageWindow', () => {
       })
 
       it('renders nearEnd layout for current=4..7', () => {
-        // current=4 is also nearStart-eligible (4 < 5); nearStart wins
-        // because the algorithm checks it first.
         expect(computePageWindow({ current: 5, total: 7 })).toEqual([1, 'ellipsis', 3, 4, 5, 6, 7])
         expect(computePageWindow({ current: 7, total: 7 })).toEqual([1, 'ellipsis', 3, 4, 5, 6, 7])
       })

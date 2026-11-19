@@ -31,10 +31,6 @@ export function registerLinkMatching(editor: LexicalEditor, deps: LinkMatchingDe
         return true
       }
 
-      // The bookmark class is resolved from the registered-node map, not
-      // imported from the shim — this module is on the card-free core path.
-      // When the editor doesn't register the bookmark card, a bare-URL paste
-      // degrades to the plain-link branch below.
       const BookmarkNodeClass = getRegisteredNodeMap(editor).get('bookmark')?.klass
 
       if (

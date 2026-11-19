@@ -7,8 +7,6 @@ import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
 import { isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
 import { Hono } from 'hono'
 
-// Form bodies carry exactly two URLs — anything larger is junk. dynamicBodyLimit
-// caps declared lengths up front and byte-counts chunked bodies too.
 const MAX_FORM_BODY_BYTES = 16 * 1024
 
 // W3C Webmention receive endpoint — unauthenticated by design (per-IP rate
@@ -22,8 +20,6 @@ export const webmentionRouter = new Hono<Env>().post(
     onError: (c) => c.json({ error: { message: 'Payload too large' } }, 413),
   }),
   async (c) => {
-    // OFF → 410, checked after the rate limit + body cap so those guards keep
-    // absorbing junk; same predicate as the discovery surfaces.
     if (!isWebmentionReceiveEnabled(c.var.requestContext.settings)) {
       return c.json({ error: { message: 'This endpoint no longer accepts webmentions' } }, 410)
     }

@@ -5,7 +5,6 @@ export const analyticsSchema = z.object({
   analytics: z.object({
     trackAdmin: coerceBoolean,
     keepBotRows: coerceBoolean,
-    // `.default(...)` so rows persisted before this key existed still parse.
     geoipAutoUpdate: coerceBoolean.default(true),
   }),
 })

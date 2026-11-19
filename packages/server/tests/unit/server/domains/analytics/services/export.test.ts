@@ -1,10 +1,6 @@
 import { csvCell } from '@kobato/server/domains/analytics/services/export.ts'
 import { describe, expect, it } from 'vitest'
 
-// csvCell escaping/formula-neutralization only — the full CSV assembly
-// (headers + CRLF around real queried rows) is pinned by the controller
-// integration test (`analyticsRouter.export` returns per-path CSV text).
-
 describe('csvCell', () => {
   it('passes plain values through untouched', () => {
     expect(csvCell('/hello')).toBe('/hello')

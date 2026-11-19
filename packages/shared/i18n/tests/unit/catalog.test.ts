@@ -15,10 +15,8 @@ import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
-/** Per-locale overrides; `null` removes the key so "missing key" stays testable. */
 type Overrides = Partial<Record<AppLocale, Record<string, string | null>>>
 
-/** Synthetic source: every locale starts from the base message, then applies its overrides. */
 function source(base: Record<string, string>, overrides: Overrides = {}) {
   const catalogs = {} as Record<AppLocale, Record<string, string>>
   for (const locale of SUPPORTED_LOCALES) {
@@ -43,7 +41,6 @@ const ENGLISH_PLURAL = '{count, plural, one {# item} other {# items}}'
 const ZH_PLURAL_ONLY_OTHER = '{count, plural, other {# 项}}'
 const ZH_TW_PLURAL_ONLY_OTHER = '{count, plural, other {# 項}}'
 
-/** English one/other, every Chinese locale other-only — the shape the catalogs ship. */
 function pluralSource(): MessageCatalogSource {
   return source(
     { items: ENGLISH_PLURAL },
@@ -63,15 +60,12 @@ describe('i18n/catalog', () => {
 
   it('merges the English baseline under each localized UI catalog', () => {
     expect(uiMessagesFor('en-US')).toBe(uiMessagesEnUS)
-    // Both namespaces stay separate: server-only keys never enter the UI catalog.
     expect(Object.hasOwn(uiMessagesFor('zh-CN'), 'email.common.greeting')).toBe(false)
     expect(uiMessagesFor('zh-TW')['common.action.reload']).toBe('重新整理')
     expect(serverMessagesFor('zh-CN')['email.common.greeting']).toBe('你好，{receiver}')
   })
 
   it('keeps the OTP resend countdown English in the baseline, Chinese in the other locales', () => {
-    // The baseline catalog is the en-US UI: a Chinese value here renders verbatim
-    // for English readers (the exact bug this pins). The other locales keep their text.
     expect(uiMessagesEnUS['auth.otp.resendIn']).toBe('Resend in {seconds}s')
     expect(uiMessagesEnUS['auth.otp.resendIn']).not.toMatch(/[\u3400-\u4DBF\u4E00-\u9FFF]/)
 
@@ -81,16 +75,11 @@ describe('i18n/catalog', () => {
   })
 
   it('keeps the persisted server namespaces (notification.*, email.*) out of the UI catalog', () => {
-    // `notification.*` keys are persisted in notification rows and `email.*`
-    // keys render server-side mail — both live ONLY in the server catalog. The
-    // plural `notifications.*` namespace is the UI one and stays allowed; only
-    // an exact `notification.` / `email.` prefix is a violation.
     const PERSISTED_SERVER_PREFIX = /^(?:notification|email)\./
     for (const locale of SUPPORTED_LOCALES) {
       const leaked = Object.keys(uiMessagesFor(locale)).filter((key) => PERSISTED_SERVER_PREFIX.test(key))
       expect(leaked, locale).toEqual([])
     }
-    // Guard the guard: the UI namespace really is the plural one.
     expect(Object.keys(uiMessagesEnUS).filter((key) => key.startsWith('notifications.'))).not.toHaveLength(0)
   })
 
@@ -103,7 +92,6 @@ describe('i18n/catalog', () => {
   })
 
   it('accepts plural category differences the locale legitimately has', () => {
-    // English needs one/other; Chinese only other. Same variable, different categories.
     expect(reasons(pluralSource())).toEqual([])
   })
 
@@ -211,10 +199,7 @@ describe('i18n/catalog-scope', () => {
         .filter((key) => isPublicMessageKey(key))
         .sort()
       expect(Object.keys(publicCatalog).sort(), locale).toEqual(expectedKeys)
-      // Values are the same translations, not a re-merged English fallback.
       expect(publicCatalog['common.action.save'], locale).toBe(full['common.action.save'])
-      // The shared notifications drawer (mounted on public pages) keeps its
-      // admin action toasts; no other admin namespace may leak.
       expect(publicCatalog['admin.toast.operationFailed'], locale).toBe(full['admin.toast.operationFailed'])
     }
   })
@@ -264,9 +249,6 @@ describe('i18n/catalog-scope', () => {
 
   it('keeps the public wire payload materially smaller (gzip regression)', () => {
     const gzipBytes = (catalog: Record<string, string>): number => gzipSync(JSON.stringify(catalog)).length
-    // Both bounds are deliberately loose — a copy edit must not fail the
-    // suite, while re-leaking a workspace family (ratio → 1) or a second
-    // catalog riding along (public > 2× today) does.
     const PUBLIC_GZIP_CEILING = 12_000
     const PUBLIC_SHARE_CEILING = 0.3
 

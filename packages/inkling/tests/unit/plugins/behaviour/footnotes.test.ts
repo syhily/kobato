@@ -39,8 +39,6 @@ type DocEntry =
   | { kind: 'p'; parts: Array<string | { ref: string; cites: string }> }
   | { kind: 'def'; targetKey: string; content?: string }
 
-// Construction order is NOT normalized — the run transform only runs when
-// registerFootnotes is in play.
 function $buildDoc(entries: DocEntry[]): void {
   const root = $getRoot()
   for (const entry of entries) {

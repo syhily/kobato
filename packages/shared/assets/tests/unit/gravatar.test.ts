@@ -25,8 +25,6 @@ describe('assets: gravatar mirrors', () => {
     })
 
     it('keeps every dropdown preset on the allowlist', () => {
-      // The admin form offers GRAVATAR_MIRROR_URLS; a preset rejected by the
-      // SSRF guard would be an unsaveable option.
       for (const url of GRAVATAR_MIRROR_URLS) {
         expect(isAllowedMirrorUrl(url), url).toBe(true)
       }

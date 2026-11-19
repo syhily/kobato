@@ -12,9 +12,6 @@ import { makeSession } from '@kobato/test/session.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The `/rpc/*` bridge must hydrate settings BEFORE projecting `rc.localization`: a pure RPC request
-// never runs `buildLoadContext`, and a cold memo would pin the pre-hydration locale/timezone pair.
-
 const db = getTestDb()
 const CSRF = 'cold-boot-csrf-token'
 
@@ -48,7 +45,6 @@ function seedInstalledSite(overrides: { locale: 'zh-TW'; timeZone: string; maxRe
   })
 }
 
-/** The real API mount, behind a request-context middleware like the perimeter. */
 function makeApiApp() {
   const rc = makeRequestContext({ db, session: makeSession({ csrfToken: CSRF }) })
   const app = new Hono<Env>()
@@ -87,7 +83,6 @@ describe('cold /rpc/content/bootstrap', () => {
   it('hydrates settings before projecting localization (installed, non-default locale)', async () => {
     seedInstalledSite({ locale: 'zh-TW', timeZone: 'Asia/Taipei' })
     resetBlogSettingsForTests()
-    // Genuinely cold: nothing hydrated yet.
     expect(getBlogSettingsBundleSync()).toBeNull()
 
     const { app, rc } = makeApiApp()
@@ -102,15 +97,12 @@ describe('cold /rpc/content/bootstrap', () => {
       json: { i18n: { locale: string; messages: Record<string, string> }; blogSettings: unknown }
     }
     expect(json.json.i18n.locale).toBe('zh-TW')
-    // A public document receives exactly the public namespace allowlist.
     expect(Object.keys(json.json.i18n.messages).sort()).toEqual(
       Object.keys(uiMessagesZhTW)
         .filter((key) => isPublicMessageKey(key))
         .sort(),
     )
     expect(json.json.i18n.messages['common.action.reload']).toBe('重新整理')
-    // The snapshot is hydrated by the bridge, and the SAME request context
-    // resolves the site pair (no second locale resolver).
     expect(getBlogSettingsBundleSync()).not.toBeNull()
     expect(rc.localization).toMatchObject({ locale: 'zh-TW', timeZone: 'Asia/Taipei', timeFormat: null })
     expect(rc.localization.revision).toBe(getBlogSettingsSnapshotSync().revision)
@@ -158,8 +150,6 @@ describe('cold /rpc/content/bootstrap', () => {
       body,
     })
 
-    // 1024-byte stored limit (not the 10 MB fallback) and zh-TW copy prove the
-    // snapshot was hydrated BEFORE the limiter and the request projection.
     expect(response.status).toBe(413)
     const json = (await response.json()) as { error: { message: string } }
     expect(json.error.message).toBe('請求內容過大')
@@ -193,7 +183,4 @@ describe('cold /rpc/content/bootstrap', () => {
   })
 })
 
-// `TEST_BLOG_SETTINGS_BUNDLE` is imported so the IT setup's default snapshot
-// stays the same object the rest of the suite expects; the cold cases above
-// clear it explicitly.
 void TEST_BLOG_SETTINGS_BUNDLE

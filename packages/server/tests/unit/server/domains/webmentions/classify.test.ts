@@ -53,8 +53,6 @@ describe('unit / classifyWebmentionType', () => {
   })
 
   it('falls back to mention when the marker lives on a wrapper element, not the anchor', () => {
-    // Documented limitation: without a DOM parser, nesting cannot be
-    // tracked — the mention still verifies through the plain link rule.
     const html = `<div class="u-like-of"><a href="https://example.com/posts/wm-target/">liked</a></div>`
     expect(classifyWebmentionType(html, SOURCE, TARGET)).toBe('mention')
   })

@@ -16,9 +16,7 @@ import { createHash } from 'node:crypto'
 
 const log = getLogger('email')
 
-// Mirrored from OTP_TTL_MS in verification-tokens.ts — keep in sync.
 const OTP_TTL_MINUTES = 5
-// Same mirror for the magic-link TTL (SIGNIN_LINK_TTL_MS).
 const SIGNIN_LINK_TTL_MINUTES = 15
 
 interface MailConfig {
@@ -37,13 +35,11 @@ interface MailConfig {
   mailgunApiKey?: string | undefined
 }
 
-// Senders only run behind the install gate, so the snapshot section is always present.
 function readMailConfig(): MailConfig {
   return requireBlogSettingsSection('mail').mail
 }
 
 interface CheckMailReadyOptions {
-  /** Test sends bypass the master switch so editors can verify connectivity first. */
   ignoreEnabled?: boolean
 }
 
@@ -51,8 +47,6 @@ interface BuildTransportOptions {
   forceEnabled?: boolean
 }
 
-// One entry per transport: readiness check, missing-field message, builder.
-// Adding a transport = one entry here + its `MailTransport` class.
 interface TransportRegistryEntry {
   isReady(mail: MailConfig): boolean
   unconfiguredKey: ServerMessageId
@@ -89,7 +83,6 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
   },
 }
 
-// A snapshot from another build can hold an out-of-union `transport` — fall back to SMTP.
 function resolveTransportEntry(mail: MailConfig): TransportRegistryEntry {
   const transport = mail.transport ?? 'smtp'
   const entry = (TRANSPORT_REGISTRY as Record<string, TransportRegistryEntry>)[transport]
@@ -100,7 +93,6 @@ function resolveTransportEntry(mail: MailConfig): TransportRegistryEntry {
   return entry
 }
 
-// Single source of truth for "should this notification fire?" — shared with the admin test action.
 export function checkMailReady(
   mail: MailConfig,
   options: CheckMailReadyOptions = {},
@@ -123,7 +115,6 @@ interface InternalSendOptions {
 let cachedTransport: { transport: MailTransport; fingerprint: string } | null = null
 
 function computeMailFingerprint(mail: MailConfig): string {
-  // Hash the config (not raw JSON) so credentials never sit in module memory.
   return createHash('sha256')
     .update(
       JSON.stringify({
@@ -148,7 +139,6 @@ export function invalidateMailTransportCache(): void {
   cachedTransport = null
 }
 
-// Cache the transport while the config fingerprint is unchanged, so connection pools survive sends.
 function getTransport(): MailTransport {
   const mail = readMailConfig()
   const fingerprint = computeMailFingerprint(mail)
@@ -175,7 +165,6 @@ export async function sendEmail(
   return transport.send({ to, subject, html }, sendOptions)
 }
 
-// BCC the inviter so admin actions stay on the audit trail.
 export async function sendAuthorInvite(
   user: { name: string; email: string },
   link: string,
@@ -238,7 +227,6 @@ export async function sendSignInLink(user: { name: string; email: string }, link
   return sendEmail(user.email, t.format('email.signInLink.subject', { siteTitle: siteIdentity.title }), html)
 }
 
-// Test sends still respect the `unconfigured` guard.
 export async function sendTestMail(to: string): Promise<SendResult> {
   const mail = readMailConfig()
   const ready = checkMailReady(mail, { ignoreEnabled: true })
@@ -251,7 +239,6 @@ export async function sendTestMail(to: string): Promise<SendResult> {
   const t = emailTranslator()
   const subject = t.format('email.testMail.subject', { siteTitle: siteIdentity.title })
   const sentAt = new Date().toISOString()
-  // Plain body (no template render) — failures then isolate the transport.
   const html = [
     `<p>${t.format('email.testMail.introPrefix')}<strong>${escapeHtml(siteIdentity.title)}</strong>${t.format('email.testMail.introSuffix')}</p>`,
     `<p>${t.format('email.testMail.bodyOk')}</p>`,
@@ -262,7 +249,6 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     `</ul>`,
   ].join('\n')
 
-  // Same transport as production, forced enabled, so editors can test before flipping the toggle.
   const transport = buildTransport(mail, { forceEnabled: true })
   try {
     return await transport.send({ to, subject, html })

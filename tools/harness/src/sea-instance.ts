@@ -1,8 +1,3 @@
-// Lifecycle for driving a built SEA binary as an HTTP instance: boot with
-// output captured to a log file, poll /health until the first response, and
-// stop with a bounded SIGTERM/SIGKILL race. Used by the pack smoke/e2e
-// orchestrators and the browser journey runner.
-
 import type { ExitOutcome, ExitState } from '@kobato/harness/process.ts'
 import type { TempDirs } from '@kobato/harness/temp.ts'
 import type { ChildProcess } from 'node:child_process'
@@ -42,11 +37,6 @@ export async function ensureBinaryExists(binaryPath: string): Promise<void> {
   }
 }
 
-/**
- * Spawn the server with an unrelated cwd, output captured to `logPath`
- * (truncated per boot). Natives extraction, migrations, and the listener
- * all happen before the first response.
- */
 export async function bootServer(
   binaryPath: string,
   dirs: TempDirs,
@@ -56,9 +46,6 @@ export async function bootServer(
   const port = await pickFreePort()
   const logStream = createWriteStream(logPath, { flags: 'w' })
   const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
-  // The config file MUST live inside the per-run temp root (never next to
-  // the binary or ~/.config), and config vars must NOT come from the parent
-  // env — a leaked value silently overrides the converged file (env > file).
   const parentEnv = scrubbedParentEnv()
   const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,
@@ -71,7 +58,6 @@ export async function bootServer(
   return { child, exitState, port, logStream, logClosed, healthResponse: null }
 }
 
-/** Poll until the server answers with ANY HTTP status (or fails boot). */
 export async function waitForHttp(url: string, exitState: ExitState): Promise<Response> {
   const deadline = Date.now() + BOOT_TIMEOUT_MS
   let lastError = 'no attempt completed'

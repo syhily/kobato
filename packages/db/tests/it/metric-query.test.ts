@@ -86,8 +86,6 @@ describe('db/query/metric — ensureMetric', () => {
   })
 
   it('returns the existing row without issuing any write when the row exists', async () => {
-    // The detail render path calls ensureMetric on every page view and the row virtually always
-    // exists, so the common path must be a pure read — no INSERT/UPSERT, hence no write lock.
     const seeded = await db.insert(metric).values({ type: 'post', ownerId: 1, pv: 7 }).returning()
     const insertSpy = vi.spyOn(db, 'insert')
 

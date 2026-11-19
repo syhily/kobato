@@ -67,7 +67,6 @@ describe('domains/settings/services — mergeSectionPatch', () => {
     const merged = mergeSectionPatch(base, { mail: cyclic })
 
     expect(merged.mail.host).toBe('new.example.com')
-    // The cyclic `self` branch was already visited, so the base value survives.
     expect(merged.mail.self).toEqual({ keep: true })
   })
 })

@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// safeFetch resolves hosts through `node:dns/promises`; keep every test on a
-// public address and stub only global fetch (the safe-fetch test convention).
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))

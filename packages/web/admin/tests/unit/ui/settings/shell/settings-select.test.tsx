@@ -6,12 +6,6 @@ import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSele
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// Same merge contract as SettingsSwitch: picking an option fires the upstream
-// `onValueChange` first, then `save()` — unless the guard returns the explicit
-// skip verdict. Base UI's SelectItem only commits a mouse selection that
-// started on the item, so tests press pointerDown before the click (mirroring
-// a real mouse).
-
 type Guard = (value: string | null) => unknown
 
 function renderSelect(onValueChange: Guard, save: () => unknown) {
@@ -56,7 +50,6 @@ describe('ui/admin/settings/shell/SettingsSelect', () => {
 
     await waitFor(() => expect(onValueChange).toHaveBeenCalledOnce())
     await flushMicrotasks()
-    // Upstream still pending: the commit must NOT have fired.
     expect(save).not.toHaveBeenCalled()
 
     gate.release()
@@ -94,8 +87,6 @@ describe('ui/admin/settings/shell/SettingsSelect', () => {
   })
 
   it('still saves when the upstream handler resolves false on its own (RHF onChange)', async () => {
-    // RHF's async onChange can resolve to `false` (its internal `state.next`
-    // result). That is not a veto — only `SETTINGS_SKIP_COMMIT` is.
     const onValueChange = vi.fn(async () => false)
     const save = vi.fn()
     renderSelect(onValueChange, save)
@@ -165,8 +156,6 @@ describe('ui/admin/settings/shell/SettingsSelect', () => {
   })
 
   it('keeps call-site value transforms inside the upstream handler', async () => {
-    // The BackupScheduleForm pattern: the raw option string is mapped before
-    // reaching RHF (`(v) => field.onChange(Number(v))`).
     const onChange = vi.fn()
     const save = vi.fn()
     render(

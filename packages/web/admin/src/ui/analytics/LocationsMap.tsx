@@ -13,10 +13,6 @@ import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
 
-// Country choropleth behind the hydration-safe gate: SSR and the first client
-// render emit the static skeleton; the @unovis map mounts client-side.
-// ISO alpha-2 codes map 1:1 onto the topojson feature ids.
-
 const LazyLocationsMapInner = lazy(() =>
   import('@kobato/web-admin/ui/analytics/LocationsMapInner.tsx').then((module) => ({
     default: module.LocationsMapInner,
@@ -76,7 +72,6 @@ export function LocationsMap({ initial, className, scope }: LocationsMapProps) {
   )
 }
 
-// Byte-identical between SSR, first client render and the lazy fallback (React #418).
 function LocationsMapSkeleton() {
   const { t } = useI18n()
   return (

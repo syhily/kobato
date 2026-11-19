@@ -18,7 +18,6 @@ function setup({ initialNodeImages = [one, two] }: { initialNodeImages?: Gallery
     }
   }
 
-  // mimic the node's setImages: a fresh array holding only the persisted props
   const writeNodeImages = vi.fn((images: GalleryImage[]) => {
     nodeImages = images.map(({ previewSrc: _previewSrc, title: _title, href: _href, ...persisted }) => persisted)
     notifyNode()
@@ -109,8 +108,6 @@ describe('createGalleryImagesMirror', () => {
     const { mirror, externalSet } = setup()
     mirror.start()
 
-    // a reorder during an in-flight upload: the overlay carries preview props
-    // the node strips on write — the echo must not drop them
     const reordered = [image({ fileName: 'p.png', previewSrc: 'blob:p', row: 0 }), image({ ...one, row: 1 })]
     mirror.setImages(reordered)
 

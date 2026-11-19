@@ -53,7 +53,6 @@ export const fontsRouter = adminUploadRoute({
     const dest = path.join(FONT_DIR, `${slot}.${ext}`)
     await writeFile(dest, buffer)
     resetFontCache()
-    // Drop the registered slot state too, or the single-flight cache keeps serving the old font.
     resetCanvasFont(slot)
 
     return {

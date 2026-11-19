@@ -1,11 +1,5 @@
-// Single owner of the route-warmup file contract: the manifest shape the
-// build-time plugin writes and the chunk walk both sides share, so the
-// writer and reader can't drift. Pure JSON/regex only.
 import type { RouteManifest, RouteManifestRoute } from '@kobato/distribution/route-warmup.ts'
 
-// Local copy of `isRecord` — do NOT import it: the vite plugin pulls
-// this module into the vite.config.ts graph, where `@/` aliases are
-// unresolved, so runtime imports must stay zero.
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -75,8 +69,6 @@ export function isRouteManifest(value: unknown): value is RouteManifest {
   return true
 }
 
-// Parses the `window.__reactRouterManifest=...;` payload; never throws —
-// a wrong prefix, malformed JSON, or a shape mismatch all return null.
 export function parseClientManifest(content: string): RouteManifest | null {
   const prefix = 'window.__reactRouterManifest='
   if (!content.startsWith(prefix)) {
@@ -94,19 +86,11 @@ export function parseClientManifest(content: string): RouteManifest | null {
   }
 }
 
-// Chunk ids are `/assets/*.js` paths; exclusion patterns match the
-// basename only (no `node:path`).
 function matchesAny(chunk: string, patterns: RegExp[]): boolean {
   const name = chunk.split('/').pop() ?? chunk
   return patterns.some((p) => p.test(name))
 }
 
-/**
- * Chunks for the given manifest ids, deduped in insertion order. `'entry'` maps
- * to `manifest.entry`; every other id, including `'root'`, maps to
- * `manifest.routes[id]` (module + imports + the `client*Module` /
- * `hydrateFallbackModule` extras); unknown ids are skipped.
- */
 export function collectManifestChunks(
   manifest: RouteManifest,
   ids: string[],

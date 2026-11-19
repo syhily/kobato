@@ -8,10 +8,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-// The toolbar weaves the entity noun into every piece of chrome through one
-// message id — this pins both entity ids and both locales, so a regression to
-// a literal label fails here.
-
 function makeState(overrides: Partial<EditorToolbarState> = {}): EditorToolbarState {
   return {
     metaOpen: false,
@@ -66,7 +62,6 @@ describe('EditorToolbar i18n', () => {
     expect(markup).toContain('title="保存文章信息')
     expect(markup).toContain('title="展开文章信息面板"')
     expect(markup).toContain('aria-label="切换文章信息面板"')
-    // The remaining chrome is entity-less but translated.
     expect(markup).toContain('返回列表')
     expect(markup).toContain('公开预览')
     expect(markup).toContain('分析')

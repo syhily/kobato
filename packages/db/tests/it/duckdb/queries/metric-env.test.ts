@@ -10,9 +10,6 @@ import {
 } from '@kobato/test/analytics-db.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-// Environment dimensions against the real engine: the metric query INNER JOINs
-// device_env_client, excludes NULL / '' bucket rows, and keeps blob/geo filters.
-
 const handle = await createTestAnalyticsDb()
 const TS = new Date('2026-01-15T11:00:00Z')
 const NOW = Math.floor(Date.now() / 1000)
@@ -20,7 +17,6 @@ const RANGE = { startAt: 0, endAt: NOW }
 
 type EnvOverrides = Partial<Omit<SeedDeviceEnvClientRow, 'eventId' | 'timestamp'>>
 
-/** One access event plus (optionally) its beacon sidecar row. */
 async function seedPair(eventId: string, env: EnvOverrides | null = null, event: Partial<SeedAccessEvent> = {}) {
   await seedAccessEvents(handle, [{ eventId, ts: TS, path: '/', country: 'US', visitorHash: eventId, ...event }])
   if (env !== null) {
@@ -28,7 +24,6 @@ async function seedPair(eventId: string, env: EnvOverrides | null = null, event:
   }
 }
 
-/** Order-independent name → visits map (equal visit counts have no stable order). */
 function visitsByName(rows: { name: string; visits: number }[]): Record<string, number> {
   return Object.fromEntries(rows.map((row) => [row.name, row.visits]))
 }
@@ -47,9 +42,7 @@ describe('analytics/metric — environment dimensions', () => {
     await seedPair('00000000-0000-4000-8000-0000000000a1', { hasStatic: true, screenW: 1920, screenH: 1080 })
     await seedPair('00000000-0000-4000-8000-0000000000a2', { hasStatic: true, screenW: 1920, screenH: 1080 })
     await seedPair('00000000-0000-4000-8000-0000000000a3', { hasStatic: true, screenW: 2560, screenH: 1440 })
-    // Dynamic-only beacon: no static block, so no screen values.
     await seedPair('00000000-0000-4000-8000-0000000000a4', { hasStatic: false, viewportW: 800 })
-    // Orphan sidecar row: no access_events row to join with.
     await seedDeviceEnvClientRows(handle, [
       { eventId: '00000000-0000-4000-8000-0000000000a5', timestamp: TS, hasStatic: true, screenW: 3840, screenH: 2160 },
     ])
@@ -99,7 +92,6 @@ describe('analytics/metric — environment dimensions', () => {
       await seedPair(`00000000-0000-4000-8000-0000000003${index.toString(16).padStart(2, '0')}`, { touchPoints })
     }
 
-    // Locale-neutral tokens: the admin UI maps them to catalog labels.
     expect(visitsByName(await queryMetric(handle.reader, { range: RANGE }, 'touch'))).toEqual({
       none: 1,
       '1-5': 2,

@@ -29,7 +29,6 @@ function isCommentGuestProfile(value: unknown): value is CommentGuestProfile {
   return true
 }
 
-/** Read the stored profile once. Exported for unit tests. */
 export function readProfile(): CommentGuestProfile | null {
   if (typeof window === 'undefined') {
     return null
@@ -43,9 +42,7 @@ export function readProfile(): CommentGuestProfile | null {
     if (isCommentGuestProfile(parsed)) {
       return parsed
     }
-  } catch {
-    // ignore malformed storage
-  }
+  } catch {}
   return null
 }
 
@@ -55,9 +52,7 @@ function writeProfile(profile: CommentGuestProfile): void {
   }
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
-  } catch {
-    // Storage-restricted browsers throw SecurityError — degrade to no persistence.
-  }
+  } catch {}
 }
 
 function removeProfile(): void {
@@ -66,9 +61,7 @@ function removeProfile(): void {
   }
   try {
     window.localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // Storage-restricted browsers throw SecurityError — degrade to no persistence.
-  }
+  } catch {}
 }
 
 // `useSyncExternalStore` needs a referentially stable snapshot — cache the
@@ -81,9 +74,7 @@ function getSnapshot(): CommentGuestProfile | null {
   if (typeof window !== 'undefined') {
     try {
       raw = window.localStorage.getItem(STORAGE_KEY)
-    } catch {
-      // Storage-restricted browsers throw SecurityError — degrade to no profile.
-    }
+    } catch {}
   }
   if (raw !== cachedRaw) {
     cachedRaw = raw

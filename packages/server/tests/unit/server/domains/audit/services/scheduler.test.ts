@@ -16,16 +16,12 @@ vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-// `computeNextRun` runs for real: UTC settings plus fake timers make the 04:00 schedule
-// deterministic, so one day + margin crosses exactly one fire.
 const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
 
 const { rescheduleArchive } = await import('@kobato/server/domains/audit/services/scheduler.ts')
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
 const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
 
-// The registry owns the shared db getter; a bare handle shape suffices —
-// the job reads only `.db` at fire time.
 let currentDb = db
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })
 
@@ -66,8 +62,6 @@ describe('audit scheduler', () => {
     seedHydratedSettings()
     scheduleRegisteredJob('audit.scheduler')
 
-    // The db is read at fire time, not captured at schedule time — a
-    // recreated pool (restore completion) is picked up.
     const freshDb = {}
     currentDb = freshDb
 

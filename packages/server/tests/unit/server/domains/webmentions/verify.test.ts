@@ -78,11 +78,9 @@ describe('webmentions/verify sourceLinksToTarget', () => {
   it('rejects a document that never links to the target', () => {
     expect(sourceLinksToTarget('<p>no links here</p>', source, target)).toBe(false)
     expect(sourceLinksToTarget('<a href="https://example.com/posts/other">x</a>', source, target)).toBe(false)
-    // Tracking params are NOT the canonical target (strict rule).
     expect(sourceLinksToTarget('<a href="https://example.com/posts/hello?utm_source=x">x</a>', source, target)).toBe(
       false,
     )
-    // Scheme downgrade is not a match.
     expect(sourceLinksToTarget('<a href="http://example.com/posts/hello">x</a>', source, target)).toBe(false)
   })
 })

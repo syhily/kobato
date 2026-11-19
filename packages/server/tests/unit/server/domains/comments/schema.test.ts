@@ -1,10 +1,6 @@
 import { filterAutocompleteSchema, loadAllCommentsSchema } from '@kobato/server/domains/comments/schema.ts'
 import { describe, expect, it } from 'vitest'
 
-// The public comment wire schemas (reply/rid/edit/list) live in
-// `@kobato/contracts/comments.ts` and are tested there; this file covers the
-// server-side-only inputs.
-
 describe('loadAllCommentsSchema', () => {
   it('accepts required fields only', async () => {
     const data = await loadAllCommentsSchema.parseAsync({ offset: 0, limit: 20 })

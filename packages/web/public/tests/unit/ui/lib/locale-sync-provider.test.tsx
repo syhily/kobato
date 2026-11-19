@@ -8,22 +8,6 @@ import {
   useLocaleSyncPublish,
 } from '@kobato/web-public/ui/lib/LocaleSyncProvider.tsx'
 // @vitest-environment happy-dom
-/**
- * Root-level cross-tab locale sync: the subscription lives in the root
- * `LocaleSyncProvider`, so every open document follows a peer's committed
- * locale — not just /admin/settings.
- *
- * Reload policy under test:
- *  · a settings workspace (flush host) flushes every dirty card inside the
- *    transaction, then reloads automatically only after the flush succeeded;
- *  · a document WITHOUT a flush host (editor, comment composer, setup, public)
- *    is never reloaded automatically — its unsaved input is not inspectable, so
- *    it shows a localized notice with an explicit Reload action;
- *  · a failed flush shows Retry + Reload, never reloads on its own, and does
- *    not consume the announcement's revision (a retry or a repeat still runs);
- *  · the revision token is consumed only immediately before a reload attempt,
- *    so a repeat after a reload is ignored but a repeat after a failure is not.
- */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useEffect, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -61,8 +45,6 @@ function PublishProbe() {
   )
 }
 
-/** A stand-in for the editor / comment composer / setup form: local state the
- *  app cannot flush, which an automatic reload would destroy. */
 function UnsavedEditor() {
   const [text, setText] = useState('')
   return (
@@ -114,14 +96,12 @@ describe('LocaleSyncProvider — document without a flush host (editor/setup/pub
 
     act(() => publishLocaleChange('en-US', 'peer-tab', 'rev-2'))
 
-    // The announcement is surfaced, not applied: no reload, no lost input.
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
     expect(reload).not.toHaveBeenCalled()
     expect(draft).toHaveValue('half-written post')
     expect(screen.getByRole('alert').textContent).toContain('其他标签页已切换语言')
     expect(screen.getByRole('alert').textContent).toContain('未保存的内容在刷新前会保留在页面上')
 
-    // The user decides when to take the new language.
     fireEvent.click(screen.getByRole('button', { name: '刷新' }))
     await waitFor(() => expect(reload).toHaveBeenCalledOnce())
     expect(draft).toHaveValue('half-written post')
@@ -133,13 +113,11 @@ describe('LocaleSyncProvider — document without a flush host (editor/setup/pub
     act(() => publishLocaleChange('en-US', 'peer-tab', 'rev-2'))
     await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1))
 
-    // A third tab repeating the same committed generation does not stack alerts.
     act(() => publishLocaleChange('en-US', 'third-tab', 'rev-2'))
     await settle()
     expect(screen.getAllByRole('alert')).toHaveLength(1)
     expect(reload).not.toHaveBeenCalled()
 
-    // Dismissing did not consume the token: a later repeat re-surfaces it.
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
     act(() => publishLocaleChange('en-US', 'third-tab', 'rev-2'))
@@ -159,7 +137,6 @@ describe('LocaleSyncProvider — document without a flush host (editor/setup/pub
     fireEvent.click(screen.getByRole('button', { name: '刷新' }))
     await waitFor(() => expect(reload).toHaveBeenCalledOnce())
 
-    // The generation was consumed by the reload attempt; a repeat is a no-op.
     act(() => publishLocaleChange('en-US', 'third-tab', 'rev-2'))
     await settle()
     expect(reload).toHaveBeenCalledOnce()

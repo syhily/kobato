@@ -6,8 +6,6 @@ import { createEditor, type LexicalEditor } from 'lexical'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The gate under test is whether the nested/caption editors MOUNT the emoji
-// typeahead — the plugin is mocked to a sentinel so no emoji-mart chunk loads.
 vi.mock('@kobato/inkling-internal/plugins/EmojiPickerPlugin', () => ({
   EmojiPickerPlugin: () => <div data-testid="emoji-picker-plugin" />,
   default: () => <div data-testid="emoji-picker-plugin" />,

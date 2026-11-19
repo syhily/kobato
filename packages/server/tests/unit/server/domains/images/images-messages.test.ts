@@ -7,8 +7,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
-// Machine kinds (`categorySlug` / `friendHost`, `audio` / `cover`) cross the wire, never
-// a pre-translated label — the catalog's ICU `select` renders them.
 interface Case {
   key: UiMessageId
   params?: ErrorMessageParams

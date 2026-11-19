@@ -12,7 +12,6 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
 
   globalSetup: './support/global-setup.ts',
-  // One shared instance with mutable settings and cross-tab journeys — never parallel.
   fullyParallel: false,
   workers: 1,
   retries: 0,

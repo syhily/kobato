@@ -6,7 +6,6 @@ import { likeDecreaseInput, likeIncreaseInput, likeIncreaseOutput, likeValidateI
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
-/** The deployed wire surface — drift here is a breaking URL change. */
 const LIKES_ROUTES = {
   increase: { method: 'POST', path: '/likes/increase' },
   decrease: { method: 'POST', path: '/likes/decrease' },
@@ -39,11 +38,9 @@ describe('likesContract shape', () => {
   it('keeps the contracts schemas behaviorally intact', () => {
     expect(likeIncreaseInput.safeParse({ key: 'post:1' }).success).toBe(true)
     expect(likeIncreaseInput.safeParse({}).success).toBe(false)
-    // `decrease`/`validate` require the token; `increase` must not mint one eagerly.
     expect(likeDecreaseInput.safeParse({ key: 'post:1' }).success).toBe(false)
     expect(likeDecreaseInput.safeParse({ key: 'post:1', token: 'tok' }).success).toBe(true)
     expect(likeValidateInput.safeParse({ key: 'post:1', token: 'tok' }).success).toBe(true)
-    // `token` stays optional on the increase output — absent when issuance is skipped.
     expect(likeIncreaseOutput.parse({ key: 'post:1', likes: 2 })).toEqual({ key: 'post:1', likes: 2 })
   })
 })

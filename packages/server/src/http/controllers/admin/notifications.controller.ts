@@ -32,9 +32,6 @@ const sendBroadcastProc = impl.sendBroadcast.handler(({ input, context }) => {
   return { id: String(row.id) }
 })
 
-// Recall is admin-only; the service refuses `direct` messages. The audit verb
-// mirrors the kind that was recalled, and a repeated (no-op) call writes no
-// second row — the state and the evidence change exactly once.
 const recall = impl.recall.handler(({ input, context }) => {
   const result = recallMessage(context.db, Number(input.id))
   if (result.newlyRecalled) {

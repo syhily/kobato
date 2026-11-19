@@ -9,10 +9,6 @@ function whereLikeTarget(target: EntityTarget) {
   return and(eq(like.type, target.type), eq(like.ownerId, target.ownerId))
 }
 
-/**
- * Register like + bump counter + read the fresh count atomically, so the
- * returned count reflects this exact insert.
- */
 export async function recordLikeAndCount(db: Database, token: string, target: EntityTarget): Promise<number> {
   return db.transaction((tx) => {
     const now = new Date()
@@ -35,7 +31,6 @@ export async function recordLikeAndCount(db: Database, token: string, target: En
   })
 }
 
-// Sync (node:sqlite): called inside the unlike transaction.
 export function consumeActiveLikeToken(db: Database, target: EntityTarget, token: string): boolean {
   const now = new Date()
   const rows = db
@@ -64,7 +59,6 @@ export interface MetricsRow {
   view: number | null
 }
 
-/** Batch metric read scoped to one entity type; callers fan out per-type and merge. */
 export async function metricsByOwnerIds(db: Database, type: EntityType, ownerIds: number[]): Promise<MetricsRow[]> {
   if (ownerIds.length === 0) {
     return []
@@ -93,7 +87,6 @@ export interface TargetCommentCountRow {
   count: number
 }
 
-/** Batch comment count read; mirrors `metricsByOwnerIds`'s shape so callers fan both out together. */
 export async function commentCountsByOwnerIds(
   db: Database,
   type: EntityType,

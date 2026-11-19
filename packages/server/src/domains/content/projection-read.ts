@@ -6,7 +6,6 @@ import { lexicalEditorStateSchema } from '@kobato/lexical/schema.ts'
 import { readStringArray } from '@kobato/server/infra/coerce.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 
-/** Parses a stored Lexical body; every stored row is a Lexical state, so anything else fails loudly. */
 export function readLexicalBody(value: unknown): LexicalEditorState {
   return lexicalEditorStateSchema.parse(value)
 }
@@ -32,14 +31,6 @@ export function readHeadings(value: unknown): MarkdownHeading[] {
   return out
 }
 
-/**
- * The revision-joined CMS fields both catalog projections derive identically;
- * each is empty when the entity has no published revision yet. Public read paths
- * serve the saved projection columns (`body_html`, `body_html_feed`), so the raw
- * `body` blob never leaves the server: `bodyState` is populated only for the
- * compute-on-read fallback (a column is NULL and the blob parses as Lexical), and
- * a parse failure degrades to an empty body, never a throw.
- */
 export function readRevisionProjection(revision: ContentRow | null): {
   bodyHtml: string | null
   bodyHtmlFeed: string | null

@@ -13,9 +13,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 
-// DDL is idempotent (old sidecars upgrade in place on boot) and columns round-trip
-// through the Appender protocol, NULLs and defaults included.
-
 const dirs: string[] = []
 const handles: AnalyticsHandle[] = []
 
@@ -243,7 +240,6 @@ describe('device_env append', () => {
         formFactors: 'Desktop',
         acceptLanguage: 'en-US,en;q=0.9',
       }),
-      // First hit of a session: no client hints arrived at all.
       {
         eventId: '00000000-0000-4000-8000-000000000003',
         timestamp: new Date('2026-01-03T00:00:00Z'),
@@ -327,7 +323,6 @@ describe('device_env append', () => {
     const handle = await openAt(join(tempDir(), 'analytics.duckdb'))
     await appendDeviceEnvClientRows(handle.writer, [
       clientRow(),
-      // Dynamic-only beacon: the static block already went out this session and several dynamic fields are unavailable.
       clientRow({
         eventId: '00000000-0000-4000-8000-000000000002',
         timestamp: new Date('2026-01-02T00:00:00Z'),

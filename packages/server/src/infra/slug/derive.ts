@@ -1,7 +1,6 @@
 import { Slugger } from '@kobato/utils/slug.ts'
 import { pinyin } from 'pinyin-pro'
 
-// Server-only (`pinyin-pro` must not reach the client); fresh Slugger per call.
 export function deriveSlug(text: string): string {
   const romanised = pinyin(text, {
     toneType: 'none',

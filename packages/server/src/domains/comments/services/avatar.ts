@@ -23,8 +23,6 @@ const FETCH_TIMEOUT_MS = 30_000
 const MIN_AVATAR_SIZE = 16
 const MAX_AVATAR_SIZE = 512
 
-// Cache keys include `size`; fixed buckets stop a per-pixel cache-key
-// explosion. Rounds up — gravatar mirrors serve exactly the requested size.
 const AVATAR_SIZE_BUCKETS = [32, 64, 128, 256] as const
 
 function bucketAvatarSize(size: number): number {
@@ -49,9 +47,6 @@ export function resolveAvatarSize(raw: string | undefined): number {
   return bucketAvatarSize(Math.min(MAX_AVATAR_SIZE, Math.max(MIN_AVATAR_SIZE, Math.trunc(parsed))))
 }
 
-/** Default-avatar URL on this site, used both as the loader fallback and
- *  as the gravatar `d=` sentinel. Carries the slot's `?v=` cache-buster so a
- *  replaced default avatar busts browser caches. */
 export function defaultAvatarUrl(): string {
   const suffix = brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.defaultAvatar)
   return joinUrl(requireBlogSettingsSection('siteIdentity').website, `/images/default-avatar.png${suffix}`)
@@ -82,15 +77,12 @@ async function safeFetchAvatar(
     maxBytes: MAX_AVATAR_BYTES,
     headers,
     operation: 'comments.avatar',
-    // A redirect to our own default avatar is the mirror's "no avatar" signal.
     shouldFollowRedirect: (nextUrl) => nextUrl.toString() !== defaultAvatarUrl(),
   })
   if (result.ok) {
     return result.body
   }
   if (result.reason === 'fetch-failed' || result.reason === 'timeout') {
-    // Network failures degrade to the default avatar. Log only the message —
-    // URLs/emails are user data and must not be emitted.
     getLogger(label).warn('avatar fetch failed', { error: fetchErrorMessage(result.error) })
   } else if (result.reason === 'blocked-host' || result.reason === 'bad-protocol') {
     getLogger(label).warn('avatar redirect target rejected by ssrf guard')
@@ -98,13 +90,9 @@ async function safeFetchAvatar(
   return null
 }
 
-/** Avatar PNG at `size`, else `null`: no-avatar signals (4xx, redirect,
- *  budget, network) or an undersized 200 payload (placeholder — never cached). */
 export async function fetchAvatarImage(hash: string, size: number): Promise<Buffer | null> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const comments = requireBlogSettingsSection('comments')
-  // SSRF guard: reject mirror URLs not on the gravatar allowlist.
-  // Never log the offending URL — it may be an internal hostname.
   if (!isAllowedMirrorUrl(comments.comments.avatar.mirror)) {
     getLogger('avatar').warn('avatar mirror url rejected by ssrf guard')
     return null
@@ -133,7 +121,6 @@ export async function fetchAvatarImage(hash: string, size: number): Promise<Buff
 // mirror answers; only network-level failures count as unreachable.
 const MIRROR_PROBE_TIMEOUT_MS = 5_000
 
-/** md5('') — no account anywhere, so mirrors answer cheaply (404 via `d=404`). */
 const MIRROR_PROBE_HASH = 'd41d8cd98f00b204e9800998ecf8427e'
 
 export interface AvatarMirrorProbe {
@@ -190,10 +177,6 @@ export async function fetchQQAvatarImage(email: string, size: number): Promise<B
   return compressImage(Buffer.from(body))
 }
 
-// GitHub Search API reverse lookup (email → numeric user id), then the CDN
-// image. Both hosts are compile-time constants and the id is the only
-// interpolated value, so no URL allowlist is needed; safeFetch still guards
-// redirects. Rate limits (authenticated search: 30/min) degrade to `null`.
 const GITHUB_SEARCH_URL = 'https://api.github.com/search/users'
 const GITHUB_AVATAR_BASE_URL = 'https://avatars.githubusercontent.com/u'
 const GITHUB_SEARCH_MAX_BYTES = 64 * 1024
@@ -211,9 +194,6 @@ function parseGithubUserId(body: ArrayBuffer): number | null {
   }
 }
 
-/** Fetch the GitHub avatar PNG for an email at the requested size; `null`
- *  when no `githubToken` is configured, the lookup misses, or any upstream
- *  call fails. Never logs the email — it is user data. */
 export async function fetchGithubAvatarImage(email: string, size: number): Promise<Buffer | null> {
   const token = requireBlogSettingsSection('comments').comments.githubToken
   if (!token) {
@@ -252,12 +232,6 @@ export async function fetchGithubAvatarImage(email: string, size: number): Promi
   return compressImage(Buffer.from(body))
 }
 
-/** Try each configured upstream (`comments.avatar.sources`) in order; the
- *  first non-null image wins. Email-keyed sources (qq/github) are skipped on
- *  hash-only requests, where the email is unknown — note the cache is keyed
- *  per size bucket, so a hash-only request at a non-default bucket can cache
- *  a gravatar-only (possibly negative) outcome even though the prewarm ran
- *  the email-aware chain at the default bucket. */
 export async function fetchAvatarByChain(
   identity: { email: string | null; hash: string },
   size: number,
@@ -279,12 +253,6 @@ export async function fetchAvatarByChain(
   return null
 }
 
-/** Canonical email hash; pre-warms the source chain at DEFAULT_AVATAR_SIZE_BUCKET
- *  with a positive/negative entry, fetched only on miss (entries are final).
- *  Hash-only image requests can't evaluate email-keyed sources (qq/github)
- *  themselves, so this is where they get their chance — but only when such a
- *  source can actually match this email (QQ shape, or a configured GitHub
- *  token), so plain emails still cost zero upstream calls here. */
 export async function resolveAvatarForEmail(email: string): Promise<string> {
   const hash = await encodedEmail(email)
   const comments = requireBlogSettingsSection('comments').comments
@@ -326,20 +294,12 @@ export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' 
 // Only md5 (32) / sha256 (64) hex digests can resolve on gravatar mirrors.
 const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
 
-/** Serving policy: cached entries serve directly; a miss fetches once and
- *  records the outcome — upstream negatives are written only on miss, but a
- *  hash resolving to NO user row is never cached: its key
- *  space is attacker-chosen and the repeat cost is one indexed lookup. */
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
   if (!isNumeric(hash) && !EMAIL_HASH_RE.test(hash)) {
-    // Neither id nor hash — redirect without caching, so garbage can't grow the avatar cache.
     return { kind: 'redirect' }
   }
   const { email, hash: canonical } = await resolveAvatarInfo(db, hash)
   if (canonical === null) {
-    // No user row — do NOT negative-cache under the raw param: the hash is
-    // attacker-chosen, so each write would be unbounded cache churn.
-    // The repeat cost is one cheap indexed user lookup.
     return { kind: 'redirect' }
   }
 
@@ -364,8 +324,6 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
 
 const GITHUB_AVATAR_URL = 'https://avatars.githubusercontent.com/u/1761698?s=32'
 
-/** A 32px avatar never justifies more — an upstream gone rogue must not
- *  buffer unbounded bytes into a base64 string. */
 const GITHUB_AVATAR_MAX_BYTES = 512 * 1024
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -377,10 +335,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary)
 }
 
-/** Owner's GitHub avatar as an inline base64 data URL (no cross-origin
- *  request); any failure → `''`. Cached via the `githubAvatar` bucket —
- *  failures ride a short TTL so a GitHub outage cannot turn every call
- *  into a 30s-timeout upstream fetch. */
 export async function fetchGithubAvatarDataUrl(): Promise<string> {
   return through('githubAvatar', {}, async () => {
     try {

@@ -16,9 +16,6 @@ import {
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// CMS page service against the real engine; the ONLY double is the
-// audit-scope logger (pino runs silent, so the force_overwrite_save line
-// would be unobservable).
 const { auditInfoMock } = vi.hoisted(() => ({ auditInfoMock: vi.fn() }))
 
 vi.mock('@kobato/server/infra/logger.ts', async (importOriginal) => {
@@ -54,8 +51,6 @@ async function seedRevision(ownerId: number, overrides: Partial<typeof contentTa
       ownerId,
       revisionNo: overrides.revisionNo ?? 1,
       status: overrides.status ?? 'draft',
-      // Seeded revisions are read through the admin revision projection, which
-      // expects a Lexical-bodied revision.
       body: emptyLexicalBody(),
       imageSources: [],
       headings: [],
@@ -79,7 +74,6 @@ beforeEach(async () => {
 
 describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () => {
   it('hasMore = true while another page exists, false when the offset+rows reaches total', async () => {
-    // Stagger updated_at so the desc(updatedAt) ordering is deterministic.
     const base = Date.now()
     for (let i = 1; i <= 5; i++) {
       await seedPage({ slug: `page-${i}`, updatedAt: new Date(base + i * 60_000) })

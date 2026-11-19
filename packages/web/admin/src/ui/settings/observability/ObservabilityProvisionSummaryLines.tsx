@@ -2,8 +2,6 @@ import type { ObservabilityProvisionSummary } from '@kobato/contracts/observabil
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
-// Provision result lines shared by the connection test (its automatic asset
-// sync) and the assets card's manual resync — one rendering, no drifting copy.
 export function ObservabilityProvisionSummaryLines({ summary }: { summary: ObservabilityProvisionSummary }) {
   const { t } = useI18n()
 

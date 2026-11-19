@@ -20,7 +20,6 @@ describe('auth: network boundary', () => {
     })
 
     it('blocks CGNAT, benchmarking, and IETF assignment ranges', () => {
-      // Aliyun ECS metadata — a plain IPv4 literal.
       expect(isBlockedFetchHost('100.100.100.200')).toBe(true)
       expect(isBlockedFetchHost('100.64.0.1')).toBe(true)
       expect(isBlockedFetchHost('100.127.255.255')).toBe(true)
@@ -36,16 +35,16 @@ describe('auth: network boundary', () => {
       expect(isBlockedFetchHost('198.17.255.255')).toBe(false)
       expect(isBlockedFetchHost('198.20.0.1')).toBe(false)
       expect(isBlockedFetchHost('192.0.1.1')).toBe(false)
-      expect(isBlockedFetchHost('192.0.2.1')).toBe(false) // TEST-NET-1 stays reachable
+      expect(isBlockedFetchHost('192.0.2.1')).toBe(false)
     })
 
     it('blocks IPv4-embedding IPv6 transition ranges (NAT64 and 6to4)', () => {
-      expect(isBlockedFetchHost('64:ff9b::a9fe:a9fe')).toBe(true) // NAT64 → 169.254.169.254
+      expect(isBlockedFetchHost('64:ff9b::a9fe:a9fe')).toBe(true)
       expect(isBlockedFetchHost('[64:ff9b::a9fe:a9fe]')).toBe(true)
-      expect(isBlockedFetchHost('64:ff9b::7f00:1')).toBe(true) // NAT64 → 127.0.0.1
+      expect(isBlockedFetchHost('64:ff9b::7f00:1')).toBe(true)
       expect(isBlockedFetchHost('64:ff9b::')).toBe(true)
-      expect(isBlockedFetchHost('2002:7f00:1::')).toBe(true) // 6to4 → 127.0.0.1
-      expect(isBlockedFetchHost('2002:a9fe:a9fe::')).toBe(true) // 6to4 → 169.254.169.254
+      expect(isBlockedFetchHost('2002:7f00:1::')).toBe(true)
+      expect(isBlockedFetchHost('2002:a9fe:a9fe::')).toBe(true)
     })
 
     it('allows public addresses outside the transition prefixes', () => {
@@ -63,31 +62,31 @@ describe('auth: network boundary', () => {
 
     it('blocks zone-ID-suffixed spellings of private IPv6 addresses', () => {
       expect(isBlockedFetchHost('fe80::1%eth0')).toBe(true) // RFC 6874 zone-ID
-      expect(isBlockedFetchHost('fe80::1%25eth0')).toBe(true) // URL-encoded zone-ID
+      expect(isBlockedFetchHost('fe80::1%25eth0')).toBe(true)
       expect(isBlockedFetchHost('[fe80::1%eth0]')).toBe(true)
       expect(isBlockedFetchHost('fc00::1%1')).toBe(true)
     })
 
     it('blocks IPv6 multicast (ff00::/8)', () => {
-      expect(isBlockedFetchHost('ff02::1')).toBe(true) // all-nodes link-local multicast
+      expect(isBlockedFetchHost('ff02::1')).toBe(true)
       expect(isBlockedFetchHost('[ff02::1]')).toBe(true)
-      expect(isBlockedFetchHost('ff05::2')).toBe(true) // site-local multicast
-      expect(isBlockedFetchHost('ff0e::1')).toBe(true) // global multicast
+      expect(isBlockedFetchHost('ff05::2')).toBe(true)
+      expect(isBlockedFetchHost('ff0e::1')).toBe(true)
     })
 
     it('blocks non-canonical IPv4 spellings of private addresses', () => {
-      expect(isBlockedFetchHost('0x7f000001')).toBe(true) // hex 127.0.0.1
-      expect(isBlockedFetchHost('2130706433')).toBe(true) // decimal 127.0.0.1
-      expect(isBlockedFetchHost('127.1')).toBe(true) // short dotted 127.0.0.1
-      expect(isBlockedFetchHost('0177.0.0.1')).toBe(true) // octal 127.0.0.1
-      expect(isBlockedFetchHost('0xA9FEA9FE')).toBe(true) // hex 169.254.169.254
-      expect(isBlockedFetchHost('10.1')).toBe(true) // short dotted 10.0.0.1
+      expect(isBlockedFetchHost('0x7f000001')).toBe(true)
+      expect(isBlockedFetchHost('2130706433')).toBe(true)
+      expect(isBlockedFetchHost('127.1')).toBe(true)
+      expect(isBlockedFetchHost('0177.0.0.1')).toBe(true)
+      expect(isBlockedFetchHost('0xA9FEA9FE')).toBe(true)
+      expect(isBlockedFetchHost('10.1')).toBe(true)
     })
 
     it('blocks IPv4-mapped IPv6 forms of private addresses', () => {
       expect(isBlockedFetchHost('::ffff:127.0.0.1')).toBe(true)
       expect(isBlockedFetchHost('[::ffff:127.0.0.1]')).toBe(true)
-      expect(isBlockedFetchHost('[::ffff:7f00:1]')).toBe(true) // URL-normalized spelling
+      expect(isBlockedFetchHost('[::ffff:7f00:1]')).toBe(true)
       expect(isBlockedFetchHost('::ffff:169.254.169.254')).toBe(true)
       expect(isBlockedFetchHost('::ffff:10.0.0.1')).toBe(true)
     })
@@ -107,10 +106,10 @@ describe('auth: network boundary', () => {
       expect(isBlockedFetchHost('p3.music.126.net')).toBe(false)
       expect(isBlockedFetchHost('example.com')).toBe(false)
       expect(isBlockedFetchHost('8.8.8.8')).toBe(false)
-      expect(isBlockedFetchHost('0x08080808')).toBe(false) // hex 8.8.8.8
-      expect(isBlockedFetchHost('::ffff:8.8.8.8')).toBe(false) // mapped public IP
+      expect(isBlockedFetchHost('0x08080808')).toBe(false)
+      expect(isBlockedFetchHost('::ffff:8.8.8.8')).toBe(false)
       expect(isBlockedFetchHost('[::ffff:808:808]')).toBe(false)
-      expect(isBlockedFetchHost('2606:4700::1%eth0')).toBe(false) // zone-ID on a public address stays public
+      expect(isBlockedFetchHost('2606:4700::1%eth0')).toBe(false)
     })
   })
 

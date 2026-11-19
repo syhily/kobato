@@ -7,10 +7,6 @@ import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
 import { describe, expect, it } from 'vitest'
 
-// The shared http(s)-URL rule states a catalog id, not prose: every schema reusing it
-// (admin user links, friend applications, …) produces the same descriptor through
-// `zodIssuesToWire`, so the reader sees the localized sentence — never the key.
-
 const EXPECTED: Record<AppLocale, string> = {
   'en-US': 'Enter an http(s) URL',
   'zh-CN': '请输入 http(s) URL',

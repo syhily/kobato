@@ -69,8 +69,6 @@ describe('trace config — endpoint security', () => {
     'http://localhost:5080',
     'http://[::1]:5080',
     'https://obs.example.com',
-    // The endpoint is server-only, so plain HTTP to a private network address (an internal
-    // OpenObserve) is a legitimate deployment.
     'http://192.168.1.10:5080',
     'http://10.0.0.5:5080',
     'http://172.16.0.2:5080',
@@ -84,8 +82,6 @@ describe('trace config — endpoint security', () => {
 
   it.each([
     ['plain HTTP to a remote host', 'http://obs.example.com'],
-    // A hostname is not statically classifiable as internal — even one that
-    // resolves privately requires HTTPS.
     ['plain HTTP to an internal hostname', 'http://openobserve.internal:5080'],
     ['embedded credentials', 'https://user:pass@obs.example.com'],
     ['a query string', 'https://obs.example.com/?token=1'],
@@ -214,8 +210,6 @@ describe('trace config — activation matrix', () => {
 
     expect(resolution.status).toBe('active')
     expect(resolution.diagnostics).toEqual([])
-    // The browser projection carries no endpoint and no token — the same-origin intake
-    // relay owns both.
     expect(frontendRumBootstrapSchema.parse(resolution.frontend)).toEqual({
       applicationId: 'kobato-dev',
       service: 'kobato',

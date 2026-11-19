@@ -22,11 +22,6 @@ vi.mock('@kobato/ui/lib/logger.ts', () => ({
   }),
 }))
 
-// A cross-card transaction (the locale switch) must block EVERY edit in the
-// workspace for its whole window: `inert` stops pointer and keyboard input
-// while `aria-busy` announces the work. The provider restores focus after a
-// failed transaction so the admin lands back on the control they used.
-
 function deferred() {
   let resolve!: () => void
   const promise = new Promise<void>((res) => {
@@ -42,9 +37,7 @@ function Harness({ task, focusAnchor }: { task: () => Promise<void>; focusAnchor
       <button
         type="button"
         onClick={() => {
-          void runTransaction(task, focusAnchor).catch(() => {
-            // The caller owns the rejection; this harness only drives the transaction.
-          })
+          void runTransaction(task, focusAnchor).catch(() => {})
         }}
       >
         run
@@ -79,12 +72,9 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
     const workspace = pendingOutput.closest('[inert]')
     expect(workspace).not.toBeNull()
     expect(workspace).toHaveAttribute('aria-busy', 'true')
-    // Every control lives inside the inert subtree — the browser blocks both
-    // pointer and keyboard editing there.
     const input = screen.getByRole('textbox', { name: 'other' })
     expect(workspace!.contains(input)).toBe(true)
     expect(workspace!.contains(screen.getByRole('button', { name: 'run' }))).toBe(true)
-    // Inert also refuses focus, so keyboard editing cannot start inside it.
     input.focus()
     expect(document.activeElement).not.toBe(input)
 
@@ -94,7 +84,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
     await waitFor(() => expect(screen.getByTestId('pending')).toHaveTextContent('false'))
     expect(document.querySelector('[inert]')).toBeNull()
 
-    // Editable again, and the value survives.
     fireEvent.change(input, { target: { value: 'after' } })
     expect(input).toHaveValue('after')
   })
@@ -135,7 +124,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
     await act(async () => {
       inner.resolve()
     })
-    // The inner task is done; the outer one still holds the workspace inert.
     expect(screen.getByTestId('pending')).toHaveTextContent('true')
     expect(document.querySelector('[inert]')).not.toBeNull()
 
@@ -158,7 +146,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
 
     fireEvent.click(button)
     await waitFor(() => expect(document.querySelector('[inert]')).not.toBeNull())
-    // Browsers blur a focused element when its ancestor becomes inert.
     button.blur()
     expect(document.activeElement).not.toBe(button)
 
@@ -169,7 +156,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
     expect(document.querySelector('[inert]')).toBeNull()
     await waitFor(() => expect(document.activeElement).toBe(button))
 
-    // The workspace is usable again.
     const input = screen.getByRole('textbox', { name: 'other' })
     fireEvent.change(input, { target: { value: 'resumed' } })
     expect(input).toHaveValue('resumed')
@@ -178,9 +164,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
   it('restores focus after a control disabled for the transaction is re-enabled', async () => {
     const gate = deferred()
 
-    // Mirrors the locale switch: `busy` is a SEPARATE child state update that
-    // clears a turn after `runTransaction` resolves, so focus can only be
-    // restored once the deferral lets both renders commit.
     function TwoPhase() {
       const { runTransaction, isTransactionPending } = useSettingsFlushContext()
       const [busy, setBusy] = useState(false)
@@ -235,8 +218,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'run' }))
     await waitFor(() => expect(document.querySelector('[inert]')).not.toBeNull())
 
-    // The popup closed: the option unmounted, so an active-element anchor
-    // would now be disconnected.
     portalOption.remove()
     expect(portalOption.isConnected).toBe(false)
     expect(document.activeElement).not.toBe(portalOption)
@@ -261,10 +242,7 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
       frames.push(callback)
       return frames.length
     })
-    vi.stubGlobal('cancelAnimationFrame', () => {
-      // The real cleanup cancels the frame; keep the callback so the test can
-      // prove which anchor the surviving schedule consumed.
-    })
+    vi.stubGlobal('cancelAnimationFrame', () => {})
 
     const { result } = renderHook(() => useSettingsFlushContext(), { wrapper: SettingsFlushProvider })
 
@@ -274,8 +252,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
       first = result.current.runTransaction(() => firstGate.promise, anchorA)
       await Promise.resolve()
     })
-    // The first transaction settles; its restore frame is scheduled but has NOT
-    // run yet, so the anchor is still unconsumed.
     await act(async () => {
       firstGate.resolve()
       await first
@@ -284,7 +260,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
     const secondGate = deferred()
     let second!: Promise<void>
     await act(async () => {
-      // No explicit anchor: the unconsumed one is preserved.
       second = result.current.runTransaction(() => secondGate.promise)
       await Promise.resolve()
     })
@@ -317,9 +292,7 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
       frames.push(callback)
       return frames.length
     })
-    vi.stubGlobal('cancelAnimationFrame', () => {
-      // Keep the cancelled callback so the test can prove it no longer restores.
-    })
+    vi.stubGlobal('cancelAnimationFrame', () => {})
 
     const { result } = renderHook(() => useSettingsFlushContext(), { wrapper: SettingsFlushProvider })
 
@@ -333,12 +306,10 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
       firstGate.resolve()
       await first
     })
-    // The first restore frame is pending: its anchor is unconsumed.
 
     const secondGate = deferred()
     let second!: Promise<void>
     await act(async () => {
-      // Explicit `null` wins over the unconsumed anchor.
       second = result.current.runTransaction(() => secondGate.promise, null)
       await Promise.resolve()
     })
@@ -352,7 +323,6 @@ describe('SettingsPanel + SettingsFlushProvider transactions', () => {
         frame(0)
       }
     })
-    // The stale anchor must never be re-focused.
     expect(document.activeElement === null || document.activeElement === document.body).toBe(true)
     expect(document.activeElement).not.toBe(anchor)
     anchor.remove()

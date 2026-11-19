@@ -13,12 +13,7 @@ export function focusEditorAt(
   editor: LexicalEditor,
   { position = 'bottom' }: { position?: 'top' | 'bottom' } = {},
 ): void {
-  editor.focus(
-    () => {
-      /* noop */
-    },
-    { defaultSelection: position === 'top' ? 'rootStart' : undefined },
-  )
+  editor.focus(() => undefined, { defaultSelection: position === 'top' ? 'rootStart' : undefined })
 
   if (position === 'top') {
     editor.update(() => {

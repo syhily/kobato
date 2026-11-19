@@ -1,9 +1,3 @@
-// Normalized DOM-tree comparison for markup parity pins (a rendered React tree vs
-// its hand-written HTML twin). Both sides reduce to tag names, class tokens, data-*
-// attributes and optional normalized text, so attribute ordering, whitespace and
-// serializer spelling cannot drift the comparison. Module level touches no DOM
-// global; only the calls need a DOM environment.
-
 export interface StructureNode {
   /** Lowercased tag name. */
   tag: string
@@ -83,7 +77,6 @@ function toStructureNode(element: Element, options: StructureCompareOptions): St
   return node
 }
 
-/** Parses an HTML fragment into the structural tree of its top-level elements. */
 export function structureFromHtml(html: string, options: StructureCompareOptions = {}): StructureNode[] {
   const container = document.createElement('div')
   container.innerHTML = html
@@ -148,13 +141,10 @@ function diffLevel(actual: readonly StructureNode[], expected: readonly Structur
   return diffs
 }
 
-/** Diffs two structural trees; returns human-readable differences (empty when
- * they match). Child order is significant. */
 export function diffStructures(actual: readonly StructureNode[], expected: readonly StructureNode[]): string[] {
   return diffLevel(actual, expected, '')
 }
 
-/** Parses both HTML fragments and diffs their normalized structural trees. */
 export function diffHtmlStructures(
   actualHtml: string,
   expectedHtml: string,

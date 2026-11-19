@@ -72,7 +72,6 @@ interface FakeGeometry {
   tileCalls: number[]
 }
 
-/** Geometry port stub: one rect for every tile, probe results consumed in order (the last one repeats). */
 function createFakeGeometry({
   rect = null,
   probes = [],

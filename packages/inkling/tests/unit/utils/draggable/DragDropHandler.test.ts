@@ -136,9 +136,6 @@ describe('DragDropHandler', () => {
     expect(document.getElementById(INKLING_CONTAINER_ID)).not.toBeInTheDocument()
   })
 
-  // the handler's test seam: performs the mousedown grab and drives the
-  // drag-start session past its threshold — synchronous, so no real
-  // mousemove choreography and no wall-clock sleeps
   function initiateDrag(containerName: string) {
     const containerElement = createContainer(containerName)
     handler.registerContainer(containerElement, createHandlers())

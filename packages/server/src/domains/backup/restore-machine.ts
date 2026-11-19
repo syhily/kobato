@@ -45,7 +45,6 @@ function setPhase(phase: RestorePhase, error?: string): void {
   log.info('Restore state changed', { phase, err: error })
 }
 
-/** Atomically claim the restore slot; false when busy or unwired. Callers must call this BEFORE any await. */
 export function tryBeginRestore(): boolean {
   if (deps === null || current !== null) {
     return false
@@ -111,8 +110,6 @@ export function consumeRestoreJobReport(): RestoreJobStatus {
   return { phase: 'idle', startedAt: '' }
 }
 
-/** Run the claimed restore chain fire-and-forget; `afterReopenFn` must stay
- *  infallible by contract. */
 export function startRestoreJob(
   restoreFn: () => Promise<RestoreChainResult>,
   afterReopenFn?: (db: Database) => Promise<void>,
@@ -178,7 +175,6 @@ export function startRestoreJob(
     log.error('Restore machine crashed', {
       err: err instanceof Error ? err.message : String(err),
     })
-    // A crash above must never wedge the slot.
     last = { phase: 'failed', startedAt: new Date().toISOString(), error: String(err) }
     current = null
   })

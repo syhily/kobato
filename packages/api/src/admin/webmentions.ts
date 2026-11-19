@@ -10,8 +10,6 @@ import {
 } from '@kobato/contracts/webmentions.ts'
 import { oc } from '@orpc/contract'
 
-// Admin webmention moderation RPC contract — admin base on the server, on the
-// standard `/admin/webmentions/*` prefix.
 export const adminWebmentionsContract = {
   loadAll: oc
     .route({ method: 'GET', path: '/admin/webmentions/load-all' })

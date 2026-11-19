@@ -7,7 +7,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// Stats read real rows + the settings snapshot.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -89,22 +88,21 @@ function brandingRef(driver: 's3' | 'local'): BrandingObjectRef {
 
 describe('storage/stats — getLocalStorageMigrationStats', () => {
   it('counts only live local rows per type (soft-deleted rows excluded)', async () => {
-    await seedImage() // local, live
-    await seedImage() // local, live
-    await seedImage({ deletedAt: new Date() }) // local, soft-deleted → excluded
-    await seedImage({ storageDriver: 's3' }) // s3 → excluded
+    await seedImage()
+    await seedImage()
+    await seedImage({ deletedAt: new Date() })
+    await seedImage({ storageDriver: 's3' })
 
-    await seedMusic() // local, live
-    await seedMusic({ deletedAt: new Date() }) // local, soft-deleted → excluded
-    await seedMusic({ storageDriver: 's3' }) // s3 → excluded
+    await seedMusic()
+    await seedMusic({ deletedAt: new Date() })
+    await seedMusic({ storageDriver: 's3' })
 
-    await seedBackup() // local
-    await seedBackup() // local
-    await seedBackup({ storageDriver: 's3' }) // s3 → excluded
+    await seedBackup()
+    await seedBackup()
+    await seedBackup({ storageDriver: 's3' })
 
     const stats = await getLocalStorageMigrationStats(db)
 
-    // The default test bundle carries no branding refs → branding stays 0.
     expect(stats).toEqual({ images: 2, music: 1, branding: 0, backups: 2 })
   })
 
@@ -128,7 +126,6 @@ describe('storage/stats — getLocalStorageMigrationStats', () => {
           faviconSvg: brandingRef('local'),
           logoSvg: brandingRef('local'),
           icon192: brandingRef('s3'),
-          // A string config field, not a BrandingObjectRef — never counted.
           robotsTxt: 'User-agent: *',
         },
       },

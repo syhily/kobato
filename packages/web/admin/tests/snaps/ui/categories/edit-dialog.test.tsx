@@ -11,14 +11,8 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-// useMutation is stubbed via a hoisted singleton so the pending and error branches are
-// reachable per-test; the base create/edit paths live in categories.test.tsx.
-
-// The stubbed dialog renders inline (the real portal never mounts under SSR);
-// open = category !== undefined.
 vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
-// Flips category from undefined (closed) to the target on first render so the dialog mounts.
 function OpenDialog({ category }: { category: AdminCategoryDto | null }) {
   const [target, setTarget] = useState<AdminCategoryDto | null | undefined>(undefined)
   if (target === undefined) {

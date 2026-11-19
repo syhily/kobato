@@ -7,10 +7,6 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { isRecord } from '@kobato/utils/type-guards.ts'
 import { format } from 'date-fns'
 
-// Daily-quote sources (sidebar `dailyQuote.source`): shanbay/one/hitokoto remote, with
-// the built-in bank as fallback on any failure; custom needs ≥10 entries (else `local`).
-// ONE serves only "today"; hitokoto is random per call (the PNG cache freezes the quote).
-
 const log = getLogger('calendar')
 
 const FETCH_OPTIONS = { timeoutMs: 5_000, maxBytes: 64_000 } as const
@@ -67,8 +63,6 @@ function isOnePayload(
 }
 
 async function fetchOne(): Promise<DailyQuote> {
-  // Fixed provider endpoint on a non-standard port — the port allowlist's
-  // documented opt-out (the URL is a compile-time constant).
   const res = await safeFetch('http://v3.wufazhuce.com:8000/api/channel/one/0/0', {
     ...FETCH_OPTIONS,
     allowNonStandardPort: true,
@@ -107,9 +101,6 @@ const REMOTE_PROVIDERS: Record<Exclude<DailyQuoteSource, 'custom' | 'local'>, (d
   hitokoto: fetchHitokoto,
 }
 
-/** Resolve today's quote from the caller's pinned settings snapshot (omitted = the current
- *  process snapshot). The bank is a rendering input: the calendar resource passes the same
- *  bundle whose revision keys the cache entry. */
 export async function getDailyQuote(date: Date, settings?: BlogSettingsBundle | null): Promise<DailyQuote> {
   const { dailyQuote } = requireBlogSettingsSection('sidebar', settings).sidebar
   if (dailyQuote.source === 'local') {

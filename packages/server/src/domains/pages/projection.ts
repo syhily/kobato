@@ -20,7 +20,6 @@ export function toCmsPage(
     id: String(meta.id),
     title: meta.title,
     date: meta.firstPublishedAt ?? meta.publishedAt,
-    /** Public catalog: mirrors `published_at` (publish / schedule), not draft saves. */
     updated: meta.publishedAt,
     comments: meta.commentsEnabled,
     cover: meta.cover,

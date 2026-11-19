@@ -11,10 +11,6 @@ import {
 } from '@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-// The persisted-shape version constant lives in `draft-store` (the storage
-// layer owns the record schema) so migrations can reference it without a cycle.
-
-/** Edit-mode draft key — shared by the edit adapter and the create adapter's migration. */
 export function draftEditKey(keyPrefix: string, entityId: string, clientRevisionToken: string): string {
   return `${keyPrefix}${entityId}:${clientRevisionToken}`
 }
@@ -65,7 +61,6 @@ export function useDraftSession<TBody, TLoaded>({
   const lastReadKeyRef = useRef<string | null>(null)
   const loadCompleteRef = useRef(false)
 
-  // Synchronously clear state when key becomes null (e.g. dialog closed).
   const [lastKey, setLastKey] = useState(key)
   if (key !== lastKey) {
     setLastKey(key)
@@ -74,7 +69,6 @@ export function useDraftSession<TBody, TLoaded>({
     }
   }
 
-  // Load → version-check → schema-check → purge-or-hydrate, once per key.
   useEffect(() => {
     if (key === null) {
       lastReadKeyRef.current = null
@@ -141,8 +135,6 @@ export function useDraftSession<TBody, TLoaded>({
     }
   }, [key, bodySchema, mapLoaded])
 
-  // Persist on every body/meta change, never before the initial load completed
-  // — a stale write must not clobber the stored draft.
   useEffect(() => {
     if (key === null) {
       return
@@ -166,9 +158,7 @@ export function useDraftSession<TBody, TLoaded>({
         if (!cancelled) {
           await setDraft(key, payload)
         }
-      } catch {
-        // Quota or disabled storage — silently ignore.
-      }
+      } catch {}
     })()
 
     return () => {
@@ -176,7 +166,6 @@ export function useDraftSession<TBody, TLoaded>({
     }
   }, [key, body, meta, draftType])
 
-  // A clear in any tab clears the hydrated draft in every other tab.
   useEffect(() => {
     if (key === null) {
       return
@@ -212,9 +201,7 @@ export function useDraftSession<TBody, TLoaded>({
       const msg: BroadcastMessage = { kind: 'cleared', key }
       bc.postMessage(msg)
       bc.close()
-    } catch {
-      // Ignore.
-    }
+    } catch {}
   }, [key, clearPrefix, broadcastName])
 
   return { loadedDraft, clearDraft }

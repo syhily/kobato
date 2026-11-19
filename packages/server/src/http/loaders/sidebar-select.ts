@@ -13,21 +13,10 @@ export interface SidebarSeedInput {
   revision: string
 }
 
-/**
- * The deterministic rotation bucket for the sidebar widgets: one selection per
- * (scope, site calendar day, settings revision). Never a per-request CSPRNG
- * draw — that would make the detail payload (and its ETag) change on every
- * render while the product intent is only "rotate the random widgets".
- */
 export function sidebarSelectionSeed({ scope, date, revision }: SidebarSeedInput): string {
   return `sidebar\u0000${scope}\u0000${date}\u0000${revision}`
 }
 
-/**
- * Build the shared selection for ONE representation. The controller computes it
- * once per request and hands the same object to every sidebar selector, so the
- * post and tag widgets can never disagree about the day/scope/revision.
- */
 export function sidebarSelection({
   settings,
   scope,
@@ -43,8 +32,6 @@ export function sidebarSelection({
     settings,
     seed: sidebarSelectionSeed({
       scope,
-      // `yyyy-MM-dd` in the SITE time zone (explicit tokens override the
-      // user-configured display format).
       date: formatLocalDate(now, 'yyyy-MM-dd', localization),
       revision: localization.revisions.listing,
     }),

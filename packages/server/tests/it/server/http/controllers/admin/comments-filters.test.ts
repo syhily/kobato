@@ -116,7 +116,6 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is empty (operator-only chip)', () => {
-    // Operator-first chips may commit `{ date: '', op }` — resolve to undefined bounds, not crash.
     expect(resolveSingleDateFilterBounds({ date: '', op: 'is-greater' })).toEqual({
       after: undefined,
       before: undefined,
@@ -128,7 +127,6 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is unparseable', () => {
-    // Defensive: an `Invalid Date`'s `toISOString` would throw.
     expect(resolveSingleDateFilterBounds({ date: 'not-a-date', op: 'is-less' })).toEqual({
       after: undefined,
       before: undefined,
@@ -174,7 +172,6 @@ describe('parseTextFilter', () => {
   })
 
   it('parses an empty value as a valid chip state', () => {
-    // A default-operator chip with no text is legal — round-trip it, don't drop it.
     expect(parseTextFilter(JSON.stringify({ op: 'contains', value: '' }))).toEqual({
       op: 'contains',
       value: '',

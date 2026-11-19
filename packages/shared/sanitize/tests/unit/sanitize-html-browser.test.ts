@@ -3,9 +3,6 @@ import { sanitizeHtmlEngine } from '@kobato/sanitize/engine.browser.ts'
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 
-// Parity suite for the DOMPurify browser engine (vite aliases the facade's
-// engine import here); mirrors tests/unit/shared/sanitize/sanitize-html.test.ts.
-
 const strategies: SafeHtmlStrategy[] = [
   'shiki',
   'math',

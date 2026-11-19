@@ -1,7 +1,3 @@
-// Test bootstrap: no DB — env vars + settings snapshot slot so server-module
-// imports resolve; jest-dom matchers + RTL auto-cleanup for happy-dom tests
-// (no-ops otherwise).
-
 // Run the suite against Zod 4.5's compiled parsers, mirroring production
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
@@ -23,10 +19,8 @@ import { cleanup } from '@testing-library/react'
 import '@kobato/test/env.ts'
 import { afterEach, vi } from 'vitest'
 
-// Inert stubs; a file-level vi.mock overrides them when a test asserts on them.
 vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
-  // `AdminShell` renders `<Toaster />`, so the mock must export it.
   Toaster: () => null,
 }))
 vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
@@ -49,11 +43,8 @@ vi.mock('node:dns/promises', () => ({
 silenceLocalStorageWarning()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
-// Auto-reset the snapshot + DOM after every test to prevent isolation leaks.
 afterEach(() => {
   cleanup()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // Analytics queries run untraced in tests: a boot path that wired the
-  // executor must not leak it into later files in this worker.
   setAnalyticsQueryExecutor(null)
 })

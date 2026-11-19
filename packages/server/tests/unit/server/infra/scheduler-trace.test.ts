@@ -38,8 +38,6 @@ beforeEach(async () => {
   vi.stubEnv('PROD', false as never)
   __resetTraceFacadeForTests()
   spans = []
-  // Synchronous export result: the SDK's InMemorySpanExporter defers the
-  // callback through `setTimeout`, which would need advancing under fake timers.
   const harnessed = {
     export(batch: ReadableSpan[], cb: (result: { code: number }) => void) {
       spans.push(...batch)

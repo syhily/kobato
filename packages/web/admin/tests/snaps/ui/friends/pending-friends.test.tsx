@@ -32,9 +32,6 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// The pending-review bucket: `useQuery` (pending rows) is mocked separately from the
-// main list's `useInfiniteQuery` (empty here), so the bucket renders alone.
-
 vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
 
 function makePendingFriend(overrides: Partial<AdminFriendDto> = {}): AdminFriendDto {

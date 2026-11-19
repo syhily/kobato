@@ -22,7 +22,6 @@ const DEFAULT_LISTING_METADATA: Required<ListingMetadataFlags> = {
   comments: false,
 }
 
-// 'skip-on-first-page': home omits page-1 SEO so `/` ships a minimal payload.
 export type ListingSeoMode = 'always' | 'skip-on-first-page'
 
 interface ListingPageRequest {
@@ -72,10 +71,8 @@ export async function listingLoader<TExtra = undefined>(
     title?: string
     description?: string
     locale: AppLocale
-    /** Request-pinned settings bundle — the same capture the caller renders with. */
     settings: BlogSettingsBundle | null
     pageSize?: number
-    /** Tail-merge guard: an orphan last page (< M posts) is absorbed into its predecessor. */
     mergeTailWhenLessThan?: number
     forceNoindex?: boolean
     metadata?: ListingMetadataFlags
@@ -99,9 +96,7 @@ export async function listingLoader<TExtra = undefined>(
       ? []
       : await fetchPage({
           pageNum,
-          // On the last page, expand the limit so tail-merged posts aren't truncated.
           limit: pageNum === totalPage ? totalPosts - (pageNum - 1) * effectivePageSize : effectivePageSize,
-          // The offset always follows the stable configured page size, even when the final limit expands.
           offset: (pageNum - 1) * effectivePageSize,
         })
 

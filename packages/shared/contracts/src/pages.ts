@@ -3,9 +3,6 @@ import { safeBoolean } from '@kobato/contracts/primitives.ts'
 import { adminRevisionDto } from '@kobato/contracts/revision.ts'
 import { z } from 'zod'
 
-// Admin pages wire inputs — the single Zod source the `@kobato/api` pages
-// contract composes and the server validates against.
-
 export const adminPageIdInput = z.object({ id: z.string().min(1) })
 export type AdminPageIdInput = z.infer<typeof adminPageIdInput>
 
@@ -25,7 +22,6 @@ export const upsertPageMetaSchema = upsertMetaBaseSchema.extend({
 export type UpsertPageMetaInput = z.infer<typeof upsertPageMetaSchema>
 
 export const adminPageDto = adminMetaBaseDto.extend({
-  /** Render the global friends grid at the bottom of the page detail route. */
   showFriends: z.boolean(),
 })
 export type AdminPageDto = z.infer<typeof adminPageDto>
@@ -38,7 +34,6 @@ export type AdminPageUpsertMetaOutput = z.infer<typeof adminPageUpsertMetaOutput
 
 export const adminPageDetailDto = z.object({
   page: adminPageDto,
-  /** Latest revision (draft preferred over published). */
   latestRevision: adminRevisionDto.nullable(),
   publishedRevision: adminRevisionDto.nullable(),
 })

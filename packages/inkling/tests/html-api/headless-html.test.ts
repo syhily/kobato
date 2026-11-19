@@ -6,13 +6,6 @@ import {
 import { MINIMAL_DOCUMENT } from '@kobato/inkling-internal/utils/initial-document'
 import { describe, expect, it } from 'vitest'
 
-// Public headless HTML surface, exercised through the
-// barrel-facing functions with no dom passed — the vitest jsdom globals feed
-// the port's global leg. Option semantics are pinned by reference in the
-// characterization suites: renderer additive override in
-// tests/inkling/html-renderer/default-round-trip.test.ts, importer wholesale
-// editorConfig replacement in tests/inkling/html-to-lexical/.
-
 const HEADING_STATE = `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello","type":"extended-text","version":1}],"direction":"ltr","format":"","indent":0,"tag":"h1","type":"extended-heading","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`
 
 describe('htmlToLexicalState', () => {

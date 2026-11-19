@@ -1,15 +1,3 @@
-// OpenObserve management client: health, organization discovery/creation, RUM
-// tokens, functions, pipelines, and v8 dashboards. Every request goes through
-// `safeFetch` with the configured endpoint as a `trustedOrigin` (self-hosted O2
-// may be loopback/private), has a bounded timeout, and never carries a URL or
-// credential into an error. Idempotent GETs retry once after a short backoff
-// on transient `network`/`timeout` failures; mutations never retry.
-//
-// OpenObserve v1.x `/healthz` answers only `{"status":"ok"}`; the release
-// version comes from the authenticated `GET /api/<org>/config` response
-// (`version`), so it is probed after the organization exists and the credentials
-// are proven.
-
 import type { SafeFetchFailure, SafeFetchResult } from '@kobato/server/infra/safe-fetch.ts'
 
 import { basicAuthorizationHeader } from '@kobato/server/domains/observability/config.ts'
@@ -21,13 +9,6 @@ export const O2_REQUEST_TIMEOUT_MS = 8_000
 export const O2_HEALTH_TIMEOUT_MS = 5_000
 const O2_MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 
-/**
- * Idempotent GETs retry exactly once after a short backoff: a transient
- * network/timeout blip should not force the admin to re-run the connection
- * test or provisioning by hand. Only `network`/`timeout` kinds qualify — an
- * answered HTTP status (even 5xx) is an upstream decision, not a blip.
- * Mutations are never retried.
- */
 const O2_GET_RETRY_BACKOFF_MS = 250
 
 function sleep(ms: number): Promise<void> {
@@ -57,7 +38,6 @@ export type O2ErrorKind =
   | 'upstream'
   | 'invalid-response'
 
-/** Safe failure surface: a closed kind + the operation + the upstream status. Never a URL or a credential. */
 export class O2ClientError extends Error {
   readonly kind: O2ErrorKind
   readonly operation: O2Operation
@@ -196,11 +176,6 @@ function titleOf(body: Record<string, unknown>): string {
   return typeof body.title === 'string' ? body.title : ''
 }
 
-/**
- * Build a client from the saved settings section. Configuration/grammar
- * problems throw `config` before any request; the organization is re-asserted
- * against the shared grammar before it is interpolated into a path.
- */
 export function createO2Client(config: O2ClientConfig): O2Client {
   const origin = normalizeObservabilityOrigin(config.endpoint)
   if (origin === null) {
@@ -209,8 +184,6 @@ export function createO2Client(config: O2ClientConfig): O2Client {
   if (!OBSERVABILITY_ORGANIZATION_PATTERN.test(config.organization)) {
     throw new O2ClientError('config', 'organizations')
   }
-  // `organizations` is a reserved global API segment in O2; an org with that
-  // identifier can never be addressed through `/api/<org>/...`.
   if (config.organization.toLowerCase() === 'organizations') {
     throw new O2ClientError('config', 'organizations')
   }
@@ -332,10 +305,6 @@ export function createO2Client(config: O2ClientConfig): O2Client {
       if (found === 'exists') {
         return 'exists'
       }
-      // O2 v1.x `POST /organizations` assigns a generated identifier, which
-      // cannot equal the site-name organization the runtime addresses. The
-      // documented identifier-preserving path is root-user auto-provisioning
-      // through an ingestion write: the path segment becomes the identifier.
       await call(`${orgBase}/v1/logs`, 'ensure-organization', {
         method: 'POST',
         body: JSON.stringify({ resourceLogs: [] }),
@@ -362,7 +331,6 @@ export function createO2Client(config: O2ClientConfig): O2Client {
         const token = value.data.rum_token
         return typeof token === 'string' && token !== '' ? token : null
       } catch (error) {
-        // No token yet is a normal 404, not a failure.
         if (error instanceof O2ClientError && error.kind === 'not-found') {
           return null
         }

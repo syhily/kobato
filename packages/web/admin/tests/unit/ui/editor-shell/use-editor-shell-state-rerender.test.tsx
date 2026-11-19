@@ -3,9 +3,6 @@ import { act } from '@testing-library/react'
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Client-side companion to use-editor-shell-state.test.ts — the SSR
-// harness cannot reproduce render-phase loops. Layout + keyboard
-// shortcuts are mocked; this suite covers only body/meta/conflict paths.
 const mutate = vi.fn()
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
 
@@ -19,14 +16,12 @@ vi.mock('@tanstack/react-query', () => ({
   })),
 }))
 
-// Shared autosave engine handles; same pattern as use-editor-shell-persist.test.
 const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
 vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
-// Per-test control over the local-storage draft the conflict check reads.
 const localDraftState = vi.hoisted(() => ({
   loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
@@ -61,7 +56,6 @@ import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
 
-// The editor shell hooks call `useI18n()`, so every render needs the provider.
 const renderHook = renderHookWithI18n
 
 interface Meta {
@@ -98,7 +92,6 @@ function makeCreateArgs() {
 }
 
 function makeEditArgs() {
-  // The shell rebuilds the detail literal every render — fresh object per call on purpose.
   const detail: EditorShellDetail<EntityLike> = {
     entity: {
       id: 'post-1',
@@ -118,8 +111,6 @@ function makeEditArgs() {
 
 describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () => {
   it('create mode survives re-renders with a referentially stable initialBody', () => {
-    // Regression: a fresh `initialBody` per render made the conflict check
-    // setState-during-render loop into "Too many re-renders".
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
     const firstBody = result.current.initialBody
     rerender()
@@ -129,8 +120,6 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
   })
 
   it('edit mode with zero revisions survives re-renders with a referentially stable initialBody', () => {
-    // Regression: zero revisions (a failed persistCreate still navigates to
-    // edit) must not yield a fresh empty state — it looped into "Too many re-renders".
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     const firstBody = result.current.initialBody
     rerender()
@@ -148,7 +137,6 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
   })
 
   it('advances the autosave baseline after adopting a local draft so the next tick does not re-send it', async () => {
-    // The stored local draft diverges from the (empty) server body.
     const localBody = lexicalBodyWith([lexicalParagraph('local draft')])
     const directSaveDraft = vi.fn().mockResolvedValue({
       status: 'saved',
@@ -168,7 +156,6 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
     const args = { ...makeEditArgs(), directSaveDraft }
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
 
-    // The conflict check fires only on a CHANGE of the loaded draft — mount clean, then deliver it.
     localDraftState.loadedDraft = { body: localBody, savedAt: 123 }
     rerender()
 
@@ -184,10 +171,6 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
       expectedClientRevisionToken: null,
       force: true,
     })
-    // …and the baseline advanced to that body reference, so the next tick
-    // short-circuits instead of re-PATCHing it (and rotating the revision token).
-    // The mount-time opening-body seed rides the engine's `initialBaseline`
-    // option, so this setBaseline call is the adopt flow's alone.
     expect(autosaveMockReturns.setBaseline).toHaveBeenCalledTimes(1)
     expect(autosaveMockReturns.setBaseline).toHaveBeenCalledWith(localBody)
     expect(result.current.body).toBe(localBody)

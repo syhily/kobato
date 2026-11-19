@@ -12,15 +12,12 @@ import {
 } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 
-// Page contract shared by every admin list procedure: offset-paginated; `hasMore` gates the next fetch, `total` optional.
 interface AdminListPageShape {
   hasMore: boolean
   total?: number
 }
 
-// Structural view of a procedure's infinite-list entry points, decoupled from the full router type.
 interface AdminInfiniteListSource<TInput, TPage extends AdminListPageShape> {
-  /** Procedure-level key — the scope `reset` drops cached pages for. */
   key(): QueryKey
   infiniteOptions(options: {
     input: (pageParam: number) => TInput
@@ -31,7 +28,6 @@ interface AdminInfiniteListSource<TInput, TPage extends AdminListPageShape> {
   }): UseInfiniteQueryOptions<TPage, Error, InfiniteData<TPage, number>, QueryKey, number> & { queryKey: QueryKey }
 }
 
-// Shared scaffold for admin infinite-scroll lists: server rows live only in the TanStack cache — views never rebuild the key.
 export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, TRow>({
   namespace,
   pageSize,
@@ -41,17 +37,12 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
   enabled = true,
   refetchInterval,
 }: {
-  /** Procedure utils exposing `infiniteOptions` — e.g. `orpcQuery.admin.posts.list`. */
   namespace: AdminInfiniteListSource<TInput, TPage>
-  /** Rows fetched per page; may be dynamic (the users view reads it from filter state). */
   pageSize: number
   buildInput: (offset: number) => TInput
   selectRows: (page: TPage) => TRow[]
-  /** Display noun message id for the error toast; translated through the same catalog as the title. Omit when the view surfaces errors inline. */
   noun?: UiMessageId
-  /** Pass false to hold the query idle until the caller arms it (e.g. a search waiting for a submitted keyword). */
   enabled?: boolean
-  /** Poll cadence in ms (refetches all loaded pages) — for views tracking live rows. */
   refetchInterval?: number
 }) {
   const { t } = useI18n()
@@ -84,7 +75,6 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
   })
 
   const queryClient = useQueryClient()
-  // The query key rebuilds every render — pin the latest in a ref so `patchPages` stays referentially stable.
   const queryKeyRef = useRef(options.queryKey)
   useEffect(() => {
     queryKeyRef.current = options.queryKey
@@ -102,21 +92,16 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
   return {
     rows,
     total,
-    /** Raw loaded pages — for cross-page derivations (e.g. search-hit dedupe). */
     pages,
-    /** First loaded page — for page-level aggregates (e.g. comment status counts). */
     firstPage,
     isLoading: listQuery.isLoading,
     isFetching: listQuery.isFetching,
-    /** Fetch error — surfaced as a toast when `noun` is set, otherwise the view renders it. */
     error: listQuery.error,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
     sentinelRef,
-    /** Rewrite the cached pages in place after a mutation, skipping the refetch. */
     patchPages,
-    /** Drop every cached page set for the procedure namespace. */
     reset,
   }
 }

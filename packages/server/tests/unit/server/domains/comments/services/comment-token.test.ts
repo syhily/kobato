@@ -21,7 +21,6 @@ describe('domains/comments/services — comment token cookie utilities', () => {
 
     it('parses a valid comment token cookie', () => {
       const serialized = serializeCommentTokensCookie(sample)
-      // serialized looks like "__comment_tokens=...; Path=/; ..."
       const valueOnly = serialized.split(';')[0] as string
       expect(parseCommentTokensCookie(valueOnly)).toEqual(sample)
     })
@@ -42,14 +41,10 @@ describe('domains/comments/services — comment token cookie utilities', () => {
       expect(cookie).toContain('Path=/')
       expect(cookie).toContain('SameSite=Lax')
       expect(cookie).toContain('Max-Age=')
-      // Max-Age should be 7 days in seconds
       expect(cookie).toMatch(/Max-Age=604800/)
     })
 
     it('omits the Secure attribute outside production (vitest runs with PROD=false)', () => {
-      // Pins the PROD-conditional pattern shared with the session and
-      // visitor cookies: plain-HTTP deployments must be able to store
-      // the commenter token jar.
       expect(serializeCommentTokensCookie(sample)).not.toContain('Secure')
     })
 

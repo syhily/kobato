@@ -37,7 +37,6 @@ import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
 
 export type CatalogNamespace = 'ui' | 'server'
 
-/** The two catalogs a locale resolves to. `ui` ships to the client; `server` never leaves the server. */
 export interface MessageCatalogs {
   locale: AppLocale
   ui: UiMessages
@@ -58,23 +57,10 @@ const SERVER_CATALOGS = {
   'zh-CN': serverMessagesZhCN,
 } as const satisfies Record<AppLocale, ServerMessages>
 
-/**
- * The UI messages one document can render: the full catalog for the workspace, the
- * allowlisted public namespaces for every other pathname. Readonly — every caller
- * shares the frozen memoized object and must never mutate it.
- */
 export type ScopedUiMessages = Readonly<Record<string, string>>
 
-/**
- * The locale's UI catalog merged over the English baseline, restricted to the
- * messages a document scope actually renders. Memoized per `locale:scope`: the
- * payload the root loader serializes is the SAME frozen object on every request, and
- * a caller that tried to patch it would throw instead of leaking one request's edit
- * into the next.
- */
 const SCOPE_CACHED_UI_CATALOGS = new Map<string, ScopedUiMessages>()
 
-/** The workspace scope always names the complete catalog. */
 export function uiMessagesForScope(locale: AppLocale, scope: 'workspace'): UiMessages
 export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): ScopedUiMessages
 export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): ScopedUiMessages {
@@ -83,8 +69,6 @@ export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): Scop
   if (cached !== undefined) {
     return cached
   }
-  // The baseline stays the shared module object (workspace default); other locales
-  // are a plain spread over it.
   const full: Record<string, string> =
     locale === BASE_LOCALE ? uiMessagesEnUS : { ...uiMessagesEnUS, ...UI_CATALOGS[locale] }
   const value: Record<string, string> =
@@ -94,12 +78,6 @@ export function uiMessagesForScope(locale: AppLocale, scope: CatalogScope): Scop
   return value
 }
 
-/**
- * The locale's complete UI catalog merged over the English baseline. The type
- * already proves completeness; the merge is the runtime safety net for a catalog
- * patched outside the type system. Frozen and memoized — callers share the object
- * and must not modify it.
- */
 export function uiMessagesFor(locale: AppLocale): UiMessages {
   return uiMessagesForScope(locale, 'workspace')
 }
@@ -136,7 +114,6 @@ type ArgumentKind = 'plain' | 'number' | 'date' | 'time' | 'plural' | 'selectord
 
 interface ArgumentShape {
   kind: ArgumentKind
-  /** Present for select / plural arguments: the option keys the message handles. */
   options: string[]
 }
 
@@ -244,7 +221,6 @@ function checkLocaleRules(
       continue
     }
     const allowed = allowedPluralCategories(locale, arg.kind === 'selectordinal')
-    // `=0`-style exact matches are legal in every locale; categories are not.
     const invalid = arg.options.filter(
       (option) => option !== 'other' && !option.startsWith('=') && !allowed.includes(option),
     )
@@ -279,18 +255,12 @@ function parseShape(
   }
 }
 
-/** One namespace's baseline + the four localized catalogs to check against it. */
 export interface MessageCatalogSource {
   namespace: CatalogNamespace
   base: Record<string, string>
   catalogs: Record<AppLocale, Record<string, string>>
 }
 
-/**
- * Every violation in one namespace. Exported so the rule set is testable with
- * synthetic catalogs — the shipped catalogs must be clean, so their failure
- * modes can only be pinned this way.
- */
 export function collectMessageCatalogIssues(source: MessageCatalogSource): CatalogIssue[] {
   const { namespace, base: baseMessages, catalogs } = source
   const issues: CatalogIssue[] = []
@@ -327,7 +297,6 @@ export function collectMessageCatalogIssues(source: MessageCatalogSource): Catal
   return issues
 }
 
-/** Every catalog violation across both namespaces and all four locales. */
 export function collectCatalogIssues(): CatalogIssue[] {
   return [
     ...collectMessageCatalogIssues({ namespace: 'ui', base: uiMessagesEnUS, catalogs: UI_CATALOGS }),

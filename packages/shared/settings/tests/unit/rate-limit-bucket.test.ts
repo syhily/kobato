@@ -6,10 +6,6 @@ import {
 import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults.ts'
 import { describe, expect, it } from 'vitest'
 
-// The server section schema and the admin ThresholdForm both compose this
-// bucket schema — its custom messages are typed UI-catalog ids (the client
-// translates them, the server maps them into descriptors), and the bound
-// travels as the issue's `minimum`/`maximum`, never baked into prose.
 describe('settings/rate-limit-bucket', () => {
   it('accepts the boundary values', () => {
     for (const [windowSeconds, maxAttempts] of [

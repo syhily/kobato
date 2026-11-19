@@ -2,9 +2,6 @@ import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter.ts'
 import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { describe, expect, it } from 'vitest'
 
-// SQL-injection regression suite: `is_bot` and the `[startAt, endAt)` range are always
-// present, so every user value must bind as a parameter.
-
 const baseQuery = { range: { startAt: 100, endAt: 200 } }
 
 describe('analytics filters', () => {
@@ -19,7 +16,6 @@ describe('analytics filters', () => {
   it('excludes geo-unknown events (empty country blob) by default', () => {
     const compiled = compileAnalyticsQuery(createAnalyticsQuery().selectAll().where(buildAnalyticsFilter(baseQuery)))
     expect(compiled.sql).toContain(`blob7 <> ''`)
-    // The exclusion is a literal — no extra bound parameter.
     expect(compiled.parameters).toEqual([100, 200])
   })
 

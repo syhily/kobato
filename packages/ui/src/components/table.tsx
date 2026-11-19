@@ -5,8 +5,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 
 function Table({ className, ...props }: ComponentProps<'table'>) {
   const { t } = useI18n()
-  // Block-level disable (the formatter splits the opening tag); region role +
-  // tabIndex makes horizontally scrollable tables keyboard-accessible.
   /* oxlint-disable jsx-a11y/no-noninteractive-tabindex */
   return (
     <div

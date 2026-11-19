@@ -3,7 +3,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Only findFontsByIds is spied (so the no-slot short-circuit is assertable); settings and the DB stay real.
 vi.mock('@kobato/server/domains/fonts/services/read.ts', { spy: true })
 
 const { findFontsByIds } = await import('@kobato/server/domains/fonts/services/read.ts')
@@ -12,9 +11,7 @@ const { resolveFontsForRender } = await import('@kobato/server/domains/fonts/ser
 const db = getTestDb()
 
 const HASH = 'a'.repeat(64)
-// NOT `fontCssKey(HASH)`: a mismatched cssKey proves render reads the persisted column.
 const CSS_KEY = `fonts/${'c'.repeat(64)}/result.css`
-// etagToTimestamp takes the first 8 hex chars: parseInt('deadbeef', 16).
 const ETAG = `deadbeef${'0'.repeat(56)}`
 const VERSION = 3735928559
 
@@ -38,7 +35,6 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}) {
   return rows[0]!
 }
 
-// Only the three slot lists matter to the resolver.
 function settings(global: string[], post: string[] = [], code: string[] = []) {
   return { og: { family: '' }, calendar: { family: '' }, global, post, code }
 }
@@ -46,7 +42,6 @@ function settings(global: string[], post: string[] = [], code: string[] = []) {
 function seedSettings(website: string | null = 'https://site.example.com') {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
-    // Null website exercises the unconfigured path; the section type is string.
     siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: website as string },
     assets: {
       ...TEST_BLOG_SETTINGS_BUNDLE.assets!,

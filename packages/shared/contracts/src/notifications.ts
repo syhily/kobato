@@ -1,21 +1,12 @@
 import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
 import { z } from 'zod'
 
-// Notification kinds: `direct` (admin ↔ user private thread, always
-// replyable), `admin` (system-generated, fanned out to every admin at creation,
-// never replyable), `broadcast` (system- or admin-created, fanned out to every
-// user at creation; only the admin-created flavor is replyable). The
-// persistence twin (column + CHECK literal) lives in
-// `@kobato/db/schema/notification.ts`, pinned value-identical by the server's
-// db-wire parity test.
 export const NOTIFICATION_KINDS = ['direct', 'admin', 'broadcast'] as const
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 
 export const NOTIFICATION_TABS = ['all', 'unread', 'direct', 'announce'] as const
 export type NotificationTab = (typeof NOTIFICATION_TABS)[number]
 
-// System-producer vocabulary. The WIRE field stays `z.string().nullable()`:
-// stored rows may outlive the vocabulary, so the read schema never narrows.
 export const NOTIFICATION_SOURCES = ['zeabur-mail-cleanup', 'job-run'] as const
 export type NotificationSource = (typeof NOTIFICATION_SOURCES)[number]
 
@@ -25,7 +16,6 @@ export const notificationSenderDto = z.object({
 })
 export type NotificationSenderDto = z.infer<typeof notificationSenderDto>
 
-// One inbox row. `sender: null` marks a system-generated message.
 export const notificationDto = z.object({
   id: idString,
   threadId: idString,
@@ -57,17 +47,13 @@ export const unreadCountOutput = z.object({
 })
 
 export const markNotificationsReadInput = z.object({
-  // Omitted = mark every unread message of the caller.
   ids: z.array(idString).min(1).max(100).optional(),
 })
 
-// The inverse gesture ("deal with this later") — ids are REQUIRED: there is
-// deliberately no "unread everything".
 export const markNotificationsUnreadInput = z.object({
   ids: z.array(idString).min(1).max(100),
 })
 
-// One thread message in the detail view. `mine` drives the chat alignment.
 export const threadMessageDto = z.object({
   id: idString,
   body: z.string(),
@@ -83,12 +69,9 @@ export const notificationThreadInput = z.object({
 
 export const notificationThreadOutput = z.object({
   messages: z.array(threadMessageDto),
-  // Whether the caller may post a reply into this thread.
   canReply: z.boolean(),
 })
 
-// Validation messages are UI message IDS (never prose): the client renders them
-// through `localizeMessage`, the server maps them with `messageDescriptor`.
 export const replyNotificationInput = z.object({
   threadId: idString,
   body: z.string().trim().min(1, 'notifications.validation.replyBody').max(5000),
@@ -96,9 +79,6 @@ export const replyNotificationInput = z.object({
 
 export const replyNotificationOutput = z.object({
   message: threadMessageDto,
-  // The thread the reply landed in. A broadcast reply forks a new private
-  // thread, so this differs from the input thread id — the UI uses the
-  // mismatch to explain where the reply went.
   threadId: idString,
 })
 
@@ -118,8 +98,6 @@ export const adminSendOutput = z.object({
   id: idString,
 })
 
-// Soft-delete recall: broadcasts and admin-kind system messages are recallable,
-// direct messages are not. Idempotent on the server side.
 export const adminRecallNotificationInput = z.object({
   id: idString,
 })

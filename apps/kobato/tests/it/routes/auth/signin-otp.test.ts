@@ -18,9 +18,6 @@ import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// OTP signin against the real engine; only mocks: the request-context
-// seam and email DELIVERY (the plaintext OTP extraction channel).
-
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendSignInOtp: vi.fn<any>(),
@@ -71,12 +68,10 @@ let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // Flush before teardown: pending events reference rows the next clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   setBlogSettingsBundleForTests(OTP_TEST_BUNDLE)
   await clearAllTables(db)
   await seedGateAdmin()
-  // Process-level rate-limit Map: reset or earlier tests exhaust the otpSend* budgets.
   __resetRateLimitsForTests()
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
@@ -199,7 +194,6 @@ function otpFormData(code: string) {
   return withCsrf(fd)
 }
 
-// `data()` results keep headers under `.init` (DataWithResponseInit); `redirect()` are real Responses.
 function getSetCookie(result: Response & { data?: any }): string | null {
   if (result.headers instanceof Headers) {
     return result.headers.get('Set-Cookie')

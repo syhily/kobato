@@ -13,15 +13,8 @@ import React from 'react'
 
 export const MarkdownPastePlugin = () => {
   const [editor] = useLexicalComposerContext()
-  // Reading the modifier state also attaches the protocol's own keydown/keyup
-  // listeners (lazily, once per editor) — see clipboard-protocol.ts.
   const modifierState = getModifierState(editor)
 
-  // Pre-warm the paste dialect chunk: the command handler below and the
-  // markdown card's exportDOM (browser copy) consume the engine
-  // synchronously, so it must be loaded before either runs. Idle-scheduled so
-  // the fetch never contends with editor mount; the cold-paste path still
-  // awaits the load before dispatching, so correctness never depends on this.
   React.useEffect(() => {
     if (typeof requestIdleCallback === 'function') {
       const handle = requestIdleCallback(() => void loadPasteDialect())

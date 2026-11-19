@@ -1,8 +1,3 @@
-// Single configuration entry point: resolves the config file (auto-created
-// when missing) + env overrides, validates, and exposes `serverConfig`.
-// CONFIG_TABLE is the single source of truth (env name = path joined by
-// `__`); `VITEST=true` without `--config` is env-only, no filesystem access.
-
 import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
 import { isValidTrustedProxyEntry } from '@kobato/server/infra/ip-match.ts'
 import { isSea } from '@kobato/server/infra/sea/sea.ts'
@@ -35,7 +30,6 @@ export const CONFIG_TABLE = [
   },
   {
     path: ['security', 'sessionSecret'],
-    // The 32-char floor applies to EACH comma-separated secret after split/trim (audit P1-17).
     schema: z
       .string()
       .transform((val) => val.split(',').map((s) => s.trim()))
@@ -44,7 +38,6 @@ export const CONFIG_TABLE = [
   },
   {
     path: ['security', 'encryptionKey'],
-    // Distinct-character floor blocks trivially weak keys like 'aaaa…'.
     schema: z
       .string()
       .min(32)
@@ -55,9 +48,6 @@ export const CONFIG_TABLE = [
   },
   {
     path: ['security', 'trustedProxies'],
-    // Comma-separated like sessionSecret; each entry is an exact IP or an
-    // IPv4 CIDR (e.g. a Docker/Traefik overlay subnet). Empty → only
-    // loopback peers may vouch for proxy headers (the pre-existing behavior).
     schema: z
       .union([
         z.string().transform((val) =>
@@ -75,8 +65,6 @@ export const CONFIG_TABLE = [
             .refine(isValidTrustedProxyEntry, {
               message: 'must be an IP address or an IPv4 CIDR (e.g. 172.18.0.0/16)',
             })
-            // /0 trusts proxy headers from ANY peer — every per-IP control
-            // (rate limits, audit attribution) silently stops applying.
             .refine((entry) => entry !== '0.0.0.0/0', {
               message: '0.0.0.0/0 would trust proxy headers from any peer, disabling every per-IP rate limit',
             }),
@@ -88,9 +76,6 @@ export const CONFIG_TABLE = [
   { path: ['storage', 'data'], schema: z.string().min(1), fileDefault: './data' },
   {
     path: ['storage', 'database'],
-    // Empty → `<storage.data>/kobato.db` at open time (tracks a custom
-    // `storage.data` without duplicating it); `:memory:` allowed for tests.
-    // `.default('')` covers config files written before this key existed.
     schema: z.string().default(''),
     fileDefault: '',
   },
@@ -113,7 +98,6 @@ export function configEnvName(path: readonly string[]): string {
 function argvConfigPath(argv: string[]): string | null {
   const explicit = parseConfigArg(argv)
   if (explicit === undefined) {
-    // `--config`/`-c` with no value parses as absent — re-scan for the flag name to fail precisely.
     const flag = argv.find((arg) => arg === '--config' || arg === '-c')
     if (flag !== undefined) {
       fail(`命令行参数 ${flag} 需要一个配置文件路径。`)
@@ -135,11 +119,6 @@ export interface ConfigCandidateEnv {
   configFile?: string
 }
 
-/**
- * Location order: --config/-c > KOBATO_CONFIG_FILE > <execDir> (SEA only) >
- * cwd > ~/.config. The env override is resolved against the process cwd and is
- * treated as explicit (the path is used even before the file exists).
- */
 export function configCandidates(argv: string[], env?: ConfigCandidateEnv): string[] {
   const explicit = argvConfigPath(argv)
   const resolvedEnv = env ?? {
@@ -184,7 +163,6 @@ function buildFileSchema(): z.ZodType {
     for (const [key, child] of Object.entries(node.children)) {
       shape[key] = build(child)
     }
-    // Every level optional: partial config files fall through to defaults/env.
     return z.object(shape).strict().optional()
   }
   return build(root)
@@ -252,8 +230,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-/** '' means "unset" in the file (mirrors the env side) — strip before
- *  validation so an auto-created file passes its own schema next boot. */
 function stripEmptyStrings(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(stripEmptyStrings)
@@ -280,13 +256,8 @@ function writeConfigFile(filePath: string, data: Record<string, unknown>): void 
   renameSync(tempPath, filePath)
 }
 
-/**
- * In-place migration for pre-rename config files: legacy values MOVE into the
- * current layout, never overwriting; one Chinese note per consumed key.
- */
 export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: boolean; notes: string[] } {
   const notes: string[] = []
-  // A target slot holding '' (unset) must not block a real legacy value.
   const taken = (value: unknown): boolean => value !== undefined && value !== ''
 
   const moveKey = (
@@ -313,7 +284,6 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
       data.security = security
       moveKey(auth, 'sessionSecret', security, 'sessionSecret', 'auth.sessionSecret → security.sessionSecret')
     }
-    // An emptied section must not survive — the strict schema rejects it.
     if (Object.keys(auth).length === 0) {
       delete data.auth
       if (!hadSecret) {
@@ -352,13 +322,11 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
     }
   }
 
-  // redis: dropped with the Redis dependency — old files carry the block and the strict schema rejects it.
   if ('redis' in data) {
     delete data.redis
     notes.push('redis(已删除)')
   }
 
-  // database (Postgres era): no meaningful mapping to a SQLite path — dropped like redis.
   if ('database' in data) {
     delete data.database
     notes.push('database(已删除)')
@@ -369,10 +337,6 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
 
 export type ConfigFileErrorKind = 'json' | 'shape' | 'schema'
 
-/** A raw config-file payload the boot-time parse would reject. The message
- *  body is the fragment `loadConfig` reports after the file path; `kind`
- *  lets a caller that must not exit (the backup restore path) word its own
- *  error. */
 export class ConfigFileError extends Error {
   constructor(
     readonly kind: ConfigFileErrorKind,
@@ -390,17 +354,6 @@ export interface ParsedConfigFile {
   notes: string[]
 }
 
-/**
- * Parse + migrate + validate a raw config file EXACTLY as boot does
- * (`loadConfig`): legacy-key moves run first (archived configs from older
- * builds stay loadable), '' means unset, then the strict file schema. Throws
- * `ConfigFileError`; never exits.
- *
- * The backup restore path shares this so a restored `kobato.config.json` is
- * checked against the SAME schema the next boot applies — a config that
- * would fail there (`process.exit(1)`, with the databases already swapped)
- * is rejected before any swap.
- */
 export function parseConfigFileJson(raw: string): ParsedConfigFile {
   let parsedJson: unknown
   try {
@@ -411,33 +364,21 @@ export function parseConfigFileJson(raw: string): ParsedConfigFile {
   if (!isRecord(parsedJson)) {
     throw new ConfigFileError('shape', '的顶层必须是一个 JSON 对象。')
   }
-  // Migrate legacy keys (renames + the removed redis block) before
-  // validation — the strict file schema would reject them otherwise.
   const { migrated, notes } = migrateLegacyKeys(parsedJson)
   const stripped = stripEmptyStrings(parsedJson)
   const result = fileSchema.safeParse(stripped)
   if (!result.success) {
     throw new ConfigFileError('schema', `包含无效内容:\n${formatIssues(result.error.issues)}`)
   }
-  // Use the RAW stripped JSON, not result.data: transformed output (sessionSecret → string[]) must never round-trip into the file.
   return { data: unsafeCast<Record<string, unknown>>(stripped), migrated, notes }
 }
 
-/**
- * Restore-time extension of `parseConfigFileJson`: additionally replays the
- * env-over-file merge + per-entry parse `loadServerConfig` applies at boot.
- * The file schema alone is all-optional (secrets may arrive via env), so a
- * config missing a REQUIRED value passes it — then the next boot exits
- * (`process.exit(1)`) AFTER the restore's engine swap. Rejecting here keeps
- * "the next boot accepts this file" an honest invariant.
- */
 export function parseRestorableConfigJson(raw: string): ParsedConfigFile {
   const parsed = parseConfigFileJson(raw)
   const issues: string[] = []
   for (const entry of CONFIG_TABLE) {
     const key = entry.path.join('.')
     const value = process.env[configEnvName(entry.path)] ?? getPath(parsed.data, entry.path)
-    // '' = unset, mirroring loadServerConfig.
     const result = entry.schema.safeParse(value === '' ? undefined : value)
     if (!result.success) {
       for (const issue of result.error.issues) {
@@ -451,12 +392,6 @@ export function parseRestorableConfigJson(raw: string): ParsedConfigFile {
   return parsed
 }
 
-/**
- * The config file path this process resolved — same order as `loadConfig`
- * (--config/-c > SEA execDir > cwd > ~/.config) — or null in the VITEST
- * env-only mode, where no file exists. The backup archives this file so the
- * env-converged configuration travels with the database snapshot.
- */
 export function resolveConfigFilePath(): string | null {
   const explicit = argvConfigPath(process.argv.slice(2))
   const envConfig = process.env.KOBATO_CONFIG_FILE
@@ -464,8 +399,6 @@ export function resolveConfigFilePath(): string | null {
     return null
   }
   const candidates = configCandidates(process.argv.slice(2))
-  // An explicit --config (or KOBATO_CONFIG_FILE) is a directive: use it even
-  // when the file doesn't exist yet (it is created there).
   return (
     explicit ??
     (envConfig === undefined ? null : resolve(envConfig)) ??
@@ -474,11 +407,6 @@ export function resolveConfigFilePath(): string | null {
   )
 }
 
-/**
- * Resolve effective raw values keyed by dotted path, persisting env overrides
- * back into the file; fatal on unreadable/invalid files. Values stay RAW —
- * transforms run exactly once in `loadServerConfig`.
- */
 export function loadConfig(): Record<string, unknown> {
   const filePath = resolveConfigFilePath()
   if (filePath === null) {
@@ -519,7 +447,6 @@ export function loadConfig(): Record<string, unknown> {
       }
       process.stderr.write(`已迁移配置文件 ${filePath} 中的旧配置项:${notes.join(', ')}\n`)
     }
-    // Use the RAW stripped JSON, not transformed output (sessionSecret → string[]) — that must never round-trip into the file.
     fileData = parsed.data
   }
 
@@ -558,7 +485,6 @@ export interface ServerConfig {
     loggingLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined
   }
   security: {
-    /** Cookie-signing secrets for the session storage (rotatable, comma-separated in the file). */
     sessionSecret: string[]
     encryptionKey: string
     trustedProxies: string[]
@@ -566,23 +492,17 @@ export interface ServerConfig {
   storage: {
     data: string
     database: string
-    /** DuckDB analytics file path. Empty → `<storage.data>/analytics.duckdb`. */
     analyticsDatabase: string
     defaultFont?: string | undefined
   }
 }
 
-/**
- * Parse every CONFIG_TABLE entry exactly once (defaults, coercion, transforms)
- * and assemble `ServerConfig`; fatal on validation failure (logger not up yet).
- */
 export function loadServerConfig(): ServerConfig {
   const raw = loadConfig()
   const config: Record<string, unknown> = {}
   const issues: string[] = []
   for (const entry of CONFIG_TABLE) {
     const key = entry.path.join('.')
-    // '' = unset — auto-created files hold it for optional values, which must fall through to the schema default.
     const value = raw[key] === '' ? undefined : raw[key]
     try {
       setPath(config, entry.path, entry.schema.parse(value))
@@ -619,8 +539,6 @@ export function loadServerConfig(): ServerConfig {
 
 export const serverConfig: ServerConfig = loadServerConfig()
 
-// NODE_ENV stays process-env-only: it selects the process mode, not a
-// deployment setting, so it never enters the config file.
 export const NODE_ENV = z
   .enum(['development', 'production', 'test'])
   .optional()

@@ -1,8 +1,3 @@
-// Normalization for the public `<InklingComposer fileUploader>` prop, which accepts legacy
-// bags: a missing `useFileUpload` hook degrades to the erroring fallback hook, and
-// `fileTypes` entries forward only when they match `{ mimeTypes: string[] }` per media type
-// (anything else degrades to "no restriction").
-
 import type { FileUploader, FileUploaderInput } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 
 const MEDIA_KEYS = ['image', 'video', 'audio', 'file'] as const

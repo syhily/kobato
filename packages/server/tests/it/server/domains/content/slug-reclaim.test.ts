@@ -5,8 +5,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Real engine; the single-connection engine serialises writers, so a
-// same-entity row at insert time was already there at pre-check time.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -77,7 +75,6 @@ describe('content/slug-reclaim — reclaimSlugOnRestore', () => {
   )
 
   it('throws when the restoring entity already owns a different slug', async () => {
-    // The entity unique index fires first — a leaked row, not a slug conflict.
     await seedRegistryRow('other', 'post', 1)
 
     const caught = catchSync(() => reclaimSlugOnRestore(db, 'post', 1, 'hello'))
@@ -86,7 +83,6 @@ describe('content/slug-reclaim — reclaimSlugOnRestore', () => {
   })
 
   it('throws when the registry already holds the slug for the restoring entity itself', async () => {
-    // Same-entity: pre-check passes, the insert hits the unique violation.
     await seedRegistryRow('hello', 'post', 1)
 
     const caught = catchSync(() => reclaimSlugOnRestore(db, 'post', 1, 'hello'))

@@ -14,8 +14,6 @@ import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/te
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Renderers stubbed to cheap buffers; warmup is wrap-don't-replace, so the
-// real through() calls fill the real buckets.
 vi.mock('@kobato/server/render/og/render.ts', () => ({
   drawOpenGraph: vi.fn(async () => Buffer.from('og-png')),
 }))
@@ -30,7 +28,6 @@ vi.mock('@kobato/server/domains/content/render-warmup.ts', async (importOriginal
 const warmMock = vi.mocked(warmContentRenderCaches)
 const drawOpenGraphMock = vi.mocked(drawOpenGraph)
 
-// Side-effect import: wires the real render layer into the domain slot.
 import '@kobato/server/render/warmup/content-cache.ts'
 
 const db = getTestDb()
@@ -77,7 +74,6 @@ describe('render cache warmup on content publish/update', () => {
       summary: '',
       cover: '',
     })
-    // Fire-and-forget warm: wait for the async write to land.
     await vi.waitFor(async () => {
       expect(await bucketHasEntries('og')).toBe(true)
       expect(await bucketHasEntries('calendar')).toBe(true)
@@ -98,7 +94,6 @@ describe('render cache warmup on content publish/update', () => {
     warmMock.mockClear()
 
     await updatePostMeta(db, { id: liveId, title: 'Live Post Renamed' })
-    // No explicit slug: the update re-derives it, so the warm target carries the NEW slug.
     expect(warmMock).toHaveBeenCalledWith(
       expect.objectContaining({ slug: 'live-post-renamed', title: 'Live Post Renamed' }),
     )
@@ -120,7 +115,6 @@ describe('render cache warmup on content publish/update', () => {
     )
     expect(result.status).toBe('saved')
 
-    // The OG path resolves an empty page summary to the site description; the warm key must too.
     expect(warmMock).toHaveBeenCalledWith({
       slug: 'about',
       title: 'About',
@@ -149,7 +143,6 @@ describe('category OG warmup', () => {
   it('warms the category OG card after a category create', async () => {
     await upsertAdminCategory(db, { name: 'Tech Notes', cover: '', description: '' })
 
-    // The OG route serves categories under a `cat-`-prefixed slug.
     expect(warmMock).toHaveBeenCalledWith({
       slug: 'cat-tech-notes',
       title: 'Tech Notes',

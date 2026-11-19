@@ -1,8 +1,3 @@
-/**
- * Transport-agnostic request facts, extracted once at the HTTP seam so the
- * domain layer never touches the raw `Request`. The proxy-aware client
- * address is deliberately absent (threaded separately as `clientAddress`).
- */
 export interface RequestFacts {
   /** Minted once per request — the analytics join key shared by the
    *  server-side row and the client beacon. */

@@ -46,7 +46,6 @@ export interface AdminTagsListResult {
   hasMore: boolean
 }
 
-// `total` is the full filtered count, independent of offset/limit.
 export async function listTagsForAdmin(db: Database, filters: AdminTagsListFilters): Promise<AdminTagsListResult> {
   const offset = filters.offset ?? 0
   const [rows, total, counts] = await Promise.all([
@@ -89,7 +88,6 @@ export async function upsertAdminTag(
     return toAdminTagDto(row, counts.get(row.name) ?? 0)
   }
 
-  // Authors may only create tags; renaming is admin-only.
   if (viewer && !hasAtLeast(viewer.role, 'admin')) {
     throw new DomainError('FORBIDDEN', ErrorMessages.FORBIDDEN)
   }
@@ -117,7 +115,6 @@ export async function upsertAdminTag(
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
 
-// Block-only deletion for every role — a stricter-than-RBAC fence so posts are never orphaned.
 export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerIdentity): Promise<boolean> {
   const deleted = await deleteAdminTaxonomy(id, 'tag', {
     findById: (id) => findTagById(db, id),
@@ -165,7 +162,6 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
     .select({ name: tagTable.name, slug: tagTable.slug })
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
-  // Narrow the count to the requested names; a whole-taxonomy count is a 3-table scan.
   const countsMapPromise = countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: uniqueNames })
   const [tagRows, countsMap] = await Promise.all([tagRowsPromise, countsMapPromise])
 
@@ -188,7 +184,6 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
   return uniqueNames.map((name) => tagMap.get(name)).filter((t): t is Tag => t !== undefined)
 }
 
-// Feed-only: accept slug or legacy display name; public routes stay slug-only.
 export async function resolveTagBySlugOrName(db: Database, value: string): Promise<TagRow | null> {
   return (await findTagBySlug(db, value)) ?? (await findTagByName(db, value))
 }

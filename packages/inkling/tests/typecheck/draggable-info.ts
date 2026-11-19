@@ -4,16 +4,6 @@ import type {
   DraggableInfo,
   ImageDraggableInfo,
 } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
-/**
- * Compile-time pins for the closed drag-payload union.
- *
- * The producers are exactly two (the card drag in DragDropReorderPlugin and
- * the gallery image drag in useGalleryReorder), so `DraggableInfo` is closed:
- * card payloads carry the heterogeneous card dataset plus the source node key,
- * image payloads carry the precise image construction dataset.
- *
- * Type-checked only, never executed.
- */
 import type { Equal, Expect } from '@kobato/inkling/tests/utils/type-pins'
 
 type CardBranch = Extract<DraggableInfo, { type: 'card' }>
@@ -73,13 +63,6 @@ const foreignType: DraggableInfo = {
   dataset: {},
 }
 void foreignType
-
-// An image drag cannot smuggle card-only fields
-//
-// Excess-property checking on a fresh literal is the only place structural
-// assignability refuses them: a widened variable would strip the extra keys,
-// and a union target treats a property as "known somewhere". So probe the
-// image branch directly.
 
 const imageWithCardName: ImageDraggableInfo = {
   type: 'image',

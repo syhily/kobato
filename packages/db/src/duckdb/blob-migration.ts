@@ -3,21 +3,8 @@ import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database.t
 
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
 
-/**
- * One-time conversion of the legacy `access_log` table (named columns) to the
- * generic-slot `access_events` schema, in one DuckDB transaction under the
- * analytics mutation lock: a failed run leaves `access_log` intact and retries
- * at next boot, and the flag is written only after the old table is dropped.
- * The legacy table is probed BEFORE the flag, so an analytics-only restore of a
- * pre-rewrite backup still migrates.
- */
-
 const BOOT_FLAG_SCOPE = 'system.analytics-blob-migration'
 
-// Old → new column mapping: the raw `ip` column is DISCARDED (it was always
-// written NULL), `visitor_hash` becomes blob5, entity scoping becomes the
-// `index1` key, and the old `ts` round-trips through epoch seconds into
-// TIMESTAMPTZ. blob13 has no old source and stays ''.
 const MIGRATION_SQL = `
 INSERT INTO access_events (
   event_id, index1, timestamp, is_bot,
@@ -60,17 +47,13 @@ async function legacyTableExists(handle: AnalyticsHandle): Promise<boolean> {
   return Number(result.getRowObjects()[0]?.c ?? 0) > 0
 }
 
-/** Convert `access_log` → `access_events` in one transaction; returns the migrated row count, or null when no legacy table exists. */
 export async function migrateLegacyAccessLog(handle: AnalyticsHandle): Promise<number | null> {
   if (!(await legacyTableExists(handle))) {
     return null
   }
   await handle.writer.run('BEGIN TRANSACTION')
   try {
-    // Retry-safe by construction: a failed run rolls the transaction back,
-    // leaving `access_log` intact — never DELETE live events here.
     await handle.writer.run(MIGRATION_SQL)
-    // Count the SOURCE rows — access_events may already hold live events.
     const count = await handle.writer.runAndReadAll('SELECT count(*) AS c FROM access_log')
     await handle.writer.run('DROP TABLE access_log')
     await handle.writer.run('COMMIT')

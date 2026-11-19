@@ -37,7 +37,6 @@ export async function countUsers(db: Database): Promise<number> {
   return rows[0]?.count ?? 0
 }
 
-// Wire-format DTO; bigint ids are stringified for the client.
 export interface AdminUserDto {
   id: string
   name: string
@@ -85,8 +84,6 @@ export async function fetchAdminUserDto(db: Database, id: number): Promise<Admin
   return row ? toAdminUserDto(row) : null
 }
 
-// The "admins cannot be muted" guard lives in `setUserMuted`'s WHERE — a null write
-// covers no-such-user and admin-target alike.
 export async function muteUser(db: Database, id: number, muted: boolean): Promise<AdminUserDto> {
   const updated = await setUserMuted(db, id, muted)
   if (!updated) {
@@ -133,7 +130,6 @@ export async function updateUserRoleWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', descriptorFor('users.error.cannotChangeOwnRole'))
   }
-  // Last-admin check and role write share one sync transaction (node:sqlite).
   const result = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {
@@ -172,7 +168,6 @@ export async function inviteAuthorWithRollback(
     throw new DomainError('CONFLICT', descriptorFor('users.error.emailTaken'))
   }
 
-  // `insertAuthor` + `issueSetupToken` in one sync transaction (node:sqlite); a failure rolls back both.
   const { user, token } = db.transaction((tx) => {
     const [inserted] = insertAuthor(tx, name, email)
     if (!inserted) {
@@ -182,7 +177,6 @@ export async function inviteAuthorWithRollback(
     return { user: inserted, token }
   })
 
-  // Email send after commit; on failure, soft-delete the row.
   const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
   const sendResult = await sendAuthorInvite(user, link, inviterName, inviterEmail)
   if (!sendResult.ok) {
@@ -234,7 +228,6 @@ export async function softDeleteUserWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', descriptorFor('users.error.cannotDeleteSelf'))
   }
-  // Count check and delete are atomic, so concurrent deletes can't zero the admin set.
   const result = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {

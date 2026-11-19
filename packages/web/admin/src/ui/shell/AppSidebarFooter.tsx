@@ -21,8 +21,6 @@ interface AppSidebarFooterProps {
   id: string
   name: string
   email: string
-  /** Supplied by the shell's single count owner — never subscribe here.
-   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
 }
 
@@ -31,7 +29,6 @@ export function AppSidebarFooter({ className, id, name, email, unreadCount }: Ap
   const [versionOpen, setVersionOpen] = useState(false)
   const logout = useLogout()
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
-  // An unknown count renders like zero: no dot, no badge, plain aria label.
   const badgeCount = unreadCount ?? 0
 
   return (

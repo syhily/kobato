@@ -53,7 +53,6 @@ export function MailTestCard({
 
   const inner = mail.mail
   const isTestPending = testMutation.isPending
-  // Readiness follows the parent's last-saved transport, not the loader snapshot.
   const isMailgun = transport === 'mailgun'
   const smtpReady =
     inner.smtpHost.trim() !== '' &&

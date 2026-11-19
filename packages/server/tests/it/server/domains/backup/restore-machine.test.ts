@@ -18,10 +18,6 @@ function wire() {
   })
 }
 
-/**
- * Wait for the fire-and-forget chain; the terminal report only becomes
- * peekable once the slot is released.
- */
 async function settle() {
   await vi.waitFor(() => {
     expect(machine.peekRestoreJobPhase().phase).toMatch(/^(completed|failed)$/)
@@ -88,7 +84,6 @@ describe('backup/restore-machine', () => {
   })
 
   it('peek never consumes the terminal report — the /ready race', async () => {
-    // /ready polls while the server restarts: a liveness read must not eat the failed report.
     expect(machine.tryBeginRestore()).toBe(true)
     machine.startRestoreJob(vi.fn().mockRejectedValue(new Error('swap failed')))
     await settle()

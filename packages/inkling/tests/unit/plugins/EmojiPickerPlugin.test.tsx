@@ -17,8 +17,6 @@ vi.mock('emoji-mart', () => ({
   SearchIndex: { search: vi.fn(() => Promise.resolve([])) },
 }))
 
-// Captures the props the plugin hands to the typeahead so tests can drive
-// queries and inspect the offered options without a DOM selection.
 const typeaheadCapture = vi.hoisted(() => ({
   props: null as {
     onQueryChange: (query: string | null) => void
@@ -63,8 +61,6 @@ function mountPlugin(editor: ReturnType<typeof createTestEditor>) {
   })
 }
 
-// renderHook only invokes the hook function; the typeahead stub must actually
-// mount, so the query-flow tests render the plugin as a component instead
 function renderPlugin(editor: ReturnType<typeof createTestEditor>) {
   return render(
     <TestWrapper editor={editor}>

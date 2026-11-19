@@ -2,14 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Object-URL preview leases are owned by the preview lease module:
- * `packages/inkling/src/utils/preview-lease.ts` is the one file that creates and
- * releases them. Card and plugin sources must not call
- * URL.createObjectURL / URL.revokeObjectURL directly. The allowlists below are
- * the complete intentional exceptions and may only shrink.
- */
-
 const SCANNED_DIRS = [join('packages', 'inkling', 'src', 'nodes'), join('packages', 'inkling', 'src', 'plugins')]
 const OBJECT_URL_CALL = /URL\.(?:createObjectURL|revokeObjectURL)\(/g
 

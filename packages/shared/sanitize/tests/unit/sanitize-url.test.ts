@@ -24,9 +24,6 @@ describe('shared: sanitize-url', () => {
     })
 
     it('rejects control-character smuggling like java\\tscript:', () => {
-      // Browsers strip C0 control characters when parsing the protocol, so
-      // `java\tscript:` IS `javascript:` at runtime. The sanitizer must
-      // strip before validating, otherwise the regex sees a "safe" string.
       expect(isSafeUrl('java\tscript:alert(1)')).toBe(false)
       expect(isSafeUrl('java\nscript:alert(1)')).toBe(false)
       expect(isSafeUrl('java\rscript:alert(1)')).toBe(false)

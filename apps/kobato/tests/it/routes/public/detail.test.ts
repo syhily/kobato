@@ -27,7 +27,6 @@ const mocks = vi.hoisted(() => ({
   resolveBodyHtml: vi.fn(),
 }))
 
-// Wrapped (not replaced): the loaders must never consult it.
 vi.mock('@kobato/server/domains/auth/primitives.ts', async () => {
   const actual = await vi.importActual<typeof import('@kobato/server/domains/auth/primitives.ts')>(
     '@kobato/server/domains/auth/primitives.ts',

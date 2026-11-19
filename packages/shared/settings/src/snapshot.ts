@@ -1,24 +1,5 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-/**
- * Module-level mutable state — safe only because writes happen in server-side
- * lifecycle code and the value is request-agnostic (global blog settings). If
- * settings ever become tenant- or request-specific this MUST move to request-local
- * storage; the slot stays in shared/ for the isomorphic sync getter.
- *
- * The revision is the process-wide REQUEST IDENTITY token, not a cache generation:
- * it advances on every successful snapshot write (first hydrate, every
- * `refreshBlogSettings`, pre-install included), so it uniquely names "this process,
- * this settings write" for locale sync and request correlation. Cache keys and
- * ETags must NOT use it — a backup/mail save would invalidate every
- * representation. They use the content-addressed, section-scoped generations from
- * `@kobato/settings/representation-scopes` instead.
- *
- * Format: `<bootId>:<counter>`. The boot id is minted once per process, so a
- * restart can never reproduce a previous process's token even if the clock moved
- * backwards; the zero-padded counter keeps the token strictly monotonic and
- * lexicographically ordered within one process. Nothing is persisted.
- */
 type Storage = Readonly<{
   blogSettingsSnapshot: BlogSettingsBundle | null
   blogSettingsRevision: string

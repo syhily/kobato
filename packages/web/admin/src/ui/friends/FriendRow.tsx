@@ -22,8 +22,6 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
   return (
     <div className="group relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
       <div className="relative aspect-3/1 w-40 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
-        {/* Plain <img>: `poster` is already an absolute URL, so the `<Image>`
-            primitive's `asset.host` localization adds nothing here. */}
         <img
           src={friend.poster}
           alt={friend.website}

@@ -7,12 +7,6 @@ import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter.ts'
 import { createAnalyticsQuery, createEnvMetricQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
 import { sql, type SelectQueryBuilder } from 'kysely'
 
-/**
- * Apply the shared WHERE predicate plus the dimension's own display
- * expression and bucket guards. Blob dimensions keep the `(unknown)` bucket;
- * environment dimensions drop rows whose bucket expression is NULL (no
- * static block / not reported) instead of inventing an empty bucket.
- */
 function shapeMetricQuery<TB extends keyof AnalyticsDatabase>(
   query: SelectQueryBuilder<AnalyticsDatabase, TB, Record<string, unknown>>,
   input: ResolvedAnalyticsQuery,
@@ -45,10 +39,6 @@ export async function queryMetric(
   type: MetricType,
   limit = 20,
 ): Promise<MetricRow[]> {
-  // `type` arrives already validated at the wire boundary (zod enum); the SQL
-  // expressions come from the hard-coded METRIC_DIMENSIONS registry — never user
-  // input. Env dimensions need the sidecar joined in (blob dimensions must not,
-  // or beacon-less events would disappear).
   const dimension = METRIC_DIMENSIONS[type]
   const rows =
     dimension.source === 'env'

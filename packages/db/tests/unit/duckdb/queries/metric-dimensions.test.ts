@@ -3,9 +3,6 @@ import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types.ts'
 import { compileAnalyticsQuery, createAnalyticsQuery, createEnvMetricQuery } from '@kobato/db/duckdb/query.ts'
 import { describe, expect, it } from 'vitest'
 
-// One registry entry per MetricType (a new type cannot compile without one); user values
-// always bind as parameters.
-
 const ENV_DIMENSIONS = ['screen', 'viewport', 'dpr', 'touch', 'colorScheme', 'netEffectiveType']
 
 function envDimensionSql(type: 'dpr' | 'touch'): string {
@@ -43,7 +40,6 @@ describe('METRIC_DIMENSIONS registry', () => {
     )
 
     expect(compiled.sql).toContain('device_env_client')
-    // The bucket tokens are server-owned CASE literals; the filter values bind.
     expect(compiled.sql).toMatch(/in \(\?, \?\)/)
     expect(compiled.parameters).toEqual(['≤480', '≤768'])
   })

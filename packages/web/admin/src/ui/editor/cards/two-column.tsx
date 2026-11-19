@@ -1,9 +1,3 @@
-// The `two-column` host card's editing-side assembly — same dual-entry contract as
-// `./solution`: the base class is built from the shared spec
-// (`@kobato/lexical/cards/two-column`) through the `.` entry's factory, and the
-// decorate chrome shares the spec's class constants with the exportDOM markup (the
-// WYSIWYG gate).
-
 import type { ReactNode } from 'react'
 
 import {
@@ -29,11 +23,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { inklingHostCardMatches } from '@kobato/web-admin/ui/editor/cards/menu-matches.ts'
 import { Columns2Icon } from 'lucide-react'
 
-// The card's nested-editor spec, const-asserted so the literal names survive into
-// the derived field maps (the same array self-types the base class below and feeds
-// the defineCard spec). `nullable` mirrors the built-in cards: the base class is
-// spec-less, so a raw base instance leaves the fields unset and the guard in
-// TwoColumnCardComponent stays honest.
 const twoColumnNestedEditors = [
   { ...TWO_COLUMN_NESTED_EDITORS[0]!, nodes: EDITOR_BASE_NODES, nullable: true },
   { ...TWO_COLUMN_NESTED_EDITORS[1]!, nodes: EDITOR_BASE_NODES, nullable: true },
@@ -52,9 +41,6 @@ export class BaseTwoColumnNode extends generateDecoratorNode({
 
 export type TwoColumnCardNode = InstanceType<typeof BaseTwoColumnNode>
 
-/** The pane chrome: the `min-w-0` cell with the `data-pt-*` data attributes. The
- *  editor slot holds the nested composer on the canvas and the pane HTML in the
- *  export (the parity test renders this shell directly). */
 export function TwoColumnPaneView({ side, children }: { side: 'left' | 'right'; children?: ReactNode }) {
   return (
     <div className={TWO_COLUMN_CARD_CLASSES.pane} data-pt-two-column-pane="" data-side={side}>
@@ -137,7 +123,6 @@ export const twoColumnCard = defineCard({
   insert: { openInEditMode: true },
   menu: [
     {
-      // English fallback; the overlay localizes through `labelKey`.
       label: 'Two columns',
       labelKey: 'host.two-column',
       desc: 'Two side-by-side columns, each edited independently',

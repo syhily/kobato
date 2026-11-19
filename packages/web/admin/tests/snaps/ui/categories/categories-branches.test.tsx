@@ -6,9 +6,6 @@ import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Populated rows, the error state and mutation side effects for CategoriesView, which
-// reads the list useQuery plus delete/reorder mutations (dnd-kit).
-
 interface CapturedMutationOptions {
   onMutate?: (variables: { orderedIds: string[] }) => void
   onSuccess?: (payload: unknown) => void
@@ -51,7 +48,6 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
-// dnd-kit touches DOM at mount — each primitive is shimmed to render children.
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => children,
   PointerSensor: class PointerSensor {},
@@ -64,7 +60,6 @@ vi.mock('@dnd-kit/sortable', () => ({
   SortableContext: ({ children }: { children: React.ReactNode }) => children,
   sortableKeyboardCoordinates: {},
   verticalListSortingStrategy: {},
-  // useSortable → stable no-ops so SSR renders rows without touching the DOM.
   useSortable: () => ({
     attributes: { 'aria-roledescription': 'sortable' },
     listeners: {},
@@ -75,7 +70,6 @@ vi.mock('@dnd-kit/sortable', () => ({
   }),
 }))
 vi.mock('@dnd-kit/utilities', () => ({
-  // CategoryRow imports the CSS helper for transform serialisation.
   CSS: { Transform: { toString: (t: unknown) => (t ? String(t) : '') } },
 }))
 vi.mock('@dnd-kit/modifiers', () => ({
@@ -146,7 +140,6 @@ describe('snapshot: CategoriesView branches', () => {
     const a = makeCategory({ id: 'cat-1', name: '前端', slug: 'frontend' })
     queryMocks.query = { ...queryMocks.query, data: { categories: [a], total: 1 } }
     renderInRouter(<CategoriesView />, '/admin/taxonomy/categories')
-    // CategoriesView registers the delete mutation first, then reorder.
     const deleteOptions = mutationCalls.captured[0]
     expect(deleteOptions).toBeDefined()
     deleteOptions.onSuccess?.({})

@@ -52,7 +52,6 @@ export async function handleIdentify(
   const existingUser = await findUserByEmail(db, email)
 
   if (isPasskeySigninUser(existingUser)) {
-    // Accepted residual signal: this answer proves a passkey account exists.
     return { kind: 'passkey' }
   }
 
@@ -68,10 +67,8 @@ export async function handleIdentify(
   }
 
   if (existingUser === null) {
-    // Unknown mailbox answers like a real send — no account-existence oracle.
     return { kind: 'magic-link-sent' }
   }
 
-  // Password answer reveals nothing beyond "not passkey / not magic-link".
   return { kind: 'password' }
 }

@@ -9,8 +9,6 @@ describe('server/infra/http/headers — CACHE_PROFILES', () => {
   })
 
   it('makes the localized HTML profiles private and revalidate-on-use', () => {
-    // The UI locale is a global setting behind a fixed URL: a stored copy that
-    // does not revalidate keeps painting the previous language in other tabs.
     expect(CACHE_PROFILES.listing).toBe('private, no-cache')
     expect(CACHE_PROFILES.detail).toBe('private, no-cache')
   })

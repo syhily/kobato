@@ -1,16 +1,3 @@
-// The `music-player` host card: kobato's 音乐播放器. Serialized dataset:
-// `playerId` plus the save-time meta snapshot (the server-owned
-// `MUSIC_PLAYER_META_KEYS` from `@kobato/lexical/artifacts`, filled by
-// `@/server/domains/content/services/lexical/music-snapshot`); nothing resolves at request
-// time. Same dual-entry contract as `./solution`.
-//
-// The markup is the public render: a wrapper div plus the `.aplayer` mount
-// point carrying `data-id` + the meta snapshot as data attributes, so the
-// hydration hook (`useMusicPlayers`) builds the `MusicPlayerCard` without a
-// server round-trip; the static fallback inside shows the song when JS is off.
-// The feed variant emits the feed figure (cover/audio absolutized against the
-// site origin) or the placeholder paragraph when the snapshot is absent.
-
 import type { DecoratorNodeProperty } from '@kobato/inkling/headless'
 
 import {
@@ -26,8 +13,6 @@ import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/lexical/projection-
 
 export const MUSIC_PLAYER_CARD_PROPERTIES = [
   { name: 'playerId', default: '' },
-  // The five server-owned meta snapshot keys below MUST stay verbatim-aligned
-  // with `MUSIC_PLAYER_META_KEYS` in `@kobato/lexical/artifacts`.
   { name: 'name', default: '', wordCount: true },
   { name: 'artist', default: '', wordCount: true },
   { name: 'cover', default: '', urlType: 'url' },
@@ -35,10 +20,6 @@ export const MUSIC_PLAYER_CARD_PROPERTIES = [
   { name: 'lyric', default: '' },
 ] as const satisfies readonly DecoratorNodeProperty[]
 
-/** Classes shared by the exportDOM markup and the decorate chrome. The
- * `fallback*` set mirrors the `MusicPlayerCard` paused initial render
- * (`@/ui/public/music-player/music-player`) so the hydration swap does not
- * shift layout — pinned by the snap/parity tests. */
 export const MUSIC_PLAYER_CARD_CLASSES = {
   wrapper: 'mt-5 mb-[1.375rem] max-w-[21.875rem] max-xl:mx-auto max-md:mx-0 max-md:mb-5 max-md:max-w-full',
   fallback: 'not-typeset overflow-hidden rounded-md border border-line-muted bg-canvas',
@@ -55,7 +36,6 @@ export const MUSIC_PLAYER_CARD_CLASSES = {
   fallbackBarTrack: 'h-1 w-full rounded-full bg-surface-dim',
 } as const
 
-/** The meta view both render states consume. All fields default to ''. */
 export interface MusicPlayerCardMeta {
   playerId: string
   name: string
@@ -76,19 +56,10 @@ export function musicPlayerCardMeta(node: MusicPlayerCardMeta): MusicPlayerCardM
   }
 }
 
-/** The snapshot counts as present when the resolver embedded it — the five
- * meta keys are written together, so the audio URL is the witness. */
 export function hasMusicPlayerMeta(meta: MusicPlayerCardMeta): boolean {
   return meta.audioUrl !== ''
 }
 
-/**
- * Static fallback markup inside the `.aplayer` mount point; mirrors the
- * player's paused initial render so the hydration swap does not shift layout.
- * `escape` is the caller's text escaper — the server renderer passes
- * `context.escapeText`; the React side relies on JSX escaping and never calls
- * this.
- */
 export function musicPlayerFallbackHtml(meta: MusicPlayerCardMeta, escape: (value: string) => string): string {
   const cover =
     meta.cover === ''
@@ -99,14 +70,10 @@ export function musicPlayerFallbackHtml(meta: MusicPlayerCardMeta, escape: (valu
   return `<div class="${MUSIC_PLAYER_CARD_CLASSES.fallback}" data-music-player-fallback="">${body}${progress}</div>`
 }
 
-/** The exportDOM render (both variants). */
 export function renderMusicPlayerCard(node: MusicPlayerCardMeta, context: CardRenderContext): CardRenderOutput {
   const document = context.createDocument()
   const raw = musicPlayerCardMeta(node)
   const escape = context.escapeText
-  // Render-boundary URL policy: the snapshot is server-resolved (a forged
-  // client body is stripped at canonicalize), but the media keys still go
-  // through the render context's safe-URL seam before hitting markup.
   const meta = { ...raw, cover: context.safeUrl('media', raw.cover), audioUrl: context.safeUrl('media', raw.audioUrl) }
 
   if (isFeedVariantRender(context)) {

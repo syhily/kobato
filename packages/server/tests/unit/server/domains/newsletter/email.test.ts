@@ -1,8 +1,6 @@
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it, vi } from 'vitest'
 
-// Capture the seam instead of hitting a transport: the subject and HTML are
-// rendered here, so the site locale at send time is what these tests pin.
 vi.mock('@kobato/server/infra/email/sender.ts', () => ({
   sendEmail: vi.fn(async () => ({ ok: true })),
 }))

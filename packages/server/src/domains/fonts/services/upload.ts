@@ -10,10 +10,8 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { createHash } from 'node:crypto'
 
-/** Max accepted upload size for a source TTF/OTF. Matches the Canvas font route. */
-export const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
+export const FONT_MAX_BYTES = 60 * 1024 * 1024
 
-/** Magic-byte kind check — TTF `00 01 00 00`, OTF `OTTO`, else null. */
 export function detectFontKind(buffer: Uint8Array): 'ttf' | 'otf' | null {
   if (buffer.length < 4) {
     return null
@@ -67,7 +65,6 @@ export interface UploadFontInput {
   familyName: string
 }
 
-/** Upload + slice + store + insert. Idempotent on source bytes — same sha256 returns the existing row. */
 export async function uploadFont(db: Database, input: UploadFontInput): Promise<AdminFontDto> {
   const { buffer, sourceName, familyName } = input
 
@@ -105,7 +102,6 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
   ]
   const { driver } = await putFont(hash, files)
 
-  // etag = sha256(result.css); repackaging busts caches without changing the storage key.
   const etag = sha256Hex(sliced.css)
   const cssKey = fontCssKey(hash)
 

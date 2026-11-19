@@ -3,7 +3,6 @@ import { TableCellHeaderStates, TableCellNode, TableNode, TableRowNode } from '@
 export { $createTableCellNode, $createTableNode, $createTableRowNode, TableCellHeaderStates } from '@lexical/table'
 export { $isTableCellNode, $isTableNode, $isTableRowNode, TableCellNode, TableNode, TableRowNode } from '@lexical/table'
 
-// The package keeps this type unexported; derive it from the states object.
 export type TableCellHeaderState = (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates]
 
 /**

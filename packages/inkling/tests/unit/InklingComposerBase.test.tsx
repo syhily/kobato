@@ -70,8 +70,6 @@ describe('InklingComposerBase', () => {
     expect(serialized).toBeDefined()
     const paragraph = serialized?.root.children[0] as SerializedParagraphNode | undefined
     expect(paragraph?.type).toBe('paragraph')
-    // MINIMAL_NODES replaces TextNode with ExtendedTextNode, so the imported
-    // text serializes under the extended type
     const text = paragraph?.children[0] as SerializedTextNode | undefined
     expect(text).toMatchObject({ text: 'hello', type: 'extended-text' })
   })

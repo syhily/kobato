@@ -17,8 +17,6 @@ import {
 import { voidOutput } from '@kobato/contracts/primitives.ts'
 import { oc } from '@orpc/contract'
 
-// Admin comment moderation RPC contract — admin base on the server, on the
-// standard `/admin/comments/*` prefix.
 export const adminCommentsContract = {
   approve: oc.route({ method: 'POST', path: '/admin/comments/approve' }).input(adminCommentIdInput).output(voidOutput),
   delete: oc.route({ method: 'POST', path: '/admin/comments/delete' }).input(adminCommentIdInput).output(voidOutput),

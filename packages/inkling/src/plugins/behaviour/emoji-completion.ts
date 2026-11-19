@@ -9,22 +9,6 @@ import {
   type TextNode,
 } from 'lexical'
 
-// Headless half of the emoji picker: the emoji-mart chunk's import port
-// (ensureEmojiSearchReady — the engine loads on the first typeahead query,
-// not at module import), the menu query policy (searchEmojis — including
-// the emoticon alias table), the exact-match `:shortcode:` completion
-// registration, and the two insertion surgeries. The React half
-// (EmojiPickerPlugin.tsx) is a pure adapter: it owns the typeahead menu
-// rendering, the query state, and product analytics — the surgeries here
-// return commit results and the plugin attaches trackEvent calls to them.
-//
-// The two search paths differ deliberately:
-// - the menu query (searchEmojis) maps emoticon aliases before searching —
-//   `:)` should list smileys
-// - the exact-match completion searches the LITERAL query: its completion
-//   check (first result's id === query) is meaningless against an aliased
-//   search term, and the aliased queries never satisfy an exact match anyway
-
 export interface EmojiSkin {
   native: string
 }
@@ -105,11 +89,6 @@ export async function searchEmojis(query: string): Promise<EmojiSearchResult[]> 
   return searchEmojiIndex(alias ?? query)
 }
 
-// Exact-match completion surgery: replace the `:id` shortcode ending at the
-// caret with the emoji's native character, keeping the caret's text format.
-// The caret is expected to sit right after the query text (the keydown-time
-// shape — the registration below prevents the closing ':' from ever being
-// inserted), so the deleted span is the query plus its leading colon.
 export function $insertEmojiCompletion(emoji: EmojiSearchResult): EmojiCommitResult | null {
   const selection = $getSelection()
 
@@ -144,13 +123,6 @@ export function $insertSelectedEmoji(
     const previousSibling = nodeToRemove.getPreviousSibling()
     nodeToRemove.remove()
 
-    // The typeahead's split state can leave the trigger ':' in the text node
-    // BEFORE nodeToRemove (rapid typing re-splits the query, and the last
-    // split can start after the colon) — when the removal span carries no
-    // leading ':', consume the trailing ':' of the previous sibling so the
-    // commit always eats the full `:query`. The guard keeps a legitimately
-    // typed colon before the trigger (e.g. "note: :tac" — the trigger colon
-    // rides nodeToRemove there, so no sibling consumption happens) untouched.
     if (!removedText.startsWith(':') && previousSibling && $isTextNode(previousSibling)) {
       const previousText = previousSibling.getTextContent()
       if (previousText.endsWith(':')) {
@@ -182,21 +154,6 @@ export interface RegisterEmojiExactMatchCompletionOptions {
   onCommit?: (result: EmojiCommitResult) => void
 }
 
-// Exact-match completion policy: while a typeahead query is active, a ':'
-// keydown searches the index and — only when the first hit's id IS the query
-// — replaces the whole `:shortcode:` with the emoji (the typeahead menu
-// itself has no notion of exact matches or closing characters). The query is
-// read lazily via getQuery so the registration is stable per editor instead
-// of re-registering on every keystroke.
-//
-// Timing note: the search runs async, but with the index chunk warm its
-// continuation is a microtask of the keydown dispatch, so
-// event.preventDefault() still lands before the browser's default insertion —
-// the closing ':' never reaches the text and the splice in
-// $insertEmojiCompletion sees the pre-colon caret shape. A query is active
-// only after the first post-':' keystroke, which already kicked the chunk
-// load, so a cold-load completion requires typing the whole shortcode faster
-// than the chunk arrives.
 export function registerEmojiExactMatchCompletion(
   editor: LexicalEditor,
   { getQuery, onCommit }: RegisterEmojiExactMatchCompletionOptions,

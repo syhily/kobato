@@ -65,14 +65,7 @@ export function ButtonGroupIconButton({
 }: ButtonGroupIconButtonProps) {
   const isActive = name === selectedName
 
-  const { handleMousedown, handleClick } = usePreviousFocus(
-    onClick
-      ? () => onClick(name)
-      : () => {
-          /* noop */
-        },
-    name,
-  )
+  const { handleMousedown, handleClick } = usePreviousFocus(onClick ? () => onClick(name) : () => undefined, name)
 
   return (
     <li className="mb-0">

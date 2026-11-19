@@ -53,9 +53,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         editor.update(() => {
           const nearestNode = $getNearestNodeFromDOMNode(draggableElement)
 
-          // draggableSelector matches top-level <div>s; a consumer-registered
-          // node rendering one is not a card — treat it as non-draggable
-          // instead of crashing on the missing methods
           if (nearestNode && $isInklingCard(nearestNode)) {
             const cardNode = nearestNode
             draggableInfo = {
@@ -111,8 +108,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
           })
         }
 
-        // the typed disposal contract: the handler unmounts the React root
-        // through dispose() without knowing the preview is React-backed
         return {
           element: dragPreviewElement,
           dispose: () => {
@@ -149,9 +144,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         if (!rootElement || !draggableInfo.element || !dropResolution) {
           return false
         }
-        // insertIndex was derived by getIndicatorPosition (resolveReorder) and
-        // arrives as the resolution argument — re-verify it against a fresh
-        // scan, never re-derive it
         const insertIndex = dropResolution.insertIndex
         const resolution = resolveDrop(
           createReorderGeometry(rootElement, ':scope > *'),
@@ -168,17 +160,11 @@ function useDragDropReorder(editor: LexicalEditor): void {
         editor.update(() => {
           if (draggableInfo.type === 'card') {
             if ($relocateCard(draggableInfo.nodeKey, droppables, insertIndex)) {
-              // the card was re-ordered in place, not moved inside another
-              // card — onDropEnd must not remove the source
               result = { success: true, sourceHandled: true }
             }
             return
           }
 
-          // insert new image node on image drops — only an actual insert
-          // counts as handled; a failed insert reports failure so the source
-          // node stays put. The 'image' variant carries the gallery-picked
-          // image dataset at its precise type — no assertion needed
           result = $insertDraggedImage(draggableInfo.dataset, droppables, insertIndex) !== null
         })
 

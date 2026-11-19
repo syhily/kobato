@@ -217,7 +217,6 @@ const ICON_MAP: Record<string, IconComponent> = {
   yandexbot: SiYandexcloud,
 }
 
-/** Regional-indicator flag emoji for an ISO 3166-1 alpha-2 code; '' otherwise. */
 export function flagEmojiFor(code: string): string {
   if (!/^[A-Za-z]{2}$/.test(code)) {
     return ''
@@ -226,10 +225,8 @@ export function flagEmojiFor(code: string): string {
   return String.fromCodePoint(0x1f1e6 + upper.charCodeAt(0) - 65, 0x1f1e6 + upper.charCodeAt(1) - 65)
 }
 
-// Callers pass the ACTIVE UI locale, so SSR and hydration agree.
 export function regionDisplayName(code: string, locale: AppLocale): string {
   const upper = code.toUpperCase()
-  // `none` keeps the caller's original spelling when the code is unresolvable.
   const display = formatDisplayName('region', upper, { locale, fallback: 'none' })
   return display === upper ? code : display
 }
@@ -253,8 +250,6 @@ export function MetricName({ name, type }: MetricNameProps) {
     )
   }
 
-  // Env bucket tokens (`other`, `none`, `1-5`, …) are machine values: the row
-  // renders the catalog label while the filter keeps sending the token.
   const valueLabelId = metricValueLabelId(type, name)
   if (valueLabelId !== null) {
     return <span className="min-w-0 break-all">{t(valueLabelId)}</span>
@@ -279,8 +274,6 @@ export function MetricName({ name, type }: MetricNameProps) {
   }
 
   if (type === 'referer') {
-    // Deterministic local letter avatar — no third-party favicon hotlink:
-    // CSP img-src 'self' forbids it, and it would leak visitors' referer hosts off-site.
     return (
       <span className="flex min-w-0 items-start gap-1.5">
         <span
@@ -315,7 +308,6 @@ export function MetricName({ name, type }: MetricNameProps) {
   }
 
   if (type === 'os' || type === 'browser' || type === 'browserType' || type === 'device' || type === 'deviceType') {
-    // Direct member access on the module-scope map; a helper call trips the react-compiler static-components rule.
     const Icon = ICON_MAP[name.toLowerCase()] ?? ICON_MAP[type]
     return (
       <span className="flex min-w-0 items-start gap-1.5">
@@ -325,6 +317,5 @@ export function MetricName({ name, type }: MetricNameProps) {
     )
   }
 
-  // region / city / timezone: stored as free-form names, rendered verbatim.
   return <span className="min-w-0 break-all">{name}</span>
 }

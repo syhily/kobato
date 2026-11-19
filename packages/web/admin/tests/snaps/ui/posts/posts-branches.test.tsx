@@ -38,9 +38,6 @@ mocks.query = {
   refetch: vi.fn(),
 }
 
-// PostsView's list, pill hook and option-list queries are hoisted singletons; only the
-// hook is mocked, so the real FilterPillBar still renders the pills.
-
 vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () => {
   const { buildPostFilterFields } = await vi.importActual<typeof import('@kobato/web-admin/ui/posts/filter-fields.ts')>(
     '@kobato/web-admin/ui/posts/filter-fields.ts',
@@ -128,9 +125,7 @@ describe('snapshot: PostsView branches', () => {
     mocks.infinite.error = new Error('boom')
     mocks.infinite.data = undefined
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    // Header + empty body still render; the toast is mocked.
     expect(html).toContain('文章管理')
-    // With no rows and not loading, the empty-state renders.
     expect(html).toContain('未找到文章')
   })
 
@@ -139,11 +134,8 @@ describe('snapshot: PostsView branches', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('筛选')
     expect(html).not.toContain('添加筛选')
-    // The sort select stays in the header — it is not a filter pill.
     expect(html).toContain('最新发布')
   })
-
-  // Active pill → field label + value label; bar gains 添加筛选 / 清除.
 
   it.each([
     ['published', '已发布'],

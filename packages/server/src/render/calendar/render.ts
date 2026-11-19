@@ -21,12 +21,10 @@ function ensureFonts(settings?: BlogSettingsBundle | null): Promise<FontSlot | n
 }
 
 function monthLabel(locale: AppLocale, date: Date): string {
-  // `date-fns` `getMonth` is 0-indexed, so the array index is `getMonth(date)` directly.
   return calendarCopyFor(locale).months[getMonth(date)] ?? ''
 }
 
 function weekdayLabel(locale: AppLocale, date: Date): string {
-  // ISO day-of-week: 1 = Monday … 7 = Sunday, hence the `- 1` offset.
   return calendarCopyFor(locale).weekdays[getISODay(date) - 1] ?? ''
 }
 
@@ -43,10 +41,6 @@ function lunarTextFor(locale: AppLocale, date: Date): string | null {
   })
 }
 
-/**
- * The 宜 line, or `null` for a locale that does not render it (en-US) or a
- * traditional term missing from the hand-reviewed table (never transliterated).
- */
 function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
   const copy = calendarCopyFor(locale)
   if (copy.auspicious === null) {
@@ -54,7 +48,6 @@ function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
   }
   const lunar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date)).getLunar()
   const auspicious = lunar.getDayYi()
-  // An empty list must never render "宜undefined".
   if (auspicious.length === 0) {
     return null
   }
@@ -63,11 +56,6 @@ function auspiciousTextFor(locale: AppLocale, date: Date): string | null {
 
 export type CalendarTheme = 'light' | 'dark'
 
-/**
- * `settings` is the caller's pinned snapshot (request capture / background send-time
- * resolve); omitted = the current process snapshot. The calendar resource always passes
- * it so the daily quote matches the cache key's `settingsRevision`.
- */
 export async function renderCalendar(
   date: Date,
   theme: CalendarTheme,
@@ -85,7 +73,6 @@ export async function renderCalendar(
   const canvas = createCanvas(WIDTH, HEIGHT)
   const ctx = canvas.getContext('2d')
 
-  // Light: opaque white card; dark: transparent canvas, white ink.
   const inkColor = theme === 'dark' ? '#ffffff' : '#000000'
   if (theme === 'light') {
     ctx.fillStyle = '#ffffff'
@@ -125,9 +112,6 @@ export async function renderCalendar(
   const dayY = 320
   ctx.fillText(String(getDate(date)), WIDTH / 2, dayY)
 
-  // The 宜 line is optional (en-US never renders it; a traditional locale may
-  // omit an unmapped term). Without it the quote block moves up instead of
-  // leaving the 220px gap empty.
   if (dailyAuspicious !== null) {
     ctx.font = `50px ${calFont}`
     ctx.fillText(dailyAuspicious, WIDTH / 2, dayY + 220)
@@ -147,7 +131,6 @@ export async function renderCalendar(
   ctx.textBaseline = 'top'
   const quoteFont = `36px ${calFont}`
   ctx.font = quoteFont
-  // Long entries overflow the card — clamp to three lines, ellipsize the last.
   const quoteLines = layoutCanvasLines(ctx, quote.content, quoteFont, maxTextWidth, 3)
   let y = quoteY
   const lineHeight = 56

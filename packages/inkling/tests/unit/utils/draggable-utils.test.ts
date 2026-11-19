@@ -133,8 +133,6 @@ describe('draggable-utils', () => {
   describe('applyUserSelect', () => {
     it('sets standard and vendor-prefixed user-select styles', () => {
       const el = document.createElement('div')
-      // jsdom's CSSStyleDeclaration drops unknown vendor-prefixed properties,
-      // so the -moz/-ms/-o writes are pinned through the setProperty mechanism
       const setPropertySpy = vi.spyOn(el.style, 'setProperty')
 
       applyUserSelect(el, 'none')

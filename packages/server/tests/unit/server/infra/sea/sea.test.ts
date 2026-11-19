@@ -14,10 +14,6 @@ import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Unit tests for the SEA runtime helpers. Under vitest every SEA-specific
-// read path must degrade gracefully (null / [] / false) and requireExternal
-// must behave like a static import against the real node_modules tree.
-
 const tmpDirs: string[] = []
 
 function makeTmpDir(): string {
@@ -59,13 +55,11 @@ describe('infra/sea — requireExternal', () => {
   it('resolves packages from the real node_modules tree', () => {
     const sharp = unsafeCast<typeof sharpDefault>(requireExternal('sharp'))
     expect(typeof sharp).toBe('function')
-    // Callable: returns a pipeline without touching input bytes until an output method runs.
     const pipeline = sharp(Buffer.alloc(8))
     expect(typeof pipeline.metadata).toBe('function')
   })
 
   it('resolves packages from KOBATO_NATIVES_DIR when set', () => {
-    // KOBATO_NATIVES_DIR mirrors the extracted `<cache>/natives-<hash>/node_modules` tree.
     const dir = makeTmpDir()
     const nativesDir = join(dir, 'node_modules')
     const pkgDir = join(nativesDir, 'fake-native-pkg')

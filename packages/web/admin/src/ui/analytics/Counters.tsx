@@ -14,8 +14,6 @@ import NumberFlow from '@number-flow/react'
 import { useQuery } from '@tanstack/react-query'
 import { FlameIcon, MousePointerClickIcon, UsersIcon } from 'lucide-react'
 
-// Self-fetching; `initial` is the loader's first paint until the client query resolves.
-
 const CARDS: { key: keyof CountersDto; labelId: UiMessageId; icon: typeof MousePointerClickIcon }[] = [
   { key: 'visits', labelId: 'admin.analytics.metric.visits', icon: MousePointerClickIcon },
   { key: 'visitors', labelId: 'admin.analytics.metric.visitors', icon: UsersIcon },

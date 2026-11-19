@@ -35,7 +35,6 @@ __adoptAnalyticsHandleForTests(analytics.handle)
 const adminRoute = await import('@/routes/admin/posts/analytics.tsx')
 const editorRoute = await import('@/routes/editor/post/analytics.tsx')
 
-// Explicit range so `parseAnalyticsSearch` never consults the clock.
 const request = new Request('http://localhost/analytics?startAt=1000&endAt=2000')
 
 beforeEach(async () => {

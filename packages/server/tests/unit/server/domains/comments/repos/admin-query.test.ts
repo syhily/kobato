@@ -2,9 +2,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Pins the source contract: listMyComments and countMyComments both route through
-// mineWhere → mineVisibleClause, and the grace constant is 7 days.
-
 const commentQueryPath = resolve(process.cwd(), 'packages/server/src/domains/comments/repos/admin-query.ts')
 const commentSharedPath = resolve(process.cwd(), 'packages/server/src/domains/comments/repos/shared.ts')
 const mineCommentsPath = resolve(process.cwd(), 'packages/server/src/domains/comments/services/mine-comments.ts')
@@ -20,7 +17,6 @@ function readSource(): string {
 }
 
 function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string {
-  // Skips the parameter list and return-type annotation to find the body's braces.
   const match = fnSignaturePattern.exec(source)
   if (!match) {
     throw new Error(`Function signature not found: ${String(fnSignaturePattern)}`)
@@ -36,7 +32,6 @@ function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string
     }
     i++
   }
-  // Consume optional `: ReturnType`, tracking depth so annotations don't trip the search.
   let angleDepth = 0
   let braceDepth = 0
   while (i < source.length) {
@@ -95,7 +90,6 @@ describe('server/db/query/comment — listMyComments / countMyComments share vis
 
   it('parameterises the visibility window to exactly 7 days of soft-delete grace', () => {
     const source = readSource()
-    // Pin the leading `7` whatever the RHS factorisation is rewritten as.
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
     const HOURS_DAYS_FORMS = [`${SEVEN_DAYS_MS}`, '7 * 24 * 60 * 60 * 1000', '7 * 24 * 3_600_000', '7 * 86_400_000']
     const constLine = /MY_COMMENTS_SOFT_DELETE_GRACE_MS\s*=\s*([^\n;]+)/.exec(source)

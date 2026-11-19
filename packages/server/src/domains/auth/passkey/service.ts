@@ -64,10 +64,6 @@ async function storeChallenge(
     })
 }
 
-/**
- * Atomic consume via `DELETE … RETURNING` — a challenge can never be
- * replayed under concurrency; expired rows consume as misses.
- */
 async function consumeChallenge(
   db: Database,
   prefix: string,
@@ -268,7 +264,6 @@ export async function verifyAuthenticationResponse(
     throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.verifyFailedGeneric'))
   }
 
-  // Verify user state BEFORE mutating the credential counter.
   const dbUser = await findSafeUserById(db, cred.userId)
   if (!dbUser?.role || dbUser.deletedAt) {
     throw new DomainError('BAD_REQUEST', descriptorFor('auth.signin.error.accountCannotSignIn'))
@@ -310,8 +305,6 @@ export async function listCredentials(db: Database, userId: number): Promise<Cre
   }))
 }
 
-// Invariant: `loginMethod = 'passkey'` must not outlive the last
-// credential — zero passkeys would lock the user out.
 async function revertMethodWhenNoCredentials(db: Database, userId: number): Promise<void> {
   const remaining = await db
     .select({ id: passkeyCredential.id })

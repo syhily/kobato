@@ -5,8 +5,6 @@ import {
 } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The registry is inert on import — handlers arrive from the bootstrap composition root
-// (db-lifecycle wiring is covered by the bootstrap tests).
 describe('server/domains/settings/services/section-changes', () => {
   beforeEach(() => {
     __clearSectionChangeHandlersForTests()

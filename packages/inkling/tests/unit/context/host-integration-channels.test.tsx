@@ -9,8 +9,6 @@ import { render } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The re-render domain under test: one feature slice's identity changing must
-// re-render only that channel's consumers, not the other channels'.
 describe('InklingHostIntegrationProvider', () => {
   it('re-renders only the channel whose slice identity changed', () => {
     let gifRenders = 0
@@ -33,8 +31,6 @@ describe('InklingHostIntegrationProvider', () => {
       return null
     }
 
-    // a constant element tree: consumers re-render only via context, never
-    // via the parent's re-render
     const children = (
       <>
         <GifConsumer />

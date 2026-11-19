@@ -33,9 +33,6 @@ const SCHEME_OPTIONS: { value: 'http' | 'https'; label: string }[] = [
   { value: 'http', label: 'http' },
 ]
 
-// Storage backend config + migration management. Lives outside the settings
-// autosave framework: the S3 config is locked once enabled and every backend
-// switch runs through the migration task (`admin.storage.*`).
 export function StorageCards({ assets }: StorageCardsProps) {
   const [wizardOpen, setWizardOpen] = useState(false)
   const { data: stats } = useQuery(orpcQuery.admin.storage.stats.queryOptions({ input: {} }))

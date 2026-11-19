@@ -60,7 +60,6 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     await vi.waitFor(() => expect(commit).toHaveBeenCalledOnce())
     const [section, payload] = commit.mock.calls[0]!
     expect(section).toBe('general')
-    // Honest sparse Section patch: only the fields this card owns AND changed.
     expect(payload).toEqual({ title: 'Updated' })
   })
 
@@ -73,14 +72,11 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     expect(display).toEqual(source)
   })
 
-  // The dirty→commit path is exercised end-to-end by the snapshot form
-  // tests that render the full card tree; this file covers the no-op guards.
-
   it('flushOnBlur is a no-op when the form is clean', () => {
     const source: Source = { title: 'Hello', description: 'World' }
     const { flushOnBlur } = renderHook(makeHook(source))
     flushOnBlur()
-    flushOnBlur() // panel-level flush registry invokes the same callback
+    flushOnBlur()
     expect(commit).not.toHaveBeenCalled()
   })
 
@@ -88,7 +84,6 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     const source: Source = { title: 'Hello', description: 'World' }
     const { form } = renderHook(makeHook(source))
     form.setValue('title', 'Typed')
-    // Wait past any debounce window — saves fire only from save()/flushOnBlur()/flush().
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(commit).not.toHaveBeenCalled()
   })

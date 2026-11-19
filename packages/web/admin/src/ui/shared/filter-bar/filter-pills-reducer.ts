@@ -1,4 +1,3 @@
-// Shared filter-pill state machine for admin list surfaces; consumers keep their codecs and side effects local.
 export interface ActiveFilter<TField extends string = string> {
   field: TField
   value: string
@@ -17,7 +16,6 @@ export function filterPillsReducer<TField extends string>(
 ): ActiveFilter<TField>[] {
   switch (action.type) {
     case 'addFilter': {
-      // One pill per field: replace an existing pill in place; append a new field.
       const idx = filters.findIndex((f) => f.field === action.field)
       if (idx === -1) {
         return [...filters, { field: action.field, value: action.value, label: action.label }]

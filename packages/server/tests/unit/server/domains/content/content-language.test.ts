@@ -9,10 +9,6 @@ import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/m
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { describe, expect, it } from 'vitest'
 
-// The content language is author metadata, not a UI locale: any well-formed BCP 47 tag
-// is legal, `SUPPORTED_LOCALES` is not a closed set, and blank stays "unset" (rendered
-// without a `lang` attribute).
-
 describe('shared/i18n/content-language — canonicalization', () => {
   it('canonicalizes case and script subtags', () => {
     expect(canonicalContentLanguage('zh-hant-tw')).toBe('zh-Hant-TW')
@@ -87,8 +83,6 @@ describe('content upsert schemas — contentLanguage field', () => {
     ['post', upsertPostMetaSchema],
     ['page', upsertPageMetaSchema],
   ])('%s leaves the grammar/descriptor decision to the mutation, not the schema', (_entity, schema) => {
-    // Structural only: an over-long value is a schema failure, a malformed
-    // tag reaches `resolveContentLanguage` so the wire carries a descriptor.
     const tooLong = 'a'.repeat(CONTENT_LANGUAGE_MAX_LENGTH + 1)
     expect(schema.safeParse({ title: 'T', contentLanguage: tooLong }).success).toBe(false)
     expect(schema.safeParse({ title: 'T', contentLanguage: 'zh_CN' }).success).toBe(true)

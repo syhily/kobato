@@ -6,14 +6,6 @@ import { registerDefaultTransforms } from '@kobato/inkling-internal/transforms'
 import { htmlToLexical } from '@kobato/inkling/tests/utils/html-to-lexical-with-dom'
 import { renderHeadless, renderLive } from '@kobato/inkling/tests/utils/render-live'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
-/**
- * The text-align four-leg contract (tiptap `TextAlign.configure({ types:
- * ['heading', 'paragraph', 'blockquote'] })` parity): an alignment set in the
- * editor must survive exportJSON serialization, the HTML export (live and
- * headless), and the HTML import — for all three states plus the no-alignment
- * default. Import keeps alignment only under `alignment: 'keep'`; the default
- * 'strip' serves surfaces without alignment UI.
- */
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
@@ -45,9 +37,6 @@ async function editAlignedParagraph(
   })
   if (format !== '') {
     $setBlocksAlignment(editor, format)
-    // Lexical 0.53 propagates the commit (and its transforms) in a later
-    // microtask — getEditorState() before the hop still shows the pre-align
-    // state
     await tick()
   }
   return editor.getEditorState().toJSON() as unknown as { root: { children: BlockJSON[] } }

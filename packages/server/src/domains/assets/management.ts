@@ -20,7 +20,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 
 const log = getLogger('branding.management')
 
-// The 4 binary slots deriving from `branding.faviconSvg` — the only cross-slot dependency.
 const FAVICON_DERIVED_SLOTS = [
   'faviconIco',
   'appleTouchIcon',
@@ -34,7 +33,6 @@ export async function uploadBrandingAsset(
   buffer: Buffer,
 ): Promise<BrandingObjectRef> {
   ensureMatchesSlot(slot, buffer)
-  // Capture the active backend once; rollback must delete from the same driver.
   const { driver } = activeBackend()
   const uploaded: BrandingSlot[] = []
   try {
@@ -44,7 +42,6 @@ export async function uploadBrandingAsset(
     if (slot === 'faviconSvg') {
       const pack = await generateFaviconPack(buffer.toString('utf8'))
       const refs: Partial<Record<BinarySlot, BrandingObjectRef>> = {}
-      // Sequential: an early failure leaves only `uploaded` refs to roll back.
       for (const derived of FAVICON_DERIVED_SLOTS) {
         refs[derived] = await putBrandingObject(derived, pack[derived])
         uploaded.push(derived)

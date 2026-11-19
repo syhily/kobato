@@ -1,16 +1,6 @@
 import { createSnapshotStore, type SnapshotListener } from '@kobato/inkling-internal/services/snapshot-store'
 import React from 'react'
 
-// Composer handle factory: a per-top-level-composer, editor-side channel shaped
-// getState / setState(partial) / subscribe. Non-React code (Lexical command handlers,
-// plugins) reads state synchronously instead of closing over a stale React mirror, so
-// behaviour listeners register once per mount. React subscribes render-only via
-// useSyncExternalStore. One instance per channel per provider — never a module
-// singleton, so multiple composers on a page cannot clobber each other.
-//
-// The handle IS the shared snapshot store with the keyed change guard: a setState that
-// keeps every value identical is swallowed, so no subscriber is notified.
-
 export type ComposerHandleListener<T> = SnapshotListener<T>
 
 export interface ComposerHandle<T> {

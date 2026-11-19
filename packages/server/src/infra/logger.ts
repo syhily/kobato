@@ -1,7 +1,3 @@
-// Structured JSON logger backed by pino; Logger/getLogger/logger is the only
-// stable surface. L3 fields are wrapped in {E}…{/E} and credential headers
-// are fully [REDACTED] by logger/sanitizer.ts, never tagged.
-
 import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from '@kobato/server/infra/config.ts'
 import { pushLogLine } from '@kobato/server/infra/logger/sink.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
@@ -15,7 +11,6 @@ function resolveLevel(): Level {
   if (level) {
     return level
   }
-  // NODE_ENV, not import.meta.env.PROD — import.meta is replaced with {} in the CJS worker bundles.
   return NODE_ENV === 'production' ? 'info' : 'debug'
 }
 
@@ -98,10 +93,6 @@ interface LogContext {
   [key: string]: unknown
 }
 
-// Writable wrapper keeps output on process.stdout so test spies can intercept it.
-// stdout is written first and its bytes are independent of the optional sink.
-// A sink that logs re-enters this stream; Node buffers that nested write and
-// flushes it from inside cb(), so the forwarding guard spans the callback too.
 let forwarding = false
 const stdout = new Writable({
   write(chunk, _encoding, cb) {
@@ -146,8 +137,6 @@ export interface Logger {
   child(extra: LogContext): Logger
   withScope(scope: string): Logger
 }
-
-// Test-only capture ring (post-privacy-tagging) so assertions run against the real pipeline; gated on isVitest().
 
 export interface LogCaptureEntry {
   scope: string

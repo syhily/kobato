@@ -13,7 +13,6 @@ function isRealtimeEvent(value: unknown): value is RealtimeEvent {
   )
 }
 
-/** Identity of one event for reconnect dedup. */
 function eventKey(event: RealtimeEvent): string {
   return [event.ts, event.path, event.country, event.city, event.browser, event.os, event.deviceType, event.isBot].join(
     '\n',
@@ -29,7 +28,6 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
   const [events, setEvents] = useState<RealtimeEvent[]>([])
   const [state, setState] = useState<'connecting' | 'live' | 'lost'>('connecting')
   const lastSeenRef = useRef<string | null>(null)
-  // Floor at the server replay tail (queryRealtimeTail's LIMIT 50) — a smaller buffer truncates a reconnect's replay.
   const size = Math.max(bufferSize, 50)
 
   useEffect(() => {
@@ -61,7 +59,6 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
         }
         lastSeenRef.current = incoming[incoming.length - 1]!.ts
         setEvents((prev) => {
-          // Drop rows already in the buffer — a reconnect resends the tail from the stale `since`.
           const seen = new Set(prev.map(eventKey))
           const fresh = incoming.filter((event) => !seen.has(eventKey(event)))
           if (fresh.length === 0) {
@@ -70,9 +67,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
           const next = [...prev, ...fresh]
           return next.length > size ? next.slice(next.length - size) : next
         })
-      } catch {
-        // bad payload — skip
-      }
+      } catch {}
     })
 
     return () => {

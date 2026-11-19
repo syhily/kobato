@@ -1,25 +1,3 @@
-/**
- * Web family direction guard — three leaves, one direction:
- *
- *   @kobato/web-client (browser platform) ← @kobato/web-public (public
- *   frontend) ← @kobato/web-admin (admin frontend).
- *
- * `packages/web/client/src/` holds the browser platform glue (hooks, oRPC
- * client, editor surface) that both product leaves compose; a `client/**`
- * module importing `@kobato/web-admin…` would invert that dependency and drag
- * view components into every consumer of the platform layer.
- *
- * `packages/web/public/src/` holds the public frontend (chrome, comments,
- * widgets, the cross-surface shared/lib tiers); `@kobato/web-admin`
- * (`packages/web/admin/src/`) may reuse audited public modules as long-term
- * seams — but the public leaf must never reach back into admin
- * (`@kobato/web-admin/…`) or the server.
- *
- * These are checks over the real import specifiers of the whole trees
- * (static `from`, side-effect/dynamic `import`, and `vi.mock` module paths —
- * the same shapes the package-dag scanner resolves), with NO exceptions: a
- * lower layer that needs an upper-layer module takes it over instead.
- */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

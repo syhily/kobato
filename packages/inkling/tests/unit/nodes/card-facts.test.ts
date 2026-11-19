@@ -58,8 +58,6 @@ describe('resolveAllCardFacts', () => {
 
 describe('the no-override invariant', () => {
   it('keeps answering from the built-in declaration when a host record names the same type', () => {
-    // defineCard refuses a colliding nodeType, so drive the registry directly
-    // to probe what the resolver guarantees even if that guard is bypassed
     registerHostCard({
       nodeType: 'video',
       spec: {

@@ -13,7 +13,6 @@ export type EditorShellStatus =
   | { kind: 'conflict'; expectedToken: string }
   | { kind: 'info'; message: string }
 
-/** One merged autosave gate, two sources: `local` (dialog adopt/discard) and `server` (next clean save). */
 export type ConflictFreezeSource = 'local' | 'server'
 
 export type PublishState =
@@ -134,8 +133,6 @@ export interface EditorDialogState {
   adoptServerVersion: () => void
 }
 
-/** Orchestrator output: the top level carries only what the screen body
- *  renders; subsection consumers receive the narrow views above. */
 export interface UseEditorShellStateOutput<TMeta> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>

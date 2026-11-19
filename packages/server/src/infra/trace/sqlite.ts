@@ -19,7 +19,6 @@ import diagnostics_channel from 'node:diagnostics_channel'
 
 const SQLITE_QUERY_CHANNEL = 'sqlite.db.query'
 
-/** Expanded SQL is never exported; only this bounded redacted form is. */
 const MAX_STATEMENT_LENGTH = 512
 
 const SQL_OPERATIONS: ReadonlySet<string> = new Set([
@@ -60,7 +59,6 @@ export interface SqliteTraceOptions {
 let subscribed = false
 let state: SubscriptionState | null = null
 
-/** First keyword → a fixed operation label; never echoes the SQL. */
 export function sqlOperation(sql: string): string {
   const match = /^\s*([A-Za-z]+)/.exec(sql)
   const keyword = match?.[1]?.toLowerCase()
@@ -98,16 +96,9 @@ function onQuery(message: unknown): void {
     span.end(endedAt)
 
     recordDbOperation('sqlite', operation, durationMs, 'success')
-  } catch {
-    // Diagnostics must never break statement execution or tracing.
-  }
+  } catch {}
 }
 
-/**
- * Subscribe to `sqlite.db.query`. Idempotent. Vitest needs
- * `enabledInTests: true`; the runtime subscribes automatically outside tests
- * with the boot-time `includeRedactedSql` setting.
- */
 export function startSqliteQueryTrace(options: SqliteTraceOptions = {}): void {
   if (subscribed) {
     return

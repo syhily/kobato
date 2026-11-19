@@ -2,7 +2,6 @@ import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-// Stub the real upload dialog so SSR stays deterministic and offline.
 vi.mock('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx', () => ({
   UploadImageDialog: () => null,
 }))

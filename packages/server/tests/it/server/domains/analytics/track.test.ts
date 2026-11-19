@@ -19,10 +19,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// `trackPageView` gates both signals (per-entity counter + time-series)
-// against the real engine: real `metric` table + adopted DuckDB sidecar.
-// No mocks.
-
 const db = getTestDb()
 
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
@@ -30,7 +26,6 @@ __adoptAnalyticsHandleForTests(analyticsHandle)
 
 const { flushTrackedEvents, trackPageView } = await import('@kobato/server/domains/analytics/track.ts')
 
-/** trackPageView is fire-and-forget by design; settle the enrich → push tail. */
 async function track(
   facts: RequestFacts,
   target: EntityTarget | null,
@@ -71,7 +66,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batchers so no pending event lands mid-next-test.
   await flushTrackedEvents()
   await flushPageViews()
   await flushAccessLog()
@@ -83,7 +77,6 @@ afterAll(async () => {
   await closeTestAnalyticsDb(analyticsHandle)
 })
 
-/** Stored pv for POST_TARGET after a flush (0 when the row never landed). */
 async function pvOfPostTarget(): Promise<number> {
   await flushPageViews()
   const row = await findMetricByTarget(db, POST_TARGET)
@@ -239,8 +232,6 @@ describe('analytics/track — trackPageView', () => {
   })
 
   it('never throws on internal failure (defensive try/catch)', async () => {
-    // Batchers down, no counter bump (null target): the sync path still
-    // returns the id, and the async push failure is swallowed + logged.
     resetAllBatchers()
     expect(await track(makeFacts({ userAgent: CHROME_UA }), null)).toBe('00000000-0000-4000-8000-0000000000ab')
     expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)

@@ -1,11 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
-  // Standalone demo playground — typechecked on demand
-  // (`tsc -p apps/inkling-demo/tsconfig.json`), deliberately outside the root `pnpm type`
-  // gate. The `*.d.ts` globs ride along for the `*.svg?react` module
-  // declarations, ambient markdown-it plugin types, and app globals. Paths come
-  // from the shared @kobato/toolchain table; the demo's Vite aliases only mirror
-  // the entries its playground build loads before tsconfig-path resolution.
   "extends": "../../tools/toolchain/tsconfig.base.json",
   "include": ["./**/*", "../../apps/kobato/src/**/*.d.ts", "../../packages/inkling/src/**/*.d.ts"],
   "compilerOptions": {

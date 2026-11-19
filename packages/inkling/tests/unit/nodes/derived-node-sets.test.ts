@@ -1,10 +1,6 @@
 import type { Transformer } from '@lexical/markdown'
 
 import { DEFAULT_HTML_NODES } from '@kobato/inkling-internal/html/default-html-nodes'
-// Import the public barrel first: it is the package/demo entry point, so the
-// module graph evaluates in the same order as in the app. Defensive: registry
-// modules imported before it could observe wrapper classes mid-cycle as
-// `undefined` if a wrapper→barrel edge is ever reintroduced.
 import '@kobato/inkling-internal/index'
 import { CARD_TRANSFORMERS, MARKDOWN_NODES } from '@kobato/inkling-internal/markdown/round-trip'
 import { DEFAULT_BASE_NODES } from '@kobato/inkling-internal/nodes/base'

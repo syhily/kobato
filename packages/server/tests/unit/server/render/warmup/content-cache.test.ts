@@ -1,9 +1,6 @@
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The renderers are the only heavy seam — canvas/font/quote work is
-// covered by their own suites. `through` runs for real: with the
-// dev-bypass buckets it always runs the loader.
 vi.mock('@kobato/server/render/og/render.ts', () => ({
   drawOpenGraph: vi.fn(async () => Buffer.from('og-png')),
 }))
@@ -19,7 +16,6 @@ vi.mock('@kobato/server/infra/logger.ts', () => ({
 import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
 import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
 import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
-// Side-effect import: self-wires the implementation into the domain slot.
 import '@kobato/server/render/warmup/content-cache.ts'
 
 const drawOpenGraphMock = vi.mocked(drawOpenGraph)
@@ -53,8 +49,6 @@ describe('render/warmup/content-cache (through the domain seam)', () => {
     expect(themes).toContain('dark')
     for (const [date, , locale] of renderCalendarMock.mock.calls) {
       expect(date).toBeInstanceOf(Date)
-      // The site locale is threaded EXPLICITLY; the warm never relies on the
-      // cache key to happen to match the renderer's language.
       expect(locale).toBe('zh-CN')
     }
   })

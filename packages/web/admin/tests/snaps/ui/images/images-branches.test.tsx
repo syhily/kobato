@@ -24,9 +24,6 @@ queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// The controller is mocked so the active-filter chips, isFetchingNextPage spinner,
-// error-toast fallthrough and the destructive ConfirmDialog can be driven.
-
 interface ControllerShape {
   q: string
   kind: 'generic' | 'category' | 'friend' | 'all'
@@ -145,7 +142,6 @@ describe('snapshot: ImagesView branches', () => {
   })
 
   it('still renders the grid when an error is present alongside data', () => {
-    // error only feeds a stubbed toast effect — the render path falls through to data.
     queryMocks.infinite.error = new Error('boom')
     queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a' })], total: 1, hasMore: false }],
@@ -157,12 +153,8 @@ describe('snapshot: ImagesView branches', () => {
   })
 })
 
-// The dialog state only populates inside the onDelete handler (not coverable
-// in SSR) — render ConfirmDialog directly.
-
 describe('snapshot: ImagesView confirm dialog branch', () => {
   it('renders nothing user-visible when state is null (closed)', () => {
-    // open={false} keeps the portal unmounted — no destructive copy in SSR output.
     const html = stableHtml(renderToHtml(<ConfirmDialog state={null} onClose={() => {}} />))
     expect(html).not.toContain('删除图片')
     expect(html).not.toContain('此操作会从 S3 删除原始对象')

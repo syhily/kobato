@@ -14,7 +14,6 @@ const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // The publish hook builds source URLs from siteIdentity.website.
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
@@ -55,7 +54,6 @@ describe('integration / webmention outbox enqueue on publish', () => {
     expect(enqueued).toBe(2)
 
     const rows = await db.select().from(webmentionOutbox)
-    // The first two hrefs normalize to one URL (fragment + trailing slash stripped).
     expect(rows).toHaveLength(2)
     const targets = rows.map((r) => r.targetUrl).sort()
     expect(targets).toEqual(['https://external.dev/article', 'https://other.dev/x'])
@@ -81,7 +79,6 @@ describe('integration / webmention outbox enqueue on publish', () => {
 
   it('dedups across republishes: sent rows stay, new links enqueue', async () => {
     await enqueuePostWebmentionOutbox(db, 'republish', bodyWithLinks(['https://ext.dev/kept']))
-    // Simulate the worker having delivered the first mention.
     await db.update(webmentionOutbox).set({ status: 'sent', endpoint: 'https://ext.dev/wm', sentAt: new Date() })
 
     await enqueuePostWebmentionOutbox(db, 'republish', bodyWithLinks(['https://ext.dev/kept', 'https://ext.dev/new']))
@@ -94,8 +91,6 @@ describe('integration / webmention outbox enqueue on publish', () => {
     expect(added?.status).toBe('pending')
   })
 
-  // The publish hook extracts links from the Lexical state directly, so the RPC
-  // publish path enqueues outbox rows for real.
   it('the RPC publish path enqueues the outbox rows for real', async () => {
     const ctx = makeAuthedCtx({ role: 'admin', db })
     const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Hook Real', summary: '', tags: [] }, ctx)
@@ -131,7 +126,6 @@ describe('integration / webmention outbox enqueue on publish', () => {
     expect(publishRes.status).toBe(200)
     expect(await db.select().from(webmentionOutbox)).toHaveLength(1)
 
-    // A meta-only upsert touches no body, so no re-enqueue happens.
     const metaRes = await callRpc(
       '/admin/posts/upsertMeta',
       { id: post.id, title: 'Meta Only (renamed)', summary: '', tags: [] },
@@ -161,7 +155,6 @@ describe('integration / webmention outbox enqueue on publish', () => {
 
     const rows = await db.select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
-    // The hook saw the publish transaction's publishedAt, not the pre-publish NULL.
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
   })
 })
@@ -180,10 +173,8 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     const rows = await db.select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
-    // The real delayUntil mapping: future publishedAt → waterline = publishedAt.
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
 
-    // Not due now, but due exactly at the publish moment.
     expect(await pickDueWebmentionOutbox(db, new Date(), 10)).toHaveLength(0)
     expect(await pickDueWebmentionOutbox(db, publishedAt, 10)).toHaveLength(1)
   })

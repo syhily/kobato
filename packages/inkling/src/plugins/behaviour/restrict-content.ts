@@ -1,12 +1,3 @@
-// Paragraphs-only restriction policy, headless; RestrictContentPlugin is only the
-// React adapter (it keeps the HIGH-priority paste wiring).
-//
-// The RootNode invariant strips decorator nodes (they cannot convert to paragraphs),
-// truncates the document to `paragraphs`, unwraps lists to their first item and
-// converts other non-paragraph elements to paragraphs, then repairs the selection to
-// the document end. It runs only against a collapsed range selection: rewriting the
-// tree under an open selection would yank its anchor.
-
 import { isEditorUpdating } from '@kobato/inkling-internal/utils/lexical-internals'
 import { $isListItemNode, $isListNode } from '@lexical/list'
 import {
@@ -61,11 +52,6 @@ export function $enforceParagraphRestriction(rootNode: RootNode, paragraphs: num
   rootNode.selectEnd()
 }
 
-/**
- * The RootNode transform plus the per-editor update guard. Even when registered on a
- * nested editor, a RootNode transform fires for root changes in OTHER editors, so the
- * guard restricts the invariant to this editor's updates.
- */
 export function registerParagraphRestriction(editor: LexicalEditor, paragraphs: number): () => void {
   return editor.registerNodeTransform(RootNode, (rootNode) => {
     if (!isEditorUpdating(editor)) {

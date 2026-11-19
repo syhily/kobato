@@ -4,11 +4,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-/**
- * Deep-merge a Section patch into a base settings object. Records merge
- * recursively; arrays / non-records REPLACE. The single merge for the settings
- * write path — do not fork it.
- */
 export function mergeSectionPatch<T extends object>(
   base: T,
   patch: Record<string, unknown>,

@@ -20,16 +20,6 @@ const SOURCE_PARTIALS = [
   { file: 'packages/web/admin/src/styles/admin.css', specifier: '@kobato/web-admin/styles/admin.css' },
 ] as const
 
-// Scan-coverage lock: the exact `@source` set each web-family partial must
-// declare, relative to the partial. The public leaf's `public.css` scans the
-// whole package ui tree (the public modules plus the cross-surface `ui/shared`
-// (NotificationsDrawer) and `ui/lib` (LocaleSyncProvider) tiers that render on
-// BOTH app surfaces); `admin-subset.css` holds the precise per-module subset
-// admin actually renders — a long-term seam, so a blanket `../ui` would drag
-// public-only modules into the admin sheet. The admin leaf's `admin.css`
-// scans its whole `ui` tree. The ownership test above only checks direction
-// (no cross-package scans) and would keep passing while a surface silently
-// dropped a tier's utilities from its CSS.
 const WEB_PARTIAL_REQUIRED_SOURCES = {
   'packages/web/public/src/styles/public.css': ['../ui'],
   'packages/web/public/src/styles/admin-subset.css': [

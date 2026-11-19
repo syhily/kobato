@@ -31,9 +31,6 @@ const KPI_ENTRIES: KpiEntry[] = [
   { labelId: 'admin.welcome.visit.kpi.referers', value: 0, icon: GlobeIcon },
 ]
 
-// The loader's weeklyTrend buckets are aggregated in Etc/UTC (the request URL carries no
-// timezone), so the trend block never renders them: SSR and the first client render emit
-// the skeleton, and the client query — which sends clientTimezone — is the only data source.
 export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps) {
   const { locale, t } = useI18n()
   const values = [summary.visits, summary.visitors, summary.referers]
@@ -45,8 +42,6 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
   const ready = useHydrated()
   const points = ready ? (trendQuery.data?.points ?? null) : null
   const daily = useMemo(() => (points ? aggregateToDaily(points) : []), [points])
-  // The SSR payload only hints whether a trend is worth expecting, so the
-  // skeleton (not an empty gap) occupies the block until client data lands.
   const expectTrend = (weeklyTrend?.points.length ?? 0) > 0
 
   return (
@@ -173,8 +168,6 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
 function aggregateToDaily(points: ViewsPoint[]): { date: string; visits: number; visitors: number }[] {
   const map = new Map<string, { visits: number; visitors: number }>()
   for (const p of points) {
-    // ViewsPoint.time is a bucket label ('%Y-%m-%d' / '%Y-%m-%d %H' /
-    // '%Y-%m-%d %H:%M') — the day key is always its first 10 chars.
     const date = dayKeyOfLabel(p.time)
     const existing = map.get(date) ?? { visits: 0, visitors: 0 }
     existing.visits += p.visits

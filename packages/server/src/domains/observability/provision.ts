@@ -1,9 +1,3 @@
-// OpenObserve asset provisioning: RUM token, the fail-closed privacy
-// function/pipeline, and the four versioned dashboards. Stream retention is NOT
-// applied here — it is an opt-in standing policy reconciled by `retention.ts`
-// on settings saves and at boot. All writes share one process-local queue so an
-// admin "provision" and the boot upgrade can never interleave settings writes.
-
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
 
@@ -124,8 +118,6 @@ async function provisionInternal(deps: ProvisionDeps): Promise<ProvisionResult> 
   try {
     const organizationStatus = await client.ensureOrganization()
 
-    // Persist a new token immediately: OpenObserve may already have rotated
-    // it, and losing the value here would force another rotate on retry.
     const token = await ensureRumToken(client, deps.currentRumToken)
     if (token.status === 'created') {
       await persist({ rumClientToken: token.token })
@@ -172,12 +164,6 @@ export interface BootProvisionOptions {
   writeSettings: ObservabilitySettingsWriter
 }
 
-/**
- * Boot auto-upgrade (best effort): when the saved connection is verified but
- * the stored `provisionedFingerprint` no longer matches the bundled assets,
- * re-run provisioning. Any failure is logged and swallowed — telemetry setup
- * must never affect site availability.
- */
 export async function upgradeObservabilityProvisioningAtBoot(options: BootProvisionOptions): Promise<void> {
   const site = options.site
   if (site === null || !isObservabilityConnectionVerified(site)) {

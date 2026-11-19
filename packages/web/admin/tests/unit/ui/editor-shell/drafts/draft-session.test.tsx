@@ -5,7 +5,6 @@ import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock the IndexedDB-backed draft store; each test programs the return values.
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
@@ -32,9 +31,6 @@ import {
   type UseDraftSessionArgs,
 } from '@kobato/web-admin/ui/editor-shell/drafts/draft-session.ts'
 import { DRAFT_STORAGE_VERSION, type DraftRecord } from '@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts'
-
-// Shared draft-session invariants exercised once at the seam; the hook
-// adapters' suites only cover keying and migration on top of this.
 
 const KEY = 'cms-post-draft:1:rev1'
 
@@ -69,7 +65,6 @@ function storedRecord(overrides: Record<string, unknown> = {}) {
   }
 }
 
-// Flush the microtask queue inside act so state updates commit before asserting.
 async function flushDraftEffects() {
   await act(async () => {
     for (let i = 0; i < 10; i++) {
@@ -147,7 +142,6 @@ describe('useDraftSession — load and validate-or-purge', () => {
     expect(draftStore.get).toHaveBeenCalledWith('b')
     expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 2 })
 
-    // Re-rendering with the same key must not read again.
     const reads = draftStore.get.mock.calls.length
     rerender({ key: 'b' })
     await flushDraftEffects()
@@ -170,7 +164,6 @@ describe('useDraftSession — persist gating', () => {
       initialProps: { body: emptyLexicalBody() },
     })
 
-    // A body change while the load is still pending must not persist.
     rerender({ body: pendingBody })
     await flushDraftEffects()
     expect(draftStore.set).not.toHaveBeenCalled()
@@ -190,7 +183,6 @@ describe('useDraftSession — persist gating', () => {
         version: DRAFT_STORAGE_VERSION,
       }),
     )
-    // No meta was provided — the payload must not carry the key at all.
     const payload = draftStore.set.mock.calls[0][1] as Record<string, unknown>
     expect(payload).not.toHaveProperty('meta')
     expect(typeof payload.savedAt).toBe('number')
@@ -246,7 +238,6 @@ describe('useDraftSession — broadcast clear protocol', () => {
   })
 
   it('clearDraft sweeps every key under clearPrefix when one is supplied (audit P1-15)', async () => {
-    // Each clientRevisionToken rotation orphans a draft, so clearing sweeps by prefix.
     const { result } = renderHook(() => useDraftSession(makeArgs({ clearPrefix: 'cms-post-draft:1:' })))
     await flushDraftEffects()
 

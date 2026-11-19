@@ -19,9 +19,6 @@ import {
 
 export const RANGE_TO_ELEMENT_BOUNDARY_THRESHOLD_PX = 10
 
-// Two adjacency notions: visual (caret geometry, arrow keys) and logical
-// (anchor offset, backspace/delete); they deliberately do not share a derivation.
-
 export interface CardAdjacencyGeometry {
   hasNativeSelection(): boolean
 
@@ -108,7 +105,6 @@ export function $getVisuallyAdjacentCard(
   if (rects.length === 0) {
     return null
   }
-  // A caret at a line start/end yields two rects; use the second (new line) to test for a card below.
   const rangeRect = rects.length > 1 ? rects[1] : rects[0]
   const elemRect = geometry.getTopLevelBlockRect()
   if (!elemRect) {
@@ -178,14 +174,6 @@ export function $removeLogicallyAdjacentCard(direction: 'previous' | 'next'): bo
   return true
 }
 
-/**
- * How the empty-block surgery reads emptiness (a deliberate divergence):
- * 'paragraph-is-empty' (backspace) requires the anchor itself to be an empty
- * ParagraphNode; 'from-mode-blank' (forward delete) requires blank top-level
- * text with the caret at offset 0, because selection-mode's 'next' boundary
- * needs an element anchor at getChildrenSize(), which a whitespace-only block
- * with zero-text children (a lone LineBreakNode) does not satisfy.
- */
 export type EmptyBlockCheck = 'paragraph-is-empty' | 'from-mode-blank'
 
 export function $removeEmptyBlockAndSelectCard(direction: 'previous' | 'next', check: EmptyBlockCheck): boolean {
@@ -239,22 +227,10 @@ export function dispatchSelectedCardDeletion(
   return true
 }
 
-/**
- * Focus the editor's root element by hand — the focus repair after selecting
- * chrome-less UI or before a card's chrome dismounts. `preventScroll` matters:
- * repair must not yank the viewport.
- */
 export function focusEditorRoot(editor: LexicalEditor): void {
   editor.getRootElement()?.focus({ preventScroll: true })
 }
 
-/**
- * Focus repair after selecting a card: a decorator selection has no caret, so
- * focus must go to the editor element by hand. 'if-blurred' (default) serves
- * pointer-driven selection; 'always' when the caller just removed the focused
- * card's chrome or a headless host asked for focus; 'never' when the caller
- * already owns focus or repaired it.
- */
 export type CardSelectionFocus = 'if-blurred' | 'always' | 'never'
 
 export function $selectCard(
@@ -278,14 +254,6 @@ export function $deselectCard(editor: LexicalEditor, nodeKey: string) {
   }
 }
 
-/**
- * Focus choreography of $removeOrReplaceNodeWithParagraph: 'decorator-next'
- * (default) moves focus to the root element only when the next sibling is a
- * decorator, since selecting one leaves no caret to carry focus; 'root-first'
- * (ctrl/cmd+Enter leaving edit mode) returns focus to the editor BEFORE the
- * card's chrome unmounts — otherwise it stays on removed elements and swallows
- * further key events.
- */
 export type CardRemovalFocus = 'decorator-next' | 'root-first'
 
 export function $removeOrReplaceNodeWithParagraph(

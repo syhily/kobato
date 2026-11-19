@@ -55,8 +55,6 @@ async function start(metricReader: TestMetricReader = reader) {
 const EVENT_LOOP_METRIC_TIMEOUT_MS = 2_000
 const EVENT_LOOP_METRIC_POLL_MS = 25
 
-/** The event-loop gauge comes from an observable callback, so the first `collect()` can see
- * no data point under load: poll with a bounded deadline; a missing observer still fails. */
 async function waitForEventLoopDelay(metricReader: TestMetricReader) {
   const deadline = Date.now() + EVENT_LOOP_METRIC_TIMEOUT_MS
   for (;;) {
@@ -128,8 +126,6 @@ describe('trace metrics — closed catalog', () => {
     })
     expect(point!.attributes).not.toHaveProperty('trace_id')
     expect(point!.attributes).not.toHaveProperty('span_id')
-    // sdk-metrics 3.1.0 / the 0.301.x OTLP transformer do not implement
-    // exemplars; there is no per-point TraceID channel to assert either.
     expect((point as unknown as { exemplars?: unknown }).exemplars).toBeUndefined()
   })
 
@@ -192,7 +188,6 @@ describe('trace metrics — closed catalog', () => {
     addHttpServerActive('GET', -1)
     const active = upDownCounter(METRIC.httpServerActiveRequests)
     active.add(Number.NaN, { 'http.request.method': 'GET' })
-    // Only the method is declared: a route (unknown while in flight) is dropped.
     active.add(1, { 'http.request.method': 'DELETE', 'http.route': '/posts/:slug' })
 
     const metrics = await reader.collectResourceMetrics()
@@ -305,7 +300,6 @@ describe('trace metrics — lifecycle', () => {
       'cache.coalesced': false,
     })
 
-    // The provider is shut down; the facade's no-op counter must not throw.
     expect(() => counter(METRIC.cacheLookupCount).add(1)).not.toThrow()
   })
 })

@@ -12,9 +12,6 @@ interface UseFloatingPanelOptions {
   cardWidth: string
 }
 
-// Resolves the card's wrapper element from its node key. The wrapper inside the
-// Lexical decorator element carries the card-width transform (e.g. wide cards),
-// so it — not the decorator element — is the positioning anchor.
 function findCardElement(editor: LexicalEditor, cardKey: NodeKey): HTMLElement | null {
   const decoratorElement = editor.getElementByKey(cardKey)
   if (!decoratorElement) {
@@ -35,12 +32,8 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
 
   const ref = useRef<T | null>(null)
 
-  // currentX/Y start undefined (not 0) so the panel resize observer can
-  // distinguish "never positioned" from a legitimate position on the (0,0) axes
   const currentX = useRef<number | undefined>(undefined)
   const currentY = useRef<number | undefined>(undefined)
-  // spacing between the panel and the viewport at the last committed position,
-  // so clamps can keep negative spacing when the user placed the panel offscreen
   const lastSpacing = useRef<PanelSpacing | null>(null)
 
   const stylesheetId = `inkling-floating-panel-drag-${useId()}`

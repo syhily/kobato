@@ -7,11 +7,7 @@ import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { WorkerDomainError } from '@kobato/server/infra/image/process-worker.ts'
 import { describe, expect, it } from 'vitest'
 
-// The image worker crosses a `worker_threads` postMessage boundary: the error
-// travels as plain JSON, so the descriptor must survive `structuredClone` and
-// rehydrate on the main thread without losing its typed id or ICU params.
 function wireFromWorkerError(error: WorkerDomainError): DomainErrorWire {
-  // Same shape `handle()` posts back.
   return structuredClone({
     name: error.name,
     code: error.code,

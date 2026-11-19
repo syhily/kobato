@@ -5,7 +5,6 @@ import type { ReactElement } from 'react'
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-// These forms read `useI18n()`; mount the root provider for every RTL render.
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
@@ -30,9 +29,6 @@ const socials: SocialsSettings = {
   socials: [{ name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/example' }],
 }
 
-// Regression: a revalidate delivers a new snapshot identity; the reseed
-// must skip `reset()` when it maps to the same form state, or useFieldArray
-// regenerates ids and the focused input loses focus.
 describe('SocialsEditor — focus retention across revalidates', () => {
   beforeEach(() => {
     commit.mockReset()
@@ -58,10 +54,9 @@ describe('SocialsEditor — focus retention across revalidates', () => {
     const input = screen.getByDisplayValue('https://github.com/example') as HTMLInputElement
     input.focus()
     fireEvent.change(input, { target: { value: 'https://github.com/exampleX' } })
-    fireEvent.blur(input) // blur-driven flush commits the edit
+    fireEvent.blur(input)
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
 
-    // Revalidate delivers the just-saved content with a new snapshot identity.
     input.focus()
     expect(document.activeElement).toBe(input)
     rerender(

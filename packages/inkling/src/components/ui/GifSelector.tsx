@@ -15,9 +15,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 const TWO_COLUMN_WIDTH = 540
 const THREE_COLUMN_WIDTH = 940
 
-// one narrowing read at the lib boundary: tsc's lib.dom types
-// contentBoxSize as a readonly array, tsgolint's vendored lib leaves it
-// any — the single-size-or-array union is the browser reality
 function isResizeObserverSize(value: unknown): value is ResizeObserverSize {
   return typeof value === 'object' && value !== null && 'inlineSize' in value && typeof value.inlineSize === 'number'
 }
@@ -33,11 +30,6 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
   const labels = useInklingLabels()
   const selectorRef = useRef<HTMLDivElement | null>(null)
   const searchRef = useRef<HTMLInputElement | null>(null)
-  // Keyboard-driven focus request for the highlighted tile, as state: the Gif
-  // tile's effect only re-runs on observable change, so a request must render
-  // through props — a hover-set highlight produces no transition for a ref
-  // latch to ride on. Hover itself never requests focus: a resting cursor
-  // must not yank focus out of the search input.
   const [focusRequestId, setFocusRequestId] = useState<string | null>(null)
   const clearFocusRequest = useCallback(() => setFocusRequestId(null), [])
   const subscribeToBrowser = useCallback((listener: () => void) => browser.subscribe(listener), [browser])

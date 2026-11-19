@@ -1,8 +1,3 @@
-/**
- * Session row view-models shared by the `/admin/security/sessions` and
- * `/admin/me/sessions` route loaders (which build them from the account
- * domain's session list) and the `ui/admin` session views that render them.
- */
 export interface AdminSessionItem {
   sid: string
   userId: string

@@ -31,8 +31,6 @@ const log = getLogger('http.error')
 
 type HttpStatus = 400 | 401 | 403 | 404 | 409 | 413 | 422 | 429 | 500
 
-// Early short-circuits (trailing-slash, install gate) can throw before the
-// request context exists; the site default locale is then the honest fallback.
 function requestTranslator(c: Context<Env>): ServerTranslator {
   const rc = c.var.requestContext as Partial<RequestContext> | undefined
   return createServerTranslator(rc?.localization?.locale ?? DEFAULT_LOCALE)
@@ -110,7 +108,6 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
   const translator = requestTranslator(c)
 
   if (err instanceof HTTPException) {
-    // Perimeter middlewares throw `LocalizedHttpException`; third-party throws keep their raw message.
     return respond(
       c,
       err.status,

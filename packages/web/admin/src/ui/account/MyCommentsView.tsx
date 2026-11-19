@@ -40,7 +40,6 @@ import { useSearchParams } from 'react-router'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
-/** tRich chunks renderers (module scope — stable across renders). */
 function renderCommentCount(chunks: ReactNode[]): ReactNode {
   return <span className="font-medium text-foreground">{chunks}</span>
 }
@@ -79,13 +78,11 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
           next.set(key, value)
         }
       }
-      // setSearchParams re-runs the loader; `replace` keeps history clean, `preventScrollReset` avoids jumping.
       setSearchParams(next, { replace: true, preventScrollReset: true })
     },
     [searchParams, setSearchParams],
   )
 
-  // URL is the source of truth: pills run controlled over the loader props; every action maps back onto the params.
   const filtersFromUrl = useMemo<ActiveFilter<MyCommentFilterFieldKey>[]>(() => {
     const filters: ActiveFilter<MyCommentFilterFieldKey>[] = []
     if (status !== 'all') {
@@ -105,7 +102,6 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
   const fields = useMemo(() => buildMyCommentFilterFields(entityOptions, t), [entityOptions, t])
 
-  // Pill action → URL patch; an empty text pill maps to q: null and survives locally until the URL re-validates.
   const syncUrl = useCallback(
     (_next: ActiveFilter<MyCommentFilterFieldKey>[], action: FilterPillsAction<MyCommentFilterFieldKey>) => {
       switch (action.type) {
@@ -204,7 +200,6 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   return (
     <AdminListPage>
       <AdminListPage.Header title={t('public.chrome.myComments')} description={t('admin.my.comments.description')}>
-        {/* Header slot only when no filters are active — body slot below takes over otherwise. */}
         <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
       </AdminListPage.Header>
 

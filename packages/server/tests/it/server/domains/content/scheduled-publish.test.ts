@@ -19,15 +19,12 @@ import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { makeAuthedCtx } from '@kobato/test/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/test/rpc-call.ts'
 
-// The job against the real engine: real rows drive next-due and the effect
-// is real filesystem cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.
 const db = getTestDb()
 
 const HOUR_MS = 3_600_000
 
 let seq = 0
 
-/** A promoted post (published, published revision attached) scheduled for `publishedAt`. */
 async function seedScheduledPost(publishedAt: Date): Promise<number> {
   const key = ++seq
   const [meta] = await db
@@ -64,7 +61,6 @@ function warmFeed(): Promise<void> {
   )
 }
 
-/** TTL expiry only makes `get` miss; only the bucket clear DELETES the entry files. */
 function feedRowCount(): Promise<number> {
   return countEntryFiles('feed')
 }
@@ -93,7 +89,6 @@ describe('scheduled-publish job', () => {
 
     scheduleRegisteredJob('content.scheduled-publish')
 
-    // Before the due time: nothing fires, the public gate still hides the row.
     await vi.advanceTimersByTimeAsync(HOUR_MS - 60_000)
     expect(await feedRowCount()).toBe(1)
     expect(db.select().from(post).where(livePostWhere()).all()).toHaveLength(0)
@@ -101,7 +96,6 @@ describe('scheduled-publish job', () => {
     await vi.advanceTimersByTimeAsync(60_000)
     expect(await feedRowCount()).toBe(0)
     expect(await getCounter('searchResult')).toBe(generationBefore + 1)
-    // …and the row is publicly visible under the live gate now.
     expect(db.select().from(post).where(livePostWhere()).all()).toHaveLength(1)
   })
 
@@ -115,7 +109,6 @@ describe('scheduled-publish job', () => {
     await vi.advanceTimersByTimeAsync(HOUR_MS)
     expect(await feedRowCount()).toBe(0)
 
-    // The second row re-armed the timer: its due time invalidates again.
     await warmFeed()
     expect(await feedRowCount()).toBe(1)
     await vi.advanceTimersByTimeAsync(HOUR_MS)
@@ -157,7 +150,6 @@ describe('scheduled-publish job', () => {
     )
     expect(res.status).toBe(200)
 
-    // Re-warm and prove the re-armed timer fires at the EARLIER time.
     await warmFeed()
     await vi.advanceTimersByTimeAsync(HOUR_MS)
     expect(await feedRowCount()).toBe(0)
@@ -182,7 +174,6 @@ describe('scheduled-publish job', () => {
     expect(createRes.status).toBe(200)
     const { post: created } = await parseRpcJson<{ post: { id: string } }>(createRes)
 
-    // The publish below must re-arm the suspended job via the lifecycle nudge.
     scheduleRegisteredJob('content.scheduled-publish')
 
     const publishRes = await callRpc(

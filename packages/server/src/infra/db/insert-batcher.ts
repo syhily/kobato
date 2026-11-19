@@ -17,8 +17,6 @@ export interface InsertBatcherOptions {
   maxBufferSize?: number
 }
 
-/** Five 2048-row DuckDB append chunks; at the normal flush threshold the
- *  buffer only gets this deep while the writer is stalled — the flood the cap defends against. */
 export const DEFAULT_MAX_BUFFER_SIZE = 10_000
 
 export interface FlushResult {
@@ -26,9 +24,6 @@ export interface FlushResult {
   deadLettered: number
 }
 
-// Shared flush-loop for buffered writers: lazy unref'd interval timer, singleflight
-// drain with snapshot detach, shutdown-hook disposal. Teardown flushes ignore the
-// pause gate; a flush drains until the payload is empty.
 export abstract class FlushLoop<Pending, Result> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<Result> | null = null
@@ -54,7 +49,6 @@ export abstract class FlushLoop<Pending, Result> {
       clearTimeout(this.timer)
       this.timer = null
     }
-    // Detach-and-discard: reset semantics are "start empty" — the restore flow already flushed.
     this.takePending()
   }
 
@@ -70,7 +64,6 @@ export abstract class FlushLoop<Pending, Result> {
     }
     if (this.timer === null) {
       this.timer = setTimeout(() => {
-        // Clear the field before flushing — a stale handle would wedge every future arm.
         this.timer = null
         void this.flush()
       }, this.flushIntervalMs)
@@ -87,9 +80,7 @@ export abstract class FlushLoop<Pending, Result> {
     if (this.paused) {
       return
     }
-    // Set the pause flag before draining so a push can't start a flush inside the window.
     this.paused = true
-    // A push that raced the drain may have armed a fresh timer — disarm it.
     if (this.timer !== null) {
       clearTimeout(this.timer)
       this.timer = null
@@ -105,7 +96,6 @@ export abstract class FlushLoop<Pending, Result> {
       return
     }
     this.paused = false
-    // Flush paused-time buffering immediately, not after a fresh interval.
     void this.flush()
   }
 
@@ -154,13 +144,10 @@ export abstract class FlushLoop<Pending, Result> {
           try {
             result = await this.writePending(current)
           } catch (error) {
-            // Recovery owns a failed batch — stop draining rather than hot-looping.
             const failed = await this.onWriteFailed(current, error)
-            // Rows buffered mid-flush may have no trigger left; re-arm the interval so they flush.
             this.armFlushTimer()
             return failed
           }
-          // Starvation guard: triggers swallowed by the singleflight never reschedule — drain until empty.
           const more = this.takePending()
           if (more === null) {
             return result
@@ -175,14 +162,10 @@ export abstract class FlushLoop<Pending, Result> {
   }
 }
 
-// Generic in-memory batcher: one multi-row INSERT per batch in a single sync
-// transaction. The writer is a LAZY GETTER, not a captured handle — the DuckDB
-// sidecar opens after registration, and restore reopens it.
 export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], FlushResult> {
   private buffer: T[] = []
   private readonly maxBufferSize: number
   private dropped = 0
-  /** True while the buffer is saturated — one warning per drop burst, so a flood cannot become a log flood. */
   private overflowing = false
 
   constructor(
@@ -217,8 +200,6 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
     return this.onInsertFailed(pending, error)
   }
 
-  /** Insert the whole batch in one transaction. Sync for node:sqlite;
-   * may be async for engines with an async client (DuckDB). */
   protected abstract insertBatch(writer: W, events: T[]): void | Promise<void>
 
   protected abstract onInsertFailed(events: T[], error: unknown): Promise<FlushResult>
@@ -228,8 +209,6 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
       this.dropped += 1
       if (!this.overflowing) {
         this.overflowing = true
-        // No dead-letter here: a page view lost to backpressure is not worth
-        // replaying, and writing every drop would just move the flood to disk.
         this.log.warn('insert batcher buffer full; dropping incoming events', {
           maxBufferSize: this.maxBufferSize,
           dropped: this.dropped,
@@ -253,16 +232,10 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
   }
 }
 
-// Dead-letter wire format: one plain-JSON object per line, Dates as epoch ms.
-
 export function serializeDeadLetterJsonLines(events: unknown[]): string {
   return events.map((event) => JSON.stringify(toJsonSafe(event))).join('\n') + '\n'
 }
 
-/**
- * Parse one dead-letter line. `revive` returns null to count the line
- * as a parse failure.
- */
 export function deserializeDeadLetterJsonLine<T>(
   line: string,
   revive: (raw: Record<string, unknown>) => T | null,

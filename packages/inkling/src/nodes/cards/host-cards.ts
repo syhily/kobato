@@ -32,14 +32,6 @@ type HostCardSpecWithParts<
   transientProps?: Transient
   nestedEditors?: Nested
 }
-/**
- * The contextual shape of a host menu entry: every field except `queryParams`,
- * which stays `readonly unknown[]` on purpose — `unknown` gives the array literal no
- * contextual element type, so the `const Menu` capture keeps `['src']` literal; a
- * contextual `readonly string[]` would widen it and lose the key the exact check
- * needs. Cost: no autocomplete for `queryParams` elements; the exact check restores
- * type safety, not hints.
- */
 type HostMenuEntryShape<Dataset extends Record<string, unknown>> = Omit<
   HostCardMenuEntrySpec<Dataset>,
   'queryParams'
@@ -66,8 +58,6 @@ export function defineCard<
     render(node: InstanceType<B>): ReactNode
   },
 ): HostCard<NodeType, HostCardSpecWithParts<Spec, Transient, Nested>> {
-  // $isInklingCard gates on `instanceof InklingDecoratorNode` and the exportDOM
-  // contract assumes the generated machinery, so require the base to extend it.
   if (!(spec.baseNode.prototype instanceof InklingDecoratorNode)) {
     throw new TypeError(
       `[defineCard] '${spec.nodeType}': baseNode must extend InklingDecoratorNode (build it with generateDecoratorNode)`,

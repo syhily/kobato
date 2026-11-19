@@ -3,10 +3,6 @@ import type { ComponentProps, FocusEventHandler } from 'react'
 import { Input } from '@kobato/ui/components/input.tsx'
 import { Textarea } from '@kobato/ui/components/textarea.tsx'
 
-// `<Input>` + blur-driven save: `flushOnBlur` is a separate prop so it
-// survives `{...form.register('x')}` — the spread's `onBlur` would
-// otherwise overwrite it.
-
 type InputProps = ComponentProps<typeof Input>
 
 interface SettingsInputProps extends Omit<InputProps, 'onBlur'> {
@@ -23,8 +19,6 @@ export function SettingsInput({ flushOnBlur, onBlur, ...props }: SettingsInputPr
   return <Input {...props} onBlur={handleBlur} />
 }
 
-// `<Textarea>` companion — same blur-saves pattern; controlled usage, so no
-// RHF onBlur to merge.
 type TextareaProps = ComponentProps<typeof Textarea>
 
 interface SettingsTextareaProps extends Omit<TextareaProps, 'onBlur'> {

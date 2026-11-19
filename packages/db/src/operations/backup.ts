@@ -4,13 +4,11 @@ import type { BackupRow, NewBackup } from '@kobato/db/types.ts'
 import { backup } from '@kobato/db/schema/backup.ts'
 import { desc, eq, lt } from 'drizzle-orm'
 
-/** Insert a backup row (`storagePath` is unique). */
 export async function insertBackup(db: Database, values: NewBackup): Promise<BackupRow> {
   const rows = await db.insert(backup).values(values).returning()
   return rows[0]!
 }
 
-/** Insert without surfacing conflicts — used by the self-healing reconcile. */
 export async function insertBackupIfMissing(db: Database, values: NewBackup): Promise<void> {
   await db.insert(backup).values(values).onConflictDoNothing({ target: backup.storagePath })
 }
@@ -38,12 +36,10 @@ export async function deleteBackupRow(db: Database, id: number): Promise<void> {
   await db.delete(backup).where(eq(backup.id, id))
 }
 
-/** Rows older than `cutoff` — used by the retention sweeper. */
 export async function findOldBackupRows(db: Database, cutoff: Date): Promise<BackupRow[]> {
   return db.select().from(backup).where(lt(backup.createdAt, cutoff))
 }
 
-/** All recorded storage paths — used by the reconcile to skip already-tracked files. */
 export async function listBackupStoragePaths(db: Database): Promise<string[]> {
   const rows = await db.select({ path: backup.storagePath }).from(backup)
   return rows.map((r) => r.path)

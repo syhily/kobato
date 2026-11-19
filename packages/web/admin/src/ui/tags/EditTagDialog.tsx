@@ -33,8 +33,6 @@ const EMPTY_DRAFT = {
   ogImage: '',
 }
 
-// `admin.tags.upsert` wire input: `id` absent → create; present → update.
-// Blank `slug` → derived from `name`.
 interface UpsertTagInput {
   id?: string
   name: string
@@ -56,7 +54,6 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
     onSuccess: (payload) => {
       toast.success(t('admin.tags.form.saved'))
       setErrorMessage(null)
-      // The list lives in the TanStack cache — invalidate the namespace instead of patching a local mirror.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.tags.list.key() })
       onSaved(payload.tag)
     },
@@ -68,12 +65,10 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
 
   if (tag !== lastTag) {
     setLastTag(tag)
-    if (tag === undefined) {
-      // closed — leave current draft for animation continuity
-    } else if (tag === null) {
+    if (tag === null) {
       setErrorMessage(null)
       setDraft(EMPTY_DRAFT)
-    } else {
+    } else if (tag !== undefined) {
       setErrorMessage(null)
       setDraft({
         name: tag.name,

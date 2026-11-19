@@ -48,7 +48,6 @@ function makeData(mentions: AdminWebmentionWire[]): InfiniteData<AdminWebmention
   }
 }
 
-// The inbox's local cache patch after a moderation mutation (no refetch).
 describe('ui / moderateMentionInPages (admin inbox cache patch)', () => {
   it('updates the row in place under the `all` filter and shifts the counts', () => {
     const data = makeData([makeMention({ id: '1' }), makeMention({ id: '2', status: 'approved' })])
@@ -85,9 +84,6 @@ describe('ui / moderateMentionInPages (admin inbox cache patch)', () => {
   })
 })
 
-// The inbox's local cache patch after a manual re-verification: the
-// server row is authoritative, and a hidden row restored to approved
-// leaves the 已隐藏 filter while the counts shift.
 describe('ui / applyReverifyToPages (admin reverify cache patch)', () => {
   const verified = makeMention({
     id: '1',

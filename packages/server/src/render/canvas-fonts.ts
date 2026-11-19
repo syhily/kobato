@@ -9,10 +9,6 @@ import { access, readFile } from 'node:fs/promises'
 
 // Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 
-// Shared by the OG and calendar renderers: fixed filenames (`og|calendar.{ttf,otf}`)
-// under FONT_DIR, probed `.ttf` first, with a process-level buffer cache cleared by
-// resetFontCache/resetCanvasFont. Failure mode is null, never throw.
-
 const log = getLogger('images.assets')
 
 export interface FontSlot {
@@ -22,7 +18,6 @@ export interface FontSlot {
 
 const inProcessByPath = new Map<string, Buffer>()
 
-// Log each missing-slot case once per replica, not per render.
 const loggedEmpty = new Set<'og' | 'calendar'>()
 const loggedMissing = new Set<string>()
 
@@ -32,9 +27,7 @@ async function resolveFontPath(slot: 'og' | 'calendar'): Promise<string | null> 
   try {
     await access(ttf)
     return ttf
-  } catch {
-    /* noop */
-  }
+  } catch {}
   try {
     await access(otf)
     return otf
@@ -79,7 +72,6 @@ async function loadFontSlot(slot: 'og' | 'calendar', family: string): Promise<Lo
 
   try {
     const buffer = await readFile(fullPath)
-    // Cache write happens in the caller's generation-guarded commit.
     log.info('Loaded Canvas font slot', { slot, path: fullPath, family, bytes: buffer.byteLength })
     return { buffer, family, path: fullPath }
   } catch (err) {
@@ -95,26 +87,14 @@ async function loadFontSlot(slot: 'og' | 'calendar', family: string): Promise<Lo
   }
 }
 
-// Single-flight: null results are never memoized (a cached no-op would
-// freeze every later render), slot assignment is unconditional once a
-// font loads, and invalidation funnels through resetCanvasFont.
-
 const canvasFontSlots: Record<'og' | 'calendar', FontSlot | null> = { og: null, calendar: null }
 const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | null> = {
   og: null,
   calendar: null,
 }
-// Generation per slot: a flight started before the bump must not commit its stale result.
 const canvasFontGenerations: Record<'og' | 'calendar', number> = { og: 0, calendar: 0 }
-// The family each in-flight load is resolving — a caller pinned to a different
-// settings generation must not join (and render with) that family.
 const canvasFontFlightFamily: Record<'og' | 'calendar', string | null> = { og: null, calendar: null }
 
-/**
- * `settings` is the caller's PINNED snapshot (request capture / send-time resolve); omitted =
- * the current process snapshot. The family check uses the same bundle the caller renders
- * with, so a settings save mid-request can never swap the font behind a keyed representation.
- */
 export function ensureCanvasFont(
   slot: 'og' | 'calendar',
   settings?: BlogSettingsBundle | null,
@@ -122,7 +102,6 @@ export function ensureCanvasFont(
   const family = requireBlogSettingsSection('fonts', settings)[slot].family
   const cached = canvasFontSlots[slot]
   if (cached !== null) {
-    // Cheap sync recheck — a family edit makes the cached slot stale.
     if (cached.family !== family) {
       resetCanvasFont(slot)
     } else if (GlobalFonts.has(cached.family)) {
@@ -131,8 +110,6 @@ export function ensureCanvasFont(
   }
   let flight = canvasFontFlights[slot]
   if (flight !== null && canvasFontFlightFamily[slot] !== family) {
-    // A flight for a different settings generation is in progress — abandon it
-    // (the generation guard below keeps its result from committing).
     resetCanvasFont(slot)
     flight = null
   }
@@ -142,8 +119,6 @@ export function ensureCanvasFont(
     flight = (async () => {
       const loaded = await loadFontSlot(slot, family)
       if (canvasFontGenerations[slot] !== generation) {
-        // Abandoned generation: never adopt a newer generation's slot — the
-        // caller renders with the fallback font its own key describes.
         return null
       }
       if (loaded !== null) {
@@ -156,7 +131,6 @@ export function ensureCanvasFont(
       return canvasFontSlots[slot]
     })()
       .catch((err) => {
-        // Only the current generation may clear its own flight.
         if (canvasFontGenerations[slot] === generation) {
           canvasFontFlights[slot] = null
           canvasFontFlightFamily[slot] = null
@@ -165,11 +139,9 @@ export function ensureCanvasFont(
       })
       .finally(() => {
         if (canvasFontGenerations[slot] !== generation) {
-          // Stale flight — leave newer flights alone.
           return
         }
         const s = canvasFontSlots[slot]
-        // Not registered (null slot, snapshot race): drop the flight so the next render retries.
         if (s === null || !GlobalFonts.has(s.family)) {
           canvasFontFlights[slot] = null
           canvasFontFlightFamily[slot] = null
@@ -180,7 +152,6 @@ export function ensureCanvasFont(
   return flight
 }
 
-/** The single invalidation seam for canvas fonts (one slot, or all). Every font mutation must call it. */
 export function resetCanvasFont(slot?: 'og' | 'calendar'): void {
   if (slot === undefined) {
     canvasFontSlots.og = null

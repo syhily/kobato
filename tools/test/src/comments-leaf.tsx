@@ -15,8 +15,6 @@ export interface LeafContextOverrides {
   actions?: Partial<CommentsActionsContextValue>
 }
 
-/** Provider supplying the three leaf-facing comments contexts with inert
- *  defaults — leaf tests cross the same context seam as production. */
 export function makeLeafContext(overrides: LeafContextOverrides = {}) {
   const identity: CommentsIdentityContextValue = {
     admin: false,

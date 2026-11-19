@@ -20,7 +20,6 @@ interface LinkInputProps {
 export function LinkInput({ href, update, cancel }: LinkInputProps) {
   const { searchLinks } = useInklingLinkingSettings()
   const labels = useInklingLabels()
-  // href/query live in local state so typing never touches the saved editor value
   const [_href, setHref] = React.useState<string | undefined>(href)
   const searchEnabled = typeof searchLinks === 'function'
   const { isSearching, listOptions } = useSearchLinks(_href || '', searchEnabled ? searchLinks : undefined)
@@ -32,7 +31,6 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
 
   useLinkDropdownOpenedTracking('text', searchEnabled)
 
-  // adjust state during render: mirror a changed href prop into local state
   const [prevHref, setPrevHref] = React.useState(href)
   if (prevHref !== href) {
     setPrevHref(href)
@@ -63,11 +61,6 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
         return
       }
 
-      // The suggestion list's global capture listener runs before this handler.
-      // If the user navigated the list it will already have stopped propagation,
-      // so reaching here means no suggestion was selected. Submit the typed URL
-      // directly and stop the event so the input's own bubble handler doesn't
-      // duplicate the update.
       event.preventDefault()
       event.stopPropagation()
       update(target.value || '')
@@ -89,9 +82,6 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       }}
       onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-          // prevent Enter from triggering in the editor and removing text.
-          // Read the live input value so the last keystroke is always captured
-          // even if React state updates lag the native value.
           e.preventDefault()
           update(e.currentTarget.value || '')
         }

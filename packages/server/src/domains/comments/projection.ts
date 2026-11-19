@@ -42,7 +42,6 @@ function asNullableString(value: number | string | null | undefined): string | n
 
 function asIso(value: Date | string | null | undefined): string {
   if (value === null || value === undefined) {
-    // Schema guarantees a value; fall back to "" rather than crashing.
     return ''
   }
   return typeof value === 'string' ? value : value.toISOString()

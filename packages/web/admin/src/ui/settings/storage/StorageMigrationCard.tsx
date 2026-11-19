@@ -32,9 +32,6 @@ const DIRECTION_LABEL: Record<string, UiMessageId> = {
   's3-to-local': 'admin.settings.storage.migration.directionLabel.s3ToLocal',
 }
 
-// Migration status + control. Not a settings form (no useSettingsCard): the
-// migration task flips the storage config server-side, so completion
-// revalidates the route loader to re-seed the sibling cards' source.
 export function StorageMigrationCard() {
   const queryClient = useQueryClient()
   const revalidator = useRevalidator()
@@ -49,8 +46,6 @@ export function StorageMigrationCard() {
     }),
   )
 
-  // One-shot completion notice + stats refresh + route-loader revalidation
-  // (the flipped storage config / status card re-seed from the loader data).
   const completedRef = useRef<string | null>(null)
   useEffect(() => {
     if (status?.phase !== 'completed' || status.finishedAt === null) {

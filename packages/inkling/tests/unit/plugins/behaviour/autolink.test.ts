@@ -111,7 +111,6 @@ describe('registerAutoLink with the inkling matchers', () => {
     })
   })
 
-  // Node accessors only run inside a read — extract plain descriptors.
   function paragraphShape(): { type: string; url?: string; text: string }[] {
     return editor.getEditorState().read(() => {
       const paragraph = $getRoot().getFirstChild()

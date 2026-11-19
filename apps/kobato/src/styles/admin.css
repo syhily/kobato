@@ -1,4 +1,3 @@
-/* App-owned admin surface: one Tailwind compile composing the per-package partials in fixed order. */
 @layer theme, base, inkling, components, utilities;
 @import 'tailwindcss' source(none);
 @import '@kobato/ui/styles/tailwind.css' reference;

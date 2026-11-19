@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Memoization rules: a not-installed database stays memoized, but a
-// failed open is never cached.
 const knobs = vi.hoisted(() => ({ installed: true }))
 const readerOpen = vi.hoisted(() => vi.fn())
 const existsSyncMock = vi.hoisted(() => vi.fn(() => knobs.installed))

@@ -11,9 +11,6 @@ import { darkBaseExtensions, lightBaseExtensions } from '@kobato/inkling-interna
 import CodeMirror from '@uiw/react-codemirror'
 import React from 'react'
 
-// The CodeMirror-backed code editor: it loads in its own chunk behind the card's
-// lazy boundary, so this module must only be reached through React.lazy.
-
 const languageMap = new Map<string, () => LanguageSupport>([
   ['javascript', javascript],
   ['js', javascript],
@@ -36,8 +33,6 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
   const viewRef = React.useRef<EditorView | null>(null)
   const codeRef = React.useRef(code)
 
-  // Keep a ref to the latest code prop so the unmount cleanup can compare
-  // against it and avoid triggering a Lexical update when nothing changed.
   React.useEffect(() => {
     codeRef.current = code
   }, [code])

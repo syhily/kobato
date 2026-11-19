@@ -10,9 +10,6 @@ export interface LabelledRadioProps {
   disabled?: boolean
 }
 
-// Base UI puts the passed `id` on a hidden native `<input type="radio">` (the visible
-// `<span role="radio">` gets a generated one), so `htmlFor` activates the control
-// natively; `aria-labelledby` names the visible span.
 export function LabelledRadio({ id, value, label, description, disabled }: LabelledRadioProps) {
   return (
     <div className="flex items-start gap-3">
@@ -35,7 +32,6 @@ export interface LabelledRadioCardProps {
   active: boolean
 }
 
-// The whole card is the `<label>`; same Base UI wiring as LabelledRadio.
 export function LabelledRadioCard({ id, value, label, description, active }: LabelledRadioCardProps) {
   return (
     <label

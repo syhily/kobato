@@ -5,10 +5,6 @@ import { seedMetric } from '@kobato/test/db.ts'
 import { regularSession } from '@kobato/test/session.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The comments/critical split must keep `loadComments`, `queryLikes`,
-// `loadSidebarData`, and the ETag fingerprint parallel: 50ms injected into each
-// still finishes under ~100ms wall clock.
-
 vi.mock('@kobato/server/domains/comments/services/shared.ts', () => ({
   ensureCommentPage: vi.fn(async () => seedMetric()),
 }))

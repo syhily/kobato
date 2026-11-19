@@ -40,7 +40,6 @@ export async function findUserById(db: Database, id: number): Promise<User | nul
   return rows[0] ?? null
 }
 
-// Sync (node:sqlite): called inside the last-admin guard transactions.
 export function findUserByIdForUpdate(db: Database, id: number): User | null {
   const rows = db.select().from(user).where(eq(user.id, id)).limit(1).all()
   return rows[0] ?? null
@@ -83,10 +82,6 @@ export async function hasRegisteredAccount(db: Database, email: string): Promise
   return rows.length > 0
 }
 
-/**
- * Bulk fetch of users by id list. Rows come back in engine order —
- * the caller indexes by `id`.
- */
 export async function findUsersByIds(db: Database, ids: number[]): Promise<User[]> {
   if (ids.length === 0) {
     return []
@@ -126,7 +121,6 @@ export async function hashAdminPassword(password: string): Promise<string> {
   return bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
 }
 
-// Sync (node:sqlite): hashing must happen outside the transaction (bcrypt is async).
 export function insertAdmin(
   db: Database,
   name: string,
@@ -148,7 +142,6 @@ export function insertAdmin(
   return db.insert(user).values(admin).returning(safeUserColumns).all()
 }
 
-// Sync (node:sqlite): called inside the invite transaction.
 export function insertAuthor(db: Database, name: string, email: string): User[] {
   const author: NewUser = {
     name,
@@ -195,13 +188,11 @@ export async function updateLastLogin(db: Database, id: number, ip: string, user
 export interface UserUpdate {
   name?: string
   email?: string
-  // `null` clears the stored value; `undefined` leaves the column untouched.
   link?: string | null
   password?: string
   role?: 'admin' | 'author' | 'visitor' | null
   badgeName?: string | null
   badgeColor?: string | null
-  // `null` clears the manual override (back to auto-derived); `undefined` leaves the column untouched.
   badgeTextColor?: string | null
   receiveEmail?: boolean
   loginMethod?: LoginMethod
@@ -210,7 +201,6 @@ export interface UserUpdate {
 const BCRYPT_HASH_RE = /^\$2[aby]?\$\d+\$/
 
 export async function updateUserById(db: Database, id: number, patch: UserUpdate): Promise<User | null> {
-  // Callers must pass a bcrypt hash, never plaintext.
   if (patch.password !== undefined && patch.password !== '' && !BCRYPT_HASH_RE.test(patch.password)) {
     throw new Error('updateUserById: password must be a bcrypt hash, not plaintext')
   }
@@ -218,7 +208,6 @@ export async function updateUserById(db: Database, id: number, patch: UserUpdate
   return updated[0] ?? null
 }
 
-// Sync (node:sqlite): called inside the last-admin guard transaction and the invite rollback path.
 export function softDeleteUserById(db: Database, id: number): boolean {
   const updated = db
     .update(user)
@@ -243,7 +232,6 @@ export async function setUserMuted(db: Database, id: number, muted: boolean): Pr
   return updated[0] ?? null
 }
 
-// Sync (node:sqlite): called inside the last-admin guard transactions.
 export function countAdmins(db: Database): number {
   const rows = db
     .select({ count: count() })
@@ -253,7 +241,6 @@ export function countAdmins(db: Database): number {
   return rows[0]?.count ?? 0
 }
 
-// Sync (node:sqlite): called inside the last-admin guard transaction.
 export function updateUserRole(db: Database, id: number, role: 'admin' | 'author' | 'visitor' | null): User | null {
   const updated = db.update(user).set({ role }).where(eq(user.id, id)).returning().all()
   return updated[0] ?? null

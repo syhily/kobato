@@ -37,9 +37,7 @@ export function LinkActionToolbarWithSearch({ anchorElem, href, onClose }: LinkA
         try {
           const target = isInternalUrl(updatedHref, siteUrl) ? 'internal' : 'external'
           trackEvent('Link dropdown: URL entered', { context: 'text', target })
-        } catch {
-          /* noop */
-        }
+        } catch {}
       }
     })
   }

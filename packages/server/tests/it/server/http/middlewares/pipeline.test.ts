@@ -12,8 +12,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const { buildLoadContext } = await import('@kobato/server/http/middleware-pipeline.ts')
 
-// Real hydration against the harness db (no getDb/hydrate doubles); the stub carries
-// the canonical context fields plus the pass-through handles (`db` / `cspNonce`).
 const db = getTestDb()
 
 function makeContextStub(overrides: Record<string, unknown> = {}) {
@@ -36,7 +34,6 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
 describe('middleware-pipeline / buildLoadContext', () => {
   beforeEach(async () => {
     await clearAllTables(db)
-    // Pre-install state so the real hydrate re-reads the setting table, not the seeded bundle.
     resetBlogSettingsForTests()
   })
 
@@ -57,7 +54,6 @@ describe('middleware-pipeline / buildLoadContext', () => {
 
     const context = await buildLoadContext(makeContextStub())
 
-    // Hydration wrote the snapshot before the context returned — loaders read sections synchronously.
     expect(context).toBeDefined()
     const bundle = getBlogSettingsBundleSync()
     expect(bundle?.siteIdentity?.title).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
@@ -70,7 +66,6 @@ describe('middleware-pipeline / buildLoadContext', () => {
   })
 
   it('does not swallow a hydration failure — it propagates so the request becomes a 500', async () => {
-    // Real failure mode: the db handle is closed underneath the hydration query.
     const closed = createTestDatabaseFile()
     closeDatabase(closed)
 
@@ -81,7 +76,6 @@ describe('middleware-pipeline / buildLoadContext', () => {
     const c = makeContextStub()
     const context = await buildLoadContext(c)
 
-    // The provider carries the canonical RequestContext itself — the CSP nonce rides inside it.
     expect(context.get(requestContext)).toBe(c.var.requestContext)
     expect(context.get(requestContext)?.cspNonce).toBe('test-nonce-123')
   })

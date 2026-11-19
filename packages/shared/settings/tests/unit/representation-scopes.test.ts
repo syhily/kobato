@@ -51,7 +51,6 @@ describe('settings/representation-scopes — dependency table', () => {
   it('invalidation is section-scoped, not global', () => {
     const base = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)
 
-    // Unrelated saves move nothing.
     for (const overrides of [
       { security: { ...TEST_BLOG_SETTINGS_BUNDLE.security!, csrf: { enabled: false, exemptPaths: [] } } },
       { backup: { ...TEST_BLOG_SETTINGS_BUNDLE.backup!, retention: { enabled: true, days: 90 } } },
@@ -60,7 +59,6 @@ describe('settings/representation-scopes — dependency table', () => {
       expect(representationRevisionsFor(clone(overrides))).toEqual(base)
     }
 
-    // A locale/identity save moves every public representation.
     const general = representationRevisionsFor(
       clone({
         siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'zh-TW', title: 'Changed' },
@@ -70,7 +68,6 @@ describe('settings/representation-scopes — dependency table', () => {
       expect(general[scope]).not.toBe(base[scope])
     }
 
-    // Calendar-only inputs do not touch the feed/OG.
     const sidebar = representationRevisionsFor(
       clone({
         sidebar: {
@@ -85,8 +82,6 @@ describe('settings/representation-scopes — dependency table', () => {
     expect(sidebar.feed).toBe(base.feed)
     expect(sidebar.og).toBe(base.og)
 
-    // Comments-only inputs move the detail/listing shells (comment UI copy) but
-    // not the feed.
     const comments = representationRevisionsFor(
       clone({
         comments: {
@@ -102,19 +97,15 @@ describe('settings/representation-scopes — dependency table', () => {
     const bundle = TEST_BLOG_SETTINGS_BUNDLE
     const first = representationRevisionsFor(bundle)
 
-    // Same snapshot object → the SAME frozen object (no re-hash per scope/request).
     expect(representationRevisionsFor(bundle)).toBe(first)
     expect(Object.isFrozen(first)).toBe(true)
 
-    // Pre-install is a constant.
     expect(representationRevisionsFor(null)).toBe(representationRevisionsFor(null))
 
-    // A structurally equal CLONE is a different object → recomputed, same values.
     const cloneResult = representationRevisionsFor(structuredClone(bundle))
     expect(cloneResult).not.toBe(first)
     expect(cloneResult).toEqual(first)
 
-    // A refresh replaces the snapshot object → new reference, changed scope.
     const refreshed = clone({
       content: {
         ...TEST_BLOG_SETTINGS_BUNDLE.content!,
@@ -132,7 +123,6 @@ describe('settings/representation-scopes — dependency table', () => {
     const structurallyEqual = representationRevisionsFor(structuredClone(TEST_BLOG_SETTINGS_BUNDLE))
     expect(structurallyEqual).toEqual(first)
 
-    // A "restart" (fresh module evaluation) must reuse the same cache keys.
     vi.resetModules()
     const { representationRevisionsFor: fresh } = await import('@kobato/settings/representation-scopes.ts')
     expect(fresh(TEST_BLOG_SETTINGS_BUNDLE)).toEqual(first)
@@ -145,8 +135,6 @@ describe('settings/representation-scopes — dependency table', () => {
   })
 
   it('covers every settings read on a public render surface', () => {
-    // Scan the public render perimeter: any section read there must be part of
-    // at least one scope's dependency list, or the cache key would miss it.
     const roots = [
       'packages/server/src/render',
       'packages/server/src/http/loaders',
@@ -184,8 +172,6 @@ describe('settings/representation-scopes — dependency table', () => {
 
     expect(found.size).toBeGreaterThan(0)
     for (const key of found) {
-      // `requireBlogSettingsSection` takes a BUNDLE key (`siteIdentity`), the
-      // dependency table speaks SECTION names (`general`).
       const section = SECTION_BY_BUNDLE_KEY.get(key) ?? (key as SettingsSection)
       expect(
         ALL_DEP_SECTIONS.has(section),

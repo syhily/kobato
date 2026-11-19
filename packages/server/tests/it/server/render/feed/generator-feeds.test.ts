@@ -12,13 +12,10 @@ import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// `generateFeeds` against the real engine: the RSS/Atom envelope, `selectFeedPosts` wiring
-// (scope, size, miss → empty-feed policy), and the state → projections → columns → feed XML path.
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // The projections absolutize media srcs against siteIdentity.website.
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
@@ -106,7 +103,6 @@ describe('render/feed/generator — generateFeeds', () => {
   })
 
   it("lands a code block's code text in the feed XML (RN-1 regression)", async () => {
-    // sanitize-html drops CDATA-wrapped markup, so the code text must survive the feed pass.
     await seedPost({
       slug: 'with-code',
       title: 'With Code',
@@ -126,7 +122,6 @@ describe('render/feed/generator — generateFeeds', () => {
     expect(itemCount(result.rss)).toBe(1)
     expect(result.rss).toContain('const answer = 42;')
     expect(result.atom).toContain('const answer = 42;')
-    // The feed variant never carries the Shiki markup.
     expect(result.rss).not.toContain('shiki')
   })
 
@@ -152,14 +147,11 @@ describe('render/feed/generator — generateFeeds', () => {
 
     const result = await generateFeeds(db, { locale: 'zh-CN' })
     expect(itemCount(result.rss)).toBe(1)
-    // Math → escaped TeX pre/code, never MathML/SVG.
     expect(result.rss).toContain('E=mc^2')
     expect(result.rss).not.toContain('<math>')
-    // Two-column flattens to left + right panes.
     expect(result.rss).toContain('左栏')
     expect(result.rss).toContain('右栏')
     expect(result.rss).not.toContain('data-pt-two-column')
-    // Music player → static figure with origin-absolutized media srcs.
     expect(result.rss).toContain('🎵 Song — Artist')
     expect(result.rss).toContain('https://example.com/storage/music/song.mp3')
   })

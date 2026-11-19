@@ -20,8 +20,6 @@ import { makeMemoryBackend } from '@kobato/test/memory-storage.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `validateS3Config` (settings lock guard) loads the SDK lazily — mock it so
-// probe outcomes are deterministic without network access.
 const s3Probe = vi.hoisted(() => ({ send: vi.fn<(...args: unknown[]) => Promise<unknown>>() }))
 vi.mock('@aws-sdk/client-s3', () => ({
   S3Client: class {
@@ -37,8 +35,6 @@ vi.mock('@aws-sdk/client-s3', () => ({
   },
 }))
 
-// The registry seam must point at memory backends BEFORE the migration module
-// resolves backends — set the seam first, then import the module under test.
 const localMem = makeMemoryBackend({ driver: 'local' })
 const s3Mem = makeMemoryBackend()
 const targetMem = makeMemoryBackend()
@@ -84,8 +80,6 @@ function bundleWithStorage(storage: Partial<AssetsSection['storage']>): BlogSett
   }
 }
 
-/** Same collaborators the composition root wires in db-lifecycle; tests override
- *  `postSwitchBackfill` to exercise failure handling. */
 function wireTestHooks(postSwitchBackfill: (hookDb: Database) => Promise<unknown> = backfillStorageAssetUrls): void {
   wireS3Migration({
     persistFlippedStorage: async (hookDb, storage) => {
@@ -110,8 +104,6 @@ beforeEach(async () => {
   __setStorageBackendForTests('local', localMem.backend)
   __setStorageBackendForTests('s3', s3Mem.backend)
   __setS3MigrationTargetFactoryForTests(() => targetMem.backend)
-  // The migration binds its S3 SOURCE to the pre-flip config snapshot, so the registry's
-  // static `s3` seam does not cover it.
   __setS3MigrationSourceFactoryForTests(() => s3Mem.backend)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   s3Probe.send.mockReset()
@@ -134,8 +126,6 @@ function seedObject(target: { store: Map<string, { body: Buffer; contentType: st
   target.store.set(key, { body: Buffer.from(`body-${key}`), contentType: 'application/octet-stream' })
 }
 
-/** Hydration only yields a bundle when BOTH the general and assets rows exist — seed them
- *  before any test that asserts on the post-switch refreshed snapshot. */
 async function seedSettingsRows(bundle: BlogSettingsBundle): Promise<void> {
   await db.insert(setting).values({ scope: 'blog.general', data: bundle.siteIdentity })
   await db.insert(setting).values({ scope: 'blog.assets', data: bundle.assets })
@@ -312,9 +302,6 @@ describe('storage/s3-migration — s3-to-s3', () => {
     await seedSettingsRows(TEST_BLOG_SETTINGS_BUNDLE)
     seedObject(s3Mem, 'images/old-1.jpg')
 
-    // Observe which config the source backend is bound to, and simulate a write
-    // landing on the OLD bucket during the switch window (the live snapshot's
-    // bucket becoming 'kobato-new' marks the flip).
     let sourceBucket: string | null = null
     let lateWriteInjected = false
     __setS3MigrationSourceFactoryForTests((config) => {
@@ -346,8 +333,6 @@ describe('storage/s3-migration — s3-to-s3', () => {
   it('records a mismatching verification when the target holds smaller pre-existing objects', async () => {
     await seedSettingsRows(TEST_BLOG_SETTINGS_BUNDLE)
     seedObject(s3Mem, 'images/dup.jpg')
-    // Same key already on the target but with fewer bytes: the copy skips it
-    // (existence check), so the final comparison cannot match.
     targetMem.store.set('images/dup.jpg', { body: Buffer.from('x'), contentType: 'application/octet-stream' })
 
     await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
@@ -385,8 +370,6 @@ describe('storage/s3-migration — header propagation', () => {
       contentType: 'image/jpeg',
       cacheControl: 'public, max-age=60',
     })
-    // A private prefix with a stored header keeps THAT header — the prefix
-    // rule only applies when the source cannot report one.
     expect(targetMem.store.get('backup/v.db.gz')).toMatchObject({
       contentType: 'application/gzip',
       cacheControl: 'private, max-age=1',
@@ -441,7 +424,6 @@ describe('storage/s3-migration — resume / cancel / single-flight', () => {
     const status = await getStorageMigrationStatus(db)
     expect(status.phase).toBe('completed')
     for (const key of ['images/ok-1.jpg', 'images/bad.jpg', 'images/ok-2.jpg']) {
-      // ok-1 was copied by the first run; the resume re-lists and copies the rest.
       expect(broken.store.has(key) || targetMem.store.has(key)).toBe(true)
     }
   })
@@ -509,9 +491,6 @@ describe('storage/s3-migration — resume / cancel / single-flight', () => {
   })
 
   it('persists the latest checkpoint cursor when the run fails', async () => {
-    // Two listing batches (LIST_BATCH_SIZE = 200): the first completes and checkpoints,
-    // the second fails — the persisted cursor must be the first batch's last key, not
-    // the original (null) resume point.
     for (let i = 0; i < 200; i += 1) {
       seedObject(s3Mem, `images/obj-${String(i).padStart(3, '0')}.jpg`)
     }
@@ -533,8 +512,6 @@ describe('storage/s3-migration — resume / cancel / single-flight', () => {
   })
 
   it('stops picking up new keys once a copy failure is observed', async () => {
-    // The failing key sorts first; sibling workers block on a gate until the failure
-    // has propagated, so any key picked up AFTER the abort would be observable.
     seedObject(s3Mem, 'images/aaa-fail.jpg')
     for (let i = 0; i < 10; i += 1) {
       seedObject(s3Mem, `images/obj-${String(i).padStart(2, '0')}.jpg`)
@@ -550,16 +527,12 @@ describe('storage/s3-migration — resume / cancel / single-flight', () => {
     __setS3MigrationTargetFactoryForTests(() => broken.backend)
 
     await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
-    // The failing key exhausts its 3 attempts in ~1s; release the blocked
-    // in-flight copies afterwards so the run can settle.
     setTimeout(() => releaseGate(), 1_500)
     await __awaitStorageMigrationForTests()
 
     const status = await getStorageMigrationStatus(db)
     expect(status.phase).toBe('failed')
     expect(status.error).toContain('images/aaa-fail.jpg')
-    // 4 workers: one held the failing key, the other three were mid-copy when
-    // the failure landed — the remaining 7 keys were never picked up.
     expect(broken.putKeys).toHaveLength(3)
   })
 
@@ -651,8 +624,6 @@ describe('settings core — assets storage lock', () => {
   it('rejects a locked-state patch that empties a required field (no probe bypass)', async () => {
     await seedSettingsRows(TEST_BLOG_SETTINGS_BUNDLE)
 
-    // accessKeyId / secretAccessKey are exempt fields, but clearing one makes the enabled
-    // config incomplete — reject instead of persisting unprobed.
     await expect(updateBlogSettingsSection(db, 'assets', { storage: { accessKeyId: '' } }, null)).rejects.toMatchObject(
       { name: 'DomainError', code: 'BAD_REQUEST' },
     )
@@ -685,8 +656,6 @@ describe('settings core — assets storage lock', () => {
       updatedAt: new Date(),
     })
 
-    // The probe is injected by the perimeter — pass the real storage-domain
-    // predicate, exactly as the settings controller wires it.
     await expect(
       updateBlogSettingsSection(db, 'assets', { storage: { bucket: 'x' } }, null, {
         isStorageMigrationActive: () => isStorageMigrationActive(db),
@@ -818,8 +787,6 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
   })
 
   it('copies via getStream when the source backend lacks getStreamWithMeta', async () => {
-    // s3-to-s3 binds the source through the factory seam — deleting getStreamWithMeta
-    // there forces the getStream + key-policy fallback.
     await seedSettingsRows(TEST_BLOG_SETTINGS_BUNDLE)
     seedObject(s3Mem, 'images/a.jpg')
 

@@ -3,9 +3,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { Buffer } from 'node:buffer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The canvas font single-flight (`ensureCanvasFont`) slot loader runs for real — only its
-// leaf dependencies (settings, fs, the native font registry) are mocked.
-
 const mocks = vi.hoisted(() => ({
   access: vi.fn<(path: string) => Promise<void>>(),
   readFile: vi.fn<(path: string) => Promise<Buffer>>(),
@@ -27,7 +24,6 @@ vi.mock('@napi-rs/canvas', () => ({
 
 const TTF_BUFFER = Buffer.from('fake-ttf-bytes')
 
-// The slot loader re-reads the settings snapshot on every call.
 function seedFontFamilies(families: { og?: string; calendar?: string }) {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -42,10 +38,8 @@ function seedFontFamilies(families: { og?: string; calendar?: string }) {
 beforeEach(() => {
   vi.clearAllMocks()
   resetCanvasFont()
-  // Drop the in-process buffer cache so readFile counts are deterministic.
   resetFontCache()
   mocks.fontsHas.mockReturnValue(false)
-  // Default fs state: a .ttf exists for every slot and reads fine.
   mocks.access.mockResolvedValue(undefined)
   mocks.readFile.mockResolvedValue(TTF_BUFFER)
 })
@@ -78,12 +72,10 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('does not memoize the null path — a later configured family is picked up', async () => {
-    // Family not configured yet: null result, no registration.
     await expect(ensureCanvasFont('calendar')).resolves.toBeNull()
     expect(mocks.readFile).not.toHaveBeenCalled()
     expect(mocks.fontsRegister).not.toHaveBeenCalled()
 
-    // Admin configures the family afterwards: the very next render loads it.
     seedFontFamilies({ calendar: 'OPPO Serif' })
     const slot = await ensureCanvasFont('calendar')
     expect(slot).toEqual({ buffer: TTF_BUFFER, family: 'OPPO Serif' })
@@ -91,13 +83,11 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('assigns the slot even when GlobalFonts already has the family (drift regression)', async () => {
-    // The slot must be assigned even when the registry already knows the family.
     seedFontFamilies({ calendar: 'OPPO Serif' })
     mocks.fontsHas.mockReturnValue(true)
 
     const slot = await ensureCanvasFont('calendar')
     expect(slot).toEqual({ buffer: TTF_BUFFER, family: 'OPPO Serif' })
-    // No re-registration; the slot survives for the fast path.
     expect(mocks.fontsRegister).not.toHaveBeenCalled()
     const again = await ensureCanvasFont('calendar')
     expect(again).toEqual(slot)
@@ -115,7 +105,6 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
 
   it('does not commit an in-flight load that raced a reset (font-upload regression)', async () => {
     seedFontFamilies({ og: 'OPPO Sans' })
-    // Hold the read so the upload's invalidation lands mid-flight.
     let releaseRead!: (buffer: Buffer) => void
     mocks.readFile.mockImplementationOnce(
       () =>
@@ -125,19 +114,15 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     )
 
     const pending = ensureCanvasFont('og')
-    // Let the flight reach readFile (the fs probes resolve as microtasks).
     await new Promise((resolve) => setImmediate(resolve))
     expect(mocks.readFile).toHaveBeenCalledTimes(1)
-    // The upload path resets while the old read is still in flight.
     resetFontCache()
     resetCanvasFont('og')
     releaseRead(TTF_BUFFER)
 
-    // The stale result must not commit: null result, no registration.
     await expect(pending).resolves.toBeNull()
     expect(mocks.fontsRegister).not.toHaveBeenCalled()
 
-    // Next render loads the NEW bytes — the raced buffer must not be cached.
     const newBuffer = Buffer.from('new-ttf-bytes')
     mocks.readFile.mockResolvedValue(newBuffer)
     const slot = await ensureCanvasFont('og')
@@ -148,7 +133,6 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
 
   it('does not join an in-flight load from a different pinned settings generation', async () => {
     seedFontFamilies({ og: 'OPPO Sans' })
-    // Hold the OLD generation's read so the newer request arrives mid-flight.
     let releaseOld!: (buffer: Buffer) => void
     mocks.readFile.mockImplementationOnce(
       () =>
@@ -161,7 +145,6 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     await new Promise((resolve) => setImmediate(resolve))
     expect(mocks.readFile).toHaveBeenCalledTimes(1)
 
-    // A request pinned to a newer snapshot (different font family) arrives.
     const newer = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       fonts: { ...TEST_BLOG_SETTINGS_BUNDLE.fonts!, og: { family: 'OPPO Serif' } },
@@ -173,13 +156,11 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     expect(mocks.readFile).toHaveBeenCalledTimes(2)
 
     releaseOld(TTF_BUFFER)
-    // The abandoned generation must not commit (its render keeps the fallback).
     await expect(pendingOld).resolves.toBeNull()
     await expect(pendingNew).resolves.toEqual({ buffer: serifBuffer, family: 'OPPO Serif' })
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
     expect(mocks.fontsRegister).toHaveBeenCalledWith(serifBuffer, 'OPPO Serif')
 
-    // The new family is the live slot for later requests on that generation.
     mocks.fontsHas.mockImplementation((family) => family === 'OPPO Serif')
     await expect(ensureCanvasFont('og', newer)).resolves.toEqual({ buffer: serifBuffer, family: 'OPPO Serif' })
   })
@@ -193,11 +174,10 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     expect(mocks.readFile).toHaveBeenCalledTimes(2)
 
     resetCanvasFont('og')
-    // Fast path is gone for og → it re-enters the load; calendar is untouched.
     mocks.fontsHas.mockReturnValue(false)
     await ensureCanvasFont('og')
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
-    expect(mocks.readFile).toHaveBeenCalledTimes(2) // buffer cache survives
+    expect(mocks.readFile).toHaveBeenCalledTimes(2)
   })
 
   it('drops the cached slot when the settings family changes — edit takes effect without restart', async () => {
@@ -205,19 +185,15 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     await ensureCanvasFont('og')
     expect(mocks.fontsRegister).toHaveBeenCalledWith(TTF_BUFFER, 'OPPO Sans')
 
-    // Fast path is now armed: the registry has the old family.
     mocks.fontsHas.mockImplementation((family) => family === 'OPPO Sans')
 
-    // Admin edits the family in settings: the very next render reloads.
     seedFontFamilies({ og: 'OPPO Serif' })
     const slot = await ensureCanvasFont('og')
     expect(slot).toEqual({ buffer: TTF_BUFFER, family: 'OPPO Serif' })
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(2)
     expect(mocks.fontsRegister).toHaveBeenLastCalledWith(TTF_BUFFER, 'OPPO Serif')
-    // Same file path → the buffer cache survives; only registration re-runs.
     expect(mocks.readFile).toHaveBeenCalledTimes(1)
 
-    // The next call fast-paths on the NEW family.
     mocks.fontsHas.mockImplementation((family) => family === 'OPPO Serif')
     const again = await ensureCanvasFont('og')
     expect(again).toEqual(slot)
@@ -229,11 +205,9 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     await ensureCanvasFont('og')
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
 
-    // Family cleared: stale slot dropped, render resolves null.
     mocks.fontsHas.mockReturnValue(true)
     seedFontFamilies({ og: '' })
     await expect(ensureCanvasFont('og')).resolves.toBeNull()
-    // Empty family short-circuits disk access; no slot is retained.
     expect(mocks.readFile).toHaveBeenCalledTimes(1)
     await expect(ensureCanvasFont('og')).resolves.toBeNull()
   })

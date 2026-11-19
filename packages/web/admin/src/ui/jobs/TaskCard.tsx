@@ -55,7 +55,6 @@ function BackupAction() {
     ...orpcQuery.admin.backup.create.mutationOptions(),
     onSuccess: async (result) => {
       toast.success(t('admin.tasks.backupCreated'), { description: result.fileName })
-      // The manual run wrote a `job_run` row and a new backup file — refresh both surfaces.
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.jobs.key() })
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.backup.key() })
     },
@@ -95,7 +94,6 @@ function MigrationActions({ migration }: { migration: StorageMigrationStatus }) 
 
   const inFlight = isStorageMigrationInFlightPhase(migration.phase)
   const resumable = migration.phase === 'failed' || migration.phase === 'cancelled' || migration.phase === 'interrupted'
-  // "Start new migration" only when no migration is in progress; in-flight/interrupted get the cancel/resume buttons instead.
   const canStartNew = !inFlight && migration.phase !== 'interrupted'
 
   return (

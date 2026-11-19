@@ -20,9 +20,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The env-beacon batcher writes `device_env_client` on its own dead-letter file/format,
-// separate from the access-log batcher and its rows.
-
 const EVENT_ID = '00000000-0000-4000-8000-0000000000be'
 
 function makeBeacon(overrides: Partial<DeviceEnvBeacon> = {}): DeviceEnvBeacon {
@@ -145,7 +142,6 @@ describe('DeviceEnvBeaconBatcher', () => {
     pushDeviceEnvBeacon(makeBeacon({ viewportW: 100 }))
     await flushDeviceEnvBeacons()
 
-    // A navigation replay of the stored id rides the same flush as a new event.
     pushDeviceEnvBeacon(makeBeacon({ viewportW: 200 }))
     pushDeviceEnvBeacon(makeBeacon({ eventId: otherId, viewportW: 300 }))
     const result = await flushDeviceEnvBeacons()

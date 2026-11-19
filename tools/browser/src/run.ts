@@ -1,9 +1,3 @@
-// Real-browser journey suite (`pnpm run test:browser`). Two modes:
-// external — KOBATO_BROWSER_BASE_URL points at an already-running instance,
-// admin credentials from the same env block; managed — no URL, boot the built
-// SEA binary against per-run temp dirs. Nothing reads a real kobato config or
-// a secret from the user's machine.
-
 import type { SmokeServer } from '@kobato/harness/sea-instance.ts'
 
 import { bootServer, ensureBinaryExists, waitForExit, waitForHttp } from '@kobato/harness/sea-instance.ts'
@@ -97,8 +91,6 @@ export async function runBrowserSuite(options: BrowserSuiteOptions = {}): Promis
   }
 
   let status = 1
-  // Never fail() from here on: an immediate exit would skip the finally below
-  // and leak the server process plus the mkdtemp root. Throw instead.
   let server: SmokeServer | null = null
   try {
     server = await bootServer(binaryPath, dirs, env, serverLogPath)
@@ -110,8 +102,6 @@ export async function runBrowserSuite(options: BrowserSuiteOptions = {}): Promis
     server.child.kill('SIGTERM')
     await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
 
-    // The admin signs in through the real form — seed a bcrypt hash of a
-    // per-run random password; the settings snapshot loads at boot, so restart.
     const adminEmail = 'browser-admin@kobato.local'
     const adminPassword = randomBytes(12).toString('hex')
     await seedInstalledInstance(databases.database, {

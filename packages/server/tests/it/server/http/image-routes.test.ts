@@ -10,15 +10,10 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `/images/*.png` param extraction against the real engine (seeded rows,
-// rate limiter, kv cache); seams: avatar fetch, OG canvas, calendar renderer.
-// Hono folds `.png` into the param NAME — routes need explicit `{[^/]+\\.png}` constraints.
-
 vi.mock('@kobato/server/domains/comments/services/avatar.ts', async (importActual) => {
   const actual = await importActual<typeof import('@kobato/server/domains/comments/services/avatar.ts')>()
   return {
     ...actual,
-    // Echo stub: the extracted hash + size are observable in the response body.
     serveAvatar: vi.fn(async (_db: unknown, hash: string, size: number) => ({
       kind: 'png' as const,
       buffer: Buffer.from(`${hash}:${size}`),
@@ -45,7 +40,6 @@ const db = getTestDb()
 
 const { imagesRouter } = await import('@kobato/server/http/resources/images.ts')
 
-// The canonical request context: `clientAddress`, `db` and the lazy localization pair.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', makeRequestContext({ request: new Request(c.req.url), db }))
@@ -85,7 +79,6 @@ describe('imagesRouter avatar', () => {
     const res = await app.request('/images/avatar/abcdef0123456789.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
-    // No `?s=` → the default size, rounded up to its cache bucket (128).
     expect(await res.text()).toBe('abcdef0123456789:128')
   })
 

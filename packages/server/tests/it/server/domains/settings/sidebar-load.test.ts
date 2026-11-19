@@ -8,8 +8,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { adminSession, regularSession } from '@kobato/test/session.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Real latestComments digest — read straight from SQLite, cleared with
-// every other table in `beforeEach`.
 const db = getTestDb()
 
 beforeEach(async () => {

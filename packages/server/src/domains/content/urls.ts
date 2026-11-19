@@ -9,10 +9,6 @@ export function entityPermalink(type: 'post' | 'page', slug: string): string {
   return type === 'post' ? `/posts/${slug}` : `/${slug}`
 }
 
-/**
- * Fully-qualified URL with trailing slash — the shape stored as `page_key`.
- * Built at email-send time so it reflects the current website and slug.
- */
 export function entityCommentUrl(type: 'post' | 'page', slug: string): string {
   const website = requireBlogSettingsSection('siteIdentity').website
   return joinUrl(website, entityPermalink(type, slug), '/')
@@ -32,7 +28,6 @@ export function canonicalPostPath(requestedSlug: string | undefined, canonicalSl
   return requestedSlug !== undefined && requestedSlug !== canonicalSlug ? `/posts/${canonicalSlug}` : undefined
 }
 
-// Page 1 of a listing is the bare root URL (no `/page/1` suffix) for canonical collapse.
 export function pagePath(rootPath: string, pageNum: number): string {
   if (pageNum <= 1) {
     return rootPath

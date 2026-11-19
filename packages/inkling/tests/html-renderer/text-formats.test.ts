@@ -125,9 +125,6 @@ describe('Format combinations', function () {
     }),
   )
 
-  // Tag open/close order must follow nesting, not the content-format
-  // declaration order; the pinned output guards the interleaved-tag regression
-  // (<p>(<strong><em>italic+bold</em><em> italic</em></strong>)</p>)
   it(
     'italic+bold different order',
     shouldRender({

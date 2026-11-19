@@ -30,7 +30,6 @@ async function decrypt(ciphertext: Buffer, password: string): Promise<Buffer> {
   return collect(Readable.from([ciphertext]).pipe(createBackupDecipher(password)))
 }
 
-/** Capture the decryption failure for kind/message assertions. */
 async function decryptError(source: Buffer | Readable, password: string): Promise<BackupDecryptionError> {
   const stream = Buffer.isBuffer(source) ? Readable.from([source]) : source
   const error: unknown = await collect(stream.pipe(createBackupDecipher(password))).then(
@@ -53,10 +52,8 @@ describe('backup crypto', () => {
   })
 
   it('round-trips a payload spanning multiple chunks', async () => {
-    // 4 MiB chunk size: 9 MiB of random bytes crosses the boundary twice.
     const plaintext = randomBytes(9 * 1024 * 1024)
     const ciphertext = await encrypt(plaintext, 'chunked-password')
-    // Buffer.equals, not toEqual — vitest's deep equality walks 9 MiB byte by byte.
     expect((await decrypt(ciphertext, 'chunked-password')).equals(plaintext)).toBe(true)
   }, 30_000)
 
@@ -89,7 +86,6 @@ describe('backup crypto', () => {
     expect(plaintext.length).toBe(0)
   })
 
-  // Record layout: [u32 ctLen][1B flags][12B IV][ct][16B tag]; the file header is 28 bytes.
   const HEADER_BYTES = 28
   const RECORD_OVERHEAD = 4 + 1 + 12 + 16
 
@@ -105,7 +101,6 @@ describe('backup crypto', () => {
   }
 
   it('rejects reordered records (sequence numbers bind via AAD)', async () => {
-    // 5 MiB: one full 4 MiB record + a final record with the rest.
     const ciphertext = await encrypt(randomBytes(5 * 1024 * 1024), 'secret-password')
     const { header, records } = splitRecords(ciphertext)
     expect(records).toHaveLength(2)
@@ -125,7 +120,6 @@ describe('backup crypto', () => {
 
   it('rejects a forged giant record length up front, without buffering it (format failure)', async () => {
     const ciphertext = await encrypt(Buffer.from('sensitive', 'utf8'), 'secret-password')
-    // Claim a ~4 GiB record: the decipher must fail fast, not accumulate.
     ciphertext.writeUInt32BE(0xffffffff, HEADER_BYTES)
     const error = await decryptError(ciphertext, 'secret-password')
     expect(error.kind).toBe('format')
@@ -154,8 +148,6 @@ describe('backup crypto', () => {
   })
 
   it('rejects a stream whose FINAL record was stripped (format failure)', async () => {
-    // Exactly 4 MiB: one full non-final record + one empty final record — slicing off the
-    // tail leaves a stream that parses cleanly but never terminates; must report truncated.
     const ciphertext = await encrypt(randomBytes(4 * 1024 * 1024), 'secret-password')
     const { header, records } = splitRecords(ciphertext)
     expect(records).toHaveLength(2)
@@ -167,18 +159,14 @@ describe('backup crypto', () => {
   }, 30_000)
 
   it('rejects a tampered flags byte: FINAL forgery fails auth, an invalid value fails the format check', async () => {
-    // 5 MiB → records[0] is a full non-final record (flags byte at offset 4).
     const ciphertext = await encrypt(randomBytes(5 * 1024 * 1024), 'secret-password')
 
-    // 0 → 1: the record claims final, but the AAD (seq‖flags) then mismatches
-    // the tag — the GCM check fails as an auth error.
     const forgedFinal = Buffer.from(ciphertext)
     forgedFinal[HEADER_BYTES + 4] = 1
     const authError = await decryptError(forgedFinal, 'secret-password')
     expect(authError.kind).toBe('auth')
     expect(authError.message).toBe('The backup password is incorrect or the file is corrupted')
 
-    // 0 → 2: not a defined flag — rejected by the framing check before decryption.
     const invalidFlags = Buffer.from(ciphertext)
     invalidFlags[HEADER_BYTES + 4] = 2
     const formatError = await decryptError(invalidFlags, 'secret-password')
@@ -189,7 +177,6 @@ describe('backup crypto', () => {
   it('round-trips when the ciphertext arrives split mid-record', async () => {
     const plaintext = randomBytes(1024 * 1024 + 7)
     const ciphertext = await encrypt(plaintext, 'secret-password')
-    // Cut inside the first (only) record — the accumulator must reassemble it.
     const cut = HEADER_BYTES + 100
     const decrypted = await collect(
       Readable.from([ciphertext.subarray(0, cut), ciphertext.subarray(cut)]).pipe(

@@ -62,10 +62,6 @@ export type OrpcErrorCode =
   | 'BAD_GATEWAY'
   | 'SERVICE_UNAVAILABLE'
 
-/**
- * A localized `ORPCError` for gates and controllers that bypass the domain guard: the
- * descriptor rides `data`, so the client never has to know the copy.
- */
 export function localizedOrpcError(
   context: HandlerContext,
   code: OrpcErrorCode,
@@ -94,14 +90,11 @@ const domainErrorGuard = root.middleware(async ({ context, next }) => {
     if (error instanceof DomainError || error instanceof ActionFailure) {
       const translator = createServerTranslator(context.localization.locale)
       const translated = translateDomainError(error, translator)
-      // Failure headers (e.g. `Retry-After`) ride the bridge's `responseHeaders` channel.
       if (translated.headers) {
         new Headers(translated.headers).forEach((value, key) => {
           context.responseHeaders.append(key, value)
         })
       }
-      // The server-localized message names the failing fields; the descriptor and issue
-      // paths ride `data` for consumers that map fields.
       throw new ORPCError(error instanceof DomainError ? error.code : 'INTERNAL_SERVER_ERROR', {
         status: translated.status,
         message: summarizeApiError(translated, translator),
@@ -205,10 +198,6 @@ export const commentPostRateLimit = root.middleware(async ({ context, next }) =>
   return next({})
 })
 
-/**
- * Per-user reply throttle: the per-IP pool cannot stop one invited account from fanning
- * replies into every inbox and mailing the whole admin team. Requires `requireAuth`.
- */
 export const notificationReplyRateLimit = root.middleware(async ({ context, next }) => {
   if (context.viewer?.role === 'admin') {
     return next({})
@@ -227,8 +216,6 @@ export const passkeyGuard = root.middleware(({ next }) => {
   return next({})
 })
 
-// Single owner of the `__comment_tokens` parse → Set-Cookie dance; the write-back runs
-// in a `finally` so it survives throws.
 export interface CommentTokenCookieJar {
   cookie: CommentTokenCookie
   refreshed?: CommentTokenCookie
@@ -254,18 +241,6 @@ export const authedProc = root.use(requireAuth).use(domainErrorGuard)
 export const adminProc = root.use(requireRole('admin')).use(domainErrorGuard)
 export const authorProc = root.use(requireRole('author')).use(domainErrorGuard)
 
-// Contract-first bases — the `implement(contract)` counterparts of the four
-// procedure bases above, with the SAME guard order (auth gate outermost, the
-// domain-error translation innermost). A controller implements a
-// `@kobato/api` contract through these; `impl.<key>.handler(...)` carries the
-// contract's route/input/output, and `impl.router({ ... })` type-checks the
-// implementation against the full contract shape. Auth, CSRF, and trace stay
-// server-side — the contract package carries metadata only.
-//
-// The guards are wired through `implementerInternal(contract, config, middlewares)`
-// — the exact primitive `implement(...).use(...)` reduces to — because the
-// public `.use` over a generic contract widens into a procedure-vs-router
-// union TypeScript cannot call.
 export function implementPublic<T extends AnyContractRouter>(contract: T) {
   return implementerInternal<T, HandlerContext, HandlerContext>(contract, {}, [domainErrorGuard])
 }

@@ -12,9 +12,6 @@ const options = {
   },
 }
 
-// Serialized Lexical JSON nodes have varying shapes depending on node type.
-// Extend SerializedElementNode with recursive children and an index signature
-// for type-specific properties (tag, listType, url, src, text) from subclasses.
 type NodeJSON = SerializedElementNode & {
   children: NodeJSON[]
   [key: string]: unknown
@@ -411,7 +408,6 @@ describe('HTMLtoLexical', function () {
     })
 
     it('avoids invalid nesting of header nodes', function () {
-      // Google Docs uses spans for headings
       const lexical = htmlToLexical(
         `
                 <h1><span style="font-size: 26pt">Hello</span></h1>
@@ -567,7 +563,6 @@ describe('HTMLtoLexical', function () {
 
   describe('Custom nodes', function () {
     it('can convert <hr> into a card', function () {
-      // $insertNodes() doesn't work with just decorators, uses $appendNodes() instead
       const lexical = htmlToLexical('<hr>', options)
 
       assert.ok(lexical.root)
@@ -716,8 +711,6 @@ describe('HTMLtoLexical', function () {
       const lexical = htmlToLexical(html, options)
       assert.ok(lexical.root)
       assert.equal(lexical.root.children.length, 3)
-      // empty list item is left after extracting invalid children; removing
-      // it means fixing the denest transform without breaking general editing
       assert.equal(lexical.root.children[0].type, 'list')
       assert.equal(lexical.root.children[0].children[0].type, 'listitem')
       assert.equal(lexical.root.children[0].children[0].children.length, 0)
@@ -729,8 +722,6 @@ describe('HTMLtoLexical', function () {
   })
 
   describe('HTML from Lexical cards', function () {
-    // note: some cards are not intended to convert from html: markdown and other web-only cards
-    //  this test pins that parser methods do not intercept cards they are not intended to handle
     it('can convert a post containing one of each card type', function () {
       const html = `
             <figure class="inkling-card inkling-image-card inkling-card-hascaption">

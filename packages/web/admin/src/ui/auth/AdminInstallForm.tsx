@@ -12,7 +12,6 @@ import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
-// Must match @/ui/admin/auth/shared.
 const inputClasses =
   'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
@@ -37,7 +36,6 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
   const [waitStatus, setWaitStatus] = useState<'polling' | 'timeout'>('polling')
   const pollAbortRef = useRef<AbortController | null>(null)
 
-  // Restore POST goes through the shared upload adapter; acceptance kicks off the restart poll.
   const { upload: uploadRestore, pending: isRestoring } = useFileUpload({
     endpoint: '/api/setup/restore',
     credentials: 'include',
@@ -58,7 +56,6 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
     },
   })
 
-  // Abort any in-flight polling when the component unmounts.
   useEffect(() => {
     return () => {
       pollAbortRef.current?.abort()
@@ -94,9 +91,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
           window.location.href = '/admin/signin'
           return
         }
-      } catch {
-        // Network errors during restart are expected; keep polling.
-      }
+      } catch {}
 
       await new Promise<void>((resolve) => setTimeout(resolve, INTERVAL_MS))
     }

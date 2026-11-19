@@ -7,13 +7,6 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { Comments } from '@kobato/web-public/ui/comments/Comments.tsx'
 // @vitest-environment happy-dom
-/**
- * Clicking 回复 on a comment (the PC flow): the reply form moves under the
- * target comment AND lands with the composer eagerly mounted and focused —
- * no second click on an inert placeholder. The top-level form stays
- * interaction-gated. (The mobile zoom-lock choreography around this handoff
- * is pinned separately in lazy-comment-body-editor.test.tsx.)
- */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -74,7 +67,6 @@ describe('Comments — clicking 回复 activates the inline composer', () => {
 
     expect(screen.queryByTestId('composer')).toBeNull()
 
-    // The second 回复 button belongs to the nested comment (id 2).
     fireEvent.click(screen.getAllByText('回复')[1])
 
     const composer = await waitFor(() => screen.getByTestId('composer'))

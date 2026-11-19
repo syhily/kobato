@@ -10,8 +10,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { Route, HashRouter as Router, Routes } from 'react-router'
 
-// Lazy so the public design-system stylesheet (`@/styles/public.css`, imported by the demo page) only loads on this
-// route and never disturbs the editor playgrounds.
 const MusicPlayerDemo = React.lazy(() => import('@kobato/inkling-demo/MusicPlayerDemo'))
 
 const rootElement = document.getElementById('root')

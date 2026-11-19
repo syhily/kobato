@@ -4,9 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { handleError } from '@/entry.server.tsx'
 
-// React Router only invokes `handleError` for non-Response errors (and
-// RouteErrorResponses carrying an `error`) — thrown 4xx/5xx Responses never
-// reach this hook.
 describe('entry.server.tsx / handleError', () => {
   beforeEach(() => {
     __clearLogCaptureForTests()
@@ -47,7 +44,6 @@ describe('entry.server.tsx / handleError', () => {
   it('skips client-aborted requests', () => {
     const request = new Request('http://localhost/')
     const controller = new AbortController()
-    // A Request's signal is lazy — pass a signal we control and abort it.
     const aborted = new Request(request, { signal: controller.signal })
     controller.abort()
 

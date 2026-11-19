@@ -18,8 +18,6 @@ export async function updateCommentBodyAndContent(
   await db.update(comment).set({ body, content }).where(eq(comment.id, id))
 }
 
-// Fresh-edit variant of `comment.updateOwn`: an in-grace-window owner edit
-// rewrites body + projection without flipping `is_pending` or notifying admins.
 export async function updateOwnCommentBody(
   db: Database,
   id: number,
@@ -34,9 +32,6 @@ export async function updateOwnCommentBody(
   return Number(result.changes)
 }
 
-// Re-pend variant of `comment.updateOwn`: an out-of-grace-window owner edit
-// rewrites body + projection and flips the comment back into the queue.
-// Moderator edits use `updateCommentBodyAndContent` so they never re-queue.
 export async function updateOwnCommentBodyAndPending(
   db: Database,
   id: number,

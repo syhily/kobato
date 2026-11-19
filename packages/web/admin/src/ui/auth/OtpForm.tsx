@@ -43,8 +43,6 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
   const [lastActionData, setLastActionData] = useState(actionData)
   if (actionData !== lastActionData) {
     setLastActionData(actionData)
-    // Branch on the descriptor's stable key, never the localized sentence:
-    // the resend acknowledgment must restart the cooldown in every locale.
     if (actionData?.messageDescriptor?.messageKey === 'auth.otp.success.resent') {
       setCooldown(RESEND_COOLDOWN_SECONDS)
     }

@@ -16,8 +16,6 @@ registerJob({
       return null
     }
     if (!bundle.analytics?.analytics.geoipAutoUpdate) {
-      // Returning null suspends the job; the seam re-evaluates periodically,
-      // so a settings toggle takes effect without an explicit reschedule.
       return null
     }
     const timeZone = bundle.siteIdentity?.timeZone ?? 'UTC'

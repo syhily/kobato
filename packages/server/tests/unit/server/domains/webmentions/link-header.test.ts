@@ -4,9 +4,6 @@ import { webmentionLinkHeader } from '@kobato/server/domains/webmentions/link-he
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/test/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
-// `webmentionLinkHeader` is pure: bundle in, Link-header value (or null)
-// out — the receive switch and the site origin are the only inputs.
-
 function bundleWith(overrides: { receiveEnabled?: boolean; website?: string }): BlogSettingsBundle {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,

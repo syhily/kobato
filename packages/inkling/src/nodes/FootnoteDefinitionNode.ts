@@ -9,9 +9,6 @@ export type { FootnoteDefinitionData } from '@kobato/inkling-internal/nodes/base
 
 export type FootnoteDefinitionNodeDataset = FootnoteDefinitionData & {
   contentEditor?: LexicalEditor
-  // accepted for getDataset/clone symmetry but not read by the constructor —
-  // `__contentEditorInitialState` is set internally when the editor is
-  // populated from its serialized HTML (@kobato/inkling-internal/nodes/nested-editors)
   contentEditorInitialState?: EditorState
 }
 

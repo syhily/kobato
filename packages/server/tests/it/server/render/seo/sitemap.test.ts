@@ -7,9 +7,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Sitemap XML from the real slim projections + live gate; the worker-seeded
-// settings pin `siteIdentity.website = https://example.com`.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -114,9 +111,7 @@ describe('buildSitemapXml', () => {
   it('excludes drafts and scheduled posts through the real live gate', async () => {
     const date = new Date('2024-09-01T00:00:00.000Z')
     await seedPost({ slug: 'only-published', firstPublishedAt: date, publishedAt: date })
-    // published = false — the live gate's `published` leg drops it.
     await seedPost({ slug: 'draft-post', published: false, publishedAt: date, withRevision: false })
-    // Published with a revision but dated in the future — the `publishedAt <= now` leg drops it.
     await seedPost({ slug: 'scheduled-post', publishedAt: new Date('2099-01-01') })
 
     const xml = await buildSitemapXml(db, TEST_BLOG_SETTINGS_BUNDLE)
@@ -141,7 +136,6 @@ describe('buildSitemapXml', () => {
   })
 
   it('escapes special XML characters in loc', async () => {
-    // Slugs are URL-safe by validation, but the builder must still escape `&`/`<`/`>` for well-formed XML.
     const date = new Date('2024-10-01T00:00:00.000Z')
     await seedPost({ slug: 'a&b<c>', firstPublishedAt: date, publishedAt: date })
 

@@ -44,10 +44,6 @@ function useInklingBehaviour({
     return registerMouseEvents(editor, { containerElem, isNested })
   }, [editor, containerElem, isNested])
 
-  // Register the behaviour listeners once per mount. Handlers read card
-  // selection synchronously from the store, so listeners stay registered for
-  // the mount's lifetime instead of re-registering per render to keep their
-  // closures fresh.
   React.useEffect(() => {
     return mergeRegister(
       registerCardSelection(editor, {

@@ -1,9 +1,6 @@
 import { startRouteWarmup } from '@kobato/web-client/route-warmup/idle-script.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Node unit environment: hand-roll just enough of the DOM surface to drive
-// startRouteWarmup, and step through idle batches with fake timers.
-
 interface StubLink {
   rel: string
   href: string

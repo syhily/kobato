@@ -1,6 +1,3 @@
-// In-memory single-job state machine for self-update: one update at a time,
-// no 'succeeded' state — on success the process restarts.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { UpdateJobStatus } from '@kobato/contracts/update.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
@@ -17,19 +14,12 @@ import { spawn } from 'node:child_process'
 const log = getLogger('update.job')
 
 let current: UpdateJobStatus = { state: 'idle' }
-// The pipeline's failures carry a descriptor; the status boundary localizes it
-// per request (the VersionDialog renders the string, never a key).
 let currentErrorDescriptor: ErrorMessageDescriptor | undefined
 
 function errorDescriptorOf(err: unknown): ErrorMessageDescriptor | undefined {
-  // Structural, not `instanceof DomainError`: the descriptor is the contract,
-  // and a re-imported errors module must not defeat the lookup.
   return carriesErrorMessageDescriptor(err) ? err.descriptor : undefined
 }
 
-// Busy is derived: any state other than idle/failed holds the single-job
-// slot. After success the state stays 'restarting' (the process restarts),
-// which keeps the slot held forever — intentionally.
 function isBusy(): boolean {
   return current.state !== 'idle' && current.state !== 'failed'
 }
@@ -42,12 +32,8 @@ export function getUpdateJobStatus(locale: AppLocale = DEFAULT_LOCALE): UpdateJo
   return { ...current, error: createServerTranslator(locale).format(messageKey, params) }
 }
 
-// Self-restart after a successful binary swap. The listen socket MUST close
-// before the replacement spawns; exit goes through `requestShutdown` so the
-// batcher flush hooks run first.
 function scheduleSelfRestart(): void {
   void (async () => {
-    // 8s budget matches the graceful close in `performShutdown`.
     await closeHttpServer(8_000)
     const recover = async (err: unknown): Promise<void> => {
       const message = err instanceof Error ? err.message : String(err)
@@ -55,7 +41,6 @@ function scheduleSelfRestart(): void {
       try {
         await restartServer()
       } catch (restartErr) {
-        // Best-effort: a failed re-bind must not escape this detached IIFE.
         log.error('self-update listener restore failed', {
           err: restartErr instanceof Error ? restartErr.message : String(restartErr),
         })
@@ -68,7 +53,6 @@ function scheduleSelfRestart(): void {
         detached: true,
         stdio: 'inherit',
       })
-      // Spawn failures arrive asynchronously via the child's 'error' event.
       child.on('error', (err) => {
         void recover(err)
       })
@@ -105,7 +89,6 @@ export function startUpdateJob(tagName: string, options: StartUpdateJobOptions =
       current = { ...current, state: 'restarting' }
       restart()
     } catch (err) {
-      // L1 operational data only — no user content.
       log.error('self-update failed', {
         targetVersion: tagName,
         err: err instanceof Error ? err.message : String(err),

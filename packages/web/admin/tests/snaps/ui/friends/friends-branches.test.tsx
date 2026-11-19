@@ -26,9 +26,6 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// Adds populated rows, the error state and the unchecked toggle to FriendsView, which
-// derives rows from useInfiniteQuery pages and inlines {q, includeHidden} via useState.
-
 vi.mock('@kobato/ui/lib/use-debounced-search.ts', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))

@@ -8,8 +8,6 @@ export interface QuickOption {
   seconds: number
 }
 
-// Three shared quick-pick profiles cover every scenario; each bucket references
-// one by name instead of carrying its own copy.
 const QUICK_AUTH: QuickOption[] = [
   { labelId: 'admin.settings.rateLimit.quick.5m', seconds: 300 },
   { labelId: 'admin.settings.rateLimit.quick.15m', seconds: 900 },
@@ -104,5 +102,4 @@ export const ADVANCED_GROUPS: readonly { labelId: UiMessageId; keys: readonly Bu
   { labelId: 'admin.settings.rateLimit.group.admin', keys: ['invite'] },
 ]
 
-/** Every bucket, common first — the reset-all iteration order. */
 export const ALL_KEYS: readonly BucketKey[] = [...COMMON_KEYS, ...ADVANCED_GROUPS.flatMap((group) => group.keys)]

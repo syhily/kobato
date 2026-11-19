@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Stub WebAuthn so the imported admin forms don't call the real browser entry under SSR.
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn(),
   startRegistration: vi.fn(),
@@ -50,7 +49,6 @@ describe('routes/auth/signin — Component SSR branches', () => {
           '/signin',
         ),
       )
-      // Runtime value stays 'login' — only the type widens, so the default branch renders.
       expect(html).toContain('登陆')
       expect(html).toContain('邮箱')
     })

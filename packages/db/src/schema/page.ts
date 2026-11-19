@@ -1,8 +1,5 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Page metadata table. The Lexical body lives in `content`; `page` only
-// points to the published revision. Slugs share a global namespace with
-// posts; cross-table collisions are caught at the app layer.
 export const page = sqliteTable(
   'page',
   {
@@ -21,7 +18,6 @@ export const page = sqliteTable(
     og: text('og'),
     published: integer('published', { mode: 'boolean' }).notNull().default(true),
     commentsEnabled: integer('comments_enabled', { mode: 'boolean' }).notNull().default(true),
-    // Per-page kill switch for the public webmention block, ANDed with the global `blog.webmentions.webmention.displayOnPosts` setting.
     webmentionsEnabled: integer('webmentions_enabled', { mode: 'boolean' }).notNull().default(true),
     showToc: integer('show_toc', { mode: 'boolean' }).notNull().default(false),
     showUpdated: integer('show_updated', { mode: 'boolean' }).notNull().default(false),
@@ -30,11 +26,8 @@ export const page = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date()),
     publishedRevisionId: integer('published_revision_id'),
-    /** The timestamp of the first publication. Immutable after set. */
     firstPublishedAt: integer('first_published_at', { mode: 'timestamp_ms' }),
-    /** Author-declared BCP 47 language of the prose; NULL inherits the document language. Never auto-detected. */
     contentLanguage: text('content_language'),
-    /** Author who created the page. NULL for legacy migrated pages. */
     authorId: integer('author_id'),
   },
   (table) => [

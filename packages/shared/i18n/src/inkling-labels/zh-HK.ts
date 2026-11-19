@@ -1,7 +1,3 @@
-// Kobato’s Inkling label overlay for zh-HK.
-// Hong Kong Traditional Chinese — written and reviewed on its own, never
-// produced by converting the Simplified table.
-
 import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'
 
 export const kobatoInklingLabelsZhHK = {

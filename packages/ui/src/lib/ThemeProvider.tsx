@@ -53,7 +53,6 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
         return stored
       }
     } catch (err) {
-      // Storage-restricted browsers throw SecurityError on any access.
       logger.warn('Failed to read theme preference', { error: err })
     }
     return 'system'

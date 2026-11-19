@@ -3,7 +3,6 @@ import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
 
 import { isRecord } from '@kobato/utils/type-guards.ts'
 
-// Pill-value contract for admin date filters: Range (`{from,to}`) and Single + operator (`{date,op}`), both serialized to a JSON string pill value.
 export interface DateFilterValue {
   from: string
   to: string

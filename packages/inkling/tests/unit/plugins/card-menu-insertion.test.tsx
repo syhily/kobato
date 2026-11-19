@@ -15,13 +15,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// The menu data under test is the REAL image declaration's, resolved through
-// the same projection the editor mounts (`getEditorCardNodes` →
-// `resolveCardMenuEntries`) and dispatched into the real registrar. The
-// assertions deliberately pin the DECLARED params (`insertParams` /
-// `queryParams`) as resolved menu data, while the insertion path itself is
-// exercised as-is — no test-side card/menu declaration is duplicated here.
-
 function createImageEditor(): LexicalEditor {
   return createTestEditor({ nodes: [ImageNode] })
 }

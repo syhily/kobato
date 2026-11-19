@@ -35,12 +35,6 @@ vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
   default: vi.fn(),
 }))
 
-// The substitution matrix lives in behaviour/at-link.test.ts; this suite pins
-// the gating and wiring only.
-//
-// The Portal's children never commit to document.body under jsdom + renderHook,
-// so assertions read the AtLinkResultsPopup element's props instead of the DOM.
-
 function createTestEditor() {
   return createEditor({
     namespace: 'test',

@@ -3,9 +3,6 @@ import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK.ts'
 import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
 import { describe, expect, it } from 'vitest'
 
-// Regional Traditional Chinese must read naturally on its own — no runtime
-// simplified→traditional conversion, and no rule that forces HK/TW to differ
-// from zh-CN everywhere (identical wording is often correct).
 describe('UI catalog — regional Traditional comment wording', () => {
   it('uses 則留言 (not 条评论) for the admin comment count in zh-HK and zh-TW', () => {
     for (const [locale, messages] of [

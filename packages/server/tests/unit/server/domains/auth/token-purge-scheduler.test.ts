@@ -14,19 +14,12 @@ vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-// `nextDailyMaintenanceDelayMs` runs for real. A pinned fake clock keeps the delay-to-fire
-// identical everywhere; advancing exactly that delay (+ 1 ms) crosses one fire, while a
-// blind full-day advance is wall-clock dependent (a run starting within 1 s of the 04:30
-// slot double-fires).
 const PINNED_NOW = new Date('2026-01-15T12:00:00.000Z')
 
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
 const { nextDailyMaintenanceDelayMs, stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
-// Load-bearing: the scheduler module self-registers on the job registry at import time.
 await import('@kobato/server/domains/auth/token-purge-scheduler.ts')
 
-// The registry owns the shared db getter; a bare handle shape suffices —
-// the job reads only `.db` at fire time.
 let currentDb = db
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })
 
@@ -48,8 +41,6 @@ describe('auth token-purge scheduler', () => {
     scheduleRegisteredJob('auth.token-purge')
     expect(purgeExpired).not.toHaveBeenCalled()
 
-    // The db is read at fire time, not captured at schedule time — a
-    // reopened handle (restore completion) is picked up.
     const freshDb = {}
     currentDb = freshDb
 

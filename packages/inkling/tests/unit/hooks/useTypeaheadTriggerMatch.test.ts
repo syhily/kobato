@@ -19,8 +19,6 @@ describe('useTypeaheadTriggerMatch', () => {
   })
 
   it('matches a trigger inside a word (no leading boundary is required)', () => {
-    // unlike lexical's stock matcher this hook intentionally does not require
-    // punctuation/space before the trigger, so `foo:bar` matches at the `:`
     const match = getMatcher()('foo:bar')
     expect(match).toEqual({ leadOffset: 3, matchingString: 'bar', replaceableString: ':bar' })
   })

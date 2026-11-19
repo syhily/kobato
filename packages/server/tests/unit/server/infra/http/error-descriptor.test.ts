@@ -39,7 +39,6 @@ describe('server/infra/http/error-descriptor — message ids', () => {
       params: { min: 60 },
       fallbackMessage: 'The time window must be at least 60 seconds',
     })
-    // The fallback is the English catalog, never the id and never a template.
     expect(descriptorFor('error.api.notFound').fallbackMessage).toBe(uiMessagesEnUS['error.api.notFound'])
   })
 
@@ -90,7 +89,6 @@ describe('server/infra/http/error-descriptor — Zod issues', () => {
       expect(wire.message).toBe(expected[locale])
       expect(wire.fallbackMessage).toBe(expected['en-US'])
       expect(wire.messageKey).toBe('admin.settings.rateLimit.error.windowMin')
-      // The key never substitutes for the text.
       expect(wire.message).not.toBe(wire.messageKey)
       expect(wire.message).not.toContain('admin.settings.')
     }

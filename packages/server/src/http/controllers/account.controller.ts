@@ -54,10 +54,6 @@ const profile = impl.profile.handler(async ({ context }) => {
   return { user, passkeyEnabled: isPasskeyEnabled(), mailReady: isMailLoginReady() }
 })
 
-// Raw session rows — sorting and `isCurrent` stay in the route loader. The
-// UA label is rendered HERE, at the perimeter: the detector dataset is
-// server-only and the public/admin route whitelists must not import the
-// analytics domain.
 const sessions = impl.sessions.handler(async ({ context }) => {
   const rows = await listSessionsByUser(context.db, idFromString(context.viewer.id))
   const translator = createServerTranslator(context.localization.locale)

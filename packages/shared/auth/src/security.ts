@@ -1,7 +1,5 @@
-/** Minimum password length enforced everywhere (login, signup, reset, change). */
 export const MIN_PASSWORD_LENGTH = 10
 
-/** Maximum password length to prevent DoS via oversized payloads. */
 export const MAX_PASSWORD_LENGTH = 128
 
 /**
@@ -12,7 +10,6 @@ export const MAX_PASSWORD_LENGTH = 128
  */
 export const MAX_PASSWORD_BYTES = 72
 
-/** The one shared complexity rule for new passwords (lower + upper + digit). */
 export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
 export function passwordWithinBcryptLimit(value: string): boolean {

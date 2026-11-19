@@ -12,7 +12,6 @@ interface Rgb {
 interface CommentBadgeSource {
   badgeName: string | null
   badgeColor: string | null
-  // Optional explicit override; non-empty short-circuits the WCAG auto-pick.
   badgeTextColor?: string | null
 }
 

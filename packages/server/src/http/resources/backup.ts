@@ -45,9 +45,6 @@ import { Readable } from 'node:stream'
 
 const log = getLogger('backup.upload')
 
-/** Stage + pre-validate (real DB open, admin row) before claiming the slot;
- *  every rejection cleans up. Encrypted uploads without a password are
- *  parked for the decrypt endpoint and answered with `{encrypted, token}`. */
 async function stageUploadForRestore(
   c: Context<Env>,
   file: File,
@@ -65,18 +62,13 @@ async function stageUploadForRestore(
   } catch (error) {
     if (error instanceof EncryptedBackupPasswordRequired) {
       if (opts.parkEncrypted === false) {
-        // No two-step prompt on this surface (setup flow) — the password
-        // must ride along as a form field.
         rmSync(error.dir, { recursive: true, force: true })
         return errorJsonResponse(c, 400, 'backup.error.passwordMissingUpload')
       }
-      // The staged dir survives (parked) — the decrypt endpoint resumes from it.
       try {
         const token = parkEncryptedUpload({ dir: error.dir, uploadPath: error.uploadPath, fileName: file.name })
         return c.json({ encrypted: true, token })
       } catch (parkError) {
-        // Park refused (cap reached with all entries mid-decrypt) — the
-        // staged dir is ours again; sweep it before surfacing the error.
         rmSync(error.dir, { recursive: true, force: true })
         if (parkError instanceof ActionFailure) {
           return failureJsonResponse(c, parkError, 429)
@@ -94,7 +86,6 @@ async function stageUploadForRestore(
     }
   }
   if (!opts.allowAnalyticsOnly || staged.content !== null) {
-    // Analytics-only uploads carry no content file to check.
     try {
       await assertStagedBackupContainsAdmin(staged)
     } catch {
@@ -116,8 +107,6 @@ async function claimAndStartRestore(
   fileName: string,
   options: { withAnalytics?: boolean },
 ): Promise<Response> {
-  // Scalar captures for the post-reopen audit event — the chain runs after
-  // this request has already returned.
   const viewer = c.var.requestContext.viewer
   const clientAddress = c.var.requestContext.clientAddress
   const userAgent = c.req.raw.headers.get('User-Agent')
@@ -127,8 +116,6 @@ async function claimAndStartRestore(
       log.info('Restore from uploaded backup completed', { configApplied: result.configApplied })
       return result
     },
-    // The swap drops the whole content DB — the audit event MUST be written
-    // after the reopen (into the restored DB), like the other two restore paths.
     afterReopenFn: async () => {
       recordAuditEvent({
         action: 'backup_restored',
@@ -150,8 +137,6 @@ async function claimAndStartRestore(
   return c.json({ accepted: true })
 }
 
-/** Setup-restore gate: authentication checks run BEFORE the rate limiter
- *  so anonymous/CSRF-failing requests never burn the 5/hour budget. */
 const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
   if (await hasAdmin(c.var.requestContext.db)) {
     return errorJsonResponse(c, 409, 'backup.error.siteInstalled')
@@ -162,7 +147,6 @@ const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
     return errorJsonResponse(c, 403, 'backup.error.setupTokenIncomplete')
   }
 
-  // Session flag may be stale after token expiry — re-check the token.
   if (!(await isSetupTokenActive(c.var.requestContext.db))) {
     return errorJsonResponse(c, 403, 'auth.setup.error.tokenExpired')
   }
@@ -180,8 +164,6 @@ export const backupRouter = new Hono<Env>()
     return c.json(consumeRestoreJobReport())
   })
   .get('/api/admin/backup/restore-progress', requireRoleMw('admin'), (c) => {
-    // Non-consuming: the UI polls this while the server is still up; once
-    // the drain closes the listener it falls back to polling /ready.
     return c.json(peekRestoreProgress())
   })
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
@@ -189,11 +171,7 @@ export const backupRouter = new Hono<Env>()
     if (!isValidBackupKey(timestamp)) {
       return errorJsonResponse(c, 400, 'backup.error.invalidKey')
     }
-    // Streamed: backups exceed the 100MB buffered-read cap, buffering would 413.
     const { stream, byteSize, encrypted, fileName } = await getBackupStream(c.var.requestContext.db, timestamp)
-    // The name comes from a DB row; `getBackupStream` already refused a path
-    // that is not a backup key, and the whitelist keeps the header safe even if
-    // that ever regresses.
     const safeFileName = fileName.replace(/[^A-Za-z0-9._-]/g, '_')
     c.header('Content-Type', encrypted ? 'application/octet-stream' : 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${safeFileName}"`)
@@ -213,8 +191,6 @@ export const backupRouter = new Hono<Env>()
     '/api/admin/backup/upload-restore',
     requireRoleMw('admin'),
     csrfGuard,
-    // Staging writes the whole upload to disk + decrypts before the restore
-    // slot is claimed — throttle so a stolen session can't multiply that.
     rateLimitByIp('backupRestoreUpload', { windowSeconds: 3600, maxAttempts: 30 }),
     bodyLimit({
       maxSize: MAX_BACKUP_FILE_SIZE,
@@ -239,8 +215,6 @@ export const backupRouter = new Hono<Env>()
     '/api/admin/backup/upload-restore/decrypt',
     requireRoleMw('admin'),
     csrfGuard,
-    // Online guess attempts at the backup password cost one scrypt each —
-    // throttle even though the surface is admin-only (stolen session).
     rateLimitByIp('backupRestoreDecrypt', { windowSeconds: 3600, maxAttempts: 30 }),
     bodyLimit({
       maxSize: 64 * 1024,
@@ -260,22 +234,15 @@ export const backupRouter = new Hono<Env>()
         return errorJsonResponse(c, 400, 'backup.error.passwordTooLong')
       }
 
-      // Atomic claim: a concurrent decrypt of the SAME token would race this
-      // one's release (rm of the parked dir) against its own read stream.
       const claim = claimEncryptedUploadForDecrypt(token)
       if (!claim.ok) {
         if (claim.reason === 'in-flight') {
           return errorJsonResponse(c, 409, 'backup.error.decryptInProgress')
         }
-        // 410 (distinct from a wrong-password 400): the token is dead —
-        // the client must re-upload, retrying the password is pointless.
         return errorJsonResponse(c, 410, 'backup.error.uploadExpired')
       }
       const parked = claim.entry
 
-      // What happens to the parked entry when this call ends:
-      //   'keep'    — wrong password (retryable) or restore slot busy (retry later)
-      //   'release' — staged and claimed, or a failure no retry can fix
       let fate: 'keep' | 'release' = 'release'
       try {
         const progressOwned = beginStagingProgress()
@@ -288,8 +255,6 @@ export const backupRouter = new Hono<Env>()
               : undefined,
           })
         } catch (error) {
-          // Only a genuine password failure keeps the parked upload — structural
-          // rejections fail on every retry, so the token dies here (410, not 400).
           if (error instanceof BackupPasswordError) {
             fate = 'keep'
             return failureJsonResponse(c, error, 400)
@@ -313,8 +278,6 @@ export const backupRouter = new Hono<Env>()
 
         const res = await claimAndStartRestore(c, staged, parked.fileName, {})
         if (res.status !== 200) {
-          // Busy: the staged copy is gone, but the parked raw upload
-          // survives — the same token works once the other restore ends.
           fate = 'keep'
         }
         return res
@@ -341,9 +304,6 @@ export const backupRouter = new Hono<Env>()
       if (!(file instanceof File)) {
         return errorJsonResponse(c, 400, 'backup.error.uploadMissing')
       }
-      // Encrypted backups carry their password as a plain form field here —
-      // the setup flow has no two-step password prompt. Trim like the
-      // create path does, so both sides derive the same key.
       const rawPassword = typeof body.password === 'string' ? body.password.trim() : ''
       if (rawPassword.length > 512) {
         return errorJsonResponse(c, 400, 'backup.error.passwordTooLong')
@@ -360,18 +320,15 @@ export const backupRouter = new Hono<Env>()
       }
       const staged = stagedOrError
 
-      // Claim the slot as late as possible — contention cleans up.
       const clientAddress = c.var.requestContext.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
       const outcome = await withRestoreClaim(async () => ({
         restoreFn: async () => {
-          // Setup applies the content database + config only — a fresh install never inherits old telemetry.
           return restoreFromStagedBackup(staged, fileName, { withAnalytics: false })
         },
         afterReopenFn: async (db) => {
-          // Runs against the fresh handle; must be infallible — the original file is gone.
           const admin = await findFirstAdminUser(db)
           if (!admin) {
             log.warn('Setup restore: admin vanished between validation and swap — skipping the audit event', {

@@ -9,9 +9,6 @@ import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { adminSession, regularSession } from '@kobato/test/session.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// Everything runs against the real in-memory engine; only the settings
-// snapshot (sidebar recentComments = 5) comes from the it-project setup.
-
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -70,7 +67,6 @@ describe('services/comments/loader — loadComments', () => {
     await seedComment({ userId: uid, ownerId: pid, content: 'approved', isPending: false })
     await seedComment({ userId: uid, ownerId: pid, content: 'pending', isPending: true })
 
-    // The regular session user (id 2) is not the author: the own-pending visibility escape does not apply.
     const result = await loadComments(db, regularSession(), { type: 'post', ownerId: pid }, 0)
 
     expect(result?.count).toBe(1)
@@ -162,7 +158,6 @@ describe('services/comments/loader — latestComments', () => {
   })
 
   it('latestComments caps the pool at the configured sidebar count', async () => {
-    // The seeded settings bundle configures recentComments count = 5.
     const pid = await seedPost('c', 'C')
     for (let i = 0; i < 7; i++) {
       const uid = await seedUser({ name: `U${i}`, email: `u${i}@example.com` })

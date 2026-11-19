@@ -9,10 +9,6 @@ import { vi } from 'vitest'
 type UploadKind = Parameters<FileUploader['useFileUpload']>[0]
 type UploadChannel = ReturnType<FileUploader['useFileUpload']>
 
-// Options for the per-test host-integration fixture. Whole values feed the
-// InklingHostIntegrationProvider facade, which fans them out into the
-// per-lifecycle channels. UI prefs (darkMode, labels) live on
-// InklingUiPrefsContext, never here.
 export interface HostIntegrationValueOptions {
   upload?: UploadChannel['upload']
   uploads?: Partial<Record<UploadKind, Partial<UploadChannel>>>

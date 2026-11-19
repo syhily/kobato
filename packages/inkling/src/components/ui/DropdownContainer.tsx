@@ -49,7 +49,6 @@ export function DropdownContainer({
       updatePlacement()
     }, 250)
 
-    // no scroll listener: every panel is positioned fixed
     const handler = () => updatePlacementDebounced()
     window.addEventListener('resize', handler, { passive: true })
 
@@ -68,8 +67,6 @@ export function DropdownContainer({
         placement === 'bottom' && placementBottomClass,
         className,
       )}
-      // Single-sourced with the selection-anchored popup flip budget — a
-      // tailwind arbitrary value cannot reference the constant.
       style={{ maxHeight: POPUP_LIST_MAX_HEIGHT }}
       data-testid={dataTestId ? `${dataTestId}-dropdown` : undefined}
     >

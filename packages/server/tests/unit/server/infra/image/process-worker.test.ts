@@ -55,7 +55,6 @@ function mockSharp(opts: {
   }
 }
 
-// The worker statically imports sharp, so the mock targets the package.
 const sharpMock = vi.hoisted(() => {
   let current: ((input: unknown) => unknown) | null = null
   const fn = Object.assign(
@@ -140,13 +139,11 @@ describe('infra/image/process-worker — processImageInWorker', () => {
   })
 
   it('rejects decompression bombs whose decoded pixels exceed the cap', async () => {
-    // 10000×10000 = 100 MP — a tiny PNG can decode to this.
     sharpMock.fn.__setMock(mockSharp({ width: 10_000, height: 10_000 }))
     await expect(run()).rejects.toMatchObject({ descriptor: { messageKey: 'images.error.worker.tooLarge' } })
   })
 
   it('accepts images exactly at the pixel ceiling', async () => {
-    // 50 MP exactly — the cap is inclusive of the largest allowed bitmap.
     sharpMock.fn.__setMock(
       mockSharp({
         width: 10_000,

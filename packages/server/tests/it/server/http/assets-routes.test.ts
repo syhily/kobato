@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest'
 
 const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
 
-// The manifest/robots handlers read the REQUEST capture; mount the router
-// behind the same projection the perimeter provides.
 async function requestAssets(path: string, init?: RequestInit): Promise<Response> {
   const db = getTestDb()
   const app = new Hono<Env>()
@@ -29,8 +27,6 @@ async function requestAssets(path: string, init?: RequestInit): Promise<Response
 }
 
 function ref(etag: string, contentType: string): BrandingObjectRef {
-  // 'local': the real local backend has neither branding key in the test storage root, so
-  // fetchBrandingObject genuinely returns null — no service-level mock needed.
   return { etag, contentType, size: 1024, updatedAt: '2024-01-01T00:00:00.000Z', driver: 'local' }
 }
 
@@ -107,8 +103,6 @@ describe('assetsRouter static paths', () => {
     const res = await requestAssets('/favicon.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
-    // fetchBrandingObject returns null (object missing on the local backend) →
-    // the bundled default is served, whose etag is sha256 hex (not "cafe").
     expect(res.headers.get('ETag')).toMatch(/^"[a-f0-9]{64}"$/)
   })
 
@@ -145,7 +139,6 @@ describe('assetsRouter manifest', () => {
     const res = await requestAssets('/manifest.webmanifest')
     const body = await res.text()
 
-    // Recompute over the received bytes — not a re-serialized object.
     const { createHash } = await import('node:crypto')
     const expected = `"${createHash('sha1').update(body).digest('hex').slice(0, 32)}"`
     expect(res.headers.get('ETag')).toBe(expected)

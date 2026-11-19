@@ -7,10 +7,6 @@ const env = e2eEnv()
 const RESTART_POLL_INTERVAL_MS = 500
 const RESTART_TIMEOUT_MS = 90_000
 
-/**
- * Poll /ready until the instance is truly back — /health 200s even
- * mid-restart, /ready 503s with the restore phase until the server's up.
- */
 async function waitForInstanceBack(): Promise<void> {
   const probe = new E2eClient(env.baseUrl)
   const deadline = Date.now() + RESTART_TIMEOUT_MS

@@ -6,10 +6,6 @@ export interface SafeStringLike {
   string: string
 }
 
-// With a language and Intl.Segmenter available, word-like segments give dictionary-aware
-// counts for CJK text (the regex fallback counts every CJK character as one word).
-// Segmenters are cached per language because construction reads locale data; the
-// availability check runs per call before the cache read.
 const segmenters = new Map<string, Intl.Segmenter>()
 
 function getSegmenter(language: string): Intl.Segmenter | undefined {
@@ -49,8 +45,6 @@ export default function countWords(text: string | SafeStringLike | null | undefi
 
   const RTLPattern = /([\u0600-\u06ff]+|[\u0591-\u05F4]+)/g
 
-  // Both patterns must run: Latin+Arabic text matches both, and picking only the first
-  // hit would drop every RTL word.
   const match = [...(normalizedText.match(pattern) ?? []), ...(normalizedText.match(RTLPattern) ?? [])]
 
   let count = 0

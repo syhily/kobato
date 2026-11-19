@@ -51,7 +51,6 @@ describe('content/schemas/live-gate — isLive', () => {
   it('returns true when publishedAt exactly equals asOf', () => {
     const exactDate = new Date('2026-06-01T12:00:00.000Z')
     const meta = liveMeta({ publishedAt: exactDate })
-    // not strictly greater, so equal timestamps should be live
     expect(isLive(meta, { asOf: exactDate })).toBe(true)
   })
 
@@ -106,7 +105,6 @@ describe('content/schemas/live-gate — liveContentWhere', () => {
     expect(query.sql).toContain('"published" = ')
     expect(query.sql).toContain('"published_revision_id" is not null')
     expect(query.sql).toContain('"published_at" <= ')
-    // sqlite boolean columns bind as 1/0
     expect(query.params).toContain(1)
   })
 

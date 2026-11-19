@@ -15,7 +15,6 @@ import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } fro
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// The default test bundle pins the current CDN base: https://assets.example.com.
 const CDN = 'https://assets.example.com'
 
 const db = getTestDb()
@@ -82,7 +81,6 @@ describe('content/services/asset-url-backfill — backfillStorageAssetUrls', () 
       poster: 'https://friend.example/poster.jpg',
     })
     await db.insert(categoryTable).values({ name: 'Cat', slug: 'cat', cover: `${CDN}/images/cat.jpg` })
-    // First-party site route — never rewritten.
     await db.insert(categoryTable).values({ name: 'Og', slug: 'og', cover: '/images/og/cats/og.png' })
 
     const result = await backfillStorageAssetUrls(db)
@@ -125,8 +123,6 @@ describe('content/services/asset-url-backfill — Lexical bodies', () => {
     const postId = await seedPostWithBody({
       slug: 'lex1',
       body: lexicalBodyWith([
-        // No width/height: the full-fidelity render would otherwise emit a
-        // transform srcset derived from the (test-pinned) asset host.
         lexicalImage({ src: `${CDN}/images/baked.jpg`, storagePath: 'images/baked.jpg', width: null, height: null }),
         {
           type: 'solution',
@@ -198,12 +194,10 @@ describe('content/services/asset-url-backfill — boot flag', () => {
     expect(await postCover(postId)).toBe('/storage/images/cover.jpg')
     expect(findFlag()).not.toBeNull()
 
-    // A row dirtied AFTER the flag proves the second boot call is a no-op.
     const lateId = await seedPostWithBody({ slug: 'p2', cover: `${CDN}/images/late.jpg`, body: emptyLexicalBody() })
     await runAssetUrlBackfillOnceAtBoot(db)
     expect(await postCover(lateId)).toBe(`${CDN}/images/late.jpg`)
 
-    // The ungated engine (migration hook) still rewrites it.
     await backfillStorageAssetUrls(db)
     expect(await postCover(lateId)).toBe('/storage/images/late.jpg')
   })
@@ -214,7 +208,6 @@ describe('content/services/asset-url-backfill — boot flag', () => {
     await runAssetUrlBackfillOnceAtBoot(db)
     expect(findFlag()).toBeNull()
 
-    // Repair the row — the next boot retries the whole corpus and succeeds.
     await db
       .update(contentTable)
       .set({ body: lexicalBodyWith([lexicalParagraph('repaired')]) })

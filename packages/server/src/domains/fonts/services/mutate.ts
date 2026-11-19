@@ -13,8 +13,6 @@ import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { eq, inArray } from 'drizzle-orm'
 
-// Slot edits never garbage-collect a font package — only an explicit delete does.
-
 async function readCurrentFonts(db: Database): Promise<FontsSettings> {
   const row = findSettingByScope(db, SECTION_REGISTRY.fonts.scope)
   const data = row?.data
@@ -27,7 +25,6 @@ async function readCurrentFonts(db: Database): Promise<FontsSettings> {
   return unsafeCast<FontsSettings>(SECTION_REGISTRY.fonts.defaults)
 }
 
-/** Set a slot's ordered font-id list (add/remove/reorder). Pure settings write — font packages are never touched. */
 export async function setFontSlot(
   db: Database,
   slot: FontSlot,
@@ -66,7 +63,6 @@ export async function deleteFont(db: Database, fontId: string): Promise<FontRow>
   return target
 }
 
-/** Hard-delete font rows + storage packages. Storage delete is best-effort — the row delete proceeds regardless. */
 async function gcFonts(db: Database, fontIds: readonly string[]): Promise<void> {
   if (fontIds.length === 0) {
     return
@@ -78,9 +74,7 @@ async function gcFonts(db: Database, fontIds: readonly string[]): Promise<void> 
   for (const row of rows) {
     try {
       await deleteFontPackage(row.hash, row.storageDriver)
-    } catch {
-      /* noop */
-    }
+    } catch {}
     await db.delete(font).where(eq(font.id, row.id))
   }
 }

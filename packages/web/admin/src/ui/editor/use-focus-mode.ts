@@ -1,10 +1,3 @@
-// Writing-focus mode toggle: the inkling surface's `focusMode` prop mounts
-// FocusModePlugin, which marks the editor root with `inkling-focus-mode` and the
-// selected top-level block with `data-inkling-focus-active`; the dimming CSS lives
-// in `styles/inkling-editor.css`. The state is a localStorage preference,
-// SSR-consistent via `useSyncExternalStore` (the server snapshot is always
-// `false`, so SSR and hydration agree).
-
 import { useCallback, useSyncExternalStore } from 'react'
 
 const FOCUS_MODE_STORAGE_KEY = 'kobato/admin/page-editor/focus-mode'

@@ -223,7 +223,6 @@ import {
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
-/** The deployed admin wire surface — drift here is a breaking URL change. */
 const ADMIN_ROUTES = {
   posts: {
     list: { method: 'GET', path: '/admin/posts/list' },
@@ -341,7 +340,6 @@ const ADMIN_ROUTES = {
     reindexSearch: { method: 'POST', path: '/admin/renders/reindex-search' },
     reprojectBodies: { method: 'POST', path: '/admin/renders/reproject-bodies' },
   },
-  // The moderation paths sit under the standard `/admin/comments/*` prefix.
   comments: {
     approve: { method: 'POST', path: '/admin/comments/approve' },
     delete: { method: 'POST', path: '/admin/comments/delete' },
@@ -370,7 +368,6 @@ const ADMIN_ROUTES = {
     status: { method: 'GET', path: '/admin/geoip/status' },
     update: { method: 'POST', path: '/admin/geoip/update' },
   },
-  // Same for webmentions: the standard `/admin/webmentions/*` prefix.
   webmentions: {
     loadAll: { method: 'GET', path: '/admin/webmentions/load-all' },
     approve: { method: 'POST', path: '/admin/webmentions/approve' },
@@ -386,9 +383,6 @@ const ADMIN_ROUTES = {
   },
 } as const
 
-/** Each procedure's input/output, pinned by OBJECT IDENTITY to the exported
- *  `@kobato/contracts` schemas — a contract composes, never copies. `input:
- *  undefined` pins the deliberately input-less procedures. */
 const ADMIN_SCHEMAS = {
   posts: {
     list: { input: listPostsSchema, output: listPostsOutputDto },

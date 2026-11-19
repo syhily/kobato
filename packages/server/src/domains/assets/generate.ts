@@ -1,8 +1,6 @@
 import { encodeIco } from '@kobato/server/domains/assets/ico.ts'
 import sharp from 'sharp'
 
-// Keep sharp statically imported — under SEA the bundler rewrites its platform loads.
-
 export interface FaviconPack {
   faviconIco: Buffer
   appleTouchIcon: Buffer

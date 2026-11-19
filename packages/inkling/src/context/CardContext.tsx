@@ -13,9 +13,7 @@ const CardContext = React.createContext<CardContextValue>({
   captionHasFocus: false,
   cardType: undefined,
   nodeKey: undefined,
-  setCaptionHasFocus: () => {
-    /* noop */
-  },
+  setCaptionHasFocus: () => undefined,
 })
 
 export default CardContext

@@ -11,10 +11,6 @@ export interface SessionRevocation {
   targetUserId: number | null
 }
 
-/**
- * Own-scope revocation: strict ownership, no admin bypass, so the audit trail
- * always reads as the owner managing their own session.
- */
 export async function revokeOwnSessionWithGuard(
   db: Database,
   sessionId: string,
@@ -31,10 +27,6 @@ export async function revokeOwnSessionWithGuard(
   return { targetUserId: meta.userId }
 }
 
-/**
- * Admin-scope revocation: any non-admin's session, or the actor's own, never another
- * live admin's. The role check is defence in depth.
- */
 export async function revokeSessionWithGuard(
   db: Database,
   sessionId: string,
@@ -54,10 +46,6 @@ export async function revokeSessionWithGuard(
   return { targetUserId: meta.userId }
 }
 
-/**
- * Bulk-scope revocation: never another admin's sessions, and no soft-delete
- * exemption (unlike the single-session scope).
- */
 export async function revokeAllSessionsWithGuard(
   db: Database,
   targetUserId: number,

@@ -10,10 +10,6 @@ import {
 } from '@kobato/server/domains/comments/services/policy.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pure-decider coverage for the comment policy module — no mocks, no DB. The services
-// load the rows and act on these verdicts; persistence wiring is pinned in
-// `packages/server/tests/it/server/domains/comments/update-own-comment.test.ts`.
-
 describe('decideOwnEdit — 30-minute grace window', () => {
   const createAt = new Date('2026-01-01T00:00:00.000Z')
 

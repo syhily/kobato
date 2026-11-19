@@ -104,9 +104,6 @@ describe('registerClickAndCut', () => {
 
     const preventDefault = vi.fn()
     const event = { target: decoratorElement, preventDefault } as unknown as MouseEvent
-    // dispatch inside an awaited commit: the handler's own state change (the
-    // card selection) lands in a deferred commit that only flushes after the
-    // dispatching update, so a synchronous read would see the pre-dispatch state
     let result = false
     await new Promise<void>((resolve) => {
       editor.update(

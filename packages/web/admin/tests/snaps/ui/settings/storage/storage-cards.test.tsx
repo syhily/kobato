@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
-// The migration card revalidates the route loader on completion — stub it for SSR.
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -81,7 +80,6 @@ describe('snapshot: StorageCards', () => {
     expect(html).toContain('kobato-test')
     expect(html).not.toContain('fieldset disabled')
     const inputById = (id: string) => new RegExp(`<input[^>]*id="${id}"[^>]*>`).exec(html)?.[0] ?? ''
-    // The `disabled` ATTRIBUTE (the class list always carries `disabled:` variants).
     expect(inputById('assets-endpoint')).toContain('disabled=""')
     expect(inputById('assets-access-key-id')).not.toContain('disabled=""')
     expect(inputById('assets-url-template')).not.toContain('disabled=""')

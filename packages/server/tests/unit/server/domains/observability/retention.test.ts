@@ -171,7 +171,6 @@ describe('observability retention sync — application', () => {
     })
 
     const first = syncObservabilityRetention()
-    // The first pass has started (and read 7) before the second save lands.
     await vi.waitFor(() => expect(clientMock.listStreams).toHaveBeenCalled())
     seed(verified({ retentionDays: 30 }))
     const second = syncObservabilityRetention()

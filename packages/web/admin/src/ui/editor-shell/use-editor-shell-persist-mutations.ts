@@ -1,6 +1,3 @@
-// The four wire mutations — declaration order is test-pinned — plus their
-// note* interpreters.
-
 import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
 import type { LexicalEditorState } from '@kobato/lexical/schema.ts'
 import type {
@@ -73,7 +70,6 @@ export function useEditorShellPersistMutations<
 
   const noteMetaSaved = useCallback(
     (saved: TEntity) => {
-      // A concurrent body leg's warning / conflict must not be hidden.
       setStatus((prev) =>
         prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
       )
@@ -97,7 +93,6 @@ export function useEditorShellPersistMutations<
 
   const noteUnpublishSaved = useCallback(
     (saved: TEntity) => {
-      // Same concurrent-leg rule as noteMetaSaved.
       setStatus((prev) =>
         prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
       )
@@ -138,8 +133,6 @@ export function useEditorShellPersistMutations<
       }
     },
     onError: (error) => {
-      // Publish never landed: roll back the optimistic server publishedAt to
-      // the pre-publish truth; the user's picker input stays untouched.
       setServerPublishedAtIso(publishedAtBeforePublishRef.current)
       noteError(error.message)
     },

@@ -1,7 +1,3 @@
-// SEA build orchestrator (`pnpm run sea:build`).
-// Platform-native by design: the embedded natives and the copied Node
-// executable are the build machine's, so build on the delivery target's arch.
-
 import { collectSeaAssets } from '@kobato/pack/sea/assets.ts'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget.ts'
 import { fail, run } from '@kobato/pack/sea/exec.ts'
@@ -36,7 +32,6 @@ function ensureNodeVersion() {
   }
 }
 
-/** The server build emits exactly one hashed cnfs wasm — pin it down. */
 async function locateCnfsWasm() {
   const assetsDir = join(repoRoot, 'apps', 'kobato', 'build', 'server', 'assets')
   const entries = await readdir(assetsDir)
@@ -61,7 +56,6 @@ async function main() {
   run('pnpm', ['run', 'build'], { env: { ...process.env, NODE_ENV: 'production' } })
 
   console.log('==> vite bundle')
-  // None of the bundles may wipe the shared intermediates dir — clean it here.
   await rm(seaIntermediatesDir(), { recursive: true, force: true })
   for (const seaBundle of ['server', 'worker', 'smoke']) {
     run('pnpm', ['exec', 'vite', 'build', '--config', 'vite.sea.config.ts'], {
@@ -85,7 +79,6 @@ async function main() {
 
   const { size } = await stat(seaBinaryPath())
   const binaryMb = (size / 1024 / 1024).toFixed(1)
-  // Fail the build on budget regression — this gate is the only size check.
   if (size > BINARY_MAX_BYTES) {
     fail(`binary is ${binaryMb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
   }

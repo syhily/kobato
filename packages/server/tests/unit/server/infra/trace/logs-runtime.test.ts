@@ -74,7 +74,6 @@ function resolution(overrides: Partial<ServerTraceRuntimeConfig> = {}): TraceCon
   }
 }
 
-/** In-memory exporter plus a durable snapshot: its own shutdown() clears the buffer. */
 interface LogHarness {
   exporter: LogRecordExporter
   records: ReadableLogRecord[]
@@ -102,7 +101,6 @@ interface FlakyLogHarness {
   delivered: ReadableLogRecord[]
 }
 
-/** First export callback reports FAILED, later exports succeed. */
 function createFlakyLogHarness(): FlakyLogHarness {
   const inner = new InMemoryLogRecordExporter()
   const batches: ReadableLogRecord[][] = []
@@ -265,9 +263,7 @@ describe('log pipeline — projection boundary', () => {
       expect(() => pipeline.sink.push(line({ msg: 'second' }))).not.toThrow()
       await pipeline.forceFlush(1000)
       expect(flaky.delivered.map((record) => record.body)).toEqual(['second'])
-      // The failed batch was dropped, not queued for replay.
       expect(flaky.batches.flat().map((record) => record.body)).toEqual(['first', 'second'])
-      // The pipeline never writes a diagnostic line into the application's stdout logger.
       expect(stdoutSpy).not.toHaveBeenCalled()
 
       await pipeline.shutdown()

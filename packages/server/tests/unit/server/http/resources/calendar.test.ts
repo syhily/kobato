@@ -78,8 +78,6 @@ describe('serveCalendar', () => {
       },
       expect.any(Function),
     )
-    // The loader closure is what calls the renderer — invoke it to prove the
-    // locale AND the settings snapshot are threaded.
     const loader = through.mock.calls[0]![2] as () => Promise<Buffer>
     await loader()
     expect(renderCalendar).toHaveBeenCalledWith(expect.any(Date), 'dark', 'zh-TW', settings)
@@ -139,7 +137,6 @@ describe('serveCalendar', () => {
 
   it('responds 304 on a CACHE HIT without regenerating the render', async () => {
     const serveCalendar = await importServeCalendar()
-    // First call is a miss (loader runs), later calls are hits (cached bytes).
     let loads = 0
     through.mockImplementation((async (...args: unknown[]) => {
       loads += 1

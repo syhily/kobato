@@ -100,7 +100,6 @@ describe('useFloatingPanel', () => {
     globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
     MockResizeObserver.instances.length = 0
 
-    // layout fakes: the card sits at (100,100) 200x200, the panel is 320x100
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       if (this.dataset.testid === 'card') {
         return new DOMRect(100, 100, 200, 200)

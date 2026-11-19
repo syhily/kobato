@@ -18,10 +18,6 @@ import { describe, expect, it } from 'vitest'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
-// SSR snapshots for the shared filter-pill chrome. Popover and combobox contents mount
-// through portals Base UI does not emit during synchronous SSR, so assertions target the
-// trigger chrome and the list/editor leaves rendered directly.
-
 const AUDIT_ACTORS = [
   { actorId: 'user-1', actorName: '雨帆', email: 'admin@example.com' },
   { actorId: 'user-2', actorName: '访客甲', email: 'guest@example.com' },

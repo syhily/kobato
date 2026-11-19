@@ -22,7 +22,6 @@ const config = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 
 // Site zone is Asia/Shanghai (UTC+8). The row was registered on Nov 8 01:00 local.
 const CREATED_AT = '2026-11-07T17:00:00.000Z'
-// Server render instant: 23:59:00 local, Nov 8 → "today".
 const SSR_NOW = '2026-11-08T15:59:00.000Z'
 // Browser hydration instant, one minute later: 00:00:30 local, Nov 9 → "yesterday".
 const CLIENT_NOW = '2026-11-08T16:00:30.000Z'
@@ -41,7 +40,6 @@ function tree(nowIso: string) {
       ),
     },
   ]
-  // The loader data the server baked into the document — never re-run on the client.
   return <RouterProvider router={createMemoryRouter(routes, { hydrationData: { loaderData: { root: { nowIso } } } })} />
 }
 
@@ -64,7 +62,6 @@ beforeEach(() => {
   mounted.push(document.body.appendChild(document.createElement('div')))
 })
 
-/** Server-render at `SSR_NOW`, then hydrate in jsdom at `CLIENT_NOW`. */
 function ssrThenHydrate(hydrationNowIso: string) {
   vi.useFakeTimers({ now: new Date(SSR_NOW) })
   const html = renderToString(tree(SSR_NOW))
@@ -86,18 +83,13 @@ describe('UsersTable — hydration-stable relative dates', () => {
   it('renders the loader instant on both sides of a midnight-crossing hydration', () => {
     const { html, container, onRecoverableError } = ssrThenHydrate(SSR_NOW)
 
-    // Server copy: the row was created on the loader's local day.
     expect(html).toContain('今天')
-    // The first client render reused the loader clock, so hydration had no
-    // reason to report a mismatch (the control below proves this can fail).
     expect(onRecoverableError).not.toHaveBeenCalled()
 
-    // Only the post-mount clock tick advances the relative label.
     expect(container.textContent).toContain('昨天')
   })
 
   it('control: a drifting clock on the client IS reported as a hydration mismatch', () => {
-    // What the render-time `new Date()` did: the browser already rolled over.
     const { onRecoverableError } = ssrThenHydrate(CLIENT_NOW)
     expect(onRecoverableError).toHaveBeenCalled()
   })

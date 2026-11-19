@@ -7,9 +7,6 @@ import { makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 
-// Pins the factory's wire contract: namespaced procedure call, admin list
-// invalidation, and `{ entity: … }` envelope unwrap.
-
 interface TestMeta {
   title: string
   slug: string

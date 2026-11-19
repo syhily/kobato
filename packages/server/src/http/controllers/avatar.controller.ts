@@ -5,8 +5,6 @@ import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-bas
 import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { joinUrl } from '@kobato/utils/urls.ts'
 
-// The limiter rides the
-// implementer so it runs BEFORE the contract's input validation.
 const impl = implementPublic(avatarContract).use(resourceRateLimit)
 
 const findAvatar = impl.find.handler(async ({ input }) => {

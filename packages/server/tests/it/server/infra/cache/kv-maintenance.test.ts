@@ -22,7 +22,6 @@ describe('sweepExpiredKvEntries', () => {
   it('removes expired cache files, keeps live/immortal ones, and sweeps both auth tables', async () => {
     await setItem('feed', 'k:expired', { json: 1 }, { ttlSeconds: -60 })
     await setItem('feed', 'k:live', { json: 2 }, { ttlSeconds: 3600 })
-    // No TTL = never expires — must survive the sweep.
     await setItem('feed', 'k:immortal', { json: 3 })
     await db.insert(oneTimeToken).values([
       { key: 'comment:token:expired', payload: { json: {} }, expiresAt: past() },

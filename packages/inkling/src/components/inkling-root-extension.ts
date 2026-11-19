@@ -17,16 +17,6 @@ export interface InklingRootExtensionInput {
   initialEditorState: InitialEditorStateType | undefined
 }
 
-/**
- * Map the composer's normalized initial state onto the extension API:
- *
- * - `undefined` falls through to `InitialStateExtension`'s default initializer
- *   (seed one empty paragraph when the root is empty).
- * - an initializer function keeps its `root.isEmpty()` guard —
- *   `InitialStateExtension` calls functions unconditionally.
- * - strings/`EditorState` instances/`null` pass through unchanged; `null` skips
- *   initialization entirely (the collaboration path).
- */
 function toExtensionInitialState(
   initialEditorState: InitialEditorStateType | undefined,
 ): InitialEditorStateType | undefined {
@@ -41,17 +31,6 @@ function toExtensionInitialState(
   }
 }
 
-/**
- * The composer's root extension: carries the createEditor configuration (namespace,
- * theme, html, nodes, onError, initial state). Built once per composer mount (the
- * caller freezes it in a mount-scoped memo) because `LexicalExtensionComposer`
- * rebuilds the editor when the extension identity changes.
- *
- * The `ReactExtension` dependency keeps decorator errors on the inkling boundary
- * (host `onError` sink + localized fallback): under the extension composer,
- * decorators render through `ReactExtension`, so `RichTextPlugin`'s own
- * `ErrorBoundary` prop is inert there.
- */
 export function buildInklingRootExtension({ nodes, onError, initialEditorState }: InklingRootExtensionInput) {
   return defineExtension({
     name: 'inkling/root',

@@ -4,10 +4,6 @@ import {
 } from '@kobato/server/domains/analytics/services/realtime-connections.ts'
 import { describe, expect, it } from 'vitest'
 
-// Domain-seam coverage for the SSE connection registry: cap-key derivation and the
-// per-key slot policy; HTTP-level driving is pinned in
-// tests/it/server/http/resources/analytics-events.test.ts.
-
 describe('realtimeConnectionKey', () => {
   it('prefers the session id when one is present', () => {
     expect(realtimeConnectionKey('abc123', '127.0.0.1')).toBe('session:abc123')

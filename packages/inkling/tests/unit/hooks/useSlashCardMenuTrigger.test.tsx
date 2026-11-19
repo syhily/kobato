@@ -13,9 +13,6 @@ vi.mock('@kobato/inkling-internal/plugins/behaviour/card-menu-trigger', async (i
   return { ...original, registerSlashCardMenuTrigger: vi.fn(() => () => {}) }
 })
 
-// the binding is the adapter between the trigger module and the session — the
-// trigger registration is mocked, so verdicts are fed synchronously and the
-// query/close matrix runs without an editor
 const editor = {} as LexicalEditor
 
 function emitVerdict(verdict: SlashMenuVerdict) {

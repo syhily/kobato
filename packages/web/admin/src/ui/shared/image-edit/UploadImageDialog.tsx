@@ -146,7 +146,6 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : t('admin.toast.uploadFailed'))
     }
-    // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
     setIsPending(false)
   }, [file, kind, note, onUploaded, t])
 
@@ -159,7 +158,6 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !isPending && onClose()}>
-      {/* `dvh` clamp keeps a tall cropper from pushing the footer off the iOS viewport. */}
       <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-w-3xl">
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col gap-4">
           <DialogHeader>

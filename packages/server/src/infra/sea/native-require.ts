@@ -1,7 +1,3 @@
-// Runtime half of the SEA native-module redirection: resolves the rewritten
-// platform-specifier requires — absolute paths from the flat natives dir
-// under SEA, embedded `natives-meta/*` metadata, node_modules otherwise.
-
 import {
   SEA_NATIVE_ASSET_PREFIX,
   SEA_NATIVE_DUCKDB_ADDON_KEY,
@@ -73,15 +69,10 @@ function readEmbeddedMetadata(key: string): unknown {
       code: 'ERR_NATIVE_METADATA_MISSING',
     })
   }
-  // The JSON shape is the caller's claim (each probe has its own type).
   const parsed: unknown = JSON.parse(raw.toString('utf-8'))
   return parsed
 }
 
-/**
- * Resolve one redirected platform specifier — only the rewritten call sites
- * inside the bundled native packages call this, never project code.
- */
 export function nativeRequire(specifier: string): unknown {
   const nativesDir = process.env.KOBATO_NATIVES_DIR
   const underSea = nativesDir !== undefined && nativesDir !== ''
@@ -104,7 +95,6 @@ export function nativeRequire(specifier: string): unknown {
       // Only win32 platform packages ship this asset; elsewhere the throw is absorbed by sharp's own fallback.
       return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_SHARP_VERSIONS_KEY) : requireExternal(specifier)
     case LIBVIPS_LIB_SPEC:
-      // Upstream this is `module.exports = __dirname`; the flat natives dir is exactly that search path.
       return underSea ? nativesDir : requireExternal(specifier)
     default:
       // The error MUST carry a `code` — sharp aggregates every failed load

@@ -16,9 +16,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// This suite keeps its own setRootElement editor (bespoke config), so it
-// registers the decorate adapter itself — reconciliation calls decorate(),
-// which resolves through the injection port (see tests/inkling/utils/test-editor.ts).
 registerCardDecorateAdapter()
 
 const embedResponse: BookmarkEmbedResponse = {

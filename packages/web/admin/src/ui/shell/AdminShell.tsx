@@ -21,13 +21,9 @@ const AdminChromeContext = createContext<AdminChromeContextValue | null>(null)
 
 const NOOP_CHROME: AdminChromeContextValue = {
   focused: false,
-  setFocused: () => {
-    /* noop */
-  },
+  setFocused: () => undefined,
   scrollTopLifted: false,
-  setScrollTopLifted: () => {
-    /* noop */
-  },
+  setScrollTopLifted: () => undefined,
 }
 
 export function useAdminChrome(): AdminChromeContextValue {
@@ -35,7 +31,6 @@ export function useAdminChrome(): AdminChromeContextValue {
   return ctx ?? NOOP_CHROME
 }
 
-/** Enter/leave focus mode for a UI state; unmount cleanup always restores. */
 export function useAdminChromeFocus(active: boolean): void {
   const { setFocused } = useAdminChrome()
   useEffect(() => {
@@ -44,8 +39,6 @@ export function useAdminChromeFocus(active: boolean): void {
   }, [active, setFocused])
 }
 
-/** Signal the shell that the current route mounts a bottom-right FAB, so
- *  `AdminScrollTopButton` rides above its default slot. */
 export function useAdminScrollTopLift(active: boolean): void {
   const { setScrollTopLifted } = useAdminChrome()
   useEffect(() => {

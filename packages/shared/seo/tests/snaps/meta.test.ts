@@ -1,7 +1,6 @@
 import { routeMeta } from '@kobato/seo/meta.ts'
 import { describe, expect, it } from 'vitest'
 
-// Snapshot the head for the three canonical page kinds — SEO regressions surface as a PR diff.
 describe('snapshot: SEO meta head', () => {
   it('default (home / website) head', () => {
     const meta = routeMeta()

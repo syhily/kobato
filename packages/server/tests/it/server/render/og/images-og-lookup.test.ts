@@ -10,10 +10,6 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// OG slug resolution against the real engine (slim public-meta lookups +
-// live gate). Only mock: the canvas renderer, whose stub echoes the title
-// into the PNG body so branches are observable on the wire.
-
 vi.mock('@kobato/server/render/og/render.ts', () => ({
   drawOpenGraph: vi.fn(async ({ title }: { title: string }) => Buffer.from(`og:${title}`)),
 }))
@@ -77,12 +73,8 @@ async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date
   return pageId
 }
 
-// Static import on purpose: a lazy beforeEach import would flake under the
-// 10s hookTimeout; the hoisted vi.mock calls still apply.
 import { imagesRouter } from '@kobato/server/http/resources/images.ts'
 
-// Stub covers the consulted fields: rate-limit `.clientAddress`, handler
-// `.db`, plus the pinned settings/localization the OG key + renderer read.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', {

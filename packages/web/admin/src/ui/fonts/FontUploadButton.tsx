@@ -16,8 +16,6 @@ import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucid
 import { useEffect, useRef, useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-// Web-font upload via the dedicated resource route, not oRPC — fonts can be
-// 60 MiB and oRPC sits behind the request-wide body limit.
 type UploadPhase =
   | { kind: 'idle' }
   | { kind: 'input'; file: File; familyName: string }
@@ -35,7 +33,6 @@ export function FontUploadButton() {
 
   const dialogOpen = phase.kind !== 'idle'
 
-  // Options close over the click-time family name so the phases keep the value the user saw.
   const inputFamilyName = phase.kind === 'input' ? phase.familyName : ''
   const trimmedFamilyName = inputFamilyName.trim()
 
@@ -52,7 +49,6 @@ export function FontUploadButton() {
       failure: 'admin.toast.unknownErrorRetry',
     },
     onSuccess: async () => {
-      // Await the refetch so the success phase renders the fresh list.
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
       setPhase({ kind: 'success', familyName: trimmedFamilyName })

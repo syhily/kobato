@@ -22,20 +22,12 @@ const FORMAT_TAG_MAP: Record<TextFormatType, TextFormatAbbreviation> = {
   capitalize: 'SPAN',
 }
 
-// The case-transform formats have no semantic tag; their SPAN carries the
-// format as an inline text-transform style so it survives serialization.
 const TEXT_TRANSFORM_FORMATS: ReadonlySet<TextFormatType> = new Set(['lowercase', 'uppercase', 'capitalize'])
 
-// Object.keys widens the key union to string; this guard is the narrow
-// back — FORMAT_TAG_MAP is a full Record<TextFormatType, …>, so key
-// membership IS the format-type check.
 function isTextFormatType(format: string): format is TextFormatType {
   return format in FORMAT_TAG_MAP
 }
 
-// The parent-chain climb's element test. nodeType, not instanceof: the
-// rendered tree may be another jsdom realm's, where a cross-realm
-// `instanceof HTMLElement` would fail.
 function isDomElement(node: Node | null): node is HTMLElement {
   return node?.nodeType === 1
 }
@@ -92,10 +84,7 @@ export default class TextContent {
           }
         }
 
-        // re-order formats to open based on the next nodes: tags that stay
-        // open across later nodes open first
         const remainingNodes = this.nodes.slice(i + 1)
-        // avoid checking any nodes after a link node because those cause all formats to close
         const nextLinkNodeIndex = remainingNodes.findIndex((n) => $isLinkNode(n))
         const remainingSortNodes =
           nextLinkNodeIndex === -1 ? remainingNodes : remainingNodes.slice(0, nextLinkNodeIndex)
@@ -127,8 +116,6 @@ export default class TextContent {
 
         currentNode.append(node.getTextContent())
 
-        // close the outermost format the next node lacks and every format nested inside it
-        // links are their own formatting islands so all formats need to close before a link
         const nextNode = remainingNodes.find((n) => $isTextNode(n) || $isLinkNode(n))
         const firstFormatToClose = openFormats.findIndex(
           (format) => !nextNode || $isLinkNode(nextNode) || ($isTextNode(nextNode) && !nextNode.hasFormat(format)),
@@ -161,8 +148,6 @@ export default class TextContent {
   }
 
   _buildAnchorElement(anchor: HTMLElement, node: LinkNode) {
-    // Set the href only for a non-empty safe URL — an empty href links to the
-    // current page; unsafe URLs (e.g. javascript:) are dropped the same way
     const safeHref = this.context.safeUrl('navigation', node.getURL())
     if (safeHref) {
       anchor.setAttribute('href', safeHref)

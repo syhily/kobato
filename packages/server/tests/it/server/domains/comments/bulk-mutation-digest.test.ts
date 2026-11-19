@@ -6,7 +6,6 @@ import { latestComments } from '@kobato/server/domains/comments/services/public-
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Stub the email boundary so the module graph never reaches the network.
 vi.mock('@kobato/server/infra/email/sender.ts', () => ({
   sendAuthorInvite: vi.fn(),
   sendPasswordReset: vi.fn(),
@@ -70,8 +69,6 @@ async function seedComment(userId: number, ownerId: number, isPending: boolean):
   return rows[0]!.id
 }
 
-// The sidebar digest reads SQLite directly — a mutation is visible on the
-// very next call, with no cache invalidation in between.
 describe('comments/repos/moderation — bulk mutations reach the sidebar digest', () => {
   it('bulk approve-by-user makes the comment visible immediately', async () => {
     const userId = await seedUser()

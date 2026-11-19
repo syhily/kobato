@@ -14,8 +14,6 @@ import { $generateNodesFromDOM } from '@lexical/html'
 import { $getRoot } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-// include BaseImageNode so imported sibling nodes are not processed by other
-// lower-priority nodes when skipped with dataset.hasBeenProcessed
 const editorNodes = [BaseGalleryNode, BaseImageNode]
 
 describe('BaseGalleryNode', function () {

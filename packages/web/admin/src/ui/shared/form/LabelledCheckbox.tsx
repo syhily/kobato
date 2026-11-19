@@ -9,9 +9,6 @@ export interface LabelledCheckboxProps {
   disabled?: boolean
 }
 
-// Base UI puts the passed `id` on a hidden native `<input>` (the visible
-// `<span role="checkbox">` gets a generated one), so `htmlFor` activates the
-// control natively; `aria-labelledby` names the visible span.
 export function LabelledCheckbox({
   id,
   label,

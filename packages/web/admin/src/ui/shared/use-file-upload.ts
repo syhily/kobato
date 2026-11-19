@@ -7,10 +7,6 @@ import { useCallback, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
-// Shared admin upload adapter for `/api/*` resource routes: CSRF from the
-// root loader, accept/size guards, multipart POST, `{ error: { message } }`
-// unwrap. Deliberately bypasses oRPC — resource routes have larger body limits.
-
 export interface FileUploadToast {
   title: string
   description?: string
@@ -86,9 +82,6 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       }
 
       setPending(true)
-      // React Compiler can't lower try/finally or throw-inside-try, so the
-      // failure is captured and handled after the try/catch, ahead of the
-      // pending reset (the same ordering the finally block had).
       let succeeded = false
       let failed = false
       let failure: unknown = null
@@ -139,7 +132,6 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       if (failed) {
         const failureId = messages?.failure ?? 'admin.toast.uploadFailed'
         if (onError) {
-          // Inline-error mode: only transport/parse/onSuccess throws land here — the !res.ok path already reported its message.
           onError(t(failureId))
         } else {
           toastApiError(failure, failureId, t)

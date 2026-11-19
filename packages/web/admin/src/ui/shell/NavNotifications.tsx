@@ -5,14 +5,10 @@ import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/No
 import { BellIcon } from 'lucide-react'
 
 interface NavNotificationsProps {
-  /** Supplied by the shell's single count owner — never subscribe here.
-   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpen: () => void
 }
 
-// the settings entry in one menu so the bottom entries share item spacing. It is a
-// button opening the global right-side drawer, not a route.
 export function NavNotifications({ unreadCount, onOpen }: NavNotificationsProps) {
   const { t } = useI18n()
   return (

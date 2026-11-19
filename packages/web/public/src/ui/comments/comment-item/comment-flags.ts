@@ -3,15 +3,11 @@ import type { MyCommentOwnership } from '@kobato/web-public/ui/comments/comments
 
 import { asKey } from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
 
-/** Slice of viewer identity the ownership predicates read — structurally satisfied
- *  by `CommentsIdentityContextValue`. */
 export interface CommentIdentity {
   currentUserId: string | null
   myComments: ReadonlyMap<string, MyCommentOwnership>
 }
 
-/** Single source of the per-comment ownership / moderation predicates, read by
- *  `CommentRow` and `CommentActions`. */
 export interface CommentFlags {
   /** Token-claimed ownership from the anonymous "my comments" merge. */
   isMine: boolean

@@ -45,7 +45,6 @@ function ThemeToggleItem() {
       >
         {isDark ? <SunIcon className="size-4 shrink-0" /> : <MoonIcon className="size-4 shrink-0" />}
         <span className="flex-1 truncate">{isDark ? t('admin.shell.theme.light') : t('admin.shell.theme.dark')}</span>
-        {/* Visual indicator only — the row button carries the interaction. */}
         <Switch
           aria-hidden
           readOnly

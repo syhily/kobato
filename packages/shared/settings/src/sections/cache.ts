@@ -5,13 +5,8 @@ import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { z } from 'zod'
 
-// Per-bucket cache configuration: only tunable buckets own a settings slot (derived
-// from `@kobato/cache/registry`), and the prefix must end with `:` so a prefix scan
-// can never reach into a neighbouring bucket. RESERVED_CACHE_PREFIXES must NEVER be
-// editor-overwritable — session/rate-limit caches depend on stable key shapes.
 export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status:']
 
-/** Custom validation messages: typed ids; the offending prefixes ride `params`. */
 export const cacheValidationMessages = {
   prefixFormat: 'admin.settings.cache.error.prefixFormat',
   prefixOverlap: 'admin.settings.cache.error.prefixOverlap',
@@ -19,8 +14,6 @@ export const cacheValidationMessages = {
 } as const satisfies Record<string, UiMessageId>
 
 const PREFIX_PATTERN = /^[a-z0-9_-]+:$/i
-// 1 hour ≤ TTL ≤ 30 days — below 1h a typo would treadmill regenerations;
-// above 30d stale renders outlive content renames.
 const MIN_TTL_SECONDS = 60 * 60
 const MAX_TTL_SECONDS = 60 * 60 * 24 * 30
 
@@ -29,13 +22,10 @@ const cacheBucketSchema = z.object({
   ttlSeconds: z.coerce.number().int().min(MIN_TTL_SECONDS).max(MAX_TTL_SECONDS),
 })
 
-// Non-tunable buckets keep their code TTL; the literal-keyed Record can't be
-// proven complete from a runtime map.
 const tunableShape = unsafeCast<Record<TunableCacheBucketId, typeof cacheBucketSchema>>(
   Object.fromEntries(TUNABLE_CACHE_BUCKET_IDS.map((id) => [id, cacheBucketSchema])),
 )
 
-// Non-tunable default prefixes are protected too — renaming a tunable bucket onto one would merge namespaces.
 const PROTECTED_PREFIXES: readonly string[] = [...RESERVED_CACHE_PREFIXES, ...FIXED_CACHE_PREFIXES]
 
 export const cacheSchema = z
@@ -46,7 +36,6 @@ export const cacheSchema = z
     const buckets = value.cache
     const entries = TUNABLE_CACHE_BUCKET_IDS.map((id) => ({ id, prefix: buckets[id].prefix }))
 
-    // "Collide" = either prefix is a strict prefix of the other — a sweep under one would match the other's keys.
     function collides(a: string, b: string): boolean {
       return a === b || a.startsWith(b) || b.startsWith(a)
     }

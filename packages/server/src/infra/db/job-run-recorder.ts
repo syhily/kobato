@@ -5,21 +5,11 @@ import { jobRun } from '@kobato/db/schema/job-run.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { count, desc, eq, inArray, lt, sql } from 'drizzle-orm'
 
-// Opt-in execution-history recorder for background jobs. The composition root
-// wires the db getter (`wireJobRunRecorder`); before that every getter-resolved
-// function is a silent no-op (the VITEST env-only boot must stay side-effect
-// free). Writes NEVER throw — history must not kill the job it records; the
-// boot-time orphan sweep (`sweepOrphanedJobRuns`) takes its db explicitly.
-// `wireJobFailureNotifier` routes terminal failures somewhere visible (the
-// admin inbox) without infra importing a domain — deduped per task key so a
-// crash-looping job does not spam.
-
 const log = getLogger('job-run-recorder')
 
 const ERROR_MAX_CHARS = 500
 export const JOB_RUN_RETENTION_DAYS = 30
 export const JOB_RUN_KEEP_PER_TASK = 200
-/** Failure notifications for the same task key are deduped inside this window. */
 export const JOB_FAILURE_NOTIFY_DEDUPE_MS = 24 * 60 * 60 * 1000
 
 let resolveDb: (() => Database) | null = null
@@ -69,21 +59,10 @@ export interface JobRunRow {
   error: string | null
 }
 
-/**
- * Wire the db getter (composition root, restore rewiring). Pure setter —
- * the crash-recovery sweep is a separate boot-time-only call.
- */
 export function wireJobRunRecorder(deps: { getDb: () => Database }): void {
   resolveDb = deps.getDb
 }
 
-/**
- * Crash recovery: rows still `running` at boot belong to a dead process —
- * mark them failed with the stable `process-restart` machine code (the admin
- * UI maps that code to the active locale; stored technical messages stay raw).
- * Called ONCE after the first wiring; the restore rewiring must NOT re-run it
- * (this process's in-flight jobs hold legit `running` rows). Never throws.
- */
 export function sweepOrphanedJobRuns(db: Database): void {
   try {
     db.update(jobRun)
@@ -116,9 +95,6 @@ export function finishJobRun(runId: number | null, status: 'success' | 'failed' 
     return
   }
   try {
-    // One atomic UPDATE: `duration_ms` derives from the stored `started_at`
-    // in-SQL; an unknown id touches 0 rows and returns none, which doubles
-    // as the notifier's unknown-id guard.
     const finishedAt = new Date()
     const truncatedError = error === undefined ? null : error.slice(0, ERROR_MAX_CHARS)
     const updated = resolveDb()
@@ -182,12 +158,6 @@ export function latestJobRunsByTask(): Map<string, JobRunRow> {
   return latest
 }
 
-/**
- * Retention prune (daily maintenance): drop rows older than
- * {@link JOB_RUN_RETENTION_DAYS}, then keep only the newest
- * {@link JOB_RUN_KEEP_PER_TASK} per task. One sync transaction; returns
- * the deleted row count and throws on failure (the caller logs).
- */
 export function pruneJobRuns(db: Database, now: Date = new Date()): number {
   const cutoff = new Date(now.getTime() - JOB_RUN_RETENTION_DAYS * 24 * 60 * 60 * 1000)
   return db.transaction((tx) => {

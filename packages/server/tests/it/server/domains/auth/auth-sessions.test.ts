@@ -20,7 +20,6 @@ describe('listSessionsByUser', () => {
     const userId = u.id
     const loginAt = new Date()
 
-    // Mirror production: bare row insert, then recordSessionLogin stamps the meta.
     const seeds = [
       { sid: 'sid-a', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120', ip: '203.0.113.1' },
       { sid: 'sid-b', userAgent: null, ip: '203.0.113.2' },

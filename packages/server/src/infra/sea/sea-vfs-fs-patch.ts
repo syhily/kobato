@@ -80,7 +80,6 @@ export type ReadvLike = {
   ): void
 }
 
-/** Sequential `fs.writev` built on single `fs.write` calls. Exported for tests. */
 export function createSequentialWritev(write: WriteLike): WritevLike {
   return (
     fd: number,
@@ -91,8 +90,6 @@ export function createSequentialWritev(write: WriteLike): WritevLike {
       | ((error: NodeJS.ErrnoException | null, bytesWritten: number, buffers: BufferList) => void),
     callbackOrUndefined?: (error: NodeJS.ErrnoException | null, bytesWritten: number, buffers: BufferList) => void,
   ) => {
-    // Mirror the original's coercion: any non-number position (undefined
-    // included) means the current offset.
     const position = typeof positionOrCallback === 'number' ? positionOrCallback : null
     const callback = typeof positionOrCallback === 'function' ? positionOrCallback : callbackOrUndefined!
     let total = 0
@@ -121,7 +118,6 @@ export function createSequentialWritev(write: WriteLike): WritevLike {
   }
 }
 
-/** Sequential `fs.readv` built on single `fs.read` calls. Exported for tests. */
 export function createSequentialReadv(read: ReadLike): ReadvLike {
   return (
     fd: number,

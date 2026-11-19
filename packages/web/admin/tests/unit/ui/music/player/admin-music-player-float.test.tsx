@@ -5,10 +5,6 @@ import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 import { renderInRouter, stableHtml } from '@kobato/test/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `AdminMusicPlayerFloat` consumes three hooks from `MusicPlayerContext`
-// plus `useLocation`. The real provider can't seed a track in an SSR pass,
-// so the hooks are stubbed with a hoisted mutable singleton.
-
 const track: AdminMusicDto = {
   id: 'm1',
   source: 'netease',
@@ -29,8 +25,6 @@ const track: AdminMusicDto = {
 }
 
 const playlist: AdminMusicDto[] = [track]
-
-// `vi.hoisted` runs before the `vi.mock` factories, so they can close over `player`.
 
 const player = vi.hoisted(() => ({
   state: {
@@ -62,7 +56,6 @@ vi.mock('@kobato/web-admin/ui/music/player/music-player-context.tsx', () => ({
   useMusicPlayerActions: () => player.actions,
 }))
 
-// Import lazily so the module under test picks up the stubbed hooks.
 async function renderFloat(initialPath = '/admin/dashboard') {
   const { AdminMusicPlayerFloat } = await import('@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat.tsx')
   return stableHtml(renderInRouter(<AdminMusicPlayerFloat />, initialPath))
@@ -95,7 +88,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     it('renders nothing on the music library page even with a current track', async () => {
       player.state.currentTrack = track
       const html = await renderFloat('/admin/library/music')
-      // The music-page branch suppresses the float; the full-page player owns playback.
       expect(html).toBe('')
     })
 
@@ -136,7 +128,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     it('renders a placeholder cover when the track has no coverUrl', async () => {
       player.state.currentTrack = { ...track, coverUrl: '' }
       const html = await renderFloat()
-      // The cover slot emits the placeholder div, never an `<img>`.
       expect(html).toContain('bg-surface-dim')
       expect(html).not.toContain('src="https://example.com/c.png"')
     })
@@ -148,9 +139,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
   })
 
   describe('position persistence (loadPosition / savePosition)', () => {
-    // The lazy `useState` position initializer runs during the SSR pass,
-    // reaching both `loadPosition` branches; happy-dom supplies the real
-    // `window` + `localStorage` the browser path reads.
     beforeEach(() => {
       player.state.currentTrack = track
       player.state.playlist = playlist
@@ -160,7 +148,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
 
     it('falls back to {x:0, y:0} when no stored position exists', async () => {
       const html = await renderFloat()
-      // `position.x || undefined` — zero coordinates leave `left`/`top` unset.
       expect(html).not.toContain('left:0')
       expect(html).toContain('cursor-grab')
     })

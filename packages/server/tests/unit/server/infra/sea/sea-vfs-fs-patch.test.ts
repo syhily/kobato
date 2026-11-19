@@ -6,11 +6,6 @@ import {
 import fs from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Unit tests for the sequential readv/writev fallbacks that repair the
-// missing async VFS handlers under SEA. The end-to-end proof (a real
-// WriteStream flushing through the patch inside a useVfs binary) is the
-// backup/restore leg of `pnpm run sea:e2e`.
-
 type WriteCall = { fd: number; buffer: Buffer; position: number | null }
 
 function makeWriter(behavior?: (call: WriteCall) => number | NodeJS.ErrnoException) {
@@ -79,8 +74,6 @@ describe('infra/sea/sea-vfs-fs-patch — createSequentialWritev', () => {
     writev(7, buffers, 0, (error, written) => {
       result = { error, written }
     })
-    // One byte of the first buffer landed; the second buffer never started —
-    // the stream layer retries the remainder itself.
     expect(result).toEqual({ error: null, written: 1 })
     expect(calls).toHaveLength(1)
   })

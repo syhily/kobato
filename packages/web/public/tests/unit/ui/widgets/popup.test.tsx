@@ -1,8 +1,5 @@
 // @vitest-environment happy-dom
 
-// Pins Popup-owned outside-click dismissal; `motion/react` is a synchronous
-// pass-through, so the tests pin dismissal wiring, not animation timing.
-
 import { wrapWithI18n } from '@kobato/test/i18n-render.tsx'
 import { Popup } from '@kobato/web-public/ui/widgets/Popup.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -34,7 +31,6 @@ vi.mock('motion/react', () => {
   }
 })
 
-// Canonical consumer wiring: the trigger owns `open`, Popup owns dismissal.
 function Harness() {
   const [open, setOpen] = useState(false)
   return (

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-// Real safeFetch round-trip; only the network boundary is stubbed: fetch via installFetch, DNS to a fixed address.
 vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
@@ -19,8 +18,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { clearAllTables, getTestDb } from '@kobato/test/integration-db.ts'
 
-// The daily re-verification job against the real engine; the registered job is
-// started explicitly, like server.ts.
 const db = getTestDb()
 
 const mockFetch = installFetch()
@@ -32,8 +29,6 @@ const HOUR_MS = 3_600_000
 
 let seq = 0
 
-/** A fresh due `approved` row (24h waterline crossed) plus its stubbed
- *  source page (links to the target). */
 async function seedRow(lastVerifiedAt: Date): Promise<void> {
   const key = ++seq
   await upsertWebmention(db, {
@@ -93,7 +88,7 @@ describe('webmentions/reverify scheduler throttle', () => {
   })
 
   it('waits for the 24h waterline instead of firing early', async () => {
-    await seedRow(new Date(Date.now() - DAY_MS + HOUR_MS)) // due in ~1h
+    await seedRow(new Date(Date.now() - DAY_MS + HOUR_MS))
     scheduleRegisteredJob('webmentions.reverify')
 
     await vi.advanceTimersByTimeAsync(HOUR_MS - 1)
@@ -104,12 +99,10 @@ describe('webmentions/reverify scheduler throttle', () => {
   })
 
   it('self-heals from suspension when a qualifying row appears', async () => {
-    // Nothing qualifying: the job suspends on its re-check timer.
     scheduleRegisteredJob('webmentions.reverify')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
     await seedRow(new Date(Date.now() - DAY_MS - 60_000))
-    // The suspended re-check (30s) picks it up; the floor throttle applies before the fetch.
     await vi.advanceTimersByTimeAsync(30_000 + REVERIFY_MIN_DELAY_MS)
     expect(mockFetch.calls).toHaveLength(1)
   })
@@ -123,7 +116,6 @@ describe('webmentions/reverify scheduler throttle', () => {
     await vi.advanceTimersByTimeAsync(REVERIFY_MIN_DELAY_MS)
     expect(mockFetch.calls).toHaveLength(REVERIFY_BATCH_SIZE)
 
-    // Still due NOW, but the next batch waits a full floor interval — the burst throttle.
     await vi.advanceTimersByTimeAsync(REVERIFY_MIN_DELAY_MS - 1)
     expect(mockFetch.calls).toHaveLength(REVERIFY_BATCH_SIZE)
 

@@ -2,11 +2,6 @@ import type { RestoreProgressDto } from '@kobato/contracts/backup.ts'
 
 import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
 
-/**
- * Staging runs BEFORE the slot is claimed, so the machine cannot report it; a
- * concurrent staging goes unreported rather than interleaving percentages.
- */
-
 interface StagingProgress {
   stage: 'decrypting' | 'extracting'
   doneBytes: number
@@ -45,8 +40,6 @@ export function resetStagingProgress(): void {
   endStagingProgress()
 }
 
-/** Non-consuming merged read: staging first (pre-claim), then the machine's
- *  running/terminal phase (peeked, so polling never eats the one-shot report). */
 export function peekRestoreProgress(): RestoreProgressDto {
   if (staging !== null) {
     const percent =

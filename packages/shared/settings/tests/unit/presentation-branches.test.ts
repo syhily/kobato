@@ -3,8 +3,6 @@ import type { BrandingObjectRef, SidebarSettings } from '@kobato/settings/types.
 import { brandingVersionSuffix, extractXHandle, isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
 import { describe, expect, it } from 'vitest'
 
-// getSidebarWidgetCount is covered in utils.test.ts
-
 function sidebarSettings(widgets: SidebarSettings['sidebar']['widgets']): SidebarSettings {
   return { sidebar: { widgets, dailyQuote: { source: 'shanbay', customQuotes: [] } } }
 }

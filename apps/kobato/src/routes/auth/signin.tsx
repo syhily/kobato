@@ -101,8 +101,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'lostpassword') {
-    // Wire the comments domain's "established commenter" check in here so the
-    // auth domain itself stays free of the comments import.
     return toActionResult(
       await requestPasswordReset(db, clientAddress, request, formData, { hasApprovedComments }),
       locale,
@@ -138,7 +136,6 @@ export async function action({ request, context }: Route.ActionArgs) {
       case 'password':
         return data({ method: 'password' as const })
       case 'magic-link-sent':
-        // Deliberately generic — never reveals whether the mailbox is registered.
         return toActionResult(authFlowSuccess('auth.signin.magicLinkSent'), locale)
       case 'error':
         return toActionResult(

@@ -1,8 +1,6 @@
 import { sanitizeHtml } from '@kobato/sanitize/sanitize-html.ts'
 import { type RefObject, useEffect } from 'react'
 
-// `bodyHtml` is the effect's re-scan key (rationale in useMusicPlayers): without it,
-// new footnote refs never bind.
 const GAP = 8
 const ARROW_HALF = 6
 
@@ -44,18 +42,14 @@ export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>,
 
       const rect = anchor.getBoundingClientRect()
       popover.hidden = false
-      // Measure after content set, then center above the trigger; clamp into the viewport.
       const width = popover.offsetWidth
       const height = popover.offsetHeight
       const left = Math.min(Math.max(rect.left + rect.width / 2 - width / 2, 8), window.innerWidth - width - 8)
-      // Flip below the trigger when floating above would leave the viewport top.
       const above = rect.top - height - GAP >= GAP
       popover.dataset.side = above ? 'top' : 'bottom'
       const top = above ? rect.top - height - GAP : rect.bottom + GAP
       popover.style.left = `${String(left)}px`
       popover.style.top = `${String(top)}px`
-      // Viewport clamping can shift the popover off the trigger's center, so
-      // the arrow tracks the trigger explicitly (clamped inside the corners).
       const arrowX = Math.min(Math.max(rect.left + rect.width / 2 - left, ARROW_HALF + 4), width - ARROW_HALF - 4)
       popover.style.setProperty('--footnote-arrow-x', `${String(arrowX)}px`)
     }

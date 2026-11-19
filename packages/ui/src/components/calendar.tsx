@@ -46,7 +46,6 @@ export function calendarWallClockDate(date: Date): Date {
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
 }
 
-/** Machine value for `data-day`: always `yyyy-MM-dd`, never a localized date. */
 export function calendarMachineDay(date: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`

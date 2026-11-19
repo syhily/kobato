@@ -8,10 +8,6 @@ import {
 import * as React from 'react'
 import { describe, expect, it } from 'vitest'
 
-// Extra coverage for useSettingsSearch under the single-pass SSR harness
-// (no effects fire): observable surfaces are initial state, callable
-// callbacks, and the empty-filter branches.
-
 describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state surfaces)', () => {
   it('exposes an empty filter and a function setter through the filter context', () => {
     const { filter, setFilter } = renderHook(useSettingsSearchFilter, {
@@ -23,9 +19,7 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
 
   it('checkVisible returns true for any keywords while the filter is empty', () => {
     const { checkVisible } = renderHook(useSettingsSearch, { wrapper: SettingsSearchProvider })
-    // Empty keywords array -> early-return true.
     expect(checkVisible([])).toBe(true)
-    // Non-empty keywords + empty filter -> still true (the `!filter` branch).
     expect(checkVisible(['anything', 'general', 'GEN'])).toBe(true)
   })
 
@@ -37,7 +31,6 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
   it('highlightKeywords returns a non-string, non-array ReactNode untouched', () => {
     const { highlightKeywords } = renderHook(useSettingsSearch, { wrapper: SettingsSearchProvider })
     const element = React.createElement('div', null, 'x')
-    // Neither the string nor the array branch matches, so the node passes through.
     expect(highlightKeywords(element)).toBe(element)
   })
 
@@ -51,7 +44,6 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
 
   it('highlightKeywords returns numeric primitives untouched', () => {
     const { highlightKeywords } = renderHook(useSettingsSearch, { wrapper: SettingsSearchProvider })
-    // A number is not a string nor an array, so it passes through.
     expect(highlightKeywords(42)).toBe(42)
   })
 
@@ -62,11 +54,8 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
     expect(() => {
       registerComponent('general-1', ['general', 'site'])
       registerComponent('mail-1', ['mail'])
-      // Overwrite an existing registration.
       registerComponent('general-1', ['overwritten'])
-      // Unregister an id that was never registered (idempotent no-op).
       unregisterComponent('never-registered')
-      // Unregister a registered id.
       unregisterComponent('general-1')
     }).not.toThrow()
   })
@@ -105,7 +94,6 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
   })
 })
 
-// No-provider fallbacks: hooks return the noop defaults and never throw.
 describe('ui/admin/settings/shell/useSettingsSearch — default (no provider) context', () => {
   it('useSettingsSearchFilter returns the default empty filter + noop setter', () => {
     const { filter, setFilter } = renderHook(useSettingsSearchFilter)
@@ -121,7 +109,6 @@ describe('ui/admin/settings/shell/useSettingsSearch — default (no provider) co
     const el = React.createElement('span')
     expect(api.highlightKeywords(el)).toBe(el)
     expect(api.noResult).toBe(false)
-    // getVisibleComponents returns an empty Set.
     expect(api.getVisibleComponents()).toBeInstanceOf(Set)
     expect(api.getVisibleComponents().size).toBe(0)
     expect(api.isOnlyVisibleComponent('a')).toBe(false)

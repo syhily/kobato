@@ -12,20 +12,8 @@ import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 
 interface InlineDataRead {
-  /** The exact upstream read/require, whitespace-tolerant. */
   pattern: RegExp
-  /**
-   * File to inline. A relative path resolves against the matching module's
-   * directory; a `bare:` prefix resolves with `createRequire(id)`, i.e.
-   * exactly the module's own resolution semantics. Unused for `path-stub`.
-   */
   dataFile?: string
-  /**
-   * text: embed as a string literal; json: embed the payload verbatim; path-stub:
-   * replace a `require.resolve(...)` with a placeholder absolute path — the
-   * module-scope resolve must merely not throw, the file is never opened (see
-   * the jsdom case below).
-   */
   kind: 'text' | 'json' | 'path-stub'
 }
 
@@ -43,9 +31,6 @@ export const INLINE_DATA_CASES: InlineDataCase[] = [
     modulePattern: /[\\/]jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]xhr[\\/]XMLHttpRequest-impl\.js$/,
     reads: [
       {
-        // Module-scope `require.resolve("./xhr-sync-worker.js")`; the Worker
-        // is constructed only for SYNC XHR, which the sanitize engine never
-        // performs — a loud placeholder path is enough.
         pattern: /require\.resolve\(\s*["']\.\/xhr-sync-worker\.js["']\s*\)/,
         kind: 'path-stub',
       },
@@ -68,11 +53,6 @@ export function expectedInlineLiteral(id: string, read: InlineDataRead): string 
   return read.kind === 'json' ? data : JSON.stringify(data)
 }
 
-/**
- * Replace the runtime data reads with inlined literals; null when the
- * module is out of scope. Throws when a module matches but any call-site
- * shape drifted — a silent no-op would resurface as a boot crash under SEA.
- */
 export function inlinePackageData(code: string, id: string): string | null {
   const kase = INLINE_DATA_CASES.find((entry) => entry.modulePattern.test(id))
   if (!kase) {

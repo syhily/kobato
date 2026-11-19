@@ -33,20 +33,14 @@ const PLATFORM_SPECIFIER_MARKERS = [
 const PLATFORM_REQUIRE =
   /(?<![\w$.])require\(([^)]*(?:@img\/sharp|@napi-rs\/canvas-|@duckdb\/node-bindings-|\.node|src\/build|skia\.wasi\.cjs)[^)]*)\)/g
 
-/** Whether a module id belongs to one of the native packages. Exported for the contract test. */
 export function isNativePackageModule(id: string): boolean {
   return SCOPED_MODULE.test(id)
 }
 
-/** Whether a `require(...)` argument is a platform specifier this plugin redirects. */
 export function isPlatformSpecifierArg(arg: string): boolean {
   return PLATFORM_SPECIFIER_MARKERS.some((marker) => arg.includes(marker))
 }
 
-/**
- * Rewrite the platform require call sites in one module's source; null when
- * nothing matched (the common case).
- */
 export function redirectNativeRequires(code: string, id: string): string | null {
   if (!isNativePackageModule(id)) {
     return null
@@ -66,7 +60,6 @@ export function redirectNativeRequires(code: string, id: string): string | null 
 export function redirectNativeRequiresPlugin(): Plugin {
   return {
     name: 'redirect-native-requires',
-    // Run before module resolution so the renamed sites are never resolved.
     enforce: 'pre',
     transform(code, id) {
       const rewritten = redirectNativeRequires(code, id)

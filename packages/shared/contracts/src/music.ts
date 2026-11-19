@@ -8,7 +8,6 @@ const adminMusicDto = z.object({
   id: idString,
   source: metingSource,
   sourceId: z.string(),
-  // Opaque 16-char `[a-z0-9]` handle referenced by `musicPlayer` blocks as `playerId`.
   playerId: z.string(),
   name: z.string(),
   artist: z.array(z.string()),
@@ -17,7 +16,6 @@ const adminMusicDto = z.object({
   audioUrl: z.string(),
   coverStoragePath: z.string(),
   coverUrl: z.string(),
-  // LRC text. `null` when the upstream provider had no lyric.
   lyric: z.string().nullable(),
   uploaderId: idString.nullable(),
   uploaderName: z.string().nullable(),
@@ -28,20 +26,15 @@ export type AdminMusicDto = z.infer<typeof adminMusicDto>
 
 const metingSearchHitDto = z.object({
   source: metingSource,
-  /** Provider-side song id, stringified for transport stability. */
   sourceId: z.string(),
   name: z.string(),
   artist: z.array(z.string()),
   album: z.string(),
-  /** Pre-resolved cover URL for the search result thumbnail. */
   coverUrl: z.string(),
-  // Direct streaming URL from the upstream provider — short-lived (token-signed,
-  // ~1h on netease) and NOT persisted; only for the dialog's `<audio>` preview.
   previewUrl: z.string(),
 })
 export type MetingSearchHit = z.infer<typeof metingSearchHitDto>
 
-// Public GET payload for the browser-side `<MusicPlayer />` so APlayer can render.
 export const publicMusicMetaDto = z.object({
   id: z.string(),
   name: z.string(),
@@ -80,9 +73,6 @@ export const getMusicOutputDto = z.object({
   music: adminMusicDto,
 })
 
-// Admin music wire inputs — the single Zod source the `@kobato/api` music
-// contract composes and the server validates against.
-
 export const adminMusicListInput = z.object({
   q: z.string().optional(),
   offset: z.coerce.number().optional(),
@@ -118,8 +108,6 @@ export type AdminMusicUpdateInput = z.infer<typeof adminMusicUpdateInput>
 export const adminMusicIdInput = z.object({ id: z.string().min(1) })
 export type AdminMusicIdInput = z.infer<typeof adminMusicIdInput>
 
-// Public `music.get` surface — the opaque 16-char player handle referenced by
-// `musicPlayer` blocks; the DTO is the browser player payload.
 export const musicGetInputSchema = z.object({
   id: z
     .string()

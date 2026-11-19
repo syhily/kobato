@@ -9,8 +9,6 @@ import { VisSingleContainer, VisTooltip, VisTopoJSONMap, VisTopoJSONMapSelectors
 import { WorldMapTopoJSON } from '@unovis/ts/maps.js'
 import { useId, useMemo } from 'react'
 
-// CLIENT ONLY: lazy-mounted behind the hydration gate in LocationsMap.tsx; WorldMapTopoJSON rides this chunk.
-
 interface AreaDatum {
   id: string
   count: number
@@ -47,7 +45,6 @@ export function LocationsMapInner({ rows }: LocationsMapInnerProps) {
     return `color-mix(in srgb, ${COLOR_AREA} ${Math.round(alpha * 100)}%, transparent)`
   }
 
-  // The tooltip template is raw HTML — escape every interpolated value.
   const tooltipTemplate = (datum: unknown) => {
     const wrapped = unsafeCast<{ data?: AreaDatum }>(datum).data
     const area = wrapped ?? unsafeCast<AreaDatum>(datum)

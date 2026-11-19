@@ -5,9 +5,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The restore swap targets the LIVE engine/config paths — resolved at call
-// time through these seams. Point them at per-test temp files; every other
-// export stays real.
 const holder = vi.hoisted(() => ({
   dir: null as string | null,
   dbPath: null as string | null,
@@ -78,13 +75,10 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
     expect(readFileSync(holder.analyticsPath!).equals(fakeDuckdbFile())).toBe(true)
     expect(readFileSync(holder.configPath!).equals(CONFIG_BYTES)).toBe(true)
 
-    // The originals are parked for the rollback path; the staged dir is swept.
     expect(readFileSync(`${holder.dbPath!}.pre-restore`).toString()).toBe('live-db')
     expect(readFileSync(`${holder.analyticsPath!}.pre-restore`).toString()).toBe('live-analytics')
     expect(readFileSync(`${holder.configPath!}.pre-restore`).toString()).toBe('{ "live": true }')
     expect(existsSync(staged.dir)).toBe(false)
-    // The restored config carries security.* secrets — never more permissive
-    // than the 0600 the boot-time writer produces.
     expect(statSync(holder.configPath!).mode & 0o777).toBe(0o600)
   })
 
@@ -102,7 +96,6 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
 
   it('a config write failure never rolls back the completed engine swaps', async () => {
     const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
-    // Unwritable target: the parent directory does not exist.
     holder.configPath = join(holder.dir!, 'missing-dir', 'kobato.config.json')
     const staged = await stageFullArchive()
 
@@ -207,8 +200,6 @@ describe('restore — a config the next boot would reject never reaches the swap
     const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
     const archive = archiveWithConfig(Buffer.from(JSON.stringify({ security: { sessionSecret: 'x' } })))
 
-    // A one-char session secret is a boot-time `.strict()` schema failure —
-    // letting it land would `process.exit(1)` on the next restart.
     await expect(stageBackup(archive)).rejects.toThrow(ActionFailure)
     await expect(stageBackup(archive)).rejects.toMatchObject({
       descriptor: { messageKey: 'backup.error.configRejected' },
@@ -219,8 +210,6 @@ describe('restore — a config the next boot would reject never reaches the swap
     const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
     const archive = archiveWithConfig(Buffer.from(JSON.stringify({ redis: { url: 'redis://x' } })))
 
-    // `redis` is stripped by the boot-time legacy migration, so it is accepted —
-    // this asserts the reuse of THAT pipeline rather than a stricter local one.
     const staged = await stageBackup(archive)
     rmSync(staged.dir, { recursive: true, force: true })
 

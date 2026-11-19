@@ -86,8 +86,6 @@ describe('commentFlags', () => {
   })
 
   it('derives the full matrix independently per predicate', () => {
-    // A token-owned comment by another session user with a pending delete:
-    // all three predicates must hold at once, from one derivation.
     const flags = commentFlags(
       makeComment({ id: '9', userId: '42', deleteRequestedAt: '2024-06-01T00:00:00.000Z' }),
       makeIdentity({ currentUserId: '42', myComments: new Map([['9', { expiresAt: 55 }]]) }),

@@ -1,18 +1,3 @@
-// Opt-in OpenObserve stream retention. `retentionDays = 0` (the
-// default) leaves the operator's own OpenObserve policy untouched; a positive
-// value makes the server own the retention of every Kobato stream — RUM,
-// traces, server logs, and the closed metric set. The sync runs at boot and
-// after every observability settings save, applying only drifted streams, so
-// a manual OpenObserve-side edit is overwritten on the next pass while the
-// field stays set. Streams are created lazily by the first ingest, so one
-// that does not exist yet is picked up by a later pass.
-//
-// The sync is deliberately NOT part of asset provisioning (provision.ts):
-// provisioning installs versioned assets once per fingerprint, while this is
-// a standing data policy reconciled against the current settings snapshot.
-// Every failure is logged and swallowed — a data-policy sync must never
-// affect the site's availability.
-
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
 import type { O2StreamType } from '@kobato/server/domains/observability/o2-client.ts'
 
@@ -28,7 +13,6 @@ const log = getLogger('observability.retention')
 
 const STREAM_TYPES: readonly O2StreamType[] = ['logs', 'traces', 'metrics']
 
-/** OTLP traces land in the organization-wide default traces stream (tools/trace's TRACE_STREAM). */
 const TRACES_STREAM = 'default'
 
 export function isKobatoOwnedStream(name: string): boolean {
@@ -58,8 +42,6 @@ async function applyRetention(site: ObservabilitySettingsSlice, retentionDays: n
   return applied
 }
 
-// One process-local queue: overlapping saves converge on the latest snapshot,
-// and a boot sync can never interleave with a save-triggered one.
 let queue: Promise<unknown> = Promise.resolve()
 
 async function sync(): Promise<void> {
@@ -73,11 +55,6 @@ async function sync(): Promise<void> {
   }
 }
 
-/**
- * Reconcile OpenObserve stream retention with the saved settings snapshot.
- * Serialized; the returned promise never rejects — a failure is logged and
- * retried on the next pass.
- */
 export function syncObservabilityRetention(): Promise<void> {
   const task = queue.then(sync).catch((error: unknown) => {
     if (error instanceof O2ClientError) {

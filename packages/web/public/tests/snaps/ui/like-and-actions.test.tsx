@@ -13,9 +13,6 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() }
 
-// useMutation is stubbed to an inert pending-toggleable singleton (musics-view pattern) so the pending branch is reachable per-test.
-
-// useCommentGuest reads localStorage — stub a no-guest default for SSR.
 vi.mock('@kobato/web-public/ui/comments/use-comment-guest.ts', () => ({
   useCommentGuest: () => ({
     profile: null,
@@ -24,17 +21,12 @@ vi.mock('@kobato/web-public/ui/comments/use-comment-guest.ts', () => ({
   }),
 }))
 
-// Replace the lazily-loaded inkling composer with a deterministic textarea so
-// SSR output is stable (the boundary module, not the editor, is what the
-// comment forms import).
 vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx', () => ({
   LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
     <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
   ),
 }))
 
-// Local fixture defaults deliberately differ from the shared catalog factory (seq-based,
-// 2024-03-12 dates).
 const aliceComment: Partial<CommentItemType> = {
   id: '1',
   createAt: '2024-01-15T08:30:00.000Z',
@@ -53,7 +45,6 @@ describe('snapshot: LikeButton', () => {
     expect(html).toContain('aria-label="点赞"')
     expect(html).toContain('aria-pressed="false"')
     expect(html).toContain('data-liked="false"')
-    // NumberFlow is lazy-loaded → SSR renders the Suspense fallback plain count.
     expect(html).toContain('<span>42</span>')
   })
 
@@ -76,8 +67,6 @@ describe('snapshot: LikeButton', () => {
   })
 })
 
-// LikeShare is covered in like-actions.test.tsx; here only the page (root-joined) share URL shape.
-
 describe('snapshot: LikeShare (page permalink)', () => {
   it('renders share buttons with the absolute page URL', () => {
     const html = stableHtml(
@@ -92,8 +81,6 @@ describe('snapshot: LikeShare (page permalink)', () => {
         />,
       ),
     )
-    // The QQ / Weibo share URLs embed the absolute URL (joined with the
-    // test-bundle website `https://example.com`).
     expect(html).toContain('url=https%3A%2F%2Fexample.com%2Fabout')
     expect(html).toContain('title=%E3%80%90%E5%85%B3%E4%BA%8E%E3%80%91')
   })
@@ -135,7 +122,6 @@ describe('snapshot: CommentActions', () => {
     expect(html).toContain('回复')
     expect(html).toContain('编辑')
     expect(html).toContain('通过')
-    // AlertDialog content is portalled — SSR asserts only the trigger copy.
     expect(html).toContain('删除')
   })
 

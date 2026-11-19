@@ -2,9 +2,6 @@ import { renderToHtml, stableHtml } from '@kobato/test/render.tsx'
 import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker.tsx'
 import { describe, expect, it } from 'vitest'
 
-// DateTimePicker is props-driven; its calendar popover mounts only on click
-// (client-only), so assert the trigger label.
-
 const noop = () => undefined
 
 describe('snapshot: DateTimePicker', () => {
@@ -15,7 +12,6 @@ describe('snapshot: DateTimePicker', () => {
   })
 
   it('renders a localized date + time label when a value is set', () => {
-    // A future date so the local-input parse is deterministic regardless of TZ.
     const html = stableHtml(renderToHtml(<DateTimePicker value="2099-06-15T14:30" onChange={noop} />))
     expect(html).toContain('2099/6/15 14:30')
     expect(html).toContain('data-empty="false"')

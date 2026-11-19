@@ -6,9 +6,6 @@ import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-pro
 import { getLogger } from '@kobato/server/infra/logger.ts'
 import { count, eq } from 'drizzle-orm'
 
-// Only drifted rows are written, and the write touches neither `updatedAt` nor
-// `clientRevisionToken` (a re-projection is not an edit).
-
 const log = getLogger('content.reproject-body-html')
 
 export interface ReprojectBodyHtmlBatchInput {

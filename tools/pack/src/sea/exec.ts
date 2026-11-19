@@ -1,6 +1,3 @@
-// Process helpers for the SEA build scripts: fail-fast wrappers around
-// spawnSync with inherited stdio so build progress stays visible.
-
 import { repoRoot } from '@kobato/pack/sea/paths.ts'
 import { spawnSync } from 'node:child_process'
 
@@ -26,7 +23,6 @@ export function run(command: string, args: string[], options: RunOptions = {}) {
   }
 }
 
-/** Best-effort variant of `run` — logs a warning instead of failing. */
 export function tryRun(command: string, args: string[], options: RunOptions = {}) {
   const result = spawnSync(command, args, { cwd: repoRoot, stdio: 'inherit', shell: NEEDS_SHELL, ...options })
   if (result.error || result.status !== 0) {

@@ -22,8 +22,6 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
   useLexicalComposerContext: vi.fn(),
 }))
 
-// a warm engine keeps the markdown leg's PASTE_MARKDOWN_COMMAND dispatch
-// synchronous; cold, plainTextPaste awaits the chunk before dispatching
 beforeAll(() => loadPasteDialect())
 
 afterEach(() => {
@@ -62,9 +60,6 @@ describe('RestrictContentPlugin', () => {
 
     renderHook(() => RestrictContentPlugin({ paragraphs: 2 }))
 
-    // jsdom has no ClipboardEvent implementation and the plugin's PASTE
-    // listener narrows PasteCommandType with an instanceof guard, so stub the
-    // global to let the dispatched payload through.
     vi.stubGlobal('ClipboardEvent', class extends Event {})
 
     const preventDefault = vi.fn()

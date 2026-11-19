@@ -1,10 +1,5 @@
-// Canonical @tanstack/react-query mock. Import before any module that
-// transitively pulls in react-query, call once at module scope, rebind
-// slots per test. Behavioural mocks keep their own vi.mock.
-
 import { vi } from 'vitest'
 
-/** Mutable control surface: the slots mirror the hook results; tests rebind them per case. */
 export interface TanstackQueryControl {
   query: any
   mutation: any
@@ -65,7 +60,6 @@ vi.mock('@tanstack/react-query', async () => {
   }
 })
 
-/** Returns the hoisted control singleton the mocked hooks read from. */
 export function mockTanstackQuery(): TanstackQueryControl {
   return control
 }

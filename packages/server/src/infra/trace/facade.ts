@@ -1,8 +1,3 @@
-// No-SDK-import tracing surface; application code depends on this facade only.
-// Until a runtime installs a delegate — and whenever tracing is disabled — every
-// operation is a true pass-through and no telemetry failure can propagate into
-// request or rendering correctness.
-
 import { getLogger } from '@kobato/server/infra/logger.ts'
 
 const log = getLogger('trace')
@@ -13,11 +8,6 @@ export type SpanAttributeValue = string | number | boolean | null | undefined
 export type SpanAttributes = Readonly<Record<string, SpanAttributeValue>>
 export type MetricAttributes = Readonly<Record<string, string | number | boolean>>
 
-/**
- * The only inbound propagation channel the runtime reads. Anything else
- * (baggage, B3, custom headers) is ignored so a request cannot smuggle extra
- * context into a span.
- */
 export interface TraceContextCarrier {
   traceparent?: string
   tracestate?: string
@@ -64,18 +54,10 @@ export interface Histogram {
   record(value: number, attributes?: MetricAttributes): void
 }
 
-/**
- * Signed counterpart of `Counter` (e.g. in-flight requests): negative deltas
- * are the whole point, so the guard bounds finiteness only.
- */
 export interface UpDownCounter {
   add(value: number, attributes?: MetricAttributes): void
 }
 
-/**
- * The implementation contract. `runtime.ts` installs one; nothing else in the
- * application may implement or consume it.
- */
 export interface TraceDelegate {
   startSpan(name: string, options?: SpanOptions): Span
   runInSpan<T>(span: Span, fn: () => T): T
@@ -103,10 +85,6 @@ const NOOP_UPDOWN_COUNTER: UpDownCounter = Object.freeze({ add: noop })
 
 let activeDelegate: TraceDelegate | null = null
 
-/**
- * Once-per-operation safe diagnostics: a broken delegate must not turn every
- * request into a log flood. The operation set is closed and tiny.
- */
 const reportedFailures = new Set<string>()
 
 function isThenable(value: unknown): value is PromiseLike<unknown> {
@@ -126,20 +104,13 @@ function reportFailure(operation: string, error: unknown): void {
       operation,
       error: error instanceof Error ? error.name : typeof error,
     })
-  } catch {
-    // Diagnostics must never break the application path.
-  }
+  } catch {}
 }
 
 function currentDelegate(): TraceDelegate | null {
   return activeDelegate
 }
 
-/**
- * Spans returned by `startSpan` keep their delegate object here so `runInSpan`
- * can install the ORIGINAL span as the active context while callers only ever
- * hold the guarded wrapper.
- */
 const rawSpans = new WeakMap<Span, Span>()
 
 function guardSpan(span: Span): Span {
@@ -184,8 +155,6 @@ function guardSpan(span: Span): Span {
 function guardCounter(counter: Counter): Counter {
   return {
     add(value, attributes) {
-      // The facade's last line of defence: a non-finite or negative counter
-      // increment never reaches the SDK, whatever a caller passes.
       if (!Number.isFinite(value) || value < 0) {
         return
       }
@@ -216,8 +185,6 @@ function guardHistogram(histogram: Histogram): Histogram {
 function guardUpDownCounter(upDownCounter: UpDownCounter): UpDownCounter {
   return {
     add(value, attributes) {
-      // Unlike a monotonic counter, a negative delta is legitimate; only a
-      // non-finite value never reaches the SDK.
       if (!Number.isFinite(value)) {
         return
       }
@@ -289,15 +256,10 @@ function runWithSpan<T>(name: string, options: SpanOptions | undefined, fn: (spa
   }
   const span = guardSpan(rawSpan)
 
-  // Record the application outcome separately from delegate failures: a
-  // delegate that throws during context cleanup must never replace a successful
-  // result or the application's own error.
   const execution: { outcome: SpanOutcome<T> } = { outcome: { kind: 'pending' } }
   let runThrew = false
   let runError: unknown
   try {
-    // The delegate sees the ORIGINAL span; application code only gets the
-    // guarded wrapper (see `rawSpans`).
     delegate.runInSpan(rawSpan, () => {
       try {
         const value = callWithSpan(span, fn)
@@ -315,8 +277,6 @@ function runWithSpan<T>(name: string, options: SpanOptions | undefined, fn: (spa
 
   const outcome = execution.outcome
   if (outcome.kind === 'threw') {
-    // A delegate may rethrow the application error verbatim — that is normal
-    // propagation, not a telemetry failure. Only a different error is one.
     if (runThrew && runError !== outcome.error) {
       reportFailure('span.cleanup', runError)
     }
@@ -330,9 +290,6 @@ function runWithSpan<T>(name: string, options: SpanOptions | undefined, fn: (spa
     return outcome.value
   }
 
-  // The delegate failed before invoking the callback, or returned without
-  // invoking it. `callWithSpan` never ran, so close the span here and degrade
-  // to a single passthrough execution.
   reportFailure(runThrew ? 'span.run' : 'span.not-invoked', runThrew ? runError : new Error('not invoked'))
   span.end()
   return fn(NOOP_SPAN)
@@ -380,14 +337,10 @@ async function runWithSpanAsync<T>(
     runError = error
   }
 
-  // Defensive: a delegate that invokes the callback but does not await its
-  // promise must not let the facade fall through to a second execution.
   if (callbackPromise !== undefined && execution.outcome.kind === 'pending') {
     try {
       await callbackPromise
-    } catch {
-      // The outcome below carries the application error.
-    }
+    } catch {}
   }
 
   const outcome = execution.outcome
@@ -432,11 +385,6 @@ export function withSpanAsync<T>(
   return runWithSpanAsync(name, options, fn)
 }
 
-/**
- * Start a span whose lifetime the caller owns. Used where a single callback
- * cannot describe the boundary (SSR shell vs. stream). Inert builds, a missing
- * delegate, or a failing start degrades to a no-op span.
- */
 export function startSpan(name: string, options?: SpanOptions): Span {
   const delegate = currentDelegate()
   if (delegate === null) {
@@ -458,12 +406,6 @@ interface DelegateRunExecution {
   callbackPromise: Promise<unknown> | undefined
 }
 
-/**
- * Settle a manual `runInSpan` whose delegate returned a thenable. Mirrors the
- * `withSpanAsync` cleanup isolation (the caller owns the span, so nothing here
- * ends it), and passthrough-runs the application callback exactly once when
- * the delegate never invoked it.
- */
 async function settleManualRunAsync(
   result: PromiseLike<unknown>,
   execution: DelegateRunExecution,
@@ -478,15 +420,10 @@ async function settleManualRunAsync(
     runError = error
   }
 
-  // A delegate that returns a different promise may resolve before the
-  // callback it invoked; wait for the callback's own promise so the outcome is
-  // final (and cannot trigger a second execution).
   if (execution.callbackPromise !== undefined && execution.outcome.kind === 'pending') {
     try {
       await execution.callbackPromise
-    } catch {
-      // `outcome` carries the application error.
-    }
+    } catch {}
   }
 
   const outcome = execution.outcome
@@ -507,12 +444,6 @@ async function settleManualRunAsync(
   return fn()
 }
 
-/**
- * Run `fn` with a manual span installed as the active OTel context, so nested
- * spans parent under it. Preserves the callback's result/throw exactly and
- * never replaces an application error with a telemetry failure — including a
- * delegate that rejects only after an async callback already settled.
- */
 export function runInSpan<T>(span: Span, fn: () => T): T
 export function runInSpan(span: Span, fn: () => unknown): unknown {
   const delegate = currentDelegate()
@@ -565,8 +496,6 @@ export function runInSpan(span: Span, fn: () => unknown): unknown {
       return outcome.value
     }
     if (execution.callbackPromise !== undefined) {
-      // The delegate invoked an async callback and then failed during cleanup;
-      // settle the application promise instead of running it a second time.
       reportFailure('span.cleanup', error)
       return settleManualRunAsync(execution.callbackPromise, execution, fn)
     }
@@ -586,8 +515,6 @@ export function runInSpan(span: Span, fn: () => unknown): unknown {
     throw outcome.error
   }
   if (execution.callbackPromise !== undefined) {
-    // A delegate that invoked an async callback must not lose its result just
-    // because it returned something other than the callback's promise.
     return settleManualRunAsync(execution.callbackPromise, execution, fn)
   }
   reportFailure('span.not-invoked', new Error('not invoked'))
@@ -650,11 +577,6 @@ export function isTraceActive(): boolean {
   return currentDelegate() !== null
 }
 
-/**
- * Install the runtime delegate. Only `infra/trace/runtime.ts` calls this after
- * constructing a provider; a caller that misbehaves can at most route spans
- * into a broken delegate, which the guarded surface isolates.
- */
 export function installTraceDelegate(delegate: TraceDelegate): boolean {
   if (activeDelegate === delegate) {
     return true
@@ -664,11 +586,6 @@ export function installTraceDelegate(delegate: TraceDelegate): boolean {
   return true
 }
 
-/**
- * Restore the no-op facade. HMR disposal calls this with its own delegate
- * before shutting the provider down; a stale module instance therefore cannot
- * remove a newer one.
- */
 export function uninstallTraceDelegate(delegate?: TraceDelegate): boolean {
   if (activeDelegate === null) {
     return false

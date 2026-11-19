@@ -23,7 +23,6 @@ beforeAll(() => {
   vfsSupported = probe.status === 0
 })
 
-/** Spawn `<node> --experimental-vfs --input-type=module -e <script>` and parse the single JSON line it prints. */
 function runVfsProbe(script: string, args: string[] = []): Record<string, unknown> {
   const result = spawnSync(process.execPath, ['--experimental-vfs', '--input-type=module', '-e', script, ...args], {
     encoding: 'utf8',

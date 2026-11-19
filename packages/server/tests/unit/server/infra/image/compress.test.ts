@@ -2,17 +2,13 @@ import { compressImage, imageWidth } from '@kobato/server/infra/image/compress.t
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
-/**
- * A valid 8×8 PNG whose IHDR declares `size`×`size` pixels. Only the header is
- * parsed for the pixel cap, so no image data of that size is ever allocated.
- */
 async function pngDeclaringPixels(size: number): Promise<Buffer> {
   const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 1, g: 2, b: 3 } } })
     .png()
     .toBuffer()
   const forged = Buffer.from(png)
-  forged.writeUInt32BE(size, 16) // IHDR width
-  forged.writeUInt32BE(size, 20) // IHDR height
+  forged.writeUInt32BE(size, 16)
+  forged.writeUInt32BE(size, 20)
   return forged
 }
 
@@ -22,7 +18,6 @@ describe('infra/image/compress — decoded-pixel cap', () => {
   it("rejects a header sharp's default would accept but our 50 M px cap does not", async () => {
     const bomb = await pngDeclaringPixels(OVER_CAP_PIXELS)
 
-    // Proves the fixture really is under the library default.
     const meta = await sharp(bomb).metadata()
     expect(meta.width).toBe(OVER_CAP_PIXELS)
 

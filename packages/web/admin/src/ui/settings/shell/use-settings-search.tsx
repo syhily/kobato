@@ -39,8 +39,6 @@ function isReactNodeArray(value: unknown): value is ReactNode[] {
 
 export type SearchComponentId = string
 
-// Filter state lives in its own context so nav items don't re-render per keystroke.
-
 interface FilterState {
   filter: string
   setFilter: (value: string) => void
@@ -48,9 +46,7 @@ interface FilterState {
 
 const FilterContext = createContext<FilterState>({
   filter: '',
-  setFilter: () => {
-    /* noop */
-  },
+  setFilter: () => undefined,
 })
 
 interface SearchApiState {
@@ -68,15 +64,9 @@ const SearchApiContext = createContext<SearchApiState>({
   checkVisible: () => true,
   highlightKeywords: (text) => text,
   noResult: false,
-  setNoResult: () => {
-    /* noop */
-  },
-  registerComponent: () => {
-    /* noop */
-  },
-  unregisterComponent: () => {
-    /* noop */
-  },
+  setNoResult: () => undefined,
+  registerComponent: () => undefined,
+  unregisterComponent: () => undefined,
   getVisibleComponents: () => new Set<SearchComponentId>(),
   isOnlyVisibleComponent: () => false,
 })
@@ -86,7 +76,6 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
   const [noResult, setNoResult] = useState(false)
   const [registeredComponents, setRegisteredComponents] = useState<Map<SearchComponentId, string[]>>(() => new Map())
 
-  // Derive visible components purely from registered + filter, no effect.
   const visibleComponents = useMemo(() => {
     const newVisible = new Set<SearchComponentId>()
     const lowerFilter = filter.toLowerCase()

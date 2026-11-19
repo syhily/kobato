@@ -33,18 +33,6 @@ import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { eq } from 'drizzle-orm'
 
-/**
- * Storage migration task: copies every object from the current primary backend
- * to a target (`local-to-s3`, `s3-to-s3`, or `s3-to-local`), THEN flips the
- * config and the per-asset driver columns.
- *
- * State lives in the single-row `storage_migration` table (cursor + counters) so
- * a failed/cancelled/interrupted run resumes from the last completed batch; the
- * in-memory `running` slot only holds the cancel flag and the single-flight
- * guarantee. Source objects are never deleted. A completed run records a final
- * source/target consistency verification (counts + bytes) on the row.
- */
-
 const log = getLogger('storage.migration.task')
 
 const SINGLETON_ID = 1
@@ -90,11 +78,6 @@ let running: RunningHandle | null = null
 
 let targetS3BackendFactory: (storage: S3TargetConfig) => StorageBackend = createS3BackendFromConfig
 
-/**
- * Source S3 backend factory — bound ONCE to the pre-flip config snapshot so
- * catch-up / verification keep reading the OLD bucket after the settings flip
- * (the settings-driven singleton would re-resolve the NEW bucket).
- */
 let sourceS3BackendFactory: (storage: S3TargetConfig) => StorageBackend = createS3BackendFromConfig
 
 let targetValidator: (storage: S3TargetConfig) => Promise<S3ValidationResult> = validateS3Config
@@ -123,11 +106,6 @@ export async function __awaitStorageMigrationForTests(): Promise<void> {
   await running?.promise
 }
 
-/**
- * Cross-domain collaborators, wired by the composition root (`bootstrap/`).
- * Structurally typed — even `import type` from Core/Feature domains is
- * banned inside this Platform leaf (boundaries contract).
- */
 export interface S3MigrationHooks {
   /**
    * Persist the flipped `assets.storage` config through the settings core's
@@ -157,11 +135,6 @@ function requireHooks(): S3MigrationHooks {
   return hooks
 }
 
-/**
- * Lock probe for the settings pipeline, injected at the HTTP perimeter
- * (`updateBlogSettingsSection`'s options) — a migration owns the storage
- * config while its row is in flight or its task holds the in-memory slot.
- */
 export async function isStorageMigrationActive(db: Database): Promise<boolean> {
   if (running !== null) {
     return true
@@ -181,14 +154,11 @@ function rowToStatus(row: MigrationRow | null): StorageMigrationStatus {
   if (row === null) {
     return IDLE_STATUS
   }
-  // A corrupt JSON blob must not crash status reads — report no readable target.
   const targetConfig = parseStorageConfig(row.targetStorage)
   const target =
     targetConfig !== null && typeof targetConfig.bucket === 'string' && typeof targetConfig.endpoint === 'string'
       ? { bucket: targetConfig.bucket, endpoint: targetConfig.endpoint }
       : null
-  // A row claiming an in-flight phase without an in-memory task means the
-  // process died mid-run — report it as resumable `interrupted`.
   const phase: StorageMigrationPhase =
     isStorageMigrationInFlightPhase(row.phase) && running === null ? 'interrupted' : row.phase
   return {
@@ -253,14 +223,6 @@ function serializeStorageConfig(config: S3TargetConfig): string {
   return JSON.stringify({ ...config, secretAccessKey: encryptIfNeeded(config.secretAccessKey ?? '') })
 }
 
-/**
- * Start a migration. Validates the target (S3 targets get a live connectivity
- * probe), enforces single-flight (in-memory slot + persisted in-flight row),
- * then runs the copy in the background — poll `getStorageMigrationStatus`.
- *
- * The in-memory slot is claimed SYNCHRONOUSLY (before the first await) and
- * released if validation fails — two concurrent starts cannot both pass.
- */
 export async function startStorageMigration(db: Database, input: StartMigrationInput): Promise<StorageMigrationStatus> {
   if (running !== null) {
     throw new DomainError('CONFLICT', descriptorFor('storage.error.migrationRunning'))
@@ -350,11 +312,6 @@ export async function cancelStorageMigration(db: Database): Promise<StorageMigra
   return rowToStatus(await readRow(db))
 }
 
-/**
- * Resume a failed / cancelled / interrupted run from its persisted cursor.
- * Already-copied objects are skipped by the target-side existence check.
- * Claims the in-memory slot synchronously, same as `startStorageMigration`.
- */
 export async function resumeStorageMigration(db: Database): Promise<StorageMigrationStatus> {
   if (running !== null) {
     throw new DomainError('CONFLICT', descriptorFor('storage.error.migrationRunning'))
@@ -387,10 +344,7 @@ export async function resumeStorageMigration(db: Database): Promise<StorageMigra
   }
 
   const sourceConfig =
-    readSourceConfig(row) ??
-    // Legacy row without a source snapshot: fall back to live settings (still
-    // the old config when the run never reached the flip).
-    (row.direction === 'local-to-s3' ? null : requireBlogSettingsSection('assets').storage)
+    readSourceConfig(row) ?? (row.direction === 'local-to-s3' ? null : requireBlogSettingsSection('assets').storage)
   launch(db, row.direction, sourceConfig, readTargetConfig(row), row.cursor, handle)
   return rowToStatus(await readRow(db))
 }
@@ -413,13 +367,9 @@ function launch(
   cursor: string | null,
   handle: RunningHandle,
 ): void {
-  // One history row per in-process attempt (a resume is a fresh attempt,
-  // same cursor) — a crash leaves it `running` until the boot-time orphan
-  // sweep marks it failed.
   handle.runId = startJobRun('storage-migration', 'manual')
   handle.promise = runMigration(db, direction, sourceConfig, targetConfig, cursor, handle)
     .catch((error) => {
-      // The run body records failures itself; this is the crash-only backstop.
       log.error('Storage migration crashed', { error: String(error) })
     })
     .finally(() => {
@@ -444,7 +394,6 @@ type ResolvedEndpoints =
     }
   | { readonly direction: 's3-to-local'; readonly source: StorageBackend; readonly target: StorageBackend }
 
-/** A persisted direction that demands a snapshot the row cannot supply is a corrupt row → fail the run cleanly. */
 function requireSnapshot(config: S3TargetConfig | null, side: 'source' | 'target'): S3TargetConfig {
   if (config === null) {
     throw new DomainError('INTERNAL', descriptorFor('storage.error.snapshotMissing', { side }))
@@ -475,13 +424,8 @@ async function runMigration(
   handle: RunningHandle,
 ): Promise<void> {
   const counters = { copiedObjects: 0, copiedBytes: 0, skippedObjects: 0 }
-  // The live checkpoint — copyAll advances it per completed batch so the
-  // failure path persists the CURRENT cursor, not the original resume point.
   const progress = { cursor: resumeCursor }
 
-  // Everything from the counter restore on sits inside the try: an early
-  // throw (e.g. readRow) must still close the history row and the singleton
-  // row instead of leaving a phantom `running`.
   try {
     if (resumeCursor !== null) {
       const existing = await readRow(db)
@@ -528,8 +472,6 @@ async function runMigration(
     } catch (error) {
       log.warn('Post-migration asset URL backfill failed', { error: String(error) })
     }
-    // History closes LAST: a bookkeeping throw above (audit, backfill) must
-    // not flip a completed run to failed.
     finishJobRun(handle.runId ?? null, 'success')
   } catch (error) {
     const cancelled = error instanceof MigrationCancelled
@@ -555,11 +497,6 @@ async function runMigration(
   }
 }
 
-/**
- * Read-only final check: list BOTH sides and compare object counts and total
- * bytes. The target may hold pre-existing extras, so it passes when it covers
- * the source (>= on both axes), not on exact equality.
- */
 async function verifyConsistency(
   source: StorageBackend,
   target: StorageBackend,
@@ -580,11 +517,6 @@ async function verifyConsistency(
   }
 }
 
-/**
- * Copy every source object to the target in key order. The cursor advances
- * once per fully-copied batch (a failed batch re-lists on resume; per-object
- * existence checks keep the retry idempotent).
- */
 async function copyAll(
   db: Database,
   source: StorageBackend,
@@ -594,7 +526,6 @@ async function copyAll(
   handle: RunningHandle,
 ): Promise<void> {
   let lastFlush = Date.now()
-  // Throttled mid-batch progress persistence so the UI sees movement on large buckets.
   const onProgress = async (): Promise<void> => {
     if (Date.now() - lastFlush >= PROGRESS_FLUSH_MS) {
       lastFlush = Date.now()
@@ -624,9 +555,6 @@ async function copyBatch(
   countSkips: boolean,
 ): Promise<void> {
   let next = 0
-  // Shared abort: once a copy exhausts its retries (or a cancel lands),
-  // sibling workers stop picking up new keys instead of running on in the
-  // background past the failure.
   let aborted = false
   const worker = async (): Promise<void> => {
     while (!aborted && next < batch.length) {
@@ -646,8 +574,6 @@ async function copyBatch(
   for (let i = 0; i < Math.min(COPY_CONCURRENCY, batch.length); i += 1) {
     workers.push(worker())
   }
-  // allSettled waits for in-flight copies to finish before propagating the
-  // failure, so no stray worker outlives the run's slot release.
   const results = await Promise.allSettled(workers)
   const failure = results.find((result) => result.status === 'rejected')
   if (failure !== undefined) {
@@ -663,9 +589,6 @@ async function copyOne(
   countSkips: boolean,
 ): Promise<void> {
   if (await target.exists(object.key)) {
-    // Only the initial copy phase counts skips — catch-up rounds re-observe
-    // the same converged objects every round and would otherwise inflate
-    // the reported number.
     if (countSkips) {
       counters.skippedObjects += 1
     }
@@ -680,8 +603,6 @@ async function copyOne(
       await target.putStream({
         key: object.key,
         body: meta.body,
-        // Stored headers copy verbatim when the source reports them (S3);
-        // otherwise the target derives them from `key-policy` + the extension.
         contentType: meta.contentType ?? contentTypeForKey(object.key),
         cacheControl: meta.cacheControl,
         visibility: visibilityForKey(object.key),
@@ -732,15 +653,8 @@ async function catchUp(
   }
 }
 
-/**
- * The flip: persist the new storage config through the wired settings-core
- * override, then re-point every per-asset driver column and the branding
- * refs. Only runs after the copy finished with zero failures.
- */
 async function switchStorage(db: Database, endpoints: ResolvedEndpoints): Promise<void> {
   if (endpoints.direction === 's3-to-local') {
-    // Carry over asset/upload — the assets section ships no defaults, so a
-    // storage-only patch cannot validate without a stored row.
     const current = requireBlogSettingsSection('assets')
     await requireHooks().persistFlippedStorage(db, { ...current.storage, enabled: false })
     await flipDriverColumns(db, endpoints, 's3', 'local')
@@ -751,7 +665,6 @@ async function switchStorage(db: Database, endpoints: ResolvedEndpoints): Promis
   const target = endpoints.targetConfig
   await requireHooks().persistFlippedStorage(db, target)
   if (endpoints.direction === 'local-to-s3') {
-    // s3-to-s3 keeps the same keys — only the bucket in settings changed.
     await flipDriverColumns(db, endpoints, 'local', 's3')
     await requireHooks().flipBrandingDrivers(db, 'local', 's3')
   }

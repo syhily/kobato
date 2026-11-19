@@ -1,9 +1,3 @@
-// The ONLY client module allowed to import the RUM SDK, reached exclusively
-// from the `useRum` effect after the root loader verified a bootstrap.
-// Every intake batch posts to the same-origin `/api/rum/intake` relay, so the
-// OpenObserve endpoint and client token never reach the document — no CORS
-// preflight, no CSP `connect-src` widening.
-
 import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 import type { RumBudgetSnapshot, RumBudgetStore } from '@kobato/web-client/lib/rum/rum-budget.ts'
 import type { RumRouteContext } from '@kobato/web-client/lib/rum/rum-route.ts'
@@ -28,7 +22,6 @@ interface RumRuntimeState {
   pollInFlight: boolean
   consent: 'granted' | 'not-granted'
   revokedByGate: boolean
-  /** Incremented by every start/stop so an in-flight initialize can abort. */
   startGeneration: number
 }
 
@@ -55,11 +48,6 @@ function isBudgetSnapshot(value: unknown): value is RumBudgetSnapshot {
   )
 }
 
-/**
- * Session-scoped cap persistence: the SDK session id is already cookie-scoped,
- * and only two counters + that random id are stored. Blocked storage degrades
- * to the in-memory policy.
- */
 function browserBudgetStore(): RumBudgetStore {
   return {
     load() {
@@ -77,9 +65,7 @@ function browserBudgetStore(): RumBudgetStore {
     save(snapshot) {
       try {
         globalThis.sessionStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(snapshot))
-      } catch {
-        // Storage blocked/full — the in-memory counters still bound the page.
-      }
+      } catch {}
     },
   }
 }
@@ -114,7 +100,6 @@ function runtime(): RumRuntimeState {
   return state
 }
 
-/** Test seam: remove the page-level runtime (counters and SDK handle included). */
 export function __resetRumForTests(): void {
   const existing = Reflect.get(globalThis, RUM_RUNTIME_KEY) as unknown
   if (isRumRuntimeState(existing)) {
@@ -136,12 +121,6 @@ function documentOrigin(): string | null {
   }
 }
 
-/**
- * The SDK calls this proxy builder with its upstream `/rum/v1/<org>/rum` path
- * and query; both ride along unchanged — the server relay validates the
- * sub-path and swaps the placeholder `o2-api-key` for the real token, so the
- * OpenObserve endpoint and credential never reach the browser.
- */
 export function rumIntakeProxyUrl({ path, parameters }: { path: string; parameters: string }): string {
   const origin = documentOrigin()
   return `${origin ?? ''}${RUM_INTAKE_PATH}${path}?${parameters}`
@@ -200,38 +179,25 @@ async function pollStatus(state: RumRuntimeState): Promise<void> {
     state.consent = consent
     state.revokedByGate = consent !== 'granted'
     if (lostConsent) {
-      // Explicit stop on the first granted→not-granted transition keeps the
-      // view/session lifecycle unambiguous before the recovery `startView`.
       try {
         state.api.stopSession()
-      } catch {
-        // Swallowed: setTrackingConsent below still enforces revocation.
-      }
+      } catch {}
     }
     state.api.setTrackingConsent(consent)
     if (shouldResumeView) {
-      // Consent recovered while the document is still open: `startView` ends
-      // the stopped view and starts a fresh one in the same document — no
-      // reload/navigation, so unsaved editor input is preserved.
       try {
         state.api.startView(state.route?.id ?? 'unknown')
-      } catch {
-        // Swallowed: keep polling and leave consent granted.
-      }
+      } catch {}
     }
   } catch {
     if (generation === state.pollGeneration && state.status === 'started' && state.api !== null) {
-      // Fail closed: a missing/offline status endpoint stops collection and
-      // discards the SDK's buffered events instead of continuing blind.
       const lostConsent = state.consent === 'granted'
       state.consent = 'not-granted'
       state.revokedByGate = true
       if (lostConsent) {
         try {
           state.api.stopSession()
-        } catch {
-          // Swallowed: setTrackingConsent below still enforces revocation.
-        }
+        } catch {}
       }
       state.api.setTrackingConsent('not-granted')
     }
@@ -254,17 +220,9 @@ function startStatusPolling(state: RumRuntimeState): void {
   void pollStatus(state)
 }
 
-/**
- * Temporarily revoke consent while the O2 gate is closed, KEEPING the SDK
- * handle, route, and status poll so a later poll can resume the same document
- * with `startView` when the gate returns. Used for a bootstrap that became
- * null without an explicit privacy decision.
- */
 export function suspendRum(): void {
   const state = runtime()
   const lostConsent = state.consent === 'granted'
-  // Record the requested state even while `initialize` is still in flight, so
-  // the just-started SDK cannot come up granted behind a closed gate.
   state.consent = 'not-granted'
   state.revokedByGate = true
   if (state.status !== 'started' || state.api === null) {
@@ -273,19 +231,14 @@ export function suspendRum(): void {
   if (lostConsent) {
     try {
       state.api.stopSession()
-    } catch {
-      // The SDK call is monitored; consent revocation still applies.
-    }
+    } catch {}
   }
   state.api.setTrackingConsent('not-granted')
-  // Keep the poll alive so suspend can recover when the gate returns; restart
-  // it if the timer was lost.
   if (state.pollTimer === null) {
     startStatusPolling(state)
   }
 }
 
-/** Revoke consent and stop polling (DNT/GPC, invalid bootstrap, unmount/HMR). */
 export function stopRum(): void {
   const state = runtime()
   stopStatusPolling(state)
@@ -299,17 +252,10 @@ export function stopRum(): void {
   state.route = null
 }
 
-/**
- * Test seam: run one status poll immediately.
- */
 export async function __pollRumStatusForTests(): Promise<void> {
   await pollStatus(runtime())
 }
 
-/**
- * Idempotently start the slim SDK. Returns once initialization settled; a
- * failure is contained and later calls never retry in the same page.
- */
 export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteContext): Promise<void> {
   const state = runtime()
   state.route = route
@@ -318,9 +264,6 @@ export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteC
     return
   }
   if (state.status === 'started') {
-    // Consent recovery is owned exclusively by the status poll: a SPA
-    // navigation or stale bootstrap must never re-authorize behind a closed
-    // gate — only update the view name and keep polling.
     state.api?.setViewName(route.id)
     startStatusPolling(state)
     return
@@ -334,9 +277,6 @@ export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteC
     return
   }
 
-  // A fresh idle start is backed by an active root-loader bootstrap, so reset
-  // stale not-granted state; an in-flight `starting` run keeps a suspend that
-  // was requested during the import.
   if (state.status === 'idle') {
     state.consent = 'granted'
     state.revokedByGate = false
@@ -362,8 +302,6 @@ async function initialize(state: RumRuntimeState, bootstrap: FrontendRumBootstra
   }
 
   try {
-    // The one SDK import edge in the client graph; reached lazily, so the
-    // package ships as its own chunk.
     const module = await import('@openobserve/browser-rum-slim')
     if (state.startGeneration !== generation || state.status !== 'starting') {
       return
@@ -382,8 +320,6 @@ async function initialize(state: RumRuntimeState, bootstrap: FrontendRumBootstra
 
     const initConfiguration: RumInitConfiguration = {
       applicationId: bootstrap.applicationId,
-      // The SDK refuses to initialize without a token; this placeholder never
-      // leaves the same-origin relay, which injects the real one server-side.
       clientToken: RUM_RELAY_CLIENT_TOKEN,
       proxy: rumIntakeProxyUrl,
       service: bootstrap.service,

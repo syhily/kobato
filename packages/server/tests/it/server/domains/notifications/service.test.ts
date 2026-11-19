@@ -29,7 +29,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
-/** Real system message used wherever a test just needs an admin-kind row. */
 const SYSTEM_NOTICE = {
   titleKey: 'notification.mail.zeaburCleanup.title',
   bodyKey: 'notification.mail.zeaburCleanup.body',
@@ -90,8 +89,6 @@ describe('notifications / producers', () => {
     const adminId = await seedUser('admin', 'admin')
     const visitorId = await seedUser('visitor', 'visitor')
 
-    // Soft-delete the target: the probe must apply the SAME predicate
-    // `listRecipientUserIds` does (deleted_at IS NULL AND role IS NOT NULL).
     db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId)).run()
     for (const targetId of [9999, visitorId]) {
       const error = captureError(() => sendDirectMessage(db, adminId, targetId, { title: 't', body: 'b' }))
@@ -115,8 +112,6 @@ describe('notifications / producers', () => {
       .from(notificationRecipient)
       .where(eq(notificationRecipient.notificationId, row.id))
       .all()
-    // 1 200 visitors + the author's pre-read self-row — 500/500/201 rows in
-    // three INSERTs, still ONE transaction.
     expect(rows).toHaveLength(1_201)
     expect(new Set(rows.map((recipient) => recipient.userId)).size).toBe(1_201)
     expect(rows.find((recipient) => recipient.userId === adminId)?.readAt).not.toBeNull()
@@ -130,8 +125,6 @@ describe('notifications / producers', () => {
     const earlyId = await seedUser('visitor', 'early')
     sendBroadcast(db, adminId, { title: '清缓存公告', body: '请刷新页面', replyable: false })
 
-    // The audience is snapshotted at send time: a later registrant has no
-    // row, no unread badge, and nothing in any tab.
     const lateId = await seedUser('visitor', 'late')
     expect(unreadCount(db, lateId)).toBe(0)
     expect((await listInbox(db, lateId, { tab: 'all', limit: 10 })).items).toHaveLength(0)
@@ -248,12 +241,6 @@ describe('notifications / inbox', () => {
   })
 
   it('pins the inbox access path: index-fed ordering, no temp B-tree', () => {
-    // Every inbox page (all / unread / cursor / kind-filtered) must walk
-    // `idx_notification_recipient_user_nid` backwards; losing the index (or
-    // ordering by the joined table) reintroduces a temp B-tree over the
-    // user's whole recipient history. The raw client is used because
-    // `EXPLAIN QUERY PLAN` needs the statement's bound values, which the
-    // drizzle `all` surface does not accept.
     const client = getDatabaseHandle().client
     const cases = [
       { label: 'all', filters: { limit: 20 } },
@@ -303,8 +290,6 @@ describe('notifications / threads & replies', () => {
 
     await db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId))
 
-    // The deleted counterpart drops out of the routing base, so the admin's
-    // reply has genuinely nobody to reach — an honest 400, not a silent send.
     expect(listThreadParticipantIds(db, root.threadId)).toEqual([adminId])
     await expect(
       replyToThread(db, viewer(adminId, 'admin'), { threadId: root.threadId, body: '还在吗' }),
@@ -320,8 +305,6 @@ describe('notifications / threads & replies', () => {
 
     const reply = await replyToThread(db, viewer(visitorId, 'visitor'), { threadId: root.threadId, body: '赞' })
     expect(reply.message.mine).toBe(true)
-    // The creator's own broadcast row is pre-read, so adminA's count is the
-    // reply alone; adminB also has the broadcast itself.
     expect(unreadCount(db, adminA)).toBe(1)
     expect(unreadCount(db, adminB)).toBe(2)
 
@@ -405,8 +388,6 @@ describe('notifications / threads & replies', () => {
     const adminId = await seedUser('admin', 'admin')
     const v1 = await seedUser('visitor', 'visitor')
     const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
-    // The broadcast's creator was the only admin; demote them so the fork
-    // would have no recipients at all.
     await db.update(user).set({ role: 'visitor' }).where(eq(user.id, adminId))
     await expect(
       replyToThread(db, viewer(v1, 'visitor', 'v1'), { threadId: root.threadId, body: 'x' }),
@@ -502,7 +483,6 @@ describe('notifications / recall', () => {
 
     recallMessage(db, root.id)
 
-    // The fork is an independent direct thread — untouched by the recall.
     const fork = await getThread(db, viewer(visitorId, 'visitor'), forkThreadId)
     expect(fork.messages.map((message) => message.body)).toEqual(['反馈'])
     expect(fork.canReply).toBe(true)
@@ -684,8 +664,6 @@ describe('notifications / localized system messages', () => {
     const thread = await getThread(db, viewer(adminId, 'admin'), stored.threadId, locale)
     expect(thread.messages[0]!.body).toBe(expected.body)
 
-    // The detail is the TRANSLATED message. English legitimately equals the
-    // stored fallback; every other locale must differ from it.
     if (locale === 'en-US') {
       expect(thread.messages[0]!.body).toBe(stored.body)
     } else {

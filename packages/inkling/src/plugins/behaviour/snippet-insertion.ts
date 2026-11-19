@@ -4,15 +4,6 @@ import { $ensureParagraphAfterCard } from '@kobato/inkling-internal/utils/$ensur
 import { $generateNodesFromSerializedNodes, $insertGeneratedNodes } from '@lexical/clipboard'
 import { $getSelection, type LexicalEditor, type SerializedLexicalNode } from 'lexical'
 
-// Snippet insertion — the headless module behind InklingSnippetPlugin. A
-// snippet is a host-managed fragment of serialized editor state (the
-// `{ name, value }` menu insertParams built by `@kobato/inkling-internal/nodes/cards/card-menu-build`);
-// inserting one parses the value, regenerates the nodes, and splices them at
-// the selection. Two special cases live here: a single-card snippet goes
-// through the card insert path (`INSERT_CARD_COMMAND`) so the card lands like
-// any other card insert, and a snippet whose last node is a card gets a
-// trailing paragraph so the caret has somewhere to go after it.
-
 export interface SnippetDataset {
   name: string
   value: string
@@ -29,15 +20,10 @@ export function isSnippetDataset(dataset: unknown): dataset is SnippetDataset {
   )
 }
 
-// A serialized node minimally needs a string `type` for
-// $generateNodesFromSerializedNodes to resolve its registered class — a
-// shallower entry would throw inside the editor update.
 function isSerializedNodeShape(node: unknown): node is SerializedLexicalNode {
   return typeof node === 'object' && node !== null && 'type' in node && typeof node.type === 'string'
 }
 
-// The snippet value is host-supplied data, so a malformed one no-ops silently
-// instead of throwing inside the editor update.
 function parseSnippetNodes(value: string): SerializedLexicalNode[] | null {
   let parsed: unknown
   try {
@@ -63,8 +49,6 @@ export function $insertSnippet(editor: LexicalEditor, dataset: unknown): boolean
   if (!serializedNodes) {
     return false
   }
-  // an entry with a string type can still fail generation — an unregistered
-  // type warns in dev and then throws on the missing registeredNode
   let nodes: ReturnType<typeof $generateNodesFromSerializedNodes>
   try {
     nodes = $generateNodesFromSerializedNodes(serializedNodes)

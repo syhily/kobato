@@ -44,7 +44,6 @@ import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { $createParagraphNode } from 'lexical'
 
 const MARKDOWN_CARDS = CARD_MARKDOWN_DECLARATIONS.filter((card) => 'markdown' in card && card.markdown !== undefined)
-// Exported for the node-set diff test, not part of the public `@kobato/inkling-internal/markdown` barrel.
 export const MARKDOWN_NODES = [
   HeadingNode,
   QuoteNode,
@@ -78,13 +77,6 @@ export const CARD_TRANSFORMERS: Transformer[] = [
   MARKDOWN_CARD_TRANSFORMER,
 ]
 
-// Fenced code blocks are this dialect's grammar, so the dialect carries its own
-// multiline transformer: the shared `CODE_BLOCK` transformer
-// (`@kobato/inkling-internal/markdown/transformers`) is a typing-shortcut trigger whose regex
-// never claims fences on import. The export reads `node.code` rather than
-// `getTextContent()`, which pads word-count text (caption included) with
-// trailing newlines. Ordered after the card transformers so
-// ```inkling:<card>``` fences match their card transformer first.
 const CODE_FENCE: MultilineElementTransformer = {
   dependencies: [CodeBlockNode],
   export: (node) => {
@@ -101,13 +93,6 @@ const CODE_FENCE: MultilineElementTransformer = {
   type: 'multiline-element',
 }
 
-// GFM pipe-table transformer, hand-written: @lexical/markdown 0.53 ships no
-// TABLE transformer — only the row/divider regexes that
-// normalizeMarkdown uses. Import claims a header row only when a divider
-// line follows it (otherwise the line stays a literal paragraph); cell
-// markdown converts through the dialect's minimal inline-only set, so a
-// cell can never grow block content. Export escapes pipes and always emits
-// row 0 as the GFM header — GFM has no headerless tables.
 const TABLE_ROW_REG_EXP = /^\|(.+)\|\s*$/
 
 function splitTableRow(line: string): string[] {
@@ -154,7 +139,6 @@ const GFM_TABLE: MultilineElementTransformer = {
     rootNode.append(table)
     return [true, endLineIndex]
   },
-  // unreachable: handleImportAfterStartMatch always claims or declines
   replace: () => false,
   export: (node, exportChildren) => {
     if (!$isTableNode(node)) {
@@ -172,11 +156,6 @@ const GFM_TABLE: MultilineElementTransformer = {
   type: 'multiline-element',
 }
 
-// The one home of the transformer precedence rule: card fences (built-in,
-// then host) match before GFM_TABLE and CODE_FENCE, so an inkling:<card>
-// fence is always a card, never a code block. An unclosed ```inkling:xxx fence
-// is malformed input no card transformer claims and imports as a code block
-// with language 'inkling:xxx' — accepted tradeoff.
 function buildTransformers(hostTransformers: Transformer[] = []): Transformer[] {
   return [...CARD_TRANSFORMERS, ...hostTransformers, GFM_TABLE, CODE_FENCE, ...DEFAULT_TRANSFORMERS]
 }

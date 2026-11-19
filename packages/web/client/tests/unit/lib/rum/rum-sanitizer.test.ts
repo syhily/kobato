@@ -300,7 +300,6 @@ describe('RUM event budget', () => {
     }
     const excess = resource(RUM_EVENT_LIMITS.resourcesPerSession)
     expect(policy.beforeSend(excess as never, {} as never)).toBe(false)
-    // A dropped event is untouched, never partially sanitized or retried.
     expect(excess).toHaveProperty('resource')
   })
 

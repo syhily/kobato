@@ -3,8 +3,6 @@ import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/lexic
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/test/lexical.ts'
 import { describe, expect, it } from 'vitest'
 
-// The transform operates on validated states (the save pipeline canonicalizes
-// first); fixtures parse through the real schema so shape drift fails here.
 function parse(state: unknown): LexicalEditorState {
   return lexicalEditorStateSchema.parse(state)
 }
@@ -46,10 +44,6 @@ describe('lexical/projection-state — artifact stripping', () => {
   })
 })
 
-// Host cards render through their own node classes (the server passes them via
-// `renderableHostCardTypes`), so the substitution below is a DEFENSIVE path: it
-// fires only for a card type the projection was not told to render (a surface
-// that omits the option, or a future card type).
 describe('lexical/projection-state — host card substitution', () => {
   it('replaces a meta-carrying music-player with a labeled paragraph', () => {
     const state = parse(

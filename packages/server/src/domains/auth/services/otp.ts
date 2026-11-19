@@ -25,10 +25,6 @@ import { idFromString } from '@kobato/utils/id.ts'
 
 const log = getLogger('auth.signin')
 
-/**
- * Loader-facing projection of the OTP pending state; clears both keys and reports
- * `expired` past TTL. The ONLY place the expiry rule exists.
- */
 export function readLivePendingOtp(session: BlogSession): { pending: PendingOtpUser | null; expired: boolean } {
   const pending = session.get('pendingOtpUser')
   if (!pending) {

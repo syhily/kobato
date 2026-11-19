@@ -7,8 +7,6 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-// A tap that never focuses (drag away, cancelled touch) must not hold the
-// viewport hostage — focus follows touchend within a couple of hundred ms.
 const FOCUS_SAFETY_MS = 500
 
 // iOS Safari zooms into focused controls with `font-size < 16px`. The zoom
@@ -102,9 +100,6 @@ export function useIosNoZoomOnFocus(): void {
         safetyTimer = null
       }
       if (isEditableCanvas(event.target)) {
-        // The activation is what must stay zoom-free, not the whole editing
-        // session — hand pinch-zoom back once the focus (and its zoom
-        // decision) has landed.
         releaseNextTask()
       }
     }
@@ -117,8 +112,6 @@ export function useIosNoZoomOnFocus(): void {
       if (!isZoomSensitive(event.target)) {
         return
       }
-      // Keep the lock while focus hops between zoom-sensitive controls — the
-      // "next" key focuses the next input with no pointerdown to relock it.
       if (isZoomSensitive(event.relatedTarget)) {
         return
       }

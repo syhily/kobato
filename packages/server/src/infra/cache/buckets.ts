@@ -41,14 +41,6 @@ export function getBucket(id: CacheBucketId): CacheBucket | undefined {
   return getCacheBuckets().find((bucket) => bucket.id === id)
 }
 
-/**
- * Async admin clear. The process-local L1 tier drops synchronously FIRST — a
- * served request must never see a value the admin just cleared. A counter
- * bucket then bumps its persisted generation strictly (a failed bump aborts)
- * before dropping entry shards, so a late write holding the pre-clear
- * generation lands in a recreated shard no reader will address.
- * Non-counter buckets rm the whole directory.
- */
 export async function clearBucket(bucket: CacheBucket): Promise<number> {
   evictBucketMemory(bucket.id)
   if (isCounterBucket(bucket.id)) {
@@ -102,7 +94,6 @@ export async function snapshotReservedBuckets(db: Database): Promise<ReservedCac
 export async function clearAllBuckets(): Promise<Record<CacheBucketId, number>> {
   const buckets = getCacheBuckets()
   const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(bucket)] as const))
-  // CACHE_BUCKET_IDS covers every bucket id; the Record just can't be proven from a runtime map.
   const result = unsafeCast<Record<CacheBucketId, number>>(Object.fromEntries(CACHE_BUCKET_IDS.map((id) => [id, 0])))
   for (const [id, removed] of entries) {
     result[id] = removed

@@ -1,19 +1,3 @@
-// OpenObserve log pipeline: the second server SDK entry, next to `runtime.ts`.
-//
-// Constructed by the trace runtime and imported by nothing else. It consumes the
-// already-projected record stream — `log-record.ts` decides what a line may say,
-// this module only ships it — and imports no stdout logger, so an exporter
-// hiccup cannot become a log line (and a log line cannot loop back in here).
-//
-// Boundaries that matter here:
-// - Fixed resource attributes come from `resource.ts` (one three-key object).
-// - The direct OTLP/HTTP exporter carries the server-only authorization header
-//   plus the OpenObserve `stream-name`; it is never projected to the browser.
-// - Bounded batch pipeline (1024/256/1s/3s, one export in flight), so a stalled
-//   OpenObserve instance drops log records instead of growing the heap.
-// - The SDK associates the active trace context itself; callers pass no context
-//   and no exception object.
-
 import type { LogSink } from '@kobato/server/infra/logger/sink.ts'
 import type { TraceLogsRuntimeConfig } from '@kobato/server/infra/trace/config.ts'
 import type { LogSeverityText } from '@kobato/server/infra/trace/log-record.ts'
@@ -61,10 +45,6 @@ export interface LogPipelineOptions {
   healthToken?: object
 }
 
-/**
- * Build the log pipeline. Construction failures clean up whatever was created
- * and rethrow so the caller can degrade logs only (traces/metrics continue).
- */
 export function buildLogPipeline(config: TraceLogsRuntimeConfig, options: LogPipelineOptions = {}): LogPipeline {
   const constructed =
     options.exporter ??
@@ -146,8 +126,6 @@ export function buildLogPipeline(config: TraceLogsRuntimeConfig, options: LogPip
     const createdProcessor = processor
     provider = null
     processor = null
-    // Release whatever was constructed: provider shutdown also shuts its
-    // processor (and that processor's exporter).
     const cleanup =
       createdProvider !== null
         ? createdProvider.shutdown()

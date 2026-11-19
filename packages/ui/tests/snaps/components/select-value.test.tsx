@@ -2,10 +2,6 @@ import { renderToHtml } from '@kobato/test/render.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
 import { describe, expect, it } from 'vitest'
 
-// Base UI's `<Select.Value>` renders the RAW value by default, so call sites resolve a
-// label via `items` on `<Select>` or a `<SelectValue>` child function. Pinned statically
-// in tests/unit/contract/select-value-label.test.ts.
-
 describe('Select value label resolution', () => {
   it('renders the selected item label when `items` is provided', () => {
     const html = renderToHtml(

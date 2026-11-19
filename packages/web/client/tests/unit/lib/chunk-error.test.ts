@@ -1,9 +1,6 @@
 import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error.ts'
 import { describe, expect, it } from 'vitest'
 
-// Contract test: locks the cross-browser chunk-error strings — false
-// negatives silently crash a stale tab, false positives force reload loops.
-
 describe('isChunkLoadError', () => {
   it('matches Chrome / Edge dynamic import failures', () => {
     const err = new TypeError('Failed to fetch dynamically imported module: https://example.com/assets/abc.js')

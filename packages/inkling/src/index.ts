@@ -35,23 +35,10 @@ import TypographyPlugin from '@kobato/inkling-internal/plugins/TypographyPlugin'
 import WordCountPlugin from '@kobato/inkling-internal/plugins/WordCountPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 
-/* Card decorate wiring: assembled card classes resolve decorate() through the
- * injection port in `@kobato/inkling-internal/nodes/card-decorate-slot`; this call fills the
- * slot for every full-entry consumer. Keep it an explicit entry-level
- * statement rather than a module side effect, so registration holds regardless
- * of the bundler's side-effect assumptions and the headless graph (which never
- * imports this barrel) stays free of the React component tree. */
 registerCardDecorateAdapter()
 
-/* The contract shared across entry surfaces (Lexical runtime types,
- * host-config types, labels, the library browser, the card-free composition
- * pieces, version) is single-sourced in ./shared-exports — add shared names
- * there, never here. */
 export * from '@kobato/inkling-internal/shared-exports'
 
-/* The defaulted composer's props are entry-specific: `nodes` is OPTIONAL
- * here (defaults to DEFAULT_NODES); the card-free `InklingComposerBase`
- * requires it. */
 export type { InklingComposerProps } from '@kobato/inkling-internal/components/InklingComposer'
 export type { InklingEditorProps } from '@kobato/inkling-internal/components/InklingEditor'
 export type { InklingNestedComposerProps } from '@kobato/inkling-internal/components/InklingNestedComposer'
@@ -141,8 +128,6 @@ export type { GalleryNodeDataset, SerializedGalleryNode } from '@kobato/inkling-
 export { MathNode, $createMathNode, $isMathNode, INSERT_MATH_COMMAND } from '@kobato/inkling-internal/nodes/MathNode'
 export type { MathNodeDataset } from '@kobato/inkling-internal/nodes/MathNode'
 
-/* Inline math is not a card (cards are block-level): the host owns the inline
- * editing UI and listens for EDIT_MATH_INLINE_COMMAND. */
 export {
   $createMathInlineNode,
   $isMathInlineNode,
@@ -168,21 +153,9 @@ export { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 export type { HostCard, HostCardMenuEntrySpec, HostCardSpec } from '@kobato/inkling-internal/nodes/cards/host-cards'
 
 export { getHostCardNodes } from '@kobato/inkling-internal/nodes/cards/host-card-nodes'
-/* The shared card-insert dispatch target: a host that intercepts a per-card
- * INSERT_* command to construct its own node class (kobato's KobatoImageNode;
- * the stock registration builds the declaration's assembled class and drops
- * host dataset keys) re-dispatches INSERT_CARD_COMMAND to reuse the same
- * selection/scroll choreography. DELETE_CARD_COMMAND is the removal half — a
- * host card's chrome dispatches it so removal gets the built-in
- * sibling-selection/focus handling instead of a bare node.remove(). */
 export { DELETE_CARD_COMMAND, INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 export type { InsertCardPayload } from '@kobato/inkling-internal/plugins/behaviour/types'
 
-/* The image-library open command: with a host subclass registered for node
- * type `image` (KobatoImageNode), InklingSelectorPlugin's LOW-priority handler
- * still mounts — `hasNodes` gates on the TYPE — but would open inkling's
- * selector overlay. The host intercepts this command at HIGH priority to open
- * its own library dialog, then re-enters through INSERT_IMAGE_COMMAND. */
 export { OPEN_IMAGE_LIBRARY_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
 /* Editor factory for host-side node tests: Lexical forbids constructing nodes
@@ -216,11 +189,6 @@ export type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/expor
 export * from '@kobato/inkling-internal/utils'
 export { lexicalStateToMarkdown, markdownToLexicalState } from '@kobato/inkling-internal/markdown'
 export type { MarkdownRoundTripOptions } from '@kobato/inkling-internal/markdown/round-trip'
-// The HTML/plain-text converters and their option/DOM types live ONLY on
-// `@kobato/inkling-internal/headless`: headless-html reaches jsdom through headless-dom's
-// lazy import, and re-exporting them here would drag jsdom (and undici) into
-// the CLIENT module graph (pinned by
-// tests/inkling/unit/html/jsdom-import-guard.test.ts).
 
 export {
   InklingComposer,

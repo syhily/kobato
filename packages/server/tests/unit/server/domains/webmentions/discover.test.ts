@@ -1,9 +1,6 @@
 import { parseWebmentionEndpoint } from '@kobato/server/domains/webmentions/discover.ts'
 import { describe, expect, it } from 'vitest'
 
-// Pure parser tests — the network shell is a thin safeFetch wrapper whose
-// parameters mirror the receiver's fetchSourceHtml (covered there).
-
 const FINAL = 'https://example.com/blog/post'
 
 describe('webmentions/discover.parseWebmentionEndpoint', () => {
@@ -49,7 +46,6 @@ describe('webmentions/discover.parseWebmentionEndpoint', () => {
 
   it('resolves a relative endpoint against the final (post-redirect) URL', () => {
     const html = '<link rel="webmention" href="../wm">'
-    // Base ends in `/post/` (a directory), so `../wm` lands under /blog/.
     expect(parseWebmentionEndpoint(null, html, 'https://example.com/blog/post/')).toBe('https://example.com/blog/wm')
     expect(parseWebmentionEndpoint(null, html, 'https://example.com/blog/post')).toBe('https://example.com/wm')
   })

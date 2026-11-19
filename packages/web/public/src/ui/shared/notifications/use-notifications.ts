@@ -13,27 +13,6 @@ import {
 } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
-/**
- * The unread badge count, polled every 120 s plus on window focus, and kept
- * fresh after any notification mutation — read-state flips patch it from the
- * mutation response (`usePatchNotificationReadState`), content changes
- * invalidate it (`useInvalidateNotifications`). The idle cadence is
- * deliberately slow — tuned polling instead of SSE: an async inbox tolerates
- * a stale badge while the tab sits in the background, and the moments that
- * matter refetch on demand.
- *
- * Exactly ONE observer per shell by design: `AppSidebar` on admin and
- * `BaseLayout` on public. Callers must pass the resulting count DOWN as a
- * prop (`NotificationsDrawer`, the nav items, the user menus) — do NOT add a
- * new call site. TanStack's `refetchInterval` runs one timer per observer
- * with no freshness check, and a shared cache entry does not dedupe
- * staggered timers, so extra observers silently multiply the fetch cadence.
- *
- * Tri-state on purpose: `null` means UNKNOWN (not loaded yet, or the query
- * failed) — never fold it into `0`, which is a confirmed "nothing unread".
- * Badges render `?? 0`; controls that a false zero would disable compare
- * against `0` explicitly.
- */
 export function useUnreadNotificationCount(enabled = true): number | null {
   const query = useQuery(
     orpcQuery.notifications.unreadCount.queryOptions({
@@ -45,11 +24,6 @@ export function useUnreadNotificationCount(enabled = true): number | null {
   return query.data?.count ?? null
 }
 
-/**
- * Invalidate every notifications query (list pages, thread, unread count) after a
- * CONTENT-changing mutation (recall, reply, compose). Read-state-only flips use
- * `usePatchNotificationReadState` instead.
- */
 export function useInvalidateNotifications(): () => Promise<void> {
   const queryClient = useQueryClient()
   return async () => {
@@ -101,11 +75,6 @@ function isNotificationPages(value: unknown): value is NotificationPages {
   return Array.isArray(value.pages) && value.pages.every((page) => isRecord(page) && Array.isArray(page.items))
 }
 
-/**
- * Classify one cached notifications query key. `inert` = the payload is
- * unaffected by a read-state flip; `unknown` = a shape this patch does not
- * understand, so the caller must fall back to a full invalidation.
- */
 function classifyNotificationQueryKey(queryKey: QueryKey, keys: NotificationCacheKeys): NotificationListMatch {
   if (hashKey(queryKey) === hashKey(keys.unreadCount)) {
     return 'inert'
@@ -115,7 +84,6 @@ function classifyNotificationQueryKey(queryKey: QueryKey, keys: NotificationCach
     return 'unknown'
   }
   const { type, input } = state
-  // Thread messages carry no read flag of their own.
   if (type === 'query' && path[path.length - 1] === 'thread') {
     return 'inert'
   }
@@ -133,8 +101,6 @@ function patchNotificationPages(
   read: boolean,
 ): NotificationPages {
   if (tab === 'unread') {
-    // The unread tab never GAINS rows locally — the item may belong anywhere
-    // in the ordering, so appending it would lie. The next poll reconciles.
     if (!read) {
       return data
     }
@@ -150,7 +116,6 @@ function patchNotificationPages(
     return removed ? { ...data, pages } : data
   }
 
-  // Every other tab keeps the row in place — only its read flag moves.
   let changed = false
   const pages = data.pages.map((page) => {
     let pageChanged = false
@@ -174,16 +139,6 @@ function invalidateNotifications(queryClient: QueryClient, scope: QueryKey): voi
   void queryClient.invalidateQueries({ queryKey: scope })
 }
 
-/**
- * Apply a read-state mutation's server verdict to the notification cache:
- * seed the unread badge from the response's authoritative `count`, then flip
- * the rows in every cached list tab (removing them from `unread` on
- * mark-read). Never throws — any key shape, missing data, or page shape this
- * cannot parse falls back to a full invalidation.
- *
- * Pass an empty `ids` to only seed the badge (mark-all-read keeps its full
- * invalidation: every row in every tab changes).
- */
 export function patchNotificationReadState(
   queryClient: QueryClient,
   ids: string[],
@@ -213,25 +168,12 @@ export function patchNotificationReadState(
       invalidateNotifications(queryClient, keys.scope)
     }
   } catch {
-    // A cache patch must never break the mutation's success path.
     try {
       invalidateNotifications(queryClient, orpcQuery.notifications.key())
-    } catch {
-      // Nothing left to fall back to.
-    }
+    } catch {}
   }
 }
 
-/**
- * Post-mutation patch for READ-STATE-ONLY changes (`markRead` /
- * `markUnread`): rewrites the cached pages and badge in place instead of
- * refetching every loaded page.
- *
- * Rule for new notification mutations: a mutation that only flips read
- * state uses this patch; a mutation that changes CONTENT (recall, reply,
- * compose — anything that adds, removes, or rewrites rows) MUST keep
- * `useInvalidateNotifications`.
- */
 export function usePatchNotificationReadState(): (ids: string[], read: boolean, count: number) => void {
   const queryClient = useQueryClient()
   return useCallback(

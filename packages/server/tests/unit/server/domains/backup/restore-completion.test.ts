@@ -110,12 +110,9 @@ describe('backup/restore-completion', () => {
     await createRestoreCompletion(deps)(false, new Error('restore failed'))
 
     expect(mockRollbackPreRestoreFiles).toHaveBeenCalledTimes(1)
-    // The rollback must land before the server comes back — restarting
-    // into the corrupt swapped payload is the wedge this guards against.
     expect(mockRollbackPreRestoreFiles.mock.invocationCallOrder[0]!).toBeLessThan(
       mockRestartServer.mock.invocationCallOrder[0]!,
     )
-    // The failure path never deletes the originals or touches the restored cache.
     expect(mockCleanupPreRestoreFiles).not.toHaveBeenCalled()
     expect(deps.wipeCache).not.toHaveBeenCalled()
     expect(deps.notifyCacheWipeFailed).not.toHaveBeenCalled()
@@ -142,8 +139,6 @@ describe('backup/restore-completion', () => {
     await createRestoreCompletion(deps)(true, undefined)
 
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
-    // A failed migration still runs the cache wipe: only the NEW content DB's
-    // cache must survive a restore.
     expect(deps.wipeCache).toHaveBeenCalledTimes(1)
   })
 

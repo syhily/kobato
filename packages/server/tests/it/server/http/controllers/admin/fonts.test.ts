@@ -16,11 +16,8 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// No mocks: everything runs real against the shared in-memory storage
-// backend (seeded fonts carry storageDriver 'local', matching its driver).
 const memory = makeMemoryBackend({ driver: 'local' })
 
-// Section-change dispatch is unit-covered; keep it out of these cases.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -33,7 +30,6 @@ beforeEach(async () => {
 afterEach(async () => {
   __resetStorageBackendsForTests()
   memory.reset()
-  // Flush BEFORE dropping the batcher: an armed flush timer leaks stale events into the next test.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -59,7 +55,6 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Prom
   return row
 }
 
-// audit_log.actor_id references user.id: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -94,7 +89,6 @@ describe('adminFontsRouter.delete', () => {
   it('returns the deleted DTO, removes the storage package, and records a font_deleted audit row', async () => {
     const admin = await seedAdmin()
     const seeded = await seedFont()
-    // Mirror putFont's output: result.css + the woff2 chunks.
     const packageFiles = ['result.css', 'chunk-0.woff2', 'chunk-1.woff2', 'chunk-2.woff2']
     for (const name of packageFiles) {
       memory.store.set(`fonts/${seeded.hash}/${name}`, {

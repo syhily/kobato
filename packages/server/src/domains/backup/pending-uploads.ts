@@ -8,8 +8,6 @@ import { rmSync } from 'node:fs'
 const log = getLogger('backup.pending-uploads')
 
 const TTL_MS = 10 * 60 * 1000
-/** Each parked upload can hold MAX_BACKUP_FILE_SIZE on the temp disk, so the
- *  count is capped; the earliest-expiring entry is evicted first. */
 const MAX_PENDING = 4
 
 export interface PendingEncryptedUpload {
@@ -60,8 +58,6 @@ function sweepExpired(): void {
 export function parkEncryptedUpload(entry: { dir: string; uploadPath: string; fileName: string }): string {
   sweepExpired()
   while (pending.size >= MAX_PENDING) {
-    // Never evict an entry mid-decrypt: its read stream opens lazily, so
-    // sweeping the dir would fail the in-flight decrypt with a bare ENOENT.
     let oldest: PendingEncryptedUpload | null = null
     for (const candidate of pending.values()) {
       if (candidate.inFlight) {
@@ -72,7 +68,6 @@ export function parkEncryptedUpload(entry: { dir: string; uploadPath: string; fi
       }
     }
     if (oldest === null) {
-      // Every parked upload is mid-decrypt — refuse rather than kill one.
       throw new ActionFailure(429, descriptorFor('backup.error.decryptQueueFull'))
     }
     dropEntry(oldest.token)
@@ -83,7 +78,6 @@ export function parkEncryptedUpload(entry: { dir: string; uploadPath: string; fi
   return token
 }
 
-/** Non-consuming read — a wrong password must leave the entry retryable. */
 export function peekEncryptedUpload(token: string): PendingEncryptedUpload | null {
   const entry = pending.get(token)
   if (entry === undefined) {
@@ -100,9 +94,6 @@ export type DecryptClaim =
   | { ok: true; entry: PendingEncryptedUpload }
   | { ok: false; reason: 'missing' | 'expired' | 'in-flight' }
 
-/** Atomically marks the entry as being decrypted (synchronous — no await
- *  between read and mark). Callers MUST pair this with `endDecryptClaim`
- *  unless they release the entry outright. */
 export function claimEncryptedUploadForDecrypt(token: string): DecryptClaim {
   const entry = pending.get(token)
   if (entry === undefined) {
@@ -119,8 +110,6 @@ export function claimEncryptedUploadForDecrypt(token: string): DecryptClaim {
   return { ok: true, entry }
 }
 
-/** Clears the in-flight mark after a decrypt attempt that KEPT the entry
- *  (wrong password — the user retries). No-op when the entry is gone. */
 export function endDecryptClaim(token: string): void {
   const entry = pending.get(token)
   if (entry !== undefined) {
@@ -138,8 +127,6 @@ export function resetPendingEncryptedUploads(): void {
   }
 }
 
-// The lazy sweep on park() alone would leave an abandoned token's dir on disk
-// until the next park, so the TTL overrun is bounded by this timer.
 registerJob({
   name: 'backup.pending-upload-sweep',
   nextDelayMs: () => 60 * 1000,

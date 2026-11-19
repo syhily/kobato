@@ -6,7 +6,6 @@ import { isUniqueConstraintError } from '@kobato/db/errors.ts'
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@kobato/db/operations/slug-registry.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 
-// Sync (node:sqlite): transactions are sync callbacks.
 export function reclaimSlugOnRestore(
   tx: Database,
   entityType: ContentType,

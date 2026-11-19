@@ -48,12 +48,8 @@ export function FriendApplyForm() {
   }
 
   const handleOpen = () => setOpen(true)
-  // `onClose` feeds Popup's focus-management effect, so its identity MUST stay stable: a
-  // fresh closure per render tears the effect down, and the teardown focuses
-  // `previouslyFocusedRef`, stealing focus mid-session and re-capturing a restore target.
   const handleClose = useCallback(() => {
     setOpen(false)
-    // A closed dialog reopens fresh — clear stale success/error state.
     setSubmitted(false)
     setSubmitError(null)
   }, [])
@@ -155,7 +151,6 @@ function readFormString(data: FormData, name: string): string | undefined {
   return typeof value === 'string' ? value : undefined
 }
 
-/** Off-screen honeypot: humans never see it; bots that fill every input trip schema validation. */
 function FriendApplyHoneypot() {
   return (
     <div className="absolute left-[-10000px] size-px overflow-hidden" aria-hidden="true">

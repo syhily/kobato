@@ -1,9 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
-// Smooth-scroll to the URL hash; flash a comment node for `#user-comment-<id>`.
-// The target may stream in late (comments load via `<Suspense>`), so watch DOM
-// mutations until it lands or a ceiling elapses.
 const TARGET_WAIT_MS = 5000
 const SCROLL_SETTLE_FALLBACK_MS = 300
 const NO_SCROLL_THRESHOLD_PX = 4
@@ -95,13 +92,10 @@ function flashComment(target: HTMLElement): void {
   for (const node of document.querySelectorAll<HTMLElement>('article.comment-body')) {
     node.classList.remove('active')
   }
-  // The hash points at `<li id="user-comment-N">`; the flash lives on the
-  // `<article>` wrapper inside it.
   const article = target.querySelector<HTMLElement>('article.comment-body')
   if (article === null) {
     return
   }
-  // Force a reflow so the CSS animation restarts when re-targeting the same comment.
   void article.offsetWidth
   article.classList.add('active')
 }

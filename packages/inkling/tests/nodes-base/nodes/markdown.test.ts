@@ -10,9 +10,6 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 const editorNodes = [MarkdownNode]
 
-// the card's exportDOM reads the paste dialect through the lazy port's sync
-// cache (the headless HTML surface would seed it; this file bypasses that
-// surface, so it warms the port itself)
 beforeAll(() => loadPasteDialect())
 
 describe('MarkdownNode', function () {

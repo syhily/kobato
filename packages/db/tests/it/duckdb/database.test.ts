@@ -28,7 +28,6 @@ interface CapturedLog {
   ctx?: Record<string, unknown>
 }
 
-/** Capture logger standing in for the composition layer's injected logger. */
 function captureLogger(): DuckDBLogger & { lines: CapturedLog[] } {
   const lines: CapturedLog[] = []
   return {

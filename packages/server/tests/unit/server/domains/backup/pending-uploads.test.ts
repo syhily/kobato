@@ -11,9 +11,6 @@ import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Fake dir paths are fine: every sweep goes through rmSync force:true, which
-// ignores a missing path — and resetPendingEncryptedUploads() releases (and
-// sweeps) whatever a case left parked.
 let seq = 0
 function makeEntry() {
   seq += 1
@@ -42,10 +39,8 @@ describe('pending encrypted uploads', () => {
     expect(peeked).toMatchObject({ token, dir: entry.dir, uploadPath: entry.uploadPath, fileName: entry.fileName })
     expect(peeked!.inFlight).toBe(false)
 
-    // Past the 10-minute TTL the peek sweeps the entry instead of returning it.
     vi.advanceTimersByTime(TTL_MS + 60_000)
     expect(peekEncryptedUpload(token)).toBeNull()
-    // Released for real — a later claim reports 'missing', not 'expired'.
     expect(claimEncryptedUploadForDecrypt(token)).toEqual({ ok: false, reason: 'missing' })
   })
 
@@ -76,16 +71,13 @@ describe('pending encrypted uploads', () => {
   })
 
   it('evicts the earliest-expiring NON-in-flight entry when the cap is reached', () => {
-    // Stagger expiresAt (1s apart) so the LRU ordering is deterministic.
     const tokens: string[] = []
     for (let i = 0; i < 4; i += 1) {
       tokens.push(parkEncryptedUpload(makeEntry()))
       vi.advanceTimersByTime(1_000)
     }
-    // The second-oldest is mid-decrypt — eviction must skip it.
     expect(claimEncryptedUploadForDecrypt(tokens[1]!).ok).toBe(true)
 
-    // The fifth park evicts the oldest non-in-flight entry (tokens[0]).
     const fifth = parkEncryptedUpload(makeEntry())
 
     expect(peekEncryptedUpload(tokens[0]!)).toBeNull()

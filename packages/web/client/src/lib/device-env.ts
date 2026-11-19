@@ -1,9 +1,5 @@
 import type { DeviceEnvBeacon } from '@kobato/contracts/analytics.ts'
 
-// Every browser API is read defensively: a missing / non-finite value is
-// OMITTED from the payload (the wire contract makes every dimension optional),
-// never sent as null — `null` is not a valid beacon value.
-
 export type DeviceEnvStaticFields = Pick<
   DeviceEnvBeacon,
   | 'screenW'
@@ -156,7 +152,6 @@ export function collectDynamicEnv(): DeviceEnvDynamicFields {
   }
 }
 
-/** Compose one beacon payload; the static block rides only the first send of a session. */
 export function buildDeviceEnvBeacon(eventId: string, includeStatic: boolean): DeviceEnvBeacon {
   return {
     eventId,

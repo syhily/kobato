@@ -1,14 +1,3 @@
-// Footnote behaviour — headless; `FootnotePlugin` is only the React/DOM adapter.
-//
-// Cross-cutting invariants: removal deliberately does NOT remove a definition
-// whose last ref disappears — it stays as an orphan, tailed by the renumber
-// engine; the doc-end run invariant (one contiguous definition run at the
-// document end) is what the string-layer export wrap relies on.
-//
-// Known gap: nested editors are separate LexicalEditor instances — the
-// top-level walk cannot see inside them, so footnote insertion is disabled
-// there and numbering never descends.
-
 import type { FootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 import type { LexicalEditor, LexicalNode, NodeKey } from 'lexical'
 
@@ -79,12 +68,6 @@ export function $collectFootnoteSnapshot(): FootnoteSnapshot {
   return { refs, definitions }
 }
 
-/**
- * The signature short-circuit: ref `targetKey:digit` occurrences in citation
- * order, then sorted definition `targetKey@rank` entries — any
- * renumber-relevant change flips the string, so an unchanged signature skips
- * the engine entirely.
- */
 export function $footnoteSyncSignature(snapshot: FootnoteSnapshot): string {
   const occurrences = snapshot.refs.map((ref) => `${ref.targetKey}:${ref.getTextContent()}`)
   const defs = snapshot.definitions.map((definition, rank) => `${definition.targetKey}@${rank + 1}`).sort()
@@ -237,8 +220,6 @@ function $scanFootnoteCaretTrigger(editor: LexicalEditor, handle: FootnoteHandle
   if (!$canInsertFootnoteRef(editor)) {
     return
   }
-  // $canInsertFootnoteRef just proved range+collapsed, but the compiler
-  // can't see it — guard locally instead of asserting
   const selection = $getSelection()
   if (!$isRangeSelection(selection)) {
     return
@@ -291,15 +272,11 @@ export function publishFootnoteMaps(editor: LexicalEditor, handle: FootnoteHandl
 
 export function registerFootnotes(editor: LexicalEditor, handle: FootnoteHandle): () => void {
   if (isNestedEditor(editor)) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
   const registeredTypes = new Set([...getRegisteredNodeMap(editor).values()].map(({ klass }) => klass.getType()))
   if (!registeredTypes.has('footnote-ref') || !registeredTypes.has('footnotedefinition')) {
-    return () => {
-      /* noop */
-    }
+    return () => undefined
   }
   const scanState: FootnoteScanState = { lastSignature: undefined }
 

@@ -13,7 +13,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Only saveBody stays mocked (covered by content-domain tests); everything else runs real.
 vi.mock('@kobato/server/domains/content/lifecycle.ts', () => ({
   saveBody: vi.fn(),
 }))
@@ -31,12 +30,10 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher so no stale events leak into the next case.
   await flushAuditLog()
   resetAllBatchers()
 })
 
-// audit_log.actor_id references user.id: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -62,7 +59,6 @@ async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) 
 async function seedPublishedRevision(postId: number): Promise<number> {
   const [rev] = await db
     .insert(contentTable)
-    // The admin detail DTO reads the revision body as a Lexical state.
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: rev.id }).where(eq(postTable.id, postId))

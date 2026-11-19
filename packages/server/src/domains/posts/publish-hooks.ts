@@ -12,10 +12,6 @@ export const POST_PUBLISH_HOOK_WARNING = {
   fallbackMessage: 'Post-publish processing (e.g. queueing Webmentions) failed; the post itself is unaffected.',
 } as const satisfies ErrorMessageDescriptor
 
-/**
- * Post-publish extension seam: the owning domain wires the hook at import
- * time (unwired = no-op). Posts must never import webmentions back (DAG).
- */
 export type PostPublishHook = (
   db: Database,
   meta: PostMetaRow,
@@ -29,8 +25,6 @@ export function wirePostPublishHook(hook: PostPublishHook): void {
   impl = hook
 }
 
-/** Run the wired extension (if any); a throwing hook degrades to a
- *  publish warning, never a failed publish. */
 export async function runPostPublishHooks(
   db: Database,
   meta: PostMetaRow,

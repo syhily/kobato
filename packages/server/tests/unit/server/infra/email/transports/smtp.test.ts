@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock nodemailer at the import boundary so the test never opens a real SMTP socket.
 const { sendMailMock, createTransportMock } = vi.hoisted(() => {
   const sendMail = vi.fn()
   return {
@@ -16,10 +15,6 @@ vi.mock('nodemailer', () => ({
 import type { SmtpConfig } from '@kobato/server/infra/email/transports/smtp.ts'
 
 import { SmtpTransport } from '@kobato/server/infra/email/transports/smtp.ts'
-
-// These tests pin the SMTP transport stub. They lock in the same
-// skip / happy / failure vocabulary the other transports speak so the
-// dispatcher can swap them transparently.
 
 const baseConfig: SmtpConfig = {
   enabled: true,

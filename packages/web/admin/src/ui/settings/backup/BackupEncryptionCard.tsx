@@ -24,12 +24,10 @@ export function BackupEncryptionCard({ backup }: BackupEncryptionCardProps) {
   const { form, flushOnBlur, save, display, settingGroupProps } = useSettingsCard<BackupLoaderShape, FormState>({
     section: 'backup',
     source: backup,
-    // The stored secret never seeds the form — only the mask drives the display.
     toState: (source) => ({ encryptionEnabled: source.encryption.enabled, password: '' }),
     fromState: (state) => ({
       encryption: {
         enabled: state.encryptionEnabled,
-        // Empty input omits the key — the server keeps the stored password.
         ...(state.password.trim() !== '' ? { password: state.password.trim() } : {}),
       },
     }),

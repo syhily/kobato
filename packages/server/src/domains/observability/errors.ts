@@ -1,7 +1,3 @@
-// OpenObserve failure → typed error descriptor. The O2 client keeps only a
-// closed kind/operation/status; this module is the single place that decides
-// which admin-readable message the transport localizes.
-
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 import type { DomainErrorCode } from '@kobato/server/infra/http/errors.ts'
 
@@ -14,10 +10,7 @@ export interface O2Failure {
   descriptor: ErrorMessageDescriptor
 }
 
-/** Map a safe O2 failure to a domain code + descriptor. Never includes the endpoint or credentials. */
 export function o2Failure(error: O2ClientError, organization: string): O2Failure {
-  // Organization creation through ingestion is root-only and can be disabled
-  // by the O2 deployment; say that explicitly instead of a generic 401/404.
   if (error.operation === 'ensure-organization' && error.kind !== 'network' && error.kind !== 'timeout') {
     return {
       code: 'BAD_REQUEST',

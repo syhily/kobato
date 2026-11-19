@@ -4,8 +4,6 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, useActionData } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Reproduction harness for the passkey signin client chain: the WebAuthn
-// ceremony and the oRPC call are mocked, everything inside LoginForm runs for real.
 const mocks = vi.hoisted(() => ({
   authBegin: vi.fn(),
   startAuthentication: vi.fn(),
@@ -79,7 +77,6 @@ describe('LoginForm passkey chain', () => {
     expect(screen.getByLabelText('邮箱')).toBeDisabled()
     expect(screen.getByText('此账号已启用 Passkey 验证，请点击上方按钮完成登陆。')).toBeInTheDocument()
 
-    // The browser only runs the ceremony after a user gesture.
     expect(verifyButton()).toBeInTheDocument()
     expect(mocks.authBegin).not.toHaveBeenCalled()
     expect(mocks.startAuthentication).not.toHaveBeenCalled()
@@ -142,7 +139,6 @@ describe('LoginForm passkey chain', () => {
   it('times out a hung ceremony: error shown, prompt cancelled, no submit', async () => {
     vi.useFakeTimers()
     const submitSpy = vi.spyOn(HTMLFormElement.prototype, 'requestSubmit').mockImplementation(() => {})
-    // The QR/hybrid failure mode: the promise never settles.
     mocks.startAuthentication.mockReturnValue(new Promise(() => {}))
 
     renderLoginForm({ method: 'passkey' })
@@ -181,7 +177,6 @@ describe('LoginForm passkey chain', () => {
     })
     expect(document.querySelector('[role="alert"]')?.textContent).toContain('Passkey 验证超时')
 
-    // The retired run must not act on a late approval.
     resolveCeremony({ id: 'cred-1', type: 'public-key', response: {} })
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
@@ -205,7 +200,6 @@ describe('LoginForm passkey chain', () => {
     })
     expect(document.querySelector('[role="alert"]')?.textContent).toContain('Passkey 验证超时')
 
-    // The retry ceremony completes — the default mock resolves.
     fireEvent.click(verifyButton())
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)

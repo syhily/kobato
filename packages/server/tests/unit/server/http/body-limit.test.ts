@@ -8,8 +8,6 @@ describe('dynamicBodyLimit', () => {
   function makeApp(maxSize: number | (() => number), onError?: (c: any) => Response) {
     const app = new Hono<Env>()
     app.use(dynamicBodyLimit({ maxSize, onError }))
-    // The handler consumes the body so that chunked/stream tests
-    // actually pull bytes through the passthrough size checker.
     app.post('/test', async (c) => {
       await c.req.text()
       return c.json({ ok: true })
@@ -91,8 +89,6 @@ describe('dynamicBodyLimit', () => {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(new TextEncoder().encode('x'.repeat(200)))
-        // Never close — simulates a client trickling an oversized chunked
-        // body. Without the upstream cancel the raw body would hang here.
       },
       cancel,
     })

@@ -10,8 +10,6 @@ export interface RenderHookOptions<THookResult> {
   wrapper?: React.ComponentType<{ children: React.ReactNode }>
 }
 
-/** Minimal SSR hook runner: renders the hook in a memory router, applies
- *  queued actions, returns the final result. Avoids @testing-library/react. */
 export function renderHook<THookResult>(
   hookFn: () => THookResult,
   options: RenderHookOptions<THookResult> = {},

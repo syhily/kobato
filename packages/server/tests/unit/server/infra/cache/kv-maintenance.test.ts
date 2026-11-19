@@ -14,7 +14,6 @@ vi.useFakeTimers()
 
 const registerShutdownHook = vi.fn()
 
-// Stub just enough of the Drizzle chain for `db.delete(table).where(…)`.
 const where = vi.fn().mockResolvedValue(undefined)
 const db = { delete: vi.fn(() => ({ where })) }
 
@@ -29,8 +28,6 @@ const { CACHE_DECLARATIONS } = await import('@kobato/cache/registry.ts')
 
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
-// The registry owns the shared db getter; a bare handle shape suffices —
-// the job reads only `.db` at fire time.
 let currentDb = db
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })
 
@@ -53,7 +50,6 @@ describe('kv-maintenance scheduler', () => {
     expect(db.delete).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(SWEEP_INTERVAL_MS)
-    // one_time_token + session (cache entries are a filesystem leg).
     expect(db.delete).toHaveBeenCalledTimes(2)
     expect(fileStoreMock.sweepBucket).toHaveBeenCalledTimes(CACHE_DECLARATIONS.length)
   })
@@ -61,7 +57,6 @@ describe('kv-maintenance scheduler', () => {
   it('resolves the db lazily at fire time, not at schedule time', async () => {
     scheduleRegisteredJob('kv.maintenance')
 
-    // A recreated pool (restore completion) must be picked up.
     const freshDb = { delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })) }
     currentDb = freshDb
 

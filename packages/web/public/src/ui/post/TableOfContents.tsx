@@ -44,7 +44,6 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
     }
   }, [])
 
-  // Scroll-lock the body only while the drawer is open.
   useEffect(() => {
     if (typeof document === 'undefined' || !visible) {
       return
@@ -76,7 +75,6 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
           visible ? 'bg-surface' : 'bg-canvas/90',
         )}
         style={{ zIndex: 'var(--z-toc-toggle-open)' }}
-        // Closed-state resting geometry — the SSR/static fallback sits where the settled animation would.
         fallbackStyle={{ width: 100, height: 100, marginRight: -80 }}
         animate={{
           width: visible ? 50 : 100,
@@ -97,7 +95,6 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
       >
         <LazyMotionSpan
           className="inline-flex"
-          // Same closed-state resting offset as the settled animation.
           fallbackStyle={{ transform: 'translateX(-2.0875rem)' }}
           animate={{
             x: visible ? 0 : '-2.0875rem',
@@ -113,7 +110,6 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
       <LazyMotionDiv
         className="fixed top-0 bottom-0 z-(--z-toc-drawer-open) h-full w-toc-drawer border-l border-line bg-surface font-normal"
         style={{ right: 0 }}
-        // Keeps the SSR/static fallback drawer off-screen while closed.
         fallbackStyle={{ transform: 'translateX(100%)' }}
         initial={false}
         animate={{ x: visible ? 0 : '100%' }}

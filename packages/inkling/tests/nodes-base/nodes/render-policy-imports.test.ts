@@ -2,19 +2,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * Renderer policy — URL validation, template escaping, sanitization — lives
- * behind the render-context seam (src/inkling/nodes/base/render-context.ts).
- * Card sources must not import the policy implementation modules directly;
- * the guard has zero exceptions.
- */
-
 const POLICY_MODULES = new Set(['is-safe-url', 'escape-html', 'clean-dom', 'sanitize-html'])
 
 const ALLOWED_IS_SAFE_URL_IMPORTERS = ['packages/inkling/src/nodes/base/render-context.ts']
 
-// cleanDOM runs only behind the seam's CALLOUT_HTML_CONFIG unwrap-allowlist
-// fallback.
 const ALLOWED_CLEAN_DOM_IMPORTERS = ['packages/inkling/src/nodes/base/render-context.ts']
 
 function listSourceFiles(dir: string): string[] {

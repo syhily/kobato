@@ -22,7 +22,6 @@ export interface PageEditorShellProps {
   navigate: NavigateFunction
 }
 
-// Module-level accessor — stable identity so the memoized detail only recomputes when the loader DTO changes.
 const getEntity = (d: AdminPageDetailDto) => d.page
 
 const PAGE_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<

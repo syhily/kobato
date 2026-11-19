@@ -5,10 +5,6 @@ import {
 } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
-// `useEffect` never runs under renderToStaticMarkup, so only the
-// SSR-reachable surface is tested here; effect-driven dispatch is
-// covered by the card-level snapshot tests.
-
 function CaptureContext({ onContext }: { onContext: (ctx: ReturnType<typeof useSettingsFlushContext>) => void }) {
   onContext(useSettingsFlushContext())
   return null
@@ -118,7 +114,6 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
     release(false)
     await expect(waiting).resolves.toBe(false)
 
-    // A throwing flush is a failure too — never an unhandled rejection.
     captured!.registerFlush('fonts', () => {
       throw new Error('boom')
     })
@@ -160,7 +155,6 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
         />
       </SettingsFlushProvider>,
     )
-    // Registry is empty in SSR (no effect ran) — flush calls are no-ops.
     expect(() => {
       captured!.flushAll()
       captured!.flushSection('fonts')

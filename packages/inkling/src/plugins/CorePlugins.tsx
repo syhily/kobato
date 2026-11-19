@@ -52,13 +52,6 @@ export interface CorePluginScope {
   isTKEnabled?: boolean
 }
 
-// A core plugin entry, as data. The explicit key keeps rendering stable
-// without leaning on component names (which minification can collapse).
-// `when` is the mount condition (omitted = always mounted); `render` carries
-// the props the plugin takes. RichTextPlugin's contentEditable/placeholder
-// contract is elements, not data, so its structure lives inside the render
-// lambda — the one structural piece the entry shape deliberately does not
-// decompose into props.
 export interface CorePluginEntry {
   key: string
   when?: (scope: CorePluginScope) => boolean

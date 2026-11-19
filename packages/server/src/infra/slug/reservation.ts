@@ -6,8 +6,6 @@ import { DomainError } from '@kobato/server/infra/http/errors.ts'
 
 export type EntityType = 'post' | 'page'
 
-// Route-prefix fence shared by posts and pages. Taxonomy slugs are exempt —
-// they never mount at a route prefix of their own.
 export const RESERVED_SLUGS = new Set<string>([
   'posts',
   'cats',
@@ -25,7 +23,6 @@ export interface SlugReservationDeps {
   findOwnMetaBySlugForUpdate: (tx: Database, slug: string) => { id: number } | null
 }
 
-// Sync (node:sqlite): called inside entity transactions.
 export function reserveSlugInTransaction(
   tx: Database,
   entityType: EntityType,

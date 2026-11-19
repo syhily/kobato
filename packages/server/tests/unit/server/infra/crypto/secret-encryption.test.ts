@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Must mock before importing the module under test because the encryption
-// key is read at module evaluation time.
 const MOCK_KEY = 'a'.repeat(32)
 
 function importModule(key: string | undefined) {
@@ -31,7 +29,6 @@ describe('secret-encryption', () => {
   describe('isEncrypted', () => {
     it('recognises enc: prefixed values', async () => {
       const { isEncrypted } = await importModule(MOCK_KEY)
-      // Construct a valid-looking enc: value: iv:authTag:ciphertext (all hex)
       expect(isEncrypted('enc:aabbccdd:11223344:aabb')).toBe(true)
     })
 
@@ -104,8 +101,6 @@ describe('secret-encryption', () => {
 
     it('the decryption error names the encryption key and the backup-restore remedy', async () => {
       const { decryptIfNeeded } = await importModule(MOCK_KEY)
-      // A wrong encryptionKey fails like corrupted ciphertext, so the message must point
-      // at the key mismatch (common case: a backup restored onto another instance).
       const fake = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
       expect(() => decryptIfNeeded(fake)).toThrow(/security\.encryptionKey/)
       expect(() => decryptIfNeeded(fake)).toThrow(/restoring a backup/)

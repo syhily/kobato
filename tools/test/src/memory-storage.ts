@@ -9,11 +9,6 @@ import type { StorageDriver } from '@kobato/settings/types.ts'
 
 import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
 import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy.ts'
-// In-memory StorageBackend fake for the S3/local-disk external. Reads of an absent key
-// reject with `StorageObjectNotFound`; deletes are idempotent; `list` honours prefix.
-// Writes resolve Cache-Control exactly like the S3 adapter (`cacheControl` verbatim,
-// else the `key-policy` visibility default). `getStreamWithMeta` exists only on the `s3`
-// driver, matching the real backends that store no headers on local FS.
 import { Readable } from 'node:stream'
 
 export interface MemoryStoredObject {
@@ -99,7 +94,6 @@ export function makeMemoryBackend({ driver = 's3' }: { driver?: StorageDriver } 
       }
     },
     async deletePrefix(prefix: string): Promise<void> {
-      // Map iterators tolerate deleting the current entry mid-iteration.
       for (const key of store.keys()) {
         if (key.startsWith(prefix)) {
           deletedKeys.push(key)
@@ -118,7 +112,6 @@ export function makeMemoryBackend({ driver = 's3' }: { driver?: StorageDriver } 
     },
   }
 
-  // Only the S3 driver reports stored headers — the real local backend has none.
   if (driver === 's3') {
     backend.getStreamWithMeta = async (key: string): Promise<StreamWithMeta> => {
       const entry = store.get(key)

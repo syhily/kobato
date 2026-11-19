@@ -31,7 +31,6 @@ describe('cn() — Tailwind utility merging', () => {
     expect(cn('text-(--color-foreground)', 'text-(--color-primary)')).toBe('text-(--color-primary)')
   })
 
-  // Custom --text-* and --color-* tokens must not collapse — they share the text- prefix.
   describe('cn() — custom theme tokens distinguished by namespace', () => {
     it('keeps custom --text-* font-size and custom --color-* text color side by side', () => {
       expect(cn('text-toc-toggle', 'text-ink-3')).toBe('text-toc-toggle text-ink-3')
@@ -75,7 +74,6 @@ describe('cn() — Tailwind utility merging', () => {
       expect(cn('rounded-sm', 'rounded-xs')).toBe('rounded-xs')
     })
 
-    // cn.ts intentionally leaves leading-* unregistered so paired --text-*/--leading-* tokens survive.
     it('keeps leading-<custom> alongside text-<same-name> on the badge call site', () => {
       const html = cn(
         'inline-flex shrink-0 items-center',

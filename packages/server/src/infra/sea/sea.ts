@@ -21,7 +21,6 @@ interface NodeSeaModule {
 
 const nodeRequire = createRequire(import.meta.url)
 
-// undefined = not probed yet; null = probed and not a SEA.
 let activeSea: NodeSeaModule | null | undefined
 
 function isNodeSeaModule(value: unknown): value is NodeSeaModule {
@@ -104,11 +103,6 @@ export function getEmbeddedAsset(key: string): Buffer | null {
   return activeReader(key)
 }
 
-/**
- * Parse the manifest's `key -> codec` registry. A missing codec means an
- * older uncompressed binary (`'none'`); an unparseable manifest means a
- * corrupt binary — fail loudly.
- */
 function parseCodecRegistry(manifestRaw: Buffer): Map<string, SeaAssetCodec> {
   let parsed: unknown
   try {
@@ -164,8 +158,6 @@ export function createEmbeddedAssetReader(source: EmbeddedAssetSource): (key: st
     if (raw === null) {
       return null
     }
-    // The manifest rides uncompressed — it is the decompression registry
-    // and must be readable before anything else.
     if (key === SEA_MANIFEST_KEY) {
       return raw
     }
@@ -192,7 +184,6 @@ export function createEmbeddedAssetReader(source: EmbeddedAssetSource): (key: st
  */
 export function requireExternal(name: string): unknown {
   const nativesDir = process.env.KOBATO_NATIVES_DIR
-  // CJS require is untyped; the caller casts to the package's real types.
   return nativesDir !== undefined && nativesDir !== ''
     ? createRequire(join(nativesDir, 'noop.cjs'))(name)
     : nodeRequire(name)

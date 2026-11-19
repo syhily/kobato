@@ -8,17 +8,6 @@ import { parseAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
 
 const log = getLogger('lexical.music-snapshot')
 
-// The Lexical music contract resolves metas at SAVE time and embeds a snapshot
-// in the node dataset: the headless HTML projection is synchronous and has no
-// resolver. The snapshot goes stale when the library row changes — the accepted
-// trade-off. Field names: `MUSIC_PLAYER_META_KEYS` (`@kobato/lexical/artifacts`).
-//
-// Media URLs (`cover` / `audioUrl`) are stored ORIGIN-RELATIVE
-// (`/storage/<key>`), never absolute: an absolute URL bakes the save-time
-// `siteIdentity.website` into stored content, so a database copy served from
-// another origin points media at the old one. The feed variant re-absolutizes
-// against the CURRENT site origin (`absolutizeAssetSrcForFeed`).
-
 function toOriginRelativeAssetUrl(url: string): string {
   if (url === '') {
     return url
@@ -27,14 +16,6 @@ function toOriginRelativeAssetUrl(url: string): string {
   return parsed === null ? url : `${parsed.route}${parsed.key}`
 }
 
-/**
- * Resolves every `music-player` node's `playerId` through the injected
- * music-domain resolver and writes the meta snapshot (`name` / `artist` /
- * `cover` / `audioUrl` / `lyric`) into the node dataset, in place. Nodes
- * whose playerId fails to resolve keep their stripped (meta-less) shape; a
- * throwing resolver degrades the whole pass to a log line — a save must
- * never fail because the music library hiccuped.
- */
 export async function snapshotMusicPlayerMeta(
   state: LexicalEditorState,
   resolveMusicEmbeds: MusicEmbedResolver,

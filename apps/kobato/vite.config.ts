@@ -21,20 +21,22 @@ const pkgSchema = z.object({
   author: z.object({ name: z.string() }),
   homepage: z.string(),
   repository: z.object({ url: z.string() }),
+  dependencies: z.record(z.string(), z.string()).optional(),
+  devDependencies: z.record(z.string(), z.string()).optional(),
+})
+
+const workspacePkgSchema = z.object({
+  name: z.string(),
+  dependencies: z.record(z.string(), z.string()).optional(),
+  devDependencies: z.record(z.string(), z.string()).optional(),
 })
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
-// Repository root (apps/kobato/vite.config.ts → two levels up) — package
-// sources live in packages/*/src, outside the app tree.
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url))
 
 const pkg = pkgSchema.parse(JSON.parse(readFileSync(resolve(projectRoot, 'package.json'), 'utf-8')))
 
-const rawPkg = JSON.parse(readFileSync(resolve(projectRoot, 'package.json'), 'utf-8')) as {
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-}
-const appDeclared = new Set([...Object.keys(rawPkg.dependencies ?? {}), ...Object.keys(rawPkg.devDependencies ?? {})])
+const appDeclared = new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})])
 
 // External dep → the workspace package that declares it. Under pnpm
 // isolation a bare include hint resolves only against THIS package's
@@ -64,11 +66,7 @@ for (const dir of [
   'packages/shared/seo',
   'packages/inkling',
 ]) {
-  const manifest = JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8')) as {
-    name: string
-    dependencies?: Record<string, string>
-    devDependencies?: Record<string, string>
-  }
+  const manifest = workspacePkgSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8')))
   for (const dep of [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]) {
     if (!depOwner.has(dep)) {
       depOwner.set(dep, manifest.name)
@@ -186,7 +184,6 @@ export default defineConfig(({ command }) => ({
       '@': resolve(projectRoot, 'src'),
     },
   },
-  // build externalizes above so dev dependency optimization skips them.
   optimizeDeps: {
     // Pin every dep reachable from the client route graph so the FIRST
     // optimize pass covers them: the static scanner only finds a subset,
@@ -199,13 +196,10 @@ export default defineConfig(({ command }) => ({
     // owning package — the crawl reaches it through that package's imports.
     include: optimizeIncludeHints([
       'react/compiler-runtime',
-      // Icon/date families ship thousands of small ESM modules — the
-      // costliest to serve unbundled.
       'lucide-react',
       'date-fns',
       'date-fns/locale',
       '@date-fns/tz',
-      // @base-ui is consumed per-component subpath; pin each used one.
       '@base-ui/react/alert-dialog',
       '@base-ui/react/avatar',
       '@base-ui/react/checkbox',
@@ -221,7 +215,6 @@ export default defineConfig(({ command }) => ({
       '@base-ui/react/tabs',
       '@base-ui/react/tooltip',
       '@base-ui/react/use-render',
-      // App-level client deps (verified against src/{client,ui,routes,shared}).
       '@dnd-kit/core',
       '@dnd-kit/modifiers',
       '@dnd-kit/sortable',
@@ -244,9 +237,6 @@ export default defineConfig(({ command }) => ({
       'react-hook-form',
       'sonner',
       'zod',
-      // The inkling editor (src/inkling) joined the client graph as SOURCE
-      // (previously a pre-bundled workspace dist): pin its heavy runtime
-      // families so the first optimize pass covers them.
       'lexical',
       '@lexical/clipboard',
       '@lexical/headless',
@@ -254,7 +244,6 @@ export default defineConfig(({ command }) => ({
       '@lexical/link',
       '@lexical/list',
       '@lexical/markdown',
-      // @lexical/react exposes NO root "." export — only subpaths.
       '@lexical/react/LexicalCollaborationContext',
       '@lexical/react/LexicalCollaborationPlugin',
       '@lexical/react/LexicalComposer',

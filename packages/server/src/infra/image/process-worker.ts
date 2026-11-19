@@ -9,8 +9,6 @@ import sharp from 'sharp'
 // to `nativeRequire` (`tools/pack/src/sea/redirect-native-requires.ts`).
 
 const THUMBHASH_MAX_DIMENSION = 100
-// Decoded-pixel ceiling (~200 MB RGBA) — caller caps bound encoded bytes
-// only, so this guards against decompression bombs.
 const MAX_INPUT_PIXELS = 50_000_000
 
 export interface ProcessImageResize {
@@ -33,10 +31,6 @@ export interface ProcessedImage {
   thumbhash: string
 }
 
-/**
- * Wire format for pool↔worker messages; errors are flattened because
- * class instances don't survive structured clone.
- */
 export interface WorkerRequest {
   type: 'process'
   id: number
@@ -54,7 +48,6 @@ export interface WorkerErrResponse {
   type: 'process:result'
   id: number
   ok: false
-  // Type-only reference: `domainErrorFromWire` must stay out of the worker's runtime graph.
   error: DomainErrorWire
 }
 
@@ -62,12 +55,6 @@ export type WorkerResponse = WorkerOkResponse | WorkerErrResponse
 
 type WorkerErrorDescriptor = NonNullable<DomainErrorWire['descriptor']>
 
-/**
- * `DomainError` stand-in for the worker isolate — `name: 'DomainError'`
- * matches the wire contract. Never import `@/server/infra/http/errors`
- * here (parameter properties break `--experimental-strip-types`); the
- * descriptor travels as plain JSON and the main thread localizes it.
- */
 export class WorkerDomainError extends Error {
   readonly code: string
   readonly issues?: { message: string; path?: string[] }[]
@@ -87,8 +74,6 @@ export class WorkerDomainError extends Error {
   }
 }
 
-// Typed ids + English fallbacks: the wire `message` is the fallback, the main
-// thread's `domainErrorFromWire` rehydrates the descriptor for localization.
 const UNREADABLE = {
   messageKey: 'images.error.worker.unreadable',
   fallbackMessage: 'Could not parse the image data',
@@ -108,8 +93,6 @@ const REENCODE_FAILED = {
 } as const
 
 export async function processImageInWorker(input: ProcessImageInput): Promise<ProcessedImage> {
-  // Reject undecodable/oversized inputs on metadata alone, before any
-  // pixels decode; `limitInputPixels` re-enforces the ceiling at decode.
   let inputMeta: Metadata
   try {
     inputMeta = await sharp(input.buffer, { failOn: 'error' }).metadata()
@@ -215,11 +198,9 @@ function fitInside(
   return { width: targetWidth, height: targetHeight }
 }
 
-// Listener registers only when loaded as a worker_thread target.
-
 if (parentPort !== null) {
   const port = parentPort
-  void workerData // present for future per-worker config; unused today
+  void workerData
 
   port.on('message', (msg: WorkerRequest) => {
     if (msg?.type !== 'process') {
@@ -228,7 +209,6 @@ if (parentPort !== null) {
     void handle(msg)
       .then((response) => port.postMessage(response))
       .catch((err: unknown) => {
-        // Should be unreachable: handle() always resolves with a response.
         port.postMessage({
           type: 'process:result',
           id: msg.id,

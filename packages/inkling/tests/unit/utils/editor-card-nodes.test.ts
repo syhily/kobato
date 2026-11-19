@@ -4,8 +4,6 @@ import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
 import { createEditor, DecoratorNode } from 'lexical'
 import { describe, expect, it } from 'vitest'
 
-// a card-shaped node with no matching declaration: the declarations are the
-// source of truth, so looking like a card does not make a node a card
 class UndeclaredCardNode extends DecoratorNode<null> {
   static getType() {
     return 'undeclared-card'

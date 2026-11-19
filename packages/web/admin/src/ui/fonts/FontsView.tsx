@@ -76,7 +76,6 @@ export function FontsView() {
     mutationFn: (fontId: string) => orpc.admin.fonts.delete({ fontId }),
     onSuccess: () => {
       toast.success(t('admin.fonts.deleted'))
-      // Invalidate via the procedure-level key — a hand-rolled array can't match TanStack's nested key grammar.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
@@ -97,15 +96,12 @@ export function FontsView() {
 
   const sensors = useSortableSensors()
 
-  // Two-container drag: library rows drop only inside a slot rect (pointerWithin);
-  // slot items reorder with closestCorners. Dispatch by active type keeps both correct.
   const collisionDetection: CollisionDetection = (args) => {
     const activeData = args.active.data.current
     const activeType =
       activeData && typeof activeData === 'object' ? (activeData as { type?: unknown }).type : undefined
     if (activeType === 'library') {
       const within = pointerWithin(args)
-      // pointerWithin returns [] outside every droppable — pass through so a library drag never lands.
       return within.length > 0 ? within : []
     }
     return closestCorners(args)
@@ -122,7 +118,6 @@ export function FontsView() {
     }
     const overData = over.data.current
 
-    // Resolve the target slot + insertion index: the slot container appends; an item targets its slot and index.
     let targetSlot: FontSlot | undefined
     let targetIndex: number | undefined
     if (isSlotItemData(overData)) {
