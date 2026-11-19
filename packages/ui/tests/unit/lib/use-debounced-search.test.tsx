@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useDebouncedSearch } from '@kobato/web-public/ui/shared/use-debounced-search.ts'
+import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search.ts'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

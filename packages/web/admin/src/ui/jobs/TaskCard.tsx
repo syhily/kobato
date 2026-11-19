@@ -14,8 +14,8 @@ import {
   TASK_CAPABILITIES,
   useFormatAdminDate,
   type TaskStatus,
-} from '@kobato/web-admin/ui/tasks/meta.ts'
-import { RunHistorySheet } from '@kobato/web-admin/ui/tasks/RunHistorySheet.tsx'
+} from '@kobato/web-admin/ui/jobs/meta.ts'
+import { RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet.tsx'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'

@@ -8,7 +8,7 @@
   `npx shadcn@latest add/diff` works. `components.json` points there. One `:root` token cascade covers
   public + admin; token tiers and the dark ladder: `packages/ui/src/styles/AGENTS.md`.
 - **`@kobato/web-public/ui/shared` + `ui/lib`** — the cross-surface tiers rendered on BOTH the public
-  chrome and the admin shell (notifications drawer, logout, LRC parser, debounced search, the root
+  chrome and the admin shell (notifications drawer, logout, LRC parser, the root
   `LocaleSyncProvider` notice, `toast-api-error`). Admin reuses them across the package boundary; new
   cross-surface modules go THERE (`packages/web/public/AGENTS.md` → Structure), never into this package.
 - **`ui/`** — grouped by domain, plus `shared/` and `shell/`.
@@ -108,8 +108,9 @@ Every module under `packages/web/{admin,public,client}/src` follows one of six s
 
 Directories are plural when they hold a collection of entities (`comments/`, `images/`, `webmentions/`) and match
 the `@kobato/api` contract group they drive; mass-noun domains stay singular (`music/`, `settings/`, `analytics/`).
-`tasks/` is the one intentional exception: the operator-facing noun is "task" (route `/admin/tasks`, copy
-`admin.tasks.*`) while its wire group is `jobs` — keep the UI noun and the `jobs` contract noun as they are.
+`jobs/` matches the `admin.jobs` wire group; the screen keeps its operator-facing nouns (route
+`/admin/tasks`, copy `admin.tasks.*`, `Task*` component names mirroring the wire's task-catalog
+types) — the directory names the API group, not the page.
 
 ## Component & styling rules
 

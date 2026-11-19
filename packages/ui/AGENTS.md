@@ -8,7 +8,7 @@
 - `lib/` is flat and role-prefixed: `use-*.ts` is a hook, `*Provider.tsx` is a provider, `*.ts` is a pure helper (including `logger.ts`, the pino-backed client logger with a pluggable sink). It contains generic presentation utilities and providers: `cn` (token-namespace merge groups), the
   `computePageWindow` pagination-window algorithm shared by the public site and the admin shell,
   `DEFAULT_FONT_STACKS` (the per-locale font map contract-pinned to `styles/tailwind.css`), the infinite-scroll
-  sentinel and other presentation hooks, and `I18nProvider`/`ThemeProvider`. Browser product state, oRPC, routes,
+  sentinel, the debounced-search input helper, and other presentation hooks, and `I18nProvider`/`ThemeProvider`. Browser product state, oRPC, routes,
   and editor glue belong in `@kobato/web-client` / `@kobato/web-admin`.
 - Consumers import directly from `@kobato/ui/<path>`; there is no barrel. Imports within this package also use the package root.
 - Preserve SSR/hydration parity and the existing lazy-motion facade rules.

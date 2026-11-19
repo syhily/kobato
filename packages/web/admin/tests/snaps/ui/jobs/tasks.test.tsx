@@ -4,9 +4,9 @@ import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
 import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/contracts/jobs.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/test/render.tsx'
-import { RunHistoryRow, RunHistorySheet } from '@kobato/web-admin/ui/tasks/RunHistorySheet.tsx'
-import { TaskCard } from '@kobato/web-admin/ui/tasks/TaskCard.tsx'
-import { TasksView } from '@kobato/web-admin/ui/tasks/TasksView.tsx'
+import { RunHistoryRow, RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet.tsx'
+import { TaskCard } from '@kobato/web-admin/ui/jobs/TaskCard.tsx'
+import { TasksView } from '@kobato/web-admin/ui/jobs/TasksView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

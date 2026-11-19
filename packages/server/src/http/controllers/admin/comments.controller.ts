@@ -19,7 +19,7 @@ import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-bas
 import { idFromString } from '@kobato/utils/id.ts'
 
 // Contract-first: method/path/input/output live in
-// `@kobato/api/admin/comments.ts` (the deployed `/comment-admin/*` surface);
+// `@kobato/api/admin/comments.ts` (the deployed `/admin/comments/*` surface);
 // this controller only implements the procedures (admin base).
 const impl = implementAdmin(adminCommentsContract)
 

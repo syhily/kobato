@@ -10,31 +10,30 @@ import {
 } from '@kobato/contracts/webmentions.ts'
 import { oc } from '@orpc/contract'
 
-// Admin webmention moderation RPC contract — admin base on the server. The
-// deployed paths are the legacy `/webmention-admin/*` surface (not
-// `/admin/webmentions/*`) and must never drift.
+// Admin webmention moderation RPC contract — admin base on the server, on the
+// standard `/admin/webmentions/*` prefix.
 export const adminWebmentionsContract = {
   loadAll: oc
-    .route({ method: 'GET', path: '/webmention-admin/load-all' })
+    .route({ method: 'GET', path: '/admin/webmentions/load-all' })
     .input(adminWebmentionListSchema)
     .output(adminWebmentionsLoadAllOutputDto),
   approve: oc
-    .route({ method: 'POST', path: '/webmention-admin/approve' })
+    .route({ method: 'POST', path: '/admin/webmentions/approve' })
     .input(adminWebmentionIdInput)
     .output(voidOutput),
   reject: oc
-    .route({ method: 'POST', path: '/webmention-admin/reject' })
+    .route({ method: 'POST', path: '/admin/webmentions/reject' })
     .input(adminWebmentionIdInput)
     .output(voidOutput),
   reverify: oc
-    .route({ method: 'POST', path: '/webmention-admin/reverify' })
+    .route({ method: 'POST', path: '/admin/webmentions/reverify' })
     .input(adminWebmentionIdInput)
     .output(adminWebmentionDto),
   outbox: oc
-    .route({ method: 'GET', path: '/webmention-admin/outbox' })
+    .route({ method: 'GET', path: '/admin/webmentions/outbox' })
     .input(adminWebmentionOutboxListSchema)
     .output(adminWebmentionOutboxOutputDto),
   pendingCount: oc
-    .route({ method: 'GET', path: '/webmention-admin/pending-count' })
+    .route({ method: 'GET', path: '/admin/webmentions/pending-count' })
     .output(adminWebmentionsPendingCountOutputSchema),
 }

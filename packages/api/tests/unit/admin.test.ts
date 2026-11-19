@@ -341,18 +341,18 @@ const ADMIN_ROUTES = {
     reindexSearch: { method: 'POST', path: '/admin/renders/reindex-search' },
     reprojectBodies: { method: 'POST', path: '/admin/renders/reproject-bodies' },
   },
-  // The deployed moderation paths are the legacy `/comment-admin/*` surface.
+  // The moderation paths sit under the standard `/admin/comments/*` prefix.
   comments: {
-    approve: { method: 'POST', path: '/comment-admin/approve' },
-    delete: { method: 'POST', path: '/comment-admin/delete' },
-    edit: { method: 'POST', path: '/comment-admin/edit' },
-    loadAll: { method: 'GET', path: '/comment-admin/load-all' },
-    searchPages: { method: 'GET', path: '/comment-admin/search-pages' },
-    searchAuthors: { method: 'GET', path: '/comment-admin/search-authors' },
-    approveCommentDeletion: { method: 'POST', path: '/comment-admin/approve-comment-deletion' },
-    listPendingDashboard: { method: 'GET', path: '/comment-admin/list-pending-dashboard' },
-    pendingCount: { method: 'GET', path: '/comment-admin/pending-count' },
-    probeAvatarMirrors: { method: 'GET', path: '/comment-admin/probe-avatar-mirrors' },
+    approve: { method: 'POST', path: '/admin/comments/approve' },
+    delete: { method: 'POST', path: '/admin/comments/delete' },
+    edit: { method: 'POST', path: '/admin/comments/edit' },
+    loadAll: { method: 'GET', path: '/admin/comments/load-all' },
+    searchPages: { method: 'GET', path: '/admin/comments/search-pages' },
+    searchAuthors: { method: 'GET', path: '/admin/comments/search-authors' },
+    approveCommentDeletion: { method: 'POST', path: '/admin/comments/approve-comment-deletion' },
+    listPendingDashboard: { method: 'GET', path: '/admin/comments/list-pending-dashboard' },
+    pendingCount: { method: 'GET', path: '/admin/comments/pending-count' },
+    probeAvatarMirrors: { method: 'GET', path: '/admin/comments/probe-avatar-mirrors' },
   },
   backup: {
     status: { method: 'GET', path: '/admin/backup/status' },
@@ -370,14 +370,14 @@ const ADMIN_ROUTES = {
     status: { method: 'GET', path: '/admin/geoip/status' },
     update: { method: 'POST', path: '/admin/geoip/update' },
   },
-  // Same for webmentions: the deployed surface is `/webmention-admin/*`.
+  // Same for webmentions: the standard `/admin/webmentions/*` prefix.
   webmentions: {
-    loadAll: { method: 'GET', path: '/webmention-admin/load-all' },
-    approve: { method: 'POST', path: '/webmention-admin/approve' },
-    reject: { method: 'POST', path: '/webmention-admin/reject' },
-    reverify: { method: 'POST', path: '/webmention-admin/reverify' },
-    outbox: { method: 'GET', path: '/webmention-admin/outbox' },
-    pendingCount: { method: 'GET', path: '/webmention-admin/pending-count' },
+    loadAll: { method: 'GET', path: '/admin/webmentions/load-all' },
+    approve: { method: 'POST', path: '/admin/webmentions/approve' },
+    reject: { method: 'POST', path: '/admin/webmentions/reject' },
+    reverify: { method: 'POST', path: '/admin/webmentions/reverify' },
+    outbox: { method: 'GET', path: '/admin/webmentions/outbox' },
+    pendingCount: { method: 'GET', path: '/admin/webmentions/pending-count' },
   },
   update: {
     check: { method: 'GET', path: '/admin/update/check' },

@@ -14,9 +14,9 @@ import {
 } from '@kobato/ui/components/sheet.tsx'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { formatDuration } from '@kobato/utils/format.ts'
+import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web-admin/ui/jobs/meta.ts'
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
-import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web-admin/ui/tasks/meta.ts'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
 import { Fragment, useState } from 'react'
 

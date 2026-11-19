@@ -13,7 +13,7 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-describe('integration / webmention-admin outbox', () => {
+describe('integration / admin webmentions outbox', () => {
   it('lists rows with per-status counts, newest first', async () => {
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://example.com/posts/a/', targetUrl: 'https://x.dev/1' })
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://example.com/posts/a/', targetUrl: 'https://x.dev/2' })

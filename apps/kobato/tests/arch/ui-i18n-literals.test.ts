@@ -359,7 +359,7 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/analytics/time-labels.ts',
         'packages/web/admin/src/ui/editor-shell/wall-clock.ts',
         'packages/web/admin/src/ui/settings/cache/cache-formatters.ts',
-        'packages/web/admin/src/ui/tasks/meta.ts',
+        'packages/web/admin/src/ui/jobs/meta.ts',
         'packages/web/public/src/ui/shared/notifications/notification-meta.ts',
         // The admin shell, settings pages and shared primitives.
         'packages/web/admin/src/ui/shell/AdminShell.tsx',

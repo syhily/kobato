@@ -12,7 +12,7 @@ import {
 import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
 
 // Contract-first: method/path/input/output live in
-// `@kobato/api/admin/webmentions.ts` (the deployed `/webmention-admin/*`
+// `@kobato/api/admin/webmentions.ts` (the deployed `/admin/webmentions/*`
 // surface); this controller only implements the procedures (admin base).
 const impl = implementAdmin(adminWebmentionsContract)
 

@@ -104,7 +104,7 @@ const getRaw = impl.getRaw.use(commentTokenCookie).handler(async ({ input, conte
 // Owner-authorized edit (comment token or session ownership). Runs the SAME
 // own-edit policy as `/comments/update-own`: in-grace edits rewrite in place,
 // out-of-grace edits re-enter the moderation queue, and the delete-request +
-// approved-replies fences apply. Moderator edits live on `/comment-admin/edit`.
+// approved-replies fences apply. Moderator edits live on `/admin/comments/edit`.
 // The resource limiter rides the implementer (before input validation — the
 // body is a Lexical state); the token jar attaches after validation, exactly
 // where the original chain placed it.

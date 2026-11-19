@@ -185,9 +185,7 @@ describe('structure conventions', () => {
       .map((entry) => entry.name)
       .sort()
 
-    // `tasks/` is the operator-facing name for the `jobs` wire group (route
-    // `/admin/tasks`, copy `admin.tasks.*`); `editor*`/`shell`/`shared` are
-    // composition tiers, not domains.
+    // `editor*`/`shell`/`shared` are composition tiers, not domains.
     const expected = [
       'account',
       'analytics',
@@ -203,6 +201,7 @@ describe('structure conventions', () => {
       'fonts',
       'friends',
       'images',
+      'jobs',
       'music',
       'pages',
       'posts',
@@ -211,35 +210,25 @@ describe('structure conventions', () => {
       'shared',
       'shell',
       'tags',
-      'tasks',
       'users',
       'webmentions',
     ]
     expect(actual, 'a new admin domain directory joins this table with its API/server counterpart').toEqual(expected)
   })
 
-  it('prefixes every admin API route with /admin except the documented wire exceptions', () => {
+  it('prefixes every admin API route with /admin', () => {
     const root = `${REPO_ROOT}/packages/api/src/admin`
-    const exceptions: Record<string, readonly string[]> = {
-      'comments.ts': ['/comment-admin/'],
-      'webmentions.ts': ['/webmention-admin/'],
-    }
     const offenders: string[] = []
     for (const file of walk(root).filter((entry) => entry.endsWith('.ts'))) {
-      const name = relative(root, file)
       const source = readFileSync(file, 'utf8')
       for (const match of source.matchAll(/path:\s*'([^']+)'/g)) {
-        const path = match[1]
-        if (path.startsWith('/admin/')) {
+        if (match[1].startsWith('/admin/')) {
           continue
         }
-        if (exceptions[name]?.some((prefix) => path.startsWith(prefix))) {
-          continue
-        }
-        offenders.push(`${relative(REPO_ROOT, file)}: ${path}`)
+        offenders.push(`${relative(REPO_ROOT, file)}: ${match[1]}`)
       }
     }
-    expect(offenders, 'admin wire paths are `/admin/<domain>/…` or a documented exception').toEqual([])
+    expect(offenders, 'every admin wire path is `/admin/<domain>/…`').toEqual([])
   })
 
   it('aligns the public API module names with their contract modules', () => {

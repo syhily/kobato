@@ -7,7 +7,7 @@ import {
   STATUS_META,
   TASK_CAPABILITIES,
   jobRunErrorLabelId,
-} from '@kobato/web-admin/ui/tasks/meta.ts'
+} from '@kobato/web-admin/ui/jobs/meta.ts'
 import { describe, expect, it } from 'vitest'
 
 const tZhCN = makeTranslator('zh-CN')

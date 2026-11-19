@@ -1,7 +1,7 @@
 import { TASK_CATALOG } from '@kobato/contracts/jobs.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { makeTranslator } from '@kobato/test/i18n.ts'
-import { TASK_CAPABILITIES } from '@kobato/web-admin/ui/tasks/meta.ts'
+import { TASK_CAPABILITIES } from '@kobato/web-admin/ui/jobs/meta.ts'
 import { describe, expect, it } from 'vitest'
 
 // The task catalog is a NEUTRAL registry: every user-facing field is a UI

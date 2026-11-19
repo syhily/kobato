@@ -277,7 +277,7 @@ export type ListPendingDashboardOutput = AdminPendingDashboardDto
 
 export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'
 
-// Admin moderation wire — the single Zod source the `@kobato/api` comment-admin
+// Admin moderation wire — the single Zod source the `@kobato/api` admin comments
 // contract composes and the server validates against.
 
 export const adminCommentIdInput = z.object({ commentId: z.string() })
