@@ -38,6 +38,9 @@ socket, a child process, or a temp dir, it lives HERE.
   `e2eEnv` (the `KOBATO_E2E_*` env contract), CSRF extraction, real signin.
 - `rpc.ts` — `callE2eRpc`: oRPC-over-HTTP, same wire format as
   the package-local `packages/server/tests/utils/rpc-call.ts` plus the `x-csrf-token` header `/rpc/*` requires.
+  `path` is the camelCase structural router path (kebab-case `.route()` strings are
+  OpenAPI metadata, not the RPC wire path), and void-output procedures answer `{}`
+  with no `json` key.
 - `smtp.ts` — `SmtpCapture` loopback capture server (just enough SMTP for
   nodemailer's plaintext path) + `decodeMail` / OTP / magic-link extractors.
 
