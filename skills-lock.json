@@ -2,11 +2,11 @@
   "version": 2,
   "skills": {
     "no-comments": {
-      "source": "cursor/plugins",
-      "commit": "35a90942a7f02e1ebbc2443643179815f2147954",
+      "source": "remotion-dev/remotion",
+      "commit": "3fcd5ae3eb8b30f40037983410217183ce3ddb81",
       "sourceType": "github",
-      "skillPath": "harness/pstack/claude-code/skills/no-comments/SKILL.md",
-      "computedHash": "f3479cfe3a44633cf6973aa33810bd52c72ce0aada00bff9aaaef512c67245c0"
+      "skillPath": ".agents/skills/no-comments/SKILL.md",
+      "computedHash": "96b170a7dc4966dd93bbd73ec21dc82b6a654b16e6f5d28d4ec01d11b5940eea"
     },
     "react-router-framework-mode": {
       "source": "remix-run/agent-skills",
