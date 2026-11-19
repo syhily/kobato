@@ -347,6 +347,12 @@ catalogs:
     '@smithy/types':
       specifier: ^4.20.0
       version: 4.20.0
+    '@tailwindcss/node':
+      specifier: ^4.3.5
+      version: 4.3.5
+    '@tailwindcss/oxide':
+      specifier: ^4.3.5
+      version: 4.3.5
     '@tailwindcss/vite':
       specifier: ^4.3.5
       version: 4.3.5
@@ -808,6 +814,12 @@ importers:
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 14.0.0
+      '@tailwindcss/node':
+        specifier: 'catalog:'
+        version: 4.3.5
+      '@tailwindcss/oxide':
+        specifier: 'catalog:'
+        version: 4.3.5
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))

@@ -70,6 +70,8 @@ catalog:
   '@simplewebauthn/browser': ^14.0.0
   '@simplewebauthn/server': ^14.1.0
   '@smithy/types': ^4.20.0
+  '@tailwindcss/node': ^4.3.5
+  '@tailwindcss/oxide': ^4.3.5
   '@tailwindcss/vite': ^4.3.5
   '@tanstack/react-query': ^5.108.1
   '@testing-library/dom': ^10.4.2
