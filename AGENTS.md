@@ -1,153 +1,98 @@
 # Project conventions
 
-## Quick orientation
+## Workspace
 
-- pnpm monorepo. The deployable app is `apps/kobato` (React Router 8 Framework Mode with SSR, `appDirectory: 'src'`, React 19 TSX/TS only); reusable code lives in workspace packages under `packages/`; path alias `@/*` → `./apps/kobato/src/*` (app-internal only).
-- Product packages: `@kobato/server` (`packages/server` — backend domains, HTTP, SSR, infrastructure adapters), `@kobato/db` (`packages/db` — SQLite node:sqlite/Drizzle and DuckDB engines, persistence schemas, operations, and migrations), the three web leaves under the `packages/web/` umbrella — `@kobato/web-admin` (`packages/web/admin` — the admin frontend: Kobato-specific admin components, domain controllers, and the page editor composition in `src/ui/`), `@kobato/web-public` (`packages/web/public` — the public frontend: public chrome, comments, widgets, music player, and the cross-surface `ui/shared` + `ui/lib` tiers; admin reuses its audited modules as long-term seams), and `@kobato/web-client` (`packages/web/client` — the browser platform leaf: the oRPC client, document-level hooks, the root settings provider, the cross-surface editor platform; composed by `@kobato/web-public`, `@kobato/web-admin` and the app, never the reverse) — `@kobato/ui` (`packages/ui` — design tokens, base styles, primitives, icons, theme/i18n providers), `@kobato/inkling` (`packages/inkling` — the self-contained Lexical editor layer). DuckDB persistence lives in `@kobato/db/duckdb`; the server owns engine composition, process batchers/schedulers, and telemetry.
-- The former single `@kobato/shared` package is now a thirteen-package isomorphic umbrella under `packages/shared/*` (directory `packages/shared/<name>`, specifier `@kobato/<name>`): `@kobato/utils` (pure helpers and the display `format` facade), `@kobato/auth` (role vocabulary, password policy, Web Crypto identity primitives, SSRF/passkey network-boundary checks), `@kobato/i18n` (locale contract, ICU message catalogs, Inkling label tables), `@kobato/cache` (the cache-bucket declaration registry and its derived id unions — NOT the server storage plane), `@kobato/catalog` (the public content read model: post/page/taxonomy/friend shapes, listing models, public projections), `@kobato/settings` (settings sections/projection/snapshot, `app-localization`, representation-scope generations, RUM client identity), `@kobato/assets` (the site-owned asset-URL grammar, image kinds/URLs, avatar rule, Gravatar mirror policy, font payloads), `@kobato/lexical` (the Lexical document model: storage schemas, save pipeline, TOC projection, host-card specs, and their Tailwind source partial), `@kobato/sanitize` (the isomorphic DOMPurify stack plus `sanitize-url` and `escape-html`), `@kobato/contracts` (wire Zod schemas/DTOs, `api-error`, `merge-patch`, the comments/backup/sessions wire families), `@kobato/telemetry` (the isomorphic RUM/OpenObserve protocol vocabulary), `@kobato/distribution` (compile-time app identity, SEA asset keys, route-warmup constants), `@kobato/seo` (`meta`/`og-image` builders). All thirteen are runtime-isomorphic and React-free; umbrella rules live in `packages/shared/AGENTS.md`, each leaf has its own AGENTS.md.
-- `@kobato/api` (`packages/api`) is the oRPC contract-first layer: the single source of every RPC procedure's `method`/`path`/`input`/`output` (declared with `@orpc/contract` over `@kobato/contracts` Zod schemas) and the contract tree mirroring the server's `apiRouter` shape. Controllers implement these contracts through the `implement*` bases in `packages/server/src/http/orpc-base.ts`; auth/CSRF/trace and the `HandlerContext` stay server-side. `likes` is the pilot surface; domains migrate in one at a time.
-- `tools/` is the top-level umbrella for development-support packages — nothing under it ships in the product: `@kobato/toolchain` (`tools/toolchain` — shared TypeScript configuration), `@kobato/test` (`tools/test` — product-free in-process Vitest infrastructure; product-shaped fixtures live in each package's `tests/utils/`), `@kobato/harness` (`tools/harness` — the out-of-process instance harness: SEA-binary and DEV-server lifecycles, per-run temp roots, plain-SQL seeding, HTTP/oRPC/SMTP clients for the live-instance suites), `@kobato/trace` (`tools/trace` — the OpenObserve DEV container tooling), `@kobato/browser` (`tools/browser` — the real-browser Playwright journey runner, `test:browser` / `sea:browser`), `@kobato/email` (`tools/email` — localized email-template previews, `emails:generate`), `@kobato/i18n-tools` (`tools/i18n` — regional terminology diff report, `i18n:regional-diff`), `@kobato/pack` (`tools/pack` — packaging tooling: SEA pipeline `src/sea/`, release automation `src/release.ts`). Beyond the package roots (`apps/`, `packages/`, `tools/`): `apps/inkling-demo` (the standalone inkling playground, `pnpm demo`) and `scripts/` — standalone ops scripts that import nothing from the project (shell or node-builtins only; currently just `build-deb.sh` + `deb/` packaging). Anything that needs project modules belongs in a tools package, not in `scripts/`.
-- Tailwind source ownership is package-local with one compile per surface. UI's `ui.css` and Inkling's `styles/index.css` are standalone entries; web-public `styles/{public,admin-subset}.css`, web `styles/admin.css`, and the lexical cards' `styles/cards.css` are package-owned `@source` partials. Each consuming surface (the app's `styles/admin.css` / `styles/public.css`, the demo's `styles/public.css`) runs exactly one Tailwind compile composing those partials via CSS `@import` behind the UI token reference, with UI's `ui.css` first as the eager root document entry. Source partials carry no `@import 'tailwindcss'` or top-level cascade-layer order declaration, and never re-declare the UI-owned `dark` variant; never use cross-package `@source` or import partials from components/routes. `apps/kobato/tests/arch/tailwind-source-ownership.test.ts` enforces the rule.
-- `pnpm dev` / `pnpm start` run the process with cwd at the REPOSITORY ROOT (vite root stays `apps/kobato` via `react-router dev apps/kobato`), so the runtime's cwd-anchored paths (`kobato.config.json`, `./data`) resolve exactly as a deployed binary expects. Build-time code must anchor paths on `import.meta.url`, never on `process.cwd()`; `@kobato/db` resolves its package-owned migrations the same way outside SEA.
-- Distribution is a single Node.js executable (SEA); runtime infrastructure config is `kobato.config.json`, validated through `CONFIG_TABLE`. `apps/kobato/package.json` is the version source of truth, and every workspace package carries the same fixed version (the root `package.json` stays a version-less workspace manifest). `release:bump` and `release:prepare-next` synchronize every package; `pnpm version:sync <version>` repairs drift manually.
-- Observability (traces/metrics/logs/browser RUM) is configured only in the admin `observability` settings section and provisioned by the server; browser RUM relays through the same-origin `/api/rum/intake` endpoint so the OpenObserve address is never exposed to visitors; `tools/trace/src/` is optional DEV container tooling (retention + smoke).
+pnpm monorepo with four top-level roots; nothing else is created at the root:
 
-## Import conventions
+- `apps/` — deployable apps: `kobato` (React Router 8 Framework Mode, SSR, React 19 TSX/TS, `appDirectory: 'src'`) and `inkling-demo` (standalone Inkling playground, `pnpm demo`).
+- `packages/` — product code that ships: `@kobato/server` (backend domains, HTTP, SSR, infra), `@kobato/db` (SQLite node:sqlite/Drizzle + DuckDB persistence), `@kobato/api` (oRPC contract-first layer over `@kobato/contracts`), `@kobato/ui` (design system), `@kobato/inkling` (self-contained Lexical editor island), `packages/web/*` (`web-client` the browser platform leaf, `web-public` the public frontend, `web-admin` the admin frontend), and thirteen isomorphic React-free leaves under `packages/shared/*`: utils, auth, i18n, cache, catalog, settings, assets, lexical, sanitize, contracts, telemetry, distribution, seo.
+- `tools/` — dev-support packages (`toolchain`, `test`, `harness`, `browser`, `email`, `i18n-tools`, `trace`, `pack`); nothing here ships in the product binary, and product `src/` never imports a tools package.
+- `scripts/` — standalone ops scripts importing no project module (shell / Node builtins only); anything needing project modules belongs in `tools/`.
 
-All module imports are absolute. The single workspace path table is `@kobato/toolchain/tsconfig.base.json`; the root `tsconfig.json` and `apps/inkling-demo/tsconfig.json` only extend it and never declare their own `paths`.
+Every workspace package has the same shape — `package.json`, `AGENTS.md` (required), `src/` (runtime source only), `tests/` mirroring `src/`, plus `drizzle/` (db only) or `assets|styles/` when the package owns them. Config files (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`, `drizzle.config.ts`) live at the package root. Test-only binaries belong to the consuming package's `tests/fixtures/`; `src/` holds no build output or generated reports.
 
-- App source: `@/...` → `apps/kobato/src/...`.
-- App test helpers: `@tests/...` → `apps/kobato/tests/...`; only files under `apps/kobato/tests/` may use it.
-- Package source, self-imports, and cross-package imports: `@kobato/<package>/...`; source never imports a package's `tests/` tree.
-- Package-local test helpers: `@kobato/<package>/tests/...`, used only from that package's own `tests/` tree.
-- Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus the one white-box host-card parity test. Public consumers still use only `@kobato/inkling` and `@kobato/inkling/headless`.
-- Inkling demo: `@kobato/inkling-demo/...`, for the playground and its host-contract tests.
-- Test-only binary fixtures belong to the consuming package under `tests/fixtures/`; never reach into another package or `tools/test` for a resource used by one test tree.
+Naming (pinned by `apps/kobato/tests/arch/structure-conventions.test.ts`): `kebab-case.ts` modules, `PascalCase.tsx` components, `use-kebab-case.ts(x)` hooks, `kebab-case-context.tsx` contexts, `*.controller.ts` controllers. Entity directories and wire modules are plural (`posts`, `comments`); mass nouns stay singular (`content`, `music`, `settings`, `cache`). No `index.ts` barrels and no `export { X } from 'y'` re-exports — `packages/inkling`'s public barrel is the one exception. Create a directory only for a family of three or more sibling modules or a documented layer.
 
-No source or test file uses a relative module specifier. The only exceptions are:
+Runtime facts:
 
-- React Router generated `./+types/*` imports.
-- Build-output entry imports (`tools/pack/src/sea/server-entry.ts`) and generated JavaScript quoted inside the SEA capability probe.
-- Import-scanner tests that quote relative specifiers as fixtures; real imports in those files are still absolute.
-
-Build-time configs import through package specifiers like everything else: `apps/kobato/vite.config.ts` and the root `vite.sea.config.ts` reach the SEA plugins through `@kobato/pack/sea/*` (both owners declare the workspace link), and the `packages/shared/tests/*/vitest.config.ts` roots import `@kobato/test/*` (the umbrella `@kobato/shared-tests` package declares the link, mirroring `@kobato/web-tests`).
-
-When adding a package, add its source and test aliases to the shared table and declare its workspace links. Do not add a package-level `paths` table. `apps/kobato/tests/arch/package-dag.test.ts` enforces the single path table, alias confinement, and the no-relative rule across every source and test tree.
-
-## Subdirectory conventions
-
-Agents load these additively as they move through the codebase:
-
-Package-level conventions live at each workspace package root (`packages/<package>/AGENTS.md`, plus the nested web-leaf docs: `packages/web/AGENTS.md` umbrella rules, `packages/web/admin/AGENTS.md`, `packages/web/client/AGENTS.md`, `packages/web/public/AGENTS.md`). Nested `src/**/AGENTS.md` files are reserved for large internal modules such as server infra/domains and web-admin ui.
-
-- `apps/kobato/src/routes/AGENTS.md` route modules, loaders, actions, React Router conventions; `packages/server/AGENTS.md` server layers, API procedures, auth, databases, content; `packages/db/AGENTS.md` SQLite/Drizzle and DuckDB persistence ownership; `packages/db/drizzle/AGENTS.md` migration authoring; `packages/server/src/infra/AGENTS.md` config file contract, SEA runtime rules; `packages/server/src/domains/storage/AGENTS.md` S3 config locking, storage migration, asset URLs; `packages/server/src/domains/fonts/AGENTS.md` vendored cn-font-split wasm slicing.
-- `packages/server/src/domains/backup/AGENTS.md` backup archive, encryption, restore; `packages/web/AGENTS.md` web umbrella rules; `packages/web/admin/AGENTS.md` admin-frontend ownership; `packages/web/client/AGENTS.md` browser platform: document-level hooks, oRPC client, editor platform, React.lazy patterns; `packages/web/public/AGENTS.md` public frontend: public chrome, comments, widgets, music player, the cross-surface shared/lib tiers; `packages/web/admin/src/ui/AGENTS.md` admin components, domain controllers, page editor composition, the body projection renderer, component architecture; `packages/web/admin/src/ui/settings/AGENTS.md` settings autosave model, card wrappers.
-- `packages/ui/AGENTS.md` design-system ownership; `apps/kobato/src/styles/AGENTS.md` app-owned Tailwind entries and product scan graphs; `packages/web/admin/src/styles/AGENTS.md` Inkling host-style adapters; `packages/ui/src/styles/AGENTS.md` generic Tailwind tokens, typeset CSS, and `@theme` conventions; `packages/shared/AGENTS.md` the shared umbrella rules plus the thirteen leaf packages (`packages/shared/<pkg>/AGENTS.md` per leaf); `packages/inkling/AGENTS.md` the Lexical editor layer: card pipeline, headless surface, labels.
-- Per-module test conventions live next to the tests: `apps/kobato/tests/AGENTS.md` (app projects, arch guards, duckdb, e2e, browser journeys), `packages/{db,server,ui,web,inkling}/tests/AGENTS.md` (`packages/web/tests` is the umbrella `web-unit`/`web-snaps` root over the three web leaves' tests — `packages/web/admin/tests`, `packages/web/client/tests`, `packages/web/public/tests` — plus the cross-leaf contract pins), `packages/shared/tests/AGENTS.md` (the umbrella `shared-unit`/`shared-snaps` roots over the thirteen leaf test trees), `tools/AGENTS.md` (the tools umbrella: product src must not depend on tools), `tools/test/AGENTS.md` (the product-free `@kobato/test` infrastructure catalog and the per-package fixture rule), `tools/harness/AGENTS.md` (the out-of-process instance harness); `tools/pack/AGENTS.md` SEA packaging, build/smoke/probe/e2e, self-update; `tools/trace/AGENTS.md` optional OpenObserve DEV container, dev retention, privacy assets, smoke.
-
-## Directory layout standards
-
-The repository has four top-level roots, each with one purpose; nothing else is created at the root:
-
-- `apps/` — deployable applications only (`kobato` the SSR app, `inkling-demo` the playground).
-- `packages/` — PRODUCT code that ships: the app's `@kobato/*` workspace packages (`api`, `db`, `server`, `ui`, `inkling`, `shared/*`, `web/*`).
-- `tools/` — DEVELOPMENT-SUPPORT packages; nothing under it ships in the product binary. Product `src/` never imports a tools package (type-level or value-level).
-- `scripts/` — standalone ops scripts that import no project module (shell or Node builtins only); anything needing project modules belongs in `tools/`.
-
-Every workspace package has the same shape, and a file that fits none of these slots is misplaced:
-
-```
-<package>/
-├── package.json      # name, exports, scripts, workspace deps
-├── AGENTS.md         # the package's conventions (required)
-├── src/              # runtime source ONLY — no tests, no fixtures, no build/test config
-├── tests/            # unit/it/snaps trees mirroring src; helpers in tests/utils|fixtures
-├── drizzle/          # (db only) package-owned migrations + snapshot
-└── assets|styles/    # package-owned static data / Tailwind partials, when the package owns them
-```
-
-- Config files (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`, `drizzle.config.ts`) live at the package root, never under `src/`.
-- Test-only binaries/images/fonts belong to the consuming package's `tests/fixtures/`; never reach into another package or `tools/test` for a resource one test tree uses.
-- `src/` holds no build output and no generated report; a generated module is written beside its generator in `tools/`, not committed as source unless the generator marks it as checked-in schema data (the drizzle snapshot, the slug transliteration table).
-- Naming (pinned by `apps/kobato/tests/arch/structure-conventions.test.ts`): `kebab-case.ts` modules, `PascalCase.tsx` components, `use-kebab-case.ts(x)` hooks, `kebab-case-context.tsx` contexts, `*.controller.ts` router controllers, `filter-fields.ts(x)` filter descriptors. Entity directories and wire modules are plural (`posts`, `comments`, `images`, `webmentions`); mass nouns stay singular (`content`, `music`, `analytics`, `settings`, `storage`, `cache`). No `index.ts` barrels — the inkling package's public barrel and its six internal alias seams are the only exceptions.
-- A directory is created for a FAMILY of three or more sibling modules, or for a documented layer; never nest a directory inside an identically named one.
+- `pnpm dev` / `pnpm start` run with cwd at the repository root so cwd-anchored paths (`kobato.config.json`, `./data`) resolve as a deployed binary expects; build-time code anchors paths on `import.meta.url`, never on `process.cwd()`.
+- Distribution is a single SEA executable; runtime config is `kobato.config.json`, validated through `CONFIG_TABLE`. `apps/kobato/package.json` is the version source of truth — every package carries the same version, synchronized by `release:bump` / `release:prepare-next` (`pnpm version:sync <version>` repairs drift).
+- Tailwind: package-owned `@source` partials, exactly one compile per surface (app `styles/admin.css` / `styles/public.css`, demo `styles/public.css`) composing them via CSS `@import` behind the UI token root (`ui.css` first). Partials carry no `@import 'tailwindcss'`, no layer-order declaration, never re-declare the UI-owned `dark` variant; no cross-package `@source`. Pinned by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts`.
 
 ## Documentation
 
-- The root `README.md` is the repository's only README. Every other directory documents itself in `AGENTS.md`; a non-root `README.md` is a convention violation — fold its core content into the owning `AGENTS.md` and delete it.
-- A package's substantive conventions live in its root `AGENTS.md`, not only in a nested doc. If a package would otherwise document itself solely inside a subdirectory, move that `AGENTS.md` to the package root. Nested `AGENTS.md` files stay reserved for documented layers with their own conventions (test trees, server `infra/` and `domains/`, web-admin `ui/`, styles entries, migrations).
-- Keep these files lean: state the contract, the invariants, and the commands that enforce them. Drop marketing prose, duplicated manuals, and upstream scaffolding.
+- The root `README.md` is the repository's only README; every other directory documents itself in `AGENTS.md`.
+- A package's substantive conventions live in its package-root `AGENTS.md`; nested `src/**/AGENTS.md` and `tests/AGENTS.md` stay reserved for large internal layers (server `infra/`/`domains/`, web-admin `ui/`, styles entries, migrations). Nested docs load additively as agents move through the codebase.
+- Keep every AGENTS.md lean: contract, invariants, enforcing commands. No marketing prose, no restating what code or tests already pin.
 
-## Skills
+## Import conventions
 
-Agent Skills under `.agents/skills/` override these conventions on conflict; `drizzle` and `taze` are CLI-generated gitignored symlinks into `node_modules` (not repo-owned); `.claude/skills/` mirrors repo-owned skills for Claude Code via symlink.
+All imports are absolute. The single workspace path table is `@kobato/toolchain/tsconfig.base.json`; root and demo tsconfigs only extend it — never add a package-level `paths` table.
 
-- `react-router-framework-mode` — routes, loaders, actions, forms, navigation, `react-router.config.ts`.
-- `vercel-react-best-practices` — any React/SSR code; the 70 numbered rules are the performance baseline.
-- `vercel-geist-design-system` — Geist/Vercel-inspired UI: typography, spacing, color, app shells.
+- App source: `@/...` → `apps/kobato/src/...`; app test helpers: `@tests/...` → `apps/kobato/tests/...` (app tests only).
+- Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; package-local test helpers use `@kobato/<package>/tests/...` only from that package's own tests.
+- Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus its one white-box parity test. Public consumers use `@kobato/inkling` or `@kobato/inkling/headless`; the demo uses `@kobato/inkling-demo/...`.
 
-## Build & CI
-
-- `pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run type`, `pnpm run test`, `pnpm run build`
-- Before committing: `pnpm run fmt && pnpm run lint && pnpm run type`, `pnpm run test`, `pnpm run build`
-
-## Test conventions
-
-Tests live next to the package they cover — there is no root-level test tree. Universal rules:
-
-- **Single-purpose rule.** One test file must not mix purposes; split unit (pure logic, mocks only) from integration (hits DB / real RPC) before moving: unit → `<package>/tests/unit/<mirrored-path>.test.ts`, integration → `<package>/tests/it/`, snapshots → `<package>/tests/snaps/`.
-- Import `describe`, `it`, `expect`, `vi` from `vitest`. Run a single project with `npx vitest run --project <name>` (filters are relative to the project root, e.g. `npx vitest run --project app-unit arch/`).
-- **TypeScript pragmatism.** Test code verifies behavior, not perfect types: `any`, `as`, and `ts-expect-error` are acceptable escapes for intentionally partial mocks/fixtures; prefer the narrowest escape, reach for `any` only after `as` proves too verbose.
-- Tests import production code through the same package-root specifiers as production code (`@kobato/server/...`, `@kobato/db/...`, `@kobato/ui/...`); test-local helpers may stay relative. `@/*` is app-source only. Filesystem-anchored guards resolve against the repository root (`process.cwd()` when run via the root `pnpm run test`).
-
-## Git
-
-- Semantic commits in English: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` — imperative mood, lowercase subject, no trailing period. Do not create commits unless explicitly asked.
-
-## Release workflow
-
-Use `/release <version> <next-version>` (e.g., `/release 6.3.0 6.4.0-dev`). No PRs — direct fast-forward merge from develop to main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION__`.
-
-1. Analyze commits since last tag and draft AI-generated release notes; bump all workspace packages to `<version>`, push develop, fast-forward merge to main, push main.
-2. Create git tag + GitHub release (the SEA workflow triggers automatically); switch back to develop, prepare `<next-version>`, push.
-
-## Defensive constraints
-
-Banned layer-root directories (in any package): `actions/`, `middleware/`, `layouts/`, `services/`, `hooks/`, `db/`, `content/` at a source root, and `assets/scripts/`. The one documented exception is `@kobato/inkling`, whose `src/hooks/` and `src/services/` are real layers of the editor island (see `packages/inkling/AGENTS.md`). There is no `assets/scripts/`; all interactivity lives in React hooks/components under `packages/web/client/src/`, `packages/web/public/src/ui/`, and `packages/web/admin/src/ui/`.
-
-- `apps/kobato/src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, the per-section "reset to defaults" action, and a monolithic `BlogConfigContext`/`<BlogConfigProvider>` — use per-section hooks.
-- `data-admin-shell` selector; a `packages/web/admin/src/lib/` parallel to `packages/ui/src/lib`; `@kobato/web-admin/ui/shadcn/components/ui/` nesting.
-- Preserve public URLs, feed URLs, image endpoints, WordPress compatibility routes, and pagination routes.
-- `*.server.ts` suffix is redundant inside `packages/server/src/`.
-- Streamed loader promises (a loader returning an un-awaited promise) require the process-level `unhandledRejection` handler in `packages/server/src/infra/lifecycle.ts` — do not remove it.
-- Never wrap the whole app (or any SSR-critical DOM that must match between server and client) in a lazy `<Suspense>` boundary whose fallback differs from the resolved content — on a cold visit the chunk is still loading at hydration time and the whole tree mismatches (React error #418). The root `LazyMotionConfig` imports its provider eagerly so a late chunk cannot replace the app tree and reset its state; other SSR-critical DOM uses a hydration-safe `useSyncExternalStore` gate or an eager import.
-- Hydration-enhancement mount points in the projected `body_html` follow the same rule: the static fallback must mirror the enhanced component's initial render (the music-player card's `musicPlayerFallbackHtml` ⇔ `MusicPlayerCard` paused state, parity-pinned by `packages/web/public/tests/unit/ui/music-player/music-player.test.tsx`).
-- JS-driven animation goes only through the `@kobato/ui/components/lazy-motion` facade (`LazyMotion*` / `LazyAnimatePresence` / `LazyMotionConfig`, or the `EagerMotion*` / `EagerAnimatePresence` browser-only nodes) — never a direct runtime `motion/react` import outside that module. Shared easing/duration constants live in `@kobato/web-client/lib/motion`; simple hover/state styling stays on CSS `transition-*` utilities.
-- Never use React `<ViewTransition>` / `addTransitionType` / `document.startViewTransition` for element or navigation animation — named captures paint in the `::view-transition` overlay above every z-index; the theme-switch wipe in `packages/ui/src/lib/ThemeProvider.tsx` is the sole `startViewTransition` consumer.
-
-## Dependencies
-
-- Every version number lives in the root `pnpm-workspace.yaml` `catalog:` table (every `package.json` references entries as `"catalog:"`); `taze` edits the catalog in place. Version-exact pins (the drizzle rc pair) stay exact inside the catalog — taze treats range-less entries as locked and skips them; every other entry carries a `^` range so `pnpm bump` keeps it current.
-- Each package declares every external package it imports — the declarations are the layering enforcement, so an undeclared import fails typecheck. Workspace links go in `dependencies`/`devDependencies` as `"workspace:*"` (a package's self-link lives in its own devDependencies).
-- Only packages required at production runtime AND shipping a native dynamic library belong in the ROOT `package.json`'s `dependencies`: `@napi-rs/canvas` and `sharp` (per-platform binaries), `@duckdb/node-api` (`duckdb.node` + libduckdb per platform).
-- Every other dependency belongs in `devDependencies` (of the package that imports it), even if the server or client bundle imports it in production: `react`, `hono`, `drizzle-orm`, `nodemailer`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser`.
-- Distribution ships only the SEA binary built on CI with the full dev install (see `tools/pack/AGENTS.md`): no node runtime, no node_modules, no `pnpm install --prod` step. Native packages must stay in the root `dependencies` so the build installs their platform binaries; the SEA pipeline bundles their JS and embeds the platform `.node` / libvips library files (`tools/pack/src/sea/assets.ts`).
-- `drizzle-orm` / `drizzle-kit` stay pinned at `1.0.0-rc.5` (pre-release); when drizzle 1.0 stable ships, evaluate upgrading the pair together and re-run the migration contract tests before unpinning.
+No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry (`tools/pack/src/sea/server-entry.ts`) and generated probe JavaScript, and import-scanner tests quoting specifiers as fixtures. Build-time configs import through package specifiers like everything else (e.g. `@kobato/pack/sea/*`, `@kobato/test/*`). `apps/kobato/tests/arch/package-dag.test.ts` enforces the single path table, alias confinement, and the no-relative rule.
 
 ## Layering
 
-Package dependency declarations enforce these rules physically; `apps/kobato/tests/arch/package-dag.test.ts` pins the exceptions and the full SRC DAG.
+Dependency declarations are the physical enforcement. `apps/kobato/tests/arch/package-dag.test.ts` pins the full SRC DAG and exceptions, `web-direction.test.ts` the web seams, `server-layers.test.ts` the internal server graph.
 
-- The shared umbrella (`packages/shared/*`, all runtime-isomorphic, React-free): `@kobato/i18n`, `@kobato/assets`, `@kobato/sanitize`, `@kobato/distribution` are leaves; `@kobato/utils` → i18n; `@kobato/auth` → i18n; `@kobato/catalog` → lexical; `@kobato/cache` → i18n, utils; `@kobato/lexical` → `@kobato/inkling/headless`, assets, sanitize, utils; `@kobato/telemetry` → settings; `@kobato/settings` → i18n, cache, assets, utils (NEVER contracts — contracts imports settings, not the reverse); `@kobato/contracts` → auth, catalog, settings, i18n, utils, lexical, assets, cache; `@kobato/seo` → settings, i18n, utils.
-- `@kobato/server` (`packages/server`) → `@kobato/db`, `@kobato/api`, all thirteen shared leaves, `@kobato/inkling` only through `@kobato/inkling/headless`. Never `@kobato/web-admin`, `@kobato/web-public`, `@kobato/web-client`, or `@kobato/ui` in `src/`.
-- `@kobato/api` (`packages/api`) → `@kobato/contracts`. The oRPC contract-first layer (`@orpc/contract`): per-domain contract modules plus the `contract.ts` composition tree mirroring `apiRouter`. Metadata-only and React-free — the server implements the contracts (guard order, validation, context) through the `implement{Public,Authed,Author,Admin}` bases in `orpc-base.ts`. Pinned by the package-dag test.
-- `@kobato/db` (`packages/db`) → `@kobato/settings`, `@kobato/lexical`, `@kobato/utils`. Owns SQLite/Drizzle and DuckDB persistence and its local row/query models; never contracts, server, web, or UI. Wire compatibility is pinned by server-side parity tests.
-- `@kobato/web-admin` (`packages/web/admin`) → `@kobato/web-public`, `@kobato/web-client`, `@kobato/api`, `@kobato/ui`, the shared leaves EXCEPT `@kobato/seo`, `@kobato/inkling` (barrel). The admin frontend; it reuses audited `@kobato/web-public` modules as long-term seams (the set pinned by `apps/kobato/tests/arch/web-direction.test.ts`). Production sources never import `@kobato/server`; the browser client is typed by `ContractRouterClient<typeof apiContract>`, DTO shapes come from `@kobato/contracts`, and server is allowed only as a tests-only fixture dependency.
-- `@kobato/web-public` (`packages/web/public`) → `@kobato/web-client`, `@kobato/ui`, `@kobato/inkling` (barrel), the shared leaves EXCEPT `@kobato/seo` (utils, i18n, auth, catalog, settings, assets, lexical, sanitize, contracts). The public-frontend leaf (public chrome, comments, widgets, music player, plus the cross-surface `ui/shared`/`ui/lib` tiers); never imports `@kobato/web-admin` (admin reuses public, never the reverse) and never `@kobato/server`. Pinned by the package-dag and web-direction tests.
-- `@kobato/web-client` (`packages/web/client`) → `@kobato/api`, `@kobato/ui`, `@kobato/inkling` (barrel), the shared leaves EXCEPT `@kobato/seo` (utils, i18n, settings, telemetry, distribution, contracts). The browser platform leaf (hooks, oRPC client, editor platform); never imports `@kobato/web-admin` or `@kobato/web-public` (the direction is product leaves → web-client, no exceptions) and never `@kobato/server` — the oRPC client is typed exclusively through `@kobato/api`. Pinned by the package-dag and web-direction tests.
-- `@kobato/ui` (`packages/ui`) → `@kobato/settings`, `@kobato/i18n`, `@kobato/utils`. Browser/SSR-safe design system; never web or server.
-- `@kobato/toolchain` (`tools/toolchain`) owns shared tool configuration and has no product-package dependency. Tools packages are dev-support only: product `src/` (apps and packages) must never depend on a tools package — see `tools/AGENTS.md`.
-- `@kobato/inkling` (`packages/inkling`) → itself only in `src/` (host-agnostic editor island; imports no `@kobato/*` package). Its tests may read `@kobato/i18n` label tables; test helpers stay in `packages/inkling/tests/utils/`. The rest of the app imports it ONLY through two entry surfaces: `@kobato/inkling` (the React barrel — app routes and web) and `@kobato/inkling/headless` (react-free; the ONLY surface `@kobato/server` and `@kobato/lexical` may use). Pinned by the package-dag test.
-- `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render. No DB imports or business logic inline.
-- Cross-domain imports under `packages/server/src/domains/` must stay acyclic; `apps/kobato/tests/arch/server-layers.test.ts` pins the internal layer direction, the audited render seams, and the complete cross-domain edge set.
-- No barrel `index.ts` files. No `export { X } from 'y'` re-exports — import directly from the source module (`packages/inkling/` is the deliberate exception: its barrel IS the public surface). Refactor from architectural correctness, not minimal diff size.
+- `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/contracts` (contracts imports settings). `@kobato/lexical` reaches Inkling only through `@kobato/inkling/headless`.
+- `@kobato/api` → `@kobato/contracts` only; metadata-only (`method`/`path`/`input`/`output`). The server implements contracts through the `implement{Public,Authed,Author,Admin}` bases in `packages/server/src/http/orpc-base.ts`.
+- `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
+- `@kobato/db` → `settings`, `lexical`, `utils`; owns its local row/query models, never wire shapes.
+- Web direction is one-way: `web-admin` → `web-public` / `web-client`, `web-public` → `web-client`; never the reverse. Web leaves never import `@kobato/server` (admin allows it only as a tests-only fixture dependency). The browser oRPC client is typed exclusively through `@kobato/api`.
+- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` imports no `@kobato/*` package in `src/`.
+- `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render — no DB imports or business logic inline. Cross-domain imports under `packages/server/src/domains/` stay acyclic.
+- Refactor from architectural correctness, not minimal diff size.
+
+## Skills
+
+`.agents/skills/` overrides these conventions on conflict; `drizzle` and `taze` are CLI-generated gitignored symlinks, `.claude/skills/` mirrors repo-owned skills for Claude Code.
+
+- `react-router-framework-mode` — routes, loaders, actions, `react-router.config.ts`.
+- `vercel-react-best-practices` — the React/SSR performance baseline.
+- `vercel-geist-design-system` — Geist UI conventions.
+
+## Build & CI
+
+- `pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run type`, `pnpm run test`, `pnpm run build`.
+- Before committing: `pnpm run fmt && pnpm run lint && pnpm run type`, then `pnpm run test`, `pnpm run build`.
+
+## Tests
+
+Tests live next to the covered package — no root-level test tree.
+
+- **Single-purpose rule:** unit (pure logic, mocks) → `tests/unit/<mirrored-path>.test.ts`; integration (DB / real RPC) → `tests/it/`; snapshots → `tests/snaps/`. One file never mixes purposes.
+- Import `describe`, `it`, `expect`, `vi` from `vitest`; run one project with `npx vitest run --project <name>`.
+- Tests import production code through the same package-root specifiers as production code; test-local helpers may stay relative.
+- **TypeScript pragmatism:** `any`, `as`, `ts-expect-error` are acceptable escapes for intentionally partial mocks; prefer the narrowest escape.
+
+## Git
+
+- Semantic commits in English (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`), imperative mood, lowercase subject, no trailing period. Do not create commits unless explicitly asked.
+
+## Release
+
+Use `/release <version> <next-version>` (e.g. `/release 6.3.0 6.4.0-dev`) — the skill automates the full lifecycle. No PRs: direct fast-forward merge develop → main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION__`.
+
+## Defensive constraints
+
+- Banned layer-root directories in any package: `actions/`, `middleware/`, `layouts/`, `services/`, `hooks/`, `db/`, `content/`, `assets/scripts/`. Sole exception: Inkling's `src/hooks/` and `src/services/` are real editor-island layers.
+- No `apps/kobato/src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, per-section "reset to defaults" actions, or a monolithic `BlogConfigContext` — use per-section hooks.
+- No `data-admin-shell` selector, no `packages/web/admin/src/lib/` parallel to `packages/ui/src/lib`, no `@kobato/web-admin/ui/shadcn/components/ui/` nesting.
+- Preserve public URLs, feed URLs, image endpoints, WordPress compatibility routes, and pagination routes.
+- `*.server.ts` is redundant inside `packages/server/src/`.
+- Do not remove the process-level `unhandledRejection` handler in `packages/server/src/infra/lifecycle.ts` — streamed loader promises require it.
+- Never wrap SSR-critical DOM in a lazy `<Suspense>` whose fallback differs from the resolved content — on a cold visit the chunk is still loading at hydration time and the whole tree mismatches (React error #418). The root `LazyMotionConfig` imports its provider eagerly; other SSR-critical DOM uses a hydration-safe `useSyncExternalStore` gate or an eager import. The same rule covers hydration mount points in projected `body_html`: the static fallback must mirror the enhanced component's initial render (`musicPlayerFallbackHtml` ⇔ `MusicPlayerCard` paused, parity-pinned by test).
+- JS-driven animation goes only through the `@kobato/ui/components/lazy-motion` facade — never a direct runtime `motion/react` import. Simple hover/state styling stays on CSS `transition-*` utilities.
+- Never use React `<ViewTransition>` / `addTransitionType` / `document.startViewTransition` for element or navigation animation — named captures paint in the `::view-transition` overlay above every z-index. The theme-switch wipe in `packages/ui/src/lib/ThemeProvider.tsx` is the sole `startViewTransition` consumer.
+
+## Dependencies
+
+- Every version lives in the root `pnpm-workspace.yaml` `catalog:` table; `taze` edits it in place. Range-less entries (the drizzle rc pair) are locked; every other entry carries `^`.
+- Each package declares every external package it imports — the declarations are the layering enforcement, so an undeclared import fails typecheck. Workspace links are `"workspace:*"` (a package's self-link lives in its own devDependencies).
+- Only native-dynamic-library packages required at production runtime belong in the ROOT `package.json` `dependencies`: `@napi-rs/canvas`, `sharp`, `@duckdb/node-api`. Every other dependency — even production-bundled ones like `react`, `hono`, `drizzle-orm` — is a `devDependencies` entry of the importing package: the SEA binary is built on CI from the full dev install (see `tools/pack/AGENTS.md`).
+- `drizzle-orm` / `drizzle-kit` stay pinned at `1.0.0-rc.5`; when drizzle 1.0 stable ships, upgrade the pair together and re-run the migration contract tests before unpinning.
