@@ -4,8 +4,8 @@
 
 import type { BrowserContext, Page } from '@playwright/test'
 
+import { browserEnv } from '@kobato/browser/browser-env.ts'
 import { test as base } from '@playwright/test'
-import { browserEnv } from '@tests/browser/support/env.ts'
 import { signInAdmin } from '@tests/browser/support/journey.ts'
 import { SettingsApi } from '@tests/browser/support/settings-api.ts'
 

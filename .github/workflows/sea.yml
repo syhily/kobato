@@ -71,8 +71,8 @@ jobs:
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
       # Real-Chromium journeys (dirty-card flush veto, cross-tab sync, public
       # composer/hydration). CI uses Playwright's bundled Chromium; local runs
-      # default to the system Chrome channel (see tests/browser/playwright.config.ts).
-      - run: pnpm exec playwright install --with-deps chromium
+      # default to the system Chrome channel (see tools/browser/playwright.config.ts).
+      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
       - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}"
         env:
           KOBATO_BROWSER_CHANNEL: chromium
@@ -241,7 +241,7 @@ jobs:
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
       # Real-Chromium journeys against the same binary (bundled Chromium on CI).
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
       - run: pnpm run sea:browser dist-sea/kobato
         env:
           KOBATO_BROWSER_CHANNEL: chromium

@@ -15,11 +15,9 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/lexical": "workspace:*",
     "@kobato/settings": "workspace:*",
-    "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@types/node": "catalog:",
     "react-intl": "catalog:",
-    "react-router": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

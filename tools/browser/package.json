@@ -6,10 +6,15 @@
   "exports": {
     "./*": "./src/*"
   },
+  "scripts": {
+    "sea:browser": "node src/sea.ts",
+    "test:browser": "node src/cli.ts"
+  },
   "devDependencies": {
     "@kobato/browser": "workspace:*",
     "@kobato/harness": "workspace:*",
     "@kobato/pack": "workspace:*",
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:"
   }

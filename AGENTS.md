@@ -27,7 +27,6 @@ All module imports are absolute. The single workspace path table is `@kobato/too
 No source or test file uses a relative module specifier. The only exceptions are:
 
 - React Router generated `./+types/*` imports.
-- `apps/kobato/tests/browser/playwright.config.ts`'s single local import — Playwright loads the config itself WITHOUT tsconfig path mapping (only test files get it); every spec/support file in that tree resolves `@tests/browser/...` through the tree's own `tsconfig.json`, which extends the shared base by relative path.
 - Build-output entry imports (`tools/pack/src/sea/server-entry.ts`) and generated JavaScript quoted inside the SEA capability probe.
 - Import-scanner tests that quote relative specifiers as fixtures; real imports in those files are still absolute.
 

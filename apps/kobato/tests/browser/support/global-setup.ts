@@ -1,4 +1,4 @@
-import { browserEnv } from '@tests/browser/support/env.ts'
+import { browserEnv } from '@kobato/browser/browser-env.ts'
 import { SettingsApi } from '@tests/browser/support/settings-api.ts'
 
 export default async function globalSetup() {

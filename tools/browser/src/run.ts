@@ -25,7 +25,10 @@ function uniquePostSlug() {
 }
 
 function runPlaywright(extraEnv: Record<string, string>) {
-  const args = ['exec', 'playwright', 'test', '--config', 'apps/kobato/tests/browser/playwright.config.ts']
+  // Run Playwright through the package that owns it, so its config and the
+  // CLI resolve from tools/browser/node_modules instead of the workspace root.
+  const configPath = resolvePath(import.meta.dirname, '../playwright.config.ts')
+  const args = ['--filter', '@kobato/browser', 'exec', 'playwright', 'test', '--config', configPath]
   const grep = process.env.KOBATO_BROWSER_TEST_GREP
   if (grep !== undefined && grep !== '') {
     args.push('--grep', grep)

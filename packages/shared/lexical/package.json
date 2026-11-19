@@ -11,10 +11,9 @@
     "@kobato/inkling": "workspace:*",
     "@kobato/lexical": "workspace:*",
     "@kobato/sanitize": "workspace:*",
-    "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@lexical/headless": "catalog:",
-    "tailwindcss": "catalog:",
+    "jsdom": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

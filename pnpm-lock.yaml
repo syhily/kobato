@@ -604,15 +604,9 @@ importers:
       '@kobato/pack':
         specifier: workspace:*
         version: link:tools/pack
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:tools/test
       '@kobato/toolchain':
         specifier: workspace:*
         version: link:tools/toolchain
-      '@playwright/test':
-        specifier: 'catalog:'
-        version: 1.65.1
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -637,9 +631,6 @@ importers:
       oxlint-tsgolint:
         specifier: 'catalog:'
         version: 7.0.2007
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.5
       taze:
         specifier: 'catalog:'
         version: 21.3.0
@@ -730,6 +721,9 @@ importers:
       '@kobato/auth':
         specifier: workspace:*
         version: link:../../packages/shared/auth
+      '@kobato/browser':
+        specifier: workspace:*
+        version: link:../../tools/browser
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../../packages/shared/catalog
@@ -748,9 +742,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../packages/shared/i18n
-      '@kobato/inkling':
-        specifier: workspace:*
-        version: link:../../packages/inkling
       '@kobato/lexical':
         specifier: workspace:*
         version: link:../../packages/shared/lexical
@@ -808,6 +799,9 @@ importers:
       '@react-router/node':
         specifier: 'catalog:'
         version: 8.5.2(react-router@8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)
+      '@simplewebauthn/browser':
+        specifier: 'catalog:'
+        version: 14.0.0
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -838,6 +832,9 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.13.19
+      jsdom:
+        specifier: 'catalog:'
+        version: 31.0.1(@napi-rs/canvas@1.1.1)
       lucide-react:
         specifier: 'catalog:'
         version: 1.76.0(@types/react@19.3.0)(react@19.3.1)
@@ -889,9 +886,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
 
   packages/db:
     devDependencies:
@@ -1177,6 +1171,9 @@ importers:
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
+      '@kobato/toolchain':
+        specifier: workspace:*
+        version: link:../../tools/toolchain
       '@kobato/utils':
         specifier: workspace:*
         version: link:../shared/utils
@@ -1279,9 +1276,6 @@ importers:
       nodemailer:
         specifier: 'catalog:'
         version: 10.6.0
-      oxc-transform-react:
-        specifier: 'catalog:'
-        version: 0.158.0
       pino:
         specifier: 'catalog:'
         version: 10.4.0
@@ -1336,9 +1330,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       react-intl:
         specifier: 'catalog:'
         version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
@@ -1354,9 +1345,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       '@kobato/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1375,9 +1363,6 @@ importers:
       '@kobato/lexical':
         specifier: workspace:*
         version: link:../lexical
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       react-router:
         specifier: 'catalog:'
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1411,9 +1396,6 @@ importers:
       '@kobato/settings':
         specifier: workspace:*
         version: link:../settings
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       '@kobato/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1423,9 +1405,6 @@ importers:
       react-intl:
         specifier: 'catalog:'
         version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
-      react-router:
-        specifier: 'catalog:'
-        version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -1438,9 +1417,6 @@ importers:
       '@kobato/distribution':
         specifier: workspace:*
         version: 'link:'
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -1456,9 +1432,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: 'link:'
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       happy-dom:
         specifier: 'catalog:'
         version: 21.0.4
@@ -1483,18 +1456,15 @@ importers:
       '@kobato/sanitize':
         specifier: workspace:*
         version: link:../sanitize
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       '@kobato/utils':
         specifier: workspace:*
         version: link:../utils
       '@lexical/headless':
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
-      tailwindcss:
+      jsdom:
         specifier: 'catalog:'
-        version: 4.3.5
+        version: 31.0.1(@napi-rs/canvas@1.1.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -1582,9 +1552,6 @@ importers:
       '@kobato/telemetry':
         specifier: workspace:*
         version: 'link:'
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -1615,9 +1582,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       '@kobato/utils':
         specifier: workspace:*
         version: 'link:'
@@ -1669,6 +1633,9 @@ importers:
       cn:
         specifier: 'catalog:'
         version: 0.5.2
+      happy-dom:
+        specifier: 'catalog:'
+        version: 21.0.4
       lucide-react:
         specifier: 'catalog:'
         version: 1.76.0(@types/react@19.3.0)(react@19.3.1)
@@ -1705,9 +1672,6 @@ importers:
 
   packages/web/admin:
     devDependencies:
-      '@base-ui/react':
-        specifier: 'catalog:'
-        version: 1.9.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@dnd-kit/core':
         specifier: 'catalog:'
         version: 6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1720,9 +1684,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: 'catalog:'
         version: 3.2.2(react@19.3.1)
-      '@kobato/api':
-        specifier: workspace:*
-        version: link:../../api
       '@kobato/assets':
         specifier: workspace:*
         version: link:../../shared/assets
@@ -1759,9 +1720,6 @@ importers:
       '@kobato/settings':
         specifier: workspace:*
         version: link:../../shared/settings
-      '@kobato/telemetry':
-        specifier: workspace:*
-        version: link:../../shared/telemetry
       '@kobato/test':
         specifier: workspace:*
         version: link:../../../tools/test
@@ -1786,21 +1744,6 @@ importers:
       '@number-flow/react':
         specifier: 'catalog:'
         version: 0.6.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@openobserve/browser-rum-slim':
-        specifier: 'catalog:'
-        version: 0.4.3
-      '@orpc/client':
-        specifier: 'catalog:'
-        version: 1.16.3(@opentelemetry/api@1.10.0)
-      '@orpc/contract':
-        specifier: 'catalog:'
-        version: 1.16.3(@opentelemetry/api@1.10.0)
-      '@orpc/react-query':
-        specifier: 'catalog:'
-        version: 1.16.3(@opentelemetry/api@1.10.0)(@orpc/client@1.16.3(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.0)(@tanstack/react-query@5.108.0(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
-      '@orpc/server':
-        specifier: 'catalog:'
-        version: 1.16.3(@opentelemetry/api@1.10.0)(ws@8.23.0)
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 14.0.0
@@ -1828,9 +1771,6 @@ importers:
       '@unovis/ts':
         specifier: 'catalog:'
         version: 1.8.1(@types/react@19.3.0)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1))
-      cn:
-        specifier: 'catalog:'
-        version: 0.5.2
       date-fns:
         specifier: 'catalog:'
         version: 4.4.0
@@ -1855,18 +1795,9 @@ importers:
       lucide-react:
         specifier: 'catalog:'
         version: 1.76.0(@types/react@19.3.0)(react@19.3.1)
-      medium-zoom:
-        specifier: 'catalog:'
-        version: 1.1.2
       motion:
         specifier: 'catalog:'
         version: 14.14.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      pino:
-        specifier: 'catalog:'
-        version: 10.4.0
-      qrcode.react:
-        specifier: 'catalog:'
-        version: 4.2.0(react@19.3.1)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -1888,9 +1819,6 @@ importers:
       sonner:
         specifier: 'catalog:'
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.5
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -2128,6 +2056,9 @@ importers:
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
+      jsdom:
+        specifier: 'catalog:'
+        version: 31.0.1(@napi-rs/canvas@1.1.1)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -2152,6 +2083,9 @@ importers:
       '@kobato/pack':
         specifier: workspace:*
         version: link:../pack
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.65.1
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -2209,9 +2143,6 @@ importers:
       '@duckdb/node-api':
         specifier: 'catalog:'
         version: 2.0.0-r.1
-      '@kobato/contracts':
-        specifier: workspace:*
-        version: link:../../packages/shared/contracts
       '@kobato/distribution':
         specifier: workspace:*
         version: link:../../packages/shared/distribution
@@ -2272,6 +2203,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
+      sonner:
+        specifier: 'catalog:'
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vite:
         specifier: 'catalog:'
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
@@ -2300,9 +2234,6 @@ importers:
 
   tools/trace:
     devDependencies:
-      '@kobato/contracts':
-        specifier: workspace:*
-        version: link:../../packages/shared/contracts
       '@kobato/harness':
         specifier: workspace:*
         version: link:../harness
@@ -2336,6 +2267,9 @@ importers:
       sharp:
         specifier: 'catalog:'
         version: 0.35.5(@types/node@26.6.6)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7

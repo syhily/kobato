@@ -1,5 +1,5 @@
+import type { BrowserEnv } from '@kobato/browser/browser-env.ts'
 import type { BrowserContext, Locator, Page } from '@playwright/test'
-import type { BrowserEnv } from '@tests/browser/support/env.ts'
 
 import { expect } from '@playwright/test'
 import { BASELINE_GENERAL } from '@tests/browser/support/settings-api.ts'

@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/contracts": "workspace:*",
     "@kobato/harness": "workspace:*",
     "@kobato/lexical": "workspace:*",
     "@kobato/pack": "workspace:*",
@@ -19,6 +18,7 @@
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
     "sharp": "catalog:",
+    "vitest": "catalog:",
     "zod": "catalog:"
   }
 }

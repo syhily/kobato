@@ -123,7 +123,15 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/api': ['@kobato/api', '@kobato/contracts', '@kobato/test'],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/lexical', '@kobato/test', '@kobato/utils'],
 
-  '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', '@kobato/test', ...SHARED_SPLIT],
+  '@kobato/server': [
+    '@kobato/server',
+    '@kobato/api',
+    '@kobato/db',
+    '@kobato/inkling',
+    '@kobato/test',
+    '@kobato/toolchain',
+    ...SHARED_SPLIT,
+  ],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-admin': [
@@ -317,18 +325,8 @@ const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'packages/ui/tests/contract/dark-variant.test.ts',
 ])
 
-const RELATIVE_IMPORT_PREFIX_EXCEPTIONS = [
-  // Playwright loads the config itself WITHOUT tsconfig path mapping (only
-  // test files get it — see the browser tree's own tsconfig.json), so the
-  // config's single local import stays relative.
-  'apps/kobato/tests/browser/playwright.config.ts',
-] as const
-
 function isAllowedRelativeImport(file: string, specifier: string): boolean {
   if (specifier.startsWith('./+types/')) {
-    return true
-  }
-  if (RELATIVE_IMPORT_PREFIX_EXCEPTIONS.some((prefix) => file.startsWith(prefix))) {
     return true
   }
   return RELATIVE_IMPORT_FILE_EXCEPTIONS.has(file) || RELATIVE_ESCAPE_EXCEPTIONS.has(`${file}:${specifier}`)

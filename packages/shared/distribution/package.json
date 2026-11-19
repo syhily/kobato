@@ -8,7 +8,6 @@
   },
   "devDependencies": {
     "@kobato/distribution": "workspace:*",
-    "@kobato/test": "workspace:*",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

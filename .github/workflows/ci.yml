@@ -82,7 +82,7 @@ jobs:
       # Real-Chromium journeys (tests/browser). CI uses Playwright's bundled
       # Chromium; `sea:browser` forces the built binary, so a missing
       # dist-sea/kobato fails the step instead of silently skipping.
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
         if: github.event_name == 'pull_request'
       - run: pnpm run sea:browser dist-sea/kobato
         if: github.event_name == 'pull_request'

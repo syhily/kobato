@@ -1,4 +1,4 @@
-import type { BrowserEnv } from '@tests/browser/support/env.ts'
+import type { BrowserEnv } from '@kobato/browser/browser-env.ts'
 
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
 import { callE2eRpc } from '@kobato/harness/rpc.ts'

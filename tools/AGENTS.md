@@ -6,7 +6,7 @@
 - `test` ↔ `@kobato/test` — in-process Vitest fixtures/doubles only (see `test/AGENTS.md`).
 - `harness` ↔ `@kobato/harness` — the out-of-process instance harness (see `harness/AGENTS.md`).
 - `trace` ↔ `@kobato/trace` — OpenObserve DEV container tooling (see `trace/README.md`); it consumes `pack/sea/paths.ts` for the shared observability-asset location and `@kobato/telemetry` for protocol names.
-- `browser` ↔ `@kobato/browser` — the real-browser Playwright journey runner (`test:browser` / `sea:browser`).
+- `browser` ↔ `@kobato/browser` — the real-browser Playwright journey runner (`test:browser` / `sea:browser`) and the Playwright config itself.
 - `email` ↔ `@kobato/email` — localized email-template previews (`emails:generate`).
 - `i18n` ↔ `@kobato/i18n-tools` — regional terminology diff report (`i18n:regional-diff`).
 - `pack` ↔ `@kobato/pack` — packaging tooling: the SEA pipeline (`pack/src/sea/`, own AGENTS.md) and release automation (`pack/src/release.ts`).

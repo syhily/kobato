@@ -8,7 +8,6 @@
   },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
-    "@kobato/contracts": "workspace:*",
     "@kobato/distribution": "workspace:*",
     "@kobato/harness": "workspace:*",
     "@kobato/pack": "workspace:*",

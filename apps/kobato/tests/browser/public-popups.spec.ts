@@ -1,6 +1,6 @@
 import type { Browser } from '@playwright/test'
 
-import { browserEnv } from '@tests/browser/support/env.ts'
+import { browserEnv } from '@kobato/browser/browser-env.ts'
 import { expect, test } from '@tests/browser/support/fixtures.ts'
 import { collectConsoleIssues, waitForHydration } from '@tests/browser/support/journey.ts'
 

@@ -9,7 +9,6 @@
   "devDependencies": {
     "@kobato/settings": "workspace:*",
     "@kobato/telemetry": "workspace:*",
-    "@kobato/test": "workspace:*",
     "vitest": "catalog:",
     "zod": "catalog:"
   }
