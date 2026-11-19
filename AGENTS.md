@@ -37,7 +37,7 @@ No relative specifiers in source or tests. Exceptions: React Router generated `.
 
 ## Layering
 
-Dependency declarations are the physical enforcement. `apps/kobato/tests/arch/package-dag.test.ts` pins the full SRC DAG and exceptions, `web-direction.test.ts` the web seams, `server-layers.test.ts` the internal server graph.
+Dependency declarations are the physical enforcement. `apps/kobato/tests/arch/package-dag.test.ts` pins the full SRC DAG and exceptions, `web-direction.test.ts` the web seams, `server-layers.test.ts` the internal server graph, `admin-feature-graph.test.ts` the intra-`web-admin` feature graph, and `server-public-surface.test.ts` the server's externally consumable module surface (domain `repos/**` privacy included).
 
 - `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/contracts` (contracts imports settings). `@kobato/catalog` and `@kobato/contracts` reach the Lexical document model through `@kobato/inkling/headless` (catalog type-only).
 - `@kobato/api` → `@kobato/contracts` only; metadata-only (`method`/`path`/`input`/`output`). The server implements contracts through the `implement{Public,Authed,Author,Admin}` bases in `packages/server/src/http/orpc-base.ts`.

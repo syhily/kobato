@@ -9,6 +9,7 @@ The direction is strictly `@kobato/web-admin` → `@kobato/web-public` → `@kob
 - admin may reuse AUDITED `@kobato/web-public` modules (the exact set is pinned by `ADMIN_PUBLIC_IMPORTS` in `apps/kobato/tests/arch/web-direction.test.ts`: the chrome clock, `CommentContentHtml`, `LazyCommentBodyEditor`, `comment-body-helpers`, the music player card, `widgets/Image` — plus the cross-surface `ui/shared`/`ui/lib` tiers every document renders). These are long-term seams, not a transitional state;
 - a web-public module NEVER imports `@kobato/web-admin` — a module both sides need belongs in `@kobato/web-public/ui/shared` (or moves down a leaf), never into admin;
 - a web-client module never imports either product leaf.
+- the intra-package feature graph under `src/ui/` is pinned feature-by-feature by `ALLOWED_FEATURE_IMPORTS` in `apps/kobato/tests/arch/admin-feature-graph.test.ts`: `ui/shared` is the reuse hub (never a dependent of a feature), the editor family wires one way, every other cross-feature edge is an audited allowlist row, and `ui/` roots hold only directories.
 
 ## Rules
 

@@ -1,4 +1,4 @@
-# yufan.me
+# kobato
 
 Personal blog/CMS: posts, pages, comments, settings, assets — one admin, one public site.
 

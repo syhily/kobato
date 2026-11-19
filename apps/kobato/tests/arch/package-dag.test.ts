@@ -98,7 +98,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/cache',
     '@kobato/assets',
     '@kobato/utils',
-    '@kobato/contracts',
     '@kobato/test',
   ],
   '@kobato/assets': ['@kobato/assets', '@kobato/test'],

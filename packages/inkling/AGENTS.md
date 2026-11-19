@@ -43,6 +43,10 @@ One closed public surface (`src/index.ts`) and one react-free surface (`src/head
 
 Glossary owned here: **card** (a decorator-node block), **card adjacency**, **card spec**, **card declaration**, **render target**, **host card**, **artifact slot**, **render-time meta**.
 
+### Internal layer order
+
+`nodes/` is the model core (assembled classes, declarations, specs); `components/` renders it, `plugins/` and `transforms/` mutate it, `context/` carries shared editor state, `hooks/` is React glue, `services/` the React-free request machines, `html/` + `markdown/` the serialization planes, `themes/` the class map, `labels/` the copy tables, `headless/` the React-free document model, `host-cards/` the kobato assemblies on top. The editor core (`nodes`, `components`, `plugins`, `hooks`, `context`) is an intentionally interdependent mesh — for new code prefer depending inward (on `nodes/` and `context/`) over lateral imports between feature layers. `headless/` is the one hard floor: React-free at the runtime-closure level, enforced by `tests/unit/headless/headless-boundary.test.ts` (no `react`/`react-dom`/`@lexical/react` edge and no React layer anywhere in the closure; `nodes/` is reached at runtime only through `nodes/base/generate-decorator-node`).
+
 ### Card pipeline
 
 - Cards collapse to declarations (`src/nodes/cards/*.declaration.ts`); `assembleCardNodeOnce` assembles the class once per card; `CARD_WRAPPER_NODES` derives from `CARD_DECLARATIONS`.
@@ -71,7 +75,7 @@ Glossary owned here: **card** (a decorator-node block), **card adjacency**, **ca
 ### The document model (`src/headless/`)
 
 - React-free by construction (same constraint as the headless entry): the Zod storage schemas (`schema.ts` full ARTICLE + `comment-schema.ts` COMMENT + the blank/submit gates), `node-whitelist.ts`, `dialect.ts` (compact↔full parity), the save pipeline readers (`walk`, `collect`, `toc`, `artifacts`, `equivalence`), and `cards/` — the React-free host-card specs + render helpers (`card-html`, `kobato-image`, `music-player` incl. `MUSIC_PLAYER_PROJECTION_PLACEHOLDER` and `musicPlayerFallbackHtml`, `solution`, `two-column`). `styles/cards.css` is the app-surface Tailwind partial scanning `../headless/cards` + `../host-cards` with the UI token bridge (apps compose `@kobato/inkling/styles/cards.css`; pinned by the app's `tailwind-source-ownership.test.ts`).
-- The server's save/projection pipeline CONSUMES this model; the feed downgrade + defensive host-card substitution live server-side (`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the reverse.
+- The server's save/projection pipeline CONSUMES this model; the feed downgrade + defensive host-card substitution live server-side (`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the reverse. The React-free guarantee is transitive and machine-pinned by `tests/unit/headless/headless-boundary.test.ts` (see Internal layer order).
 
 ### Host cards (`src/host-cards/`)
 
