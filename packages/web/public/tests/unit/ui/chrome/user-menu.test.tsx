@@ -5,11 +5,16 @@ import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header.tsx'
 import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-public/ui/shared/auth/use-logout.ts', () => ({
-  useLogout: () => vi.fn(),
-}))
+const { useLogout: realUseLogout } = await import('@kobato/web-public/ui/shared/auth/use-logout.ts')
+const useLogoutSpy = vi.spyOn(await import('@kobato/web-public/ui/shared/auth/use-logout.ts'), 'useLogout')
+void realUseLogout
+useLogoutSpy.mockImplementation((() => vi.fn()) as never)
+
+afterAll(() => {
+  useLogoutSpy.mockRestore()
+})
 
 const { UserMenu } = await import('@kobato/web-public/ui/chrome/UserMenu.tsx')
 
