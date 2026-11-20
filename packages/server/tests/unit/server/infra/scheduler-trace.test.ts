@@ -3,12 +3,13 @@ import type { ReadableSpan } from '@opentelemetry/sdk-trace'
 
 import { SpanStatusCode } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/db/job-run-recorder.ts', () => ({
-  startJobRun: vi.fn(() => 42),
-  finishJobRun: vi.fn(),
-}))
+// The recorder writes job history rows; its id contract (42) is pinned
+// through function doubles.
+const recorder = await import('@kobato/server/infra/db/job-run-recorder.ts')
+const startJobRun = vi.spyOn(recorder, 'startJobRun').mockImplementation(() => 42 as never)
+const finishJobRun = vi.spyOn(recorder, 'finishJobRun').mockImplementation(() => undefined as never)
 
 import { scheduleJob, stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
@@ -118,4 +119,9 @@ describe('trace jobs — scheduler perimeter', () => {
     expect(job!.attributes['error.category']).toBe('unknown')
     expect(JSON.stringify(job!.attributes)).not.toContain('secret backup failure')
   })
+})
+
+afterAll(() => {
+  startJobRun.mockRestore()
+  finishJobRun.mockRestore()
 })

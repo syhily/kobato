@@ -1,24 +1,29 @@
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const serviceMocks = vi.hoisted(() => ({
-  checkForUpdate: vi.fn(),
-  applyUpdate: vi.fn(),
-}))
-const jobMocks = vi.hoisted(() => ({ getUpdateJobStatus: vi.fn() }))
-
-vi.mock('@kobato/server/domains/update/service.ts', () => serviceMocks)
-vi.mock('@kobato/server/domains/update/job.ts', () => jobMocks)
-
-vi.mock('@kobato/server/domains/audit/services/record.ts', () => ({
-  recordAuditEventFromContext: vi.fn(),
-}))
+// The update service hits GitHub and the job tracks a process-level
+// pipeline; both stay controlled at the function level. Audit recording
+// runs for real (buffered) and is observed through a spy.
+const serviceMocks = {
+  checkForUpdate: vi
+    .spyOn(await import('@kobato/server/domains/update/service.ts'), 'checkForUpdate')
+    .mockResolvedValue({ updateAvailable: false } as never),
+  applyUpdate: vi
+    .spyOn(await import('@kobato/server/domains/update/service.ts'), 'applyUpdate')
+    .mockResolvedValue({ fromVersion: '6.4.0', toVersion: '6.5.0' } as never),
+}
+const jobMocks = {
+  getUpdateJobStatus: vi
+    .spyOn(await import('@kobato/server/domains/update/job.ts'), 'getUpdateJobStatus')
+    .mockReturnValue({ state: 'idle', targetVersion: null } as never),
+}
 
 const { RPCHandler } = await import('@orpc/server/fetch')
 const { adminUpdateRouter } = await import('@kobato/server/http/controllers/admin/update.controller.ts')
-const { recordAuditEventFromContext } = await import('@kobato/server/domains/audit/services/record.ts')
+const auditModule = await import('@kobato/server/domains/audit/services/record.ts')
+const recordAuditSpy = vi.spyOn(auditModule, 'recordAuditEventFromContext')
 const handler = new RPCHandler(adminUpdateRouter)
 
 async function call(path: string, input: unknown, ctx = makeAuthedCtx({ role: 'admin' })) {
@@ -72,7 +77,7 @@ describe('admin update controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ fromVersion: string; toVersion: string }>(response)
     expect(body).toEqual({ fromVersion: '6.4.0', toVersion: '6.5.0' })
-    expect(recordAuditEventFromContext).toHaveBeenCalledWith(
+    expect(recordAuditSpy).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         action: 'system_updated',
@@ -86,7 +91,7 @@ describe('admin update controller', () => {
     serviceMocks.applyUpdate.mockRejectedValue(new DomainError('CONFLICT', '已有更新任务正在进行中'))
     const response = await call('/apply', {})
     expect(response.status).toBe(409)
-    expect(recordAuditEventFromContext).not.toHaveBeenCalled()
+    expect(recordAuditSpy).not.toHaveBeenCalled()
   })
 
   it('apply translates a gate refusal to 403', async () => {
@@ -103,4 +108,11 @@ describe('admin update controller', () => {
     expect(serviceMocks.checkForUpdate).not.toHaveBeenCalled()
     expect(serviceMocks.applyUpdate).not.toHaveBeenCalled()
   })
+})
+
+afterAll(() => {
+  serviceMocks.checkForUpdate.mockRestore()
+  serviceMocks.applyUpdate.mockRestore()
+  jobMocks.getUpdateJobStatus.mockRestore()
+  recordAuditSpy.mockRestore()
 })

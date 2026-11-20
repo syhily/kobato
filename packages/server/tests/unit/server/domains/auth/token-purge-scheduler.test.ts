@@ -1,13 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-const purgeExpired = vi.fn().mockResolvedValue(0)
 const db = {}
 
-vi.mock('@kobato/server/domains/auth/verification-tokens.ts', () => ({
-  purgeExpired: (...args: unknown[]) => purgeExpired(...args),
-}))
+const purgeExpired = vi
+  .spyOn(await import('@kobato/server/domains/auth/verification-tokens.ts'), 'purgeExpired')
+  .mockResolvedValue(0 as never)
 
 const PINNED_NOW = new Date('2026-01-15T12:00:00.000Z')
 
@@ -59,4 +58,8 @@ describe('auth token-purge scheduler', () => {
     stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
+})
+
+afterAll(() => {
+  purgeExpired.mockRestore()
 })

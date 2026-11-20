@@ -1,15 +1,13 @@
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-const runArchiveJob = vi.fn().mockResolvedValue(undefined)
+const runArchiveJob = vi
+  .spyOn(await import('@kobato/server/domains/audit/services/archive.ts'), 'runArchiveJob')
+  .mockResolvedValue(undefined as never)
 const db = {}
-
-vi.mock('@kobato/server/domains/audit/services/archive.ts', () => ({
-  runArchiveJob: (...args: unknown[]) => runArchiveJob(...args),
-}))
 
 const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
 
@@ -96,4 +94,8 @@ describe('audit scheduler', () => {
     stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
+})
+
+afterAll(() => {
+  runArchiveJob.mockRestore()
 })
