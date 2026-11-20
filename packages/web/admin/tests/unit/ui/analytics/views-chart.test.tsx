@@ -3,24 +3,27 @@ import { renderInRouter } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
 import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const control = mockTanstackQuery()
 
 const captured = vi.hoisted(() => ({ inputs: [] as Record<string, unknown>[] }))
 
-vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
-  orpcQuery: {
-    analytics: {
-      views: {
-        queryOptions: (options: { input: Record<string, unknown> }) => {
-          captured.inputs.push(options.input)
-          return { queryKey: ['analytics', 'views', options.input] }
-        },
+const orpcQueryMod = await import('@kobato/web-client/api/orpc-query.ts')
+vi.spyOn(orpcQueryMod, 'orpcQuery', 'get').mockImplementation((() => ({
+  analytics: {
+    views: {
+      queryOptions: (options: { input: Record<string, unknown> }) => {
+        captured.inputs.push(options.input)
+        return { queryKey: ['analytics', 'views', options.input] }
       },
     },
   },
-}))
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function ViewsChartRouteHarness() {
   const state = useAnalyticsState()

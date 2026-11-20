@@ -6,7 +6,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const control = mockTanstackQuery()
 
@@ -21,32 +21,35 @@ const captured = vi.hoisted(() => ({
   onDirectSuccess: [] as (() => void)[],
 }))
 
-vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
-  orpcQuery: {
-    notifications: { key: () => ['notifications'] },
-    admin: {
-      users: {
-        list: {
-          queryOptions: (options: { input: { q?: string; limit: number; offset: number } }) => {
-            captured.queryInputs.push(options.input)
-            return { queryKey: ['admin', 'users', 'list', options.input] }
-          },
+const orpcQueryMod = await import('@kobato/web-client/api/orpc-query.ts')
+vi.spyOn(orpcQueryMod, 'orpcQuery', 'get').mockImplementation((() => ({
+  notifications: { key: () => ['notifications'] },
+  admin: {
+    users: {
+      list: {
+        queryOptions: (options: { input: { q?: string; limit: number; offset: number } }) => {
+          captured.queryInputs.push(options.input)
+          return { queryKey: ['admin', 'users', 'list', options.input] }
         },
-      },
-      notifications: {
-        sendDirect: {
-          mutationOptions: (options: { onSuccess?: () => void }) => {
-            if (options.onSuccess !== undefined) {
-              captured.onDirectSuccess.push(options.onSuccess)
-            }
-            return {}
-          },
-        },
-        sendBroadcast: { mutationOptions: () => ({}) },
       },
     },
+    notifications: {
+      sendDirect: {
+        mutationOptions: (options: { onSuccess?: () => void }) => {
+          if (options.onSuccess !== undefined) {
+            captured.onDirectSuccess.push(options.onSuccess)
+          }
+          return {}
+        },
+      },
+      sendBroadcast: { mutationOptions: () => ({}) },
+    },
   },
-}))
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const { ComposeNotificationDialog } =
   await import('@kobato/web-public/ui/shared/notifications/ComposeNotificationDialog.tsx')
