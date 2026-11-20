@@ -7,7 +7,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { makeAdminComment } from '@kobato/web-admin/tests/utils/catalog.ts'
 import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
@@ -70,27 +70,24 @@ const stubActions = vi.hoisted((): CommentActions => {
   }
 })
 
-vi.mock('@kobato/web-admin/ui/comments/use-comments-controller.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/comments/use-comments-controller.ts')>(
-    '@kobato/web-admin/ui/comments/use-comments-controller.ts',
-  )
-  return {
-    ...actual,
-    useCommentsController: () => ({
-      comments: controllerState.comments,
-      total: controllerState.total,
-      statusCounts: controllerState.statusCounts,
-      hasMore: controllerState.hasMore,
-      isLoading: controllerState.isLoading,
-      isFetchingNextPage: controllerState.isFetchingNextPage,
-      sentinelRef: { current: null },
-      actions: stubActions,
-      confirm: null,
-      closeConfirm: vi.fn(),
-      updateCommentBody: vi.fn(),
-      invalidateList: vi.fn(),
-    }),
-  }
+const commentsControllerMod = await import('@kobato/web-admin/ui/comments/use-comments-controller.ts')
+vi.spyOn(commentsControllerMod, 'useCommentsController').mockImplementation((() => ({
+  comments: controllerState.comments,
+  total: controllerState.total,
+  statusCounts: controllerState.statusCounts,
+  hasMore: controllerState.hasMore,
+  isLoading: controllerState.isLoading,
+  isFetchingNextPage: controllerState.isFetchingNextPage,
+  sentinelRef: { current: null },
+  actions: stubActions,
+  confirm: null,
+  closeConfirm: vi.fn(),
+  updateCommentBody: vi.fn(),
+  invalidateList: vi.fn(),
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 function resetController() {
