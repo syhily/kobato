@@ -3,23 +3,27 @@
 import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
 
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { render } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const logWarn = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/ui/lib/logger.ts', () => ({
-  getLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: logWarn,
-    error: vi.fn(),
-    child: vi.fn(),
-    withScope: vi.fn(),
-  }),
-}))
+const loggerMod = await import('@kobato/ui/lib/logger.ts')
+vi.spyOn(loggerMod, 'getLogger').mockImplementation((() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: logWarn,
+  error: vi.fn(),
+  child: vi.fn(),
+  withScope: vi.fn(),
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { useI18n } = await import('@kobato/ui/lib/I18nProvider.tsx')
+const { wrapWithI18n } = await import('@kobato/ui/tests/utils/i18n-render.tsx')
 
 const MESSAGES = {
   ...uiMessagesZhCN,

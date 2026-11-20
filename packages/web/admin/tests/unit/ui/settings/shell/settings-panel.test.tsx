@@ -1,26 +1,28 @@
 // @vitest-environment happy-dom
 
-import {
-  SettingsFlushProvider,
-  useSettingsFlushContext,
-} from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
-import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 const logWarn = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/ui/lib/logger.ts', () => ({
-  getLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: logWarn,
-    error: vi.fn(),
-    child: vi.fn(),
-    withScope: vi.fn(),
-  }),
-}))
+const loggerMod = await import('@kobato/ui/lib/logger.ts')
+vi.spyOn(loggerMod, 'getLogger').mockImplementation((() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: logWarn,
+  error: vi.fn(),
+  child: vi.fn(),
+  withScope: vi.fn(),
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { SettingsPanel } = await import('@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx')
+const { SettingsFlushProvider, useSettingsFlushContext } =
+  await import('@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx')
 
 function deferred() {
   let resolve!: () => void
