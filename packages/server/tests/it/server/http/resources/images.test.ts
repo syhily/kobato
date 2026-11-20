@@ -10,29 +10,23 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/render/calendar/render.ts', () => ({
-  renderCalendar: vi.fn(),
-}))
+// The calendar renderer has its own real-canvas coverage; this suite pins
+// route + cache semantics with a fast spy.
+const renderCalendar = vi
+  .spyOn(await import('@kobato/server/render/calendar/render.ts'), 'renderCalendar')
+  .mockResolvedValue(Buffer.from('cal') as never)
+// Avatar resolution is a DB+network pipeline covered elsewhere; the route
+// mapping of its outcomes is what this suite pins.
+const serveAvatar = vi
+  .spyOn(await import('@kobato/server/domains/comments/services/avatar.ts'), 'serveAvatar')
+  .mockResolvedValue({ kind: 'redirect' } as never)
 
-vi.mock('@kobato/server/domains/comments/services/avatar.ts', async (importActual) => {
-  const actual = await importActual<typeof import('@kobato/server/domains/comments/services/avatar.ts')>()
-  return {
-    ...actual,
-    serveAvatar: vi.fn(),
-  }
-})
-
-vi.mock('@kobato/server/render/og/render.ts', () => ({
-  drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from('png')),
-}))
-
-import { serveAvatar } from '@kobato/server/domains/comments/services/avatar.ts'
 import { onErrorHandler } from '@kobato/server/http/errors.ts'
 import { imagesRouter } from '@kobato/server/http/resources/images.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { renderCalendar } from '@kobato/server/render/calendar/render.ts'
+import sharp from 'sharp'
 
 const db = getTestDb()
 
@@ -55,7 +49,7 @@ async function seedLivePost(slug: string): Promise<void> {
       slug,
       title: 'Post',
       summary: 'Summary',
-      cover: 'cover.jpg',
+      cover: coverDataUri,
       published: true,
       publishedAt: new Date('2024-01-01'),
       firstPublishedAt: new Date('2024-01-01'),
@@ -76,7 +70,7 @@ async function seedLivePage(slug: string): Promise<void> {
       slug,
       title: 'Page',
       summary: 'Page summary',
-      cover: 'cover.jpg',
+      cover: coverDataUri,
       published: true,
       publishedAt: new Date('2024-01-01'),
       firstPublishedAt: new Date('2024-01-01'),
@@ -89,13 +83,24 @@ async function seedLivePage(slug: string): Promise<void> {
   await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, rows[0]!.id))
 }
 
+const coverDataUri = `data:image/png;base64,${(
+  await sharp({ create: { width: 200, height: 200, channels: 3, background: { r: 32, g: 64, b: 128 } } })
+    .png()
+    .toBuffer()
+).toString('base64')}`
+
 describe('images resource', () => {
   beforeEach(async () => {
     await clearAllTables(db)
-    vi.clearAllMocks()
+    renderCalendar.mockClear()
+    serveAvatar.mockClear()
+    serveAvatar.mockResolvedValue({ kind: 'redirect' } as never)
     __resetRateLimitsForTests()
-    ;(renderCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('cal'))
-    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
+  })
+
+  afterAll(() => {
+    renderCalendar.mockRestore()
+    serveAvatar.mockRestore()
   })
 
   it('renders an OG image for a post', async () => {
@@ -135,7 +140,7 @@ describe('images resource', () => {
   })
 
   it('renders an OG image for a category', async () => {
-    await db.insert(categoryTable).values({ name: 'Code', slug: 'code', description: '', cover: '' })
+    await db.insert(categoryTable).values({ name: 'Code', slug: 'code', description: '', cover: coverDataUri })
     const res = await requestImages('http://localhost/images/og/cats/code.png')
     expect(res.status).toBe(200)
   })
@@ -210,7 +215,7 @@ describe('images resource', () => {
   })
 
   it('maps a png outcome to a 200 image/png response', async () => {
-    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'png', buffer: Buffer.from('av') })
+    serveAvatar.mockResolvedValue({ kind: 'png', buffer: Buffer.from('av') } as never)
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
@@ -219,7 +224,6 @@ describe('images resource', () => {
   })
 
   it('maps a redirect outcome to the default avatar path', async () => {
-    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(302)
     expect(res.headers.get('Location')).toBe('/images/default-avatar.png')
@@ -229,7 +233,7 @@ describe('images resource', () => {
     const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
     expect(res.status).toBe(302)
     expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 256)
-    ;(serveAvatar as ReturnType<typeof vi.fn>).mockClear()
+    serveAvatar.mockClear()
     await requestImages('http://localhost/images/avatar/abc.png')
     expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 128)
   })
