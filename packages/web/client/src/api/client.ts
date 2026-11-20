@@ -11,6 +11,8 @@ export function setCsrfToken(token: string) {
 }
 
 const link = new RPCLink({
+  // Read the global per call so test transports installed later are honoured.
+  fetch: (request, init) => globalThis.fetch(request, init),
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
     const h: Record<string, string> = {}
