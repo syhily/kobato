@@ -12,7 +12,7 @@ import type { FontsSettings } from '@kobato/settings/types.ts'
 import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload.ts'
 
 import { MemoryRouter } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const hookMock = vi.hoisted(() => ({
   calls: [] as UseFileUploadOptions[],
@@ -20,12 +20,15 @@ const hookMock = vi.hoisted(() => ({
   pending: false,
 }))
 
-vi.mock('@kobato/web-admin/ui/shared/use-file-upload.ts', () => ({
-  useFileUpload: (options: UseFileUploadOptions) => {
-    hookMock.calls.push(options)
-    return { upload: hookMock.upload, pending: hookMock.pending }
-  },
-}))
+const useFileUploadMod = await import('@kobato/web-admin/ui/shared/use-file-upload.ts')
+vi.spyOn(useFileUploadMod, 'useFileUpload').mockImplementation(((options: UseFileUploadOptions) => {
+  hookMock.calls.push(options)
+  return { upload: hookMock.upload, pending: hookMock.pending }
+}) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm.tsx'
 

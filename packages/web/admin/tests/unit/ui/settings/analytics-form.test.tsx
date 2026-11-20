@@ -14,7 +14,7 @@ import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
@@ -24,12 +24,15 @@ const hookMock = vi.hoisted(() => ({
   pending: false,
 }))
 
-vi.mock('@kobato/web-admin/ui/shared/use-file-upload.ts', () => ({
-  useFileUpload: (options: UseFileUploadOptions) => {
-    hookMock.options = options
-    return { upload: hookMock.upload, pending: hookMock.pending }
-  },
-}))
+const useFileUploadMod = await import('@kobato/web-admin/ui/shared/use-file-upload.ts')
+vi.spyOn(useFileUploadMod, 'useFileUpload').mockImplementation(((options: UseFileUploadOptions) => {
+  hookMock.options = options
+  return { upload: hookMock.upload, pending: hookMock.pending }
+}) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm.tsx'
 
