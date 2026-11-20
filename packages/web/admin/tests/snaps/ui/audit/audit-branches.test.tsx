@@ -6,7 +6,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = mockTanstackQuery()
 
@@ -35,29 +35,28 @@ mocks.mutation = {
   isPending: false,
 }
 
-vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () => {
-  const { buildAuditFilterFields } = await vi.importActual<
-    typeof import('@kobato/web-admin/ui/audit/filter-fields.tsx')
-  >('@kobato/web-admin/ui/audit/filter-fields.tsx')
-  return {
-    useFilterPills: () => ({
-      filters: mocks.filters,
-      hasFilters: mocks.filters.length > 0,
-      dispatch: mocks.dispatch,
-      queryInput: () => ({}),
-      text: () => ({ op: 'contains', value: '' }),
-      dateSingle: () => null,
-      dateRange: () => null,
-      bar: {
-        fields: buildAuditFilterFields(mocks.actors, tZhCN),
-        filters: mocks.filters,
-        search: {},
-        onAddFilter: vi.fn(),
-        onRemoveFilter: vi.fn(),
-        onClearFilters: vi.fn(),
-      },
-    }),
-  }
+const { buildAuditFilterFields } = await import('@kobato/web-admin/ui/audit/filter-fields.tsx')
+const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+vi.spyOn(filterPillsMod, 'useFilterPills').mockImplementation((() => ({
+  filters: mocks.filters,
+  hasFilters: mocks.filters.length > 0,
+  dispatch: mocks.dispatch,
+  queryInput: () => ({}),
+  text: () => ({ op: 'contains', value: '' }),
+  dateSingle: () => null,
+  dateRange: () => null,
+  bar: {
+    fields: buildAuditFilterFields(mocks.actors, tZhCN),
+    filters: mocks.filters,
+    search: {},
+    onAddFilter: vi.fn(),
+    onRemoveFilter: vi.fn(),
+    onClearFilters: vi.fn(),
+  },
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 const ACTORS: AuditLogActorDto[] = [
