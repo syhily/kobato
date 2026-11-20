@@ -12,16 +12,24 @@ import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/dom
 import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const runtimeMock = vi.hoisted(() => ({
-  startTraceRuntime: vi.fn(),
-  stopTraceRuntime: vi.fn(),
-}))
-
-vi.mock('@kobato/server/infra/trace/runtime.ts', () => runtimeMock)
+// The OTel runtime is a process-level boundary; observe without starting it.
+const runtimeMock = {
+  startTraceRuntime: vi
+    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'startTraceRuntime')
+    .mockImplementation(async () => ({ shutdown: async () => {} }) as never),
+  stopTraceRuntime: vi
+    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'stopTraceRuntime')
+    .mockImplementation(async () => {}),
+}
 
 const db: Database = getTestDb()
+
+afterAll(() => {
+  runtimeMock.startTraceRuntime.mockRestore()
+  runtimeMock.stopTraceRuntime.mockRestore()
+})
 
 const SITE: ObservabilitySettingsSlice = {
   enabled: true,

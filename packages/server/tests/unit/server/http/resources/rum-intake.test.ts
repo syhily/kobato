@@ -2,11 +2,11 @@ import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { SafeFetchOptions, SafeFetchResult } from '@kobato/server/infra/safe-fetch.ts'
 import type { FrontendRumRelay } from '@kobato/server/infra/trace/config.ts'
 
+import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
 import { Hono } from 'hono'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const relay = vi.hoisted(() => ({ current: null as FrontendRumRelay | null }))
-const upstream = vi.hoisted(() => ({
+const upstream = {
   calls: [] as Array<{ url: string; options: SafeFetchOptions }>,
   result: {
     ok: true,
@@ -14,31 +14,20 @@ const upstream = vi.hoisted(() => ({
     response: new Response(null, { status: 200 }),
     body: new ArrayBuffer(0),
   } as SafeFetchResult,
-  rateLimited: false,
-}))
+}
 
-vi.mock('@kobato/server/infra/trace/config.ts', () => ({
-  activeFrontendRelay: () => relay.current,
-}))
-
-vi.mock('@kobato/server/infra/safe-fetch.ts', () => ({
-  safeFetch: async (url: string, options: SafeFetchOptions) => {
-    upstream.calls.push({ url, options })
+// The relay HTTP hop is the unit boundary here; the guarded fetch is
+// captured at the function level.
+const safeFetch = vi
+  .spyOn(await import('@kobato/server/infra/safe-fetch.ts'), 'safeFetch')
+  .mockImplementation(async (url: string, options?: SafeFetchOptions) => {
+    upstream.calls.push({ url, options: options! })
     return upstream.result
-  },
-}))
-
-vi.mock('@kobato/server/infra/rate-limit.ts', () => ({
-  tryRumIntakeRateLimit: async () => ({ exceeded: upstream.rateLimited }),
-}))
-
-const relayMetrics = vi.hoisted(() => ({
-  recordRumRelayOutcome: vi.fn(),
-}))
-
-vi.mock('@kobato/server/infra/trace/metrics.ts', () => relayMetrics)
+  })
+const recordRumRelayOutcome = vi.spyOn(await import('@kobato/server/infra/trace/metrics.ts'), 'recordRumRelayOutcome')
 
 import { rumIntakeRouter } from '@kobato/server/http/resources/rum-intake.ts'
+import { __resetRateLimitsForTests as resetRumLimits } from '@kobato/server/infra/rate-limit.ts'
 
 const RELAY: FrontendRumRelay = {
   endpoint: 'http://10.0.0.5:5080',
@@ -46,6 +35,8 @@ const RELAY: FrontendRumRelay = {
   clientToken: 'real-rum-token',
   clientIdentity: 'anonymous',
 }
+
+const FORWARD_RELAY: FrontendRumRelay = { ...RELAY, clientIdentity: 'forward' }
 
 function app(): Hono<Env> {
   const hono = new Hono<Env>()
@@ -74,16 +65,33 @@ function postBatch(
 }
 
 beforeEach(() => {
-  relay.current = RELAY
+  __resetFrontendGateForTests()
+  activateFrontendGate(
+    {},
+    {
+      applicationId: 'test',
+      service: 'kobato',
+      environment: 'production',
+      sessionSampleRate: 100,
+      clientIdentity: 'anonymous',
+    } as never,
+    RELAY,
+  )
   upstream.calls = []
   upstream.result = { ok: true, url: '', response: new Response(null, { status: 200 }), body: new ArrayBuffer(0) }
-  upstream.rateLimited = false
-  relayMetrics.recordRumRelayOutcome.mockReset()
+  recordRumRelayOutcome.mockClear()
+  resetRumLimits()
+})
+
+afterAll(() => {
+  __resetFrontendGateForTests()
+  safeFetch.mockRestore()
+  recordRumRelayOutcome.mockRestore()
 })
 
 describe('rumIntakeRouter', () => {
   it('answers 404 and never forwards while the verification gate is closed', async () => {
-    relay.current = null
+    __resetFrontendGateForTests()
 
     const res = await postBatch('/api/rum/intake/rum/v1/default/rum?o2-api-key=kobato-relay')
 
@@ -122,8 +130,8 @@ describe('rumIntakeRouter', () => {
     expect(tooLarge.status).toBe(413)
 
     expect(upstream.calls).toHaveLength(0)
-    expect(relayMetrics.recordRumRelayOutcome).toHaveBeenCalledTimes(1)
-    expect(relayMetrics.recordRumRelayOutcome).toHaveBeenCalledWith('oversized')
+    expect(recordRumRelayOutcome).toHaveBeenCalledTimes(1)
+    expect(recordRumRelayOutcome).toHaveBeenCalledWith('oversized')
   })
 
   it('cuts a length-less streamed body at the byte cap during the read', async () => {
@@ -161,16 +169,19 @@ describe('rumIntakeRouter', () => {
     expect(upstream.calls).toHaveLength(1)
   })
 
-  it('answers 429 with a Retry-After hint when the per-IP relay bucket is exhausted', async () => {
-    upstream.rateLimited = true
+  it('answers 429 with a Retry-After hint when the real per-IP relay bucket is exhausted', async () => {
+    // The real bucket allows 240 per minute; exhaust it for this IP.
+    for (let i = 0; i < 240; i++) {
+      expect((await postBatch('/api/rum/intake/rum/v1/default/rum')).status).toBe(202)
+    }
 
     const res = await postBatch('/api/rum/intake/rum/v1/default/rum')
 
     expect(res.status).toBe(429)
     expect(res.headers.get('Retry-After')).toBe('60')
-    expect(upstream.calls).toHaveLength(0)
-    expect(relayMetrics.recordRumRelayOutcome).toHaveBeenCalledWith('rate_limited')
-  })
+    expect(upstream.calls).toHaveLength(240)
+    expect(recordRumRelayOutcome).toHaveBeenCalledWith('rate_limited')
+  }, 30_000)
 
   it('forwards the batch with the real token injected and every inbound o2-api-key dropped', async () => {
     const res = await postBatch(
@@ -181,7 +192,7 @@ describe('rumIntakeRouter', () => {
     expect(res.status).toBe(202)
     expect(res.headers.get('Cache-Control')).toBe('no-store')
     expect(await res.text()).toBe('')
-    expect(relayMetrics.recordRumRelayOutcome).toHaveBeenCalledWith('ok')
+    expect(recordRumRelayOutcome).toHaveBeenCalledWith('ok')
 
     expect(upstream.calls).toHaveLength(1)
     const call = upstream.calls[0]!
@@ -203,7 +214,17 @@ describe('rumIntakeRouter', () => {
   })
 
   it('attaches the client address and the original User-Agent only in forward mode', async () => {
-    relay.current = { ...RELAY, clientIdentity: 'forward' }
+    activateFrontendGate(
+      {},
+      {
+        applicationId: 'test',
+        service: 'kobato',
+        environment: 'production',
+        sessionSampleRate: 100,
+        clientIdentity: 'forward',
+      } as never,
+      FORWARD_RELAY,
+    )
 
     const res = await app().request('/api/rum/intake/rum/v1/default/rum?o2-api-key=kobato-relay', {
       method: 'POST',
@@ -221,7 +242,17 @@ describe('rumIntakeRouter', () => {
   })
 
   it('omits the User-Agent in forward mode when the browser sent none', async () => {
-    relay.current = { ...RELAY, clientIdentity: 'forward' }
+    activateFrontendGate(
+      {},
+      {
+        applicationId: 'test',
+        service: 'kobato',
+        environment: 'production',
+        sessionSampleRate: 100,
+        clientIdentity: 'forward',
+      } as never,
+      FORWARD_RELAY,
+    )
 
     const res = await postBatch('/api/rum/intake/rum/v1/default/rum?o2-api-key=kobato-relay')
 
@@ -255,6 +286,6 @@ describe('rumIntakeRouter', () => {
     expect(body).not.toContain('10.0.0.5')
     expect(body).not.toContain('real-rum-token')
     expect(body).not.toContain('500')
-    expect(relayMetrics.recordRumRelayOutcome).toHaveBeenCalledWith('upstream_error')
+    expect(recordRumRelayOutcome).toHaveBeenCalledWith('upstream_error')
   })
 })

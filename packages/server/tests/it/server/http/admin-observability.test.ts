@@ -20,20 +20,28 @@ import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const runtimeMock = vi.hoisted(() => ({
-  startTraceRuntime: vi.fn(),
-  stopTraceRuntime: vi.fn(),
-}))
-
-vi.mock('@kobato/server/infra/trace/runtime.ts', () => runtimeMock)
+// The OTel runtime is a process-level boundary; observe without starting it.
+const runtimeMock = {
+  startTraceRuntime: vi
+    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'startTraceRuntime')
+    .mockImplementation(async () => ({ shutdown: async () => {} }) as never),
+  stopTraceRuntime: vi
+    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'stopTraceRuntime')
+    .mockImplementation(async () => {}),
+}
 
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
 
 const db: Database = getTestDb()
+
+afterAll(() => {
+  runtimeMock.startTraceRuntime.mockRestore()
+  runtimeMock.stopTraceRuntime.mockRestore()
+})
 
 const SITE: ObservabilitySettingsSlice = {
   enabled: true,
