@@ -6,7 +6,7 @@ import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
 } from '@kobato/server/tests/utils/blog-settings.ts'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const clientMock = vi.hoisted(() => ({
   listStreams: vi.fn(),
@@ -14,9 +14,12 @@ const clientMock = vi.hoisted(() => ({
   createO2Client: vi.fn(),
 }))
 
-vi.mock('@kobato/server/domains/observability/o2-client.ts', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@kobato/server/domains/observability/o2-client.ts')>()
-  return { ...original, createO2Client: clientMock.createO2Client }
+// The O2 client is the observability backend's network boundary.
+const createO2Client = vi
+  .spyOn(await import('@kobato/server/domains/observability/o2-client.ts'), 'createO2Client')
+  .mockImplementation((...args: unknown[]) => clientMock.createO2Client(...(args as [])))
+afterAll(() => {
+  createO2Client.mockRestore()
 })
 
 import { O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'

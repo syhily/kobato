@@ -20,20 +20,29 @@ import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
 } from '@kobato/server/tests/utils/blog-settings.ts'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const runtimeMock = vi.hoisted(() => ({
-  startTraceRuntime: vi.fn(),
-  stopTraceRuntime: vi.fn(),
-}))
+// The OTel runtime is a process-level boundary; observe without starting it.
+const runtimeMock = {
+  startTraceRuntime: vi
+    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'startTraceRuntime')
+    .mockImplementation(async () => ({ started: true, shutdown: vi.fn(), forceFlush: vi.fn() }) as never),
+  stopTraceRuntime: vi
+    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'stopTraceRuntime')
+    .mockImplementation(async () => {}),
+}
 
-vi.mock('@kobato/server/infra/trace/runtime.ts', () => runtimeMock)
+const retentionMock = {
+  syncObservabilityRetention: vi
+    .spyOn(await import('@kobato/server/domains/observability/retention.ts'), 'syncObservabilityRetention')
+    .mockImplementation(async () => {}),
+}
 
-const retentionMock = vi.hoisted(() => ({
-  syncObservabilityRetention: vi.fn(),
-}))
-
-vi.mock('@kobato/server/domains/observability/retention.ts', () => retentionMock)
+afterAll(() => {
+  runtimeMock.startTraceRuntime.mockRestore()
+  runtimeMock.stopTraceRuntime.mockRestore()
+  retentionMock.syncObservabilityRetention.mockRestore()
+})
 
 const SITE: ObservabilitySettingsSlice = {
   enabled: true,
@@ -72,12 +81,9 @@ function verifiedThenChanged(patch: Partial<ObservabilitySettingsSlice>): Observ
 }
 
 beforeEach(() => {
-  runtimeMock.startTraceRuntime.mockReset()
-  runtimeMock.stopTraceRuntime.mockReset()
-  runtimeMock.startTraceRuntime.mockResolvedValue({ started: true, shutdown: vi.fn(), forceFlush: vi.fn() })
-  runtimeMock.stopTraceRuntime.mockResolvedValue(undefined)
-  retentionMock.syncObservabilityRetention.mockReset()
-  retentionMock.syncObservabilityRetention.mockResolvedValue(undefined)
+  runtimeMock.startTraceRuntime.mockClear()
+  runtimeMock.stopTraceRuntime.mockClear()
+  retentionMock.syncObservabilityRetention.mockClear()
   __resetExportHealthForTests()
   __resetObservabilityRuntimeForTests()
 })
