@@ -2,14 +2,18 @@ import type { WebmentionRow } from '@kobato/db/types.ts'
 
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/email/admin-notification.ts', () => ({
-  sendAdminNotification: vi.fn(async () => ({ ok: true })),
-}))
-
-const { sendAdminNotification } = await import('@kobato/server/infra/email/admin-notification.ts')
+// The transport itself is covered by the notifications suite; this suite
+// pins the subject/element mapping through a capturing function spy.
+const sendAdminNotification = vi
+  .spyOn(await import('@kobato/server/infra/email/admin-notification.ts'), 'sendAdminNotification')
+  .mockImplementation(async () => ({ ok: true }) as never)
 const { sendNewWebmention } = await import('@kobato/server/domains/webmentions/email.ts')
+
+afterAll(() => {
+  sendAdminNotification.mockRestore()
+})
 
 const mention = {
   sourceUrl: 'https://sender.example/mentioning-post',
@@ -21,7 +25,7 @@ const mention = {
 const target = { title: '目标文章标题', canonicalUrl: 'https://example.com/posts/target/' }
 
 function lastCall(): { subject: string; props: Record<string, unknown> } {
-  const calls = vi.mocked(sendAdminNotification).mock.calls
+  const calls = sendAdminNotification.mock.calls
   const [{ subject, element }] = calls[calls.length - 1]
   return { subject, props: element.props as Record<string, unknown> }
 }
@@ -51,7 +55,7 @@ describe('webmentions/email — sendNewWebmention', () => {
   it('renders through AdminNotificationEmail', async () => {
     await sendNewWebmention(mention, target)
 
-    const calls = vi.mocked(sendAdminNotification).mock.calls
+    const calls = sendAdminNotification.mock.calls
     expect(calls[calls.length - 1][0].element.type).toBe(AdminNotificationEmail)
   })
 

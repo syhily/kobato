@@ -2,14 +2,18 @@ import type { FriendRow } from '@kobato/db/types.ts'
 
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/email/admin-notification.ts', () => ({
-  sendAdminNotification: vi.fn(async () => ({ ok: true })),
-}))
-
-const { sendAdminNotification } = await import('@kobato/server/infra/email/admin-notification.ts')
+// The transport itself is covered by the notifications suite; this suite
+// pins the subject/element mapping through a capturing function spy.
+const sendAdminNotification = vi
+  .spyOn(await import('@kobato/server/infra/email/admin-notification.ts'), 'sendAdminNotification')
+  .mockImplementation(async () => ({ ok: true }) as never)
 const { sendNewFriendApplication } = await import('@kobato/server/domains/friends/email.ts')
+
+afterAll(() => {
+  sendAdminNotification.mockRestore()
+})
 
 const friend = {
   website: '小鱼的博客',
@@ -19,7 +23,7 @@ const friend = {
 } as FriendRow
 
 function lastCall(): { subject: string; props: Record<string, unknown> } {
-  const calls = vi.mocked(sendAdminNotification).mock.calls
+  const calls = sendAdminNotification.mock.calls
   const [{ subject, element }] = calls[calls.length - 1]
   return { subject, props: element.props as Record<string, unknown> }
 }
@@ -47,7 +51,7 @@ describe('friends/email — sendNewFriendApplication', () => {
   it('renders through AdminNotificationEmail', async () => {
     await sendNewFriendApplication(friend)
 
-    const calls = vi.mocked(sendAdminNotification).mock.calls
+    const calls = sendAdminNotification.mock.calls
     expect(calls[calls.length - 1][0].element.type).toBe(AdminNotificationEmail)
   })
 

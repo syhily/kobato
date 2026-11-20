@@ -14,20 +14,21 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/comments/services/email.ts', () => ({
-  sendApprovedComment: vi.fn(async () => undefined),
-  sendNewComment: vi.fn(async () => undefined),
-  sendNewReply: vi.fn(async () => undefined),
-}))
+// The transports are covered elsewhere; these spies pass through to the
+// real senders (mail is disabled in the test bundle, so they stay quiet).
+const emailModule = await import('@kobato/server/domains/comments/services/email.ts')
+vi.spyOn(emailModule, 'sendApprovedComment')
+vi.spyOn(emailModule, 'sendNewComment')
+vi.spyOn(emailModule, 'sendNewReply')
 
-vi.mock('@kobato/server/domains/comments/services/public-query.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/comments/services/public-query.ts')>()
-  return { ...actual, loadComments: vi.fn(actual.loadComments) }
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 const publicQuery = await import('@kobato/server/domains/comments/services/public-query.ts')
+const loadCommentsSpy = vi.spyOn(publicQuery, 'loadComments')
 const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller.ts')
 const { commentsPublicRouter } = await import('@kobato/server/http/controllers/comments-public.controller.ts')
 const commentsRouter = commentsPublicRouter
@@ -209,7 +210,7 @@ describe('commentsRouter.loadComments', () => {
   it('throws BAD_GATEWAY when the comment loader fails', async () => {
     const pid = await seedPost('gateway')
     await seedMetricRow('post', pid, 'pk-gateway')
-    vi.mocked(publicQuery.loadComments).mockResolvedValueOnce(null)
+    loadCommentsSpy.mockResolvedValueOnce(null)
     const ctx = makePublicCtx({ db })
     await expect(
       call(commentsRouter.loadComments, { page_key: 'pk-gateway', offset: 0 }, { context: ctx }),
@@ -229,7 +230,7 @@ describe('commentsRouter.loadComments', () => {
     expect(res.comments).toHaveLength(1)
     expect(res.comments[0]).toMatchObject({ name: 'Alice', isPending: false })
     expect(res.next).toBe(false)
-    expect(publicQuery.loadComments).toHaveBeenCalled()
+    expect(loadCommentsSpy).toHaveBeenCalled()
   })
 })
 
@@ -284,7 +285,7 @@ describe('commentsRouter.replyComment', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]?.ownerId).toBe(pid)
     expect(rows[0]?.content).toContain('hello')
-    const emails = await import('@kobato/server/domains/comments/services/email.ts')
+    const emails = emailModule
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
     expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')
   })

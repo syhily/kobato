@@ -6,13 +6,18 @@ import { user } from '@kobato/db/schema/user.ts'
 import { makeCommentBody } from '@kobato/server/tests/utils/catalog.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { randomUUID } from 'node:crypto'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/comments/services/email.ts', () => ({
-  sendApprovedComment: vi.fn(async () => undefined),
-  sendNewComment: vi.fn(async () => undefined),
-  sendNewReply: vi.fn(async () => undefined),
-}))
+// The transports are covered elsewhere; these spies pass through to the
+// real senders (mail is disabled in the test bundle, so they stay quiet).
+const emailModule = await import('@kobato/server/domains/comments/services/email.ts')
+vi.spyOn(emailModule, 'sendApprovedComment')
+vi.spyOn(emailModule, 'sendNewComment')
+vi.spyOn(emailModule, 'sendNewReply')
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const { canonicalizeCommentBody } = await import('@kobato/server/domains/comments/services/canonicalize.ts')
 
