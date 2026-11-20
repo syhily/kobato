@@ -3,20 +3,28 @@ import type { Env } from '@kobato/server/http/hono-env.ts'
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { post as postTable } from '@kobato/db/schema/post.ts'
+import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
+import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/render/og/render.ts', () => ({
-  drawOpenGraph: vi.fn(async ({ title }: { title: string }) => Buffer.from(`og:${title}`)),
-}))
 
 const db = getTestDb()
 
+const drawSpy = vi.spyOn(await import('@kobato/server/render/og/render.ts'), 'drawOpenGraph')
+void drawOpenGraph
+
+const coverDataUri = `data:image/png;base64,${(
+  await sharp({ create: { width: 200, height: 200, channels: 3, background: { r: 32, g: 64, b: 128 } } })
+    .png()
+    .toBuffer()
+).toString('base64')}`
+
 beforeEach(async () => {
+  drawSpy.mockClear()
   await clearAllTables(db)
 })
 
@@ -34,7 +42,7 @@ async function seedPost(opts: {
       slug: opts.slug,
       title: opts.title ?? opts.slug,
       summary: opts.summary ?? '',
-      cover: '/cover.png',
+      cover: coverDataUri,
       published: opts.published ?? true,
       publishedAt: opts.publishedAt ?? new Date('2020-01-01'),
       firstPublishedAt: new Date('2020-01-01'),
@@ -58,7 +66,7 @@ async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date
     .values({
       slug: opts.slug,
       title: opts.title ?? opts.slug,
-      cover: '/about.png',
+      cover: coverDataUri,
       published: true,
       publishedAt: opts.publishedAt ?? new Date('2020-01-01'),
       firstPublishedAt: new Date('2020-01-01'),
@@ -105,7 +113,8 @@ describe('OG image slug resolution', () => {
     const res = await requestOg('hello')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
-    expect(await res.text()).toBe('og:Hello')
+    expect([...new Uint8Array(await res.arrayBuffer()).slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47])
+    expect(drawSpy.mock.calls[0]?.[0]).toMatchObject({ title: 'Hello' })
   })
 
   it('returns PNG when slug matches a public page', async () => {
@@ -114,12 +123,14 @@ describe('OG image slug resolution', () => {
     const res = await requestOg('about')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
-    expect(await res.text()).toBe('og:About')
+    expect([...new Uint8Array(await res.arrayBuffer()).slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47])
+    expect(drawSpy.mock.calls[0]?.[0]).toMatchObject({ title: 'About' })
   })
 
   it('falls back when slug matches neither post nor page', async () => {
     const res = await requestOg('nonexistent')
     expect(res.status).toBe(302)
+    expect(drawSpy).not.toHaveBeenCalled()
   })
 
   it('falls back when post is not public', async () => {
@@ -142,7 +153,8 @@ describe('OG image slug resolution', () => {
 
     const res = await requestOg('collision')
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('og:Hello')
+    expect(drawSpy).toHaveBeenCalledTimes(1)
+    expect(drawSpy.mock.calls[0]?.[0]).toMatchObject({ title: 'Hello' })
   })
 
   it('404 for empty slug (route pattern mismatch)', async () => {

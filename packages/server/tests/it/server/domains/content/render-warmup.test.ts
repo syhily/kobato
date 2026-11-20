@@ -8,25 +8,14 @@ import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/life
 import { createPost, updatePostMeta } from '@kobato/server/domains/posts/services/mutate.ts'
 import { upsertAdminCategory } from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
-import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
+import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/render/og/render.ts', () => ({
-  drawOpenGraph: vi.fn(async () => Buffer.from('og-png')),
-}))
-vi.mock('@kobato/server/render/calendar/render.ts', () => ({
-  renderCalendar: vi.fn(async () => Buffer.from('cal-png')),
-}))
-vi.mock('@kobato/server/domains/content/render-warmup.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/content/render-warmup.ts')>()
-  return { ...actual, warmContentRenderCaches: vi.fn(actual.warmContentRenderCaches) }
-})
-
-const warmMock = vi.mocked(warmContentRenderCaches)
-const drawOpenGraphMock = vi.mocked(drawOpenGraph)
+const warmMock = vi.spyOn(await import('@kobato/server/domains/content/render-warmup.ts'), 'warmContentRenderCaches')
+void warmContentRenderCaches
 
 import '@kobato/server/render/warmup/content-cache.ts'
 
@@ -35,10 +24,15 @@ const db = getTestDb()
 const VALID_BODY = lexicalBodyWith([lexicalParagraph('hi')])
 const NO_MUSIC = stubMusicResolver()
 
+const coverDataUri = `data:image/png;base64,${(
+  await sharp({ create: { width: 200, height: 200, channels: 3, background: { r: 32, g: 64, b: 128 } } })
+    .png()
+    .toBuffer()
+).toString('base64')}`
+
 beforeEach(async () => {
+  warmMock.mockClear()
   await clearAllTables(db)
-  vi.clearAllMocks()
-  drawOpenGraphMock.mockImplementation(async () => Buffer.from('og-png'))
 })
 
 async function postIdBySlug(slug: string): Promise<number> {
@@ -57,7 +51,7 @@ async function bucketHasEntries(bucket: string): Promise<boolean> {
 
 describe('render cache warmup on content publish/update', () => {
   it('warms the OG + calendar buckets after a post publish', async () => {
-    await createPost(db, { title: 'Hello World' }, null)
+    await createPost(db, { title: 'Hello World', cover: coverDataUri }, null)
     const postId = await postIdBySlug('hello-world')
 
     const result = await saveBody(
@@ -68,20 +62,23 @@ describe('render cache warmup on content publish/update', () => {
     )
     expect(result.status).toBe('saved')
 
-    expect(warmMock).toHaveBeenCalledWith({
+    expect(warmMock.mock.calls.at(-1)?.[0]).toMatchObject({
       slug: 'hello-world',
       title: 'Hello World',
       summary: '',
-      cover: '',
+      cover: coverDataUri,
     })
-    await vi.waitFor(async () => {
-      expect(await bucketHasEntries('og')).toBe(true)
-      expect(await bucketHasEntries('calendar')).toBe(true)
-    })
+    await vi.waitFor(
+      async () => {
+        expect(await bucketHasEntries('og')).toBe(true)
+        expect(await bucketHasEntries('calendar')).toBe(true)
+      },
+      { timeout: 8_000 },
+    )
   })
 
   it('re-warms after a meta update on a live post, but not on an unpublished one', async () => {
-    await createPost(db, { title: 'Live Post' }, null)
+    await createPost(db, { title: 'Live Post', cover: coverDataUri }, null)
     const liveId = await postIdBySlug('live-post')
     await saveBody(
       db,
@@ -104,7 +101,7 @@ describe('render cache warmup on content publish/update', () => {
   })
 
   it('warms after a page publish with the site-description summary fallback', async () => {
-    await createPage(db, { title: 'About' }, null)
+    await createPage(db, { title: 'About', cover: coverDataUri }, null)
     const pageId = await pageIdBySlug('about')
 
     const result = await saveBody(
@@ -115,17 +112,16 @@ describe('render cache warmup on content publish/update', () => {
     )
     expect(result.status).toBe('saved')
 
-    expect(warmMock).toHaveBeenCalledWith({
+    expect(warmMock.mock.calls.at(-1)?.[0]).toMatchObject({
       slug: 'about',
       title: 'About',
       summary: '诗与梦想的远方',
-      cover: '',
+      cover: coverDataUri,
     })
   })
 
   it('a failed warm never reaches the publish path', async () => {
-    drawOpenGraphMock.mockRejectedValue(new Error('render down'))
-    await createPost(db, { title: 'Fragile Render' }, null)
+    await createPost(db, { title: 'Fragile Render', cover: 'ftp://example.com/broken.png' }, null)
     const postId = await postIdBySlug('fragile-render')
 
     const result = await saveBody(
@@ -141,30 +137,38 @@ describe('render cache warmup on content publish/update', () => {
 
 describe('category OG warmup', () => {
   it('warms the category OG card after a category create', async () => {
-    await upsertAdminCategory(db, { name: 'Tech Notes', cover: '', description: '' })
+    await upsertAdminCategory(db, { name: 'Tech Notes', cover: coverDataUri, description: '' })
 
-    expect(warmMock).toHaveBeenCalledWith({
+    expect(warmMock.mock.calls.at(-1)?.[0]).toMatchObject({
       slug: 'cat-tech-notes',
       title: 'Tech Notes',
       summary: '诗与梦想的远方',
-      cover: '',
+      cover: coverDataUri,
     })
-    await vi.waitFor(async () => {
-      expect(await bucketHasEntries('og')).toBe(true)
-    })
+    await vi.waitFor(
+      async () => {
+        expect(await bucketHasEntries('og')).toBe(true)
+      },
+      { timeout: 8_000 },
+    )
   })
 
   it('re-warms under the new content-hash key after a category rename', async () => {
-    const created = await upsertAdminCategory(db, { name: 'Old Cat', cover: '', description: 'old summary' })
+    const created = await upsertAdminCategory(db, { name: 'Old Cat', cover: coverDataUri, description: 'old summary' })
     warmMock.mockClear()
 
-    await upsertAdminCategory(db, { id: Number(created.id), name: 'New Cat', cover: '', description: 'new summary' })
+    await upsertAdminCategory(db, {
+      id: Number(created.id),
+      name: 'New Cat',
+      cover: coverDataUri,
+      description: 'new summary',
+    })
 
-    expect(warmMock).toHaveBeenCalledWith({
+    expect(warmMock.mock.calls.at(-1)?.[0]).toMatchObject({
       slug: 'cat-new-cat',
       title: 'New Cat',
       summary: 'new summary',
-      cover: '',
+      cover: coverDataUri,
     })
   })
 })
