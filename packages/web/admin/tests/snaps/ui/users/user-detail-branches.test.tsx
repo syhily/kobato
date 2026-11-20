@@ -2,51 +2,11 @@ import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comment
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 
 import { makeCommentBody } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
+import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const queryMocks = vi.hoisted(() => ({
-  userQuery: {
-    data: null as { user: AdminUserDto } | null,
-    isPending: false,
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  commentsQuery: {
-    data: null as { comments: AdminComment[] } | null,
-    isPending: false,
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: { mutate: vi.fn(), isPending: false },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-    removeQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => {
-      queryCounter.n += 1
-      return queryCounter.n === 1 ? queryMocks.userQuery : queryMocks.commentsQuery
-    },
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-const queryCounter = vi.hoisted(() => ({ n: 0 }))
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
@@ -118,26 +78,7 @@ function renderDetail(userId: string): string {
 
 describe('snapshot: UserDetailView branches', () => {
   beforeEach(() => {
-    queryCounter.n = 0
-    queryMocks.userQuery = {
-      data: null,
-      isPending: true,
-      isLoading: true,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: null,
-      isPending: true,
-      isLoading: true,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+    testQueryClient.clear()
   })
 
   it('renders the recent-comments list when comments resolve', () => {
@@ -148,17 +89,14 @@ describe('snapshot: UserDetailView branches', () => {
       commentCount: 2,
       lastCommentAt: '2024-05-01T10:00:00.000Z',
     })
-    queryMocks.userQuery = {
-      data: { user },
-      isPending: false,
-      isLoading: false,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: {
+    testQueryClient.setQueryData(
+      orpcQuery.admin.users.get.queryOptions({ input: { id: 'detail-comments' } }).queryKey,
+      { user: user },
+    )
+    testQueryClient.setQueryData(
+      orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: 'detail-comments' } })
+        .queryKey,
+      {
         comments: [
           makeAdminComment({
             id: 'c1',
@@ -173,13 +111,7 @@ describe('snapshot: UserDetailView branches', () => {
           }),
         ],
       },
-      isPending: false,
-      isLoading: false,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    )
 
     const html = renderDetail('detail-comments')
     expect(html).toContain('用户详情')
@@ -197,24 +129,14 @@ describe('snapshot: UserDetailView branches', () => {
       name: 'Ada',
       role: 'admin',
     })
-    queryMocks.userQuery = {
-      data: { user },
-      isPending: false,
-      isLoading: false,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: { comments: [] },
-      isPending: false,
-      isLoading: false,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: 'detail-admin' } }).queryKey, {
+      user: user,
+    })
+    testQueryClient.setQueryData(
+      orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: 'detail-admin' } })
+        .queryKey,
+      { comments: [] },
+    )
 
     const html = renderDetail('detail-admin')
     expect(html).toContain('Ada')
