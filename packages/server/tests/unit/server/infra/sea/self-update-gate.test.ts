@@ -1,74 +1,58 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { evaluateSelfUpdateGate, type SelfUpdateGateEnvironment } from '@kobato/server/infra/sea/self-update-gate.ts'
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const fsMocks = vi.hoisted(() => ({
-  accessSync: vi.fn(),
-  existsSync: vi.fn(),
-  readFileSync: vi.fn(),
-}))
+let hostDir: string
+let binaryDir: string
+let dockerEnvPath: string
+let cgroupPath: string
 
-vi.mock('node:fs', () => ({
-  accessSync: fsMocks.accessSync,
-  constants: { W_OK: 2 },
-  existsSync: fsMocks.existsSync,
-  readFileSync: fsMocks.readFileSync,
-}))
+beforeEach(() => {
+  hostDir = mkdtempSync(join(tmpdir(), 'kobato-self-update-gate-'))
+  binaryDir = join(hostDir, 'bin')
+  mkdirSync(binaryDir, { recursive: true })
+  dockerEnvPath = join(hostDir, '.dockerenv')
+  cgroupPath = join(hostDir, 'cgroup')
+})
 
-const seaMocks = vi.hoisted(() => ({ isSea: vi.fn() }))
-vi.mock('@kobato/server/infra/sea/sea.ts', () => ({ isSea: seaMocks.isSea }))
+afterEach(() => {
+  chmodSync(binaryDir, 0o755)
+  rmSync(hostDir, { recursive: true, force: true })
+})
 
-const versionState = vi.hoisted(() => ({ value: '6.4.0' }))
-vi.mock('@kobato/distribution/app.ts', () => ({
-  get APP_VERSION() {
-    return versionState.value
-  },
-}))
-
-const { evaluateSelfUpdateGate } = await import('@kobato/server/infra/sea/self-update-gate.ts')
-
-const realPlatform = process.platform
-const realArch = process.arch
-
-function setHost(platform: string, arch: string) {
-  Object.defineProperty(process, 'platform', { value: platform })
-  Object.defineProperty(process, 'arch', { value: arch })
+function env(overrides: Partial<SelfUpdateGateEnvironment> = {}): SelfUpdateGateEnvironment {
+  return {
+    isSea: true,
+    platform: 'linux',
+    arch: 'x64',
+    dockerEnvPath,
+    cgroupPath,
+    binaryDir,
+    appVersion: '6.4.0',
+    ...overrides,
+  }
 }
 
 describe('update/gate evaluateSelfUpdateGate', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    seaMocks.isSea.mockReturnValue(true)
-    setHost('linux', 'x64')
-    fsMocks.existsSync.mockReturnValue(false)
-    fsMocks.readFileSync.mockReturnValue('1:name=systemd:/init.scope\n0::/init.scope')
-    fsMocks.accessSync.mockReturnValue(undefined)
-    versionState.value = '6.4.0'
-  })
-
-  afterEach(() => {
-    Object.defineProperty(process, 'platform', { value: realPlatform })
-    Object.defineProperty(process, 'arch', { value: realArch })
-  })
-
   it('allows the happy path (SEA, linux x64, bare metal, writable, release build)', () => {
-    const gate = evaluateSelfUpdateGate()
+    const gate = evaluateSelfUpdateGate(env())
     expect(gate).toEqual({ canSelfUpdate: true, reasons: [], reasonDescriptors: [] })
   })
 
   it('allows linux arm64', () => {
-    setHost('linux', 'arm64')
-    expect(evaluateSelfUpdateGate().canSelfUpdate).toBe(true)
+    expect(evaluateSelfUpdateGate(env({ arch: 'arm64' })).canSelfUpdate).toBe(true)
   })
 
   it('refuses non-SEA deployments', () => {
-    seaMocks.isSea.mockReturnValue(false)
-    const gate = evaluateSelfUpdateGate()
+    const gate = evaluateSelfUpdateGate(env({ isSea: false }))
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons).toHaveLength(1)
   })
 
   it('refuses non-linux platforms', () => {
-    setHost('darwin', 'arm64')
-    const gate = evaluateSelfUpdateGate()
+    const gate = evaluateSelfUpdateGate(env({ platform: 'darwin', arch: 'arm64' }))
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons.join()).toContain('Linux')
     expect(gate.reasonDescriptors.map((reason) => reason.messageKey)).toEqual(['update.gate.platform'])
@@ -78,55 +62,52 @@ describe('update/gate evaluateSelfUpdateGate', () => {
   })
 
   it('refuses unsupported linux arches', () => {
-    setHost('linux', 'arm')
-    expect(evaluateSelfUpdateGate().canSelfUpdate).toBe(false)
+    expect(evaluateSelfUpdateGate(env({ arch: 'arm' })).canSelfUpdate).toBe(false)
   })
 
-  it('refuses containerized deployments detected via /.dockerenv', () => {
-    fsMocks.existsSync.mockImplementation((path: string) => path === '/.dockerenv')
-    const gate = evaluateSelfUpdateGate()
+  it('refuses containerized deployments detected via the dockerenv marker', () => {
+    writeFileSync(dockerEnvPath, '')
+    const gate = evaluateSelfUpdateGate(env())
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons).toEqual(['Docker deployments must pull a new image to upgrade.'])
     expect(gate.reasonDescriptors[0]!.messageKey).toBe('update.gate.containerized')
   })
 
-  it('refuses containerized deployments detected via /proc/1/cgroup', () => {
-    fsMocks.readFileSync.mockReturnValue('12:devices:/kubepods/burstable/pod123/abc')
-    const gate = evaluateSelfUpdateGate()
+  it('refuses containerized deployments detected via the init cgroup', () => {
+    writeFileSync(cgroupPath, '12:devices:/kubepods/burstable/pod123/abc')
+    const gate = evaluateSelfUpdateGate(env())
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasonDescriptors.map((reason) => reason.messageKey)).toEqual(['update.gate.containerized'])
   })
 
+  it('treats a bare-metal cgroup as not containerized', () => {
+    writeFileSync(cgroupPath, '1:name=systemd:/init.scope\n0::/init.scope')
+    expect(evaluateSelfUpdateGate(env()).canSelfUpdate).toBe(true)
+  })
+
   it('treats an unreadable cgroup as not containerized', () => {
-    fsMocks.readFileSync.mockImplementation(() => {
-      throw new Error('ENOENT')
-    })
-    expect(evaluateSelfUpdateGate().canSelfUpdate).toBe(true)
+    expect(evaluateSelfUpdateGate(env({ cgroupPath: join(hostDir, 'missing-cgroup') })).canSelfUpdate).toBe(true)
   })
 
   it('refuses when the binary directory is not writable', () => {
-    fsMocks.accessSync.mockImplementation(() => {
-      throw new Error('EACCES')
-    })
-    const gate = evaluateSelfUpdateGate()
+    chmodSync(binaryDir, 0o555)
+    const gate = evaluateSelfUpdateGate(env())
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons.join()).toContain('not writable')
     expect(gate.reasonDescriptors[0]!.messageKey).toBe('update.gate.unwritable')
   })
 
   it('refuses dev builds', () => {
-    versionState.value = '6.4.4-dev'
-    const gate = evaluateSelfUpdateGate()
+    const gate = evaluateSelfUpdateGate(env({ appVersion: '6.4.4-dev' }))
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons.join()).toContain('Development builds')
     expect(gate.reasonDescriptors[0]!.messageKey).toBe('update.gate.devBuild')
   })
 
   it('accumulates every failed check as a reason', () => {
-    seaMocks.isSea.mockReturnValue(false)
-    setHost('darwin', 'arm64')
-    versionState.value = '6.4.4-dev'
-    const gate = evaluateSelfUpdateGate()
+    const gate = evaluateSelfUpdateGate(
+      env({ isSea: false, platform: 'darwin', arch: 'arm64', appVersion: '6.4.4-dev' }),
+    )
     expect(gate.canSelfUpdate).toBe(false)
     expect(gate.reasons.length).toBeGreaterThanOrEqual(3)
     expect(gate.reasonDescriptors.map((reason) => reason.messageKey)).toEqual([
@@ -140,8 +121,7 @@ describe('update/gate evaluateSelfUpdateGate', () => {
   })
 
   it('keeps the non-SEA reason in English while the descriptor carries the message id', () => {
-    seaMocks.isSea.mockReturnValue(false)
-    const gate = evaluateSelfUpdateGate()
+    const gate = evaluateSelfUpdateGate(env({ isSea: false }))
     expect(gate.reasons).toEqual([
       'This deployment is not a single-file SEA binary; upgrade through the package manager or a container image.',
     ])

@@ -28,38 +28,61 @@ export interface SelfUpdateGateResult {
 const SUPPORTED_ARCHES = new Set(['x64', 'arm64'])
 const CONTAINER_CGROUP_PATTERN = /docker|kubepods|containerd|podman/
 
-function isContainerized(): boolean {
-  if (existsSync('/.dockerenv')) {
+export interface SelfUpdateGateEnvironment {
+  isSea: boolean
+  platform: NodeJS.Platform
+  arch: string
+  dockerEnvPath: string
+  cgroupPath: string
+  binaryDir: string
+  appVersion: string
+}
+
+function defaultEnvironment(): SelfUpdateGateEnvironment {
+  return {
+    isSea: isSea(),
+    platform: process.platform,
+    arch: process.arch,
+    dockerEnvPath: '/.dockerenv',
+    cgroupPath: '/proc/1/cgroup',
+    binaryDir: dirname(process.execPath),
+    appVersion: APP_VERSION,
+  }
+}
+
+function isContainerized(env: SelfUpdateGateEnvironment): boolean {
+  if (existsSync(env.dockerEnvPath)) {
     return true
   }
   try {
-    return CONTAINER_CGROUP_PATTERN.test(readFileSync('/proc/1/cgroup', 'utf8'))
+    return CONTAINER_CGROUP_PATTERN.test(readFileSync(env.cgroupPath, 'utf8'))
   } catch {
     return false
   }
 }
 
-export function evaluateSelfUpdateGate(): SelfUpdateGateResult {
+export function evaluateSelfUpdateGate(environment: Partial<SelfUpdateGateEnvironment> = {}): SelfUpdateGateResult {
+  const env: SelfUpdateGateEnvironment = { ...defaultEnvironment(), ...environment }
   const reasonDescriptors: ErrorMessageDescriptor[] = []
   const add = (messageKey: SelfUpdateGateReasonKey): void => {
     reasonDescriptors.push({ messageKey, fallbackMessage: uiMessagesEnUS[messageKey] })
   }
 
-  if (!isSea()) {
+  if (!env.isSea) {
     add('update.gate.notSea')
   }
-  if (process.platform !== 'linux' || !SUPPORTED_ARCHES.has(process.arch)) {
+  if (env.platform !== 'linux' || !SUPPORTED_ARCHES.has(env.arch)) {
     add('update.gate.platform')
   }
-  if (isContainerized()) {
+  if (isContainerized(env)) {
     add('update.gate.containerized')
   }
   try {
-    accessSync(dirname(process.execPath), constants.W_OK)
+    accessSync(env.binaryDir, constants.W_OK)
   } catch {
     add('update.gate.unwritable')
   }
-  if (APP_VERSION.includes('-dev')) {
+  if (env.appVersion.includes('-dev')) {
     add('update.gate.devBuild')
   }
 

@@ -1,33 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-const fsState = vi.hoisted(() => {
-  return {
-    files: new Map<string, string | Buffer>(),
-    dirExists: new Set<string>(),
-    sizes: new Map<string, number>(),
-  }
-})
-
-vi.mock('node:fs', () => ({
-  existsSync: (p: string) => fsState.dirExists.has(p),
-  readdirSync: (dir: string) => {
-    return [...fsState.files.keys()]
-      .filter((k) => k.startsWith(dir + '/') || k === dir)
-      .map((k) => k.slice(dir.length + 1))
-  },
-  readFileSync: (file: string) => {
-    const v = fsState.files.get(file)
-    if (v === undefined) {
-      throw new Error(`ENOENT: ${file}`)
-    }
-    return v
-  },
-  statSync: (file: string) => ({ size: fsState.sizes.get(file) ?? 0 }),
-  writeFileSync: (file: string, content: string) => {
-    fsState.files.set(file, content)
-  },
-}))
-
 import type { RouteManifest } from '@kobato/distribution/route-warmup.ts'
 
 import {
@@ -36,6 +6,10 @@ import {
   TIER1_ROUTES,
   tier2BucketForRouteId,
 } from '@kobato/toolchain/src/vite/route-warmup.ts'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import routes from '@/routes.ts'
 
@@ -73,17 +47,38 @@ function buildManifest(prefix: string): string {
   )};\n`
 }
 
+let buildRoot: string
+let assetsDir: string
+
+beforeEach(() => {
+  buildRoot = mkdtempSync(join(tmpdir(), 'kobato-route-warmup-'))
+  assetsDir = join(buildRoot, 'client', 'assets')
+  mkdirSync(assetsDir, { recursive: true })
+})
+
+afterEach(() => {
+  rmSync(buildRoot, { recursive: true, force: true })
+})
+
+function manifestPath(): string {
+  return join(assetsDir, 'warmup-manifest.json')
+}
+
+function addChunk(name: string, size = 1024): void {
+  writeFileSync(join(assetsDir, `${name}.js`), Buffer.alloc(size, 1))
+}
+
+function addManifestFile(content: string): void {
+  writeFileSync(join(assetsDir, 'manifest-abc.js'), content)
+}
+
 function buildPluginContext() {
   const written: Record<string, string> = {}
-  const logs: string[] = []
-  const errors: string[] = []
   return {
     written,
-    logs,
-    errors,
     ctx: {
       environment: undefined,
-      options: { dir: '/build/server' } as { dir?: string },
+      options: { dir: join(buildRoot, 'server') } as { dir?: string },
       async writeFile(path: string, content: string) {
         written[path] = content
       },
@@ -98,12 +93,6 @@ async function invokeWriteBundle(ctx: ReturnType<typeof buildPluginContext>['ctx
 }
 
 describe('route-warmup plugin — writeBundle handler', () => {
-  beforeEach(() => {
-    fsState.files.clear()
-    fsState.dirExists.clear()
-    fsState.sizes.clear()
-  })
-
   it('is a Vite plugin with the expected shape', () => {
     const plugin = routeWarmupPlugin()
     expect(plugin.name).toBe('route-warmup')
@@ -118,51 +107,43 @@ describe('route-warmup plugin — writeBundle handler', () => {
   })
 
   it('skips when the client assets dir does not exist', async () => {
+    rmSync(assetsDir, { recursive: true, force: true })
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
-    expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
+    expect(existsSync(manifestPath())).toBe(false)
   })
 
   it('skips when no manifest file is found in the client assets dir', async () => {
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set('/build/client/assets/entry.js', '')
-    fsState.sizes.set('/build/client/assets/entry.js', 100)
+    addChunk('entry', 100)
 
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
+    expect(existsSync(manifestPath())).toBe(false)
   })
 
   it('skips when the manifest is present but malformed (no window prefix)', async () => {
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set('/build/client/assets/manifest-abc.js', 'not-the-expected-prefix')
-    fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
+    addManifestFile('not-the-expected-prefix')
 
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
+    expect(existsSync(manifestPath())).toBe(false)
   })
 
   it('skips when the parsed manifest has 0 routes', async () => {
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set(
-      '/build/client/assets/manifest-abc.js',
+    addManifestFile(
       `window.__reactRouterManifest=${JSON.stringify({ entry: { module: '', imports: [] }, routes: {} })};`,
     )
-    fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
 
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
+    expect(existsSync(manifestPath())).toBe(false)
   })
 
   it('writes a warmup-manifest.json that tiers, dedupes, and filters chunks', async () => {
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
-    fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
+    addManifestFile(buildManifest('window.__reactRouterManifest='))
 
     for (const name of [
       'entry',
@@ -178,16 +159,13 @@ describe('route-warmup plugin — writeBundle handler', () => {
       'signin',
       'canvas-hl',
     ]) {
-      fsState.files.set(`/build/client/assets/${name}.js`, '')
-      fsState.sizes.set(`/build/client/assets/${name}.js`, 1024)
+      addChunk(name)
     }
 
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    const raw = fsState.files.get('/build/client/assets/warmup-manifest.json')
-    expect(typeof raw).toBe('string')
-    const manifest = JSON.parse(raw as string)
+    const manifest = JSON.parse(readFileSync(manifestPath(), 'utf8'))
 
     expect(manifest.tier1).toEqual(
       expect.arrayContaining([
@@ -212,20 +190,17 @@ describe('route-warmup plugin — writeBundle handler', () => {
   })
 
   it('excludes chunks larger than IDLE_SIZE_LIMIT from idle tiers', async () => {
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
-    fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
+    addManifestFile(buildManifest('window.__reactRouterManifest='))
 
-    for (const name of ['entry', 'runtime', 'root', 'home', 'shared', 'dashboard', 'admin-shared']) {
-      fsState.files.set(`/build/client/assets/${name}.js`, '')
-      fsState.sizes.set(`/build/client/assets/${name}.js`, 1024)
+    for (const name of ['entry', 'runtime', 'root', 'home', 'shared', 'admin-shared']) {
+      addChunk(name)
     }
-    fsState.sizes.set('/build/client/assets/dashboard.js', 200 * 1024)
+    addChunk('dashboard', 200 * 1024)
 
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    const manifest = JSON.parse(fsState.files.get('/build/client/assets/warmup-manifest.json') as string)
+    const manifest = JSON.parse(readFileSync(manifestPath(), 'utf8'))
     expect(manifest.tier2_admin).not.toContain('/assets/dashboard.js')
   })
 })
@@ -304,31 +279,23 @@ describe('route-warmup tier derivation — src/routes.ts coverage', () => {
 })
 
 describe('route-warmup plugin — environment guards', () => {
-  beforeEach(() => {
-    fsState.files.clear()
-    fsState.dirExists.clear()
-    fsState.sizes.clear()
-  })
-
   it('skips when running under the client Vite environment', async () => {
+    addManifestFile(buildManifest('window.__reactRouterManifest='))
     const { ctx } = buildPluginContext()
     ;(ctx as unknown as { environment: unknown }).environment = { name: 'client' }
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
 
     await invokeWriteBundle(ctx)
 
-    expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
+    expect(existsSync(manifestPath())).toBe(false)
   })
 
   it('skips older Vite SSR builds (no environment API + options.ssr)', async () => {
+    addManifestFile(buildManifest('window.__reactRouterManifest='))
     const { ctx } = buildPluginContext()
     ;(ctx.options as { ssr?: boolean }).ssr = true
-    fsState.dirExists.add('/build/client/assets')
-    fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
 
     await invokeWriteBundle(ctx)
 
-    expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
+    expect(existsSync(manifestPath())).toBe(false)
   })
 })

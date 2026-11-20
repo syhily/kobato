@@ -1,25 +1,18 @@
 import type { UserConfig } from 'vite'
 
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const honoDevServerMock = vi.hoisted(() => vi.fn((..._args: unknown[]) => ({ configureServer: vi.fn() })))
 const nodeAdapterMock = vi.hoisted(() => ({ __esModule: true, default: vi.fn() }))
-const existsSyncMock = vi.hoisted(() => vi.fn((_path: string) => false))
-const setViteDevServerMock = vi.hoisted(() => vi.fn())
 const stderrWriteMock = vi.hoisted(() => vi.fn(() => true))
 
 vi.mock('@hono/vite-dev-server', () => ({
   default: (...args: unknown[]) => honoDevServerMock(...args),
 }))
 vi.mock('@hono/vite-dev-server/node', () => nodeAdapterMock)
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>
-  return { ...actual, existsSync: existsSyncMock, default: { ...actual, existsSync: existsSyncMock } }
-})
-vi.mock('@kobato/server/infra/hono/dev-server-ref.ts', () => ({
-  setViteDevServer: setViteDevServerMock,
-  getViteDevServer: vi.fn(() => null),
-}))
 
 const originalNodeEnv = process.env.NODE_ENV
 const originalStderrWrite = process.stderr.write
@@ -56,12 +49,11 @@ function viteUserConfig(rrCtx: Record<string, unknown> = {}, userCfg: UserConfig
 }
 
 const { reactRouterHonoServer } = await import('@kobato/server/infra/hono/dev.ts')
+const { getViteDevServer, setViteDevServer } = await import('@kobato/server/infra/hono/dev-server-ref.ts')
 
 describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    existsSyncMock.mockReset()
-    existsSyncMock.mockReturnValue(false)
     honoDevServerMock.mockReset()
     honoDevServerMock.mockReturnValue({ configureServer: vi.fn() })
     captureStderr()
@@ -72,6 +64,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
 
   afterEach(() => {
     restoreStderr()
+    setViteDevServer(undefined)
     process.env.NODE_ENV = originalNodeEnv
   })
 
@@ -217,33 +210,55 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
   })
 
   describe('findDefaultServerEntry (via config)', () => {
+    let projectRoot: string
+
+    beforeEach(() => {
+      projectRoot = mkdtempSync(join(tmpdir(), 'kobato-hono-dev-'))
+    })
+
+    afterEach(() => {
+      rmSync(projectRoot, { recursive: true, force: true })
+    })
+
+    function projectContext() {
+      return reactRouterContext({
+        rootDirectory: projectRoot,
+        reactRouterConfig: {
+          appDirectory: join(projectRoot, 'app'),
+          buildDirectory: join(projectRoot, 'build'),
+          serverBuildFile: 'index.js',
+          basename: '/',
+          future: {},
+        },
+        environmentBuildContext: { name: 'ssr' },
+      })
+    }
+
     it('picks app/server.ts when it exists', async () => {
-      existsSyncMock.mockImplementation((p: string) => p === '/project/app/server.ts')
+      mkdirSync(join(projectRoot, 'app'), { recursive: true })
+      writeFileSync(join(projectRoot, 'app/server.ts'), '')
       const plugin = reactRouterHonoServer()
-      const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
-      const result = (await config(cfg, {} as never)) as UserConfig
+      const result = (await config(viteUserConfig(projectContext()), {} as never)) as UserConfig
       expect((result.build!.rolldownOptions as { input: string }).input).toBe('app/server.ts')
     })
 
     it('falls back to app/server/index.ts when the file way is absent', async () => {
-      existsSyncMock.mockImplementation((p: string) => p === '/project/app/server/index.ts')
+      mkdirSync(join(projectRoot, 'app/server'), { recursive: true })
+      writeFileSync(join(projectRoot, 'app/server/index.ts'), '')
       const plugin = reactRouterHonoServer()
-      const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
-      const result = (await config(cfg, {} as never)) as UserConfig
+      const result = (await config(viteUserConfig(projectContext()), {} as never)) as UserConfig
       expect((result.build!.rolldownOptions as { input: string }).input).toBe('app/server/index.ts')
     })
 
     it('uses the virtual module + warns once when no entry exists', async () => {
       vi.resetModules()
-      existsSyncMock.mockReturnValue(false)
       stderrWriteMock.mockClear()
       const { reactRouterHonoServer: freshPlugin } = await import('@kobato/server/infra/hono/dev.ts')
       const plugin = freshPlugin()
-      const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
-      const result = (await config(cfg, {} as never)) as UserConfig
+      const result = (await config(viteUserConfig(projectContext()), {} as never)) as UserConfig
       expect((result.build!.rolldownOptions as { input: string }).input).toBe(
         '\0virtual:react-router-hono-server/server',
       )
@@ -251,13 +266,10 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
     })
 
     it('honours an explicit serverEntryPoint option over file discovery', async () => {
-      existsSyncMock.mockReturnValue(true)
       const plugin = reactRouterHonoServer({ serverEntryPoint: 'custom/server.ts' })
-      const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
-      const result = (await config(cfg, {} as never)) as UserConfig
+      const result = (await config(viteUserConfig(projectContext()), {} as never)) as UserConfig
       expect((result.build!.rolldownOptions as { input: string }).input).toBe('custom/server.ts')
-      expect(existsSyncMock).not.toHaveBeenCalled()
     })
   })
 
@@ -319,6 +331,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       ])
       expect(honoDevServerMock).toHaveBeenCalled()
       expect(honoPlugin.configureServer).toHaveBeenCalledWith(built.server)
+      expect(getViteDevServer()).toBe(built.server)
     })
 
     it('excludes vite-internal module URLs so vite serves them', async () => {

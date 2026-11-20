@@ -1,3 +1,4 @@
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { packTar } from '@kobato/server/tests/utils/backup-buffer.ts'
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -5,23 +6,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const holder = vi.hoisted(() => ({
+const holder = {
   dir: null as string | null,
   dbPath: null as string | null,
   analyticsPath: null as string | null,
   configPath: null as string | null,
-}))
-
-vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/config.ts')>()),
-  resolveConfigFilePath: () => holder.configPath,
-}))
-
-vi.mock('@kobato/server/infra/db/paths.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/db/paths.ts')>()),
-  resolveDatabasePath: () => holder.dbPath,
-  resolveAnalyticsPath: () => holder.analyticsPath,
-}))
+}
 
 const SQLITE_HEADER = Buffer.from('SQLite format 3\0', 'latin1')
 
@@ -45,9 +35,12 @@ beforeEach(() => {
   writeFileSync(holder.dbPath, 'live-db')
   writeFileSync(holder.analyticsPath, 'live-analytics')
   writeFileSync(holder.configPath, '{ "live": true }')
+  __setEnginePathsForTests({ database: holder.dbPath, analytics: holder.analyticsPath })
+  vi.stubEnv('KOBATO_CONFIG_FILE', holder.configPath)
 })
 
 afterEach(() => {
+  __setEnginePathsForTests(null)
   rmSync(holder.dir!, { recursive: true, force: true })
   holder.dir = null
 })
@@ -85,6 +78,7 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
   it('skips the config in env-only mode (no config file) and reports configApplied: false', async () => {
     const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
     holder.configPath = null
+    vi.unstubAllEnvs()
     const staged = await stageFullArchive()
 
     const result = await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz')
@@ -97,6 +91,7 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
   it('a config write failure never rolls back the completed engine swaps', async () => {
     const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
     holder.configPath = join(holder.dir!, 'missing-dir', 'kobato.config.json')
+    vi.stubEnv('KOBATO_CONFIG_FILE', holder.configPath)
     const staged = await stageFullArchive()
 
     const result = await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz')

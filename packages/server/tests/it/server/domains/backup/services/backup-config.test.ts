@@ -6,30 +6,28 @@ import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-
-const holder = vi.hoisted(() => ({ configPath: null as string | null, configDir: null as string | null }))
-
-vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/config.ts')>()),
-  resolveConfigFilePath: () => holder.configPath,
-}))
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const CONFIG_CONTENTS = '{\n  "server": { "port": 4321 }\n}\n'
 
 const mem = makeMemoryBackend()
 const db = getTestDb()
 
+let configDir: string
+let configPath: string
+
 beforeAll(() => {
-  holder.configDir = mkdtempSync(join(tmpdir(), 'kobato-backup-config-test-'))
-  holder.configPath = join(holder.configDir, 'kobato.config.json')
-  writeFileSync(holder.configPath, CONFIG_CONTENTS)
+  configDir = mkdtempSync(join(tmpdir(), 'kobato-backup-config-test-'))
+  configPath = join(configDir, 'kobato.config.json')
+  writeFileSync(configPath, CONFIG_CONTENTS)
+})
+
+beforeEach(() => {
+  vi.stubEnv('KOBATO_CONFIG_FILE', configPath)
 })
 
 afterAll(() => {
-  if (holder.configDir !== null) {
-    rmSync(holder.configDir, { recursive: true, force: true })
-  }
+  rmSync(configDir, { recursive: true, force: true })
 })
 
 afterEach(async () => {
@@ -53,16 +51,14 @@ describe('createBackup — config file in the archive', () => {
   })
 
   it('still archives the database when the config file is unreadable', async () => {
+    vi.stubEnv('KOBATO_CONFIG_FILE', join(configDir, 'missing.json'))
     __setStorageBackendForTests('s3', mem.backend)
-    const readable = holder.configPath
-    holder.configPath = join(holder.configDir!, 'missing.json')
-    try {
-      const result = await createBackup(db)
-      const stored = mem.store.get(`backup/${result.fileName}`)
-      const entries = unpackTar(extractBackupFile(stored!.body))
-      expect(entries.map((entry) => entry.name)).toEqual(['kobato.db'])
-    } finally {
-      holder.configPath = readable
-    }
+
+    const result = await createBackup(db)
+
+    const stored = mem.store.get(`backup/${result.fileName}`)
+    expect(stored).toBeDefined()
+    const entries = unpackTar(extractBackupFile(stored!.body))
+    expect(entries.map((entry) => entry.name)).toEqual(['kobato.db'])
   })
 })

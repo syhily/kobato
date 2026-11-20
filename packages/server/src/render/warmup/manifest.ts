@@ -20,6 +20,15 @@ import { matchRoutes, type RouteObject } from 'react-router'
 
 let cached: WarmupManifest | null | undefined
 
+let testAssetsDir: string | null = null
+
+export function __setWarmupAssetsDirForTests(dir: string | null): void {
+  testAssetsDir = dir
+  cached = undefined
+  routeManifestCache = undefined
+  routeTreeCache = undefined
+}
+
 export function getWarmupManifest(): WarmupManifest | null {
   if (cached !== undefined) {
     return cached
@@ -32,9 +41,10 @@ export function getWarmupManifest(): WarmupManifest | null {
   try {
     const __dirname = dirname(fileURLToPath(import.meta.url))
     // SEA: the manifest is embedded, not on disk.
+    const assetsDir = testAssetsDir ?? join(__dirname, '..', '..', 'client', 'assets')
     const raw = readAssetTextOrDisk(
       `${SEA_CLIENT_ASSET_PREFIX}assets/warmup-manifest.json`,
-      join(__dirname, '..', '..', 'client', 'assets', 'warmup-manifest.json'),
+      join(assetsDir, 'warmup-manifest.json'),
     )
     if (raw === null) {
       cached = null
@@ -66,9 +76,10 @@ function readClientManifest(): RouteManifest | null {
     // Under SEA the client assets live in the mounted VFS — same dir listing.
     const root = seaVfsRoot()
     const assetsDir =
-      root === null
+      testAssetsDir ??
+      (root === null
         ? join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'client', 'assets')
-        : join(root, SEA_CLIENT_ASSET_PREFIX, 'assets')
+        : join(root, SEA_CLIENT_ASSET_PREFIX, 'assets'))
 
     let manifestFile: string | undefined
     if (existsSync(assetsDir)) {
