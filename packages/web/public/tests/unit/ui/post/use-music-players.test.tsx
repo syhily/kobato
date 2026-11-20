@@ -4,15 +4,28 @@ import { renderHookWithI18n } from '@kobato/web-public/tests/utils/i18n-render.t
 import { safeMediaSrc, useMusicPlayers } from '@kobato/web-public/ui/post/use-music-players.tsx'
 import { act } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/ui/components/music-player/music-player.tsx', () => ({
-  MusicPlayerCard: ({ url, name, cover, lrc }: { url: string; name?: string; cover?: string; lrc?: string }) => (
-    <div data-stub-player="" data-url={url} data-cover={cover ?? ''} data-lrc={lrc ?? ''}>
-      {name}
-    </div>
-  ),
-}))
+const musicPlayerMod = await import('@kobato/ui/components/music-player/music-player.tsx')
+vi.spyOn(musicPlayerMod, 'MusicPlayerCard').mockImplementation((({
+  url,
+  name,
+  cover,
+  lrc,
+}: {
+  url: string
+  name?: string
+  cover?: string
+  lrc?: string
+}) => (
+  <div data-stub-player="" data-url={url} data-cover={cover ?? ''} data-lrc={lrc ?? ''}>
+    {name}
+  </div>
+)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function mountContainer(html: string): { container: HTMLDivElement; ref: RefObject<HTMLDivElement | null> } {
   const container = document.createElement('div')
