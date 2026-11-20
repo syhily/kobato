@@ -4,7 +4,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { makeAdminMusic } from '@kobato/web-admin/tests/utils/catalog.ts'
 import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
@@ -32,17 +32,20 @@ const playerState = vi.hoisted(() => ({
   currentTime: 0,
 }))
 
-vi.mock('@kobato/web-admin/ui/music/player/music-player-context.tsx', () => ({
-  useMusicPlayerActions: () => ({
-    load: vi.fn(),
-    toggle: vi.fn(),
-  }),
-  useMusicPlayerState: () => ({
-    currentTrack: playerState.currentTrack,
-    isPlaying: playerState.isPlaying,
-  }),
-  useMusicPlayerTime: () => playerState.currentTime,
-}))
+const musicPlayerContext = await import('@kobato/web-admin/ui/music/player/music-player-context.tsx')
+vi.spyOn(musicPlayerContext, 'useMusicPlayerActions').mockImplementation((() => ({
+  load: vi.fn(),
+  toggle: vi.fn(),
+})) as never)
+vi.spyOn(musicPlayerContext, 'useMusicPlayerState').mockImplementation((() => ({
+  currentTrack: playerState.currentTrack,
+  isPlaying: playerState.isPlaying,
+})) as never)
+vi.spyOn(musicPlayerContext, 'useMusicPlayerTime').mockImplementation(() => playerState.currentTime)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const qingHuaCi: Partial<AdminMusicDto> = {
   name: '青花瓷',

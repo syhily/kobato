@@ -13,7 +13,7 @@ import { MusicsView } from '@kobato/web-admin/ui/music/MusicsView.tsx'
 import { AdminMusicPlayerFloat } from '@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat.tsx'
 import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { ProgressSlider } from '@kobato/web-admin/ui/music/player/ProgressSlider.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
@@ -64,9 +64,12 @@ const searchHookMock = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@kobato/web-admin/ui/music/use-meting-music-search.ts', () => ({
-  useMetingMusicSearch: () => searchHookMock.state,
-}))
+const usemetingmusicsearch = await import('@kobato/web-admin/ui/music/use-meting-music-search.ts')
+vi.spyOn(usemetingmusicsearch, 'useMetingMusicSearch').mockImplementation(() => searchHookMock.state)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function resetSearchHookMock(): void {
   searchHookMock.state = {

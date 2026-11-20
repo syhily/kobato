@@ -3,7 +3,7 @@
 import type { AdminMusicDto } from '@kobato/contracts/music.ts'
 
 import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const track: AdminMusicDto = {
   id: 'm1',
@@ -50,11 +50,14 @@ const player = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@kobato/web-admin/ui/music/player/music-player-context.tsx', () => ({
-  useMusicPlayerState: () => player.state,
-  useMusicPlayerTime: () => player.time,
-  useMusicPlayerActions: () => player.actions,
-}))
+const musicplayercontext = await import('@kobato/web-admin/ui/music/player/music-player-context.tsx')
+vi.spyOn(musicplayercontext, 'useMusicPlayerState').mockImplementation(() => player.state)
+vi.spyOn(musicplayercontext, 'useMusicPlayerTime').mockImplementation(() => player.time)
+vi.spyOn(musicplayercontext, 'useMusicPlayerActions').mockImplementation(() => player.actions)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 async function renderFloat(initialPath = '/admin/dashboard') {
   const { AdminMusicPlayerFloat } = await import('@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat.tsx')
