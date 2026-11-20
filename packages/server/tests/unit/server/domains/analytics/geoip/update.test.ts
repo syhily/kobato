@@ -1,62 +1,22 @@
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/data-paths.ts'
+import { minimalMmdbBytes } from '@kobato/server/tests/utils/minimal-mmdb.ts'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { gzipSync } from 'node:zlib'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const DB_PATH = '/tmp/maxmind/GeoLite2-City.mmdb'
-const META_PATH = '/tmp/maxmind/GeoLite2-City.meta.json'
+const MMDB = minimalMmdbBytes()
 
-const knobs = vi.hoisted(() => ({
-  installed: true,
-  metaJson: null as string | null,
-}))
-
-const fsPromiseMocks = vi.hoisted(() => ({
-  mkdir: vi.fn().mockResolvedValue(undefined),
-  readFile: vi.fn(),
-  rename: vi.fn().mockResolvedValue(undefined),
-  rm: vi.fn().mockResolvedValue(undefined),
-  writeFile: vi.fn().mockResolvedValue(undefined),
-}))
-
-const resetGeoReader = vi.hoisted(() => vi.fn())
-const readerOpen = vi.hoisted(() => vi.fn())
-const pipelineMock = vi.hoisted(() => vi.fn())
-
-function mockModules() {
-  vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
-    MAXMIND_DB_PATH: DB_PATH,
-    MAXMIND_META_PATH: META_PATH,
-  }))
-  vi.doMock('@kobato/server/domains/analytics/geoip/lookup.ts', () => ({ resetGeoReader }))
-  vi.doMock('@kobato/server/infra/logger.ts', () => ({
-    getLogger: vi.fn(() => ({ info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() })),
-  }))
-  vi.doMock('@maxmind/geoip2-node', () => ({ Reader: { open: readerOpen } }))
-  vi.doMock('node:fs', async () => {
-    const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
-    return { ...actual, existsSync: () => knobs.installed, createWriteStream: vi.fn() }
-  })
-  vi.doMock('node:fs/promises', () => ({
-    ...fsPromiseMocks,
-    readFile: vi.fn(async () => {
-      if (knobs.metaJson === null) {
-        throw new Error('ENOENT')
-      }
-      return knobs.metaJson
-    }),
-  }))
-  vi.doMock('node:stream/promises', () => ({ pipeline: pipelineMock }))
-}
-
-function meta(meta: { version: string | null; source: 'upload' | 'remote' }): string {
-  return JSON.stringify({ ...meta, updatedAt: '2026-08-01T00:00:00.000Z' })
+function meta(metaJson: { version: string | null; source: 'upload' | 'remote' }): void {
+  writeFileSync(MAXMIND_META_PATH, JSON.stringify({ ...metaJson, updatedAt: '2026-08-01T00:00:00.000Z' }))
 }
 
 function versionResponse(version: string): Response {
   return new Response(JSON.stringify({ version }), { status: 200 })
 }
 
-function downloadResponse(): Response {
-  return new Response(new ReadableStream({ start: (c) => c.close() }), { status: 200 })
+function downloadResponse(bytes: Buffer = MMDB): Response {
+  return new Response(new Uint8Array(gzipSync(bytes)), { status: 200 })
 }
 
 // AbortSignal.timeout's reason is a real TimeoutError DOMException, which isTimeoutError's instanceof Error check expects.
@@ -64,19 +24,21 @@ function timeoutError(): DOMException {
   return new DOMException('The operation timed out.', 'TimeoutError')
 }
 
-describe('analytics/geoip-update', () => {
-  beforeEach(() => {
-    vi.resetModules()
-    vi.unstubAllGlobals()
-    vi.clearAllMocks()
-    knobs.installed = true
-    knobs.metaJson = null
-    pipelineMock.mockResolvedValue(undefined)
-    readerOpen.mockReset()
-    readerOpen.mockResolvedValue({})
-    mockModules()
-  })
+beforeEach(() => {
+  vi.unstubAllGlobals()
+  mkdirSync(dirname(MAXMIND_DB_PATH), { recursive: true })
+  rmSync(MAXMIND_DB_PATH, { force: true })
+  rmSync(`${MAXMIND_DB_PATH}.download`, { force: true })
+  rmSync(MAXMIND_META_PATH, { force: true, recursive: true })
+})
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+  rmSync(MAXMIND_META_PATH, { force: true, recursive: true })
+  rmSync(`${MAXMIND_DB_PATH}.download`, { force: true })
+})
+
+describe('analytics/geoip-update', () => {
   describe('fetchLatestGeoipVersion', () => {
     it('parses the version from the jsDelivr package.json', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(versionResponse('1.0.86')))
@@ -103,18 +65,19 @@ describe('analytics/geoip-update', () => {
 
   describe('runRemoteGeoipUpdate', () => {
     it('reports up-to-date when the installed version matches the remote one', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
+      writeFileSync(MAXMIND_DB_PATH, MMDB)
+      meta({ version: '1.0.86', source: 'remote' })
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(versionResponse('1.0.86')))
       const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
 
       const result = await runRemoteGeoipUpdate()
       expect(result).toEqual({ status: 'up-to-date', version: '1.0.86', previousVersion: '1.0.86' })
       expect(fetch).toHaveBeenCalledTimes(1)
-      expect(fsPromiseMocks.rename).not.toHaveBeenCalled()
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
     })
 
     it('downloads, validates, and swaps the database when the version differs', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
+      meta({ version: '1.0.86', source: 'remote' })
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
@@ -126,15 +89,14 @@ describe('analytics/geoip-update', () => {
       expect(vi.mocked(fetch).mock.calls[1]![0]).toBe(
         'https://cdn.jsdelivr.net/npm/geolite2-city@1.0.87/GeoLite2-City.mmdb.gz',
       )
-      expect(readerOpen).toHaveBeenCalledWith(`${DB_PATH}.download`)
-      expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)
-      expect(fsPromiseMocks.writeFile).toHaveBeenCalledWith(META_PATH, expect.stringContaining('"source":"remote"'))
-      expect(fsPromiseMocks.writeFile).toHaveBeenCalledWith(META_PATH, expect.stringContaining('"1.0.87"'))
-      expect(resetGeoReader).toHaveBeenCalled()
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
+      expect(existsSync(`${MAXMIND_DB_PATH}.download`)).toBe(false)
+      const storedMeta = JSON.parse(readFileSync(MAXMIND_META_PATH, 'utf8')) as { version: string; source: string }
+      expect(storedMeta.source).toBe('remote')
+      expect(storedMeta.version).toBe('1.0.87')
     })
 
     it('downloads when no database is installed yet', async () => {
-      knobs.installed = false
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
@@ -144,25 +106,26 @@ describe('analytics/geoip-update', () => {
       const result = await runRemoteGeoipUpdate()
       expect(result.status).toBe('updated')
       expect(result.previousVersion).toBeNull()
-      expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
     })
 
     it('drops the staged file and never swaps when validation fails', async () => {
-      readerOpen.mockRejectedValue(new Error('invalid database'))
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
+        vi
+          .fn()
+          .mockResolvedValueOnce(versionResponse('1.0.87'))
+          .mockResolvedValueOnce(downloadResponse(Buffer.from('this is not an mmdb'))),
       )
       const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({ name: 'DomainError', code: 'INTERNAL' })
-      expect(fsPromiseMocks.rename).not.toHaveBeenCalled()
-      expect(fsPromiseMocks.rm).toHaveBeenCalledWith(`${DB_PATH}.download`, { force: true })
-      expect(resetGeoReader).not.toHaveBeenCalled()
+      expect(existsSync(MAXMIND_DB_PATH)).toBe(false)
+      expect(existsSync(`${MAXMIND_DB_PATH}.download`)).toBe(false)
     })
 
     it('reports a download timeout distinctly from a connection failure', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
+      meta({ version: '1.0.86', source: 'remote' })
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockRejectedValueOnce(timeoutError()),
@@ -176,11 +139,24 @@ describe('analytics/geoip-update', () => {
     })
 
     it('reports a download timeout that fires mid-stream', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
-      pipelineMock.mockRejectedValueOnce(timeoutError())
+      meta({ version: '1.0.86', source: 'remote' })
+      const firstChunk = gzipSync(MMDB)
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
+        vi
+          .fn()
+          .mockResolvedValueOnce(versionResponse('1.0.87'))
+          .mockResolvedValueOnce(
+            new Response(
+              new ReadableStream({
+                start(controller) {
+                  controller.enqueue(new Uint8Array(firstChunk))
+                  controller.error(timeoutError())
+                },
+              }),
+              { status: 200 },
+            ),
+          ),
       )
       const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
 
@@ -188,28 +164,33 @@ describe('analytics/geoip-update', () => {
         name: 'DomainError',
         descriptor: { messageKey: 'analytics.error.geoipDownloadTimeout' },
       })
-      expect(fsPromiseMocks.rm).toHaveBeenCalledWith(`${DB_PATH}.download`, { force: true })
+      expect(existsSync(`${MAXMIND_DB_PATH}.download`)).toBe(false)
     })
 
     it('propagates the size-guard DomainError from the stream and cleans the staged file', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
-      const { descriptorFor } = await import('@kobato/server/infra/http/error-descriptor.ts')
-      const sizeError = new DomainError('INTERNAL', descriptorFor('analytics.error.geoipTooLarge', { max: '100 MB' }))
-      pipelineMock.mockRejectedValueOnce(sizeError)
+      meta({ version: '1.0.86', source: 'remote' })
+      // 101 MB of zeroes gzip down to ~100 KB but decompress past the 100 MB guard.
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
+        vi
+          .fn()
+          .mockResolvedValueOnce(versionResponse('1.0.87'))
+          .mockResolvedValueOnce(downloadResponse(Buffer.alloc(101 * 1024 * 1024))),
       )
       const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
 
-      await expect(runRemoteGeoipUpdate()).rejects.toBe(sizeError)
-      expect(fsPromiseMocks.rm).toHaveBeenCalledWith(`${DB_PATH}.download`, { force: true })
-      expect(fsPromiseMocks.rename).not.toHaveBeenCalled()
-    })
+      await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({
+        descriptor: { messageKey: 'analytics.error.geoipTooLarge' },
+      })
+      expect(existsSync(`${MAXMIND_DB_PATH}.download`)).toBe(false)
+      expect(existsSync(MAXMIND_DB_PATH)).toBe(false)
+    }, 30_000)
 
     it('still succeeds when the meta sidecar write fails after the swap', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
-      fsPromiseMocks.writeFile.mockRejectedValueOnce(new Error('ENOSPC'))
+      meta({ version: '1.0.86', source: 'remote' })
+      rmSync(MAXMIND_META_PATH, { force: true })
+      // A directory at the sidecar path makes the post-swap write fail for real.
+      mkdirSync(MAXMIND_META_PATH)
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
@@ -218,12 +199,11 @@ describe('analytics/geoip-update', () => {
 
       const result = await runRemoteGeoipUpdate()
       expect(result.status).toBe('updated')
-      expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)
-      expect(resetGeoReader).toHaveBeenCalled()
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
     })
 
     it('coalesces concurrent manual checks into a single download', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
+      meta({ version: '1.0.86', source: 'remote' })
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
@@ -234,13 +214,14 @@ describe('analytics/geoip-update', () => {
       expect(a).toBe(b)
       expect(a.status).toBe('updated')
       expect(fetch).toHaveBeenCalledTimes(2)
-      expect(fsPromiseMocks.rename).toHaveBeenCalledTimes(1)
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
     })
   })
 
   describe('runScheduledGeoipUpdate', () => {
     it('never replaces a manually uploaded database', async () => {
-      knobs.metaJson = meta({ version: null, source: 'upload' })
+      writeFileSync(MAXMIND_DB_PATH, MMDB)
+      meta({ version: null, source: 'upload' })
       const fetchMock = vi.fn()
       vi.stubGlobal('fetch', fetchMock)
       const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
@@ -250,7 +231,7 @@ describe('analytics/geoip-update', () => {
     })
 
     it('updates a remote-installed database when a newer version exists', async () => {
-      knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
+      meta({ version: '1.0.86', source: 'remote' })
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
@@ -258,11 +239,10 @@ describe('analytics/geoip-update', () => {
       const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
 
       await runScheduledGeoipUpdate()
-      expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
     })
 
     it('installs a database when none exists', async () => {
-      knobs.installed = false
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
@@ -270,7 +250,7 @@ describe('analytics/geoip-update', () => {
       const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
 
       await runScheduledGeoipUpdate()
-      expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)
+      expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
     })
   })
 })

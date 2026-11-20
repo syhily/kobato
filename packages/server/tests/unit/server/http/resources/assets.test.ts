@@ -1,9 +1,10 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { DEFAULT_SVG_ETAG } from '@kobato/server/assets/defaults.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { Hono } from 'hono'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 function requestContextFor(settings: BlogSettingsBundle | null, locale: 'zh-CN' | 'zh-TW' = 'zh-CN') {
   return {
@@ -13,76 +14,41 @@ function requestContextFor(settings: BlogSettingsBundle | null, locale: 'zh-CN' 
   } as unknown as Env['Variables']['requestContext']
 }
 
+async function buildApp(settings: BlogSettingsBundle | null = TEST_BLOG_SETTINGS_BUNDLE) {
+  const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', requestContextFor(settings))
+    await next()
+  })
+  app.route('/', assetsRouter)
+  return app
+}
+
 describe('assetsRouter', () => {
   beforeEach(() => {
-    vi.resetModules()
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
-  async function buildApp(settings: BlogSettingsBundle | null = TEST_BLOG_SETTINGS_BUNDLE) {
-    vi.doMock('@kobato/server/domains/assets/services/routes.ts', () => ({
-      ASSET_ROUTES: { '/logo.svg': 'logo' },
-      resolveSiteAsset: vi.fn(),
-    }))
-
-    const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
-    const app = new Hono<Env>()
-    app.use('*', async (c, next) => {
-      c.set('requestContext', requestContextFor(settings))
-      await next()
-    })
-    app.route('/', assetsRouter)
-    return app
-  }
-
-  it('returns 404 when asset is not resolved', async () => {
+  it('returns 404 when the path maps to no asset route', async () => {
     const app = await buildApp()
-    const res = await app.request('/logo.svg')
+    const res = await app.request('/nope.svg')
     expect(res.status).toBe(404)
   })
 
-  it('returns asset bytes with etag', async () => {
-    vi.doMock('@kobato/server/domains/assets/services/routes.ts', () => ({
-      ASSET_ROUTES: { '/logo.svg': 'logo' },
-      resolveSiteAsset: vi.fn().mockResolvedValue({
-        content: Buffer.from('<svg></svg>'),
-        contentType: 'image/svg+xml',
-        etag: 'abc',
-      }),
-    }))
-
-    const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
-    const app = new Hono<Env>()
-    app.use('*', async (c, next) => {
-      c.set('requestContext', requestContextFor(TEST_BLOG_SETTINGS_BUNDLE))
-      await next()
-    })
-    app.route('/', assetsRouter)
+  it('returns the default logo asset bytes with the default etag', async () => {
+    const app = await buildApp()
 
     const res = await app.request('/logo.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
-    expect(res.headers.get('ETag')).toBe('"abc"')
+    expect(res.headers.get('ETag')).toBe(`"${DEFAULT_SVG_ETAG.logoSvg}"`)
   })
 
   it('returns 304 on matching if-none-match', async () => {
-    vi.doMock('@kobato/server/domains/assets/services/routes.ts', () => ({
-      ASSET_ROUTES: { '/logo.svg': 'logo' },
-      resolveSiteAsset: vi.fn().mockResolvedValue({
-        content: Buffer.from('<svg></svg>'),
-        contentType: 'image/svg+xml',
-        etag: 'abc',
-      }),
-    }))
+    const app = await buildApp()
 
-    const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
-    const app = new Hono<Env>()
-    app.use('*', async (c, next) => {
-      c.set('requestContext', requestContextFor(TEST_BLOG_SETTINGS_BUNDLE))
-      await next()
-    })
-    app.route('/', assetsRouter)
-
-    const res = await app.request('/logo.svg', { headers: { 'if-none-match': '"abc"' } })
+    const res = await app.request('/logo.svg', { headers: { 'if-none-match': `"${DEFAULT_SVG_ETAG.logoSvg}"` } })
     expect(res.status).toBe(304)
   })
 

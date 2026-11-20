@@ -19,4 +19,8 @@ export function getProvider(source: string): MusicProvider {
   return provider
 }
 
+export function __setProviderForTests(source: MetingSource, provider: MusicProvider | null): void {
+  providers.set(source, provider ?? (source === 'netease' ? neteaseProvider : tencentProvider))
+}
+
 export type { MetingSource }

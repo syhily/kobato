@@ -1,182 +1,125 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
+import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf.ts'
+import { FONT_DIR } from '@kobato/server/infra/data-paths.ts'
+import { resetFontCache } from '@kobato/server/render/canvas-fonts.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { adminSession, adminUser } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-function createTestApp(session = adminSession()) {
+const REAL_TTF = readFileSync(join(dirname(import.meta.filename), '../../../../fixtures/fonts/Barlow-Regular.ttf'))
+const OG_FONT_PATH = join(FONT_DIR, 'og.ttf')
+
+function createApp() {
+  const session = adminSession()
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', { session, viewer: adminUser(), clientAddress: '127.0.0.1' } as never)
+    c.set('requestContext', {
+      session,
+      viewer: adminUser(),
+      clientAddress: '127.0.0.1',
+      requestFacts: { userAgent: 'vitest' },
+    } as never)
     await next()
   })
-  return app
+  return { app, csrf: { 'x-csrf-token': ensureCsrfToken(session) } }
 }
 
-function mockCsrf() {
-  vi.doMock('@kobato/server/http/middlewares/csrf.ts', () => ({
-    csrfGuard: async (_c: unknown, next: () => Promise<void>) => next(),
-  }))
+beforeEach(() => {
+  resetFontCache()
+  mkdirSync(FONT_DIR, { recursive: true })
+  rmSync(OG_FONT_PATH, { force: true })
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    fonts: { ...TEST_BLOG_SETTINGS_BUNDLE.fonts, og: { family: 'OPPO Sans' } },
+  } as typeof TEST_BLOG_SETTINGS_BUNDLE)
+})
+
+afterAll(() => {
+  rmSync(OG_FONT_PATH, { force: true })
+})
+
+async function makeRouter() {
+  const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
+  return fontsRouter
 }
 
 describe('fontsRouter', () => {
-  beforeEach(() => {
-    vi.resetModules()
-    vi.unstubAllGlobals()
-    mockCsrf()
-  })
-
   it('uploads a .ttf font for the og slot', async () => {
-    vi.doMock('@kobato/server/domains/audit/services/record.ts', () => ({
-      recordAuditEvent: vi.fn(),
-      recordAuditEventFromContext: vi.fn(),
-    }))
-    vi.doMock('@kobato/server/infra/logger.ts', () => ({
-      getLogger: vi.fn(() => ({ info: vi.fn() })),
-    }))
-    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
-      FONT_DIR: '/tmp/fonts',
-    }))
-    vi.doMock('@kobato/server/render/canvas-fonts.ts', () => ({
-      resetFontCache: vi.fn(),
-      resetCanvasFont: vi.fn(),
-    }))
-
-    const fsMocks = {
-      mkdir: vi.fn().mockResolvedValue(undefined),
-      writeFile: vi.fn().mockResolvedValue(undefined),
-    }
-    vi.doMock('node:fs/promises', () => fsMocks)
-
-    const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
-    const app = createTestApp()
-    app.route('/', fontsRouter)
+    const { app, csrf } = createApp()
+    app.route('/', await makeRouter())
 
     const form = new FormData()
     form.append('slot', 'og')
-    form.append('file', new File(['fontdata'], 'font.ttf', { type: 'font/ttf' }))
+    form.append('file', new File([REAL_TTF], 'font.ttf', { type: 'font/ttf' }))
 
-    const res = await app.request('/api/admin/fonts/upload', {
-      method: 'POST',
-      body: form,
-    })
+    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({ slot: 'og', size: 8 })
-    expect(fsMocks.writeFile).toHaveBeenCalledWith('/tmp/fonts/og.ttf', Buffer.from('fontdata'))
+    await expect(res.json()).resolves.toEqual({ slot: 'og', size: REAL_TTF.length })
+    expect(readFileSync(OG_FONT_PATH).equals(REAL_TTF)).toBe(true)
   })
 
   it('invalidates the canvas font slot on upload — the next ensureCanvasFont re-reads', async () => {
-    const families = { og: 'OPPO Sans', calendar: '' }
-    const fsMocks = {
-      mkdir: vi.fn().mockResolvedValue(undefined),
-      writeFile: vi.fn().mockResolvedValue(undefined),
-      access: vi.fn().mockResolvedValue(undefined),
-      readFile: vi.fn().mockResolvedValue(Buffer.from('ttf-v1')),
-    }
-    const registered = new Set<string>()
-    vi.doUnmock('@kobato/server/render/canvas-fonts.ts')
-    vi.doMock('@kobato/server/domains/audit/services/record.ts', () => ({
-      recordAuditEvent: vi.fn(),
-      recordAuditEventFromContext: vi.fn(),
-    }))
-    vi.doMock('@kobato/server/infra/logger.ts', () => ({
-      getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn() })),
-    }))
-    vi.doMock('@kobato/server/infra/data-paths.ts', () => ({
-      FONT_DIR: '/tmp/fonts',
-    }))
-    vi.doMock('node:fs/promises', () => fsMocks)
-    vi.doMock('@napi-rs/canvas', () => ({
-      GlobalFonts: {
-        has: (family: string) => registered.has(family),
-        register: (_buffer: Buffer, family: string) => void registered.add(family),
-      },
-    }))
-    vi.doMock('@kobato/settings/getters.ts', () => ({
-      requireBlogSettingsSection: vi.fn((section: string) => {
-        if (section === 'fonts') {
-          return {
-            og: { family: families.og },
-            calendar: { family: families.calendar },
-          }
-        }
-        throw new Error(`unexpected settings section: ${section}`)
-      }),
-    }))
-
-    const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
+    const { app, csrf } = createApp()
+    app.route('/', await makeRouter())
+    writeFileSync(OG_FONT_PATH, REAL_TTF)
     const { ensureCanvasFont } = await import('@kobato/server/render/canvas-fonts.ts')
-    const app = createTestApp()
-    app.route('/', fontsRouter)
 
     const first = await ensureCanvasFont('og')
     expect(first?.family).toBe('OPPO Sans')
-    expect(fsMocks.readFile).toHaveBeenCalledTimes(1)
+    expect(first?.buffer.equals(REAL_TTF)).toBe(true)
 
-    await ensureCanvasFont('og')
-    expect(fsMocks.readFile).toHaveBeenCalledTimes(1)
+    const cached = await ensureCanvasFont('og')
+    expect(cached).toBe(first)
 
     const form = new FormData()
     form.append('slot', 'og')
-    form.append('file', new File(['ttf-v2'], 'font.ttf', { type: 'font/ttf' }))
-    const res = await app.request('/api/admin/fonts/upload', {
-      method: 'POST',
-      body: form,
-    })
+    form.append('file', new File([REAL_TTF], 'font.ttf', { type: 'font/ttf' }))
+    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(200)
 
-    fsMocks.readFile.mockResolvedValue(Buffer.from('ttf-v2'))
     const second = await ensureCanvasFont('og')
-    expect(fsMocks.readFile).toHaveBeenCalledTimes(2)
+    expect(second).not.toBe(first)
     expect(second?.family).toBe('OPPO Sans')
-    expect(second?.buffer).toEqual(Buffer.from('ttf-v2'))
+    expect(second?.buffer.equals(REAL_TTF)).toBe(true)
   })
 
   it('rejects an unknown slot', async () => {
-    const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
-    const app = createTestApp()
-    app.route('/', fontsRouter)
+    const { app, csrf } = createApp()
+    app.route('/', await makeRouter())
 
     const form = new FormData()
     form.append('slot', 'body')
     form.append('file', new File(['fontdata'], 'font.ttf', { type: 'font/ttf' }))
 
-    const res = await app.request('/api/admin/fonts/upload', {
-      method: 'POST',
-      body: form,
-    })
+    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 
   it('rejects a non-ttf/otf file', async () => {
-    const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
-    const app = createTestApp()
-    app.route('/', fontsRouter)
+    const { app, csrf } = createApp()
+    app.route('/', await makeRouter())
 
     const form = new FormData()
     form.append('slot', 'og')
     form.append('file', new File(['fontdata'], 'font.woff2', { type: 'font/woff2' }))
 
-    const res = await app.request('/api/admin/fonts/upload', {
-      method: 'POST',
-      body: form,
-    })
+    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 
   it('rejects an empty file', async () => {
-    const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
-    const app = createTestApp()
-    app.route('/', fontsRouter)
+    const { app, csrf } = createApp()
+    app.route('/', await makeRouter())
 
     const form = new FormData()
     form.append('slot', 'og')
     form.append('file', new File([], 'font.ttf', { type: 'font/ttf' }))
 
-    const res = await app.request('/api/admin/fonts/upload', {
-      method: 'POST',
-      body: form,
-    })
+    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 })
