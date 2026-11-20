@@ -5,7 +5,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView.tsx'
 import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
@@ -40,9 +40,12 @@ const controller = vi.hoisted<ControllerShape>(() => ({
   activeFilters: [],
 }))
 
-vi.mock('@kobato/web-admin/ui/images/use-images-reducer.ts', () => ({
-  useImagesReducer: () => controller,
-}))
+const imagesReducerMod = await import('@kobato/web-admin/ui/images/use-images-reducer.ts')
+vi.spyOn(imagesReducerMod, 'useImagesReducer').mockImplementation((() => controller) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function makeImage(overrides: Partial<AdminImageDto> & { id: string }): AdminImageDto {
   return {
