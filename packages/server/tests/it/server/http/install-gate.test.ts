@@ -1,8 +1,12 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
+import { user } from '@kobato/db/schema/user.ts'
 import { normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 // prettier-ignore
 const EXEMPT_CASES = [
@@ -36,6 +40,16 @@ const BLOCKED_CASES = [
   { path: '/about',                  desc: 'page route' },
 ]
 
+const db = getTestDb()
+
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+afterEach(async () => {
+  await clearAllTables(db)
+})
+
 describe('honoInstallGateMiddleware', () => {
   async function makeApp() {
     const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
@@ -43,7 +57,7 @@ describe('honoInstallGateMiddleware', () => {
     app.use('*', async (c, next) => {
       c.set('requestContext', {
         url: normalizeDocumentUrl(new URL(c.req.url)),
-        db: {},
+        db,
       } as unknown as Env['Variables']['requestContext'])
       await next()
     })
@@ -52,20 +66,18 @@ describe('honoInstallGateMiddleware', () => {
     return app
   }
 
+  async function seedAdmin(): Promise<void> {
+    const hashed = await bcrypt.hash('Password123!', 12)
+    await db.insert(user).values({ name: 'Admin', email: 'admin@example.com', password: hashed, role: 'admin' })
+  }
+
   describe('exempt paths (noAdmin → passes through)', () => {
     for (const { path, desc } of EXEMPT_CASES) {
       it(`allows ${desc}: ${path}`, async () => {
-        vi.doMock('@kobato/db/operations/user.ts', () => ({
-          hasAdmin: vi.fn().mockResolvedValue(false),
-        }))
-        try {
-          const app = await makeApp()
-          const res = await app.request(path)
-          expect(res.status).not.toBe(302)
-          expect(res.headers.get('location')).not.toBe('/admin/setup')
-        } finally {
-          vi.doUnmock('@kobato/db/operations/user.ts')
-        }
+        const app = await makeApp()
+        const res = await app.request(path)
+        expect(res.status).not.toBe(302)
+        expect(res.headers.get('location')).not.toBe('/admin/setup')
       })
     }
   })
@@ -73,34 +85,22 @@ describe('honoInstallGateMiddleware', () => {
   describe('blocked paths (noAdmin → redirect)', () => {
     for (const { path, desc } of BLOCKED_CASES) {
       it(`redirects ${desc}: ${path}`, async () => {
-        vi.doMock('@kobato/db/operations/user.ts', () => ({
-          hasAdmin: vi.fn().mockResolvedValue(false),
-        }))
-        try {
-          const app = await makeApp()
-          const res = await app.request(path)
-          expect(res.status).toBe(303)
-          expect(res.headers.get('location')).toBe('/admin/setup')
-        } finally {
-          vi.doUnmock('@kobato/db/operations/user.ts')
-        }
+        const app = await makeApp()
+        const res = await app.request(path)
+        expect(res.status).toBe(303)
+        expect(res.headers.get('location')).toBe('/admin/setup')
       })
     }
   })
 
   describe('installed state', () => {
     it('allows all paths when installed', async () => {
-      vi.doMock('@kobato/db/operations/user.ts', () => ({
-        hasAdmin: vi.fn().mockResolvedValue(true),
-      }))
-      vi.resetModules()
-      try {
-        const app = await makeApp()
-        const res = await app.request('/posts/hello')
-        expect(res.status).toBe(200)
-      } finally {
-        vi.doUnmock('@kobato/db/operations/user.ts')
-      }
+      await seedAdmin()
+      const app = await makeApp()
+      const res = await app.request('/posts/hello')
+      expect(res.status).toBe(200)
+      const admins = await db.select().from(user).where(eq(user.role, 'admin'))
+      expect(admins.length).toBe(1)
     })
   })
 })

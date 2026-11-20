@@ -2,11 +2,24 @@ import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { APP_VERSION } from '@kobato/distribution/app.ts'
+import { countEntryFiles, wipeCache } from '@kobato/server/infra/cache/file-store.ts'
+import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
+import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
 import { HTTPException } from 'hono/http-exception'
+import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const PNG = Buffer.from('png-bytes')
+const throughSpy = vi.spyOn(await import('@kobato/server/infra/cache/registry.ts'), 'through')
+// The renderer has its own real-canvas coverage; here it is replaced with a
+// cheap real PNG so the route + cache semantics stay fast to exercise.
+const PNG = await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 1, g: 2, b: 3 } } })
+  .png()
+  .toBuffer()
+const renderCalendarSpy = vi
+  .spyOn(await import('@kobato/server/render/calendar/render.ts'), 'renderCalendar')
+  .mockImplementation(async () => PNG)
 
 function options(
   overrides: Partial<{
@@ -20,40 +33,30 @@ function options(
   return {
     theme: 'light' as const,
     locale: 'zh-CN' as AppLocale,
-    settingsRevision: representationRevisionsFor(null).calendar,
-    settings: null,
+    settingsRevision: representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE).calendar,
+    settings: TEST_BLOG_SETTINGS_BUNDLE,
     ifNoneMatch: null,
     ...overrides,
   }
 }
 
+async function importServeCalendar() {
+  return (await import('@kobato/server/http/resources/calendar.ts')).serveCalendar
+}
+
 describe('serveCalendar', () => {
-  beforeEach(() => {
-    vi.resetModules()
+  beforeEach(async () => {
+    throughSpy.mockClear()
+    renderCalendarSpy.mockClear()
+    vi.unstubAllEnvs()
+    await wipeCache()
+    __resetMemoryCacheForTests()
+    resetCacheCounterMemo()
   })
 
-  let through: ReturnType<typeof vi.fn>
-  let renderCalendar: ReturnType<typeof vi.fn>
-
-  async function importServeCalendar() {
-    through = vi.fn().mockResolvedValue(PNG)
-    renderCalendar = vi.fn().mockResolvedValue(PNG)
-    vi.doMock('@kobato/server/infra/http/status.ts', () => ({
-      pngResponse: vi.fn((buffer: Buffer, headers?: HeadersInit) => {
-        const merged = new Headers(headers)
-        merged.set('Content-Type', 'image/png')
-        return new Response(new Uint8Array(buffer), { headers: merged })
-      }),
-    }))
-    vi.doMock('@kobato/server/infra/cache/registry.ts', () => ({ through }))
-    vi.doMock('@kobato/server/render/calendar/render.ts', () => ({ renderCalendar }))
-    const { serveCalendar } = await import('@kobato/server/http/resources/calendar.ts')
-    return serveCalendar
-  }
-
   it('returns a PNG with the revalidating cache semantics', async () => {
-    const serveCalendar = await importServeCalendar()
-    const res = await serveCalendar({ year: '2026', time: '0617' }, options())
+    const serve = await importServeCalendar()
+    const res = await serve({ year: '2026', time: '0617' }, options())
 
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
@@ -63,11 +66,11 @@ describe('serveCalendar', () => {
   })
 
   it('caches by date + theme + locale + version + settings revision, and passes the pinned bundle to the renderer', async () => {
-    const serveCalendar = await importServeCalendar()
-    const settings = { siteIdentity: null } as unknown as BlogSettingsBundle
-    await serveCalendar({ year: '2026', time: '0617' }, options({ theme: 'dark', locale: 'zh-TW', settings }))
+    const serve = await importServeCalendar()
+    const settings = TEST_BLOG_SETTINGS_BUNDLE
+    await serve({ year: '2026', time: '0617' }, options({ theme: 'dark', locale: 'zh-TW', settings }))
 
-    expect(through).toHaveBeenCalledWith(
+    expect(throughSpy).toHaveBeenCalledWith(
       'calendar',
       {
         date: '2026-06-17',
@@ -78,18 +81,16 @@ describe('serveCalendar', () => {
       },
       expect.any(Function),
     )
-    const loader = through.mock.calls[0]![2] as () => Promise<Buffer>
-    await loader()
-    expect(renderCalendar).toHaveBeenCalledWith(expect.any(Date), 'dark', 'zh-TW', settings)
+    expect(renderCalendarSpy).toHaveBeenCalledWith(expect.any(Date), 'dark', 'zh-TW', settings)
   })
 
   it('moves the key when the settings revision advances', async () => {
-    const serveCalendar = await importServeCalendar()
-    await serveCalendar({ year: '2026', time: '0617' }, options({ settingsRevision: 'boot-test:0000000010' }))
-    await serveCalendar({ year: '2026', time: '0617' }, options({ settingsRevision: 'boot-test:0000000011' }))
+    const serve = await importServeCalendar()
+    await serve({ year: '2026', time: '0617' }, options({ settingsRevision: 'boot-test:0000000010' }))
+    await serve({ year: '2026', time: '0617' }, options({ settingsRevision: 'boot-test:0000000011' }))
 
-    const first = through.mock.calls[0]![1] as { settingsRevision: string }
-    const second = through.mock.calls[1]![1] as { settingsRevision: string }
+    const first = throughSpy.mock.calls[0]![1] as { settingsRevision: string }
+    const second = throughSpy.mock.calls[1]![1] as { settingsRevision: string }
     expect(first.settingsRevision).toBe('boot-test:0000000010')
     expect(second.settingsRevision).toBe('boot-test:0000000011')
     expect(first).not.toEqual(second)
@@ -98,20 +99,20 @@ describe('serveCalendar', () => {
   it.each(['en-US', 'zh-CN', 'zh-TW', 'zh-HK'] as const)(
     'keys and heads the %s variant independently',
     async (locale) => {
-      const serveCalendar = await importServeCalendar()
-      const res = await serveCalendar({ year: '2026', time: '0617' }, options({ locale }))
+      const serve = await importServeCalendar()
+      const res = await serve({ year: '2026', time: '0617' }, options({ locale }))
 
       expect(res.headers.get('Content-Language')).toBe(locale)
-      expect(through.mock.calls[0]![1]).toMatchObject({ locale, version: APP_VERSION })
+      expect(throughSpy.mock.calls[0]![1]).toMatchObject({ locale, version: APP_VERSION })
     },
   )
 
   it('answers 304 on a matching If-None-Match, with the current locale heads and no body', async () => {
-    const serveCalendar = await importServeCalendar()
-    const first = await serveCalendar({ year: '2026', time: '0617' }, options())
+    const serve = await importServeCalendar()
+    const first = await serve({ year: '2026', time: '0617' }, options())
     const etag = first.headers.get('ETag')!
 
-    const cached = await serveCalendar({ year: '2026', time: '0617' }, options({ ifNoneMatch: etag }))
+    const cached = await serve({ year: '2026', time: '0617' }, options({ ifNoneMatch: etag }))
 
     expect(cached.status).toBe(304)
     expect(cached.headers.get('ETag')).toBe(etag)
@@ -121,86 +122,76 @@ describe('serveCalendar', () => {
   })
 
   it('matches a comma-separated / weak If-None-Match list, not just one exact value', async () => {
-    const serveCalendar = await importServeCalendar()
-    const first = await serveCalendar({ year: '2026', time: '0617' }, options())
+    const serve = await importServeCalendar()
+    const first = await serve({ year: '2026', time: '0617' }, options())
     const etag = first.headers.get('ETag')!
 
-    const listed = await serveCalendar({ year: '2026', time: '0617' }, options({ ifNoneMatch: `"other", W/${etag}` }))
+    const listed = await serve({ year: '2026', time: '0617' }, options({ ifNoneMatch: `"other", W/${etag}` }))
     expect(listed.status).toBe(304)
 
-    const wildcard = await serveCalendar({ year: '2026', time: '0617' }, options({ ifNoneMatch: '*' }))
+    const wildcard = await serve({ year: '2026', time: '0617' }, options({ ifNoneMatch: '*' }))
     expect(wildcard.status).toBe(304)
 
-    const stale = await serveCalendar({ year: '2026', time: '0617' }, options({ ifNoneMatch: '"stale"' }))
+    const stale = await serve({ year: '2026', time: '0617' }, options({ ifNoneMatch: '"stale"' }))
     expect(stale.status).toBe(200)
   })
 
   it('responds 304 on a CACHE HIT without regenerating the render', async () => {
-    const serveCalendar = await importServeCalendar()
-    let loads = 0
-    through.mockImplementation((async (...args: unknown[]) => {
-      loads += 1
-      const loader = args[2] as () => Promise<Buffer>
-      return loads === 1 ? loader() : PNG
-    }) as never)
-
-    const first = await serveCalendar({ year: '2026', time: '0617' }, options())
+    // The calendar bucket bypasses cache reads outside PROD (dev always
+    // re-renders); the hit path is the production behavior under test.
+    vi.stubEnv('PROD', true as never)
+    const serve = await importServeCalendar()
+    const first = await serve({ year: '2026', time: '0617' }, options())
     const etag = first.headers.get('ETag')!
-    expect(renderCalendar).toHaveBeenCalledTimes(1)
+    expect(renderCalendarSpy).toHaveBeenCalledTimes(1)
+    // writeEntry is fire-and-forget; wait until the entry file has landed.
+    await vi.waitFor(async () => {
+      expect(await countEntryFiles('calendar')).toBe(1)
+    })
 
-    const cached = await serveCalendar({ year: '2026', time: '0617' }, options({ ifNoneMatch: etag }))
+    const cached = await serve({ year: '2026', time: '0617' }, options({ ifNoneMatch: etag }))
     expect(cached.status).toBe(304)
     expect(cached.headers.get('ETag')).toBe(etag)
-    expect(renderCalendar).toHaveBeenCalledTimes(1)
+    expect(renderCalendarSpy).toHaveBeenCalledTimes(1)
   })
 
   it('throws 404 for malformed year', async () => {
-    const serveCalendar = await importServeCalendar()
-    const error = await serveCalendar({ year: 'ab' }, options()).catch((err: unknown) => err)
+    const serve = await importServeCalendar()
+    const error = await serve({ year: 'ab' }, options()).catch((err: unknown) => err)
     expect(error).toBeInstanceOf(HTTPException)
     expect(error).toMatchObject({ status: 404 })
   })
 
   it('throws 404 for invalid calendar date', async () => {
-    const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2026', time: '0230' }, options())).rejects.toMatchObject({
-      status: 404,
-    })
+    const serve = await importServeCalendar()
+    await expect(serve({ year: '2026', time: '0230' }, options())).rejects.toMatchObject({ status: 404 })
   })
 
   it('throws 404 for an invalid time', async () => {
-    const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2026', time: 'abcd' }, options())).rejects.toMatchObject({
-      status: 404,
-    })
+    const serve = await importServeCalendar()
+    await expect(serve({ year: '2026', time: 'abcd' }, options())).rejects.toMatchObject({ status: 404 })
   })
 
   it('throws 404 for a year below the supported window', async () => {
-    const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '1969', time: '0617' }, options())).rejects.toMatchObject({
-      status: 404,
-    })
+    const serve = await importServeCalendar()
+    await expect(serve({ year: '1969', time: '0617' }, options())).rejects.toMatchObject({ status: 404 })
   })
 
   it('throws 404 for a year above the supported window', async () => {
-    const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2101', time: '0617' }, options())).rejects.toMatchObject({
-      status: 404,
-    })
+    const serve = await importServeCalendar()
+    await expect(serve({ year: '2101', time: '0617' }, options())).rejects.toMatchObject({ status: 404 })
   })
 
   it('serves the window edges (1970 and 2100)', async () => {
-    const serveCalendar = await importServeCalendar()
+    const serve = await importServeCalendar()
     for (const year of ['1970', '2100']) {
-      const res = await serveCalendar({ year, time: '0617' }, options())
+      const res = await serve({ year, time: '0617' }, options())
       expect(res.status).toBe(200)
     }
   })
 
   it('throws 404 for a date that rolls over', async () => {
-    const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2026', time: '1399' }, options())).rejects.toMatchObject({
-      status: 404,
-    })
+    const serve = await importServeCalendar()
+    await expect(serve({ year: '2026', time: '1399' }, options())).rejects.toMatchObject({ status: 404 })
   })
 })

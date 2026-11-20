@@ -12,6 +12,7 @@ import {
 } from '@kobato/server/domains/backup/restore-machine.ts'
 import { readyHandler } from '@kobato/server/http/ready.ts'
 import { __getLifecycleContainer, setServerPhase } from '@kobato/server/infra/lifecycle.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -83,29 +84,21 @@ describe('/ready endpoint', () => {
   })
 
   it('is exempt from install-gate middleware', async () => {
-    const mockHasAdmin = vi.fn().mockResolvedValue(false)
+    const db = getTestDb()
+    await clearAllTables(db)
+    const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
+    const gated = new Hono<Env>()
+    gated.use('*', async (c, next) => {
+      c.set('requestContext', {
+        url: new URL(c.req.url),
+        db,
+      } as unknown as Env['Variables']['requestContext'])
+      await next()
+    })
+    gated.use(honoInstallGateMiddleware)
+    gated.get('/ready', readyHandler)
 
-    vi.doMock('@kobato/db/operations/user.ts', () => ({
-      hasAdmin: () => mockHasAdmin(),
-    }))
-
-    try {
-      const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
-      const gated = new Hono<Env>()
-      gated.use('*', async (c, next) => {
-        c.set('requestContext', {
-          url: new URL(c.req.url),
-          db: {},
-        } as unknown as Env['Variables']['requestContext'])
-        await next()
-      })
-      gated.use(honoInstallGateMiddleware)
-      gated.get('/ready', readyHandler)
-
-      const res = await gated.request('/ready')
-      expect(res.status).toBe(200)
-    } finally {
-      vi.doUnmock('@kobato/db/operations/user.ts')
-    }
+    const res = await gated.request('/ready')
+    expect(res.status).toBe(200)
   })
 })

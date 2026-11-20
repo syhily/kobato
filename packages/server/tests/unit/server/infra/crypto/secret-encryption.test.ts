@@ -1,25 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const MOCK_KEY = 'a'.repeat(32)
+const MOCK_KEY = 'a1b2c3d4e5f6g7h8i9j0a1b2c3d4e5f6'
 
 function importModule(key: string | undefined) {
-  vi.doMock('@kobato/server/infra/config.ts', () => ({
-    serverConfig: {
-      server: {},
-      database: {},
-      security: { encryptionKey: key },
-      storage: {},
-    },
-  }))
-  vi.doMock('@kobato/server/infra/logger.ts', () => ({
-    getLogger: () => ({ warn: vi.fn(), error: vi.fn() }),
-  }))
+  if (key === undefined) {
+    vi.unstubAllEnvs()
+  } else {
+    vi.stubEnv('security__encryptionKey', key)
+  }
+  vi.resetModules()
   return import('@kobato/server/infra/crypto/secret-encryption.ts')
 }
 
 function clean() {
-  vi.doUnmock('@kobato/server/infra/config.ts')
-  vi.doUnmock('@kobato/server/infra/logger.ts')
+  vi.unstubAllEnvs()
   vi.resetModules()
 }
 
@@ -118,7 +112,7 @@ describe('secret-encryption', () => {
     it('derives its key from the deployment encryption key', async () => {
       const first = (await importModule(MOCK_KEY)).secretHmac('observability', 'payload')
       clean()
-      const rotated = (await importModule('b'.repeat(32))).secretHmac('observability', 'payload')
+      const rotated = (await importModule('b1c2d3e4f5g6h7i8j9k0b1c2d3e4f5g6h')).secretHmac('observability', 'payload')
       expect(rotated).not.toBe(first)
     })
   })
