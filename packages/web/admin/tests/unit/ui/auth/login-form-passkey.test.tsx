@@ -2,7 +2,7 @@
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, useActionData } from 'react-router'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   authBegin: vi.fn(),
@@ -10,13 +10,21 @@ const mocks = vi.hoisted(() => ({
   cancelCeremony: vi.fn(),
 }))
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    passkey: {
-      authBegin: mocks.authBegin,
-    },
-  },
-}))
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      passkey: {
+        authBegin: mocks.authBegin,
+      },
+    }) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { LoginForm } = await import('@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx')
 
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: mocks.startAuthentication,
@@ -24,7 +32,6 @@ vi.mock('@simplewebauthn/browser', () => ({
 }))
 
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
-import { LoginForm } from '@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx'
 
 function renderLoginForm(actionData?: { method: 'passkey' | 'password' }) {
   const routes = [

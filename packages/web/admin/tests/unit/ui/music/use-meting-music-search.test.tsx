@@ -5,24 +5,31 @@ import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const searchMock = vi.hoisted(() =>
   vi.fn<(input: { source?: string; keyword: string; limit?: number; offset?: number }) => Promise<SearchMusicOutput>>(),
 )
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    admin: {
-      music: {
-        search: (input: { source?: string; keyword: string; limit?: number; offset?: number }) => searchMock(input),
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      admin: {
+        music: {
+          search: (input: { source?: string; keyword: string; limit?: number; offset?: number }) => searchMock(input),
+        },
       },
-    },
-  },
-}))
+    }) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { dedupeSearchHits, useMetingMusicSearch } = await import('@kobato/web-admin/ui/music/use-meting-music-search.ts')
 
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
-import { dedupeSearchHits, useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search.ts'
 
 function makeWrapper() {
   const queryClient = new QueryClient({

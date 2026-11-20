@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const routerState = vi.hoisted(() => ({
   fonts: undefined as FontsSettings | undefined,
@@ -23,9 +23,14 @@ vi.mock('react-router', async () => {
 
 const setSlotMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: { admin: { fonts: { setSlot: setSlotMock } } },
-}))
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () => ({ admin: { fonts: { setSlot: setSlotMock } } }) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },

@@ -14,7 +14,7 @@ import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
 import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm.tsx'
 import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
 import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm.tsx'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const cacheQueryMocks = mockTanstackQuery()
 
@@ -38,16 +38,22 @@ vi.mock('react-router', async () => {
   }
 })
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    admin: {
-      cache: {
-        getStats: vi.fn(async () => ({})),
-        clear: vi.fn(async () => ({})),
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      admin: {
+        cache: {
+          getStats: vi.fn(async () => ({})),
+          clear: vi.fn(async () => ({})),
+        },
       },
-    },
-  },
-}))
+    }) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const populatedFonts: FontsSettings = {
   og: { family: 'OPPOSans' },

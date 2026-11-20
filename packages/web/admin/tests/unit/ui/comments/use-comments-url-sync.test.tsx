@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render as rtlRender } from '@testing-library/react'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   loadAll: vi.fn(),
@@ -19,29 +19,35 @@ const api = vi.hoisted(() => ({
   searchAuthors: vi.fn(),
 }))
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    admin: {
-      comments: {
-        loadAll: (input: unknown) => api.loadAll(input),
-        approve: (input: unknown) => api.approve(input),
-        delete: (input: unknown) => api.deleteComment(input),
-        approveCommentDeletion: (input: unknown) => api.approveCommentDeletion(input),
-        searchPages: (input: unknown) => api.searchPages(input),
-        searchAuthors: (input: unknown) => api.searchAuthors(input),
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      admin: {
+        comments: {
+          loadAll: (input: unknown) => api.loadAll(input),
+          approve: (input: unknown) => api.approve(input),
+          delete: (input: unknown) => api.deleteComment(input),
+          approveCommentDeletion: (input: unknown) => api.approveCommentDeletion(input),
+          searchPages: (input: unknown) => api.searchPages(input),
+          searchAuthors: (input: unknown) => api.searchAuthors(input),
+        },
       },
-    },
-  },
-}))
+    }) as never,
+)
 
-import { buildCommentFilterFields, type CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import {
-  parseCommentFiltersFromSearchParams,
-  useCommentsController,
-} from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields.ts')
+const { parseCommentFiltersFromSearchParams, useCommentsController } =
+  await import('@kobato/web-admin/ui/comments/use-comments-controller.ts')
+const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
+
+import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
 
 type Pills = ReturnType<typeof useFilterPills<CommentFilterFieldKey>>
 type Controller = ReturnType<typeof useCommentsController>

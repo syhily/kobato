@@ -4,7 +4,7 @@ import type { LikeValidateOutput as ValidateLikeTokenOutput } from '@kobato/cont
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   validate: vi.fn(),
@@ -12,22 +12,29 @@ const api = vi.hoisted(() => ({
   decrease: vi.fn(),
 }))
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    likes: {
-      validate: (input: unknown) => api.validate(input),
-      increase: (input: unknown) => api.increase(input),
-      decrease: (input: unknown) => api.decrease(input),
-    },
-  },
-}))
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      likes: {
+        validate: (input: unknown) => api.validate(input),
+        increase: (input: unknown) => api.increase(input),
+        decrease: (input: unknown) => api.decrease(input),
+      },
+    }) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { LikeButton } = await import('@kobato/web-public/ui/LikeActions.tsx')
 
 vi.mock('@number-flow/react', () => ({
   default: ({ value }: { value: number }) => <span>{value}</span>,
 }))
 
 import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
-import { LikeButton } from '@kobato/web-public/ui/LikeActions.tsx'
 
 const PERMALINK = '/posts/hello'
 const TOKENS_KEY = 'like-tokens'

@@ -3,19 +3,25 @@ import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    admin: {
-      mail: { sendTest: vi.fn(async () => ({})) },
-    },
-  },
-}))
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      admin: {
+        mail: { sendTest: vi.fn(async () => ({})) },
+      },
+    }) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const smtpPopulated: MailLoaderShape = {
   mail: {

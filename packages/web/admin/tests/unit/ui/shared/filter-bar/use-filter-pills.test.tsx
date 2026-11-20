@@ -7,26 +7,32 @@ import type { ReactNode } from 'react'
 import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   searchPages: vi.fn(),
   searchAuthors: vi.fn(),
 }))
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: {
-    admin: {
-      comments: {
-        searchPages: (input: unknown) => api.searchPages(input),
-        searchAuthors: (input: unknown) => api.searchAuthors(input),
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () =>
+    ({
+      admin: {
+        comments: {
+          searchPages: (input: unknown) => api.searchPages(input),
+          searchAuthors: (input: unknown) => api.searchAuthors(input),
+        },
       },
-    },
-  },
-}))
+    }) as never,
+)
 
-import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields.ts')
+const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 

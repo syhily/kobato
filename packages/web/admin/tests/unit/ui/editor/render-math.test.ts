@@ -1,10 +1,15 @@
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mathMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({ orpc: { admin: { renders: { math: mathMock } } } }))
+const apiClientMod = await import('@kobato/web-client/api/client.ts')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(() => ({ admin: { renders: { math: mathMock } } }) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const { makeRenderMath, resolveMathError } = await import('@kobato/web-admin/ui/editor/render-math.ts')
 
