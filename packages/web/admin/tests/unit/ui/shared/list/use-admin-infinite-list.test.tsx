@@ -8,11 +8,9 @@ import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { toast } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
-
-const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
-vi.mock('sonner', () => ({ toast: toastMock }))
-
+const toastMock = vi.mocked(toast)
 interface TestRow {
   id: string
 }

@@ -46,8 +46,6 @@ vi.mock('@tanstack/react-query', async () => {
   }
 })
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => children,
   PointerSensor: class PointerSensor {},

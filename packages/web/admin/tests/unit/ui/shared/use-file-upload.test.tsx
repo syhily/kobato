@@ -13,9 +13,8 @@ vi.mock('react-router', async () => {
   }
 })
 
-const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
-vi.mock('sonner', () => ({ toast: toastMock }))
-
+import { toast } from 'sonner'
+const toastMock = vi.mocked(toast)
 const fetchMock = vi.hoisted(() => vi.fn())
 
 import { makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
@@ -239,6 +238,7 @@ describe('useFileUpload — success handling', () => {
     const order: string[] = []
     toastMock.success.mockImplementation(() => {
       order.push('toast')
+      return ''
     })
     const { result } = renderHook(() =>
       useFileUpload({

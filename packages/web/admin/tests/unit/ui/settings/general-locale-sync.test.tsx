@@ -15,14 +15,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.hoisted(() => vi.fn())
-const toastMock = vi.hoisted(() => ({ error: vi.fn(), warning: vi.fn(), success: vi.fn() }))
 const reload = vi.fn()
 
 vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
 }))
-
-vi.mock('sonner', () => ({ toast: toastMock, Toaster: () => null }))
 
 const INITIAL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 const TIME_ZONES = ['Asia/Shanghai', 'UTC', 'America/New_York'] as const

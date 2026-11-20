@@ -48,8 +48,6 @@ vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
 }))
 
-vi.mock('sonner', () => ({ toast, Toaster: () => null }))
-
 import { ObservabilityForm } from '@kobato/web-admin/ui/settings/observability/ObservabilityForm.tsx'
 
 const INITIAL: ObservabilitySettings = structuredClone(TEST_BLOG_SETTINGS_BUNDLE.observability!)

@@ -35,9 +35,8 @@ vi.mock('@kobato/web-client/api/client.ts', () => ({
   },
 }))
 
-const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
-vi.mock('sonner', () => ({ toast: toastMock }))
-
+import { toast } from 'sonner'
+const toastMock = vi.mocked(toast)
 import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields.ts'
 import {
   useCommentsController,

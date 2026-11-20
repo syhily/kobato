@@ -16,8 +16,6 @@ vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   }),
 }))
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn() }, Toaster: () => null }))
-
 const siteIdentity = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 
 describe('General locale selector — released surface', () => {

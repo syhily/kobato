@@ -14,7 +14,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
 const commit = vi.hoisted(() => vi.fn())
-const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
+import { toast } from 'sonner'
+const toastMock = vi.mocked(toast)
 
 vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
   useSettingsMutation: () => ({
@@ -23,8 +24,6 @@ vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
     status: 'idle',
   }),
 }))
-
-vi.mock('sonner', () => ({ toast: toastMock, Toaster: () => null }))
 
 interface Source {
   title: string

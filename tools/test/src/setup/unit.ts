@@ -18,7 +18,7 @@ import '@kobato/test/env.ts'
 import { afterAll, afterEach, vi } from 'vitest'
 
 vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn() },
   Toaster: () => null,
 }))
 // `safeFetch` resolves hostnames before dialing; tests stub `fetch`, so DNS

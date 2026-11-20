@@ -31,9 +31,8 @@ vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },
 }))
 
-const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
-vi.mock('sonner', () => ({ toast: toastMock }))
-
+import { toast } from 'sonner'
+const toastMock = vi.mocked(toast)
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { type SlotState, slotsReducer, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots.ts'
 
