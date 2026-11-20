@@ -1,6 +1,6 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
@@ -8,12 +8,15 @@ const draftStore = vi.hoisted(() => ({
   remove: vi.fn<(key: string) => Promise<void>>(),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts', () => ({
-  DRAFT_STORAGE_VERSION: 1,
-  getDraft: (key: string) => draftStore.get(key),
-  setDraft: (key: string, record: unknown) => draftStore.set(key, record),
-  removeDraft: (key: string) => draftStore.remove(key),
-}))
+const draftStoreMod = await import('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts')
+vi.spyOn(draftStoreMod, 'getDraft').mockImplementation(((key: string) => draftStore.get(key)) as never)
+vi.spyOn(draftStoreMod, 'setDraft').mockImplementation(((key: string, record: unknown) =>
+  draftStore.set(key, record)) as never)
+vi.spyOn(draftStoreMod, 'removeDraft').mockImplementation(((key: string) => draftStore.remove(key)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
@@ -158,7 +161,7 @@ describe('useCreateDraft — synchronous return shape', () => {
     expect(editCall).toBeDefined()
     expect(editCall![0]).toBe('cms-post-draft:post-42:rev-7')
     expect(editCall![1].type).toBe('post-edit')
-    expect(editCall![1].version).toBe(1)
+    expect(editCall![1].version).toBe(draftStoreMod.DRAFT_STORAGE_VERSION)
     const removeCalls = draftStore.remove.mock.calls.map((c) => c[0])
     expect(removeCalls.some((k) => k.includes(config.keyPrefix))).toBe(true)
     expect(fake.sessionStorage.removeItem).toHaveBeenCalledWith(config.sessionKey)

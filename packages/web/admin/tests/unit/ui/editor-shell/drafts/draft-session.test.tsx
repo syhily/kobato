@@ -3,7 +3,7 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
 
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
@@ -12,13 +12,17 @@ const draftStore = vi.hoisted(() => ({
   removeByPrefix: vi.fn<(prefix: string) => Promise<void>>(),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts', () => ({
-  DRAFT_STORAGE_VERSION: 1,
-  getDraft: (key: string) => draftStore.get(key),
-  setDraft: (key: string, record: unknown) => draftStore.set(key, record),
-  removeDraft: (key: string) => draftStore.remove(key),
-  removeDraftsByPrefix: (prefix: string) => draftStore.removeByPrefix(prefix),
-}))
+const draftStoreMod = await import('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts')
+vi.spyOn(draftStoreMod, 'getDraft').mockImplementation(((key: string) => draftStore.get(key)) as never)
+vi.spyOn(draftStoreMod, 'setDraft').mockImplementation(((key: string, record: unknown) =>
+  draftStore.set(key, record)) as never)
+vi.spyOn(draftStoreMod, 'removeDraft').mockImplementation(((key: string) => draftStore.remove(key)) as never)
+vi.spyOn(draftStoreMod, 'removeDraftsByPrefix').mockImplementation(((prefix: string) =>
+  draftStore.removeByPrefix(prefix)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
