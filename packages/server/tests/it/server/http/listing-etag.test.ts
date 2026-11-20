@@ -16,12 +16,7 @@ import { representationRevisionsFor } from '@kobato/settings/representation-scop
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const analytics = vi.hoisted(() => ({ trackPageView: vi.fn() }))
-
-vi.mock('@kobato/server/domains/analytics/track.ts', () => ({
-  trackPageView: analytics.trackPageView,
-  flushTrackedEvents: vi.fn(async () => undefined),
-}))
+const trackPageView = vi.spyOn(await import('@kobato/server/domains/analytics/track.ts'), 'trackPageView')
 
 const db = getTestDb()
 
@@ -31,7 +26,7 @@ beforeEach(async () => {
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   __resetRateLimitsForTests()
-  analytics.trackPageView.mockClear()
+  trackPageView.mockClear()
 })
 
 afterEach(() => {
@@ -310,14 +305,14 @@ describe('listing representation ETags — redirects and page views', () => {
     await seedPost({ slug: 'first' })
 
     const first = await read<OkListing>('/content/home', {})
-    expect(analytics.trackPageView).toHaveBeenCalledTimes(1)
+    expect(trackPageView).toHaveBeenCalledTimes(1)
 
     const repeated = await read<NotModified>('/content/home', { ifNoneMatch: first.etag })
     expect(repeated.kind).toBe('not-modified')
-    expect(analytics.trackPageView).toHaveBeenCalledTimes(1)
+    expect(trackPageView).toHaveBeenCalledTimes(1)
 
     await seedPost({ slug: 'second', firstPublishedAt: new Date('2026-02-01') })
     await read<OkListing>('/content/home', { ifNoneMatch: first.etag })
-    expect(analytics.trackPageView).toHaveBeenCalledTimes(2)
+    expect(trackPageView).toHaveBeenCalledTimes(2)
   })
 })
