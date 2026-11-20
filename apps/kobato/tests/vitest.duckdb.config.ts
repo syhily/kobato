@@ -26,8 +26,9 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 120_000,
     // The native engine is thread-safe and every file builds its own
-    // throwaway DuckDB database under its own mkdtemp dir, so files run on the
-    // shared threads pool in parallel with per-file isolation.
-    isolate: true,
+    // throwaway DuckDB database under its own mkdtemp dir, and both setups
+    // reset the shared analytics executor between files — so the files share
+    // workers like every other project (16s → 11s on this suite).
+    isolate: false,
   },
 })
