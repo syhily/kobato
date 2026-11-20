@@ -4,11 +4,14 @@ import type { HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/hea
 import { useHeaderBackgroundImage } from '@kobato/inkling-internal/hooks/useHeaderBackgroundImage'
 import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/get-accent-color', () => ({
-  getAccentColor: vi.fn(),
-}))
+const ink_utils_get_accent_color = await import('@kobato/inkling-internal/utils/get-accent-color')
+vi.spyOn(ink_utils_get_accent_color, 'getAccentColor').mockImplementation(vi.fn() as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 interface PolicyProps {
   layout: string

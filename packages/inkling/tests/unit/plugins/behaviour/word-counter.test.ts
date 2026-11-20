@@ -22,11 +22,14 @@ import {
   type LexicalEditor,
   type NodeKey,
 } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils', async (importActual) => {
-  const actual = await importActual<typeof import('@kobato/inkling-internal/utils')>()
-  return { ...actual, countWords: vi.fn(actual.countWords) }
+const passthrough_utils = await import('@kobato/inkling-internal/utils')
+const { countWords: realCountWords } = await import('@kobato/inkling-internal/utils')
+vi.spyOn(passthrough_utils, 'countWords').mockImplementation(realCountWords as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 const synchronousThrottle: WordCounterThrottle = (fn) => Object.assign(() => fn(), { cancel: () => {} })

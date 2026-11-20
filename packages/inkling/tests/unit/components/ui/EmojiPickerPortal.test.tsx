@@ -1,16 +1,19 @@
 import EmojiPickerPortal from '@kobato/inkling-internal/components/ui/EmojiPickerPortal'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 const pickerPropsSpy = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/inkling-internal/components/ui/EmojiPicker', () => ({
-  default: (props: Record<string, unknown>) => {
-    pickerPropsSpy(props)
-    return <div data-testid="emoji-picker" />
-  },
-}))
+const ink_components_ui_EmojiPicker = await import('@kobato/inkling-internal/components/ui/EmojiPicker')
+vi.spyOn(ink_components_ui_EmojiPicker, 'default').mockImplementation(((props: Record<string, unknown>) => {
+  pickerPropsSpy(props)
+  return <div data-testid="emoji-picker" />
+}) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function createAnchor(rect: { top: number; left: number }): React.RefObject<HTMLElement | null> {
   const anchor = document.createElement('div')

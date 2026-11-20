@@ -5,31 +5,39 @@ import {
   clampImageCardWidth,
   migrateImageDataUrl,
 } from '@kobato/inkling-internal/plugins/behaviour/image-lifecycle'
-import { dataSrcToFile } from '@kobato/inkling-internal/utils/data-src-to-file'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor, type NodeKey } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/data-src-to-file', () => ({
-  dataSrcToFile: vi.fn(),
-}))
+const ink_utils_data_src_to_file = await import('@kobato/inkling-internal/utils/data-src-to-file')
+const dataSrcToFileSpy = vi.spyOn(ink_utils_data_src_to_file, 'dataSrcToFile').mockImplementation(vi.fn() as never)
+const dataSrcToFile = dataSrcToFileSpy
 
-vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
-  getImageDimensions: vi.fn(),
-}))
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+const ink_utils_get_image_dimensions = await import('@kobato/inkling-internal/utils/get-image-dimensions')
+const getImageDimensionsSpy = vi
+  .spyOn(ink_utils_get_image_dimensions, 'getImageDimensions')
+  .mockImplementation(vi.fn() as never)
+const getImageDimensions = getImageDimensionsSpy
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const DATA_SRC = 'data:image/png;base64,iVBORw0KGgo='
 
 describe('migrateImageDataUrl', () => {
   afterEach(() => {
-    vi.restoreAllMocks()
+    dataSrcToFileSpy.mockClear()
   })
 
   it('converts a data: src and uploads the file', async () => {
     const file = new File(['img'], 'data-src-image-1.png', { type: 'image/png' })
-    vi.mocked(dataSrcToFile).mockResolvedValue(file)
+    dataSrcToFile.mockResolvedValue(file)
     const runUpload = vi.fn()
 
     const fired = await migrateImageDataUrl({ src: DATA_SRC }, { runUpload, onError: vi.fn() })
@@ -53,7 +61,7 @@ describe('migrateImageDataUrl', () => {
 
   it('abandons a stale run after the conversion await', async () => {
     const file = new File(['img'], 'data-src-image-1.png', { type: 'image/png' })
-    vi.mocked(dataSrcToFile).mockResolvedValue(file)
+    dataSrcToFile.mockResolvedValue(file)
     const runUpload = vi.fn()
 
     const fired = await migrateImageDataUrl({ src: DATA_SRC, isCancelled: () => true }, { runUpload, onError: vi.fn() })
@@ -64,7 +72,7 @@ describe('migrateImageDataUrl', () => {
 
   it('reports a conversion failure through onError', async () => {
     const failure = new Error('conversion failed')
-    vi.mocked(dataSrcToFile).mockRejectedValue(failure)
+    dataSrcToFile.mockRejectedValue(failure)
     const onError = vi.fn()
 
     const fired = await migrateImageDataUrl({ src: DATA_SRC }, { runUpload: vi.fn(), onError })
@@ -86,7 +94,7 @@ describe('backfillImageDimensions', () => {
         throw error
       },
     })
-    vi.mocked(getImageDimensions).mockResolvedValue({ width: 100, height: 50 })
+    getImageDimensions.mockResolvedValue({ width: 100, height: 50 })
     nodeKey = ''
     await updateEditor(editor, () => {
       const node = $createImageNode({ src: 'https://example.com/image.png' })
@@ -155,7 +163,7 @@ describe('backfillImageDimensions', () => {
 
   it('reports a broken src through onError and leaves dimensions unset', async () => {
     const failure = new Error('unloadable')
-    vi.mocked(getImageDimensions).mockRejectedValue(failure)
+    getImageDimensions.mockRejectedValue(failure)
     const onError = vi.fn()
 
     const fired = await backfillImageDimensions(

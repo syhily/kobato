@@ -1,14 +1,19 @@
 import { AudioNode, $createAudioNode, type AudioNode as AudioNodeType } from '@kobato/inkling-internal/nodes/AudioNode'
 import { audioUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
-import { getAudioMetadata } from '@kobato/inkling-internal/utils/get-audio-metadata'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/get-audio-metadata', () => ({
-  getAudioMetadata: vi.fn(),
-}))
+const ink_utils_get_audio_metadata = await import('@kobato/inkling-internal/utils/get-audio-metadata')
+const getAudioMetadataSpy = vi
+  .spyOn(ink_utils_get_audio_metadata, 'getAudioMetadata')
+  .mockImplementation(vi.fn() as never)
+const getAudioMetadata = getAudioMetadataSpy
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 describe('audioUploadIntent', () => {
   let editor: LexicalEditor
@@ -17,13 +22,14 @@ describe('audioUploadIntent', () => {
 
   beforeEach(() => {
     editor = createHeadlessEditor({ nodes: [AudioNode], onError: () => {} })
-    vi.mocked(getAudioMetadata).mockResolvedValue({ duration: 123.456 })
+    getAudioMetadata.mockResolvedValue({ duration: 123.456 })
     createObjectURLSpy = vi.spyOn(globalThis.URL, 'createObjectURL').mockReturnValue('blob://audio-preview')
     revokeObjectURLSpy = vi.spyOn(globalThis.URL, 'revokeObjectURL').mockImplementation(() => {})
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    createObjectURLSpy?.mockRestore()
+    revokeObjectURLSpy?.mockRestore()
   })
 
   async function createAudioNodeInEditor(): Promise<string> {

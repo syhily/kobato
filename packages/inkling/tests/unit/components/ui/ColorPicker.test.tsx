@@ -1,11 +1,14 @@
 import { ColorIndicator, ColorPicker } from '@kobato/inkling-internal/components/ui/ColorPicker'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/hooks/useClickOutside', () => ({
-  useClickOutside: vi.fn(),
-}))
+const ink_hooks_useClickOutside = await import('@kobato/inkling-internal/hooks/useClickOutside')
+vi.spyOn(ink_hooks_useClickOutside, 'useClickOutside').mockImplementation(vi.fn() as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 describe('ColorPicker', () => {
   const onChange = vi.fn()

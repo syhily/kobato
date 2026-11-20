@@ -4,12 +4,19 @@ import InklingNestedEditor from '@kobato/inkling-internal/components/InklingNest
 import { render, screen } from '@testing-library/react'
 import { createEditor, type LexicalEditor } from 'lexical'
 import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/plugins/EmojiPickerPlugin', () => ({
-  EmojiPickerPlugin: () => <div data-testid="emoji-picker-plugin" />,
-  default: () => <div data-testid="emoji-picker-plugin" />,
-}))
+const ink_plugins_EmojiPickerPlugin = await import('@kobato/inkling-internal/plugins/EmojiPickerPlugin')
+vi.spyOn(ink_plugins_EmojiPickerPlugin, 'EmojiPickerPlugin').mockImplementation((() => (
+  <div data-testid="emoji-picker-plugin" />
+)) as never)
+vi.spyOn(ink_plugins_EmojiPickerPlugin, 'default').mockImplementation((() => (
+  <div data-testid="emoji-picker-plugin" />
+)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function createNestedEditor(): LexicalEditor {
   return createEditor({ namespace: 'nested', nodes: [], onError: () => {} })

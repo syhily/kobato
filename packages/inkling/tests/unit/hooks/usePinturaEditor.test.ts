@@ -3,11 +3,14 @@ import usePinturaEditor from '@kobato/inkling-internal/hooks/usePinturaEditor'
 import { resolveLabels, type InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/analytics', () => ({
-  default: vi.fn(),
-}))
+const ink_utils_analytics = await import('@kobato/inkling-internal/utils/analytics')
+vi.spyOn(ink_utils_analytics, 'default').mockImplementation(vi.fn() as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 class MockPinturaEditor {
   on(): void {}

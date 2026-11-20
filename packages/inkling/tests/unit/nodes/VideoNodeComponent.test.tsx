@@ -6,7 +6,6 @@ import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 import { VideoNode, $createVideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
 import { VideoNodeComponent } from '@kobato/inkling-internal/nodes/VideoNodeComponent'
 import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
-import extractVideoMetadata from '@kobato/inkling-internal/utils/extract-video-metadata'
 import { createCardSelectionStoreWrapper } from '@kobato/inkling/tests/utils/card-selection-store'
 import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
@@ -14,11 +13,16 @@ import { CollaborationContext } from '@lexical/react/LexicalCollaborationContext
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { $getNodeByKey, $getRoot, createEditor, type LexicalEditor, type NodeKey } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/extract-video-metadata', () => ({
-  default: vi.fn(),
-}))
+const ink_utils_extract_video_metadata = await import('@kobato/inkling-internal/utils/extract-video-metadata')
+const extractVideoMetadata = vi
+  .spyOn(ink_utils_extract_video_metadata, 'default')
+  .mockImplementation(vi.fn() as unknown as () => never as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function createTestEditor(): LexicalEditor {
   const editor = createEditor({ namespace: 'test', nodes: [VideoNode], onError: () => {} })
@@ -114,7 +118,7 @@ describe('VideoNodeComponent', () => {
     vi.clearAllMocks()
     editor = createTestEditor()
     captionEditor = createEditor({ namespace: 'caption', nodes: MINIMAL_NODES, onError: () => {} })
-    vi.mocked(extractVideoMetadata).mockResolvedValue({
+    extractVideoMetadata.mockResolvedValue({
       duration: 61,
       width: 640,
       height: 360,
@@ -126,7 +130,8 @@ describe('VideoNodeComponent', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    createObjectURLSpy.mockRestore()
+    revokeObjectURLSpy.mockRestore()
   })
 
   interface RenderOptions {
@@ -198,7 +203,7 @@ describe('VideoNodeComponent', () => {
 
   it('surfaces the exact metadata error and writes nothing when metadata extraction fails', async () => {
     const nodeKey = await addVideoNode(editor, false)
-    vi.mocked(extractVideoMetadata).mockRejectedValue(new Error('Failed to load video metadata'))
+    extractVideoMetadata.mockRejectedValue(new Error('Failed to load video metadata'))
     const file = new File(['video'], 'clip.mp4', { type: 'video/mp4' })
     const videoUpload = createUploadMock()
 
@@ -222,7 +227,7 @@ describe('VideoNodeComponent', () => {
   it('writes the full patch, uploads a synthesized thumbnail, and clears the preview', async () => {
     const nodeKey = await addVideoNode(editor, false)
     const thumbnailBlob = new Blob(['thumb'], { type: 'image/jpeg' })
-    vi.mocked(extractVideoMetadata).mockResolvedValue({
+    extractVideoMetadata.mockResolvedValue({
       duration: 61,
       width: 640,
       height: 360,

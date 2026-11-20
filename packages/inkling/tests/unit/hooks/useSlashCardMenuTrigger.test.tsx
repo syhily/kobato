@@ -6,11 +6,15 @@ import { useSlashCardMenuTrigger } from '@kobato/inkling-internal/hooks/useSlash
 import { registerSlashCardMenuTrigger } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import { act, render, screen } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/plugins/behaviour/card-menu-trigger', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@kobato/inkling-internal/plugins/behaviour/card-menu-trigger')>()
-  return { ...original, registerSlashCardMenuTrigger: vi.fn(() => () => {}) }
+const passthrough_card_menu_trigger = await import('@kobato/inkling-internal/plugins/behaviour/card-menu-trigger')
+vi.spyOn(passthrough_card_menu_trigger, 'registerSlashCardMenuTrigger').mockImplementation(
+  vi.fn(() => () => {}) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 const editor = {} as LexicalEditor

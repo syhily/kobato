@@ -1,14 +1,19 @@
 import { ImageNode, $createImageNode, type ImageNode as ImageNodeType } from '@kobato/inkling-internal/nodes/ImageNode'
 import { imageUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { tick, updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
-  getImageDimensions: vi.fn(),
-}))
+const ink_utils_get_image_dimensions = await import('@kobato/inkling-internal/utils/get-image-dimensions')
+const getImageDimensionsSpy = vi
+  .spyOn(ink_utils_get_image_dimensions, 'getImageDimensions')
+  .mockImplementation(vi.fn() as never)
+const getImageDimensions = getImageDimensionsSpy
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 describe('imageUploadIntent', () => {
   let editor: LexicalEditor
@@ -17,13 +22,14 @@ describe('imageUploadIntent', () => {
 
   beforeEach(() => {
     editor = createHeadlessEditor({ nodes: [ImageNode], onError: () => {} })
-    vi.mocked(getImageDimensions).mockResolvedValue({ width: 100, height: 200 })
+    getImageDimensions.mockResolvedValue({ width: 100, height: 200 })
     createObjectURLSpy = vi.spyOn(globalThis.URL, 'createObjectURL').mockReturnValue('blob://image-preview')
     revokeObjectURLSpy = vi.spyOn(globalThis.URL, 'revokeObjectURL').mockImplementation(() => {})
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    createObjectURLSpy?.mockRestore()
+    revokeObjectURLSpy?.mockRestore()
   })
 
   async function createImageNodeInEditor(): Promise<string> {
@@ -69,7 +75,7 @@ describe('imageUploadIntent', () => {
   })
 
   it('revokes the object URL if metadata extraction fails', async () => {
-    vi.mocked(getImageDimensions).mockRejectedValue(new Error('failed to read dimensions'))
+    getImageDimensions.mockRejectedValue(new Error('failed to read dimensions'))
     const file = new File(['image'], 'test.png', { type: 'image/png' })
     const upload = vi.fn().mockResolvedValue([{ url: 'https://example.com/image.png' }])
     const nodeKey = await createImageNodeInEditor()

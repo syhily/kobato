@@ -10,11 +10,14 @@ import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dim
 import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
-  getImageDimensions: vi.fn(),
-}))
+const ink_utils_get_image_dimensions = await import('@kobato/inkling-internal/utils/get-image-dimensions')
+vi.spyOn(ink_utils_get_image_dimensions, 'getImageDimensions').mockImplementation(vi.fn() as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const META: VideoFlowMetadata = { duration: 12, width: 640, height: 360, mimeType: 'video/mp4' }
 const META_WITH_BLOB: VideoFlowMetadata = { ...META, thumbnailBlob: new Blob(['thumb'], { type: 'image/jpeg' }) }

@@ -15,7 +15,7 @@ import {
 } from '@kobato/inkling-internal/components/ui/SettingsPanel'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   contextValue: { cardConfig: {} as CardConfig },
@@ -35,9 +35,14 @@ function createListOptionItem(): ListOptionItem {
   }
 }
 
-vi.mock('@kobato/inkling-internal/context/InklingHostIntegrationContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/inkling-internal/context/InklingHostIntegrationContext')>()
-  return { ...actual, useInklingLinkingSettings: () => mocks.contextValue.cardConfig }
+const passthrough_InklingHostIntegrationContext =
+  await import('@kobato/inkling-internal/context/InklingHostIntegrationContext')
+vi.spyOn(passthrough_InklingHostIntegrationContext, 'useInklingLinkingSettings').mockImplementation(
+  (() => mocks.contextValue.cardConfig) as never,
+)
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 describe('SettingsPanel', function () {

@@ -19,7 +19,7 @@ import {
   type NodeKey,
 } from 'lexical'
 import React, { useMemo } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface CapturedContainerOptions {
   droppable: {
@@ -35,20 +35,22 @@ const captured = vi.hoisted(() => ({
   resolveDrop: vi.fn(),
 }))
 
-vi.mock('@kobato/inkling-internal/utils/draggable/use-drag-drop-container', () => ({
-  useDragDropContainer: (options: CapturedContainerOptions) => {
-    captured.containerOptions = options
-    return { refresh: vi.fn() }
-  },
-}))
+const ink_utils_draggable_use_drag_drop_container =
+  await import('@kobato/inkling-internal/utils/draggable/use-drag-drop-container')
+vi.spyOn(ink_utils_draggable_use_drag_drop_container, 'useDragDropContainer').mockImplementation(((
+  options: CapturedContainerOptions,
+) => {
+  captured.containerOptions = options
+  return { refresh: vi.fn() }
+}) as never)
 
-vi.mock('@kobato/inkling-internal/utils/draggable/reorder-rules', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@kobato/inkling-internal/utils/draggable/reorder-rules')>()
-  return {
-    ...original,
-    resolveDrop: (...args: unknown[]) => captured.resolveDrop(...args),
-  }
+afterAll(() => {
+  vi.restoreAllMocks()
 })
+
+const reorderRulesMod = await import('@kobato/inkling-internal/utils/draggable/reorder-rules')
+vi.spyOn(reorderRulesMod, 'resolveDrop').mockImplementation(((...args: unknown[]) =>
+  captured.resolveDrop(...args)) as never)
 
 function TestWrapper({ children, editor }: { children: React.ReactNode; editor: LexicalEditor }) {
   const contextValue = useMemo<React.ContextType<typeof LexicalComposerContext>>(

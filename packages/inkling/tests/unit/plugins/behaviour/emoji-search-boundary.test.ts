@@ -13,11 +13,18 @@ import {
 } from '@kobato/inkling-internal/plugins/behaviour/emoji-completion'
 import { createTestEditor, drainEnqueuedUpdates, tick } from '@kobato/inkling/tests/utils/test-editor'
 import { $createParagraphNode, $createTextNode, $getRoot, KEY_DOWN_COMMAND, type LexicalEditor } from 'lexical'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const searchEmojiMartIndex = vi.hoisted(() => vi.fn<(query: string) => Promise<unknown>>())
 
-vi.mock('@kobato/inkling-internal/plugins/behaviour/emoji-search-index', () => ({ searchEmojiMartIndex }))
+const ink_plugins_behaviour_emoji_search_index =
+  await import('@kobato/inkling-internal/plugins/behaviour/emoji-search-index')
+vi.spyOn(ink_plugins_behaviour_emoji_search_index, 'searchEmojiMartIndex').mockImplementation(((query: string) =>
+  searchEmojiMartIndex(query)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 async function setParagraph(editor: LexicalEditor, text: string) {
   await drainEnqueuedUpdates(editor, () => {

@@ -3,11 +3,16 @@ import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/m
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor } from 'lexical'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/components/ui/CardCaptionEditor', () => ({
-  CardCaptionEditor: () => <div data-testid="card-caption-editor" />,
-}))
+const ink_components_ui_CardCaptionEditor = await import('@kobato/inkling-internal/components/ui/CardCaptionEditor')
+vi.spyOn(ink_components_ui_CardCaptionEditor, 'CardCaptionEditor').mockImplementation((() => (
+  <div data-testid="card-caption-editor" />
+)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function createCaptionEditor() {
   return createEditor({ namespace: 'test', onError: () => {} })

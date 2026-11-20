@@ -1,30 +1,40 @@
 import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
 import { galleryUploadIntent, type UploadFn } from '@kobato/inkling-internal/nodes/upload-intent'
-import { getImageDimensions } from '@kobato/inkling-internal/utils/get-image-dimensions'
 import { createPreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-vi.mock('@kobato/inkling-internal/utils/get-image-dimensions', () => ({
-  getImageDimensions: vi.fn(),
-}))
+const ink_utils_get_image_dimensions = await import('@kobato/inkling-internal/utils/get-image-dimensions')
+const getImageDimensionsSpy = vi
+  .spyOn(ink_utils_get_image_dimensions, 'getImageDimensions')
+  .mockImplementation(vi.fn() as never)
+const getImageDimensions = getImageDimensionsSpy
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 describe('galleryUploadIntent', () => {
   let setImages: Mock<(images: GalleryImage[]) => void>
   let setPreviewImages: Mock<(images: GalleryImage[]) => void>
   let setErrorMessage: Mock<(message: string) => void>
+  let createObjectURLSpy: ReturnType<typeof vi.spyOn>
+  let revokeObjectURLSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    vi.mocked(getImageDimensions).mockResolvedValue({ width: 100, height: 50 })
+    getImageDimensions.mockResolvedValue({ width: 100, height: 50 })
     setImages = vi.fn()
     setPreviewImages = vi.fn()
     setErrorMessage = vi.fn()
-    vi.spyOn(globalThis.URL, 'createObjectURL').mockImplementation((blob) => `blob://preview-${(blob as File).name}`)
-    vi.spyOn(globalThis.URL, 'revokeObjectURL').mockImplementation(() => {})
+    createObjectURLSpy = vi
+      .spyOn(globalThis.URL, 'createObjectURL')
+      .mockImplementation((blob) => `blob://preview-${(blob as File).name}`)
+    revokeObjectURLSpy = vi.spyOn(globalThis.URL, 'revokeObjectURL').mockImplementation(() => {})
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    createObjectURLSpy.mockRestore()
+    revokeObjectURLSpy.mockRestore()
   })
 
   function runIntent({
@@ -129,7 +139,7 @@ describe('galleryUploadIntent', () => {
   })
 
   it('keeps the file order when the parallel dimension reads settle out of order', async () => {
-    vi.mocked(getImageDimensions).mockImplementation(
+    getImageDimensions.mockImplementation(
       (src: string) =>
         new Promise((resolve) => {
           setTimeout(() => resolve({ width: 100, height: 50 }), src === 'blob://preview-a.jpg' ? 20 : 0)
@@ -148,7 +158,7 @@ describe('galleryUploadIntent', () => {
   })
 
   it('releases the batch leases and propagates when a dimension read rejects', async () => {
-    vi.mocked(getImageDimensions).mockImplementation(async (src: string) => {
+    getImageDimensions.mockImplementation(async (src: string) => {
       if (src === 'blob://preview-b.jpg') {
         throw new Error('cannot decode')
       }
