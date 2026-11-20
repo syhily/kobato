@@ -5,10 +5,12 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { emptyLexicalBody, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
 import { adminUser } from '@kobato/server/tests/utils/session.ts'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/pages/repo.ts', { spy: true })
-vi.mock('@kobato/server/domains/pages/services/public-query.ts', { spy: true })
+const findPageMetaBySlugForUpdate = vi.spyOn(
+  await import('@kobato/server/domains/pages/repo.ts'),
+  'findPageMetaBySlugForUpdate',
+)
 
 const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
@@ -269,7 +271,7 @@ describe('pages/services/mutate — createPage', () => {
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
     await seedPage({ slug: 'raced', title: 'Existing' })
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValueOnce(null)
+    findPageMetaBySlugForUpdate.mockResolvedValueOnce(null)
     await expect(mutate.createPage(db, { slug: 'raced', title: 'New' }, null)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -307,7 +309,7 @@ describe('pages/services/mutate — updatePageMeta', () => {
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
     await seedPage({ slug: 'raced-taken', title: 'Existing' })
     const p = await seedPage({ slug: 'raced-orig', title: 'Orig' })
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValueOnce(null)
+    findPageMetaBySlugForUpdate.mockResolvedValueOnce(null)
     await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'raced-taken', title: 'Orig' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -436,4 +438,8 @@ describe('content/lifecycle (page adapter) — save result projection', () => {
       expect(result.revision.clientRevisionToken).not.toBe('')
     }
   })
+})
+
+afterAll(() => {
+  findPageMetaBySlugForUpdate.mockRestore()
 })

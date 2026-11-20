@@ -6,7 +6,7 @@ import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@ko
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
 const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
@@ -15,10 +15,11 @@ const s3Memory = makeMemoryBackend({ driver: 's3' })
 const localMemory = makeMemoryBackend({ driver: 'local' })
 let s3Put: Mock<StorageBackend['put']>
 
-vi.mock('@kobato/server/infra/storage/public-url.ts', () => ({
-  resolveAssetUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
-  safeResolveAssetUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
-}))
+const publicUrlSpy = await import('@kobato/server/infra/storage/public-url.ts')
+vi.spyOn(publicUrlSpy, 'resolveAssetUrl').mockImplementation((p: string) => `https://assets.example.com/${p}`)
+const safeResolveAssetUrl = vi
+  .spyOn(publicUrlSpy, 'safeResolveAssetUrl')
+  .mockImplementation((p: string) => `https://assets.example.com/${p}`)
 
 const processImageBufferMock = vi.fn(async ({ buffer }: { buffer: Buffer }) => ({
   buffer,
@@ -27,13 +28,12 @@ const processImageBufferMock = vi.fn(async ({ buffer }: { buffer: Buffer }) => (
   byteSize: buffer.byteLength,
   thumbhash: 'thumb',
 }))
-vi.mock('@kobato/server/infra/image/process.ts', () => ({
-  processImageBuffer: processImageBufferMock,
-}))
+vi.spyOn(await import('@kobato/server/infra/image/process.ts'), 'processImageBuffer').mockImplementation(
+  processImageBufferMock as never,
+)
 
 const read = await import('@kobato/server/domains/music/services/read.ts')
 const musicOps = await import('@kobato/db/operations/music.ts')
-const publicUrlMod = await import('@kobato/server/infra/storage/public-url.ts')
 const searchService = await import('@kobato/server/domains/music/services/search.ts')
 const addMod = await import('@kobato/server/domains/music/services/write/add.ts')
 const metadataMod = await import('@kobato/server/domains/music/services/write/metadata.ts')
@@ -163,9 +163,8 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('keeps a coverless track playable with the default cover', async () => {
     await seedMusic({ playerId: 'nocover', coverStoragePath: 'musics/nocover.jpg' })
-    const buildMock = vi.mocked(publicUrlMod.safeResolveAssetUrl)
-    buildMock.mockImplementationOnce((path: string) => `https://assets.example.com/${path}`)
-    buildMock.mockImplementationOnce(() => null)
+    safeResolveAssetUrl.mockImplementationOnce((path: string) => `https://assets.example.com/${path}`)
+    safeResolveAssetUrl.mockImplementationOnce(() => null)
     const metas = await read.getPublicMusicMetasByIds(db, ['nocover'])
     expect(metas.get('nocover')?.pic).toBe(read.DEFAULT_MUSIC_COVER_URL)
     expect(metas.get('nocover')?.url).toContain('https://assets.example.com/')
@@ -173,7 +172,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('drops entries whose audio URL is unbuildable', async () => {
     await seedMusic({ playerId: 'noaudio' })
-    vi.mocked(publicUrlMod.safeResolveAssetUrl).mockImplementationOnce(() => null)
+    safeResolveAssetUrl.mockImplementationOnce(() => null)
     const metas = await read.getPublicMusicMetasByIds(db, ['noaudio'])
     expect(metas.size).toBe(0)
   })
@@ -499,4 +498,8 @@ describe('music/services/search — searchMusic', () => {
     expect(resolveAudioUrl).not.toHaveBeenCalled()
     expect(resolveCoverUrl).not.toHaveBeenCalled()
   })
+})
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })

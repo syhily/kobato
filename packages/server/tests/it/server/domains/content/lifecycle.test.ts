@@ -16,16 +16,19 @@ import {
 } from '@kobato/server/tests/utils/lexical.ts'
 import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
 import { asc, eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/content/services/image-sync.ts', { spy: true })
-vi.mock('@kobato/server/domains/content/revisions.ts', { spy: true })
-vi.mock('@kobato/server/infra/lexical/lexical-projection.ts', { spy: true })
+const syncLibraryImageBlocks = vi.spyOn(
+  await import('@kobato/server/domains/content/services/image-sync.ts'),
+  'syncLibraryImageBlocks',
+)
+const findLatestRevision = vi.spyOn(await import('@kobato/server/domains/content/revisions.ts'), 'findLatestRevision')
+const computeBodyProjections = vi.spyOn(
+  await import('@kobato/server/infra/lexical/lexical-projection.ts'),
+  'computeBodyProjections',
+)
 
 const { loadDraftPreviewBySlug, saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
-const { syncLibraryImageBlocks } = await import('@kobato/server/domains/content/services/image-sync.ts')
-const { findLatestRevision } = await import('@kobato/server/domains/content/revisions.ts')
-const { computeBodyProjections } = await import('@kobato/server/infra/lexical/lexical-projection.ts')
 const { canonicalizeLexicalEditorState } =
   await import('@kobato/server/domains/content/services/lexical/canonicalize.ts')
 
@@ -138,7 +141,7 @@ describe('content/lifecycle — saveBody degraded sync', () => {
   it('continues with a warning when the image-library sync fails', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
-    vi.mocked(syncLibraryImageBlocks).mockRejectedValueOnce(new Error('boom'))
+    syncLibraryImageBlocks.mockRejectedValueOnce(new Error('boom'))
 
     const result = await saveBody(
       db,
@@ -227,7 +230,7 @@ describe('content/lifecycle — saveBody force overwrite', () => {
     const meta = await seedPost()
     await seedRevision(meta.id, { status: 'published', clientRevisionToken: 'server-token' })
     const { adapter, recordForceOverwrite } = makeAdapter({ id: meta.id, publishedRevisionId: null })
-    vi.mocked(findLatestRevision).mockRejectedValueOnce(new Error('transient read failure'))
+    findLatestRevision.mockRejectedValueOnce(new Error('transient read failure'))
 
     await expect(
       saveBody(
@@ -426,7 +429,7 @@ describe('content/lifecycle — body projections', () => {
       bodyHtmlFeed: '<p>Hello world</p>',
     })
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
-    vi.mocked(computeBodyProjections).mockClear()
+    computeBodyProjections.mockClear()
 
     const result = await saveBody(
       db,
@@ -443,7 +446,7 @@ describe('content/lifecycle — body projections', () => {
   it('degrades to NULL projection columns with a warning when the render fails', async () => {
     const meta = await seedPost()
     const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
-    vi.mocked(computeBodyProjections).mockRejectedValueOnce(new Error('render boom'))
+    computeBodyProjections.mockRejectedValueOnce(new Error('render boom'))
 
     const result = await saveBody(
       db,
@@ -614,4 +617,8 @@ describe('content/lifecycle — loadDraftPreviewBySlug', () => {
     expect(result!.preview.id).toBe(meta.id.toString())
     expect(result!.hasNewerDraft).toBe(true)
   })
+})
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })

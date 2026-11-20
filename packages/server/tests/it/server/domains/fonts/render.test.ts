@@ -1,11 +1,10 @@
 import { font } from '@kobato/db/schema/font.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/fonts/services/read.ts', { spy: true })
+const findFontsByIds = vi.spyOn(await import('@kobato/server/domains/fonts/services/read.ts'), 'findFontsByIds')
 
-const { findFontsByIds } = await import('@kobato/server/domains/fonts/services/read.ts')
 const { resolveFontsForRender } = await import('@kobato/server/domains/fonts/services/render.ts')
 
 const db = getTestDb()
@@ -51,7 +50,7 @@ function seedSettings(website: string | null = 'https://site.example.com') {
 }
 
 beforeEach(async () => {
-  vi.mocked(findFontsByIds).mockClear()
+  findFontsByIds.mockClear()
   seedSettings()
   await clearAllTables(db)
 })
@@ -107,4 +106,8 @@ describe('resolveFontsForRender — slot resolution', () => {
     const on = await resolveFontsForRender(db, settings([], ['font-1']), true)
     expect(on.post).toHaveLength(1)
   })
+})
+
+afterAll(() => {
+  findFontsByIds.mockRestore()
 })

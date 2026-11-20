@@ -1,13 +1,12 @@
 import { music } from '@kobato/db/schema/media.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const publicUrlMock = vi.hoisted(() => ({
-  resolveAssetUrl: vi.fn((p: string) => `https://cdn.example.com/${p}`),
-  safeResolveAssetUrl: vi.fn<(p: string) => string | null>((p: string) => `https://cdn.example.com/${p}`),
-}))
-
-vi.mock('@kobato/server/infra/storage/public-url.ts', () => publicUrlMock)
+const publicUrlMock = await import('@kobato/server/infra/storage/public-url.ts')
+vi.spyOn(publicUrlMock, 'resolveAssetUrl').mockImplementation((path: string) => `https://cdn.example.com/${path}`)
+const safeResolveAssetUrl = vi
+  .spyOn(publicUrlMock, 'safeResolveAssetUrl')
+  .mockImplementation((path: string) => `https://cdn.example.com/${path}`)
 
 const { DEFAULT_MUSIC_COVER_URL, getMusicMetaForPlayer, getPublicMusicMetasByIds } =
   await import('@kobato/server/domains/music/services/read.ts')
@@ -17,7 +16,7 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
   vi.clearAllMocks()
-  publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) => `https://cdn.example.com/${path}`)
+  safeResolveAssetUrl.mockImplementation((path: string) => `https://cdn.example.com/${path}`)
 })
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
@@ -66,7 +65,7 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
 
   it('falls back to the default cover when the cover URL is unbuildable', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) =>
+    safeResolveAssetUrl.mockImplementation((path: string) =>
       path === 'musics/c.jpg' ? null : `https://cdn.example.com/${path}`,
     )
     const meta = await getMusicMetaForPlayer(db, 'p1')
@@ -77,7 +76,7 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
 
   it('returns null when the audio URL is unbuildable (unplayable ≠ coverless)', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) =>
+    safeResolveAssetUrl.mockImplementation((path: string) =>
       path === 'musics/a.mp3' ? null : `https://cdn.example.com/${path}`,
     )
     expect(await getMusicMetaForPlayer(db, 'p1')).toBeNull()
@@ -105,7 +104,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('keeps a coverless track playable with the default cover', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) =>
+    safeResolveAssetUrl.mockImplementation((path: string) =>
       path === 'musics/c.jpg' ? null : `https://cdn.example.com/${path}`,
     )
     const metas = await getPublicMusicMetasByIds(db, ['p1'])
@@ -114,8 +113,12 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('drops entries whose audio URL is unbuildable', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockReturnValue(null)
+    safeResolveAssetUrl.mockReturnValue(null)
     const metas = await getPublicMusicMetasByIds(db, ['p1'])
     expect(metas.size).toBe(0)
   })
+})
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
