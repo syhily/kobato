@@ -1,31 +1,22 @@
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
+import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
+import { __setWarmupAssetsDirForTests } from '@kobato/server/render/warmup/manifest.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { resetBlogSettingsForTests } from '@tests/utils/blog-settings.ts'
 import { makeLoaderArgs } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
 import { makeSession } from '@tests/utils/session.ts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 const session = makeSession({ csrfToken: 'test-csrf-token' })
 
-vi.mock('@kobato/web-client/api/query-client.ts', () => ({
-  makeQueryClient: vi.fn(() => ({})),
-}))
-
-vi.mock('@tanstack/react-query', () => ({
-  dehydrate: vi.fn(() => ({})),
-}))
-
-vi.mock('@kobato/server/render/warmup/manifest.ts', () => ({
-  getCriticalChunksForPathname: vi.fn(() => null),
-  getWarmupManifest: vi.fn(() => null),
-}))
-
-const traceConfig = vi.hoisted(() => ({ current: { rum: null as unknown } }))
-vi.mock('@kobato/server/infra/trace/config.ts', () => ({
-  activeFrontendRum: () => traceConfig.current.rum,
-}))
+// No warmup assets are staged, so the real manifest resolvers return null.
+const emptyAssetsDir = mkdtempSync(join(tmpdir(), 'kobato-root-loader-'))
+__setWarmupAssetsDirForTests(emptyAssetsDir)
 
 const { loader } = await import('@/root.tsx')
 
@@ -33,7 +24,13 @@ describe('root loader', () => {
   beforeEach(async () => {
     await clearAllTables(db)
     resetBlogSettingsForTests()
-    traceConfig.current = { rum: null }
+    __resetFrontendGateForTests()
+  })
+
+  afterAll(() => {
+    __setWarmupAssetsDirForTests(null)
+    __resetFrontendGateForTests()
+    rmSync(emptyAssetsDir, { recursive: true, force: true })
   })
 
   it('hydrates to null on an empty setting table — the pre-install state', async () => {
@@ -75,13 +72,6 @@ describe('root loader', () => {
   })
 
   it('returns only the narrow browser bootstrap when frontend RUM is active — in dev and production builds', async () => {
-    const makeBootstrap = (environment: 'development' | 'production') => ({
-      applicationId: 'kobato-dev',
-      service: 'kobato',
-      environment,
-      sessionSampleRate: 100,
-      clientIdentity: 'anonymous' as const,
-    })
     const args = () =>
       makeLoaderArgs({
         request: new Request('http://localhost/'),
@@ -92,8 +82,19 @@ describe('root loader', () => {
       })
 
     for (const environment of ['development', 'production'] as const) {
-      const bootstrap = makeBootstrap(environment)
-      traceConfig.current = { rum: bootstrap }
+      const bootstrap = {
+        applicationId: 'kobato-dev',
+        service: 'kobato',
+        environment,
+        sessionSampleRate: 100,
+        clientIdentity: 'anonymous' as const,
+      }
+      activateFrontendGate({}, bootstrap, {
+        endpoint: 'http://127.0.0.1:5080',
+        organization: 'default',
+        clientToken: 'rum-client-token',
+        clientIdentity: 'anonymous',
+      })
 
       const result = await loader(args())
 

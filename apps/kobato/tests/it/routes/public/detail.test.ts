@@ -15,71 +15,38 @@ import { adminSession, emptySession, regularSession } from '@tests/utils/session
 import { and, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  resolveSessionContext: vi.fn(),
-  findPostBySlug: vi.fn(),
-  findPageBySlug: vi.fn(),
-  listAllFriends: vi.fn(),
-  getTagsByNames: vi.fn(),
-  loadDetailCritical: vi.fn(),
-  resolveBodyHtml: vi.fn(),
-}))
+// Session resolution stays controlled; every domain service runs for real
+// behind call-through spies.
+const postSingle = await import('@kobato/server/domains/posts/services/single.ts')
+const pagesPublicQuery = await import('@kobato/server/domains/pages/services/public-query.ts')
+const friendsService = await import('@kobato/server/domains/friends/service.ts')
+const tagsService = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+const detailCritical = await import('@kobato/server/http/loaders/detail-critical.ts')
+const bodyHtml = await import('@kobato/server/domains/content/services/body-html.ts')
 
-vi.mock('@kobato/server/domains/auth/primitives.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/auth/primitives.ts')>(
-    '@kobato/server/domains/auth/primitives.ts',
-  )
-  return { ...actual, resolveSessionContext: mocks.resolveSessionContext }
-})
+const realFindPostBySlug = postSingle.findPostBySlug
+const realFindPageBySlug = pagesPublicQuery.findPageBySlug
+const realListAllFriends = friendsService.listAllFriends
+const realGetTagsByNames = tagsService.getTagsByNames
+const realLoadDetailCritical = detailCritical.loadDetailCritical
+const realResolveBodyHtml = bodyHtml.resolveBodyHtml
 
-vi.mock('@kobato/server/domains/posts/services/single.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/posts/services/single.ts')>(
-    '@kobato/server/domains/posts/services/single.ts',
-  )
-  mocks.findPostBySlug.mockImplementation(actual.findPostBySlug)
-  return { ...actual, findPostBySlug: mocks.findPostBySlug }
-})
+const mocks = {
+  resolveSessionContext: vi
+    .spyOn(await import('@kobato/server/domains/auth/primitives.ts'), 'resolveSessionContext')
+    .mockImplementation(async () => ({ session: emptySession(), user: null, dirty: false }) as never),
+  findPostBySlug: vi.spyOn(postSingle, 'findPostBySlug').mockImplementation(realFindPostBySlug),
+  findPageBySlug: vi.spyOn(pagesPublicQuery, 'findPageBySlug').mockImplementation(realFindPageBySlug),
+  listAllFriends: vi.spyOn(friendsService, 'listAllFriends').mockImplementation(realListAllFriends),
+  getTagsByNames: vi.spyOn(tagsService, 'getTagsByNames').mockImplementation(realGetTagsByNames),
+  loadDetailCritical: vi.spyOn(detailCritical, 'loadDetailCritical').mockImplementation(realLoadDetailCritical),
+  resolveBodyHtml: vi.spyOn(bodyHtml, 'resolveBodyHtml').mockImplementation(realResolveBodyHtml),
+}
 
-vi.mock('@kobato/server/domains/pages/services/public-query.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/pages/services/public-query.ts')>(
-    '@kobato/server/domains/pages/services/public-query.ts',
-  )
-  mocks.findPageBySlug.mockImplementation(actual.findPageBySlug)
-  return { ...actual, findPageBySlug: mocks.findPageBySlug }
-})
-
-vi.mock('@kobato/server/domains/friends/service.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/friends/service.ts')>(
-    '@kobato/server/domains/friends/service.ts',
-  )
-  mocks.listAllFriends.mockImplementation(actual.listAllFriends)
-  return { ...actual, listAllFriends: mocks.listAllFriends }
-})
-
-vi.mock('@kobato/server/domains/taxonomies/tags/service.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/taxonomies/tags/service.ts')>(
-    '@kobato/server/domains/taxonomies/tags/service.ts',
-  )
-  mocks.getTagsByNames.mockImplementation(actual.getTagsByNames)
-  return { ...actual, getTagsByNames: mocks.getTagsByNames }
-})
-
-vi.mock('@kobato/server/http/loaders/detail-critical.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/http/loaders/detail-critical.ts')>(
-    '@kobato/server/http/loaders/detail-critical.ts',
-  )
-  mocks.loadDetailCritical.mockImplementation(actual.loadDetailCritical)
-  return { ...actual, loadDetailCritical: mocks.loadDetailCritical }
-})
-
-vi.mock('@kobato/server/domains/content/services/body-html.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/content/services/body-html.ts')>(
-    '@kobato/server/domains/content/services/body-html.ts',
-  )
-  mocks.resolveBodyHtml.mockImplementation(actual.resolveBodyHtml)
-  return { ...actual, resolveBodyHtml: mocks.resolveBodyHtml }
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 const db = getTestDb()
@@ -170,7 +137,7 @@ function gateOnce(mock: (typeof mocks)[keyof typeof mocks]): { release: () => vo
   const gate = new Promise<void>((resolve) => {
     release = resolve
   })
-  mock.mockImplementationOnce((...args: unknown[]) => gate.then(() => base(...args)))
+  mock.mockImplementationOnce(((...args: unknown[]) => gate.then(() => base(...args))) as never)
   return { release }
 }
 
