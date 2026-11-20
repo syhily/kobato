@@ -2,39 +2,16 @@
 
 import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/contracts/update.ts'
 
+import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
 import { renderWithI18n, wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const orpcMocks = vi.hoisted(() => ({
-  check: vi.fn(),
-  apply: vi.fn(),
-}))
+const mockFetch = installFetch()
 
-vi.mock('@kobato/web-client/api/client.ts', () => ({
-  orpc: { admin: { update: { check: orpcMocks.check, apply: orpcMocks.apply } } },
-}))
-
-const queryState = vi.hoisted(() => ({
-  status: { data: undefined as UpdateJobStatus | undefined },
-}))
-
-vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
-  orpcQuery: {
-    github: { avatar: { queryOptions: () => ({ queryKey: ['github-avatar'] }) } },
-    admin: { update: { status: { queryOptions: () => ({ queryKey: ['admin-update-status'] }) } } },
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: (opts: { queryKey: unknown[] }) =>
-      opts.queryKey[0] === 'admin-update-status' ? { data: queryState.status.data } : { data: undefined },
-  }
-})
-
+// testDefine pins a -dev version; the update flow only runs on release
+// builds, so this file simulates one.
 vi.mock('@kobato/distribution/app.ts', () => ({
   APP_NAME: 'kobato',
   APP_VERSION: '6.4.0',
@@ -43,6 +20,8 @@ vi.mock('@kobato/distribution/app.ts', () => ({
   APP_HOMEPAGE: 'https://example.com',
   APP_REPOSITORY: 'https://github.com/syhily/kobato',
 }))
+
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
 
 const { VersionDialog } = await import('@kobato/web-admin/ui/shell/VersionDialog.tsx')
 
@@ -62,38 +41,62 @@ function checkResult(overrides: Partial<UpdateCheckResult> = {}): UpdateCheckRes
 }
 
 describe('ui/admin/shell/VersionDialog', () => {
+  let queryClient: QueryClient
+  const statusNow = { current: { state: 'idle', targetVersion: null } as unknown as UpdateJobStatus }
+
   beforeEach(() => {
-    orpcMocks.check.mockReset()
-    orpcMocks.apply.mockReset()
-    queryState.status.data = undefined
+    mockFetch.reset()
+    statusNow.current = { state: 'idle' }
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+      if (url.endsWith('/rpc/admin/update/status')) {
+        return jsonResponse({ json: statusNow.current })
+      }
+      return mockFetch.fetch(input as never, init)
+    }) as unknown as typeof globalThis.fetch
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    queryClient.setQueryData(orpcQuery.github.avatar.queryOptions({ input: {} }).queryKey, { avatar: null })
   })
 
+  function renderDialog() {
+    return renderWithI18n(
+      <QueryClientProvider client={queryClient}>
+        <VersionDialog open={true} onOpenChange={noop} />
+      </QueryClientProvider>,
+    )
+  }
+
+  function enqueueCheck(result: UpdateCheckResult) {
+    mockFetch.enqueue(/\/rpc\/admin\/update\/check$/, jsonResponse({ json: result }))
+  }
+
   it('renders the idle prompt before any check', () => {
-    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    renderDialog()
     expect(screen.getByText('点击上方按钮检查是否有新版本')).toBeInTheDocument()
   })
 
   it('shows up-to-date after a check with no newer release', async () => {
-    orpcMocks.check.mockResolvedValue(
-      checkResult({ updateAvailable: false, latestVersion: '6.4.0', tagName: 'v6.4.0' }),
+    mockFetch.enqueue(
+      /\/rpc\/admin\/update\/check$/,
+      jsonResponse({ json: checkResult({ updateAvailable: false, latestVersion: '6.4.0', tagName: 'v6.4.0' }) }),
     )
-    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    renderDialog()
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('当前已是最新版本')).toBeInTheDocument())
   })
 
   it('shows an error when the check fails', async () => {
-    orpcMocks.check.mockRejectedValue(new Error('network down'))
-    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    enqueueCheckError(() => new Response('network down', { status: 500 }))
+    renderDialog()
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('检查失败，请稍后重试')).toBeInTheDocument())
   })
 
   it('offers 立即更新 with the confirm line when the deployment can self-update', async () => {
-    orpcMocks.check.mockResolvedValue(checkResult())
-    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    enqueueCheck(checkResult())
+    renderDialog()
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('发现新版本：')).toBeInTheDocument())
@@ -102,7 +105,7 @@ describe('ui/admin/shell/VersionDialog', () => {
   })
 
   it('shows the gate reasons instead of 立即更新 when self-update is refused', async () => {
-    orpcMocks.check.mockResolvedValue(
+    enqueueCheck(
       checkResult({
         canSelfUpdate: false,
         reasons: [
@@ -113,7 +116,7 @@ describe('ui/admin/shell/VersionDialog', () => {
         ],
       }),
     )
-    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    renderDialog()
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByText('Docker 部署请拉取新镜像升级。')).toBeInTheDocument())
@@ -121,21 +124,32 @@ describe('ui/admin/shell/VersionDialog', () => {
   })
 
   it('runs the apply flow and renders every job state', async () => {
-    orpcMocks.check.mockResolvedValue(checkResult())
-    orpcMocks.apply.mockResolvedValue({ fromVersion: '6.4.0', toVersion: '6.5.0' })
-    const view = renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    enqueueCheck(checkResult())
+    mockFetch.enqueue(
+      /\/rpc\/admin\/update\/apply$/,
+      jsonResponse({ json: { fromVersion: '6.4.0', toVersion: '6.5.0' } }),
+    )
+    const view = renderDialog()
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByRole('button', { name: /立即更新/ })).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: /立即更新/ }))
-    await waitFor(() => expect(orpcMocks.apply).toHaveBeenCalledWith({}))
+    await waitFor(() => expect(mockFetch.calls.some(({ url }) => url.endsWith('/rpc/admin/update/apply'))).toBe(true))
 
     await waitFor(() => expect(screen.getByText('正在下载更新包…')).toBeInTheDocument())
 
+    const statusKey = orpcQuery.admin.update.status.queryOptions({ input: {} }).queryKey
     const setJob = (status: UpdateJobStatus) => {
-      queryState.status.data = status
-      view.rerender(wrapWithI18n(<VersionDialog open={true} onOpenChange={noop} />))
+      statusNow.current = status
+      queryClient.setQueryData(statusKey, status)
+      view.rerender(
+        wrapWithI18n(
+          <QueryClientProvider client={queryClient}>
+            <VersionDialog open={true} onOpenChange={noop} />
+          </QueryClientProvider>,
+        ),
+      )
     }
 
     setJob({ state: 'verifying', targetVersion: 'v6.5.0' })
@@ -152,9 +166,9 @@ describe('ui/admin/shell/VersionDialog', () => {
   })
 
   it('shows an apply error when the job cannot start', async () => {
-    orpcMocks.check.mockResolvedValue(checkResult())
-    orpcMocks.apply.mockRejectedValue(new Error('已有更新任务正在进行中'))
-    renderWithI18n(<VersionDialog open={true} onOpenChange={noop} />)
+    enqueueCheck(checkResult())
+    mockFetch.enqueue(/\/rpc\/admin\/update\/apply$/, () => new Response('conflict', { status: 409 }))
+    renderDialog()
 
     fireEvent.click(screen.getByRole('button', { name: /检查更新/ }))
     await waitFor(() => expect(screen.getByRole('button', { name: /立即更新/ })).toBeInTheDocument())
@@ -163,3 +177,7 @@ describe('ui/admin/shell/VersionDialog', () => {
     await waitFor(() => expect(screen.getByText(/启动更新失败/)).toBeInTheDocument())
   })
 })
+
+function enqueueCheckError(response: () => Response) {
+  mockFetch.enqueue(/\/rpc\/admin\/update\/check$/, response)
+}
