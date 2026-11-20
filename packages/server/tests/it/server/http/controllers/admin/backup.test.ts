@@ -13,6 +13,7 @@ import {
 import { createBackup } from '@kobato/server/domains/backup/services/backup.ts'
 import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
@@ -20,26 +21,17 @@ import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call, ORPCError } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { Readable } from 'node:stream'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-vi.mock('@kobato/server/domains/backup/services/backup.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/backup.ts')>()
-  return {
-    ...actual,
-    getBackupStream: vi.fn(),
-    isBackupEncrypted: vi.fn(async () => false),
-  }
-})
-
-vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/restore.ts')>()
-  return {
-    ...actual,
-    stageBackup: vi.fn(async () => ({ dir: '/tmp/staged', content: '/tmp/staged/kobato.db', analytics: null })),
-    restoreFromStagedBackup: vi.fn(async () => undefined),
-  }
-})
+// Restore flows run against real archives created through the create
+// endpoint; the two spies keep argument/short-circuit observability.
+const backupModule = await import('@kobato/server/domains/backup/services/backup.ts')
+const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
+const getBackupStream = vi.spyOn(backupModule, 'getBackupStream')
+const stageBackup = vi.spyOn(restoreModule, 'stageBackup')
 
 const db = getTestDb()
 
@@ -53,12 +45,20 @@ let restoreDeps: {
   complete: Mock<(success: boolean, error?: Error) => Promise<void>>
 }
 
+const engineDir = mkdtempSync(join(tmpdir(), 'kobato-admin-backup-'))
+const enginePaths = { database: join(engineDir, 'kobato.db'), analytics: join(engineDir, 'analytics.duckdb') }
+
 beforeEach(async () => {
   await clearAllTables(db)
   __resetRateLimitsForTests()
   initAllBatchers(getDatabaseHandle())
   __setStorageBackendForTests('s3', s3Memory.backend)
   __setStorageBackendForTests('local', localMemory.backend)
+  __setEnginePathsForTests(enginePaths)
+  writeFileSync(enginePaths.database, 'live-db')
+  writeFileSync(enginePaths.analytics, 'live-analytics')
+  getBackupStream.mockClear()
+  stageBackup.mockClear()
   restoreDeps = {
     drain: vi.fn(async () => {}),
     prepareForSwap: vi.fn(async () => {}),
@@ -73,6 +73,9 @@ afterEach(async () => {
   resetAllBatchers()
   resetRestoreMachine()
   __resetStorageBackendsForTests()
+  __setEnginePathsForTests(null)
+  rmSync(engineDir, { recursive: true, force: true })
+  mkdirSync(engineDir, { recursive: true })
   s3Memory.reset()
   localMemory.reset()
 })
@@ -87,6 +90,11 @@ async function seedAdmin(): Promise<number> {
 
 function adminCtx(userId: number) {
   return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
+}
+
+async function createRealBackup(userId: number, password?: string) {
+  const input = password === undefined ? undefined : { password }
+  return call(adminBackupRouter.create, input, { context: adminCtx(userId) })
 }
 
 describe('adminBackupRouter.status', () => {
@@ -218,28 +226,25 @@ describe('adminBackupRouter.delete', () => {
 })
 
 describe('adminBackupRouter.restore', () => {
-  it('returns accepted after restoring backup and runs the machine chain for real', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
-      stream: Readable.from(['archive-bytes']),
-      byteSize: 13,
-      encrypted: false,
-      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz',
-    })
+  it('returns accepted after restoring a real backup and runs the machine chain for real', async () => {
     const admin = await seedAdmin()
-    const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+    const created = await createRealBackup(admin)
+    const res = await call(adminBackupRouter.restore, { key: created.timestamp }, { context: adminCtx(admin) })
     expect(res).toEqual({ accepted: true })
 
     await vi.waitFor(() => expect(restoreDeps.complete).toHaveBeenCalledWith(true, undefined))
     expect(restoreDeps.drain).toHaveBeenCalledOnce()
     expect(restoreDeps.prepareForSwap).toHaveBeenCalledOnce()
     expect(restoreDeps.reopenAfterSwap).toHaveBeenCalledOnce()
+    expect(
+      readFileSync(enginePaths.database).equals(s3Memory.store.get(`backup/${created.fileName}`)!.body.subarray(0, 0)),
+    ).toBe(false)
 
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'backup_restored'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('backup')
-    expect(rows[0]!.resourceId).toBe('2026-01-01T00-00-00')
+    expect(rows[0]!.resourceId).toBe(created.timestamp)
     expect(rows[0]!.actorId).toBe(admin)
   })
 
@@ -260,55 +265,43 @@ describe('adminBackupRouter.restore', () => {
   })
 
   it('asks for a password when the backup is encrypted and none is available — without claiming the slot', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
     const admin = await seedAdmin()
-    const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+    const created = await createRealBackup(admin, 'one-off-password')
+    getBackupStream.mockClear()
+
+    const res = await call(adminBackupRouter.restore, { key: created.timestamp }, { context: adminCtx(admin) })
     expect(res).toEqual({ passwordRequired: true })
-    expect(vi.mocked(backupService.getBackupStream)).not.toHaveBeenCalled()
+    expect(getBackupStream).not.toHaveBeenCalled()
     expect(restoreDeps.drain).not.toHaveBeenCalled()
   })
 
-  it('restores an encrypted backup when the caller supplies the password', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    const restoreService = await import('@kobato/server/domains/backup/services/restore.ts')
-    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
-    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
-      stream: Readable.from(['archive-bytes']),
-      byteSize: 13,
-      encrypted: true,
-      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
-    })
+  it('restores a real encrypted backup when the caller supplies the password', async () => {
     const admin = await seedAdmin()
+    const created = await createRealBackup(admin, 'supplied-password')
+
     const res = await call(
       adminBackupRouter.restore,
-      { key: '2026-01-01T00-00-00', password: 'supplied-password' },
-      { context: adminCtx(admin) },
+      { key: created.timestamp, password: 'supplied-password' },
+      {
+        context: adminCtx(admin),
+      },
     )
     expect(res).toEqual({ accepted: true })
-    expect(vi.mocked(restoreService.stageBackup)).toHaveBeenCalledWith(
+    expect(stageBackup).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ password: 'supplied-password' }),
     )
     await vi.waitFor(() => expect(restoreDeps.complete).toHaveBeenCalledWith(true, undefined))
   })
 
-  it('propagates the staging failure when the caller-supplied password is wrong', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    const restoreService = await import('@kobato/server/domains/backup/services/restore.ts')
-    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
-    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
-      stream: Readable.from(['archive-bytes']),
-      byteSize: 13,
-      encrypted: true,
-      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
-    })
-    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(new restoreService.BackupPasswordError())
+  it('propagates the real GCM failure when the caller-supplied password is wrong', async () => {
     const admin = await seedAdmin()
+    const created = await createRealBackup(admin, 'right-password')
+
     await expect(
       call(
         adminBackupRouter.restore,
-        { key: '2026-01-01T00-00-00', password: 'wrong-password' },
+        { key: created.timestamp, password: 'wrong-password' },
         { context: adminCtx(admin) },
       ),
     ).rejects.toMatchObject({
@@ -319,58 +312,37 @@ describe('adminBackupRouter.restore', () => {
   })
 
   it('caps explicit-password restore attempts per (admin, backup) — the 11th guess is a 429', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    const restoreService = await import('@kobato/server/domains/backup/services/restore.ts')
-    vi.mocked(backupService.isBackupEncrypted).mockResolvedValue(true)
-    vi.mocked(backupService.getBackupStream).mockResolvedValue({
-      stream: Readable.from(['archive-bytes']),
-      byteSize: 13,
-      encrypted: true,
-      fileName: 'backup-2026-03-03T00-00-00.db.tar.gz.enc',
-    })
-    // Every guess fails the GCM tag check.
-    vi.mocked(restoreService.stageBackup).mockRejectedValue(new restoreService.BackupPasswordError())
     const admin = await seedAdmin()
+    await createRealBackup(admin, 'right-password')
+    const created = await createRealBackup(admin, 'right-password')
 
     for (let i = 0; i < 10; i++) {
       await expect(
         call(
           adminBackupRouter.restore,
-          { key: '2026-03-03T00-00-00', password: `guess-${i}` },
+          { key: created.timestamp, password: `guess-${i}` },
           { context: adminCtx(admin) },
         ),
       ).rejects.toThrow(ORPCError)
     }
-    expect(vi.mocked(backupService.getBackupStream)).toHaveBeenCalledTimes(10)
+    expect(getBackupStream).toHaveBeenCalledTimes(10)
 
     await expect(
-      call(
-        adminBackupRouter.restore,
-        { key: '2026-03-03T00-00-00', password: 'guess-11' },
-        { context: adminCtx(admin) },
-      ),
+      call(adminBackupRouter.restore, { key: created.timestamp, password: 'guess-11' }, { context: adminCtx(admin) }),
     ).rejects.toMatchObject({ status: 429 })
-    expect(vi.mocked(backupService.getBackupStream)).toHaveBeenCalledTimes(10)
+    expect(getBackupStream).toHaveBeenCalledTimes(10)
   })
 
   it('falls back to asking for a password when the STORED settings password fails to decrypt', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    const restoreService = await import('@kobato/server/domains/backup/services/restore.ts')
-    vi.mocked(backupService.isBackupEncrypted).mockResolvedValueOnce(true)
-    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
-      stream: Readable.from(['archive-bytes']),
-      byteSize: 13,
-      encrypted: true,
-      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz.enc',
-    })
-    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(new restoreService.BackupPasswordError())
-    const { wireBackupEncryption, resetBackupEncryption } = backupService
+    const admin = await seedAdmin()
+    await createRealBackup(admin, 'right-password')
+    const created = await createRealBackup(admin, 'right-password')
+    const { wireBackupEncryption, resetBackupEncryption } = backupModule
     wireBackupEncryption({ resolveEncryptionPassword: () => 'stored-password' })
     try {
-      const admin = await seedAdmin()
-      const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+      const res = await call(adminBackupRouter.restore, { key: created.timestamp }, { context: adminCtx(admin) })
       expect(res).toEqual({ passwordRequired: true })
-      expect(vi.mocked(restoreService.stageBackup)).toHaveBeenCalledWith(
+      expect(stageBackup).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ password: 'stored-password' }),
       )
@@ -379,20 +351,21 @@ describe('adminBackupRouter.restore', () => {
     }
   })
 
-  it('asks for a password when the row says plain but the BYTES are encrypted — and sweeps the staged dir', async () => {
-    const backupService = await import('@kobato/server/domains/backup/services/backup.ts')
-    const restoreService = await import('@kobato/server/domains/backup/services/restore.ts')
-    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
-      stream: Readable.from(['archive-bytes']),
-      byteSize: 13,
-      encrypted: false,
-      fileName: 'backup-2026-01-01T00-00-00.db.tar.gz',
-    })
-    const stagedDir = '/tmp/kobato-restore-mismatch'
-    const required = new restoreService.EncryptedBackupPasswordRequired(stagedDir, `${stagedDir}/upload.bin`)
-    vi.mocked(restoreService.stageBackup).mockRejectedValueOnce(required)
+  it('asks for a password when the key says plain but the BYTES are encrypted — and sweeps the staged dir', async () => {
     const admin = await seedAdmin()
-    const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
+    const plain = await createRealBackup(admin)
+    const enc = await createRealBackup(admin, 'one-off-password')
+    // Corrupt the plain backup in place: its registry row stays plain while
+    // the stored bytes are swapped for the encrypted archive.
+    const encBody = s3Memory.store.get(`backup/${enc.fileName}`)!.body
+    await s3Memory.backend.put({
+      key: `backup/${plain.fileName}`,
+      body: encBody,
+      contentType: 'application/gzip',
+      visibility: 'private',
+    })
+
+    const res = await call(adminBackupRouter.restore, { key: plain.timestamp }, { context: adminCtx(admin) })
     expect(res).toEqual({ passwordRequired: true })
     expect(restoreDeps.drain).not.toHaveBeenCalled()
     expect(restoreDeps.complete).not.toHaveBeenCalled()
