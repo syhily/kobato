@@ -10,35 +10,16 @@ import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@tests/utils/blog-settings.ts'
+import { createCaptureMailFixture, parseMail } from '@tests/utils/capture-mail.ts'
+import { makeRouteContext } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { makeRequestContext } from '@tests/utils/request-context.ts'
 import { makeSession } from '@tests/utils/session.ts'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mockHandles = vi.hoisted(() => ({
-  getRequestContext: vi.fn<any>(),
-  sendSignInLink: vi.fn<any>(),
-}))
-
-vi.mock('@kobato/server/http/request-context.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/http/request-context.ts')>()
-  return {
-    ...actual,
-    getRequestContext: mockHandles.getRequestContext,
-  }
-})
-
-vi.mock('@kobato/server/infra/email/sender.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/email/sender.ts')>()
-  return {
-    ...actual,
-    sendSignInLink: mockHandles.sendSignInLink,
-  }
-})
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
+const mail = await createCaptureMailFixture()
 
 const CSRF_TOKEN = 'signin-magiclink-csrf-token'
 
@@ -78,21 +59,18 @@ beforeEach(async () => {
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
   markSessionDirty = vi.fn<() => void>()
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({
-      session: testSession,
-      db,
-      request: new Request('http://localhost/admin/signin'),
-      markSessionDirty,
-    }),
-  )
-  mockHandles.sendSignInLink.mockClear()
-  mockHandles.sendSignInLink.mockResolvedValue({ ok: true })
+  await mail.drain()
+  mail.applyCaptureMail()
 })
 
 afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
@@ -133,10 +111,13 @@ function setContext(action: string | null, redirectTo = '/admin', clientAddress 
   }
   params.set('redirect_to', redirectTo)
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty }),
-  )
-  return url
+  return makeRouteContext({
+    session: testSession,
+    clientAddress,
+    db,
+    request: new Request(url),
+    markSessionDirty,
+  })
 }
 
 async function callAction(
@@ -146,7 +127,8 @@ async function callAction(
   clientAddress = '127.0.0.1',
   requestUrl = 'http://localhost/admin/signin',
 ): Promise<Response & { data?: any }> {
-  const url = setContext(actionName, redirectTo, clientAddress)
+  const routeContext = setContext(actionName, redirectTo, clientAddress)
+  const url = new URL(requestUrl)
   const request = new Request(requestUrl, {
     method: 'POST',
     body: formData,
@@ -155,7 +137,7 @@ async function callAction(
     return (await action({
       request,
       url,
-      context: new Map(),
+      context: routeContext,
       params: {},
       pattern: 'admin/signin',
     })) as Response
@@ -169,14 +151,12 @@ async function callAction(
 
 async function callLoader(search: string): Promise<Response & { data?: any }> {
   const url = new URL(`http://localhost/admin/signin${search}`)
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, db, request: new Request(url), markSessionDirty }),
-  )
+  const routeContext = makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
   try {
     return (await loader({
       request: new Request(url),
       url,
-      context: new Map(),
+      context: routeContext,
       params: {},
       pattern: 'admin/signin',
     })) as unknown as Response
@@ -215,11 +195,20 @@ async function auditRowsFor(actionName: string) {
   return db.select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
+// The magic-link URL out of an already-parsed mail body.
+function linkFromBody(body: string): string {
+  const match = /https?:\/\/[^\s"'<]*token=[^\s"'<]+/.exec(body.replace(/&amp;/g, '&'))
+  expect(match).not.toBeNull()
+  return match![0]!
+}
+
+async function extractLinkFromMail(): Promise<string> {
+  return linkFromBody((await parseMail(mail)).body)
+}
+
 async function identifyAndExtractToken(email = 'admin@example.com'): Promise<string> {
   await callAction('identify', emailFormData(email))
-  expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
-  const link = mockHandles.sendSignInLink.mock.calls[0]![1] as string
-  const token = new URL(link).searchParams.get('token')
+  const token = new URL(await extractLinkFromMail()).searchParams.get('token')
   expect(token).toBeTruthy()
   return token as string
 }
@@ -231,9 +220,9 @@ describe('integration: magic-link signin flow (real DB)', () => {
     const result = await callAction('identify', emailFormData())
     expect(result.data?.message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
-    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
-    const [recipient, link] = mockHandles.sendSignInLink.mock.calls[0]! as [{ email: string }, string]
-    expect(recipient.email).toBe('admin@example.com')
+    const sent = await parseMail(mail)
+    expect(sent.to).toBe('admin@example.com')
+    const link = linkFromBody(sent.body)
     expect(link.startsWith(`${MAGIC_LINK_TEST_BUNDLE.siteIdentity!.website}/admin/signin?action=magiclink`)).toBe(true)
     expect(link).toContain('token=')
     expect(link).toContain('redirect_to=%2Fadmin')
@@ -249,8 +238,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
     await seedUser('magic-link')
 
     await callAction('identify', emailFormData(), '/admin', '127.0.0.1', 'http://evil.tld/admin/signin')
-    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
-    const link = mockHandles.sendSignInLink.mock.calls[0]![1] as string
+    const link = linkFromBody((await parseMail(mail)).body)
     expect(link.startsWith('https://example.com/admin/signin?action=magiclink')).toBe(true)
     expect(link).not.toContain('evil.tld')
   })
@@ -259,21 +247,21 @@ describe('integration: magic-link signin flow (real DB)', () => {
     const result = await callAction('identify', emailFormData('ghost@example.com'))
 
     expect(result.data?.message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
-    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
   })
 
   it('identify answers method=password for a regular user', async () => {
     await seedUser('password')
     const result = await callAction('identify', emailFormData())
     expect(result.data?.method).toBe('password')
-    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
   })
 
   it('identify answers method=passkey for a passkey-method user', async () => {
     await seedUser('passkey')
     const result = await callAction('identify', emailFormData())
     expect(result.data?.method).toBe('passkey')
-    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
   })
 
   it('full round-trip: identify → emailed link → confirm consumes token and establishes session', async () => {
@@ -330,11 +318,13 @@ describe('integration: magic-link signin flow (real DB)', () => {
     for (let i = 0; i < 3; i++) {
       await callAction('identify', emailFormData(), '/admin', uniqueIp)
     }
-    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(3)
+    for (let i = 0; i < 3; i++) {
+      await parseMail(mail)
+    }
 
     const result = await callAction('identify', emailFormData(), '/admin', uniqueIp)
     expect(result.data?.error).toBe('发送过于频繁，请稍后再试。')
-    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(3)
+    expect(await mail.noMessage()).toBe(true)
   })
 
   it('records a magic_link_sent audit event', async () => {

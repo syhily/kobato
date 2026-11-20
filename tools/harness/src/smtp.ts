@@ -13,6 +13,12 @@ export interface CapturedMail {
 
 const CAPTURE_HOST = '127.0.0.1'
 
+/** `MAIL FROM:<addr> [params]` / `RCPT TO:<addr> [params]` → the bare address. */
+function envelopeAddress(commandLine: string): string {
+  const match = /<(?:[^:@>]+@[^:>]+|postmaster)>/.exec(commandLine)
+  return match ? match[0]!.slice(1, -1) : commandLine
+}
+
 export class SmtpCapture {
   private readonly server: Server
   private readonly messages: CapturedMail[] = []
@@ -117,10 +123,10 @@ export class SmtpCapture {
           reply('250-capture.kobato.local greets you')
           reply('250 SIZE 10485760')
         } else if (verb === 'MAIL') {
-          mailFrom = line
+          mailFrom = envelopeAddress(line)
           reply('250 2.1.0 Ok')
         } else if (verb === 'RCPT') {
-          mailTo = line
+          mailTo = envelopeAddress(line)
           reply('250 2.1.5 Ok')
         } else if (verb === 'DATA') {
           inData = true

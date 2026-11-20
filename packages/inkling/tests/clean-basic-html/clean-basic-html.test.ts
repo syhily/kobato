@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { cleanBasicHtml } from '@kobato/inkling-internal/html/clean-basic-html/clean-basic-html'
 import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
@@ -79,13 +80,16 @@ describe('cleanBasicHtml', function () {
 
 describe('options.ownerDocument', function () {
   it('parses within the given document (the headless-import port)', function () {
-    const element = document.createElement('div')
+    const dom = createTestDom()
+    const element = dom.window.document.createElement('div')
     const result = cleanBasicHtml('<p>caption <b>text</b></p>', { ownerDocument: element.ownerDocument })
     expect(result).toBe('<p>caption <b>text</b></p>')
   })
 
   it('an explicit createDocument wins over ownerDocument', function () {
-    const element = document.createElement('div')
+    const dom = createTestDom()
+    const element = dom.window.document.createElement('div')
+    const { DOMParser } = dom.window
     const result = cleanBasicHtml('<p>x</p>', {
       ownerDocument: element.ownerDocument,
       createDocument: (html) => new DOMParser().parseFromString(`<span>custom</span>${html}`, 'text/html'),

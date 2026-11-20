@@ -19,33 +19,12 @@ import {
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeSession } from '@kobato/server/tests/utils/session.ts'
 import bcrypt from 'bcryptjs'
-import { and, eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mocks = vi.hoisted(() => ({
-  sendPasswordReset: vi.fn<(user: unknown, link: string) => Promise<{ ok: boolean }>>(async () => ({ ok: true })),
-  deleteAllCredentials: vi.fn(),
-}))
-
-vi.mock('@kobato/server/infra/email/sender.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/email/sender.ts')>()
-  return {
-    ...actual,
-    sendPasswordReset: mocks.sendPasswordReset,
-  }
-})
-
-vi.mock('@kobato/server/domains/auth/passkey/service.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/auth/passkey/service.ts')>()
-  mocks.deleteAllCredentials.mockImplementation(actual.deleteAllCredentials)
-  return {
-    ...actual,
-    deleteAllCredentials: mocks.deleteAllCredentials,
-  }
-})
+import { and, eq, sql } from 'drizzle-orm'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 const CLIENT = '203.0.113.7'
@@ -116,19 +95,47 @@ function formWith(fields: Record<string, string>): FormData {
   return fd
 }
 
+const mail = await createCaptureMailFixture()
+
+// The real reset link out of the actually-delivered email (HTML-escaped
+// ampersands decoded first).
+async function resetLinkFromMail(): Promise<URL> {
+  const message = await mail.nextMessage()
+  let body = message.raw
+  if (/Content-Transfer-Encoding: base64/i.test(body)) {
+    const payload = body
+      .split(/\r?\n\r?\n/)
+      .slice(1)
+      .join('')
+      .replace(/[^A-Za-z0-9+/=]/g, '')
+    body = Buffer.from(payload, 'base64').toString('utf8')
+  } else {
+    // minimal quoted-printable: soft breaks + =3D
+    body = body.replace(/[=]\r?\n/g, '').replace(/[=]3D/gi, '=')
+  }
+  const decoded = body.replace(/&amp;/g, '&')
+  const match = /(?:https?:\/\/[^\s"'<]*)?\/admin\/signin[^\s"'<]*token=[^\s"'<]+/.exec(decoded)
+  expect(match).not.toBeNull()
+  return new URL(match![0]!, 'http://fallback.local')
+}
+
 beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   __resetRateLimitsForTests()
   vi.clearAllMocks()
-  mocks.sendPasswordReset.mockResolvedValue({ ok: true })
-  mocks.deleteAllCredentials.mockClear()
+  mail.useCapture()
   hasApprovedComments.mockResolvedValue(false)
 })
 
 afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 describe('auth/password-flow — requestPasswordReset (real db + tokens)', () => {
@@ -137,12 +144,11 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     const userId = await seedUser({ email: 'a@example.com' })
 
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
-    mocks.sendPasswordReset.mockClear()
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
-    expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await db.select().from(verification)).toHaveLength(1)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(1)
     void userId
@@ -153,7 +159,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     await seedUser({ email: 'a@example.com' })
 
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
-    mocks.sendPasswordReset.mockClear()
 
     const result = await requestPasswordReset(
       db,
@@ -164,7 +169,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     )
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
-    expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await db.select().from(verification)).toHaveLength(1)
   })
 
@@ -173,7 +178,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(__rateLimitKeysForTests().some((key) => key.includes('password-reset-email'))).toBe(false)
-    expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
   })
 
   it('issues one real token, sends one email, and audits once for an existing user', async () => {
@@ -186,10 +191,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     const row = await resetTokenRow(userId)
     expect(row).toBeDefined()
 
-    expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
-    const [sentUser, link] = mocks.sendPasswordReset.mock.calls[0]! as [{ email: string }, string]
-    expect(sentUser.email).toBe('vis@example.com')
-    const url = new URL(link)
+    const url = await resetLinkFromMail()
     expect(url.origin).toBe('https://example.com')
     expect(url.pathname).toBe('/admin/signin')
     expect(url.searchParams.get('action')).toBe('resetpassword')
@@ -209,13 +211,20 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
   })
 
   it('falls back to the request origin when no site website is configured', async () => {
-    setBlogSettingsBundleForTests(undefined)
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: '' },
+    })
+    mail.applyCaptureMail()
     await seedUser({ email: 'vis@example.com' })
 
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }), resetDeps)
 
-    const [, link] = mocks.sendPasswordReset.mock.calls[0]! as [unknown, string]
-    expect(new URL(link).origin).toBe('http://localhost')
+    // With no website configured the template renders the relative href; the
+    // service fell back to the request origin when building it.
+    const url = await resetLinkFromMail()
+    expect(url.pathname).toBe('/admin/signin')
+    expect(url.searchParams.get('action')).toBe('resetpassword')
   })
 
   it('stays silent for an unknown email (enumeration-safe)', async () => {
@@ -229,7 +238,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(await db.select().from(verification)).toHaveLength(0)
-    expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(0)
   })
 
@@ -240,7 +249,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(await db.select().from(verification)).toHaveLength(0)
-    expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
   })
 
   it('does NOT upgrade an anonymous commenter without any approved comment', async () => {
@@ -253,7 +262,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     expect(hasApprovedComments).toHaveBeenCalledWith(db, userId)
     expect((await userRow(userId))!.role).toBeNull()
     expect(await db.select().from(verification)).toHaveLength(0)
-    expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(0)
   })
 
@@ -266,7 +275,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect((await userRow(userId))!.role).toBe('visitor')
     expect(await resetTokenRow(userId)).toBeDefined()
-    expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
+    expect((await mail.nextMessage()).to).toContain('anon@example.com')
     const audits = await auditRowsFor('password_reset_requested')
     expect(audits).toHaveLength(1)
     expect(audits[0]).toMatchObject({ actorId: userId, actorRole: 'visitor' })
@@ -406,7 +415,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
     expect(row.loginMethod).toBe('password')
 
-    expect(mocks.deleteAllCredentials).toHaveBeenCalledWith(db, userId)
     expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))).toHaveLength(0)
 
     const sessions = await db.select().from(sessionTable)
@@ -477,20 +485,28 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {
     const userId = await seedUser()
-    mocks.deleteAllCredentials.mockRejectedValueOnce(new Error('db down'))
-    const { token } = issueResetToken(db, userId)
+    // Real cleanup failure: the passkey table is dropped so the DELETE inside
+    // the flow throws (best-effort must not break the reset).
+    const ddlRows = await db.all<{ sql: string }>(sql`SELECT sql FROM sqlite_master WHERE name = 'passkey_credential'`)
+    expect(ddlRows.length).toBe(1)
+    await db.run(sql`DROP TABLE passkey_credential`)
+    try {
+      const { token } = issueResetToken(db, userId)
 
-    const result = await resetPasswordWithToken(
-      flowCtx(makeSession({})),
-      request(),
-      validForm(token),
-      '/admin',
-      'password-reset',
-    )
+      const result = await resetPasswordWithToken(
+        flowCtx(makeSession({})),
+        request(),
+        validForm(token),
+        '/admin',
+        'password-reset',
+      )
 
-    expect(result.type).toBe('redirect')
-    const row = (await userRow(userId))!
-    expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
+      expect(result.type).toBe('redirect')
+      const row = (await userRow(userId))!
+      expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
+    } finally {
+      await db.run(sql.raw(ddlRows[0]!.sql))
+    }
   })
 
   it('returns 账户状态异常 when the user is gone after token consume', async () => {

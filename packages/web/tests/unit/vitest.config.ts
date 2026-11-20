@@ -1,3 +1,4 @@
+import { vitestTestBase } from '@kobato/test/vitest.base.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,20 +13,33 @@ export default defineConfig({
   },
   define: testDefine,
   test: {
-    name: 'web-unit',
-    globals: false,
-    silent: 'passed-only',
-    maxWorkers: 4,
-    environment: 'node',
-    include: [
-      'packages/web/tests/unit/**/*.test.{ts,tsx}',
-      'packages/web/tests/contract/**/*.test.{ts,tsx}',
-      'packages/web/admin/tests/unit/**/*.test.{ts,tsx}',
-      'packages/web/client/tests/unit/**/*.test.{ts,tsx}',
-      'packages/web/public/tests/unit/**/*.test.{ts,tsx}',
-    ],
-    exclude: [...configDefaults.exclude],
+    ...vitestTestBase,
+    name: 'web',
+    pool: 'vmThreads',
+    environment: 'happy-dom',
     setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/unit.ts')],
-    testTimeout: 10_000,
+    projects: [
+      {
+        test: {
+          name: 'unit',
+          include: [
+            'packages/web/tests/unit/**/*.test.{ts,tsx}',
+            'packages/web/tests/contract/**/*.test.{ts,tsx}',
+            'packages/web/admin/tests/unit/**/*.test.{ts,tsx}',
+            'packages/web/client/tests/unit/**/*.test.{ts,tsx}',
+            'packages/web/public/tests/unit/**/*.test.{ts,tsx}',
+          ],
+          exclude: [...configDefaults.exclude, 'packages/web/admin/tests/unit/ui/analytics/time-labels.test.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'tz-unit',
+          pool: 'forks',
+          isolate: true,
+          include: ['packages/web/admin/tests/unit/ui/analytics/time-labels.test.ts'],
+        },
+      },
+    ],
   },
 })

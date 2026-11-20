@@ -52,7 +52,7 @@ export function createPinturaAssetLoader(
     try {
       importUrl = resolvePinturaImportUrl(jsUrl, ports.baseUrl)
     } catch (e) {
-      store.emit({ error: e instanceof Error ? e : new Error('Failed to load Pintura script') })
+      store.emit({ error: new Error('Failed to load Pintura script', { cause: e }) })
     }
     if (importUrl) {
       void runTrackedRequest(track, generation, () => ports.importModule(importUrl)).then((outcome) => {

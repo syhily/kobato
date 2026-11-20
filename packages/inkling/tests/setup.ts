@@ -1,6 +1,18 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
+import { ReadableStream, TransformStream, WritableStream } from 'node:stream/web'
 import { afterEach } from 'vitest'
+
+// The project runs on the vmThreads pool: each file gets a fresh VM context
+// that does not inherit Node's web-stream globals.
+if (globalThis.ReadableStream === undefined) {
+  globalThis.ReadableStream = ReadableStream as unknown as typeof globalThis.ReadableStream
+  globalThis.WritableStream = WritableStream as unknown as typeof globalThis.WritableStream
+  globalThis.TransformStream = TransformStream as unknown as typeof globalThis.TransformStream
+}
+if (typeof globalThis.DOMParser !== 'function' && typeof window !== 'undefined' && window.DOMParser) {
+  globalThis.DOMParser = window.DOMParser as unknown as typeof globalThis.DOMParser
+}
 
 // jsdom does not implement ResizeObserver, but several components depend on it.
 function MockResizeObserver() {}

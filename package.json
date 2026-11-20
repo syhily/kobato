@@ -31,7 +31,7 @@
     "test:inkling": "vitest run --project inkling",
     "test:it": "vitest run --project '*-it'",
     "test:snaps": "vitest run --project '*-snaps'",
-    "test:unit": "vitest run --project '*-unit'",
+    "test:unit": "vitest run --project '*unit*'",
     "trace:down": "node tools/trace/src/down.ts",
     "trace:init": "node tools/trace/src/init.ts",
     "trace:smoke": "vite-node tools/trace/src/smoke.ts",

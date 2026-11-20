@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type { LexicalEditor, EditorConfig } from 'lexical'
 
 import {
@@ -24,12 +25,14 @@ describe('AtLinkNode', function () {
     Object.defineProperty(globalThis, 'document', { value: window.document, configurable: true, writable: true })
     Object.defineProperty(globalThis, 'window', { value: window, configurable: true, writable: true })
     Object.defineProperty(globalThis, 'DOMParser', { value: window.DOMParser, configurable: true, writable: true })
+    Object.defineProperty(globalThis, 'Node', { value: window.Node, configurable: true, writable: true })
   })
 
   afterEach(function () {
     delete (global as Record<string, unknown>).document
     delete (global as Record<string, unknown>).window
     delete (global as Record<string, unknown>).DOMParser
+    delete (global as Record<string, unknown>).Node
   })
 
   it(

@@ -50,19 +50,23 @@ describe('client/api/client', () => {
   })
 
   it('RPCLink url falls back to localhost when globalThis.location is undefined', async () => {
-    await import('@kobato/web-client/api/client.ts')
-    expect(lastUrlFn.current?.()).toBe('http://localhost/rpc')
+    vi.stubGlobal('location', undefined)
+    try {
+      await import('@kobato/web-client/api/client.ts')
+      expect(lastUrlFn.current?.()).toBe('http://localhost/rpc')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('RPCLink url uses globalThis.location.origin when available', async () => {
-    const originalLocation = globalThis.location
-    globalThis.location = { origin: 'https://example.com' } as Location
+    vi.stubGlobal('location', { origin: 'https://example.com' } as Location)
     try {
       vi.resetModules()
       await import('@kobato/web-client/api/client.ts')
       expect(lastUrlFn.current?.()).toBe('https://example.com/rpc')
     } finally {
-      globalThis.location = originalLocation
+      vi.unstubAllGlobals()
       vi.resetModules()
     }
   })

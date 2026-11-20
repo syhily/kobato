@@ -1,4 +1,5 @@
 import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules.ts'
+import { vitestTestBase } from '@kobato/test/vitest.base.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,11 +13,10 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   define: testDefine,
   test: {
+    ...vitestTestBase,
     name: 'web-snaps',
-    globals: false,
-    silent: 'passed-only',
-    maxWorkers: 4,
-    environment: 'node',
+    pool: 'vmThreads',
+    environment: 'happy-dom',
     include: [
       'packages/web/tests/snaps/**/*.test.{ts,tsx}',
       'packages/web/admin/tests/snaps/**/*.test.{ts,tsx}',
@@ -25,6 +25,5 @@ export default defineConfig({
     ],
     exclude: [...configDefaults.exclude],
     setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/snaps.ts')],
-    testTimeout: 10_000,
   },
 })

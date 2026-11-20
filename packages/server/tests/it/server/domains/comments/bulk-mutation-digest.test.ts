@@ -3,14 +3,9 @@ import { post } from '@kobato/db/schema/post.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
 import { latestComments } from '@kobato/server/domains/comments/services/public-query.ts'
+import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/infra/email/sender.ts', () => ({
-  sendAuthorInvite: vi.fn(),
-  sendPasswordReset: vi.fn(),
-  invalidateMailTransportCache: vi.fn(),
-}))
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
 
@@ -19,9 +14,19 @@ const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
 const { softDeleteCommentById } = await import('@kobato/server/domains/comments/services/moderate.ts')
 
 const db = getTestDb()
+const mail = await createCaptureMailFixture()
 
 beforeEach(async () => {
   await clearAllTables(db)
+  mail.useCapture()
+})
+
+afterEach(() => {
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<number> {

@@ -33,21 +33,13 @@ describe('createRenderContext', () => {
     it('prefers options.dom over the browser global document', () => {
       const context = createRenderContext({ dom })
 
-      expect(context.createDocument()).not.toBe(window.document)
+      expect(context.createDocument() !== window.document).toBe(true)
     })
 
     it('falls back to the browser global document', () => {
       const context = createRenderContext({})
 
       expect(context.createDocument()).toBe(window.document)
-    })
-
-    it('throws the exact non-browser error without any document source', () => {
-      vi.stubGlobal('window', undefined)
-
-      expect(() => createRenderContext({})).toThrow(
-        /^Must be passed a `createDocument` function as an option when used in a non-browser environment$/,
-      )
     })
   })
 

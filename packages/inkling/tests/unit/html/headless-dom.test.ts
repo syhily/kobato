@@ -1,5 +1,9 @@
+// @vitest-environment node
 import { HEADLESS_DOM_MISSING_MESSAGE, resolveHeadlessDom } from '@kobato/inkling-internal/html/headless-dom'
+import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+const blankDocument = () => createTestDom().window.document.implementation.createHTMLDocument('')
 
 describe('resolveHeadlessDom', () => {
   afterEach(() => {
@@ -7,21 +11,21 @@ describe('resolveHeadlessDom', () => {
   })
 
   it('returns an injected dom as-is', async () => {
-    const injected = { window: { document: document.implementation.createHTMLDocument('') } }
+    const injected = { window: { document: blankDocument() } }
 
     await expect(resolveHeadlessDom(injected)).resolves.toBe(injected)
   })
 
   it('prefers an injected dom over a global window', async () => {
-    const globalDocument = document.implementation.createHTMLDocument('')
+    const globalDocument = blankDocument()
     vi.stubGlobal('window', { document: globalDocument })
-    const injected = { window: { document: document.implementation.createHTMLDocument('') } }
+    const injected = { window: { document: blankDocument() } }
 
     await expect(resolveHeadlessDom(injected)).resolves.toBe(injected)
   })
 
   it('wraps the global window when nothing is injected', async () => {
-    const globalWindow = { document: document.implementation.createHTMLDocument('') }
+    const globalWindow = { document: blankDocument() }
     vi.stubGlobal('window', globalWindow)
 
     const resolved = await resolveHeadlessDom()
@@ -46,11 +50,11 @@ describe('resolveHeadlessDom', () => {
 
   it('loads the default dom once and caches it process-wide', async () => {
     vi.stubGlobal('window', undefined)
-    const loaded = { window: { document: document.implementation.createHTMLDocument('') } }
+    const loaded = { window: { document: blankDocument() } }
     const load = vi.fn(async () => loaded)
 
     await expect(resolveHeadlessDom(undefined, load)).resolves.toBe(loaded)
-    const other = { window: { document: document.implementation.createHTMLDocument('') } }
+    const other = { window: { document: blankDocument() } }
     await expect(
       resolveHeadlessDom(
         undefined,

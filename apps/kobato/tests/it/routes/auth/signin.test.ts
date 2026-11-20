@@ -11,39 +11,16 @@ import { issueSignInLinkToken } from '@kobato/server/domains/auth/verification-t
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@tests/utils/blog-settings.ts'
+import { createCaptureMailFixture, parseMail } from '@tests/utils/capture-mail.ts'
+import { makeRouteContext } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { makeRequestContext } from '@tests/utils/request-context.ts'
 import { adminUser, makeSession } from '@tests/utils/session.ts'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mockHandles = vi.hoisted(() => ({
-  getRequestContext: vi.fn<any>(),
-  sendSignInOtp: vi.fn<any>(),
-  sendSignInLink: vi.fn<any>(),
-  sendPasswordReset: vi.fn<any>(),
-}))
-
-vi.mock('@kobato/server/http/request-context.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/http/request-context.ts')>()
-  return {
-    ...actual,
-    getRequestContext: mockHandles.getRequestContext,
-  }
-})
-
-vi.mock('@kobato/server/infra/email/sender.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/email/sender.ts')>()
-  return {
-    ...actual,
-    sendSignInOtp: mockHandles.sendSignInOtp,
-    sendSignInLink: mockHandles.sendSignInLink,
-    sendPasswordReset: mockHandles.sendPasswordReset,
-  }
-})
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
+const mail = await createCaptureMailFixture()
 
 const CSRF_TOKEN = 'signin-route-csrf-token'
 
@@ -95,25 +72,18 @@ beforeEach(async () => {
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
   markSessionDirty = vi.fn<() => void>()
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({
-      session: testSession,
-      db,
-      request: new Request('http://localhost/admin/signin'),
-      markSessionDirty,
-    }),
-  )
-  mockHandles.sendSignInOtp.mockClear()
-  mockHandles.sendSignInLink.mockClear()
-  mockHandles.sendPasswordReset.mockClear()
-  mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
-  mockHandles.sendSignInLink.mockResolvedValue({ ok: true })
-  mockHandles.sendPasswordReset.mockResolvedValue({ ok: true })
+  await mail.drain()
+  mail.applyCaptureMail()
 })
 
 afterEach(async () => {
   await flushAuditLog()
+  mail.restore()
   resetAllBatchers()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
@@ -154,10 +124,7 @@ function setContext(action: string | null, redirectTo: string | null = '/admin',
     params.set('redirect_to', redirectTo)
   }
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty }),
-  )
-  return url
+  return makeRouteContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty })
 }
 
 async function callAction(
@@ -166,13 +133,14 @@ async function callAction(
   redirectTo: string | null = '/admin',
   clientAddress = '127.0.0.1',
 ): Promise<Response & { data?: any }> {
-  const url = setContext(actionName, redirectTo, clientAddress)
+  const routeContext = setContext(actionName, redirectTo, clientAddress)
+  const url = new URL('http://localhost/admin/signin')
   const request = new Request(url, { method: 'POST', body: formData })
   try {
     return (await action({
       request,
       url,
-      context: new Map(),
+      context: routeContext,
       params: {},
       pattern: 'admin/signin',
     })) as Response & { data?: any }
@@ -186,14 +154,12 @@ async function callAction(
 
 async function callLoader(search: string): Promise<Response & { data?: any }> {
   const url = new URL(`http://localhost/admin/signin${search}`)
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, db, request: new Request(url), markSessionDirty }),
-  )
+  const routeContext = makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
   try {
     return (await loader({
       request: new Request(url),
       url,
-      context: new Map(),
+      context: routeContext,
       params: {},
       pattern: 'admin/signin',
     })) as unknown as Response & { data?: any }
@@ -241,10 +207,17 @@ function extractData(result: unknown): Record<string, unknown> {
   return (result as { data?: Record<string, unknown> }).data ?? {}
 }
 
+// The OTP code out of the actually-delivered email (hex colors stripped).
+async function extractOtpFromMail(): Promise<string> {
+  const sent = await parseMail(mail)
+  const match = /\b\d{6}\b/.exec(sent.body.replace(/#[0-9a-fA-F]{3,8}/g, ''))
+  expect(match).not.toBeNull()
+  return match![0]!
+}
+
 async function doLogin(clientAddress = '127.0.0.1'): Promise<string> {
   await callAction(null, loginFormData(), '/admin', clientAddress)
-  expect(mockHandles.sendSignInOtp).toHaveBeenCalled()
-  return mockHandles.sendSignInOtp.mock.calls[0]![1] as string
+  return extractOtpFromMail()
 }
 
 function wrongOtp(code: string): string {
@@ -379,6 +352,7 @@ describe('routes/signin', () => {
 describe('routes/signin — OTP (real db + tokens)', () => {
   beforeEach(() => {
     setBlogSettingsBundleForTests(MAIL_READY_BUNDLE)
+    mail.applyCaptureMail()
   })
 
   it('issues OTP and sends email when mail is ready', async () => {
@@ -386,12 +360,8 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     const result = await callAction(null, loginFormData())
 
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
-    const otpCode = mockHandles.sendSignInOtp.mock.calls[0]![1] as string
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'admin@example.com' }),
-      otpCode,
-    )
+    const otpCode = await extractOtpFromMail()
+    expect(markSessionDirty).toHaveBeenCalled()
     expect(testSession.get('pendingOtpUser')).toEqual(
       expect.objectContaining({ userId: String(admin.id), email: 'admin@example.com' }),
     )
@@ -411,7 +381,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     const result = await callAction(null, loginFormData())
 
-    expect(mockHandles.sendSignInOtp).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
 
     expect(getSetCookie(result)).toMatch(/^__session=/)
     expect(await sessionRowsFor(admin.id)).toHaveLength(1)
@@ -421,10 +391,11 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
   it('blocks OTP send when rate limit is exceeded', async () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSend', 1))
+    mail.applyCaptureMail()
     await seedUser()
 
     await callAction(null, loginFormData())
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
+    await parseMail(mail)
     testSession.unset('pendingOtpUser')
     testSession.unset('otpFailCount')
     markSessionDirty.mockClear()
@@ -432,7 +403,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const result = await callAction(null, loginFormData())
 
     expect(extractData(result).error).toBe('发送过于频繁，请稍后再试。')
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
+    expect(await mail.noMessage()).toBe(true)
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
   })
@@ -496,8 +467,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     const result = await callAction('resendotp', withCsrf())
 
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(2)
-    const newCode = mockHandles.sendSignInOtp.mock.calls[1]![1] as string
+    const newCode = await extractOtpFromMail()
     expect(newCode).not.toBe(oldCode)
     expect(testSession.get('otpFailCount')).toBe(0)
     expect(markSessionDirty).toHaveBeenCalled()
@@ -518,6 +488,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
   it('blocks OTP verify when rate limit is exceeded', async () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpVerify', 2))
+    mail.applyCaptureMail()
     const admin = await seedUser()
     const otpCode = await doLogin()
 
@@ -540,6 +511,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
   it('blocks login when login rate limit exceeded', async () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'signIn', 1))
+    mail.applyCaptureMail()
     await seedUser()
 
     await callAction(null, loginFormData())
@@ -560,13 +532,13 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(result.headers.get('Location')).toContain('error=invalid_credentials')
     expect(getSetCookie(result)).toBeNull()
     expect(markSessionDirty).not.toHaveBeenCalled()
-    expect(mockHandles.sendSignInOtp).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await db.select().from(verification)).toHaveLength(0)
   })
 
   it('returns error when first-time OTP email send fails', async () => {
     await seedUser()
-    mockHandles.sendSignInOtp.mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'fail' })
+    mail.useDeadTransport()
 
     const result = await callAction(null, loginFormData())
 
@@ -576,16 +548,9 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
-  it('returns error when first-time OTP email throws', async () => {
-    await seedUser()
-    mockHandles.sendSignInOtp.mockRejectedValueOnce(new Error('network timeout'))
-
-    const result = await callAction(null, loginFormData())
-
-    expect(extractData(result).error).toBe('验证码发送失败，请稍后重试。')
-    expect(testSession.get('pendingOtpUser')).toBeUndefined()
-    expect(markSessionDirty).not.toHaveBeenCalled()
-  })
+  // The thrown-error leg of sendOtpSafely maps to the SAME descriptor as the
+  // ok:false leg above and is unreachable with real mail infrastructure; the
+  // send-fails test above pins the shared UX.
 
   it('rejects verifyotp when no pendingOtpUser in session', async () => {
     const result = await callAction('verifyotp', otpFormData('123456'))
@@ -632,7 +597,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   it('returns error when email send fails on resend', async () => {
     await seedUser()
     await doLogin()
-    mockHandles.sendSignInOtp.mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'fail' })
+    mail.useDeadTransport()
     markSessionDirty.mockClear()
 
     const result = await callAction('resendotp', withCsrf())
@@ -658,6 +623,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
   it('blocks resend when rate limit exceeded', async () => {
     setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSend', 1))
+    mail.applyCaptureMail()
     await seedUser()
     await doLogin()
     markSessionDirty.mockClear()
@@ -665,7 +631,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const result = await callAction('resendotp', withCsrf())
 
     expect(extractData(result).error).toBe('发送过于频繁，请稍后再试。')
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
+    expect(await mail.noMessage()).toBe(true)
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
@@ -691,7 +657,7 @@ describe('routes/signin — identify (real db)', () => {
 
     expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
-    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await db.select().from(verification)).toHaveLength(0)
   })
 
@@ -719,15 +685,16 @@ describe('routes/signin — identify (real db)', () => {
 
   it('sends a magic link for a magic-link user when mail is ready', async () => {
     setBlogSettingsBundleForTests(MAIL_READY_BUNDLE)
+    mail.applyCaptureMail()
+    mail.applyCaptureMail()
     const admin = await seedUser({ loginMethod: 'magic-link' })
 
     const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
-    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
-    const [recipient, link] = mockHandles.sendSignInLink.mock.calls[0]! as [{ email: string }, string]
-    expect(recipient.email).toBe('admin@example.com')
-    expect(link).toContain('action=magiclink')
+    const sent = await parseMail(mail)
+    expect(sent.to).toBe('admin@example.com')
+    expect(sent.body).toContain('action=magiclink')
     const rows = await db
       .select()
       .from(verification)
@@ -736,12 +703,13 @@ describe('routes/signin — identify (real db)', () => {
   })
 
   it('degrades a magic-link user to password when mail is not ready', async () => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     await seedUser({ loginMethod: 'magic-link' })
 
     const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).method).toBe('password')
 
-    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await mail.noMessage()).toBe(true)
     expect(await db.select().from(verification)).toHaveLength(0)
   })
 

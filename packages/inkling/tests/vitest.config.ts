@@ -1,3 +1,4 @@
+import { vitestTestBase } from '@kobato/test/vitest.base.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
 import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
@@ -10,10 +11,9 @@ export default defineConfig({
   },
   define: testDefine,
   test: {
+    ...vitestTestBase,
     name: 'inkling',
-    globals: false,
-    silent: 'passed-only',
-    maxWorkers: 4,
+    pool: 'vmThreads',
     environment: 'jsdom',
     setupFiles: ['./setup.ts'],
     server: {
@@ -32,6 +32,5 @@ export default defineConfig({
       './transforms/**/*.test.{js,jsx,ts,tsx}',
       './nodes-base/**/*.test.{js,jsx,ts,tsx}',
     ],
-    testTimeout: 10_000,
   },
 })

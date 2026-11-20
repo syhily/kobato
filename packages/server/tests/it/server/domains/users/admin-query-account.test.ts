@@ -2,24 +2,13 @@ import { comment } from '@kobato/db/schema/comment.ts'
 import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
 import { user, verification } from '@kobato/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
+import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
-
-const emailMocks = vi.hoisted(() => ({
-  sendAuthorInvite: vi.fn(),
-  sendPasswordReset: vi.fn(),
-}))
-const { sendAuthorInvite, sendPasswordReset } = emailMocks
-
-vi.mock('@kobato/server/infra/email/sender.ts', () => ({
-  sendAuthorInvite: emailMocks.sendAuthorInvite,
-  sendPasswordReset: emailMocks.sendPasswordReset,
-  invalidateMailTransportCache: vi.fn(),
-}))
 
 const admin = await import('@kobato/server/domains/users/services/admin.ts')
 const account = await import('@kobato/server/domains/users/services/account.ts')
@@ -27,12 +16,20 @@ const adminQuery = await import('@kobato/server/domains/users/repos/admin-query.
 const userOps = await import('@kobato/db/operations/user.ts')
 
 const db = getTestDb()
+const mail = await createCaptureMailFixture()
 
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  sendAuthorInvite.mockReset()
-  sendPasswordReset.mockReset()
+  mail.useCapture()
+})
+
+afterEach(() => {
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}) {
@@ -368,8 +365,6 @@ describe('users/services/admin — softDeleteUserWithGuard', () => {
 
 describe('users/services/admin — inviteAuthorWithRollback', () => {
   it('creates the author and sends the invite on the happy path', async () => {
-    sendAuthorInvite.mockResolvedValueOnce({ ok: true })
-
     const result = await admin.inviteAuthorWithRollback(
       db,
       'Jane',
@@ -378,6 +373,7 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
       'Admin',
     )
     expect(result.success).toBe(true)
+    expect((await mail.nextMessage()).to).toContain('jane@example.com')
 
     const rows = await db.select().from(user).where(eq(user.email, 'jane@example.com'))
     expect(rows).toHaveLength(1)
@@ -392,7 +388,7 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
   })
 
   it('soft-deletes the author when email send fails', async () => {
-    sendAuthorInvite.mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'down' })
+    mail.useDeadTransport()
 
     await expect(
       admin.inviteAuthorWithRollback(db, 'Jane', 'jane@example.com', 'https://blog.example.com', 'Admin'),
@@ -420,11 +416,10 @@ describe('users/services/admin — sendPasswordResetToUser', () => {
 
   it('issues a reset token and sends the email', async () => {
     await seedUser({ name: 'Reset', email: 'reset@example.com', password: 'hashed' })
-    sendPasswordReset.mockResolvedValueOnce(undefined)
 
     const result = await admin.sendPasswordResetToUser(db, 'reset@example.com', 'https://blog.example.com')
     expect(result.userId).toBeDefined()
-    expect(sendPasswordReset).toHaveBeenCalledTimes(1)
+    expect((await mail.nextMessage()).to).toContain('reset@example.com')
   })
 })
 

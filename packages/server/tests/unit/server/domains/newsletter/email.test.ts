@@ -1,20 +1,12 @@
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
-import { describe, expect, it, vi } from 'vitest'
+import { createCaptureMailFixture, parseMail } from '@kobato/server/tests/utils/capture-mail.ts'
+import { afterAll, afterEach, describe, expect, it } from 'vitest'
 
-vi.mock('@kobato/server/infra/email/sender.ts', () => ({
-  sendEmail: vi.fn(async () => ({ ok: true })),
-}))
-
-const { sendEmail } = await import('@kobato/server/infra/email/sender.ts')
 const { sendConfirmSubscription } = await import('@kobato/server/domains/newsletter/email.ts')
 
 const CONFIRM_LINK = 'https://example.com/newsletter/confirm?token=abc123'
 
-function lastMail(): { to: string; subject: string; html: string } {
-  const calls = vi.mocked(sendEmail).mock.calls
-  const [to, subject, html] = calls[calls.length - 1]!
-  return { to, subject, html }
-}
+const mail = await createCaptureMailFixture()
 
 function setSiteLocale(locale: 'en-US' | 'zh-CN'): void {
   setBlogSettingsBundleForTests({
@@ -24,7 +16,16 @@ function setSiteLocale(locale: 'en-US' | 'zh-CN'): void {
       newsletter: { ...TEST_BLOG_SETTINGS_BUNDLE.newsletter!.newsletter, fromName: '', subjectPrefix: '' },
     },
   })
+  mail.applyCaptureMail()
 }
+
+afterEach(() => {
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
+})
 
 describe('newsletter/email — sendConfirmSubscription', () => {
   it('renders the zh-CN subject and body (site title fallbacks)', async () => {
@@ -32,17 +33,17 @@ describe('newsletter/email — sendConfirmSubscription', () => {
     try {
       await sendConfirmSubscription('reader@example.com', CONFIRM_LINK, 24)
 
-      const { to, subject, html } = lastMail()
+      const sent = await parseMail(mail)
       const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
-      expect(to).toBe('reader@example.com')
-      expect(subject).toBe(`【${title}】请确认你的邮件订阅`)
-      expect(html).toContain('确认你的订阅')
-      expect(html).toContain(`「${title}」的邮件更新`)
-      expect(html).toContain('24 小时内有效')
-      expect(html).toContain('确认订阅')
-      expect(html).toContain(`href="${CONFIRM_LINK}"`)
+      expect(sent.to).toBe('reader@example.com')
+      expect(sent.subject).toBe(`【${title}】请确认你的邮件订阅`)
+      expect(sent.body).toContain('确认你的订阅')
+      expect(sent.body).toContain(`「${title}」的邮件更新`)
+      expect(sent.body).toContain('24 小时内有效')
+      expect(sent.body).toContain('确认订阅')
+      expect(sent.body).toContain(`href="${CONFIRM_LINK}"`)
     } finally {
-      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+      mail.restore()
     }
   })
 
@@ -51,16 +52,16 @@ describe('newsletter/email — sendConfirmSubscription', () => {
     try {
       await sendConfirmSubscription('reader@example.com', CONFIRM_LINK, 24)
 
-      const { subject, html } = lastMail()
+      const sent = await parseMail(mail)
       const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
-      expect(subject).toBe(`${title}: Please confirm your email subscription`)
-      expect(html).toContain('Confirm your subscription')
-      expect(html).toContain(`updates from ${title}`)
-      expect(html).toContain('valid for 24 hours')
-      expect(html).toContain('Confirm subscription')
-      expect(html).toContain(`href="${CONFIRM_LINK}"`)
+      expect(sent.subject).toBe(`${title}: Please confirm your email subscription`)
+      expect(sent.body).toContain('Confirm your subscription')
+      expect(sent.body).toContain(`updates from ${title}`)
+      expect(sent.body).toContain('valid for 24 hours')
+      expect(sent.body).toContain('Confirm subscription')
+      expect(sent.body).toContain(`href="${CONFIRM_LINK}"`)
     } finally {
-      setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+      mail.restore()
     }
   })
 })

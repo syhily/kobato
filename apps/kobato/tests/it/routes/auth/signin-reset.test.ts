@@ -10,33 +10,12 @@ import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { issueResetToken } from '@kobato/server/domains/auth/verification-tokens.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
+import { makeRouteContext } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { makeRequestContext } from '@tests/utils/request-context.ts'
 import { makeSession } from '@tests/utils/session.ts'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mockHandles = vi.hoisted(() => ({
-  getRequestContext: vi.fn<any>(),
-  sendPasswordReset: vi.fn<any>(),
-}))
-
-vi.mock('@kobato/server/http/request-context.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/http/request-context.ts')>()
-  return {
-    ...actual,
-    getRequestContext: mockHandles.getRequestContext,
-  }
-})
-
-vi.mock('@kobato/server/infra/email/sender.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/email/sender.ts')>()
-  return {
-    ...actual,
-    sendPasswordReset: mockHandles.sendPasswordReset,
-  }
-})
 
 const db = getTestDb()
 
@@ -60,8 +39,6 @@ beforeEach(async () => {
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
   markSessionDirty = vi.fn<() => void>()
-  mockHandles.sendPasswordReset.mockClear()
-  mockHandles.sendPasswordReset.mockResolvedValue({ ok: true })
 })
 
 afterEach(async () => {
@@ -86,16 +63,14 @@ async function seedUser(overrides: Record<string, unknown> = {}) {
 
 async function callResetAction(body: Record<string, string>): Promise<unknown> {
   const url = new URL('http://localhost/admin/signin?action=resetpassword')
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, db, request: new Request(url), markSessionDirty }),
-  )
+  const routeContext = makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
   const request = new Request(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ ...body, csrf_token: CSRF_TOKEN }).toString(),
   })
   try {
-    return await action({ request, context: new Map(), params: {} } as unknown as Parameters<typeof action>[0])
+    return await action({ request, context: routeContext, params: {} } as unknown as Parameters<typeof action>[0])
   } catch (error) {
     if (error instanceof Response) {
       return error

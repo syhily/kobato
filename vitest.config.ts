@@ -8,7 +8,9 @@ export default defineConfig({
     silent: 'passed-only',
     // Explicit list — apps/kobato/tests/e2e needs a live SEA-booted instance
     // (it is driven by `pnpm run sea:e2e`) and must never join the default
-    // run; packages/inkling brings its own project config.
+    // run; packages/inkling brings its own project config. File-based
+    // projects do not inherit this config's test options — each spreads
+    // @kobato/test/vitest.base.ts instead (only inline projects extend it).
     projects: [
       'packages/shared/tests/unit/vitest.config.ts',
       'packages/shared/tests/snaps/vitest.config.ts',
@@ -16,7 +18,9 @@ export default defineConfig({
       'packages/db/tests/unit/vitest.config.ts',
       'packages/db/tests/it/vitest.config.ts',
       'packages/server/tests/unit/vitest.config.ts',
+      'packages/server/tests/iso-unit/vitest.config.ts',
       'packages/server/tests/it/vitest.config.ts',
+      'packages/server/tests/iso-it/vitest.config.ts',
       'packages/ui/tests/unit/vitest.config.ts',
       'packages/ui/tests/snaps/vitest.config.ts',
       'packages/web/tests/unit/vitest.config.ts',
@@ -24,7 +28,9 @@ export default defineConfig({
       'packages/inkling/tests/vitest.config.ts',
       'tools/trace/tests/unit/vitest.config.ts',
       'apps/kobato/tests/unit/vitest.config.ts',
+      'apps/kobato/tests/iso-unit/vitest.config.ts',
       'apps/kobato/tests/it/vitest.config.ts',
+      'apps/kobato/tests/iso-it/vitest.config.ts',
       'apps/kobato/tests/snaps/vitest.config.ts',
       'apps/kobato/tests/vitest.duckdb.config.ts',
     ],

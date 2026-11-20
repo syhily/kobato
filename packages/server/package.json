@@ -22,6 +22,7 @@
     "@kobato/contracts": "workspace:*",
     "@kobato/db": "workspace:*",
     "@kobato/distribution": "workspace:*",
+    "@kobato/harness": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/sanitize": "workspace:*",

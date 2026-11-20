@@ -1,41 +1,71 @@
 import { user, verification } from '@kobato/db/schema/user.ts'
+import { SmtpCapture } from '@kobato/harness/smtp.ts'
+import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { eq, sql } from 'drizzle-orm'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const sendAuthorInvite = vi.hoisted(() => vi.fn())
-
-vi.mock('@kobato/server/infra/email/sender.ts', () => ({
-  sendAuthorInvite,
-  sendPasswordReset: vi.fn(),
-  invalidateMailTransportCache: vi.fn(),
-}))
-
-const setupTokenMocks = vi.hoisted(() => ({
-  issueSetupToken: vi.fn(),
-  realIssueSetupToken:
-    undefined as unknown as typeof import('@kobato/server/domains/auth/verification-tokens.ts').issueSetupToken,
-}))
-
-vi.mock('@kobato/server/domains/auth/verification-tokens.ts', async (importOriginal) => {
-  const real = await importOriginal<typeof import('@kobato/server/domains/auth/verification-tokens.ts')>()
-  setupTokenMocks.realIssueSetupToken = real.issueSetupToken
-  return {
-    issueResetToken: real.issueResetToken,
-    issueSetupToken: (...args: Parameters<typeof real.issueSetupToken>) => setupTokenMocks.issueSetupToken(...args),
-    revokeTokensFor: real.revokeTokensFor,
-  }
-})
-
+// Real end-to-end: the actual sender, templates, and nodemailer SMTP transport
+// against an in-process capture server; the failure leg dials a port with no
+// listener and the token-store fault drops the verification table for real.
 const { inviteAuthorWithRollback } = await import('@kobato/server/domains/users/services/admin.ts')
 
 const db = getTestDb()
+const capture = new SmtpCapture()
+let capturePort = 0
+let deadPort = 0
+
+function bundleWithSmtp(port: number) {
+  return {
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    mail: {
+      mail: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
+        enabled: true,
+        sender: 'noreply@example.com',
+        transport: 'smtp' as const,
+        smtpHost: '127.0.0.1',
+        smtpPort: port,
+        smtpUser: 'test',
+        smtpPass: 'test',
+        smtpSecure: false,
+        smtpRequireTls: false,
+        smtpRejectUnauthorized: false,
+      },
+    },
+  }
+}
+
+beforeAll(async () => {
+  capturePort = await capture.start()
+  // A loopback port with no listener: a real ECONNREFUSED for the failure leg.
+  const { createServer } = await import('node:net')
+  deadPort = await new Promise<number>((resolve, reject) => {
+    const probe = createServer()
+    probe.once('error', reject)
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address() as { port: number }
+      probe.close(() => resolve(port))
+    })
+  })
+})
+
+afterAll(async () => {
+  await capture.close()
+})
 
 beforeEach(async () => {
+  // The it-setup afterEach resets the bundle to defaults; re-point mail at
+  // the capture server for every test, and drop any cached transporter.
+  setBlogSettingsBundleForTests(bundleWithSmtp(capturePort))
+  invalidateMailTransportCache()
   await clearAllTables(db)
-  sendAuthorInvite.mockReset()
-  setupTokenMocks.issueSetupToken.mockReset()
-  setupTokenMocks.issueSetupToken.mockImplementation(setupTokenMocks.realIssueSetupToken)
+})
+
+afterEach(() => {
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  invalidateMailTransportCache()
 })
 
 async function findUserRow(email: string) {
@@ -58,8 +88,6 @@ async function countSetupTokensFor(userId: number): Promise<number> {
 
 describe('integration / inviteAuthorWithRollback', () => {
   it('creates the author and sends the invite on the happy path', async () => {
-    sendAuthorInvite.mockResolvedValueOnce({ ok: true })
-
     const result = await inviteAuthorWithRollback(
       db,
       'Jane Author',
@@ -78,16 +106,14 @@ describe('integration / inviteAuthorWithRollback', () => {
     const tokenCount = await countSetupTokensFor(row!.id)
     expect(tokenCount).toBe(1)
 
-    expect(sendAuthorInvite).toHaveBeenCalledTimes(1)
+    const mail = await capture.nextMessage(5_000)
+    expect(mail.to).toContain('jane@example.com')
+    expect(mail.raw).toContain('noreply@example.com')
   })
 
   it('soft-deletes the author when email send fails', async () => {
-    sendAuthorInvite.mockResolvedValueOnce({
-      ok: false,
-      reason: 'upstream',
-      status: 500,
-      message: 'provider down',
-    })
+    setBlogSettingsBundleForTests(bundleWithSmtp(deadPort))
+    invalidateMailTransportCache()
 
     await expect(
       inviteAuthorWithRollback(db, 'Jane Author', 'jane@example.com', 'https://blog.example.com', 'Admin'),
@@ -100,8 +126,8 @@ describe('integration / inviteAuthorWithRollback', () => {
   })
 
   it('rolls back the token if the user insert hits a unique-constraint error', async () => {
-    sendAuthorInvite.mockResolvedValueOnce({ ok: true })
     await inviteAuthorWithRollback(db, 'First Author', 'dup@example.com', 'https://blog.example.com', 'Admin')
+    await capture.nextMessage(5_000)
 
     const existing = await findUserRow('dup@example.com')
     expect(existing).not.toBeNull()
@@ -119,18 +145,22 @@ describe('integration / inviteAuthorWithRollback', () => {
     expect(tokensAfter).toBe(tokensBefore)
   })
 
-  it('preserves atomicity when issueSetupToken fails mid-transaction', async () => {
-    setupTokenMocks.issueSetupToken.mockImplementationOnce(() => {
-      throw new Error('token store down')
-    })
+  it('preserves atomicity when the token store fails mid-transaction', async () => {
+    // Drop the verification table for real: the INSERT inside the transaction
+    // throws, the whole invite rolls back. The DDL is snapshotted and restored.
+    const ddlRows = await db.all<{ sql: string }>(sql`SELECT sql FROM sqlite_master WHERE name = 'verification'`)
+    expect(ddlRows.length).toBe(1)
+    await db.run(sql`DROP TABLE verification`)
 
-    await expect(
-      inviteAuthorWithRollback(db, 'Ghost Author', 'ghost@example.com', 'https://blog.example.com', 'Admin'),
-    ).rejects.toThrow('token store down')
+    try {
+      await expect(
+        inviteAuthorWithRollback(db, 'Ghost Author', 'ghost@example.com', 'https://blog.example.com', 'Admin'),
+      ).rejects.toThrow()
 
-    const row = await findUserRow('ghost@example.com')
-    expect(row).toBeNull()
-
-    expect(sendAuthorInvite).not.toHaveBeenCalled()
+      const row = await findUserRow('ghost@example.com')
+      expect(row).toBeNull()
+    } finally {
+      await db.run(sql.raw(ddlRows[0]!.sql))
+    }
   })
 })

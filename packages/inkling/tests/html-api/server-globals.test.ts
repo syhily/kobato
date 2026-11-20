@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { renderHeadless } from '@kobato/inkling/tests/utils/render-live'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

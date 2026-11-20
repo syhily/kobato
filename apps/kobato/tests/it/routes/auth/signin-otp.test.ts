@@ -11,35 +11,16 @@ import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@tests/utils/blog-settings.ts'
+import { createCaptureMailFixture, parseMail } from '@tests/utils/capture-mail.ts'
+import { makeRouteContext } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { makeRequestContext } from '@tests/utils/request-context.ts'
 import { makeSession } from '@tests/utils/session.ts'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mockHandles = vi.hoisted(() => ({
-  getRequestContext: vi.fn<any>(),
-  sendSignInOtp: vi.fn<any>(),
-}))
-
-vi.mock('@kobato/server/http/request-context.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/http/request-context.ts')>()
-  return {
-    ...actual,
-    getRequestContext: mockHandles.getRequestContext,
-  }
-})
-
-vi.mock('@kobato/server/infra/email/sender.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/email/sender.ts')>()
-  return {
-    ...actual,
-    sendSignInOtp: mockHandles.sendSignInOtp,
-  }
-})
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
+const mail = await createCaptureMailFixture()
 
 const CSRF_TOKEN = 'signin-otp-csrf-token'
 
@@ -76,21 +57,18 @@ beforeEach(async () => {
   testSession = makeSession({})
   testSession.set('csrfToken', CSRF_TOKEN)
   markSessionDirty = vi.fn<() => void>()
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({
-      session: testSession,
-      db,
-      request: new Request('http://localhost/admin/signin'),
-      markSessionDirty,
-    }),
-  )
-  mockHandles.sendSignInOtp.mockClear()
-  mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
+  await mail.drain()
+  mail.applyCaptureMail()
 })
 
 afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
@@ -135,17 +113,14 @@ function setContext(
   }
   params.set('redirect_to', redirectTo)
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
-  mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({
-      session: testSession,
-      clientAddress,
-      db,
-      request: new Request(url),
-      markSessionDirty,
-      localization: { locale, timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
-    }),
-  )
-  return url
+  return makeRouteContext({
+    session: testSession,
+    clientAddress,
+    db,
+    request: new Request(url),
+    markSessionDirty,
+    localization: { locale, timeZone: 'UTC', timeFormat: null, revision: 'boot-test:0000000000' },
+  })
 }
 
 async function callAction(
@@ -155,7 +130,8 @@ async function callAction(
   clientAddress = '127.0.0.1',
   locale: AppLocale = 'zh-CN',
 ): Promise<Response & { data?: any }> {
-  const url = setContext(actionName, redirectTo, clientAddress, locale)
+  const routeContext = setContext(actionName, redirectTo, clientAddress, locale)
+  const url = new URL(`http://localhost/admin/signin`)
   const request = new Request('http://localhost/admin/signin', {
     method: 'POST',
     body: formData,
@@ -164,7 +140,7 @@ async function callAction(
     return (await action({
       request,
       url,
-      context: new Map(),
+      context: routeContext,
       params: {},
       pattern: 'admin/signin',
     })) as Response
@@ -202,10 +178,18 @@ function getSetCookie(result: Response & { data?: any }): string | null {
   return init?.headers?.['Set-Cookie'] ?? null
 }
 
+// The OTP code out of the actually-delivered email — the e2e pattern.
+async function extractOtpFromMail(): Promise<string> {
+  const sent = await parseMail(mail)
+  // Hex colors in the template styling (e.g. #334155) are 6-digit noise.
+  const match = /\b\d{6}\b/.exec(sent.body.replace(/#[0-9a-fA-F]{3,8}/g, ''))
+  expect(match).not.toBeNull()
+  return match![0]!
+}
+
 async function doLogin(): Promise<string> {
   await callAction(null, loginFormData())
-  expect(mockHandles.sendSignInOtp).toHaveBeenCalled()
-  return mockHandles.sendSignInOtp.mock.calls[0]![1] as string
+  return extractOtpFromMail()
 }
 
 async function getOtpRow(userId: number) {
@@ -230,15 +214,10 @@ describe('integration: OTP login flow (real DB)', () => {
     const admin = await seedAdminUser()
 
     const loginResult = await callAction(null, loginFormData())
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
-    const otpCode = mockHandles.sendSignInOtp.mock.calls[0]![1] as string
+    const otpCode = await extractOtpFromMail()
     expect(markSessionDirty).toHaveBeenCalled()
     expect(loginResult.headers.get('Set-Cookie')).toBeNull()
     markSessionDirty.mockClear()
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'admin@example.com' }),
-      otpCode,
-    )
 
     const row = await getOtpRow(admin.id)
     expect(row).not.toBeNull()
@@ -356,8 +335,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(resendResult)).toBeNull()
 
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(2)
-    const newOtp = mockHandles.sendSignInOtp.mock.calls[1]![1] as string
+    const newOtp = await extractOtpFromMail()
     expect(newOtp).not.toBe(oldOtp)
 
     const oldResult = await callAction('verifyotp', otpFormData(oldOtp))
@@ -401,7 +379,10 @@ describe('integration: OTP login flow (real DB)', () => {
       testSession.unset('otpFailCount')
     }
 
-    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(3)
+    // Three sends really happened (three mails at the capture server).
+    for (let i = 0; i < 3; i++) {
+      expect((await parseMail(mail)).to).toContain('admin@example.com')
+    }
 
     markSessionDirty.mockClear()
     const result = await callAction(null, loginFormData(), '/admin', uniqueIp)

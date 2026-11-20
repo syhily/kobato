@@ -5,7 +5,7 @@
 - `admin/` — `@kobato/web-admin`: the admin frontend (admin components, domain controllers, the page editor composition, the admin style adapters).
 - `public/` — `@kobato/web-public`: the public frontend (public chrome, comments, widgets, music player) plus the cross-surface `ui/shared`/`ui/lib` tiers.
 - `client/` — `@kobato/web-client`: the browser platform below both product leaves (document-level hooks, the oRPC client, the root settings contexts, the cross-surface editor platform).
-- `tests/` — the umbrella Vitest roots (`web-unit` / `web-snaps`) and the CROSS-LEAF contract pins that must not live in any single leaf (see `tests/AGENTS.md`).
+- `tests/` — the umbrella Vitest roots (`web (unit)` / `web-snaps`) and the CROSS-LEAF contract pins that must not live in any single leaf (see `tests/AGENTS.md`).
 
 ## Module seam and direction
 

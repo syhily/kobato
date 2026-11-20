@@ -204,8 +204,9 @@ describe('infra/config — loadConfig', () => {
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
     const dir = makeTmpDir()
-    const realCwd = process.cwd()
-    process.chdir(dir)
+    // worker_threads cannot process.chdir(); spy on cwd instead so the
+    // candidate path resolves inside the empty tmp dir.
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(dir)
     try {
       process.argv = [realArgv[0]!, realArgv[1]!]
       vi.stubEnv('storage__database', ':memory:')
@@ -214,7 +215,7 @@ describe('infra/config — loadConfig', () => {
       expect(env['storage.database']).toBe(':memory:')
       expect(existsSync(configPathIn(dir))).toBe(false)
     } finally {
-      process.chdir(realCwd)
+      cwdSpy.mockRestore()
     }
   })
 

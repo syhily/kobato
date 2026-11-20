@@ -71,10 +71,10 @@ describe('usePinturaEditor', () => {
   it('sets error when the script URL is invalid', async () => {
     const { result } = renderHook(() => usePinturaEditor({ config: { jsUrl: 'http://' } }))
     await waitFor(() => {
-      expect(result.current.error).toBeInstanceOf(Error)
+      expect(result.current.error).toBeTruthy()
     })
 
-    expect(result.current.error?.message).toContain('Invalid URL')
+    expect(String((result.current.error as Error).cause)).toContain('Invalid URL')
   })
 
   it('sets error when the script import fails', async () => {

@@ -4,27 +4,30 @@ import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { adminUsersCrudRouter } from '@kobato/server/http/controllers/admin/users-crud.controller.ts'
 import { adminUsersSessionsRouter } from '@kobato/server/http/controllers/admin/users-sessions.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
+import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/infra/email/sender.ts', () => ({
-  sendAuthorInvite: vi.fn(),
-  sendPasswordReset: vi.fn(),
-  invalidateMailTransportCache: vi.fn(),
-}))
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
+// Any mail the flows emit really flows into the in-process capture server.
+const mail = await createCaptureMailFixture()
 
 beforeEach(async () => {
   await clearAllTables(db)
   initAllBatchers(getDatabaseHandle())
+  mail.useCapture()
 })
 
 afterEach(() => {
   resetAllBatchers()
+  mail.restore()
+})
+
+afterAll(async () => {
+  await mail.close()
 })
 
 async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {

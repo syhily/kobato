@@ -1180,6 +1180,9 @@ importers:
       '@kobato/distribution':
         specifier: workspace:*
         version: link:../shared/distribution
+      '@kobato/harness':
+        specifier: workspace:*
+        version: link:../../tools/harness
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../shared/i18n

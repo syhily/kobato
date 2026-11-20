@@ -127,6 +127,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/inkling',
     '@kobato/test',
     '@kobato/toolchain',
+    '@kobato/harness',
     ...SHARED_SPLIT,
   ],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],

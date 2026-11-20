@@ -46,7 +46,10 @@ export class AtLinkNode extends ElementNode {
 
     span.classList.add(...atLinkClasses)
 
-    const svgElement = new DOMParser().parseFromString(linkSVG, 'image/svg+xml').documentElement
+    // Parse in the span's own window so the SVG shares the span's document
+    // (test environments may provide a DOMParser from another window).
+    const svgView = span.ownerDocument.defaultView!
+    const svgElement = new svgView.DOMParser().parseFromString(linkSVG, 'image/svg+xml').documentElement
     svgElement.classList.add(...atLinkIconClasses)
 
     span.appendChild(svgElement)

@@ -15,6 +15,7 @@ Import generic helpers as `@kobato/test/<name>.ts`:
 - `duckdb-files` — the exact list of test files that spin up the real DuckDB native engine (the `duckdb` project and the `unit`/`it` excludes share it)
 - `env` — the test `process.env` contract
 - `fake-broadcast-channel`, `fetch` (responder queue with call capture), `in-memory-metric-reader`
+- `vitest-base` — `vitestTestBase`, the workspace-wide pool/isolate/maxWorkers defaults every project config spreads into its `test` block (file-based projects do not inherit the root config's test options)
 - `log-message-literals` — the AST scanner behind the static-log-message guard
 - `mock-react-query` — the canonical `@tanstack/react-query` module mock
 - `route-test-utils`, `rum-events`, `silence-local-storage-warning`
