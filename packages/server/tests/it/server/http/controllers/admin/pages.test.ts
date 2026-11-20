@@ -4,7 +4,6 @@ import { page as pageTable } from '@kobato/db/schema/page.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { saveBody } from '@kobato/server/domains/content/lifecycle.ts'
 import { adminPagesRouter } from '@kobato/server/http/controllers/admin/pages.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
@@ -12,11 +11,7 @@ import { emptyLexicalBody } from '@kobato/server/tests/utils/lexical.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/domains/content/lifecycle.ts', () => ({
-  saveBody: vi.fn(),
-}))
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
@@ -75,19 +70,6 @@ function adminCtx(userId: number) {
 async function auditRowsFor(action: string) {
   await flushAuditLog()
   return db.select().from(auditLog).where(eq(auditLog.action, action))
-}
-
-const revisionStub = {
-  id: '1',
-  revisionNo: 1,
-  status: 'draft' as const,
-  body: emptyLexicalBody(),
-  imageSources: [],
-  headings: [],
-  authorId: '1',
-  clientRevisionToken: '00000000-0000-4000-8000-000000000000',
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
 describe('adminPagesRouter.get', () => {
@@ -192,62 +174,55 @@ describe('adminPagesRouter.unpublish', () => {
 })
 
 describe('adminPagesRouter.saveDraft', () => {
-  it('returns saved status on success and records a page_draft_saved audit row', async () => {
+  it('saves a real draft revision and records a page_draft_saved audit row', async () => {
     const admin = await seedAdmin()
-    vi.mocked(saveBody).mockResolvedValueOnce({
-      status: 'saved',
-      revision: revisionStub,
-      warningDescriptors: [],
-    })
+    const seeded = await seedPage()
     const res = await call(
       adminPagesRouter.saveDraft,
-      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: String(seeded.id), body: emptyLexicalBody(), expectedClientRevisionToken: null },
       { context: adminCtx(admin) },
     )
     expect(res.status).toBe('saved')
 
     const audits = await auditRowsFor('page_draft_saved')
     expect(audits).toHaveLength(1)
-    expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: '1', actorId: admin })
+    expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: String(seeded.id), actorId: admin })
   })
 
-  it('returns conflict status when tokens mismatch (and records no audit)', async () => {
+  it('returns a real conflict when the client token mismatches (and records no audit)', async () => {
     const admin = await seedAdmin()
-    vi.mocked(saveBody).mockResolvedValueOnce({
-      status: 'conflict',
-      latest: revisionStub,
-      expectedToken: '11111111-1111-4000-8000-000000000000',
-      warningDescriptors: [],
-    })
+    const seeded = await seedPage()
+    const revision = await seedRevision(seeded.id, 1)
     const res = await call(
       adminPagesRouter.saveDraft,
-      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      {
+        id: String(seeded.id),
+        body: emptyLexicalBody(),
+        expectedClientRevisionToken: '11111111-1111-4000-8000-000000000000',
+      },
       { context: adminCtx(admin) },
     )
     expect(res.status).toBe('conflict')
+    expect(res).toMatchObject({ latest: { id: String(revision.id) } })
 
     expect(await auditRowsFor('page_draft_saved')).toHaveLength(0)
   })
 })
 
 describe('adminPagesRouter.publishLatest', () => {
-  it('returns saved status on success and records a page_published audit row', async () => {
+  it('publishes a real revision and records a page_published audit row', async () => {
     const admin = await seedAdmin()
-    vi.mocked(saveBody).mockResolvedValueOnce({
-      status: 'saved',
-      revision: revisionStub,
-      warningDescriptors: [],
-    })
+    const seeded = await seedPage()
     const res = await call(
       adminPagesRouter.publishLatest,
-      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: String(seeded.id), body: emptyLexicalBody(), expectedClientRevisionToken: null },
       { context: adminCtx(admin) },
     )
     expect(res.status).toBe('saved')
 
     const audits = await auditRowsFor('page_published')
     expect(audits).toHaveLength(1)
-    expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: '1', actorId: admin })
+    expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: String(seeded.id), actorId: admin })
   })
 })
 

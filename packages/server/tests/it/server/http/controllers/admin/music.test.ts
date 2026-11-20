@@ -3,8 +3,6 @@ import { music } from '@kobato/db/schema/media.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { searchMusic } from '@kobato/server/domains/music/services/search.ts'
-import { addMusic } from '@kobato/server/domains/music/services/write/add.ts'
 import { adminMusicRouter } from '@kobato/server/http/controllers/admin/music.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
@@ -13,15 +11,16 @@ import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/music/services/search.ts', () => ({
-  searchMusic: vi.fn(),
-}))
-
-vi.mock('@kobato/server/domains/music/services/write/add.ts', () => ({
-  addMusic: vi.fn(),
-}))
+// Music search hits external providers; the controller mapping is pinned
+// through function-level doubles.
+const searchMusic = vi
+  .spyOn(await import('@kobato/server/domains/music/services/search.ts'), 'searchMusic')
+  .mockImplementation(() => Promise.resolve({ results: [] }) as never)
+const addMusic = vi
+  .spyOn(await import('@kobato/server/domains/music/services/write/add.ts'), 'addMusic')
+  .mockImplementation(() => Promise.resolve(undefined) as never)
 
 const mem = makeMemoryBackend()
 
@@ -108,7 +107,7 @@ describe('adminMusicRouter.list', () => {
 
 describe('adminMusicRouter.search', () => {
   it('returns search results', async () => {
-    vi.mocked(searchMusic).mockResolvedValueOnce({
+    searchMusic.mockResolvedValueOnce({
       results: [
         {
           source: 'netease' as const,
@@ -131,7 +130,7 @@ describe('adminMusicRouter.search', () => {
 
 describe('adminMusicRouter.add', () => {
   it('returns the added music', async () => {
-    vi.mocked(addMusic).mockResolvedValueOnce(musicStub)
+    addMusic.mockResolvedValueOnce(musicStub)
     const ctx = makeAuthedCtx({ db })
     const res = await call(adminMusicRouter.add, { source: 'netease', sourceId: '12345' }, { context: ctx })
     expect(res.music.id).toBe('1')
@@ -211,4 +210,9 @@ describe('adminMusicRouter.delete', () => {
       code: 'NOT_FOUND',
     })
   })
+})
+
+afterAll(() => {
+  searchMusic.mockRestore()
+  addMusic.mockRestore()
 })

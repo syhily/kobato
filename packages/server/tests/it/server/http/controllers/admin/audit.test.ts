@@ -3,11 +3,7 @@ import { user } from '@kobato/db/schema/user.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/domains/audit/highlight.ts', () => ({
-  highlightAuditLogDetails: vi.fn((details: string | null) => Promise.resolve(details)),
-}))
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller.ts')
 

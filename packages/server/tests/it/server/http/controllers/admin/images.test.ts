@@ -3,8 +3,6 @@ import { image } from '@kobato/db/schema/media.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import * as adminMutate from '@kobato/server/domains/images/services/admin-mutate.ts'
-import * as uploadService from '@kobato/server/domains/images/services/upload.ts'
 import { adminImagesRouter } from '@kobato/server/http/controllers/admin/images.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
@@ -14,27 +12,32 @@ import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
+import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/images/services/admin-mutate.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/images/services/admin-mutate.ts')>()
-  return {
-    ...actual,
-    recalculateImageThumbhash: vi.fn(),
-  }
-})
-
-vi.mock('@kobato/server/domains/images/services/upload.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/images/services/upload.ts')>()
-  return {
-    ...actual,
-    uploadImage: vi.fn(),
-  }
-})
+// The controller→service mapping stays observable; the services run for real.
+const adminMutate = await import('@kobato/server/domains/images/services/admin-mutate.ts')
+const uploadService = await import('@kobato/server/domains/images/services/upload.ts')
+const recalculateImageThumbhash = vi.spyOn(adminMutate, 'recalculateImageThumbhash')
+const uploadImage = vi.spyOn(uploadService, 'uploadImage')
 
 const db = getTestDb()
 
 const memory = makeMemoryBackend({ driver: 's3' })
+
+const TINY_PNG = new Blob(
+  [
+    await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 9, g: 8, b: 7 } } })
+      .png()
+      .toBuffer(),
+  ],
+  {
+    type: 'image/png',
+  },
+)
+const TINY_JPEG = await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 9, g: 8, b: 7 } } })
+  .jpeg()
+  .toBuffer()
 
 beforeEach(async () => {
   __setStorageBackendForTests('s3', memory.backend)
@@ -78,26 +81,6 @@ async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
 
 function adminCtx(userId: number) {
   return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
-}
-
-function imageDto(overrides: Record<string, unknown> = {}) {
-  return {
-    id: '1',
-    kind: 'generic' as const,
-    storagePath: 'images/2026/01/01.jpg',
-    publicUrl: 'https://cdn.example.com/images/2026/01/01.jpg',
-    mimeType: 'image/jpeg',
-    width: 1920,
-    height: 1080,
-    byteSize: 204800,
-    thumbhash: 'abc123',
-    uploaderId: '1',
-    uploaderName: 'Alice',
-    note: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  }
 }
 
 describe('adminImagesRouter.list', () => {
@@ -169,17 +152,29 @@ describe('adminImagesRouter.updateNote', () => {
 })
 
 describe('adminImagesRouter.recalculateThumbhash', () => {
-  it('returns image with recalculated thumbhash', async () => {
+  it('recalculates a real thumbhash from the stored image bytes', async () => {
     const admin = await seedAdmin()
-    vi.mocked(adminMutate.recalculateImageThumbhash).mockResolvedValueOnce(imageDto())
+    const seeded = await seedImage({ storagePath: 'images/generic/tiny.jpg' })
+    await memory.backend.put({
+      key: 'images/generic/tiny.jpg',
+      body: TINY_JPEG,
+      contentType: 'image/jpeg',
+      visibility: 'public',
+    })
 
-    const res = await call(adminImagesRouter.recalculateThumbhash, { id: '1' }, { context: adminCtx(admin) })
+    const res = await call(
+      adminImagesRouter.recalculateThumbhash,
+      { id: String(seeded.id) },
+      { context: adminCtx(admin) },
+    )
 
-    expect(res.image.id).toBe('1')
+    expect(res.image.id).toBe(String(seeded.id))
+    expect(res.image.thumbhash).toMatch(/.+/)
+    expect(recalculateImageThumbhash).toHaveBeenCalledOnce()
   })
 })
 
-describe('adminImagesRouter.upload — orchestration only', () => {
+describe('adminImagesRouter.upload', () => {
   beforeEach(() => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -190,16 +185,20 @@ describe('adminImagesRouter.upload — orchestration only', () => {
     })
   })
 
-  it('validates the declared file against the configured cap, then uploads', async () => {
+  it('validates the declared file against the configured cap, then uploads for real', async () => {
     const admin = await seedAdmin()
-    vi.mocked(uploadService.uploadImage).mockResolvedValueOnce(imageDto())
     const ctx = adminCtx(admin)
-    const file = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })
 
-    const res = await call(adminImagesRouter.upload, { file, metadata: { kind: 'generic' } }, { context: ctx })
+    const res = await call(
+      adminImagesRouter.upload,
+      { file: TINY_PNG, metadata: { kind: 'generic' } },
+      { context: ctx },
+    )
 
-    expect(res.image.id).toBe('1')
-    expect(uploadService.uploadImage).toHaveBeenCalledWith(
+    expect(res.image.mimeType).toBe('image/jpeg')
+    expect(res.image.width).toBe(8)
+    expect(res.image.byteSize).toBeLessThanOrEqual(1024)
+    expect(uploadImage).toHaveBeenCalledWith(
       db,
       expect.objectContaining({
         kind: { kind: 'generic' },
@@ -218,21 +217,19 @@ describe('adminImagesRouter.upload — orchestration only', () => {
     await expect(
       call(adminImagesRouter.upload, { file, metadata: { kind: 'generic' } }, { context: adminCtx(admin) }),
     ).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' })
-    expect(uploadService.uploadImage).not.toHaveBeenCalled()
+    expect(uploadImage).not.toHaveBeenCalled()
   })
 
   it('routes the category kind with its slug to the domain upload', async () => {
     const admin = await seedAdmin()
-    vi.mocked(uploadService.uploadImage).mockResolvedValueOnce(imageDto())
-    const file = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })
 
     await call(
       adminImagesRouter.upload,
-      { file, metadata: { kind: 'category', slug: 'tech', note: 'cover' } },
+      { file: TINY_PNG, metadata: { kind: 'category', slug: 'tech', note: 'cover' } },
       { context: adminCtx(admin) },
     )
 
-    expect(uploadService.uploadImage).toHaveBeenCalledWith(
+    expect(uploadImage).toHaveBeenCalledWith(
       db,
       expect.objectContaining({ kind: { kind: 'category', slug: 'tech' }, note: 'cover' }),
     )
@@ -252,6 +249,6 @@ describe('adminImagesRouter.upload — orchestration only', () => {
     await expect(
       call(adminImagesRouter.upload, { file, metadata: { kind: 'friend', host: 'example.com' } }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
-    expect(uploadService.uploadImage).not.toHaveBeenCalled()
+    expect(uploadImage).not.toHaveBeenCalled()
   })
 })

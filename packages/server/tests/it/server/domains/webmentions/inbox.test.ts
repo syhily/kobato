@@ -10,13 +10,11 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/webmentions/email.ts', () => ({
-  sendNewWebmention: vi.fn(async () => ({ ok: true })),
-}))
-
-const { sendNewWebmention } = await import('@kobato/server/domains/webmentions/email.ts')
+const sendNewWebmention = vi
+  .spyOn(await import('@kobato/server/domains/webmentions/email.ts'), 'sendNewWebmention')
+  .mockImplementation(async () => ({ ok: true }) as never)
 
 const db = getTestDb()
 const mockFetch = installFetch()
@@ -225,4 +223,8 @@ describe('integration / webmention inbox worker', () => {
     expect(await listWebmentionInbox(db)).toHaveLength(0)
     expect(await db.select().from(webmention)).toHaveLength(0)
   })
+})
+
+afterAll(() => {
+  sendNewWebmention.mockRestore()
 })

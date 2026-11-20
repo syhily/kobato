@@ -13,12 +13,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/domains/content/lifecycle.ts', () => ({
-  saveBody: vi.fn(),
-}))
-
-const lifecycle = await import('@kobato/server/domains/content/lifecycle.ts')
-
 const db = getTestDb()
 
 let seq = 0
@@ -125,36 +119,21 @@ describe('adminPostsRouter.delete', () => {
 })
 
 describe('adminPostsRouter.saveDraft', () => {
-  it('discriminates `saved` and `conflict` shapes on the union response', async () => {
+  it('saves a real draft revision and audits post_draft_saved', async () => {
     const admin = await seedAdmin()
-    const revision = {
-      id: '1',
-      revisionNo: 1,
-      status: 'draft' as const,
-      body: emptyLexicalBody(),
-      imageSources: [],
-      headings: [],
-      authorId: '1',
-      clientRevisionToken: '00000000-0000-4000-8000-000000000000',
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    }
-    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
-      status: 'saved',
-      revision: revision,
-      warningDescriptors: [],
-    })
+    const seeded = await seedPost()
 
     const res = (await call(
       adminPostsRouter.saveDraft,
-      { id: '1', body: emptyLexicalBody(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: String(seeded.id), body: emptyLexicalBody(), expectedClientRevisionToken: null },
       { context: adminCtx(admin) },
-    )) as { status: string }
+    )) as { status: string; revision?: { id: string; status: string } }
     expect(res.status).toBe('saved')
+    expect(res.revision?.status).toBe('draft')
 
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_draft_saved'))
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ resourceType: 'post', resourceId: '1', actorId: admin })
+    expect(rows[0]).toMatchObject({ resourceType: 'post', resourceId: String(seeded.id), actorId: admin })
   })
 })
