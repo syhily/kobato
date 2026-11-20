@@ -7,22 +7,13 @@ import {
 import { replayDeadLetterAccessLog } from '@kobato/server/domains/analytics/services/batcher.ts'
 import { initAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
-import { readFile, rename, writeFile } from 'node:fs/promises'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 let analyticsHandle: AnalyticsHandle
 let ingestShouldFail = false
-
-vi.mock('node:fs/promises', async () => {
-  const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
-  return {
-    ...actual,
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-    rename: vi.fn(),
-    appendFile: vi.fn(),
-  }
-})
 
 const makeEvent = (path: string) =>
   JSON.stringify({
@@ -49,13 +40,17 @@ const makeEvent = (path: string) =>
     isBot: false,
   })
 
+let deadLetterDir: string
+
 beforeAll(async () => {
   analyticsHandle = await createTestAnalyticsDb()
+  deadLetterDir = mkdtempSync(join(tmpdir(), 'kobato-dead-letter-'))
 })
 
 afterAll(async () => {
   __resetAnalyticsEngineForTests()
   await closeTestAnalyticsDb(analyticsHandle)
+  rmSync(deadLetterDir, { recursive: true, force: true })
 })
 
 beforeEach(() => {
@@ -74,43 +69,44 @@ beforeEach(() => {
   })
 })
 
+function stageDeadLetter(lines: string[]): string {
+  const path = join(deadLetterDir, `dead-${Math.random().toString(36).slice(2)}.jsonl`)
+  writeFileSync(path, `${lines.join('\n')}\n`)
+  return path
+}
+
 describe('replayDeadLetter', () => {
   const dbStub = {}
   initAllBatchers({ db: dbStub, client: {}, path: ':memory:', inMemory: true, closed: false } as never)
 
   it('returns replayed=0 failed=0 when file does not exist', async () => {
-    vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))
-    const result = await replayDeadLetterAccessLog('/tmp/nonexistent.jsonl')
+    const result = await replayDeadLetterAccessLog(join(deadLetterDir, 'nonexistent.jsonl'))
     expect(result).toEqual({ replayed: 0, failed: 0 })
   })
 
-  it('replays all valid events when copy succeeds', async () => {
-    const lines = [makeEvent('/a'), makeEvent('/b'), makeEvent('/c')]
-    vi.mocked(readFile).mockResolvedValue(lines.join('\n') + '\n')
-    vi.mocked(writeFile).mockResolvedValue(undefined)
-    vi.mocked(rename).mockResolvedValue(undefined)
+  it('replays all valid events for real and truncates the file', async () => {
+    const path = stageDeadLetter([makeEvent('/a'), makeEvent('/b'), makeEvent('/c')])
 
-    const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
+    const result = await replayDeadLetterAccessLog(path)
     expect(result.replayed).toBe(3)
     expect(result.failed).toBe(0)
+    expect(readFileSync(path, 'utf8')).toBe('')
   })
 
   it('counts parse failures in failed, replayed=0 when ingest fails', async () => {
     ingestShouldFail = true
-    const lines = [makeEvent('/a'), 'this-is-not-json', makeEvent('/c')]
-    vi.mocked(readFile).mockResolvedValue(lines.join('\n') + '\n')
+    const path = stageDeadLetter([makeEvent('/a'), 'this-is-not-json', makeEvent('/c')])
 
-    const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
+    const result = await replayDeadLetterAccessLog(path)
     expect(result.replayed).toBe(0)
     expect(result.failed).toBe(3)
   })
 
   it('counts mixed parse and ingest failures correctly', async () => {
     ingestShouldFail = true
-    const lines = [makeEvent('/a'), 'bad-1', 'bad-2', makeEvent('/d')]
-    vi.mocked(readFile).mockResolvedValue(lines.join('\n') + '\n')
+    const path = stageDeadLetter([makeEvent('/a'), 'bad-1', 'bad-2', makeEvent('/d')])
 
-    const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
+    const result = await replayDeadLetterAccessLog(path)
     expect(result.replayed).toBe(0)
     expect(result.failed).toBe(4)
   })
