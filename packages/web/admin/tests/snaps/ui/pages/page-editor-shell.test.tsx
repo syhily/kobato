@@ -7,7 +7,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { makeAdminPage } from '@kobato/web-admin/tests/utils/catalog.ts'
 import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { PagesView } from '@kobato/web-admin/ui/pages/PagesView.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
@@ -30,30 +30,27 @@ queryMocks.filters = [] as ActiveFilter<PageFilterFieldKey>[]
 
 queryMocks.dispatch = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')>(
-    '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts',
-  )
-  return {
-    ...actual,
-    useFilterPills: ({ fields }: { fields: unknown }) => ({
-      filters: queryMocks.filters,
-      hasFilters: queryMocks.filters.length > 0,
-      dispatch: queryMocks.dispatch,
-      queryInput: () => ({}),
-      text: () => ({ op: 'contains', value: '' }),
-      dateSingle: () => null,
-      dateRange: () => null,
-      bar: {
-        fields,
-        filters: queryMocks.filters,
-        search: {},
-        onAddFilter: vi.fn(),
-        onRemoveFilter: vi.fn(),
-        onClearFilters: vi.fn(),
-      },
-    }),
-  }
+const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+vi.spyOn(filterPillsMod, 'useFilterPills').mockImplementation((({ fields }: { fields: unknown }) => ({
+  filters: queryMocks.filters,
+  hasFilters: queryMocks.filters.length > 0,
+  dispatch: queryMocks.dispatch,
+  queryInput: () => ({}),
+  text: () => ({ op: 'contains', value: '' }),
+  dateSingle: () => null,
+  dateRange: () => null,
+  bar: {
+    fields,
+    filters: queryMocks.filters,
+    search: {},
+    onAddFilter: vi.fn(),
+    onRemoveFilter: vi.fn(),
+    onClearFilters: vi.fn(),
+  },
+})) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
 })
 
 const aboutPage: Partial<AdminPageDto> = {

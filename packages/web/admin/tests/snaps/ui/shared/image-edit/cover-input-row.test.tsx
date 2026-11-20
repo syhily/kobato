@@ -1,10 +1,13 @@
 import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx', () => ({
-  UploadImageDialog: () => null,
-}))
+const mod_UploadImageDialog = await import('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx')
+vi.spyOn(mod_UploadImageDialog, 'UploadImageDialog').mockImplementation((() => null) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 describe('CoverInputRow — upload gating', () => {
   it('keeps the upload trigger enabled whenever a kind is supplied (no S3 toggle)', () => {

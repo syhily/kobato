@@ -2,11 +2,14 @@
 
 import { useEditorShellLayout } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-layout.ts'
 import { renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-admin/ui/shell/AdminShell.tsx', () => ({
-  useAdminScrollTopLift: vi.fn(),
-}))
+const mod_AdminShell = await import('@kobato/web-admin/ui/shell/AdminShell.tsx')
+vi.spyOn(mod_AdminShell, 'useAdminScrollTopLift').mockImplementation(vi.fn() as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 let viewportWidth = 1280
 
