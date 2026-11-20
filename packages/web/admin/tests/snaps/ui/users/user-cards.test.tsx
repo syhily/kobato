@@ -1,6 +1,6 @@
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
+import { renderInRouter, renderToHtml, stableHtml, testQueryClient } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -130,48 +130,14 @@ describe('snapshot: UserOperationsCard', () => {
   })
 })
 
-const queryMocks = vi.hoisted(() => ({
-  userQuery: {
-    data: null as { user: AdminUserDto } | null,
-    isPending: false,
-    isFetching: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  commentsQuery: {
-    data: null as { comments: unknown[] } | null,
-    isPending: false,
-    isFetching: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: { mutate: vi.fn(), isPending: false },
-  queryClient: { invalidateQueries: vi.fn(), setQueryData: vi.fn(), removeQueries: vi.fn() },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => {
-      queryCounter.n += 1
-      return queryCounter.n === 1 ? queryMocks.userQuery : queryMocks.commentsQuery
-    },
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-const queryCounter = vi.hoisted(() => ({ n: 0 }))
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
 
 describe('snapshot: UserDetailView', () => {
   beforeEach(() => {
-    queryCounter.n = 0
+    testQueryClient.clear()
   })
 
   it('renders the skeleton when the user query is pending', () => {
-    queryMocks.userQuery = { data: null, isPending: true, isFetching: false, error: null, refetch: vi.fn() }
-    queryMocks.commentsQuery = { data: null, isPending: true, isFetching: false, error: null, refetch: vi.fn() }
     const html = stableHtml(
       renderInRouter(
         <UserDetailView userId="u1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
@@ -193,20 +159,13 @@ describe('snapshot: UserDetailView', () => {
       badgeName: 'VIP',
       badgeColor: '#ff0000',
     })
-    queryMocks.userQuery = {
-      data: { user },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: { comments: [] },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: 'detail-1' } }).queryKey, {
+      user,
+    })
+    testQueryClient.setQueryData(
+      orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: 'detail-1' } }).queryKey,
+      { comments: [] },
+    )
     const html = stableHtml(
       renderInRouter(
         <UserDetailView userId="detail-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
@@ -235,20 +194,11 @@ describe('snapshot: UserDetailView', () => {
       name: 'Self Admin',
       role: 'admin',
     })
-    queryMocks.userQuery = {
-      data: { user },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: { comments: [] },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: 'self-1' } }).queryKey, { user })
+    testQueryClient.setQueryData(
+      orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: 'self-1' } }).queryKey,
+      { comments: [] },
+    )
     const html = stableHtml(
       renderInRouter(
         <UserDetailView userId="self-1" currentUserId="self-1" navigate={vi.fn()} passkeyEnabled={false} />,
@@ -267,20 +217,11 @@ describe('snapshot: UserDetailView', () => {
       isMuted: true,
       deletedAt: '2024-04-01T00:00:00.000Z',
     })
-    queryMocks.userQuery = {
-      data: { user },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: { comments: [] },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: 'dm-1' } }).queryKey, { user })
+    testQueryClient.setQueryData(
+      orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: 'dm-1' } }).queryKey,
+      { comments: [] },
+    )
     const html = stableHtml(
       renderInRouter(
         <UserDetailView userId="dm-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
@@ -299,20 +240,13 @@ describe('snapshot: UserDetailView', () => {
       role: null,
       passkeyCount: 4,
     })
-    queryMocks.userQuery = {
-      data: { user },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
-    queryMocks.commentsQuery = {
-      data: { comments: [] },
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: 'anon-det-1' } }).queryKey, {
+      user,
+    })
+    testQueryClient.setQueryData(
+      orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: 'anon-det-1' } }).queryKey,
+      { comments: [] },
+    )
     const html = stableHtml(
       renderInRouter(
         <UserDetailView userId="anon-det-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={true} />,
