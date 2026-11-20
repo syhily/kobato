@@ -13,7 +13,7 @@ import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 
-const testQueryClient = new QueryClient({
+export const testQueryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: false, gcTime: 0 },
     mutations: { retry: false },

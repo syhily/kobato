@@ -1,25 +1,10 @@
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/contracts/comments.ts'
 
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
+import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-admin/tests/utils/render.tsx'
 import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
 import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingModerationPanel.tsx'
 import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard.tsx'
-import { describe, expect, it, vi } from 'vitest'
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: (options: { initialData?: unknown }) => ({
-      data: options.initialData,
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }),
-    useMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
-  }
-})
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const approvalItem: AdminPendingItemDto = {
   id: 'c1',
@@ -72,6 +57,10 @@ describe('snapshot: pickEmptyStateLineId', () => {
 })
 
 describe('snapshot: PendingModerationPanel', () => {
+  beforeEach(() => {
+    testQueryClient.clear()
+  })
+
   it('renders pending rows with approve/reject actions', () => {
     const initial = makeDashboard([approvalItem, deletionItem])
     const html = stableHtml(
