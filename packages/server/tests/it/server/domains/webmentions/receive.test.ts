@@ -1,10 +1,14 @@
 import { post } from '@kobato/db/schema/post.ts'
 import { webmention } from '@kobato/db/schema/webmention.ts'
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
+__setDnsLookupForTests(dnsSeam)
 
 vi.mock('@kobato/server/domains/webmentions/email.ts', () => ({
   sendNewWebmention: vi.fn(async () => ({ ok: true })),

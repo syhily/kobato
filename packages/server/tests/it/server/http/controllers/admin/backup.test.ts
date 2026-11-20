@@ -41,16 +41,6 @@ vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOrigin
   }
 })
 
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  requestShutdown: vi.fn(),
-  registerShutdownHook: vi.fn(),
-  unregisterShutdownHook: vi.fn(),
-  setServerPhase: vi.fn(),
-  restartServer: vi.fn(),
-  setRestartGetDb: vi.fn(),
-  setRestartRefreshSettings: vi.fn(),
-}))
-
 const db = getTestDb()
 
 const s3Memory = makeMemoryBackend({ driver: 's3' })

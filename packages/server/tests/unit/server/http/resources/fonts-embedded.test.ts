@@ -1,21 +1,13 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
+import { __setStorageDirForTests } from '@kobato/server/infra/data-paths.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { Hono } from 'hono'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const tmp = vi.hoisted(() => ({ root: '' }))
-
-vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
-  const fs = await import('node:fs')
-  const os = await import('node:os')
-  const nodePath = await import('node:path')
-  tmp.root = fs.mkdtempSync(nodePath.join(os.tmpdir(), 'fonts-embedded-route-'))
-  return { ...actual, STORAGE_DIR: tmp.root }
-})
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 const { fontsEmbeddedRouter } = await import('@kobato/server/http/resources/fonts-embedded.ts')
 
@@ -39,15 +31,19 @@ function seedStorageEnabled(enabled: boolean) {
 const HASH = 'a'.repeat(64)
 const MISSING_HASH = 'b'.repeat(64)
 
+const root = mkdtempSync(join(tmpdir(), 'fonts-embedded-route-'))
+__setStorageDirForTests(root)
+
 beforeAll(() => {
-  mkdirSync(`${tmp.root}/fonts/${HASH}`, { recursive: true })
-  writeFileSync(`${tmp.root}/fonts/${HASH}/result.css`, '@font-face{}')
-  writeFileSync(`${tmp.root}/fonts/${HASH}/chunk-001.woff2`, 'woff2-bytes')
-  writeFileSync(`${tmp.root}/fonts/${HASH}/.secret.woff2`, 'hid')
+  mkdirSync(`${root}/fonts/${HASH}`, { recursive: true })
+  writeFileSync(`${root}/fonts/${HASH}/result.css`, '@font-face{}')
+  writeFileSync(`${root}/fonts/${HASH}/chunk-001.woff2`, 'woff2-bytes')
+  writeFileSync(`${root}/fonts/${HASH}/.secret.woff2`, 'hid')
 })
 
 afterAll(() => {
-  rmSync(tmp.root, { recursive: true, force: true })
+  __setStorageDirForTests(null)
+  rmSync(root, { recursive: true, force: true })
 })
 
 describe('fonts-embedded public route (local driver)', () => {

@@ -1,19 +1,8 @@
+import { RESTORE_TEMP_PREFIX, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore.ts'
 import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/infra/db/paths.ts', () => ({
-  resolveDatabasePath: () => ':memory:',
-  resolveAnalyticsPath: () => ':memory:',
-  isInMemoryPath: (path: string) => path === ':memory:',
-}))
-
-vi.mock('@kobato/server/infra/logger.ts', () => ({
-  getLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
-}))
-
-import { RESTORE_TEMP_PREFIX, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore.ts'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const created: string[] = []
 

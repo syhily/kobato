@@ -22,11 +22,15 @@ import {
 import { type AvatarEntry, AvatarStatus, get, set } from '@kobato/server/infra/cache/registry.ts'
 import { imageWidth } from '@kobato/server/infra/image/compress.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
+__setDnsLookupForTests(dnsSeam)
 
 const db = getTestDb()
 

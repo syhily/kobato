@@ -4,14 +4,7 @@ import { serverConfig } from '@kobato/server/infra/config.ts'
 import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-const gate = vi.hoisted(() => ({ vitest: true }))
-
-vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/config.ts')>()
-  return { ...actual, isVitest: () => gate.vitest }
-})
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { migrateSecretsEncryption } = await import('@kobato/server/domains/settings/services/migrate-secrets.ts')
 
@@ -38,12 +31,16 @@ async function readData(scope: string): Promise<Record<string, unknown>> {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  gate.vitest = false
+  vi.stubEnv('VITEST', 'false')
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('migrateSecretsEncryption', () => {
   it('is skipped in test mode', async () => {
-    gate.vitest = true
+    vi.stubEnv('VITEST', 'true')
     await seedSetting('blog.mail', { mail: { smtpPass: 'plain-mail-key' } })
 
     await migrateSecretsEncryption(db)

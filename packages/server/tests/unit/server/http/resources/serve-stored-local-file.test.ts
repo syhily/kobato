@@ -1,28 +1,24 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-
-const tmp = vi.hoisted(() => ({ root: '' }))
-
-vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
-  const fs = await import('node:fs')
-  const os = await import('node:os')
-  const path = await import('node:path')
-  tmp.root = fs.mkdtempSync(path.join(os.tmpdir(), 'serve-stored-local-file-'))
-  return { ...actual, STORAGE_DIR: tmp.root }
-})
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 await import('@kobato/server/infra/data-paths.ts')
+const { __setStorageDirForTests } = await import('@kobato/server/infra/data-paths.ts')
 const { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } =
   await import('@kobato/server/http/resources/serve-local-file.ts')
 
+const root = mkdtempSync(join(tmpdir(), 'serve-stored-local-file-'))
+__setStorageDirForTests(root)
+
 beforeAll(() => {
-  mkdirSync(`${tmp.root}/images`, { recursive: true })
-  writeFileSync(`${tmp.root}/images/example.txt`, 'hello')
+  mkdirSync(`${root}/images`, { recursive: true })
+  writeFileSync(`${root}/images/example.txt`, 'hello')
 })
 
 afterAll(() => {
-  rmSync(tmp.root, { recursive: true, force: true })
+  __setStorageDirForTests(null)
+  rmSync(root, { recursive: true, force: true })
 })
 
 describe('serveStoredLocalFile', () => {

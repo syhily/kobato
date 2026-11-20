@@ -10,7 +10,11 @@ import {
   upgradeObservabilityProvisioningAtBoot,
 } from '@kobato/server/domains/observability/provision.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { describe, expect, it, vi } from 'vitest'
+
+const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
+__setDnsLookupForTests(dnsSeam)
 
 const SITE: ObservabilitySettingsSlice = {
   enabled: true,

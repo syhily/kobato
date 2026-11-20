@@ -18,7 +18,7 @@ const VALID_PROFILE: CommentGuestProfile = {
 }
 
 const store = new Map<string, string>()
-vi.stubGlobal('localStorage', {
+const storageStub = {
   getItem(key: string) {
     return store.get(key) ?? null
   },
@@ -31,7 +31,7 @@ vi.stubGlobal('localStorage', {
   clear() {
     store.clear()
   },
-} as unknown as Storage)
+} as unknown as Storage
 
 function Probe() {
   const { profile } = useCommentGuest()
@@ -40,6 +40,7 @@ function Probe() {
 
 beforeEach(() => {
   store.clear()
+  vi.stubGlobal('localStorage', storageStub)
 })
 
 describe('useCommentGuest client behavior', () => {

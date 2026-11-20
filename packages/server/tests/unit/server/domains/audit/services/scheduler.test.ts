@@ -5,15 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.useFakeTimers()
 
 const runArchiveJob = vi.fn().mockResolvedValue(undefined)
-const registerShutdownHook = vi.fn()
 const db = {}
 
 vi.mock('@kobato/server/domains/audit/services/archive.ts', () => ({
   runArchiveJob: (...args: unknown[]) => runArchiveJob(...args),
-}))
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
 const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000

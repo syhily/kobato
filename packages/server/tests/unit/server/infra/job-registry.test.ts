@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.useFakeTimers()
-
-const registerShutdownHook = vi.fn()
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
-}))
-
 const {
+  __resetJobHandleForTests,
   __resetJobRegistrationsForTests,
   jobDb,
   jobHandle,
@@ -22,14 +15,17 @@ const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-ut
 
 describe('job registry', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     stopAllScheduledJobs()
     __resetJobRegistrationsForTests()
+    __resetJobHandleForTests()
   })
 
   afterEach(() => {
     stopAllScheduledJobs()
     __resetJobRegistrationsForTests()
+    vi.useRealTimers()
   })
 
   it('throws when a job evaluates before the handle getter is wired', () => {

@@ -8,4 +8,8 @@ export const vitestTestBase = {
   maxWorkers: 4,
   isolate: false,
   testTimeout: 10_000,
+  // Shared workers reuse one module registry across files; a stub left behind
+  // by a failed or timed-out file would poison every later file's fetch/env.
+  unstubGlobals: true,
+  unstubEnvs: true,
 } as const

@@ -2,21 +2,15 @@ import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/se
 import type { ReadableSpan } from '@opentelemetry/sdk-trace'
 import type { Worker } from 'node:worker_threads'
 
+import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
+import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
+import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: vi.fn(),
-  unregisterShutdownHook: vi.fn(),
-}))
-
-import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
-import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
 
 const { WorkerPool, __setWorkerFactory, __resetWorkerFactory } =
   await import('@kobato/server/infra/image/process-pool.ts')

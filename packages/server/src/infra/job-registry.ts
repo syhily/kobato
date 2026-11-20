@@ -80,3 +80,7 @@ export function __resetJobRegistrationsForTests(): void {
   }
   entries.length = 0
 }
+
+export function __resetJobHandleForTests(): void {
+  getHandle = null
+}

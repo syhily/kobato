@@ -1,12 +1,8 @@
 import type { Hono } from 'hono'
 
 import { wrapFetchWithLeakedResponseHandler } from '@kobato/server/http/leaked-response.ts'
-import { describe, expect, it, vi } from 'vitest'
-
-const mocks = vi.hoisted(() => ({ warn: vi.fn() }))
-vi.mock('@kobato/server/infra/logger.ts', () => ({
-  getLogger: vi.fn(() => ({ warn: mocks.warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() })),
-}))
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 interface FakeApp {
   fetch: (req: Request | string) => Response | Promise<Response>
@@ -14,6 +10,14 @@ interface FakeApp {
 
 function makeApp(fetchImpl: FakeApp['fetch']): FakeApp {
   return { fetch: fetchImpl }
+}
+
+beforeEach(() => {
+  __clearLogCaptureForTests()
+})
+
+function leakedResponseWarns() {
+  return __logCaptureForTests().filter((entry) => entry.msg === 'leaked-response')
 }
 
 describe('server/http/leaked-response — wrapFetchWithLeakedResponseHandler', () => {
@@ -52,11 +56,10 @@ describe('server/http/leaked-response — wrapFetchWithLeakedResponseHandler', (
     })
     wrapFetchWithLeakedResponseHandler(app as unknown as Hono)
     await app.fetch(new Request('https://example.com/admin/signin?action=login&token=one-time-secret'))
-    expect(mocks.warn).toHaveBeenCalledWith(
-      'leaked-response',
-      expect.objectContaining({ path: '/admin/signin', status: 302 }),
-    )
-    expect(JSON.stringify(mocks.warn.mock.calls)).not.toContain('one-time-secret')
+    const warns = leakedResponseWarns()
+    expect(warns).toHaveLength(1)
+    expect(warns[0].ctx).toMatchObject({ path: '/admin/signin', status: 302 })
+    expect(JSON.stringify(warns)).not.toContain('one-time-secret')
   })
 
   it('rethrows non-Response sync errors', () => {

@@ -5,6 +5,7 @@ import * as adminQuery from '@kobato/server/domains/pages/services/admin-query.t
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
 import * as mutate from '@kobato/server/domains/pages/services/mutate.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import {
   emptyLexicalBody,
@@ -14,20 +15,11 @@ import {
   stubMusicResolver,
 } from '@kobato/server/tests/utils/lexical.ts'
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-const { auditInfoMock } = vi.hoisted(() => ({ auditInfoMock: vi.fn() }))
-
-vi.mock('@kobato/server/infra/logger.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/logger.ts')>()
-  return {
-    ...actual,
-    getLogger: (scope: string) => {
-      const real = actual.getLogger(scope)
-      return scope === 'audit.cms.pages' ? { ...real, info: auditInfoMock } : real
-    },
-  }
-})
+function auditInfos() {
+  return __logCaptureForTests().filter((entry) => entry.scope === 'audit.cms.pages' && entry.level === 'info')
+}
 
 const db = getTestDb()
 
@@ -69,7 +61,7 @@ const NO_MUSIC = stubMusicResolver()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  auditInfoMock.mockClear()
+  __clearLogCaptureForTests()
 })
 
 describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () => {
@@ -317,9 +309,10 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     expect(result.status).toBe('saved')
 
-    expect(auditInfoMock).toHaveBeenCalledTimes(1)
-    const [message, context] = auditInfoMock.mock.calls[0]!
-    expect(message).toBe('force_overwrite_save')
+    expect(auditInfos()).toHaveLength(1)
+    const auditEntry = auditInfos()[0]!
+    expect(auditEntry.msg).toBe('force_overwrite_save')
+    const context = auditEntry.ctx
     const rows = await contentRows(meta.id)
     expect(rows).toHaveLength(1)
     expect(context).toMatchObject({
@@ -357,7 +350,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
 
     expect(result.status).toBe('saved')
-    expect(auditInfoMock).not.toHaveBeenCalled()
+    expect(auditInfos()).toHaveLength(0)
   })
 
   it('publish translates a conflict back into the wire shape and leaves the meta row unpublished', async () => {
@@ -415,10 +408,10 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     expect(result.status).toBe('saved')
 
-    expect(auditInfoMock).toHaveBeenCalledTimes(1)
-    const [message, context] = auditInfoMock.mock.calls[0]!
-    expect(message).toBe('force_overwrite_save')
-    expect(context).toMatchObject({
+    expect(auditInfos()).toHaveLength(1)
+    const auditEntry = auditInfos()[0]!
+    expect(auditEntry.msg).toBe('force_overwrite_save')
+    expect(auditEntry.ctx).toMatchObject({
       mode: 'publish',
       actor: '99',
       pageMetaId: String(meta.id),

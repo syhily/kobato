@@ -1,26 +1,5 @@
 import type { Database } from '@kobato/db/database.ts'
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterAll, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: vi.fn(),
-  unregisterShutdownHook: vi.fn(),
-}))
-
-const logger = vi.hoisted(() => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-}))
-
-vi.mock('@kobato/server/infra/logger.ts', () => ({
-  getLogger: () => logger,
-}))
-
 import {
   DEFAULT_MAX_BUFFER_SIZE,
   InsertBatcher,
@@ -28,13 +7,36 @@ import {
   replayDeadLetter,
   writeDeadLetter,
 } from '@kobato/server/infra/db/insert-batcher.ts'
-import { registerShutdownHook } from '@kobato/server/infra/lifecycle.ts'
+import { __getLifecycleContainer } from '@kobato/server/infra/lifecycle.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests, getLogger } from '@kobato/server/infra/logger.ts'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const tmp = mkdtempSync(join(tmpdir(), 'insert-batcher-test-'))
 afterAll(() => rmSync(tmp, { recursive: true, force: true }))
 
+const liveBatchers: InsertBatcher<string>[] = []
+function track<T extends InsertBatcher<string>>(batcher: T): T {
+  liveBatchers.push(batcher)
+  return batcher
+}
+afterAll(() => {
+  for (const batcher of liveBatchers) {
+    batcher.dispose()
+  }
+  liveBatchers.length = 0
+})
+
 function fakeDb(): Database {
   return {} as Database
+}
+
+const log = getLogger('insert-batcher-test')
+
+function bufferFullWarns() {
+  return __logCaptureForTests().filter((entry) => entry.msg === 'insert batcher buffer full; dropping incoming events')
 }
 
 class TestBatcher extends InsertBatcher<string> {
@@ -52,10 +54,7 @@ class TestBatcher extends InsertBatcher<string> {
   }
 
   protected async onInsertFailed(events: string[]): Promise<FlushResult> {
-    await writeDeadLetter(events, (es) => es.join('\n') + '\n', join(tmp, 'dead-letter.jsonl'), {
-      info: vi.fn(),
-      error: vi.fn(),
-    } as never)
+    await writeDeadLetter(events, (es) => es.join('\n') + '\n', join(tmp, 'dead-letter.jsonl'), log)
     return { committed: 0, deadLettered: events.length }
   }
 }
@@ -63,7 +62,7 @@ class TestBatcher extends InsertBatcher<string> {
 describe('server/infra/db/insert-batcher — flush mechanics', () => {
   it('flushes the whole buffer as one batch at the threshold', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 3 }, 'test', () => fakeDb())
+    const batcher = track(new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 3 }, 'test', () => fakeDb()))
     batcher.push('a')
     batcher.push('b')
     batcher.push('c')
@@ -74,7 +73,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('pause drains the buffer then holds every flush trigger; resume flushes what buffered during the pause', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb())
+    const batcher = track(new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb()))
     batcher.push('before')
     await batcher.pause()
     expect(TestBatcher.inserted).toEqual([['before']])
@@ -98,12 +97,14 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
       const gate = new Promise<void>((resolve) => {
         release = resolve
       })
-      const gated = new (class extends TestBatcher {
-        protected override async insertBatch(_db: Database, events: string[]): Promise<void> {
-          await gate
-          TestBatcher.inserted.push(events)
-        }
-      })({ flushIntervalMs: 60_000, flushThreshold: 1 }, 'test', () => fakeDb())
+      const gated = track(
+        new (class extends TestBatcher {
+          protected override async insertBatch(_db: Database, events: string[]): Promise<void> {
+            await gate
+            TestBatcher.inserted.push(events)
+          }
+        })({ flushIntervalMs: 60_000, flushThreshold: 1 }, 'test', () => fakeDb()),
+      )
 
       gated.push('a')
       const pausePromise = gated.pause()
@@ -128,7 +129,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('flushForTeardown drains rows buffered during a pause while flush() stays gated', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb())
+    const batcher = track(new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb()))
     await batcher.pause()
     batcher.push('held')
 
@@ -142,12 +143,15 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('the shutdown hook flushes through the pause gate (SIGTERM inside a backup window)', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb())
+    const hooks = __getLifecycleContainer().hooks
+    const known = new Set(hooks.map((entry) => entry.fn))
+    const batcher = track(new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb()))
     await batcher.pause()
     batcher.push('sigterm-window')
 
-    const hook = vi.mocked(registerShutdownHook).mock.calls.at(-1)![0] as () => Promise<void>
-    await hook()
+    const entry = hooks.find((hook) => !known.has(hook.fn))
+    expect(entry).toBeDefined()
+    await entry!.fn()
 
     expect(TestBatcher.inserted).toEqual([['sigterm-window']])
     batcher.resume()
@@ -157,7 +161,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     vi.useFakeTimers()
     try {
       TestBatcher.inserted = []
-      const batcher = new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 2 }, 'test', () => fakeDb())
+      const batcher = track(new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 2 }, 'test', () => fakeDb()))
       await batcher.pause()
       batcher.push('a')
       batcher.push('b')
@@ -182,7 +186,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
       TestBatcher.gate = new Promise<void>((resolve) => {
         release = resolve
       })
-      const batcher = new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 3 }, 'test', () => fakeDb())
+      const batcher = track(new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 3 }, 'test', () => fakeDb()))
       batcher.push('a')
       batcher.push('b')
       batcher.push('c')
@@ -218,16 +222,18 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
       const gate = new Promise<void>((_resolve, reject) => {
         release = reject
       })
-      const failing = new (class extends TestBatcher {
-        private failArmed = true
-        protected override async insertBatch(_db: Database, events: string[]): Promise<void> {
-          if (this.failArmed) {
-            this.failArmed = false
-            await gate
+      const failing = track(
+        new (class extends TestBatcher {
+          private failArmed = true
+          protected override async insertBatch(_db: Database, events: string[]): Promise<void> {
+            if (this.failArmed) {
+              this.failArmed = false
+              await gate
+            }
+            TestBatcher.inserted.push(events)
           }
-          TestBatcher.inserted.push(events)
-        }
-      })({ flushIntervalMs: 1_000, flushThreshold: 3 }, 'test', () => fakeDb())
+        })({ flushIntervalMs: 1_000, flushThreshold: 3 }, 'test', () => fakeDb()),
+      )
 
       failing.push('a')
       failing.push('b')
@@ -272,7 +278,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('routes a failed batch to onInsertFailed (dead-letter) and clears the buffer', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 2 }, 'test', () => fakeDb())
+    const batcher = track(new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 2 }, 'test', () => fakeDb()))
     batcher.push('x')
     TestBatcher.failNext = true
     batcher.push('y')
@@ -284,9 +290,8 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('replays a dead-letter file back through ingest and truncates it', async () => {
     writeFileSync(join(tmp, 'replay.jsonl'), 'r1\nr2\n')
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 10 }, 'test', () => fakeDb())
+    const batcher = track(new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 10 }, 'test', () => fakeDb()))
     TestBatcher.inserted = []
-    const log = { info: vi.fn(), error: vi.fn() } as never
     const result = await replayDeadLetter(
       join(tmp, 'replay.jsonl'),
       (line) => line,
@@ -299,7 +304,6 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
   })
 
   it('reports a missing dead-letter file as a no-op', async () => {
-    const log = { info: vi.fn(), error: vi.fn() } as never
     const result = await replayDeadLetter(
       join(tmp, 'does-not-exist.jsonl'),
       (line) => line,
@@ -315,11 +319,9 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
     vi.useFakeTimers()
     try {
       TestBatcher.inserted = []
-      logger.warn.mockClear()
-      const batcher = new TestBatcher(
-        { flushIntervalMs: 60_000, flushThreshold: 1_000, maxBufferSize: 5 },
-        'test',
-        () => fakeDb(),
+      __clearLogCaptureForTests()
+      const batcher = track(
+        new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 1_000, maxBufferSize: 5 }, 'test', () => fakeDb()),
       )
 
       for (let i = 0; i < 8; i += 1) {
@@ -328,11 +330,10 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
 
       expect(await batcher.flush()).toEqual({ committed: 5, deadLettered: 0 })
       expect(TestBatcher.inserted).toEqual([['e0', 'e1', 'e2', 'e3', 'e4']])
-      expect(logger.warn).toHaveBeenCalledTimes(1)
-      expect(logger.warn).toHaveBeenCalledWith('insert batcher buffer full; dropping incoming events', {
-        maxBufferSize: 5,
-        dropped: 1,
-      })
+      const warns = bufferFullWarns()
+      expect(warns).toHaveLength(1)
+      expect(warns[0].ctx).toMatchObject({ maxBufferSize: 5, dropped: 1 })
+      expect(warns[0].level).toBe('warn')
     } finally {
       vi.useRealTimers()
     }
@@ -342,11 +343,9 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
     vi.useFakeTimers()
     try {
       TestBatcher.inserted = []
-      logger.warn.mockClear()
-      const batcher = new TestBatcher(
-        { flushIntervalMs: 60_000, flushThreshold: 1_000, maxBufferSize: 2 },
-        'test',
-        () => fakeDb(),
+      __clearLogCaptureForTests()
+      const batcher = track(
+        new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 1_000, maxBufferSize: 2 }, 'test', () => fakeDb()),
       )
 
       batcher.push('a')
@@ -364,11 +363,9 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
         ['a', 'b'],
         ['c', 'd'],
       ])
-      expect(logger.warn).toHaveBeenCalledTimes(2)
-      expect(logger.warn).toHaveBeenLastCalledWith('insert batcher buffer full; dropping incoming events', {
-        maxBufferSize: 2,
-        dropped: 3,
-      })
+      const warns = bufferFullWarns()
+      expect(warns).toHaveLength(2)
+      expect(warns[1].ctx).toMatchObject({ maxBufferSize: 2, dropped: 3 })
     } finally {
       vi.useRealTimers()
     }
@@ -378,11 +375,11 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
     vi.useFakeTimers()
     try {
       TestBatcher.inserted = []
-      logger.warn.mockClear()
-      const batcher = new TestBatcher(
-        { flushIntervalMs: 60_000, flushThreshold: DEFAULT_MAX_BUFFER_SIZE + 1 },
-        'test',
-        () => fakeDb(),
+      __clearLogCaptureForTests()
+      const batcher = track(
+        new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: DEFAULT_MAX_BUFFER_SIZE + 1 }, 'test', () =>
+          fakeDb(),
+        ),
       )
 
       for (let i = 0; i <= DEFAULT_MAX_BUFFER_SIZE; i += 1) {
@@ -391,7 +388,7 @@ describe('server/infra/db/insert-batcher — buffer cap', () => {
 
       expect(await batcher.flush()).toEqual({ committed: DEFAULT_MAX_BUFFER_SIZE, deadLettered: 0 })
       expect(TestBatcher.inserted[0]).toHaveLength(DEFAULT_MAX_BUFFER_SIZE)
-      expect(logger.warn).toHaveBeenCalledTimes(1)
+      expect(bufferFullWarns()).toHaveLength(1)
     } finally {
       vi.useRealTimers()
     }

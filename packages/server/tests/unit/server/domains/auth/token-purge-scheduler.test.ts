@@ -3,15 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.useFakeTimers()
 
 const purgeExpired = vi.fn().mockResolvedValue(0)
-const registerShutdownHook = vi.fn()
 const db = {}
 
 vi.mock('@kobato/server/domains/auth/verification-tokens.ts', () => ({
   purgeExpired: (...args: unknown[]) => purgeExpired(...args),
-}))
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
 const PINNED_NOW = new Date('2026-01-15T12:00:00.000Z')

@@ -486,9 +486,12 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {
     const userId = await seedUser()
     // Real cleanup failure: the passkey table is dropped so the DELETE inside
-    // the flow throws (best-effort must not break the reset).
-    const ddlRows = await db.all<{ sql: string }>(sql`SELECT sql FROM sqlite_master WHERE name = 'passkey_credential'`)
-    expect(ddlRows.length).toBe(1)
+    // the flow throws (best-effort must not break the reset). Table AND index
+    // DDL is snapshotted and restored in creation order.
+    const ddlRows = await db.all<{ type: string; name: string; sql: string }>(
+      sql`SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'passkey_credential' AND sql IS NOT NULL ORDER BY type = 'index', name`,
+    )
+    expect(ddlRows.length).toBeGreaterThan(0)
     await db.run(sql`DROP TABLE passkey_credential`)
     try {
       const { token } = issueResetToken(db, userId)
@@ -505,7 +508,9 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       const row = (await userRow(userId))!
       expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
     } finally {
-      await db.run(sql.raw(ddlRows[0]!.sql))
+      for (const ddlRow of ddlRows) {
+        await db.run(sql.raw(ddlRow.sql))
+      }
     }
   })
 

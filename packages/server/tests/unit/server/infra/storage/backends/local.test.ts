@@ -1,24 +1,19 @@
-import { existsSync, readdirSync, rmSync, statSync } from 'node:fs'
-import { Readable } from 'node:stream'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const tmp = vi.hoisted(() => ({ root: '' }))
-
-vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
-  const fs = await import('node:fs')
-  const os = await import('node:os')
-  const nodePath = await import('node:path')
-  tmp.root = fs.mkdtempSync(nodePath.join(os.tmpdir(), 'local-storage-'))
-  return { ...actual, STORAGE_DIR: tmp.root }
-})
-
+import { __setStorageDirForTests } from '@kobato/server/infra/data-paths.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
 import { localBackend, resolveLocalPath } from '@kobato/server/infra/storage/backends/local.ts'
+import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { Readable } from 'node:stream'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+const root = mkdtempSync(join(tmpdir(), 'local-storage-'))
+__setStorageDirForTests(root)
 
 afterAll(() => {
-  rmSync(tmp.root, { recursive: true, force: true })
+  __setStorageDirForTests(null)
+  rmSync(root, { recursive: true, force: true })
 })
 
 describe('storage/local — resolveLocalPath (security)', () => {
@@ -53,7 +48,7 @@ describe('storage/local — resolveLocalPath (security)', () => {
 
 describe('storage/local — put/get round-trip', () => {
   beforeEach(() => {
-    rmSync(tmp.root, { recursive: true, force: true })
+    rmSync(root, { recursive: true, force: true })
   })
 
   it('writes then reads the same bytes and reports size', async () => {
@@ -66,12 +61,12 @@ describe('storage/local — put/get round-trip', () => {
 
   it('creates nested directories as needed', async () => {
     await localBackend.put({ key: 'musics/2026/track.mp3', body: Buffer.from([1, 2, 3]), contentType: 'audio/mpeg' })
-    expect(existsSync(`${tmp.root}/musics/2026/track.mp3`)).toBe(true)
+    expect(existsSync(`${root}/musics/2026/track.mp3`)).toBe(true)
   })
 
   it('leaves no .tmp-* file behind after a successful write (atomic rename)', async () => {
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('x'), contentType: 'image/jpeg' })
-    const all = readdirSync(tmp.root, { recursive: true }) as string[]
+    const all = readdirSync(root, { recursive: true }) as string[]
     expect(all.some((p) => p.includes('.tmp-'))).toBe(false)
   })
 
@@ -99,7 +94,7 @@ describe('storage/local — put/get round-trip', () => {
 
 describe('storage/local — private-object permissions', () => {
   beforeEach(() => {
-    rmSync(tmp.root, { recursive: true, force: true })
+    rmSync(root, { recursive: true, force: true })
   })
 
   it('creates a private object 0600 with a 0700 directory', async () => {
@@ -110,10 +105,8 @@ describe('storage/local — private-object permissions', () => {
       visibility: 'private',
     })
 
-    expect(statSync(`${tmp.root}/backup`).mode & 0o777).toBe(0o700)
-    expect(statSync(`${tmp.root}/backup/backup-2026-01-01T00-00-00-0123456789abcdef.db.tar.gz`).mode & 0o777).toBe(
-      0o600,
-    )
+    expect(statSync(`${root}/backup`).mode & 0o777).toBe(0o700)
+    expect(statSync(`${root}/backup/backup-2026-01-01T00-00-00-0123456789abcdef.db.tar.gz`).mode & 0o777).toBe(0o600)
   })
 
   it('creates a private STREAMED object 0600', async () => {
@@ -124,21 +117,21 @@ describe('storage/local — private-object permissions', () => {
       visibility: 'private',
     })
 
-    expect(statSync(`${tmp.root}/audit-log`).mode & 0o777).toBe(0o700)
-    expect(statSync(`${tmp.root}/audit-log/2026-01.jsonl.gz`).mode & 0o777).toBe(0o600)
+    expect(statSync(`${root}/audit-log`).mode & 0o777).toBe(0o700)
+    expect(statSync(`${root}/audit-log/2026-01.jsonl.gz`).mode & 0o777).toBe(0o600)
   })
 
   it('leaves public objects on the process defaults (umask-derived, not forced owner-only)', async () => {
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('x'), contentType: 'image/jpeg' })
 
-    expect(statSync(`${tmp.root}/images`).mode & 0o777).toBe(0o777 & ~process.umask())
-    expect(statSync(`${tmp.root}/images/a.jpg`).mode & 0o777).toBe(0o666 & ~process.umask())
+    expect(statSync(`${root}/images`).mode & 0o777).toBe(0o777 & ~process.umask())
+    expect(statSync(`${root}/images/a.jpg`).mode & 0o777).toBe(0o666 & ~process.umask())
   })
 })
 
 describe('storage/local — delete + list', () => {
   beforeEach(async () => {
-    rmSync(tmp.root, { recursive: true, force: true })
+    rmSync(root, { recursive: true, force: true })
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('a'), contentType: 'image/jpeg' })
     await localBackend.put({ key: 'images/sub/b.jpg', body: Buffer.from('bb'), contentType: 'image/jpeg' })
     await localBackend.put({ key: 'musics/c.mp3', body: Buffer.from('ccc'), contentType: 'audio/mpeg' })
@@ -182,7 +175,7 @@ describe('storage/local — delete + list', () => {
 
 describe('storage/local — directory keys resolve to StorageObjectNotFound, not EISDIR', () => {
   beforeEach(async () => {
-    rmSync(tmp.root, { recursive: true, force: true })
+    rmSync(root, { recursive: true, force: true })
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('a'), contentType: 'image/jpeg' })
   })
 

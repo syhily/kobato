@@ -1,21 +1,13 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
+import { __setStorageDirForTests } from '@kobato/server/infra/data-paths.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { Hono } from 'hono'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-
-const tmp = vi.hoisted(() => ({ root: '' }))
-
-vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
-  const fs = await import('node:fs')
-  const os = await import('node:os')
-  const nodePath = await import('node:path')
-  tmp.root = fs.mkdtempSync(nodePath.join(os.tmpdir(), 'storage-redirect-it-'))
-  return { ...actual, STORAGE_DIR: tmp.root }
-})
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const { localStorageRouter } = await import('@kobato/server/http/resources/local-storage.ts')
 
@@ -26,13 +18,17 @@ app.use('*', async (c, next) => {
 })
 app.route('/', localStorageRouter)
 
+const root = mkdtempSync(join(tmpdir(), 'storage-redirect-it-'))
+__setStorageDirForTests(root)
+
 beforeAll(() => {
-  mkdirSync(`${tmp.root}/images`, { recursive: true })
-  writeFileSync(`${tmp.root}/images/a.jpg`, 'img-bytes')
+  mkdirSync(`${root}/images`, { recursive: true })
+  writeFileSync(`${root}/images/a.jpg`, 'img-bytes')
 })
 
 afterAll(() => {
-  rmSync(tmp.root, { recursive: true, force: true })
+  __setStorageDirForTests(null)
+  rmSync(root, { recursive: true, force: true })
 })
 
 describe('storage redirect — site-owned /storage/* URLs', () => {

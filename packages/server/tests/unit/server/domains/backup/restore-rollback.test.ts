@@ -1,35 +1,23 @@
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const paths = vi.hoisted(() => ({ db: '', analytics: '' }))
-
-vi.mock('@kobato/server/infra/db/paths.ts', () => ({
-  resolveDatabasePath: () => paths.db,
-  resolveAnalyticsPath: () => paths.analytics,
-  isInMemoryPath: (path: string) => path === ':memory:',
-}))
-
-vi.mock('@kobato/server/infra/logger.ts', () => ({
-  getLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
-}))
-
 import {
   cleanupPreRestoreFiles,
   recoverPreRestoreFiles,
   rollbackPreRestoreFiles,
 } from '@kobato/server/domains/backup/services/restore.ts'
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 let dir: string
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'kobato-rollback-test-'))
-  paths.db = join(dir, 'kobato.db')
-  paths.analytics = join(dir, 'analytics.duckdb')
+  __setEnginePathsForTests({ database: join(dir, 'kobato.db'), analytics: join(dir, 'analytics.duckdb') })
 })
 
 afterEach(async () => {
+  __setEnginePathsForTests(null)
   await rm(dir, { recursive: true, force: true })
 })
 
@@ -44,95 +32,95 @@ async function exists(path: string): Promise<boolean> {
 
 describe('services/restore — rollbackPreRestoreFiles', () => {
   it('moves the pre-restore originals back over the swapped files', async () => {
-    await writeFile(paths.db, 'corrupt-swapped')
-    await writeFile(`${paths.db}.pre-restore`, 'original-db')
-    await writeFile(paths.analytics, 'corrupt-analytics')
-    await writeFile(`${paths.analytics}.pre-restore`, 'original-analytics')
+    await writeFile(join(dir, 'kobato.db'), 'corrupt-swapped')
+    await writeFile(join(dir, 'kobato.db.pre-restore'), 'original-db')
+    await writeFile(join(dir, 'analytics.duckdb'), 'corrupt-analytics')
+    await writeFile(join(dir, 'analytics.duckdb.pre-restore'), 'original-analytics')
 
     await rollbackPreRestoreFiles()
 
-    expect(await readFile(paths.db, 'utf8')).toBe('original-db')
-    expect(await readFile(paths.analytics, 'utf8')).toBe('original-analytics')
-    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
-    expect(await exists(`${paths.analytics}.pre-restore`)).toBe(false)
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('original-db')
+    expect(await readFile(join(dir, 'analytics.duckdb'), 'utf8')).toBe('original-analytics')
+    expect(await exists(join(dir, 'kobato.db.pre-restore'))).toBe(false)
+    expect(await exists(join(dir, 'analytics.duckdb.pre-restore'))).toBe(false)
   })
 
   it('never touches a live file that has no pre-restore sibling', async () => {
-    await writeFile(paths.db, 'corrupt-swapped')
-    await writeFile(`${paths.db}.pre-restore`, 'original-db')
-    await writeFile(paths.analytics, 'live-analytics')
+    await writeFile(join(dir, 'kobato.db'), 'corrupt-swapped')
+    await writeFile(join(dir, 'kobato.db.pre-restore'), 'original-db')
+    await writeFile(join(dir, 'analytics.duckdb'), 'live-analytics')
 
     await rollbackPreRestoreFiles()
 
-    expect(await readFile(paths.db, 'utf8')).toBe('original-db')
-    expect(await readFile(paths.analytics, 'utf8')).toBe('live-analytics')
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('original-db')
+    expect(await readFile(join(dir, 'analytics.duckdb'), 'utf8')).toBe('live-analytics')
   })
 })
 
 describe('services/restore — cleanupPreRestoreFiles', () => {
   it('removes the pre-restore siblings and leaves the swapped files intact', async () => {
-    await writeFile(paths.db, 'new-db')
-    await writeFile(`${paths.db}.pre-restore`, 'original-db')
-    await writeFile(paths.analytics, 'new-analytics')
-    await writeFile(`${paths.analytics}.pre-restore`, 'original-analytics')
+    await writeFile(join(dir, 'kobato.db'), 'new-db')
+    await writeFile(join(dir, 'kobato.db.pre-restore'), 'original-db')
+    await writeFile(join(dir, 'analytics.duckdb'), 'new-analytics')
+    await writeFile(join(dir, 'analytics.duckdb.pre-restore'), 'original-analytics')
 
     await cleanupPreRestoreFiles()
 
-    expect(await readFile(paths.db, 'utf8')).toBe('new-db')
-    expect(await readFile(paths.analytics, 'utf8')).toBe('new-analytics')
-    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
-    expect(await exists(`${paths.analytics}.pre-restore`)).toBe(false)
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('new-db')
+    expect(await readFile(join(dir, 'analytics.duckdb'), 'utf8')).toBe('new-analytics')
+    expect(await exists(join(dir, 'kobato.db.pre-restore'))).toBe(false)
+    expect(await exists(join(dir, 'analytics.duckdb.pre-restore'))).toBe(false)
   })
 
   it('is a no-op when no siblings exist', async () => {
-    await writeFile(paths.db, 'new-db')
+    await writeFile(join(dir, 'kobato.db'), 'new-db')
 
     await expect(cleanupPreRestoreFiles()).resolves.toBeUndefined()
-    expect(await readFile(paths.db, 'utf8')).toBe('new-db')
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('new-db')
   })
 })
 
 describe('services/restore — recoverPreRestoreFiles', () => {
   it('rolls the pre-restore sibling back when the swap target is MISSING (mid-swap crash)', async () => {
-    await writeFile(`${paths.db}.pre-restore`, 'original-db')
-    await writeFile(`${paths.db}.restore-staging`, 'partial-new-db')
+    await writeFile(join(dir, 'kobato.db.pre-restore'), 'original-db')
+    await writeFile(join(dir, 'kobato.db.restore-staging'), 'partial-new-db')
 
     await recoverPreRestoreFiles()
 
-    expect(await readFile(paths.db, 'utf8')).toBe('original-db')
-    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
-    expect(await exists(`${paths.db}.restore-staging`)).toBe(false)
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('original-db')
+    expect(await exists(join(dir, 'kobato.db.pre-restore'))).toBe(false)
+    expect(await exists(join(dir, 'kobato.db.restore-staging'))).toBe(false)
   })
 
   it('drops the sibling when the target EXISTS (swap completed before the crash)', async () => {
-    await writeFile(paths.db, 'new-db')
-    await writeFile(`${paths.db}.pre-restore`, 'original-db')
-    await writeFile(`${paths.db}.restore-staging`, 'orphan-staging')
+    await writeFile(join(dir, 'kobato.db'), 'new-db')
+    await writeFile(join(dir, 'kobato.db.pre-restore'), 'original-db')
+    await writeFile(join(dir, 'kobato.db.restore-staging'), 'orphan-staging')
 
     await recoverPreRestoreFiles()
 
-    expect(await readFile(paths.db, 'utf8')).toBe('new-db')
-    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
-    expect(await exists(`${paths.db}.restore-staging`)).toBe(false)
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('new-db')
+    expect(await exists(join(dir, 'kobato.db.pre-restore'))).toBe(false)
+    expect(await exists(join(dir, 'kobato.db.restore-staging'))).toBe(false)
   })
 
   it('handles mixed engine states independently', async () => {
-    await writeFile(`${paths.db}.pre-restore`, 'original-db')
-    await writeFile(paths.analytics, 'new-analytics')
-    await writeFile(`${paths.analytics}.pre-restore`, 'original-analytics')
+    await writeFile(join(dir, 'kobato.db.pre-restore'), 'original-db')
+    await writeFile(join(dir, 'analytics.duckdb'), 'new-analytics')
+    await writeFile(join(dir, 'analytics.duckdb.pre-restore'), 'original-analytics')
 
     await recoverPreRestoreFiles()
 
-    expect(await readFile(paths.db, 'utf8')).toBe('original-db')
-    expect(await readFile(paths.analytics, 'utf8')).toBe('new-analytics')
-    expect(await exists(`${paths.db}.pre-restore`)).toBe(false)
-    expect(await exists(`${paths.analytics}.pre-restore`)).toBe(false)
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('original-db')
+    expect(await readFile(join(dir, 'analytics.duckdb'), 'utf8')).toBe('new-analytics')
+    expect(await exists(join(dir, 'kobato.db.pre-restore'))).toBe(false)
+    expect(await exists(join(dir, 'analytics.duckdb.pre-restore'))).toBe(false)
   })
 
   it('is a no-op on a clean boot', async () => {
-    await writeFile(paths.db, 'live-db')
+    await writeFile(join(dir, 'kobato.db'), 'live-db')
 
     await expect(recoverPreRestoreFiles()).resolves.toBeUndefined()
-    expect(await readFile(paths.db, 'utf8')).toBe('live-db')
+    expect(await readFile(join(dir, 'kobato.db'), 'utf8')).toBe('live-db')
   })
 })

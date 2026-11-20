@@ -11,16 +11,6 @@ import { adminSession } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  requestShutdown: vi.fn(),
-  registerShutdownHook: vi.fn(),
-  unregisterShutdownHook: vi.fn(),
-  setServerPhase: vi.fn(),
-  restartServer: vi.fn(),
-  setRestartGetDb: vi.fn(),
-  setRestartRefreshSettings: vi.fn(),
-}))
-
 const db = getTestDb()
 const mem = makeMemoryBackend({ driver: 's3' })
 

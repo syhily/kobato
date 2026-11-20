@@ -10,7 +10,6 @@ import { SpanKind, SpanStatusCode } from '@opentelemetry/api'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { lookup } from 'node:dns/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))

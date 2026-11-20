@@ -11,6 +11,14 @@ import { Agent } from 'undici'
 export const SAFE_FETCH_DEFAULT_TIMEOUT_MS = 10_000
 export const SAFE_FETCH_DEFAULT_MAX_REDIRECTS = 5
 
+type TestDnsLookup = (host: string) => Promise<LookupAddress[]>
+
+let lookupForTests: TestDnsLookup | null = null
+
+export function __setDnsLookupForTests(fn: TestDnsLookup | null): void {
+  lookupForTests = fn
+}
+
 export interface SafeFetchOptions {
   /** Per-request timeout (each redirect hop gets a fresh budget). */
   timeoutMs?: number
@@ -131,7 +139,8 @@ async function resolveForDial(
   hints: number,
   validate: boolean,
 ): Promise<LookupAddress[]> {
-  const addresses = await lookup(host, { all: true, family, hints })
+  const addresses =
+    lookupForTests !== null ? await lookupForTests(host) : await lookup(host, { all: true, family, hints })
   if (addresses.length === 0) {
     throw noAddressError(host)
   }
@@ -202,7 +211,7 @@ async function guardTarget(
   }
   let addresses: { address: string; family: number }[]
   try {
-    addresses = await lookup(bare, { all: true })
+    addresses = lookupForTests !== null ? await lookupForTests(bare) : await lookup(bare, { all: true })
   } catch (error) {
     return failure('dns-failure', url, null, error)
   }

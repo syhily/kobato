@@ -1,24 +1,24 @@
-import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.useFakeTimers()
-
-vi.mock('node:dns/promises', () => ({
-  lookup: async () => [{ address: '93.184.216.34', family: 4 }],
-}))
-
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
 import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
 import { OUTBOX_MIN_DELAY_MS, rescheduleWebmentionOutbox } from '@kobato/server/domains/webmentions/outbox-scheduler.ts'
 import { OUTBOX_BATCH_SIZE } from '@kobato/server/domains/webmentions/outbox.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
+import { eq } from 'drizzle-orm'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
+afterAll(() => {
+  __setDnsLookupForTests(null)
+})
+
 const mockFetch = installFetch()
+
+__setDnsLookupForTests(async () => [{ address: '203.0.113.10', family: 4 }])
 
 const SOURCE = 'https://example.com/posts/scheduled/'
 const HOUR_MS = 3_600_000
@@ -40,6 +40,7 @@ function statusCount(status: 'pending' | 'no-endpoint'): number {
 }
 
 beforeEach(async () => {
+  vi.useFakeTimers()
   stopAllScheduledJobs()
   await clearAllTables(db)
   mockFetch.reset()
@@ -48,6 +49,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   stopAllScheduledJobs()
+  vi.useRealTimers()
 })
 
 describe('webmentions/outbox scheduler throttle', () => {

@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream'
 
-import { isPathInside, STORAGE_DIR } from '@kobato/server/infra/data-paths.ts'
+import { isPathInside, storageDir } from '@kobato/server/infra/data-paths.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
 import { getLogger } from '@kobato/server/infra/logger.ts'
@@ -39,8 +39,9 @@ export function resolveLocalPath(key: string): string {
   if (key === '' || key.startsWith('/') || UNSAFE_KEY_CHARS.test(key)) {
     throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
-  const abs = path.resolve(STORAGE_DIR, key)
-  if (!isPathInside(abs, STORAGE_DIR)) {
+  const root = storageDir()
+  const abs = path.resolve(root, key)
+  if (!isPathInside(abs, root)) {
     throw new ActionFailure(400, descriptorFor('storage.error.invalidPath', { key }))
   }
   return abs
@@ -169,8 +170,9 @@ export const localBackend: StorageBackend = {
 
   async deletePrefix(prefix: string): Promise<void> {
     try {
-      const dir = path.resolve(STORAGE_DIR, prefix)
-      if (!isPathInside(dir, STORAGE_DIR)) {
+      const root = storageDir()
+      const dir = path.resolve(root, prefix)
+      if (!isPathInside(dir, root)) {
         return
       }
       await rm(dir, { recursive: true, force: true })
@@ -180,11 +182,12 @@ export const localBackend: StorageBackend = {
   },
 
   async list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]> {
-    const base = path.resolve(STORAGE_DIR, prefix)
-    if (!isPathInside(base, STORAGE_DIR)) {
+    const root = storageDir()
+    const base = path.resolve(root, prefix)
+    if (!isPathInside(base, root)) {
       return []
     }
-    const walked = await walk(base, STORAGE_DIR)
+    const walked = await walk(base, root)
     let items = walked.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
     if (opts?.startAfter !== undefined) {
       const startAfter = opts.startAfter

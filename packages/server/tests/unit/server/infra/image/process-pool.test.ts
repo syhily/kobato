@@ -1,11 +1,7 @@
 import type { Worker } from 'node:worker_threads'
 
 import { EventEmitter } from 'node:events'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: vi.fn(),
-}))
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const { WorkerPool, getProcessPool, stopProcessPool, __setWorkerFactory, __resetWorkerFactory } =
   await import('@kobato/server/infra/image/process-pool.ts')

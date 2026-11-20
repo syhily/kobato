@@ -1,26 +1,26 @@
-import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.useFakeTimers()
-
-vi.mock('node:dns/promises', () => ({
-  lookup: async () => [{ address: '93.184.216.34', family: 4 }],
-}))
-
 import { upsertWebmention } from '@kobato/db/operations/webmention.ts'
 import { post } from '@kobato/db/schema/post.ts'
 import { webmention } from '@kobato/db/schema/webmention.ts'
 import { REVERIFY_MIN_DELAY_MS } from '@kobato/server/domains/webmentions/reverify-scheduler.ts'
 import { REVERIFY_BATCH_SIZE } from '@kobato/server/domains/webmentions/reverify.ts'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
+import { eq } from 'drizzle-orm'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
+afterAll(() => {
+  __setDnsLookupForTests(null)
+})
+
 const mockFetch = installFetch()
+
+__setDnsLookupForTests(async () => [{ address: '203.0.113.10', family: 4 }])
 
 const SOURCE = 'https://sender.example/post'
 const TARGET = 'https://example.com/posts/wm-target/'
@@ -62,6 +62,7 @@ function failedCount(): number {
 }
 
 beforeEach(async () => {
+  vi.useFakeTimers()
   stopAllScheduledJobs()
   await clearAllTables(db)
   mockFetch.reset()
@@ -72,6 +73,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   stopAllScheduledJobs()
+  vi.useRealTimers()
 })
 
 describe('webmentions/reverify scheduler throttle', () => {

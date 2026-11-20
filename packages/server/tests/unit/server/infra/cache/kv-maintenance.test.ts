@@ -12,14 +12,8 @@ import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/
 
 vi.useFakeTimers()
 
-const registerShutdownHook = vi.fn()
-
 const where = vi.fn().mockResolvedValue(undefined)
 const db = { delete: vi.fn(() => ({ where })) }
-
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
-  registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
-}))
 
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
 const { sweepExpiredKvEntries } = await import('@kobato/server/infra/cache/kv-maintenance.ts')

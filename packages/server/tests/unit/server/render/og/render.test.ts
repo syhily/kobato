@@ -1,10 +1,14 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'
+
+const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
+__setDnsLookupForTests(dnsSeam)
 
 // No byte-for-byte PNG hash: it would break on every node-canvas / sharp / OS font-hinting
 // upgrade. The structural invariants are pinned instead — a PNG buffer of the configured

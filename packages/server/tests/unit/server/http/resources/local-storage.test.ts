@@ -1,21 +1,13 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
+import { __setStorageDirForTests } from '@kobato/server/infra/data-paths.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { Hono } from 'hono'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const tmp = vi.hoisted(() => ({ root: '' }))
-
-vi.mock('@kobato/server/infra/data-paths.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/data-paths.ts')>()
-  const fs = await import('node:fs')
-  const os = await import('node:os')
-  const nodePath = await import('node:path')
-  tmp.root = fs.mkdtempSync(nodePath.join(os.tmpdir(), 'local-storage-route-'))
-  return { ...actual, STORAGE_DIR: tmp.root }
-})
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 const { localStorageRouter } = await import('@kobato/server/http/resources/local-storage.ts')
 
@@ -37,26 +29,30 @@ function seedStorageEnabled(enabled: boolean, assetHost = 'assets.example.com') 
   })
 }
 
+const root = mkdtempSync(join(tmpdir(), 'local-storage-route-'))
+__setStorageDirForTests(root)
+
 beforeAll(() => {
-  mkdirSync(`${tmp.root}/images`, { recursive: true })
-  mkdirSync(`${tmp.root}/musics`, { recursive: true })
-  mkdirSync(`${tmp.root}/branding`, { recursive: true })
-  mkdirSync(`${tmp.root}/backup`, { recursive: true })
-  mkdirSync(`${tmp.root}/private`, { recursive: true })
-  mkdirSync(`${tmp.root}/unknown`, { recursive: true })
-  writeFileSync(`${tmp.root}/images/a.jpg`, 'img')
-  writeFileSync(`${tmp.root}/musics/b.mp3`, 'aud')
-  writeFileSync(`${tmp.root}/musics/t.flac`, 'flac')
-  writeFileSync(`${tmp.root}/branding/c.svg`, '<svg/>')
-  writeFileSync(`${tmp.root}/backup/backup-2026-01-01T00-00-00.sql.gz`, 'dump')
-  writeFileSync(`${tmp.root}/private/secret.txt`, 'shh')
-  writeFileSync(`${tmp.root}/.env`, 'SECRET=1')
-  writeFileSync(`${tmp.root}/images/.hidden`, 'hid')
-  writeFileSync(`${tmp.root}/unknown/x.txt`, 'x')
+  mkdirSync(`${root}/images`, { recursive: true })
+  mkdirSync(`${root}/musics`, { recursive: true })
+  mkdirSync(`${root}/branding`, { recursive: true })
+  mkdirSync(`${root}/backup`, { recursive: true })
+  mkdirSync(`${root}/private`, { recursive: true })
+  mkdirSync(`${root}/unknown`, { recursive: true })
+  writeFileSync(`${root}/images/a.jpg`, 'img')
+  writeFileSync(`${root}/musics/b.mp3`, 'aud')
+  writeFileSync(`${root}/musics/t.flac`, 'flac')
+  writeFileSync(`${root}/branding/c.svg`, '<svg/>')
+  writeFileSync(`${root}/backup/backup-2026-01-01T00-00-00.sql.gz`, 'dump')
+  writeFileSync(`${root}/private/secret.txt`, 'shh')
+  writeFileSync(`${root}/.env`, 'SECRET=1')
+  writeFileSync(`${root}/images/.hidden`, 'hid')
+  writeFileSync(`${root}/unknown/x.txt`, 'x')
 })
 
 afterAll(() => {
-  rmSync(tmp.root, { recursive: true, force: true })
+  __setStorageDirForTests(null)
+  rmSync(root, { recursive: true, force: true })
 })
 
 describe('local-storage public route — namespace allowlist (local driver)', () => {

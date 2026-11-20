@@ -1,8 +1,3 @@
-import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.useFakeTimers()
-
 import { content } from '@kobato/db/schema/content.ts'
 import { page } from '@kobato/db/schema/page.ts'
 import { post } from '@kobato/db/schema/post.ts'
@@ -18,6 +13,8 @@ import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
@@ -70,6 +67,7 @@ function sitemapRowCount(): Promise<number> {
 }
 
 beforeEach(async () => {
+  vi.useFakeTimers()
   stopAllScheduledJobs()
   await clearAllTables(db)
   __resetCacheCountersForTests()
@@ -77,6 +75,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   stopAllScheduledJobs()
+  vi.useRealTimers()
 })
 
 describe('scheduled-publish job', () => {

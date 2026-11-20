@@ -147,9 +147,12 @@ describe('integration / inviteAuthorWithRollback', () => {
 
   it('preserves atomicity when the token store fails mid-transaction', async () => {
     // Drop the verification table for real: the INSERT inside the transaction
-    // throws, the whole invite rolls back. The DDL is snapshotted and restored.
-    const ddlRows = await db.all<{ sql: string }>(sql`SELECT sql FROM sqlite_master WHERE name = 'verification'`)
-    expect(ddlRows.length).toBe(1)
+    // throws, the whole invite rolls back. Table AND index DDL is snapshotted
+    // and restored in creation order — the worker's DB outlives this file.
+    const ddlRows = await db.all<{ type: string; name: string; sql: string }>(
+      sql`SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'verification' AND sql IS NOT NULL ORDER BY type = 'index', name`,
+    )
+    expect(ddlRows.length).toBeGreaterThan(1)
     await db.run(sql`DROP TABLE verification`)
 
     try {
@@ -160,7 +163,9 @@ describe('integration / inviteAuthorWithRollback', () => {
       const row = await findUserRow('ghost@example.com')
       expect(row).toBeNull()
     } finally {
-      await db.run(sql.raw(ddlRows[0]!.sql))
+      for (const row of ddlRows) {
+        await db.run(sql.raw(row.sql))
+      }
     }
   })
 })

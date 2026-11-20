@@ -12,6 +12,16 @@ export const MAXMIND_DB_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City
 export const MAXMIND_META_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.meta.json')
 export const STORAGE_DIR = path.resolve(DATA_PATH, 'storage')
 
+let storageDirForTests: string | null = null
+
+export function __setStorageDirForTests(dir: string | null): void {
+  storageDirForTests = dir
+}
+
+export function storageDir(): string {
+  return storageDirForTests ?? STORAGE_DIR
+}
+
 export function isPathInside(target: string, root: string): boolean {
   const relative = path.relative(root, target)
   return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)

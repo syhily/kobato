@@ -3,7 +3,7 @@
 import 'zod/compile'
 import '@kobato/test/env.ts'
 import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
-import { vi } from 'vitest'
+import { afterAll, vi } from 'vitest'
 
 silenceLocalStorageWarning()
 
@@ -14,3 +14,9 @@ silenceLocalStorageWarning()
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
 }))
+
+// Shared workers keep one event loop across files; a file that leaves fake
+// timers installed would freeze every later file's timers/setImmediate.
+afterAll(() => {
+  vi.useRealTimers()
+})

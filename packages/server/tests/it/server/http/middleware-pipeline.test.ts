@@ -1,5 +1,8 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
+import { session as sessionTable } from '@kobato/db/schema/session.ts'
+import { buildCspHeader, configureMiddleware, buildLoadContext } from '@kobato/server/http/middleware-pipeline.ts'
+import { requestContext } from '@kobato/server/http/request-context.ts'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
@@ -10,77 +13,6 @@ import { makeRequestContext } from '@kobato/server/tests/utils/request-context.t
 import { emptySession } from '@kobato/server/tests/utils/session.ts'
 import { Hono } from 'hono'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('@kobato/server/http/app.ts', () => ({
-  createApiApp: vi.fn(() => new Hono()),
-}))
-
-vi.mock('@kobato/server/http/resources/analytics.ts', () => ({
-  analyticsEventsRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/assets.ts', () => ({
-  assetsRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/backup.ts', () => ({
-  backupRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/branding.ts', () => ({
-  brandingRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/feed.ts', () => ({
-  feedRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/fonts.ts', () => ({
-  fontsRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/fonts-package.ts', () => ({
-  fontsPackageRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/images.ts', () => ({
-  imagesRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/maxmind.ts', () => ({
-  maxmindRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/music-proxy.ts', () => ({
-  musicProxyRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/redirects.ts', () => ({
-  redirectsRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/http/resources/sitemap.ts', () => ({
-  sitemapRouter: new Hono(),
-}))
-
-vi.mock('@kobato/server/infra/logger.ts', () => ({
-  root: {},
-  getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })),
-  L3_KEYS: new Set<string>(),
-}))
-
-vi.mock('hono-pino', () => ({
-  pinoLogger: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@kobato/server/infra/logger/sanitizer.ts', () => ({
-  sanitizeReqHeaders: vi.fn((headers) => headers),
-  resBindings: vi.fn(() => ({})),
-}))
-
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { buildCspHeader, configureMiddleware, buildLoadContext } from '@kobato/server/http/middleware-pipeline.ts'
-import { requestContext } from '@kobato/server/http/request-context.ts'
 
 describe('buildCspHeader', () => {
   it('returns a strict nonce-based policy in production', () => {

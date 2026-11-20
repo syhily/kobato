@@ -16,8 +16,6 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts', () => ({
   removeDraftsByPrefix: (prefix: string) => draftStore.removeByPrefix(prefix),
 }))
 
-vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
-
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
@@ -37,6 +35,7 @@ describe('useLocalDraft — synchronous render branches', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     FakeBroadcastChannel.instances.length = 0
+    vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
     draftStore.get.mockResolvedValue(null)
     draftStore.set.mockResolvedValue(undefined)
     draftStore.remove.mockResolvedValue(undefined)

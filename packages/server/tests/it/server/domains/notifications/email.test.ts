@@ -11,23 +11,14 @@ import {
   unreadCount,
 } from '@kobato/server/domains/notifications/service.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 
-const logWarn = vi.hoisted(() => vi.fn())
-const logError = vi.hoisted(() => vi.fn())
-
-vi.mock('@kobato/server/infra/logger.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/logger.ts')>()
-  return {
-    ...actual,
-    getLogger: (scope: string) => {
-      const real = actual.getLogger(scope)
-      return scope === 'notifications.email' ? { ...real, warn: logWarn, error: logError } : real
-    },
-  }
-})
+function emailLogs(level: 'warn' | 'error') {
+  return __logCaptureForTests().filter((entry) => entry.scope === 'notifications.email' && entry.level === level)
+}
 
 const db = getTestDb()
 
@@ -95,8 +86,7 @@ function sentMessage(index: number): FormData {
 beforeEach(async () => {
   await clearAllTables(db)
   seq = 0
-  logWarn.mockReset()
-  logError.mockReset()
+  __clearLogCaptureForTests()
   fetchMock.mockReset()
   fetchMock.mockResolvedValue(new Response(null, { status: 200 }))
   vi.stubGlobal('fetch', fetchMock)
@@ -238,8 +228,8 @@ describe('notifications email — failure isolation', () => {
     expect(row.threadId).toBe(row.id)
     expect(unreadCount(db, visitorId)).toBe(1)
 
-    await vi.waitFor(() => expect(logWarn).toHaveBeenCalled())
-    const [, context] = logWarn.mock.calls[0]!
+    await vi.waitFor(() => expect(emailLogs('warn').length).toBeGreaterThan(0))
+    const context = emailLogs('warn')[0]!.ctx
     expect(context).toMatchObject({ reason: 'network', userId: visitorId })
     expect(context).not.toMatchObject({ to: expect.anything() })
     expect(JSON.stringify(context)).not.toContain('visitor-2@example.com')
@@ -257,11 +247,12 @@ describe('notifications email — failure isolation', () => {
     const attempted = fetchMock.mock.calls.map((_, index) => String(sentMessage(index).get('to')))
     expect(new Set(attempted)).toEqual(new Set(['admin-1@example.com', 'admin2-2@example.com']))
 
-    expect(logWarn).toHaveBeenCalledTimes(1)
-    const warned = logWarn.mock.calls[0]![1] as { reason: string; userId: number }
+    const warns = emailLogs('warn')
+    expect(warns).toHaveLength(1)
+    const warned = warns[0]!.ctx as { reason: string; userId: number }
     expect(warned.reason).toBe('network')
     expect(attempted[0]).toBe(warned.userId === adminId ? 'admin-1@example.com' : 'admin2-2@example.com')
-    expect(logError).not.toHaveBeenCalled()
+    expect(emailLogs('error')).toHaveLength(0)
 
     expect(unreadCount(db, adminId)).toBe(1)
     expect(unreadCount(db, secondAdminId)).toBe(1)
@@ -276,11 +267,11 @@ describe('notifications email — failure isolation', () => {
     try {
       notifyAdmins(db, SYSTEM_NOTICE)
 
-      await vi.waitFor(() => expect(logError).toHaveBeenCalledTimes(1))
-      expect(logError.mock.calls[0]![0]).toBe('failed to send notification email')
+      await vi.waitFor(() => expect(emailLogs('error')).toHaveLength(1))
+      expect(emailLogs('error')[0]!.msg).toBe('failed to send notification email')
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
       expect(rejectOnce).toHaveBeenCalledTimes(2)
-      expect(logWarn).not.toHaveBeenCalled()
+      expect(emailLogs('warn')).toHaveLength(0)
     } finally {
       rejectOnce.mockRestore()
     }

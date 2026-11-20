@@ -1,20 +1,12 @@
 import type { NotificationRow } from '@kobato/db/types.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-const logWarn = vi.hoisted(() => vi.fn())
-
-vi.mock('@kobato/server/infra/logger.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/logger.ts')>()
-  return {
-    ...actual,
-    getLogger: (scope: string) => {
-      const real = actual.getLogger(scope)
-      return scope === 'notifications.message' ? { ...real, warn: logWarn } : real
-    },
-  }
-})
+function warnLines() {
+  return __logCaptureForTests().filter((entry) => entry.level === 'warn')
+}
 
 const { __resetNotificationMessageWarningsForTests, encodeNotificationDescriptor, resolveNotificationMessage } =
   await import('@kobato/server/domains/notifications/message.ts')
@@ -46,7 +38,7 @@ const JOB_TITLE_PARAMS = { taskKey: 'backup' }
 const JOB_BODY_PARAMS = { taskKey: 'backup', hasError: 'yes', error: 'disk full' }
 
 beforeEach(() => {
-  logWarn.mockReset()
+  __clearLogCaptureForTests()
   __resetNotificationMessageWarningsForTests()
 })
 
@@ -88,7 +80,7 @@ describe('notification message — descriptor resolution', () => {
     const legacy = row({ title: '历史标题', body: '历史正文' })
     const resolved = resolveNotificationMessage(legacy, createServerTranslator('en-US'))
     expect(resolved).toEqual({ title: '历史标题', body: '历史正文' })
-    expect(logWarn).not.toHaveBeenCalled()
+    expect(warnLines()).toHaveLength(0)
   })
 
   it('falls back to the stored English text and warns ONCE for an unregistered key', () => {
@@ -107,8 +99,9 @@ describe('notification message — descriptor resolution', () => {
 
     expect(first).toEqual({ title: 'Background task failed: backup', body: 'Task backup failed.' })
     expect(second).toEqual(first)
-    expect(logWarn).toHaveBeenCalledTimes(1)
-    expect(logWarn.mock.calls[0]![1]).toMatchObject({ key: 'notification.removed.key', reason: 'unregistered-key' })
+    const warns = warnLines()
+    expect(warns).toHaveLength(1)
+    expect(warns[0].ctx).toMatchObject({ key: 'notification.removed.key', reason: 'unregistered-key' })
   })
 
   it('falls back when the stored params are not valid JSON', () => {
@@ -124,9 +117,10 @@ describe('notification message — descriptor resolution', () => {
     const resolved = resolveNotificationMessage(broken, createServerTranslator('zh-CN'))
 
     expect(resolved).toEqual({ title: 'Background task failed: backup', body: 'Task backup failed.' })
-    expect(logWarn).toHaveBeenCalledTimes(2)
-    for (const call of logWarn.mock.calls) {
-      expect(call[1]).toMatchObject({ reason: 'invalid-params' })
+    const warns = warnLines()
+    expect(warns).toHaveLength(2)
+    for (const warn of warns) {
+      expect(warn.ctx).toMatchObject({ reason: 'invalid-params' })
     }
   })
 })

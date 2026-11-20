@@ -15,8 +15,6 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts', () => ({
   removeDraft: (key: string) => draftStore.remove(key),
 }))
 
-vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
-
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
@@ -62,6 +60,7 @@ let savedWindowDescriptor: PropertyDescriptor | undefined
 beforeEach(() => {
   vi.clearAllMocks()
   FakeBroadcastChannel.instances.length = 0
+  vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
   draftStore.get.mockResolvedValue(null)
   draftStore.set.mockResolvedValue(undefined)
   draftStore.remove.mockResolvedValue(undefined)

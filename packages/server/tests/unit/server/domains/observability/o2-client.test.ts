@@ -1,10 +1,9 @@
+import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('node:dns/promises', () => ({
-  lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
-}))
-
-import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
+const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
+__setDnsLookupForTests(dnsSeam)
 
 const BASE = 'https://obs.example.com'
 
