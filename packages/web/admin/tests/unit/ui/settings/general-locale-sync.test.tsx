@@ -12,14 +12,21 @@ import { publishLocaleChange } from '@kobato/web-client/lib/locale-sync.ts'
 import { LocaleSyncProvider } from '@kobato/web-public/ui/lib/LocaleSyncProvider.tsx'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.hoisted(() => vi.fn())
 const reload = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const INITIAL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 const TIME_ZONES = ['Asia/Shanghai', 'UTC', 'America/New_York'] as const

@@ -17,19 +17,22 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-admin/tests/utils/blog-settings.ts'
 import { CommentsForm } from '@kobato/web-admin/ui/settings/comments/CommentsForm.tsx'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
 const commit = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit,
-    isPending: false,
-    status: 'idle',
-  }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const baseComments: CommentsLoaderShape = projectCommentsForAdmin(TEST_BLOG_SETTINGS_BUNDLE.comments!)
 

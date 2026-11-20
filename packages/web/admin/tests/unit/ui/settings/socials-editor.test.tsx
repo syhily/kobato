@@ -11,19 +11,22 @@ function renderUi(ui: ReactElement) {
 import type { SocialsSettings } from '@kobato/settings/types.ts'
 
 import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit,
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  resetStatus: vi.fn(),
+  revalidate: vi.fn(),
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const socials: SocialsSettings = {
   socials: [{ name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/example' }],

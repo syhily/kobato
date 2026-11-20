@@ -16,17 +16,20 @@ import { mailDefaults } from '@kobato/settings/sections/mail.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-admin/tests/utils/blog-settings.ts'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit,
-    isPending: false,
-    status: 'idle',
-  }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function renderMailForm(mail: MailLoaderShape) {
   const queryClient = new QueryClient({

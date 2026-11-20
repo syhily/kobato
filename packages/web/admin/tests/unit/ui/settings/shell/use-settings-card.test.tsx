@@ -1,18 +1,21 @@
 import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit,
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  resetStatus: vi.fn(),
+  revalidate: vi.fn(),
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 interface Source {
   title: string

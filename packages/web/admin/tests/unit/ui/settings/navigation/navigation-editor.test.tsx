@@ -11,19 +11,22 @@ function renderUi(ui: ReactElement) {
 import type { NavigationSettings } from '@kobato/settings/types.ts'
 
 import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit,
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  resetStatus: vi.fn(),
+  revalidate: vi.fn(),
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const navigation: NavigationSettings = {
   navigation: {

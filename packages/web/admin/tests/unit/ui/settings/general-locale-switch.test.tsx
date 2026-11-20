@@ -8,15 +8,22 @@ import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/Setti
 import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
 // @vitest-environment happy-dom
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.hoisted(() => vi.fn())
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit,
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const SITE_IDENTITY = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 const reload = vi.fn()

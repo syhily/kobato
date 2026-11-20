@@ -6,15 +6,18 @@ import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.t
 import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(async () => ({ ok: true, section: {} })),
-    isPending: false,
-    status: 'idle',
-  }),
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
+  commit: vi.fn(async () => ({ ok: true, section: {} })),
+  isPending: false,
+  status: 'idle',
 }))
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 const siteIdentity = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 
