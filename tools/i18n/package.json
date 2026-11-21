@@ -3,8 +3,12 @@
   "version": "8.0.3-dev",
   "private": true,
   "type": "module",
+  "scripts": {
+    "i18n:regional-diff": "vite-node src/regional-diff.ts"
+  },
   "devDependencies": {
     "@kobato/i18n": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vite-node": "catalog:"
   }
 }

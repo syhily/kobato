@@ -9,21 +9,22 @@
     "db:migrate": "pnpm -C packages/db db:migrate",
     "demo": "vite apps/inkling-demo",
     "dev": "pnpm -C apps/kobato dev",
-    "emails:generate": "vite-node tools/email/src/generate.ts",
+    "emails:generate": "pnpm -C tools/email emails:generate",
     "fmt": "oxfmt -c oxfmt.config.ts --write",
     "fmt:check": "oxfmt -c oxfmt.config.ts --check",
-    "i18n:regional-diff": "vite-node tools/i18n/src/regional-diff.ts",
+    "i18n:regional-diff": "pnpm -C tools/i18n i18n:regional-diff",
     "lint": "oxlint -c oxlint.config.ts",
     "lint:fix": "oxlint -c oxlint.config.ts --fix",
     "prepare": "pnpx husky",
-    "release:bump": "node tools/pack/src/release.ts bump",
-    "release:prepare-next": "node tools/pack/src/release.ts prepare-next",
-    "release:tag": "node tools/pack/src/release.ts tag",
+    "release:bump": "pnpm -C tools/pack release:bump",
+    "release:prepare-next": "pnpm -C tools/pack release:prepare-next",
+    "release:tag": "pnpm -C tools/pack release:tag",
     "sea:browser": "pnpm --filter @kobato/browser run sea:browser",
-    "sea:build": "node tools/pack/src/sea/build.ts",
-    "sea:e2e": "node tools/pack/src/sea/e2e.ts",
-    "sea:probe": "node tools/pack/src/sea/vfs-capabilities.ts",
-    "sea:smoke": "node tools/pack/src/sea/smoke.ts",
+    "sea:build": "pnpm -C tools/pack sea:build",
+    "sea:e2e": "pnpm -C tools/pack sea:e2e",
+    "sea:package": "pnpm -C tools/pack sea:package",
+    "sea:probe": "pnpm -C tools/pack sea:probe",
+    "sea:smoke": "pnpm -C tools/pack sea:smoke",
     "start": "pnpm -C apps/kobato start",
     "test": "vitest run",
     "test:browser": "pnpm --filter @kobato/browser run test:browser",
@@ -32,13 +33,13 @@
     "test:it": "vitest run --project '*-it'",
     "test:snaps": "vitest run --project '*-snaps'",
     "test:unit": "vitest run --project '*unit*'",
-    "trace:down": "node tools/trace/src/down.ts",
-    "trace:init": "node tools/trace/src/init.ts",
-    "trace:smoke": "vite-node tools/trace/src/smoke.ts",
-    "trace:status": "node tools/trace/src/status.ts",
-    "trace:up": "node tools/trace/src/up.ts",
+    "trace:down": "pnpm -C tools/trace trace:down",
+    "trace:init": "pnpm -C tools/trace trace:init",
+    "trace:smoke": "pnpm -C tools/trace trace:smoke",
+    "trace:status": "pnpm -C tools/trace trace:status",
+    "trace:up": "pnpm -C tools/trace trace:up",
     "type": "pnpm -C apps/kobato typegen && tsc",
-    "version:sync": "node tools/pack/src/release.ts sync-versions"
+    "version:sync": "pnpm -C tools/pack version:sync"
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",
@@ -59,7 +60,6 @@
     "taze": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-node": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },
@@ -73,8 +73,15 @@
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ]
   },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^26.13.1",
+      "onFail": "download"
+    }
+  },
   "engines": {
-    "node": ">=26.9.0"
+    "node": ">=26.13.1"
   },
   "packageManager": "pnpm@12.22.0"
 }

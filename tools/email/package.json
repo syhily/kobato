@@ -3,11 +3,15 @@
   "version": "8.0.3-dev",
   "private": true,
   "type": "module",
+  "scripts": {
+    "emails:generate": "vite-node src/generate.ts"
+  },
   "devDependencies": {
     "@kobato/i18n": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "vite-node": "catalog:"
   }
 }
