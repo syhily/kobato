@@ -24,7 +24,7 @@
   "oxc.requireConfig": true,
   "oxc.tsConfigPath": "${workspaceRoot}/tsconfig.json",
   "oxc.typeAware": true,
-  "oxc.useExecPath": true,
+  "oxc.useExecPath": false,
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
