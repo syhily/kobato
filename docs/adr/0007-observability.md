@@ -68,7 +68,7 @@ There is no build-time telemetry gate: development and production run the same s
 survives only as the `env` label. The server derives the OTLP trace, metric, and log URLs from `endpoint` and
 `organization`; its authorization value never leaves the process or enters browser configuration, and the server
 credential and RUM client token rotate independently. The SEA binary carries the server OTel SDK (dynamic import; the
-chunk loads only for a configured site) inside the 230 MB CI budget.
+chunk loads only for a configured site) inside the 250 MB CI budget.
 
 Validation (`shared/config/observability.ts`): `sampleRate` ∈ [0,1] and frontend `sessionSampleRate` ∈ [0,100]; endpoint
 URLs reject credentials, query strings, and fragments, and `organization` is validated against a closed path-segment
@@ -455,7 +455,7 @@ package is the only browser telemetry dependency.
   DEV-only gate or `/api/dev/rum/status`, retention as an always-on server policy (it is opt-in), a Pino transport, full
   RUM/Replay/browser-logs, Node auto-instrumentation, a mandatory Collector, or eager browser SDK shipping.
 - Missing raw URLs, identity, DOM state, and full error text are expected privacy behavior, not bugs to work around.
-- The server OTel SDK ships inside the SEA binary (dynamic chunk, loaded only for a configured site); the 230 MB CI
+- The server OTel SDK ships inside the SEA binary (dynamic chunk, loaded only for a configured site); the 250 MB CI
   budget is the guard. The browser SDK stays in its own lazy client chunk and never enters the SSR/SEA graph.
 - Known limits: no browser parent on an initial hard document load; approximate metric↔trace correlation; day-granular
   OSS retention rather than a literal 24-hour window; GeoIP removal proven by omission rather than against real data;

@@ -71,7 +71,7 @@ INSTALLED packages, and the installed native platform specifiers. Cross-package 
 
 ## Commands
 
-- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`), budgeted at 230 MB (`BINARY_MAX_BYTES`). Deliberately NOT
+- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`), budgeted at 250 MB (`BINARY_MAX_BYTES`). Deliberately NOT
   UPX-compressed — do not re-add. The injector requires an official **single-architecture** Node distribution; on an
   Intel Mac with the universal node, prepend a single-arch `node` to `PATH`. Injection is single-path: **`--build-sea`
   is the only injector** — no postject, no codesign on darwin.
