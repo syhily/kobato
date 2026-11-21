@@ -13,15 +13,10 @@ export interface FileUploadToast {
 }
 
 export interface FileUploadMessages {
-  /** Type-guard failure (`accept` mismatch). Defaults to a bare "wrong file type" toast. */
   invalidType?: FileUploadToast
-  /** Size-guard failure. Receives the offending file so the copy can quote its size. */
   tooLarge?: (file: File) => FileUploadToast
-  /** Success toast body. Omit to skip the success toast (custom onSuccess UX). */
   success?: string
-  /** Fallback when the server error body carries no extractable message. Defaults to the translated `admin.toast.uploadStatusFailed`. */
   httpFailure?: (status: number) => string
-  /** Fallback title message id for transport failures and non-Error throws. Defaults to `admin.toast.uploadFailed`. */
   failure?: UiMessageId
 }
 
@@ -29,22 +24,16 @@ export interface UseFileUploadOptions {
   endpoint: string
   t: ToastTranslator
   fields?: Record<string, string>
-  /** Dotted-suffix allowlist matched against the file name (e.g. '.svg', '.sql.gz'); omit to skip the type guard. Guards only run for File inputs. */
   accept?: readonly string[]
-  /** Size cap in bytes. Omit to skip the size guard. */
   maxBytes?: number
   credentials?: RequestCredentials
-  /** Parse the response body as JSON before the ok check; a malformed body lands in the failure channel like a transport error. */
   parseJson?: boolean
   messages?: FileUploadMessages
-  /** Runs after a successful POST; awaited, receives the parsed body when parseJson is set. */
   onSuccess?: (body: unknown) => void | Promise<void>
-  /** When set, every failure channel routes here instead of toast.error; guard failures pass `description ?? title`. */
   onError?: (message: string) => void
 }
 
 export interface UseFileUploadResult {
-  /** Run the full choreography. Resolves true on success, false on any handled failure. */
   upload: (input: File | FormData) => Promise<boolean>
   pending: boolean
 }

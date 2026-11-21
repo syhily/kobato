@@ -8,7 +8,6 @@ function pngDimensions(png: Buffer): { width: number; height: number } {
   if (png.length < 24 || !png.subarray(0, 8).equals(PNG_SIGNATURE) || png.readUInt32BE(12) !== IHDR_TYPE) {
     throw new Error('encodeIco: input is not a PNG buffer')
   }
-  // IHDR data starts at byte 16: width and height, big-endian uint32.
   return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) }
 }
 

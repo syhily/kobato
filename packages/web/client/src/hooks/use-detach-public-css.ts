@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 
 function isPublicStylesheet(el: Element): boolean {
   if (el.tagName === 'STYLE') {
-    // Vite dev server injects `<style data-vite-dev-id="…/public.css">`
     const devId = el.getAttribute('data-vite-dev-id') ?? ''
     return /[/\\]public\.css(?:[?#]|$)/.test(devId)
   }

@@ -32,23 +32,18 @@ export interface ClientPage {
   id: string
   title: string
   date: Date
-  /** When present from catalog hydration: `published_at` (last publish / go-live), not `updated_at`. */
   updated?: Date
   comments: boolean
   cover: string
   coverThumbhash?: string
-  /** Intrinsic cover dimensions resolved from the `image` row at catalog hydration. */
   coverWidth?: number
   coverHeight?: number
   og?: string
   published: boolean
   summary: string
   toc: boolean
-  /** When true the public detail route renders the 「修改于 XXXX」 timestamp next to the first-publish date; flipped from the editor without re-publishing. */
   showUpdated: boolean
-  /** Author-declared BCP 47 language of the prose; `null` = inherit the document UI language. Never used to pick a UI catalog. */
   contentLanguage: string | null
-  /** When true the public detail route appends the global friends grid below the body (the body format has no friends block). */
   showFriends: boolean
   slug: string
   permalink: string
@@ -59,7 +54,6 @@ export interface ClientPost {
   id: string
   title: string
   date: Date
-  /** When present from catalog hydration: `published_at` (last publish / go-live), not `updated_at`. */
   updated?: Date
   comments: boolean
   alias: string[]
@@ -72,9 +66,7 @@ export interface ClientPost {
   published: boolean
   visible: boolean
   toc: boolean
-  /** See `ClientPage.showUpdated`. Toggles "Updated on XXXX" on the public detail. */
   showUpdated: boolean
-  /** See `ClientPage.contentLanguage`. */
   contentLanguage: string | null
   slug: string
   permalink: string
@@ -105,8 +97,6 @@ export interface LoadPostsWithMetadataOptions {
 }
 
 export interface ListingPostCard {
-  /** Stringified `post.id` — used by the metric-metadata fan-out helper to key
-   * counter rows by `(type='post', owner_id=BigInt(id))`. */
   id: string
   slug: string
   title: string
@@ -116,7 +106,6 @@ export interface ListingPostCard {
   permalink: string
   category: string
   date: Date
-  /** Drafts get a "[Draft]" prefix in the listing title. */
   published: boolean
 }
 
@@ -133,14 +122,11 @@ export interface DetailPostShell {
   category: string
   tags: string[]
   date: Date
-  /** Catalog: `published_at` for "last modified", not row `updated_at`. */
   updated?: Date
   og?: string
   comments: boolean
   toc: boolean
-  /** See `ClientPost.showUpdated`. */
   showUpdated: boolean
-  /** See `ClientPage.contentLanguage`. */
   contentLanguage: string | null
   headings: MarkdownHeading[]
 }
@@ -152,19 +138,15 @@ export interface DetailPageShell {
   summary: string
   cover: string
   coverThumbhash?: string
-  /** Intrinsic cover dimensions resolved from the `image` row at catalog hydration. */
   coverWidth?: number
   coverHeight?: number
   permalink: string
   date: Date
-  /** Catalog: `published_at` for "last modified", not row `updated_at`. */
   updated?: Date
   og?: string
   comments: boolean
   toc: boolean
-  /** See `ClientPage.showUpdated`. */
   showUpdated: boolean
-  /** See `ClientPage.contentLanguage`. */
   contentLanguage: string | null
   headings: MarkdownHeading[]
 }
@@ -191,22 +173,16 @@ export interface CommentFormUser {
 }
 
 export interface Post extends ClientPost {
-  /** Saved full-fidelity projection column; NULL when only the parsed state exists (compute-on-read). */
   bodyHtml: string | null
-  /** Saved feed-variant projection column (rssMode parity); NULL alongside `bodyHtml`. */
   bodyHtmlFeed: string | null
-  /** Parsed Lexical state, populated only when a projection column is NULL (compute-on-read fallback). */
   bodyState: LexicalEditorState | null
   imageSources: string[]
   publishedRevisionId: number | null
 }
 
 export interface Page extends ClientPage {
-  /** Saved full-fidelity projection column; NULL when only the parsed state exists (compute-on-read). */
   bodyHtml: string | null
-  /** Saved feed-variant projection column (rssMode parity); NULL alongside `bodyHtml`. */
   bodyHtmlFeed: string | null
-  /** Parsed Lexical state, populated only when a projection column is NULL (compute-on-read fallback). */
   bodyState: LexicalEditorState | null
   imageSources: string[]
   publishedRevisionId: number | null

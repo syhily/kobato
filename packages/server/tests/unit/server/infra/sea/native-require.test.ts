@@ -111,7 +111,6 @@ describe('infra/sea/native-require — under SEA (KOBATO_NATIVES_DIR set)', () =
     vi.stubEnv('KOBATO_NATIVES_DIR', dir)
     seaMock.getEmbeddedAsset.mockReturnValue(null)
 
-    // Mirrors the upstream MODULE_NOT_FOUND for a missing ./versions export.
     expect(() => nativeRequire(SHARP_VERSIONS_SPEC)).toThrow(/embedded metadata asset missing/)
   })
 

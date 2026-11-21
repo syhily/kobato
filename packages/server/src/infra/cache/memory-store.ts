@@ -79,8 +79,6 @@ export function getMemoryItem(id: CacheBucketId, key: string): unknown {
 
 export interface MemoryEntryMeta {
   expiresAtMs: number
-  /** Encoded payload size for binary entries (a nested Buffer can't be
-   *  measured by serializing the wrapper); omit for JSON values. */
   bytes?: number
 }
 

@@ -2,8 +2,6 @@ import type { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlu
 
 import React from 'react'
 
-// Derived from the installed component — Lexical's own ProviderFactory alias
-// is unexported.
 export type LexicalProviderFactory = React.ComponentProps<typeof CollaborationPlugin>['providerFactory']
 
 export interface InklingCollaborationContextValue {

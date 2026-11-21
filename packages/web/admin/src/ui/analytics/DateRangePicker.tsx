@@ -34,7 +34,6 @@ function startOfDaySec(date: Date): number {
   return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 1000)
 }
 
-/** Local midnight at the start of the day AFTER the given day (DST-safe). */
 function startOfNextDaySec(date: Date): number {
   return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime() / 1000)
 }

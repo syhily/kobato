@@ -3,13 +3,6 @@ import type { Compilable } from 'kysely'
 
 import { DummyDriver, Kysely, MysqlAdapter, MysqlIntrospector, MysqlQueryCompiler } from 'kysely'
 
-/**
- * Kysely as a pure SQL compiler: the DummyDriver never connects — Kysely builds
- * the AST, a custom compiler emits DuckDB SQL with identifiers unquoted and
- * whitelisted against a strict pattern. User values travel ONLY as bound `?`
- * parameters; execution goes through the MVCC reader connection.
- */
-
 export interface AnalyticsEventRow {
   event_id: string
   index1: string
@@ -108,11 +101,6 @@ export function setAnalyticsQueryExecutor(next: AnalyticsQueryExecutor | null): 
   executor = next
 }
 
-/**
- * The execution core: compile + runAndReadAll on the reader connection. BigInt
- * cells convert to Number when safe (analytics counts never approach the unsafe
- * range) and to String otherwise rather than losing precision silently.
- */
 export async function executeAnalyticsQuery(
   reader: AnalyticsReader,
   query: Compilable,

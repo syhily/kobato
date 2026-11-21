@@ -105,8 +105,6 @@ export async function replayAllDeadLetters(): Promise<void> {
   }
 }
 
-// Return-only T is the typed-lookup API — callers write `getBatcher<PageViewBatcher>(name)`
-// instead of asserting the stored `RegisteredBatcher` at every call site.
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function getBatcher<T extends RegisteredBatcher>(name: string): T | undefined {
   const entry = entries.find((candidate) => candidate.name === name)

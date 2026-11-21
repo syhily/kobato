@@ -3,8 +3,6 @@ import { DomainError } from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 function uniqueViolation(failed: string): Error {
-  // node:sqlite unique violations carry errcode 2067 and name the
-  // offending COLUMNS in the message — never the index name.
   return Object.assign(new Error(`UNIQUE constraint failed: ${failed}`), { errcode: 2067 })
 }
 

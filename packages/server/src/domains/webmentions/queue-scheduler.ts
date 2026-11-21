@@ -6,15 +6,12 @@ import { getLogger } from '@kobato/server/infra/logger'
 
 export interface QueueSchedulerOptions {
   name: string
-  /** Catalog task binding — live-state tracking only (no history: high-frequency batches would flood `job_run`). */
   task: { key: string }
   findNextDueAt: (db: Database) => Date | 'now' | null
   runBatch: (db: Database) => Promise<number>
 }
 
 export interface QueueScheduler {
-  /** Burst throttle floor: drained batches self-reschedule; the floor keeps
-   *  a burst from hammering third-party hosts back-to-back. */
   readonly minDelayMs: number
 }
 

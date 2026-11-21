@@ -583,12 +583,6 @@ describe('Denest transform', function () {
   })
 
   it('lifts a bare list item nested in a paragraph into a root list', function () {
-    // pins the orphan-list-item case end to end: denest never sees this input
-    // because Lexical 0.53's class-seeded ListItemNode $transform fires on the
-    // parsed item first (dirty nodes run in nodeMap order, ahead of editor-
-    // registered transforms) and lifts it into a fresh list at the root. The
-    // collector path that $unwrapListItemForRootInsertion still owns is pinned
-    // by 'handles headings+text inside list items' above.
     const before = {
       root: {
         children: [

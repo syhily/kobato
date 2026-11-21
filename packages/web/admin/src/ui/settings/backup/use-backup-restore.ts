@@ -198,7 +198,6 @@ export interface UploadRestoreState {
   step: RestoreStep
   percent: number | null
   hasDecrypt: boolean
-  /** Encrypted upload parked server-side, waiting for the password prompt. */
   pendingToken: string | null
   pendingFileName: string | null
   passwordPending: boolean

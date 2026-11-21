@@ -142,15 +142,6 @@ export function $removeDropSource(nodeKey: NodeKey): boolean {
   return true
 }
 
-/**
- * The drag-marker refresh policy: refresh only when the set, order, or DOM
- * identity of top-level blocks may have changed. Text edits only mark the
- * edited node's ancestors as dirty *parents* (flag false), so per-keystroke
- * updates skip the refresh; a direct root child being intentionally dirty
- * (cloned) means a block was added, removed, reordered, or re-rendered.
- * Lexical marks the root itself intentionally dirty on every update
- * ($applyAllTransforms), so the root's own flag is ignored.
- */
 export function resolveDragMarkerRefresh(dirtyElements: Map<NodeKey, boolean>, editorState: EditorState): boolean {
   let hasDirtyRootChildCandidate = false
   for (const [key, intentionallyDirty] of dirtyElements) {

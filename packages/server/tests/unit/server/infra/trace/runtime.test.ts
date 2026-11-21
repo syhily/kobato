@@ -43,11 +43,6 @@ function disabledResolution(): TraceConfigResolution {
   return { status: 'disabled', server: null, frontend: null, frontendRelay: null, diagnostics: [] }
 }
 
-/**
- * Real OTel in-memory exporter plus a durable snapshot of what it received:
- * `InMemorySpanExporter.shutdown()` clears its own buffer, so a shutdown-flush
- * assertion needs the exported spans retained separately.
- */
 interface ExporterHarness {
   exporter: SpanExporter
   spans: ReadableSpan[]

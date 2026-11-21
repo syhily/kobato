@@ -88,7 +88,6 @@ describe('utils/formatter — date formatting', () => {
 
     it('renders the locale default in the site time zone', () => {
       const date = new Date('2024-05-15T06:34:56.000Z')
-      // 06:34 UTC is 14:34 in Asia/Shanghai; zh-CN short date + short time.
       expect(formatLocalDate(date, undefined, auto)).toBe('2024/5/15 14:34')
     })
 

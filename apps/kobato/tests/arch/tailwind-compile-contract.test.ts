@@ -5,15 +5,6 @@ import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/*
- * Compile-seam contract: the text-level ownership suite pins what the css
- * files SAY; this suite pins what the Tailwind compiler actually DOES with
- * them. Every regression in the monorepo split sailed through the text
- * checks: an unterminated @source merged two scan directives, a reference
- * import silently dropped theme-var emission, and a surface sheet's own
- * preflight overrode the root sheet's border default by document order.
- */
-
 const REPO_ROOT = process.cwd()
 const nodeRequire = createRequire(resolve(REPO_ROOT, 'apps/kobato/vite.config.ts'))
 
@@ -41,13 +32,6 @@ const BRIDGE_SHEETS = {
   demo: [],
 } as const
 
-/*
- * Runtime-injected variables: Base UI anchor positioning stamps these on
- * popup elements, and Shiki css-variables themes stamp token colors as
- * inline custom properties on highlighted <pre> markup. Neither class of
- * variable can be defined in a stylesheet, so resolution allows them
- * explicitly.
- */
 const RUNTIME_INJECTED = new Set([
   '--anchor-width',
   '--available-height',
@@ -126,8 +110,6 @@ function customPropertyDefinitions(text: string): Set<string> {
 }
 
 function varReferences(text: string): string[] {
-  // --tw-* internals are registered properties; a ref carrying its own
-  // fallback is safe by construction and not worth flagging.
   const out: string[] = []
   for (const match of text.matchAll(/var\(\s*(--[a-zA-Z][\w-]*)\s*([),])/g)) {
     if (match[1].startsWith('--tw-') || match[2] === ',') {

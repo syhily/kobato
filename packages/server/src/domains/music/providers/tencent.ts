@@ -67,7 +67,6 @@ export function decodeHtmlEntities(text: string): string {
   for (const [entity, char] of Object.entries(ENTITY_MAP)) {
     decoded = decoded.replace(new RegExp(entity, 'g'), char)
   }
-  // Out-of-range codepoints (> U+10FFFF) are left as the original text.
   decoded = decoded.replace(/&#(\d+);/g, (match, dec: string) => {
     const cp = Number.parseInt(dec, 10)
     return cp <= 0x10ffff ? String.fromCodePoint(cp) : match

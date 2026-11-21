@@ -97,8 +97,6 @@ function formWith(fields: Record<string, string>): FormData {
 
 const mail = await createCaptureMailFixture()
 
-// The real reset link out of the actually-delivered email (HTML-escaped
-// ampersands decoded first).
 async function resetLinkFromMail(): Promise<URL> {
   const message = await mail.nextMessage()
   let body = message.raw
@@ -110,7 +108,6 @@ async function resetLinkFromMail(): Promise<URL> {
       .replace(/[^A-Za-z0-9+/=]/g, '')
     body = Buffer.from(payload, 'base64').toString('utf8')
   } else {
-    // minimal quoted-printable: soft breaks + =3D
     body = body.replace(/[=]\r?\n/g, '').replace(/[=]3D/gi, '=')
   }
   const decoded = body.replace(/&amp;/g, '&')
@@ -220,8 +217,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }), resetDeps)
 
-    // With no website configured the template renders the relative href; the
-    // service fell back to the request origin when building it.
     const url = await resetLinkFromMail()
     expect(url.pathname).toBe('/admin/signin')
     expect(url.searchParams.get('action')).toBe('resetpassword')
@@ -464,7 +459,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     const userId = await seedUser()
     const { token } = issueResetToken(db, userId)
 
-    // 73 ASCII bytes with complexity — past the bcrypt truncation point.
     const result = await resetPasswordWithToken(
       flowCtx(makeSession({})),
       request(),
@@ -485,9 +479,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {
     const userId = await seedUser()
-    // Real cleanup failure: the passkey table is dropped so the DELETE inside
-    // the flow throws (best-effort must not break the reset). Table AND index
-    // DDL is snapshotted and restored in creation order.
     const ddlRows = await db.all<{ type: string; name: string; sql: string }>(
       sql`SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'passkey_credential' AND sql IS NOT NULL ORDER BY type = 'index', name`,
     )

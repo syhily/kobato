@@ -5,11 +5,4 @@ export { $isTableCellNode, $isTableNode, $isTableRowNode, TableCellNode, TableNo
 
 export type TableCellHeaderState = (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates]
 
-/**
- * The upstream `@lexical/table` element family — deliberately not cards: a cell
- * holds editable inline text with a real Lexical selection, which the decorator
- * card pipeline cannot provide. The family joins `EDITOR_BASE_NODES` alongside
- * LinkNode/ListNode, the other non-card families; the cell guard
- * (`@kobato/inkling-internal/nodes/table/table-cell-guard`) keeps every cell inline-only.
- */
 export const INKLING_TABLE_NODES = [TableNode, TableRowNode, TableCellNode]

@@ -33,26 +33,11 @@ const log = getLogger('settings.service')
 
 export interface SectionUpdateResult {
   bundle: BlogSettingsBundle | null
-  /**
-   * Honest side-effect failures: the row IS persisted but a registered change
-   * handler threw, so derived state is stale until the next successful save or
-   * restart. Descriptors — the controller localizes them per request.
-   */
   warnings: ErrorMessageDescriptor[]
 }
 
 export interface SectionUpdateOptions {
-  /**
-   * Internal escape hatch for the storage migration task: allows patching a
-   * LOCKED `assets.storage` config. Regular admin saves never pass this.
-   */
   allowStorageConfigOverride?: boolean
-  /**
-   * Storage-migration lock probe, injected by the HTTP perimeter (Core may
-   * not import the storage domain): when it resolves `true`, storage.*
-   * patches are rejected with CONFLICT. Absent → treated as no active
-   * migration (internal callers never patch storage through this pipeline).
-   */
   isStorageMigrationActive?: () => Promise<boolean>
 }
 

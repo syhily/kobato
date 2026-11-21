@@ -8,10 +8,6 @@ export interface SaveDraftInput {
   body: unknown
   imageSources: string[]
   headings: unknown
-  /**
-   * Save-time body projections. `null`/absent = leave the columns untouched on a
-   * rewrite (the no-op short-circuit and the best-effort failure path both skip it).
-   */
   projections?: BodyProjections | null
   authorId: number | null
   expectedClientRevisionToken?: string | null

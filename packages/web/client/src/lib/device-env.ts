@@ -30,9 +30,7 @@ export type DeviceEnvDynamicFields = Pick<
 >
 
 interface NavigatorWithExtras extends Navigator {
-  /** Chrome-only (`navigator.deviceMemory`, GiB). */
   deviceMemory?: number
-  /** Network Information API — Chromium only; absent in Firefox/Safari. */
   connection?: {
     effectiveType?: string
     downlink?: number

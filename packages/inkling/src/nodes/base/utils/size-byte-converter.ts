@@ -18,8 +18,6 @@ export function bytesToSize(bytes: number) {
     return '0 Byte'
   }
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-  // clamp to the largest unit — past TB the unclamped index read sizes[5+]
-  // (undefined) and produced strings like '1 undefined'
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), sizes.length - 1)
   return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i]
 }

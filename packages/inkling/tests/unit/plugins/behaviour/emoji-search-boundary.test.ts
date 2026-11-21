@@ -1,10 +1,3 @@
-// Boundary-validation pins for the emoji search port: emoji-mart's
-// SearchIndex.search returns `any`, so `./emoji-completion` validates every
-// entry before handing it out. The scripted adapter below replaces the chunk
-// module the port imports (`./emoji-search-index`), NOT the real emoji-mart
-// data, so the malformed shapes exercised here are exactly decoded — an
-// empty-skins entry would otherwise reach insertion, which reads
-// `skins[0].native`.
 import {
   ensureEmojiSearchReady,
   registerEmojiExactMatchCompletion,

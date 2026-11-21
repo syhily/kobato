@@ -51,18 +51,7 @@ export interface ImageUrlOptions {
   height: number
   quality?: number
   assetHost: string
-  /**
-   * Transform template for remote images on `assetHost`.
-   * Placeholders: `{src}`, `{width}`, `{height}`, `{quality}` (defaults to 100).
-   */
   urlTemplate?: string
-  /**
-   * Site origin (e.g. `https://example.com`). When set and `src` is a
-   * site-owned `/storage/<key>` URL, the template is not applied inline: the
-   * transform intent travels as `?w=&h=&q=` and the `/storage/*` 302 boundary
-   * substitutes it server-side (`buildRedirectLocation` in
-   * `packages/server/src/http/resources/storage-redirect.ts` — keep the two in sync).
-   */
   siteOrigin?: string
 }
 

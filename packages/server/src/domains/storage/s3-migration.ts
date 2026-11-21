@@ -107,18 +107,8 @@ export async function __awaitStorageMigrationForTests(): Promise<void> {
 }
 
 export interface S3MigrationHooks {
-  /**
-   * Persist the flipped `assets.storage` config through the settings core's
-   * LOCKED-section override. Receives the COMPLETE new storage config; the
-   * implementation carries over the section's non-storage fields.
-   */
   readonly persistFlippedStorage: (db: Database, storage: AssetsSettings['storage']) => Promise<void>
   readonly flipBrandingDrivers: (db: Database, from: StorageDriver, to: StorageDriver) => Promise<void>
-  /**
-   * Completed-run content rewrite (asset-url backfill). ALWAYS runs on
-   * completion — idempotent, so a failed earlier attempt is retried at every
-   * completed migration regardless of the boot-time one-shot flag.
-   */
   readonly postSwitchBackfill: (db: Database) => Promise<unknown>
 }
 

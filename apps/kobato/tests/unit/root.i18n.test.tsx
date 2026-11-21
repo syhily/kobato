@@ -18,12 +18,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ErrorBoundary, Layout, shouldRevalidate } from '@/root'
 
-// Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
 vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
 
-// Meta/Links/Scripts/ScrollRestoration need the framework build manifest a
-// memory router lacks — stub them, keep the rest real.
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()
   return {

@@ -29,7 +29,6 @@ describe('adminMailRouter.sendTest', () => {
   })
 
   it('throws BAD_REQUEST when mail is unconfigured', async () => {
-    // The default test bundle leaves mail unconfigured.
     const ctx = makeAuthedCtx()
     await expect(call(adminMailRouter.sendTest, { to: 'admin@example.com' }, { context: ctx })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
@@ -37,8 +36,6 @@ describe('adminMailRouter.sendTest', () => {
   })
 
   it('throws BAD_GATEWAY when the upstream provider rejects the mail', async () => {
-    // The real MailgunTransport against a stubbed network boundary: the
-    // provider answers 502 and the transport maps it to an upstream failure.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       mail: {

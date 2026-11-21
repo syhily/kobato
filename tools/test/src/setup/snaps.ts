@@ -1,5 +1,3 @@
-// Run the suite against Zod 4.5's compiled parsers, mirroring production
-// (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
 import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning'
 import '@kobato/test/env'
@@ -12,8 +10,6 @@ vi.mock('sonner', () => ({
 
 silenceLocalStorageWarning()
 
-// Shared workers keep one event loop across files; restore timers after every
-// test so no file can freeze a later file's timers/setImmediate.
 afterEach(() => {
   vi.useRealTimers()
 })

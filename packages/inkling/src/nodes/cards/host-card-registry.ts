@@ -15,16 +15,6 @@ export type HostCardMenuEntrySpec<Dataset extends Record<string, unknown> = Reco
   icon: CardIconId | ComponentType<SVGProps<SVGSVGElement>>
   command: CardMenuCommand | AnyLexicalCommand
 }
-/**
- * The props a host card's picker render receives. `nodeKey` — not the node instance —
- * crosses the boundary: pick writes resolve the latest instance by key inside
- * `editor.update()`, so a render that outlives an edit never touches a detached node
- * (Lexical #195). `fromInsert` is true when the request rode the insert command:
- * merge the pick write into the insert's undo entry (`mergeHistory`) so one undo
- * retracts both; a replace write on a resolved card stays a discrete undo entry.
- * The render runs inside the composer tree — return an element (hooks live on that
- * element's component), never call hooks in the render body.
- */
 export interface CardPickerRenderProps {
   editor: LexicalEditor
 
@@ -56,11 +46,6 @@ export interface HostCardRecord {
   nodeType: string
   spec: HostCardSpec
 }
-// Module-level registry, mirroring Lexical `createCommand`'s global idiom: hosts
-// call `defineCard` at module top level, before their composer mounts. Kept in its
-// own module with a type-only import closure — derived views read it inside
-// module-init assembly paths, so it must never pull in the wrapper layer at
-// runtime. The Map is the ordered store (insertion order is specified).
 const HOST_CARDS_BY_TYPE = new Map<string, HostCardRecord>()
 export function getHostCard(nodeType: string): HostCardRecord | undefined {
   return HOST_CARDS_BY_TYPE.get(nodeType)

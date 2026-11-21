@@ -31,7 +31,6 @@ export interface EstablishLoginOptions {
 
 export interface EstablishedLoginSession {
   sid: string
-  /** `Set-Cookie` header value — callers MUST attach it to the response. */
   setCookie: string
 }
 

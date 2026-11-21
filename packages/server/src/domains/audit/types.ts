@@ -15,7 +15,6 @@ export interface AuditEventInput {
   details?: Record<string, unknown>
   ipAddress?: string | null
   userAgent?: string | null
-  /** Captured at push time by the batcher. Do not set manually. */
   createdAt?: Date
 }
 

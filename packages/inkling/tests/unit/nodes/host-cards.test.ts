@@ -301,8 +301,6 @@ describe('host card insert integration', () => {
       $getRoot().append(paragraph)
       paragraph.select()
     })
-    // Lexical 0.53 commits updates on a microtask — tick() drains the queue so
-    // assertions see the settled state
     await tick()
 
     expect(editor.dispatchCommand(DERIVED_MUSIC_PLAYER_INSERT, { src: 'https://example.com/song.mp3' })).toBe(true)

@@ -15,11 +15,6 @@ import { MetricsGroup } from '@kobato/web-admin/ui/analytics/MetricsGroup'
 import { TrendTabs } from '@kobato/web-admin/ui/analytics/TrendTabs'
 import { type AnalyticsScope, type AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 
-// Shared by the site-wide overview and the per-post shells. URL state arrives as a
-// prop from the route module (the only place useSearchParams may be read). Views/heatmap
-// loader payloads are not threaded through — they would be bucketed in Etc/UTC while
-// client queries refetch with the real clientTimezone.
-
 export interface AnalyticsDashboardData {
   counters: CountersDto
   initialMetrics: Partial<Record<MetricType, MetricRow[]>>

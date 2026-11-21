@@ -20,7 +20,6 @@ export interface HomeLayoutBodyProps {
   categoryLinks: Record<string, string>
   featurePosts: ListingPostCard[]
   sidebar: SidebarData
-  /** From `loaderData.listingNowIso` — stabilises relative dates across SSR + hydration. */
   listingNowIso: string
   children?: ReactNode
   currentUser?: { role: string } | null

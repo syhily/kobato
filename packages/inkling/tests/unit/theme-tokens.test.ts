@@ -4,16 +4,6 @@ import { describe, expect, it } from 'vitest'
 
 const stylesDir = path.resolve(__dirname, '../../src/styles')
 
-// The theming contract has two sources of truth that must never drift:
-// - src/inkling/styles/theme.css holds the `@theme` token table, reference-imported
-//   so Tailwind compiles utilities from it without emitting `:root`
-//   declarations.
-// - src/inkling/styles/index.css hand-writes the same tokens as runtime defaults
-//   under `@layer theme { .inkling-lexical { … } }`, which is where hosts
-//   override them.
-// This suite parses both and pins name/value parity per token plus a snapshot
-// of the full token list: changing a token is an explicit contract change.
-
 const BRIDGE_VARIABLES = [
   '--white',
   '--grey-50',

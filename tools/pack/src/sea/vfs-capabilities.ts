@@ -1,9 +1,3 @@
-// Capability-verification suite for the Node.js 26.9 VFS features:
-//   Group A — userland `node:vfs` probes (cheap child processes).
-//   Group B — a mini SEA built with `"useVfs": true` (one --build-sea round).
-// Standalone CLI: `node tools/pack/src/sea/vfs-capabilities.ts [nodeBinary]`
-// (default process.execPath). Exits non-zero on any failed assertion.
-
 import { fail, tryRun } from '@kobato/pack/sea/exec'
 import { repoRoot, SEA_SENTINEL_FUSE } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
@@ -614,8 +608,6 @@ function runSeaGroup() {
       copyFileSync(sharpAddon, join(assetsDir, 'natives', 'sharp.node'))
       assets['natives/sharp.node'] = join(assetsDir, 'natives', 'sharp.node')
       if (libvipsLibrary !== null) {
-        // Embed the dependent dylib too: the pinned limitation is that the
-        // addon fails from the VFS even when its dylib rides along.
         const libvipsName = 'libvips-cpp' + libvipsLibrary.slice(libvipsLibrary.lastIndexOf('.'))
         copyFileSync(libvipsLibrary, join(assetsDir, 'natives', libvipsName))
         assets[`natives/${libvipsName}`] = join(assetsDir, 'natives', libvipsName)
@@ -651,7 +643,6 @@ function runSeaGroup() {
         `--build-sea exited with code ${build.status ?? 'unknown'}: ${tailLines(build.stderr, 8)}`,
       )
       if (process.platform === 'darwin') {
-        // Best-effort: a modified binary needs an ad-hoc signature on darwin.
         tryRun('codesign', ['--remove-signature', outputPath])
         tryRun('codesign', ['--sign', '-', '--force', outputPath])
       }

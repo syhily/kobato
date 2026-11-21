@@ -1,15 +1,3 @@
-// Trace-only `sqlite.db.query` subscriber.
-//
-// Deliberately independent of `infra/db/query-diagnostics.ts`: tracing must not
-// require the debug log level, and the debug subscriber's redaction rules are
-// not the trace privacy contract.
-//
-// The diagnostics channel publishes AFTER a statement completes and only for
-// successful statements, with `duration` in nanoseconds. The span therefore gets
-// an explicit start/end derived from that duration, and exists only when a
-// request/job span is already active — a boot-time migration or a timer flush
-// without an active span produces nothing.
-
 import { isVitest } from '@kobato/server/infra/config'
 import { redactBoundValues } from '@kobato/server/infra/db/query-diagnostics'
 import { activeTraceIds, isTraceActive, startSpan } from '@kobato/server/infra/trace/facade'
@@ -52,7 +40,6 @@ interface SubscriptionState {
 
 export interface SqliteTraceOptions {
   includeRedactedSql?: boolean
-  /** Vitest never subscribes implicitly; a test must opt in. */
   enabledInTests?: boolean
 }
 

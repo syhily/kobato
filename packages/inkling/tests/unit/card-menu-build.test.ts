@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest'
 const Icon = () => null
 type NodeEntries = Array<[string, CardMenuSource]>
 
-// fixture menu items carry real commands — insertCommand is typed
-// LexicalCommand<unknown>, so string placeholders do not typecheck
 const INSERT_CARD_ONE = createCommand('insert_card_one')
 const INSERT_CARD_TWO = createCommand('insert_card_two')
 const INSERT_CARD_THREE = createCommand('insert_card_three')

@@ -7,9 +7,6 @@ export type WebmentionStatus = (typeof WEBMENTION_STATUSES)[number]
 export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
 export type WebmentionVerifyStatus = (typeof WEBMENTION_VERIFY_STATUSES)[number]
 
-// Webmention response type (W3C / IndieWeb mf2 classification): detected from
-// `u-in-reply-to` / `u-repost-of` / `u-like-of` markers, no marker = `mention`;
-// presentational grouping only — moderation and verification treat all types alike.
 export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
 export type WebmentionType = (typeof WEBMENTION_TYPES)[number]
 

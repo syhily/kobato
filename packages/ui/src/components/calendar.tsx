@@ -39,9 +39,6 @@ function CalendarWeekNumber({ children, ...weekProps }: WeekNumberProps) {
   )
 }
 
-// DayPicker dates are WALL-CLOCK dates (local components are the truth), so a
-// formatter normalizes them onto UTC and formats in UTC — explicit zone, no
-// host-zone drift between SSR and hydration.
 export function calendarWallClockDate(date: Date): Date {
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
 }
@@ -73,8 +70,6 @@ export function Calendar({
   const locale = localeProp ?? dateFnsLocaleFor(appLocale)
   const defaultClassNames = useMemo(() => getDefaultClassNames(), [])
 
-  // Month dropdown labels are WALL-CLOCK text: normalized onto UTC and formatted
-  // in UTC so SSR and hydration agree regardless of the host/browser zone.
   const mergedFormatters = useMemo(
     () => ({
       formatMonthDropdown: (date: Date) =>

@@ -126,7 +126,6 @@ describe('analyticsRouter.heatmap', () => {
       visits: number
       visitors: number
     }[]
-    // All three events are 1970-01-01 00:2x UTC — a Thursday (isodow 4).
     expect(res).toEqual([{ weekday: 4, hour: 0, visits: 3, visitors: 2 }])
   })
 })

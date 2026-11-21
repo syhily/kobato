@@ -17,10 +17,8 @@ import { Form, Link } from 'react-router'
 export interface LoginActionData {
   method?: 'passkey' | 'password'
   message?: string
-  /** The typed identity behind `message` — stable across locales (OtpForm branches on it). */
   messageDescriptor?: ErrorMessageDescriptor
   error?: string
-  /** The typed identity behind `error`; flows that lack a descriptor send only the plain string. */
   errorDescriptor?: ErrorMessageDescriptor
 }
 
@@ -94,7 +92,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     }
   }
 
-  // The ceremony MUST launch from a user gesture — modal WebAuthn requires transient activation.
   const runPasskey = useCallback(async () => {
     setPasskeyError(null)
     setPasskeyPending(true)

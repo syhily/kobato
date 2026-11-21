@@ -19,9 +19,7 @@ export type SelfUpdateGateReasonKey = (typeof SELF_UPDATE_GATE_REASON_KEYS)[numb
 
 export interface SelfUpdateGateResult {
   canSelfUpdate: boolean
-  /** English technical text — `kobato doctor`, logs and diagnostics. */
   reasons: string[]
-  /** Typed admin-facing descriptors, resolved by the VersionDialog per locale. */
   reasonDescriptors: ErrorMessageDescriptor[]
 }
 

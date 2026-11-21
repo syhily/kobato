@@ -29,8 +29,6 @@ export function renderCodeBlockNode(node: CodeBlockNodeData, context: RenderCont
   }
 
   if (node.highlightedHtml) {
-    // Server-prerendered artifact: emitted verbatim modulo sanitization, with
-    // the raw source on `data-code` as the host's copy-button hook.
     if (node.language) {
       code.setAttribute('data-language', node.language)
     }

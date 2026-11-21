@@ -12,13 +12,9 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The calendar renderer has its own real-canvas coverage; this suite pins
-// route + cache semantics with a fast spy.
 const renderCalendar = vi
   .spyOn(await import('@kobato/server/render/calendar/render'), 'renderCalendar')
   .mockResolvedValue(Buffer.from('cal') as never)
-// Avatar resolution is a DB+network pipeline covered elsewhere; the route
-// mapping of its outcomes is what this suite pins.
 const serveAvatar = vi
   .spyOn(await import('@kobato/server/domains/comments/services/avatar'), 'serveAvatar')
   .mockResolvedValue({ kind: 'redirect' } as never)

@@ -16,7 +16,6 @@ export async function callE2eRpc<T>(
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new Error(`e2e rpc ${path}: response is not an oRPC envelope`)
   }
-  // oRPC drops the `json` key for void-output procedures: `undefined` serializes to `{}`.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return { status: res.status, json: ('json' in parsed ? parsed.json : undefined) as T }
 }

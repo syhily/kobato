@@ -1,12 +1,8 @@
-// Hand-written (no import spec): the nested metadata payload and the
-// DOM-mutating mixtapeEmbed conversion are structural, not flat per-property
-// reads.
 import type { LexicalNode } from 'lexical'
 
 export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, unknown>) => LexicalNode) {
   return {
     figure: (nodeElem: HTMLElement) => {
-      // tagName is guaranteed by Lexical's nodeName dispatch ('figure' key)
       if (nodeElem.classList.contains('inkling-bookmark-card')) {
         return {
           conversion(domNode: HTMLElement) {
@@ -14,8 +10,8 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
             const icon = domNode.querySelector('.inkling-bookmark-icon')?.getAttribute('src')
             const title = domNode.querySelector('.inkling-bookmark-title')?.textContent?.trim()
             const description = domNode.querySelector('.inkling-bookmark-description')?.textContent?.trim()
-            const author = domNode.querySelector('.inkling-bookmark-publisher')?.textContent?.trim() // NOTE: This is NOT in error. The classes are reversed for theme backwards-compatibility.
-            const publisher = domNode.querySelector('.inkling-bookmark-author')?.textContent?.trim() // NOTE: This is NOT in error. The classes are reversed for theme backwards-compatibility.
+            const author = domNode.querySelector('.inkling-bookmark-publisher')?.textContent?.trim()
+            const publisher = domNode.querySelector('.inkling-bookmark-author')?.textContent?.trim()
             const thumbnail = domNode.querySelector('.inkling-bookmark-thumbnail img')?.getAttribute('src')
             const caption = domNode.querySelector('figure.inkling-bookmark-card figcaption')?.textContent?.trim()
             const payload: Record<string, unknown> = {
@@ -39,14 +35,12 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
       return null
     },
     div: (nodeElem: HTMLElement) => {
-      // nodeType/tagName are guaranteed by Lexical's nodeName dispatch ('div' key)
       if (nodeElem.className.includes('graf--mixtapeEmbed')) {
         return {
           conversion(domNode: HTMLElement) {
             const anchorElement = domNode.querySelector('.markup--mixtapeEmbed-anchor')
             const titleElement = anchorElement?.querySelector('.markup--mixtapeEmbed-strong')
             const descElement = anchorElement?.querySelector('.markup--mixtapeEmbed-em')
-            // Image is a top level field inside it's own a tag
             const imgElement = domNode.querySelector<HTMLElement>('.mixtapeImage')
 
             domNode.querySelector('br')?.remove()
@@ -58,20 +52,16 @@ export function parseBookmarkNode(BaseBookmarkNode: new (data: Record<string, un
 
             if (titleElement?.innerHTML) {
               title = titleElement.innerHTML.trim()
-              // remove the title so the remaining anchor text is the publisher
               titleElement.remove()
             }
 
             if (descElement?.innerHTML) {
               description = descElement.innerHTML.trim()
-              // remove the description so the remaining anchor text is the publisher
               descElement.remove()
             }
 
             const publisher = anchorElement?.innerHTML.trim() ?? ''
 
-            // Optional: the element usually still exists with a
-            // has.mixtapeImage--empty class and no background image
             if (imgElement?.style.backgroundImage) {
               const match = /url\(([^)]*?)\)/.exec(imgElement.style.backgroundImage)
               if (match?.[1]) {

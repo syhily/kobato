@@ -18,9 +18,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// createBackup runs for REAL (VACUUM INTO works from :memory:) against an
-// in-memory backend; pins: overlapping same-second backups get CONFLICT,
-// stale staging files never block the next run.
 const mem = makeMemoryBackend()
 const db = getTestDb()
 

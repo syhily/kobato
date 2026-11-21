@@ -1,9 +1,3 @@
-/**
- * ThumbHash — compact perceptual image hash for blur placeholders.
- * TS port of evanw/thumbhash@0.1.1; snapshot tests guard against
- * drift from the upstream algorithm.
- */
-
 export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): Uint8Array {
   if (w > 100 || h > 100) {
     throw new Error(`${w}x${h} doesn't fit in 100x100`)

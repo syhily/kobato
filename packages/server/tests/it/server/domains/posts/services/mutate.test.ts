@@ -112,7 +112,6 @@ describe('posts/services/mutate — createPost', () => {
   })
 
   it('throws CONFLICT when a stale registry row owns the slug (the registry constraint leg)', async () => {
-    // The registry insert itself surfaces the CONFLICT; SQLite names columns, not the index.
     await db.insert(slugRegistry).values({ slug: 'stale', entityType: 'post', entityId: 999 })
 
     await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toMatchObject({

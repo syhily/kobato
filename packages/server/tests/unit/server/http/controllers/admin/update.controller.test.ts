@@ -3,9 +3,6 @@ import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The update service hits GitHub and the job tracks a process-level
-// pipeline; both stay controlled at the function level. Audit recording
-// runs for real (buffered) and is observed through a spy.
 const serviceMocks = {
   checkForUpdate: vi
     .spyOn(await import('@kobato/server/domains/update/service'), 'checkForUpdate')

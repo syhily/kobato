@@ -5,8 +5,6 @@ import { SpanStatusCode } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The recorder writes job history rows; its id contract (42) is pinned
-// through function doubles.
 const recorder = await import('@kobato/server/infra/db/job-run-recorder')
 const startJobRun = vi.spyOn(recorder, 'startJobRun').mockImplementation(() => 42 as never)
 const finishJobRun = vi.spyOn(recorder, 'finishJobRun').mockImplementation(() => undefined as never)

@@ -5,21 +5,10 @@ import {
   resolveImportedFootnoteTargetKey,
 } from '@kobato/inkling-internal/nodes/footnote/footnote-keys'
 
-// Hand-written parser: both footnote HTML dialects arrive as one container —
-// `section.footnotes > ol > li` is markdown-it-footnote's paste shape and
-// inkling's own export shape alike, so ONE conversion consumes the whole
-// section and returns every definition node. The li `id` is only the source
-// anchor slug correlating definitions with their refs — targetKeys are
-// recast per import (see `@kobato/inkling-internal/nodes/footnote/footnote-keys`).
 export function parseFootnoteDefinitionSection(
   FootnoteDefinitionNodeClass: new (data: Record<string, unknown>) => LexicalNode,
 ) {
   return {
-    // markdown-it-footnote separates prose from the definitions with
-    // <hr class="footnotes-sep"> — swallow it here (priority 1 beats the HR
-    // card's 0, and ties go to the later-registered class) so it doesn't
-    // import as a horizontal-rule card. Sibling removal at section time
-    // would be too late: the hr converts BEFORE the section is reached.
     hr: (nodeElem: HTMLElement) => {
       if (!nodeElem.classList.contains('footnotes-sep')) {
         return null
@@ -43,14 +32,7 @@ export function parseFootnoteDefinitionSection(
               ? resolveImportedFootnoteTargetKey(domNode.ownerDocument, slug)
               : createFootnoteTargetKey()
 
-            // The definition content is the li's inner HTML minus its
-            // back-reference anchors (markdown-it's `a.footnote-backref`
-            // inside the paragraph, inkling's own trailing
-            // `a[data-footnote-backref]`).
             const content = li.cloneNode(true)
-            // Unreachable in practice (the clone of an element is an
-            // element) — lib.dom types cloneNode as Node, so narrow
-            // instead of asserting.
             if (!isElementNode(content)) {
               return
             }
@@ -69,8 +51,6 @@ export function parseFootnoteDefinitionSection(
   }
 }
 
-// nodeType, not instanceof: the source document may be another jsdom
-// realm's, where instanceof fails
 function isElementNode(node: Node): node is Element {
   return node.nodeType === 1
 }

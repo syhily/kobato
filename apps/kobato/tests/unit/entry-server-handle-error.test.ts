@@ -30,7 +30,6 @@ describe('entry.server.tsx / handleError', () => {
   })
 
   it('unwraps RouteErrorResponses carrying the original error', () => {
-    // react-router 8.3.0 exports the class only as `UNSAFE_ErrorResponseImpl` (`ErrorResponse` is type-only).
     const routeError = new UNSAFE_ErrorResponseImpl(500, 'Internal Server Error', new Error('boom'))
 
     handleError(routeError, { request: new Request('http://localhost/') })

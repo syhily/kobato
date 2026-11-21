@@ -163,7 +163,6 @@ describe('analytics/metric — queryMetric', () => {
 
 describe('analytics/heatmap — queryHeatmap', () => {
   it('returns ISO weekday/hour buckets in the client timezone', async () => {
-    // 2026-01-15T23:30:00Z: Thursday 23:30 UTC; Friday 07:30 in Asia/Shanghai.
     await seedAccessEvents(handle, [
       { ts: ts('2026-01-15T23:30:00Z'), visitorHash: 'a', path: '/', country: 'US' },
       { ts: ts('2026-01-15T23:45:00Z'), visitorHash: 'b', path: '/', country: 'US' },

@@ -43,7 +43,6 @@ export function planBodySave(
 }
 
 export interface DraftSavePlan {
-  /** `undefined` = omit the field, `null` = cancel the server schedule, string = set it. */
   publishedAt: string | null | undefined
   bodyDiverged: boolean
   bannerLegs: 1 | 2
@@ -70,7 +69,6 @@ export function planCreatePublishedAt(pickerPublishedAt: string): string | undef
 
 export interface PublishPlan {
   publishedAtField: string | undefined
-  /** Optimistic server publishedAt — reverted to the pre-publish truth on error. */
   optimisticServerPublishedAtIso: string
 }
 

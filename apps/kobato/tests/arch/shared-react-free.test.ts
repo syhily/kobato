@@ -3,8 +3,6 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-// Auto-discovered: every directory under packages/shared/ that owns a src/ tree
-// is a leaf and is covered — a newly split leaf cannot be missed by a stale list.
 const SHARED_SRC_ROOTS = readdirSync(join(PROJECT_ROOT, 'packages/shared'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => join(PROJECT_ROOT, 'packages/shared', entry.name, 'src'))

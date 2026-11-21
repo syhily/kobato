@@ -67,10 +67,6 @@ export function recordForceOverwriteAudit<TMeta extends { id: number }>(
 export interface SaveBodyInput {
   entityId: number
   body: unknown
-  /**
-   * Music-domain resolver wired by the controller (lexical must not depend on music);
-   * resolves `music-player` playerIds into the snapshot embedded at save time.
-   */
   resolveMusicEmbeds: MusicEmbedResolver
   expectedClientRevisionToken?: string | null
   force?: boolean

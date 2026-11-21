@@ -7,9 +7,7 @@ import { asc, count, eq, inArray, or, type SQL } from 'drizzle-orm'
 
 export interface AdminTagsListFilters {
   q?: string
-  /** Zero-based offset for pagination. Defaults to 0 when undefined. */
   offset?: number
-  /** Page size. When undefined, all matching rows are returned (used by callers that need the full list). */
   limit?: number
 }
 

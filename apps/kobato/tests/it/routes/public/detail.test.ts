@@ -17,8 +17,6 @@ import { randomUUID } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Session resolution stays controlled; every domain service runs for real
-// behind call-through spies.
 const postSingle = await import('@kobato/server/domains/posts/services/single')
 const pagesPublicQuery = await import('@kobato/server/domains/pages/services/public-query')
 const friendsService = await import('@kobato/server/domains/friends/service')

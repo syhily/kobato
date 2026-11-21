@@ -14,20 +14,14 @@ import { Readable } from 'node:stream'
 export interface MemoryStoredObject {
   body: Buffer
   contentType: string
-  /** Cache-Control resolved at write time — what `getStreamWithMeta` reports back. */
   cacheControl?: string
 }
 
 export interface MemoryBackend {
-  /** The StorageBackend to hand to the registry seam. */
   backend: StorageBackend
-  /** key → stored payload. */
   store: Map<string, MemoryStoredObject>
-  /** Every key passed to put/putStream, in call order. */
   putKeys: string[]
-  /** Every key passed to delete/deleteMany/deletePrefix, in call order. */
   deletedKeys: string[]
-  /** Drop all objects and recorded calls. */
   reset: () => void
 }
 

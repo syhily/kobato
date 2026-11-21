@@ -25,8 +25,6 @@ export default function useFloatingPanel<T extends HTMLElement = HTMLDivElement>
   cardKey,
   cardWidth,
 }: UseFloatingPanelOptions): { ref: RefObject<T | null> } {
-  // read the raw context (null-safe) so the panel can still render outside a
-  // composer (e.g. isolated unit tests) — useLexicalComposerContext would throw
   const composerContext = useContext(LexicalComposerContext)
   const editor = composerContext?.[0] ?? null
 

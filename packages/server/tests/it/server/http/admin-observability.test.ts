@@ -22,7 +22,6 @@ import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-set
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The OTel runtime is a process-level boundary; observe without starting it.
 const runtimeMock = {
   startTraceRuntime: vi
     .spyOn(await import('@kobato/server/infra/trace/runtime'), 'startTraceRuntime')

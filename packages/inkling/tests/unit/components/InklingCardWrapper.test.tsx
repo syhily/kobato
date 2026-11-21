@@ -106,8 +106,6 @@ describe('InklingCardWrapper', () => {
   it('keys the decorator parent data attribute off the width prop', async () => {
     const nodeKey = await addHtmlNode(editor)
 
-    // in this harness the decorator parent element is the render container;
-    // in the product it is Lexical's decorator div
     const { container, rerenderWidth } = renderWrapperWithWidth(nodeKey, 'wide')
     expect(container).toHaveAttribute('data-inkling-card-width', 'wide')
 

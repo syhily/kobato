@@ -4,9 +4,7 @@ import { readRumConsent, subscribeRumConsent, writeRumConsent } from '@kobato/we
 import { useCallback, useSyncExternalStore } from 'react'
 
 export interface RumConsentState {
-  /** False during SSR and the first client render; the banner renders only when true. */
   ready: boolean
-  /** The visitor's decision; `null` while undecided (and on the server snapshot). */
   decision: RumConsent | null
   accept: () => void
   decline: () => void

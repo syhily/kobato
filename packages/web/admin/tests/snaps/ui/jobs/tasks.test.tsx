@@ -145,7 +145,6 @@ describe('snapshot: TasksView', () => {
     expect(html).toContain('内容')
     expect(html).toContain('维护')
 
-    // Status badges (site timezone Asia/Shanghai: 2026-08-20T20:00Z → 04:00 next day).
     expect(html).toContain('正常')
     expect(html).toContain('已挂起')
     expect(html).toContain('最近失败')

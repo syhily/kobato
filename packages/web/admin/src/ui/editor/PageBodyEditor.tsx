@@ -17,14 +17,10 @@ import { FocusIcon } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 
 export interface PageBodyEditorProps {
-  /** Initial Lexical body. Only read on first mount + when `bodyKey` changes. */
   initialBody: LexicalEditorState
   bodyKey: string
   onBodyChange: (body: LexicalEditorState) => void
   disabled?: boolean
-  /** Chrome rendered inside the scroll container above the canvas (the
-   *  title/slug strip) so it scrolls with the document as one centered
-   *  writing column. */
   header?: React.ReactNode
 }
 
@@ -48,9 +44,6 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
 
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
   const { t, localizeMessage } = useI18n()
-  // `localizeMessage` closes over the same `intl` instance as `t`, so the
-  // translator identity is the correct (and stable) memo key — keying on the
-  // callback itself would rebuild the card config on every provider render.
   // oxlint-disable-next-line react-hooks/exhaustive-deps
   const cardConfig = useMemo(() => makePageEditorCardConfig(t, localizeMessage), [t])
   const [focusMode, toggleFocusMode] = useFocusModePreference()

@@ -54,12 +54,6 @@ export class FootnoteRefNode extends TextNode {
     }
   }
 
-  // <sup id="user-content-fnref-N"><a href="#user-content-fn-N">N</a></sup> —
-  // the anchors come from the single contract owner (`./footnote-anchors`);
-  // N is the node's own text, which the renumber engine keeps equal to the
-  // ref's citation index. A non-numeric label (e.g. an unbracketed
-  // markdown-it import) carries no index — indexing is skipped rather than
-  // leaking `fnref-NaN`.
   exportDOM(_editor: LexicalEditor, options: ExportDOMOptions = {}): DOMExportOutput {
     const context = createRenderContext(options)
     const document = context.createDocument()

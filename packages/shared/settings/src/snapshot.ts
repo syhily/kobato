@@ -9,12 +9,9 @@ type Storage = Readonly<{
 
 export interface BlogSettingsSnapshot {
   bundle: BlogSettingsBundle | null
-  /** Boot-unique, in-process monotonic settings-snapshot generation; see the module note. */
   revision: string
 }
 
-// `crypto.randomUUID` exists in Node and browsers; the fallback still mixes the
-// clock with randomness (never the clock alone) so two boots cannot collide.
 function createBootId(): string {
   const crypto = globalThis.crypto
   if (typeof crypto?.randomUUID === 'function') {
@@ -43,7 +40,6 @@ function setStorage(partial: Partial<Storage>): void {
 
 export interface BlogSettingsSnapshotSlot {
   read: () => BlogSettingsBundle | null
-  /** Bundle + revision from ONE read — the request capture pins both together. */
   readSnapshot: () => BlogSettingsSnapshot
   write: (value: BlogSettingsBundle | null | undefined) => void
   readHydration: () => Promise<BlogSettingsBundle | null> | undefined

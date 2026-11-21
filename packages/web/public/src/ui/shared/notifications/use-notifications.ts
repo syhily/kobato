@@ -31,11 +31,6 @@ export function useInvalidateNotifications(): () => Promise<void> {
   }
 }
 
-// oRPC's operation key shape: `[procedurePath, { input?, type? }]`, where an
-// infinite query's input is its FIRST page's input. So the list key is
-// `[['notifications','list'], { input: { tab, limit }, type: 'infinite' }]`
-// and the tab rides the key's second element. Derived per call (never at
-// module scope) so importing this hook never depends on the router shape.
 interface NotificationCacheKeys {
   scope: QueryKey
   unreadCount: QueryKey

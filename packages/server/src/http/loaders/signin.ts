@@ -13,11 +13,6 @@ import { data, redirect } from 'react-router'
 
 const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])
 
-/**
- * POST-only logout (the route action's `action=logout` branch, behind the
- * shared CSRF validation). A GET logout would let any cross-site <img> or
- * link prefetch silently sign a user out.
- */
 export async function handleSigninLogout(rc: RequestContext, redirectTo: string): Promise<never> {
   const { session } = rc
   const user = session.get('user')

@@ -15,8 +15,6 @@ export interface CoverInputRowProps {
   description?: string
   value: string
   onChange: (value: string) => void
-  /** `kind` for the upload dialog — the parent must keep `slug` / `host` in
-   *  sync or the upload lands at a stale object key; `null` disables upload. */
   uploadKind: UploadKind | null
   fallbackSrc?: string
   thumbnailClassName?: string

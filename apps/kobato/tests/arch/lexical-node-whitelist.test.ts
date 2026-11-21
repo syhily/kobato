@@ -115,14 +115,6 @@ describe('contract: lexical node whitelist', () => {
   })
 
   it('derives the article manifest from the actually-mounted composer nodes', () => {
-    // The page editor's composer module is the ground truth. Lexical always
-    // registers RootNode/TextNode/LineBreakNode/TabNode/ParagraphNode — of
-    // those only paragraph/linebreak can appear in a produced state (text is
-    // shadowed by the extended-text replacement pair, tab is unreachable
-    // through inkling's indent handling, root/artificial are
-    // containers/internals). Replacement-pair entries contribute their
-    // `replace` type to the shadowed set; the extended class entry in the same
-    // pair is what serializes.
     type NodeEntry = (() => unknown) | { getType?: () => string; replace?: { getType?: () => string } }
     const shadowed = new Set<string>()
     const classTypes = new Set<string>()

@@ -6,10 +6,6 @@ import { Readable } from 'node:stream'
 
 export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 
-/**
- * Bridge a Node `fs.createReadStream` into a DOM `ReadableStream`; Node's
- * `stream/web` type is incompatible with the DOM lib `Response` expects.
- */
 export function nodeStreamToWeb(stream: Readable): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
     start(controller) {

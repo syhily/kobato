@@ -20,7 +20,6 @@ import { startOfDay, subDays } from 'date-fns'
 const log = getLogger('comments.likes')
 
 export async function increaseLikes(db: Database, target: EntityTarget): Promise<{ likes: number; token: string }> {
-  // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
   const token = makeToken(64)
   const likes = await recordLikeAndCount(db, token, target)
   return { likes, token }

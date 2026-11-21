@@ -11,11 +11,8 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, useState }
 const log = getLogger('locale-sync')
 
 export interface LocaleSyncFlushHost {
-  /** The settings workspace transaction host (`inert` + pending flag). */
   runTransaction: <T>(task: () => T | Promise<T>) => Promise<T>
-  /** True only when EVERY dirty card committed. */
   flushAllAndWait: () => Promise<boolean>
-  /** True while the workspace runs a transaction of its own. */
   isBusy: () => boolean
 }
 
@@ -45,7 +42,6 @@ const LocaleSyncContext = createContext<LocaleSyncContextValue>({
 
 export interface LocaleSyncProviderProps {
   locale: AppLocale
-  /** The bootstrap settings revision (`<bootId>:<counter>`) — an opaque dedupe token. */
   revision?: string
   children: ReactNode
 }

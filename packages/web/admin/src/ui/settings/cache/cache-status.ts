@@ -2,7 +2,6 @@ import type { ClearCacheTarget } from '@kobato/cache/types'
 
 export interface ClearStatus {
   state: 'idle' | 'pending' | 'success' | 'error'
-  /** Last-clicked target so the per-bucket button can show "clearing…" only on itself. */
   target: ClearCacheTarget | null
   message: string | null
 }

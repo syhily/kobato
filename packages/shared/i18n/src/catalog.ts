@@ -1,23 +1,3 @@
-// The single aggregation of every message catalog, plus the ICU contract the
-// catalogs are held to. Server-only value import surface: `messages/ui/**` and
-// `messages/server/**` reach the client exclusively through the root loader, never
-// through this module's static graph.
-//
-// Validation compares VARIABLES and LOGICAL OPTIONS, not plural categories: English
-// may need one/other where Chinese only needs other. Every argument name (including
-// rich-text tag names) must match the English baseline, and so must its kind
-// (plain / plural / select / number …); every plural/select must carry `other` (the
-// ICU parser itself rejects a message without it: MISSING_OTHER_CLAUSE) and use only
-// categories legal for that locale's `Intl.PluralRules`; every select must cover
-// the baseline's option values. A violation throws {@link CatalogValidationError};
-// `shared/` has no logger, so the root-loader / server-translator boundaries catch,
-// log and degrade.
-//
-// Scope: `content.bootstrap` ships `uiMessagesForScope(locale, scope)` — the
-// workspace catalog for /admin + /editor, and the `admin.*`-free public subset
-// everywhere else (see `catalog-scope`). Every returned catalog is memoized per
-// `locale:scope` and frozen, so callers share one object and cannot mutate it.
-
 import type { CatalogScope } from '@kobato/i18n/catalog-scope'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { ServerMessages } from '@kobato/i18n/messages/server/en-US'

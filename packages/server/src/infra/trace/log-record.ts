@@ -16,7 +16,6 @@ export interface ProjectedLogAttributes {
 
 export interface ProjectedLogRecord {
   timestampMs: number
-  /** OpenTelemetry severity number (INFO 9, WARN 13, ERROR 17, FATAL 21). */
   severityNumber: number
   severityText: LogSeverityText
   body?: string

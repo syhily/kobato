@@ -38,7 +38,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export interface EditorShellPersistDraft<TMeta> {
   meta: TMeta
   body: LexicalEditorState
-  /** Opening body the server holds — the local-conflict baseline and the dialog's server version. */
   initialBody: LexicalEditorState
 }
 
@@ -57,7 +56,6 @@ export interface EditorShellPersistMutations<
 
 export interface EditorShellPersistNotifications<TMeta> {
   applyServerMeta: (meta: TMeta) => void
-  /** Flip the local meta draft's `published` flag after a successful publish. */
   markMetaPublished: () => void
   replaceBody: (body: LexicalEditorState, key: string) => void
 }
@@ -67,7 +65,6 @@ export interface UseEditorShellPersistArgs<
   TEntity extends EntityLike,
   TUpsertMetaInput = Record<string, unknown>,
 > {
-  /** Pre-loaded detail; `undefined` means create mode — every edit flow gates on it. */
   detail?: EditorShellDetail<TEntity>
   draft: EditorShellPersistDraft<TMeta>
   localDraftConfig: LocalDraftConfig<LexicalEditorState>

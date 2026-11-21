@@ -14,18 +14,6 @@ import { ensureLexicalNodeOwnMethods } from '@kobato/inkling-internal/nodes/base
 import { defineFieldAccessor } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
 import { decorateCardNode } from '@kobato/inkling-internal/nodes/card-decorate-slot'
 
-/**
- * The class type `assembleCardNode` returns: the declaration's base node class with
- * the spec statics adopted and `decorate()` added, and the spec-derived `__*` field
- * map folded into the instance side — a shim's `InstanceType` carries the full
- * transient/nested-editor vocabulary without a hand-written map or cast. TypeScript
- * can't see statics inherited through a class-expression base, so the Lexical static
- * side is spelled out via the mapped type — at runtime every member is genuinely
- * present on the assembled class. The static side deliberately carries no extra
- * construct signature (`KlassConstructor` intersection): `InstanceType` over one
- * folds `LexicalNode`'s construct return into the instance type first, degrading the
- * base node's method types (e.g. `exportJSON()` collapsing to `SerializedLexicalNode`).
- */
 export type CardNodeClass<TNode extends LexicalNode, D = unknown> = {
   [k in keyof typeof LexicalNode]: (typeof LexicalNode)[k]
 } & {
@@ -80,11 +68,6 @@ export function assembleCardNode<
   return AssembledCardNode as unknown as CardNodeClass<TNode, D>
 }
 
-// `var` hoists: a shim reached through the wrapper-layer import cycle (shim →
-// card-wrappers → assemble-card-node → decorate tree → plugins/components →
-// shim) calls `assembleCardNodeOnce` while this module is still evaluating, so
-// the cache binding must exist before any module body runs — a `const` would
-// still be in its TDZ.
 // oxlint-disable-next-line no-var
 var assembledCardNodeCache: WeakMap<object, CardNodeClass<LexicalNode>> | undefined
 

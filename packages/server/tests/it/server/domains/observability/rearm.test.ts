@@ -14,7 +14,6 @@ import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The OTel runtime is a process-level boundary; observe without starting it.
 const runtimeMock = {
   startTraceRuntime: vi
     .spyOn(await import('@kobato/server/infra/trace/runtime'), 'startTraceRuntime')
@@ -80,10 +79,6 @@ afterEach(() => {
   __resetObservabilityRuntimeForTests()
 })
 
-// HMR can re-evaluate `@kobato/settings/snapshot` (module-level state), so a fresh
-// module graph reads back an empty settings snapshot. The boot path hydrates
-// before syncing precisely so the runtime re-arms without waiting for the next
-// admin save or the first browser request.
 describe('observability runtime re-arm after an HMR settings-snapshot loss', () => {
   it('hydrates from the DB and starts the verified runtime', async () => {
     seedSettings(VERIFIED)

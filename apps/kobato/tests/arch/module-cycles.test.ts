@@ -1,22 +1,3 @@
-/**
- * Module-level import cycles.
- *
- * The directory-grain guards (`server-layers`, `web-direction`,
- * `admin-feature-graph`) pin layer and feature edges, but none of them can see
- * a cycle that closes INSIDE a directory or across two adjacent files. This
- * guard walks the runtime (value) import graph of every product src tree —
- * `import type` edges are erased; static `from`, side-effect, dynamic
- * `import()`, `export { … } from`, and `vi.mock` edges all count — resolves
- * specifiers through the workspace path table, and fails on any strongly
- * connected component larger than one file.
- *
- * A value-import cycle is a TDZ hazard even when it happens to work today:
- * module-evaluation order decides whether a binding is initialized when a
- * consumer reads it at its own top level. Break cycles by moving the shared
- * binding (a command constant, a schema, a small pure helper) into a leaf
- * module both sides import — see `plugins/behaviour/selector-insertion` for
- * the reference shape.
- */
 import { REPO_PACKAGES } from '@tests/arch/workspace-packages'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -50,12 +31,6 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-/**
- * Runtime (non-type) specifiers: `import type … from` and `export type { … } from`
- * statements are erased, and a named-import block survives only when it binds
- * at least one runtime name. `vi.mock` module paths count as edges too — mocks
- * mirror the runtime graph.
- */
 function valueImportSpecifiers(source: string): string[] {
   let stripped = stripComments(source)
   stripped = stripped.replace(/import\s+type\s[\s\S]{0,800}?from\s+['"][^'"]+['"]/g, '')
@@ -138,8 +113,6 @@ const adjacency = new Map<string, Set<string>>()
 
 for (const file of files) {
   for (const specifier of valueImportSpecifiers(readFileSync(file, 'utf8'))) {
-    // Unresolvable specifiers are assets (css/svg?react), externals, or
-    // test-tree-only helpers outside the src graph — not cycle candidates.
     const resolved = resolveSpecifier(file, specifier)
     if (resolved !== null && nodeSet.has(resolved)) {
       const targets = adjacency.get(file) ?? new Set<string>()

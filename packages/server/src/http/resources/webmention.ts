@@ -9,9 +9,6 @@ import { Hono } from 'hono'
 
 const MAX_FORM_BODY_BYTES = 16 * 1024
 
-// W3C Webmention receive endpoint — unauthenticated by design (per-IP rate
-// limit + moderation queue carry the abuse load). Verification is async:
-// shape-only check + enqueue, 202 at once.
 export const webmentionRouter = new Hono<Env>().post(
   '/webmention',
   rateLimitByIp('webmention', 'resource'),

@@ -11,7 +11,6 @@ export class AsideParser {
     return {
       blockquote: () => ({
         conversion: (domNode: HTMLElement) => {
-          // tagName is guaranteed by Lexical's nodeName dispatch ('blockquote' key)
           if (domNode.classList.contains('inkling-blockquote-alt')) {
             const node = new this.NodeClass()
             return { node }

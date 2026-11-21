@@ -1,56 +1,42 @@
-# React Router / Vite build output
 build/
 apps/kobato/build/
 dist/
 dist-sea/
 
-# generated framework/content artifacts
 .react-router/
 apps/kobato/.react-router/
 .source/
 
-# local caches
 .vite/
 .cache/
 
-# dependencies
 node_modules/
 .pnpm-store/
 
-# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 bun-debug.log*
 
-# test output
 coverage/
 
-# scratch / probe scripts (e.g. tmp/meting-probe.mjs)
 tmp/
 
-# Local data directory
 data/
 
-# environment variables
 .env
 .env.*
 !.env.example
 
-# macOS-specific files
 .DS_Store
 
-# jetbrains setting folder
 .idea/
 
-# Hide the SQL session
 *.session.sql
-
 
 .history/
 
-# AI Tools ignore.
 .cursor/
 .junie/
 .trae/
@@ -64,5 +50,4 @@ data/
 plans/
 docs/plans/
 
-# Local config file (auto-created on first dev run; contains secrets)
 kobato.config.json

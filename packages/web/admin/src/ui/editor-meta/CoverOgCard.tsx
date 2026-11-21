@@ -12,10 +12,8 @@ export interface CoverOgCardProps {
   onCoverChange: (value: string) => void
   og: string
   onOgChange: (value: string) => void
-  /** Editor-side title / summary — folded into the generated-OG preview cache-buster. */
   title: string
   summary: string
-  /** Persisted slug for the generated `/images/og/:slug.png` preview; empty ⇒ pre-save hint. */
   ogPreviewSlug?: string | null
   disabled?: boolean
 }

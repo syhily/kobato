@@ -1,6 +1,3 @@
-// BroadcastChannel only exists in DOM contexts; stub it for tests.
-// Instances on the same name receive each other's messages synchronously,
-// so tests fan out cross-tab events without timers.
 export class FakeBroadcastChannel {
   static instances: FakeBroadcastChannel[] = []
   name: string

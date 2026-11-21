@@ -38,22 +38,12 @@ import { constants as zlibConstants, zstdCompressSync } from 'node:zlib'
 
 const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
 
-/**
- * Packing policy: only the native dynamic libraries are zstd-packed; everything
- * else rides raw — under `useVfs` each key is a plain `node:fs` read, so a
- * packed payload would be unreadable there. Natives never touch the VFS:
- * dlopen needs real files and worker threads cannot see the mount.
- */
 export function shouldPackAsset(key: string): boolean {
   return key.startsWith(SEA_NATIVE_ASSET_PREFIX)
 }
 
 export const SEA_COMPRESSION_MIN_BYTES = 1024
 
-/**
- * Capped at 8 — zstd's job granularity saturates beyond that. The manifest
- * hashes RAW bytes, so cross-machine packed-byte differences don't matter.
- */
 const ZSTD_PACK_WORKERS = Math.min(availableParallelism(), 8)
 
 const ZSTD_MULTITHREAD_MIN_BYTES = 4 * 1024 * 1024
@@ -82,10 +72,6 @@ function sha256(bytes: Buffer) {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
-/**
- * zstd level 9 is the only pack codec: level 19 costs ~37 s where 9 costs ~2 s,
- * for roughly 6% of the blob (machine code packs poorly either way).
- */
 export function packAssetBytes(raw: Buffer): { codec: SeaAssetCodec; bytes: Buffer } {
   if (raw.byteLength < SEA_COMPRESSION_MIN_BYTES) {
     return { codec: 'none', bytes: raw }
@@ -129,7 +115,6 @@ async function listFiles(root: string) {
         continue
       }
       if (entry.isSymbolicLink()) {
-        // Symlinks inside published packages (e.g. libvips.so.42 -> libvips.so.42.0.1).
         if (statSync(path).isDirectory()) {
           await walk(realpathSync(path))
           continue
@@ -162,11 +147,6 @@ interface InstalledPackage {
   root: string
 }
 
-/**
- * The one installed platform package out of an entry package's
- * optionalDependencies: under pnpm they are siblings of the package's real
- * location, so a sibling's existence picks exactly what this install provides.
- */
 function findPlatformPackage(
   entryName: string,
   match: (dep: string) => boolean,
@@ -230,10 +210,6 @@ function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
   }
 }
 
-/**
- * Collect the native dynamic libraries + platform metadata — exactly the
- * flat extraction dir's contents (5 files on darwin/linux, 7 on win32).
- */
 async function addNativeAssets(assets: Map<string, string>, files: ManifestFileEntry[], ctx: PackContext) {
   const sharpPkg = findPlatformPackage(
     'sharp',
@@ -281,7 +257,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
     await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${name}`, join(libvipsDir, name), ctx)
   }
   await addAsset(assets, files, SEA_NATIVE_SKIA_ADDON_KEY, skiaAddon, ctx)
-  // ICU datafile rides only where the platform package ships one; it extracts beside skia.node.
   const skiaIcuData = join(canvasPkg.root, 'icudtl.dat')
   if (existsSync(skiaIcuData)) {
     await addAsset(assets, files, SEA_NATIVE_SKIA_ICU_KEY, skiaIcuData, ctx)

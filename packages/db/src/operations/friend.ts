@@ -13,14 +13,8 @@ export async function listPublicFriendRows(db: Database): Promise<FriendRow[]> {
 export interface AdminFriendsListFilters {
   q?: string
   includeHidden?: boolean
-  /**
-   * Exact visibility match; takes precedence over `includeHidden` (so the
-   * pending-review bucket can list only `visible: false` rows).
-   */
   visible?: boolean
-  /** Zero-based offset for pagination. Defaults to 0 when undefined. */
   offset?: number
-  /** Page size. When undefined, all matching rows are returned. */
   limit?: number
 }
 

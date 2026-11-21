@@ -20,7 +20,6 @@ const ROW_DATE_FORMAT = 'LL-dd HH:mm'
 
 export interface PendingModerationPanelProps {
   initial: ListPendingDashboardOutput
-  /** Catalog id picked by the loader — resolved here so the server never renders copy. */
   emptyStateLineId: UiMessageId
 }
 
@@ -118,8 +117,6 @@ export function PendingModerationPanel({ initial, emptyStateLineId }: PendingMod
         </div>
       </div>
 
-      {/* The only scroll container. `min-h-0` lets the flex parent compute
-          available height so the inner `overflow-y-auto` actually engages. */}
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
         {data === undefined ? (
           <p className="py-10 text-center text-sm text-muted-foreground">{t('common.state.loading')}</p>

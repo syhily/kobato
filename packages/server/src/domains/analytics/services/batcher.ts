@@ -22,7 +22,6 @@ const BATCHER_NAME = 'AccessLogBatcher'
 
 export interface AccessLogItem {
   event: EnrichedAccessEvent
-  /** NULL only for legacy flat dead-letter rows. */
   envServer: DeviceEnvServerRow | null
 }
 

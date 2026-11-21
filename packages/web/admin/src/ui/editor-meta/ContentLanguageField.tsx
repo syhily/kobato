@@ -5,7 +5,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 
 export interface ContentLanguageFieldProps {
   id: string
-  /** Draft value; empty string = unset (no `lang` on the public body container). */
   value: string
   onChange: (value: string) => void
   disabled?: boolean

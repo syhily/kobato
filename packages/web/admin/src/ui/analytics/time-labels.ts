@@ -16,9 +16,7 @@ export function parseTimeLabel(unit: TimeUnit, label: string): number {
 }
 
 export interface TimeLabelOptions {
-  /** Active UI locale (never a runtime default). */
   locale: AppLocale
-  /** The BROWSER zone the bucket labels were produced in (`getClientTimezone()`). */
   timeZone: string
 }
 

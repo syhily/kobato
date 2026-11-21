@@ -48,10 +48,6 @@ export interface CspInput {
   isDev: boolean
 }
 
-/**
- * Opt the origin into User-Agent Client Hints: Chromium then sends the
- * `Sec-CH-UA-*` headers, which the analytics enrich pipeline persists.
- */
 export const ACCEPT_CH_HEADER =
   'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Form-Factors'
 
@@ -65,9 +61,7 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const website = bundle?.siteIdentity?.website
   const siteOrigin = website ? URL.parse(website)?.origin : undefined
   const mediaExtra = siteOrigin && !origins.has(siteOrigin) ? `${extra} ${siteOrigin}` : extra
-  // Dev: Vite's injected scripts lack the request nonce — allow `unsafe-inline`.
   const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
-  // Dev: Vite's client may create blob workers — `worker-src` needs blob:.
   const workerSrc = isDev ? "worker-src 'self' blob:" : "worker-src 'self'"
   const devMediaExtra = isDev ? `${mediaExtra} https:` : mediaExtra
   const directives = [
@@ -84,16 +78,12 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
     "form-action 'self'",
     "base-uri 'self'",
   ]
-  // UIR is https-only: on an http-configured site it would upgrade the site's
-  // own origin — including 302 targets carrying absolute http Locations (the
-  // avatar fallback), which Chrome rewrites to https and then fails to load.
   if (siteUsesHttps(bundle)) {
     directives.push('upgrade-insecure-requests')
   }
   return directives.join('; ')
 }
 
-/** The configured website origin is https — HSTS / upgrade hints are appropriate. */
 export function siteUsesHttps(bundle: BlogSettingsBundle | null): boolean {
   return URL.parse(bundle?.siteIdentity?.website ?? '')?.protocol === 'https:'
 }
@@ -110,10 +100,6 @@ export function configureMiddleware(app: Hono<Env>): void {
     if (!rc) {
       return
     }
-    // A 304 revalidates a CACHED document whose inline scripts carry the ORIGINAL
-    // request's nonce. Revalidating caches fold the 304's headers into the stored
-    // entry (RFC 9111 §4.3.4), so strip CSP (the static one included) to keep the
-    // policy that matches the stored body.
     if (c.res.status === 304) {
       c.res.headers.delete('Content-Security-Policy')
       return
@@ -122,14 +108,9 @@ export function configureMiddleware(app: Hono<Env>): void {
     const isDev = import.meta.env.DEV
     const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev })
     c.res.headers.set('Content-Security-Policy', csp)
-    // HSTS only makes sense for an https-configured site: sent from an http
-    // deployment it would (once any TLS front-end passes it through) pin the
-    // host to a scheme the operator explicitly did not choose.
     if (siteUsesHttps(bundle)) {
       c.res.headers.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains')
     }
-    // UA-CH recovers device model / OS detail erased by Chrome's UA reduction
-    // (first-party, so no Permissions-Policy delegation is needed).
     c.res.headers.set('Accept-CH', ACCEPT_CH_HEADER)
     const webmentionLink = webmentionLinkHeader(bundle)
     if (webmentionLink !== null) {
@@ -139,14 +120,9 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   app.use(
     secureHeaders({
-      // HSTS is set per-response by the dynamic middleware above — only for an
-      // https-configured site, never unconditionally.
       strictTransportSecurity: false,
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
-        // Dev: Vite / React Router tooling injects un-nonced inline scripts. This
-        // static policy only survives non-HTML short-circuits (301/404) that never
-        // reach `requestContextMiddleware`, so no inline script is legitimate there.
         scriptSrc: import.meta.env.DEV ? ["'self'", "'unsafe-inline'"] : ["'self'"],
         workerSrc: ["'self'", 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'"],

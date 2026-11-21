@@ -194,8 +194,6 @@ describe('MusicsView render branches', () => {
       isPending: false,
       data: { pages: [{ musics: [a], total: 1, hasMore: false }] },
     }
-    // Sort menu starts closed (popup unmounted until opened); Base UI
-    // applies aria-expanded only after hydration, so SSR asserts aria-haspopup.
     const html = renderMusics()
     expect(html).toContain('aria-label="排序"')
     expect(html).toContain('aria-haspopup="menu"')

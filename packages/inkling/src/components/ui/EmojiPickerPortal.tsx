@@ -5,8 +5,6 @@ import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPre
 import React from 'react'
 
 interface EmojiPickerPortalProps extends Omit<EmojiMartPickerOptions, 'data' | 'onEmojiSelect'> {
-  // emoji-mart's onEmojiSelect delivers its (untyped upstream) emoji object;
-  // consumers read the `native` character off it
   onEmojiClick: (emoji: { native?: string }) => void
   positionRef: React.RefObject<HTMLElement | null>
   data?: unknown

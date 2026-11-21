@@ -8,7 +8,6 @@
 }
 
 :root {
-  /* Darkened from the base brand so inline links and brand text clear WCAG AA on white (5.11:1). */
   --brand: #007a82;
   --brand-dark: #151b2b;
   --brand-darker: #20283b;
@@ -22,7 +21,6 @@
   --ink-1: #151b2b;
   --ink-2: #1f2538;
   --ink-3: #404b69;
-  /* Drives muted-foreground / placeholder / timestamps; darkened to clear WCAG AA on white (5.24:1). */
   --ink-4: #646c82;
   --ink-on-dark: #e8e9ea;
   --ink-5: #eaecf3;
@@ -475,7 +473,6 @@ pre.shiki span {
   }
 }
 
-/* Tailwind theme bridge (shadcn slots); the cn.ts parity tests parse this file. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

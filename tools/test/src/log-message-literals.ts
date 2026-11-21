@@ -6,25 +6,19 @@ export type LogMessageRule = 'dynamic-message' | 'marker-message' | 'dynamic-opt
 
 export interface LogMessageViolation {
   rule: LogMessageRule
-  /** Repo-relative, POSIX-separated path. */
   file: string
   line: number
   column: number
-  /** Raw source text of the offending argument/property value. */
   text: string
 }
 
 export interface LogMessageAllowlistEntry {
-  /** Repo-relative file path, or a directory prefix (matched as `path/…`). */
   path: string
-  /** Restrict the exemption to these rules; omit to exempt every rule in the path. */
   rule?: LogMessageRule
-  /** Restrict the exemption to a match whose source text equals this snippet. */
   text?: string
 }
 
 export interface LogMessageScanOptions {
-  /** Repo-relative files or directory prefixes to scan. */
   roots: readonly string[]
   allowlist?: readonly LogMessageAllowlistEntry[]
 }

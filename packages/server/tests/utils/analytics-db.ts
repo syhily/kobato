@@ -28,8 +28,6 @@ export async function closeTestAnalyticsDb(handle: AnalyticsHandle): Promise<voi
   if (index !== -1) {
     handles.splice(index, 1)
   }
-  // Join any batcher flush still writing through this handle — closing the
-  // DuckDB connections under an in-flight append is a native use-after-free.
   await settleAllBatchers()
   await closeAnalyticsDatabase(handle)
 }
@@ -44,7 +42,6 @@ export function closeAllTestAnalyticsDbs(): void {
 }
 
 export interface SeedAccessEvent {
-  /** Pin the primary key so a device_env_client row can join on it. */
   eventId?: string
   ts: Date
   visitorHash?: string

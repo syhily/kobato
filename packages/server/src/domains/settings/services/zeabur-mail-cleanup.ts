@@ -19,23 +19,6 @@ export interface ZeaburMailCleanupNotify {
   actionUrl?: string
 }
 
-/**
- * One-shot boot cleanup for Zeabur's retired hosted mail API: a stored `blog.mail` row
- * still carrying `transport: 'zeabur'` would hydrate onto the SMTP transport and silently
- * send nothing (no SMTP host configured). Such a row is rewritten through the honest
- * section update path — mail disabled, transport pinned to SMTP, legacy keys dropped by
- * write-schema validation, the bundle refreshed and the transport cache invalidated by
- * the registered section-change handlers; the injected notifier alerts the admins when a
- * row was actually cleaned.
- *
- * Rows that merely CARRY the legacy `host`/`apiKey` keys are left untouched: every
- * pre-cleanup install seeded those keys from the old defaults, so their presence says
- * nothing about the transport in use — and hydration strips unknown keys anyway, making
- * them inert for smtp/mailgun rows.
- *
- * Flag-gated like the other boot backfills: the flag is written only after the cleanup
- * (and its notification) succeeded, so a crash retries on the next boot.
- */
 export async function runZeaburMailCleanupAtBoot(
   db: Database,
   notify: (message: ZeaburMailCleanupNotify) => Promise<void> | void,

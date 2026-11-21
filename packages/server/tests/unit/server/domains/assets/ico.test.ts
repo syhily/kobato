@@ -49,8 +49,6 @@ describe('encodeIco', () => {
   it('produces a payload that decodes as a valid PNG at the declared offset', async () => {
     const ico = encodeIco([await makePng(32)])
 
-    // libvips cannot decode ICO containers (browsers can), so verify by
-    // extracting the payload via the directory entry and decoding that.
     const payload = ico.subarray(ico.readUInt32LE(18))
     const metadata = await sharp(payload).metadata()
     expect(metadata.format).toBe('png')

@@ -140,8 +140,6 @@ function frontendTemplate(
   audioDurationTotal.textContent = '/'
   const audioDUrationNode = document.createElement('span')
   audioDUrationNode.setAttribute('class', 'inkling-audio-duration')
-  // m:ss — the import spec parses this back with minutes*60+seconds, so a
-  // raw seconds count would reimport 60x too large (or zero on non-integers)
   audioDUrationNode.textContent = formatVideoDuration(node.duration)
   audioDurationTotal.appendChild(audioDUrationNode)
   audioPlayer.appendChild(audioDurationTotal)
@@ -156,7 +154,7 @@ function frontendTemplate(
   const playbackRate = document.createElement('button')
   playbackRate.setAttribute('class', 'inkling-audio-playback-rate')
   playbackRate.setAttribute('aria-label', 'Adjust playback speed')
-  playbackRate.innerHTML = '1&#215;' // innerHTML, not textContent: the &#215; entity must be parsed
+  playbackRate.innerHTML = '1&#215;'
   audioPlayer.appendChild(playbackRate)
 
   const unmuteIcon = document.createElement('button')

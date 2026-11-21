@@ -4,14 +4,6 @@ import { HISTORY_MERGE_TAG, type LexicalNode, type NodeKey } from 'lexical'
 import React from 'react'
 
 export interface CardWriteOptions {
-  /**
-   * Merge this write into the previous history entry instead of pushing a
-   * new undo step — applied inkling-side as Lexical's `HISTORY_MERGE_TAG`
-   * update tag (hosts name the option, never the tag). The pick seam's
-   * insert-then-pick flow uses it (the request's `fromInsert` marker) so
-   * one undo retracts insert and pick together; a write on an already
-   * resolved card (replace) leaves it unset and stays a discrete entry.
-   */
   mergeHistory?: boolean
 }
 

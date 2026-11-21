@@ -22,11 +22,7 @@ export function warmCommentEditorChunks(locale: AppLocale): void {
 }
 
 export interface LazyCommentBodyEditorProps extends Omit<CommentBodyEditorProps, 'labels'> {
-  /** Mount the real editor immediately (edit forms, admin dialogs). Default: wait for the
-   *  user to point at or focus the placeholder (the always-visible reply form). */
   eager?: boolean
-  /** Hand focus to the contenteditable once the editor mounts (inline reply / edit
-   *  forms). Evaluated at mount; remount the surface to focus again. */
   focusOnMount?: boolean
 }
 
@@ -44,8 +40,6 @@ export function LazyCommentBodyEditor({
   const labelsReady = payloadLabels !== undefined || labels !== undefined
   const shellRef = useRef<HTMLDivElement | null>(null)
   const focusOnLoadRef = useRef(focusOnMount)
-  // iOS decides the input auto-zoom when focus lands, so the viewport stays locked from
-  // the activation intent until the contenteditable has actually taken focus.
   const zoomLockHeldRef = useRef(false)
   const releaseTimerRef = useRef<number | null>(null)
 
@@ -64,8 +58,6 @@ export function LazyCommentBodyEditor({
     releaseViewportZoomLock()
   }, [])
 
-  // Release one task after focus() so WebKit's zoom decision already saw the locked
-  // viewport; pinch-zoom then returns for the editing session.
   const scheduleZoomLockRelease = useCallback(() => {
     if (releaseTimerRef.current !== null) {
       return
@@ -92,8 +84,6 @@ export function LazyCommentBodyEditor({
       return
     }
     focusOnLoadRef.current = false
-    // The lock must be in place before the focus call: iOS reads the viewport meta
-    // when the editable becomes the active element.
     holdZoomLock()
     shellRef.current?.querySelector<HTMLElement>('[contenteditable]')?.focus({ preventScroll: true })
     scheduleZoomLockRelease()

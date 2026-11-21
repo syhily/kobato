@@ -38,8 +38,6 @@ export function CodeBlockPlainEditor({ code, language, updateCode, onEscape }: C
         onEscape?.()
         return
       }
-      // Keep the parent Lexical editor's undo/redo out of the textarea so the
-      // native text undo history and Lexical's never fight (HtmlEditor's guard).
       if ((event.ctrlKey || event.metaKey) && (event.key === 'z' || event.key === 'y')) {
         event.stopPropagation()
       }

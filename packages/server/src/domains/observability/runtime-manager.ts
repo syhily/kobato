@@ -21,14 +21,7 @@ export type ObservabilityRuntimePhase = 'disabled' | 'unverified' | 'invalid' | 
 export interface ObservabilityRuntimeStatus {
   phase: ObservabilityRuntimePhase
   fingerprint: string | null
-  /** Diagnostics-free failure summary (codes / field names only, never a value). */
   lastError: string | null
-  /**
-   * Latest OTLP export failure reported by the running runtime's observed
-   * exporters (traces/metrics/logs). Null while every signal exports cleanly
-   * or no runtime is active — phase alone cannot see an upstream outage, this
-   * can.
-   */
   lastExportError: ExportFailure | null
 }
 

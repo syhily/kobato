@@ -74,7 +74,6 @@ export function renderImageNode(node: ImageNodeData, context: RenderContext) {
 
   let picture: HTMLPictureElement | null = null
 
-  // a null width yields no srcset below, so skip the call outright
   if (node.width !== null) {
     const imgAttributes = {
       src: node.src,
@@ -109,14 +108,11 @@ export function renderImageNode(node: ImageNodeData, context: RenderContext) {
   )
 
   if (shouldRenderPicture) {
-    // const-aliased so the closure below keeps the narrowing
-    // shouldRenderPicture established (its typeof check covers both)
     const canTransformImageToFormat = context.canTransformImageToFormat
     const pictureElement = document.createElement('picture')
     let sourcesAdded = false
 
     MODERN_IMAGE_FORMATS.forEach((format) => {
-      // a null width yields no srcset from getSrcsetAttribute — skip early
       if (node.width === null) {
         return
       }

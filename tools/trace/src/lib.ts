@@ -45,10 +45,6 @@ export interface TraceState {
   organization: string
   adminEmail: string
   adminPassword: string
-  /**
-   * Kept in the state-file contract so an existing `state.json` still parses; the
-   * RUM client token is created by the server during the admin connection test.
-   */
   rumToken: string
   applicationId: string
   containerName: string
@@ -86,7 +82,6 @@ export interface OpenObserveInstance {
   containerName: string
   volumeName: string
   port: number
-  /** True when this call created the container rather than reusing one. */
   created: boolean
 }
 

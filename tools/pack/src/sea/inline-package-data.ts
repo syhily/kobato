@@ -1,10 +1,3 @@
-// Bundler plugin: inline static package data files into the server bundle.
-// Bundled packages reach for files at runtime in ways a single-file ESM SEA
-// binary cannot survive; every payload is static. JSON embeds verbatim (a JSON
-// text IS a JS expression) so consumers still bind objects, not strings.
-// Call-site shapes are pinned by the `inline-package-data` contract test so an
-// upstream release changing one fails at upgrade time.
-
 import type { Plugin } from 'vite'
 
 import { readFileSync } from 'node:fs'
@@ -18,9 +11,7 @@ interface InlineDataRead {
 }
 
 export interface InlineDataCase {
-  /** Contract-test label; also used in the drift error message. */
   name: string
-  /** Absolute-path pattern of the module carrying the runtime reads. */
   modulePattern: RegExp
   reads: InlineDataRead[]
 }

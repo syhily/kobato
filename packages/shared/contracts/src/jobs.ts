@@ -20,12 +20,10 @@ export type TaskGroup = 'content' | 'system' | 'maintenance'
 
 export interface TaskCatalogEntry {
   key: string
-  /** UI message id — the admin task center resolves it with the active locale. */
   label: UiMessageId
   description: UiMessageId
   kind: TaskKind
   group: TaskGroup
-  /** UI message id for the schedule line (e.g. `Daily at 04:00 (site time zone)`). */
   scheduleHint: UiMessageId
 }
 

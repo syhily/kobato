@@ -1,5 +1,4 @@
 // adapted from draggable.js Scrollable plugin (MIT)
-// https://github.com/Shopify/draggable/blob/master/src/Draggable/Plugins/Scrollable/Scrollable.js
 import type { DraggableInfo } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
 import {
@@ -13,9 +12,6 @@ const defaultOptions = {
 }
 
 export interface ScrollHandlerOptions {
-  // The element that actually scrolls when the only scrollable ancestor is the document
-  // scrolling element — the composer's dragScrollContainerSelector option; absent, the
-  // document scrolling element is used.
   documentScrollContainerSelector?: string | null
 }
 
@@ -37,7 +33,6 @@ export class ScrollHandler {
 
     this._isSafari = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')
 
-    // bind `this` so methods can be passed to requestAnimationFrame
     this._scroll = this._scroll.bind(this)
   }
 
@@ -85,9 +80,6 @@ export class ScrollHandler {
   getScrollableElement(target: HTMLElement): HTMLElement {
     const found = getParentScrollableElement(target)
 
-    // Layouts that scroll inside a container rather than the document: when the document
-    // scrolling element is the only scrollable ancestor, prefer the configured container
-    // (see ScrollHandlerOptions).
     if (found === getDocumentScrollingElement()) {
       const container = this._documentScrollContainerSelector
         ? document.querySelector<HTMLElement>(this._documentScrollContainerSelector)
@@ -120,8 +112,6 @@ export class ScrollHandler {
     const topPosition = rect.top + offsetHeight - clientY
     const bottomPosition = clientY - rect.top
 
-    // Safari auto-scrolls when the pointer is outside the window; skip this handler's own
-    // scrolling in that situation to avoid jank
     if (topPosition < sensitivity && !(this._isSafari && topPosition < 0)) {
       scrollableElement.scrollTop += speed
     } else if (bottomPosition < sensitivity && !(this._isSafari && bottomPosition < 0)) {

@@ -1,15 +1,3 @@
-// SEA Intl capability probe. Technical server probe: it
-// verifies that the ICU data bundled into the executable actually renders the
-// four UI locales — not merely that the Intl constructors exist.
-//
-// Pure module on purpose: it imports only the locale contract and the shared
-// display formatter (no config, no database, no server graph), so
-// `kobato --smoke-intl` can run with zero side effects and
-// `tools/pack/src/sea/smoke.ts` can spawn it on a bare binary. The probe never reads
-// ICU data files: every assertion goes through the public Intl APIs, so the
-// same module works against a full-ICU or a small-ICU SEA target and fails
-// loudly (rather than degrading to English) when the data is missing.
-
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
@@ -24,28 +12,15 @@ export const INTL_LIST_PROBE = ['1 hour', '30 minutes'] as const
 export const INTL_COLLATION_PROBE = ['張', '李', '王'] as const
 
 export interface IntlLocaleExpectation {
-  /** Numeric date + h23 time in UTC (CLDR field order varies per locale). */
   dateTime: string
-  /** `RelativeTimeFormat.format(-1, 'day')` with numeric:'auto'. */
   relativeDay: string
-  /** `DisplayNames({ type: 'region' }).of('US')`. */
   regionName: string
-  /** `PluralRules.select(1)` — the CLDR plural category. */
   pluralCategory: string
-  /** `Intl.ListFormat({ style: 'narrow', type: 'unit' })` over {@link INTL_LIST_PROBE}. */
   listUnits: string
-  /** `formatDuration(INTL_PROBE_DURATION_MS)` — the production duration surface. */
   duration: string
-  /** `Intl.Collator` sort of {@link INTL_COLLATION_PROBE}, comma-joined. */
   collation: string
 }
 
-/**
- * Exact expected outputs per locale. These are asserted, not snapshotted: a
- * binary whose ICU data is missing/reduced fails the probe instead of silently
- * falling back to English. The values are CLDR-stable for the pinned Node/ICU
- * (the SEA build's Node version is fixed by `.nvmrc`).
- */
 export const INTL_LOCALE_EXPECTATIONS = {
   'en-US': {
     dateTime: '01/02/2026, 15:04',
@@ -90,14 +65,9 @@ export interface IntlLocaleProbeResult extends IntlLocaleExpectation {
 }
 
 function normalizeWhitespace(text: string): string {
-  // ICU may emit narrow no-break spaces (U+202F) before day-period markers —
-  // `\s` folds them so the comparison is about the pattern, not the glyph.
   return text.replace(/\s+/g, ' ').trim()
 }
 
-// `Intl.supportedLocalesOf` is constructor-scoped (there is no namespace-level
-// one): every constructor we use must actually resolve the locale, otherwise
-// the runtime would silently fall back to the default locale.
 function assertSupported(locale: AppLocale): void {
   for (const [name, ctor] of [
     ['DateTimeFormat', Intl.DateTimeFormat],

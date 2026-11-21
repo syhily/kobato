@@ -16,8 +16,6 @@ export interface ArchivesBodyProps {
 export function ArchivesBody({ resolvedPosts, listingNowIso }: ArchivesBodyProps) {
   const { locale, timeZone } = useSiteIdentity()
   const { t } = useI18n()
-  // Bucket by the site-configured time zone (same path as the displayed
-  // dates), so SSR and hydration always agree on the group keys.
   const groupedPosts = Object.groupBy(resolvedPosts, (post) => {
     const parts = localDateParts(new Date(post.date), locale, timeZone)
     return formatDate(new Date(Date.UTC(parts.year, parts.month - 1, 1)), {

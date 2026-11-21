@@ -15,7 +15,6 @@ import { eq } from 'drizzle-orm'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The controller→service mapping stays observable; the services run for real.
 const adminMutate = await import('@kobato/server/domains/images/services/admin-mutate')
 const uploadService = await import('@kobato/server/domains/images/services/upload')
 const recalculateImageThumbhash = vi.spyOn(adminMutate, 'recalculateImageThumbhash')

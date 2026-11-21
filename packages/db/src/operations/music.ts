@@ -12,7 +12,6 @@ export interface AdminMusicListFilters {
   limit?: number
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
   sortOrder?: 'asc' | 'desc'
-  /** Default `false`: list view hides soft-deleted rows. */
   includeDeleted?: boolean
 }
 

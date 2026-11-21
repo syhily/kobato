@@ -14,7 +14,6 @@ import { joinUrl } from '@kobato/utils/urls'
 
 export interface SeoI18n {
   locale: AppLocale
-  /** Document-scope UI catalog; only title-key lookups read it. */
   messages: Readonly<Record<string, string>>
 }
 
@@ -34,9 +33,7 @@ export interface FeedLinkOptions {
 }
 
 export interface RouteSeoOptions {
-  /** Raw content title (post/page/category/tag/navigation copy). Never a message id. */
   title?: string
-  /** Static document title: a UI message id resolved from matches' i18n payload. */
   titleKey?: UiMessageId
   description?: string
   pageUrl?: string

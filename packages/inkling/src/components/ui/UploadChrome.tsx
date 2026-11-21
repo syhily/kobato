@@ -10,7 +10,6 @@ export function uploadProgressStyle(progress?: number): React.CSSProperties {
   return { width: `${progress?.toFixed(0) ?? '0'}%` }
 }
 export interface UploadFileInputProps {
-  /** The input's `name` — a DOM contract unit tests and e2e query (`input[name="…"]`). */
   name: string
   fileInputRef?: React.Ref<HTMLInputElement>
   mimeTypes?: string[]

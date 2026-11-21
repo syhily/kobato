@@ -106,12 +106,6 @@ export default function $convertToHtmlString(editor: LexicalEditor, options: Exp
 
   const output: string[] = []
   const children: LexicalNode[] = $getRoot().getChildren()
-  // null results (bare inline nodes as root children) never reach output, so
-  // children indices and output indices diverge — keep the map for the
-  // trailing-paragraph splice below and the post-processors (the seam's
-  // contract, `@kobato/inkling-internal/html/renderer/post-process`). Dev Lexical rejects
-  // such trees at RootNode.splice, but prod builds strip that guard, so a
-  // malformed headless import can still produce them there.
   const outputIndexByChild: number[] = []
 
   for (const child of children) {

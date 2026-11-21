@@ -9,7 +9,6 @@ import { Maximize2Icon } from 'lucide-react'
 export interface MetricDetailsDialogProps {
   title: string
   rows: MetricRow[]
-  /** Full-set visit sum backing the row percents. */
   total: number
   type: MetricType
   onSelect?: (type: MetricType, value: string) => void

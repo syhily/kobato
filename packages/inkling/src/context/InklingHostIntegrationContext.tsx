@@ -78,12 +78,6 @@ export interface LibraryImageItem {
 }
 
 export interface ImageLibrarySettings {
-  /**
-   * Empty query = the default (unfiltered) listing, fetched immediately on
-   * picker open; non-empty queries are debounced. `undefined` means
-   * "transient failure / cancelled": the picker keeps its last items (the same
-   * convention as LinkingSettings.searchLinks).
-   */
   search: (query: string) => Promise<LibraryImageItem[] | undefined>
 
   upload?: () => Promise<LibraryImageItem | undefined>
@@ -93,12 +87,6 @@ export interface LibrarySettings {
 }
 
 export interface MathSettings {
-  /**
-   * The host's server-side render channel (kobato: oRPC admin.renderMath; the
-   * 200ms debounce stays host-owned). In-editor previews only — the artifacts
-   * persisted on the node are filled by the host's save pipeline and never
-   * written back by the editor.
-   */
   renderMath?: (args: { tex: string; display: boolean }) => Promise<{ mathml?: string; svg?: string; error?: string }>
 }
 

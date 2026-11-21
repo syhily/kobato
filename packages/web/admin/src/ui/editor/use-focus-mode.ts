@@ -2,8 +2,6 @@ import { useCallback, useSyncExternalStore } from 'react'
 
 const FOCUS_MODE_STORAGE_KEY = 'kobato/admin/page-editor/focus-mode'
 
-// Cache the parsed snapshot: `useSyncExternalStore` demands referential
-// stability between store changes.
 let cachedRaw: string | null | undefined
 let cachedEnabled = false
 
@@ -13,7 +11,6 @@ function getSnapshot(): boolean {
     try {
       raw = window.localStorage.getItem(FOCUS_MODE_STORAGE_KEY)
     } catch {
-      // localStorage may throw in private mode — treat as nothing stored.
       raw = null
     }
   }
@@ -50,9 +47,7 @@ export function useFocusModePreference(): [boolean, () => void] {
     if (typeof window !== 'undefined') {
       try {
         window.localStorage.setItem(FOCUS_MODE_STORAGE_KEY, next ? '1' : '0')
-      } catch {
-        // localStorage may throw (private mode / quota); the preference is best-effort.
-      }
+      } catch {}
     }
     emitChange()
   }, [])

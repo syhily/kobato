@@ -18,15 +18,12 @@ import {
 import { renderFileNode } from '@kobato/inkling-internal/nodes/base/nodes/file/file-renderer'
 import { bytesToSize, sizeToBytes } from '@kobato/inkling-internal/nodes/base/utils/size-byte-converter'
 
-// the card's transient-prop spec — see the audioTransientProps note
 export const fileTransientProps = [
   transientTriggerFileDialogProp,
   transientInitialFileProp,
 ] as const satisfies readonly TransientPropSpec[]
 
 const fileProperties = [
-  // the blob guard as spec data: an upload-in-progress data-string src must
-  // not be persisted (the generated exportJSON redacts it)
   { name: 'src', default: '', urlType: 'url', redactDataUrl: true },
   { name: 'fileTitle', default: '', wordCount: true },
   { name: 'fileCaption', default: '', wordCount: true },
@@ -45,8 +42,6 @@ export const fileImportSpec = {
         { name: 'fileTitle', kind: 'text', selector: '.inkling-file-card-title', fallback: '' },
         { name: 'fileCaption', kind: 'text', selector: '.inkling-file-card-caption', fallback: '' },
         { name: 'fileName', kind: 'text', selector: '.inkling-file-card-filename', fallback: '' },
-        // sizeToBytes('') is 0 — the property default — so a missing size
-        // element still writes the key
         { name: 'fileSize', kind: 'text', selector: '.inkling-file-card-filesize', fallback: '', parse: sizeToBytes },
       ],
     },
@@ -57,8 +52,6 @@ export type FileData = DecoratorNodeData<typeof fileProperties>
 
 export type SerializedFileNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof fileProperties>>
 
-// the merged interface self-types the spec-driven fields/accessors — see the
-// BaseAudioNode note
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseFileNode extends CardSpecFieldMapFor<typeof fileTransientProps> {}
 export class BaseFileNode extends generateDecoratorNode({

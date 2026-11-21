@@ -110,7 +110,6 @@ describe('buildCspHeader', () => {
       expect(csp).toContain("frame-ancestors 'none'")
       expect(csp).toContain("form-action 'self'")
       expect(csp).toContain("base-uri 'self'")
-      // No configured site (install gate) → no transport upgrade directives.
       expect(csp).not.toContain('upgrade-insecure-requests')
     }
   })

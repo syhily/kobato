@@ -42,8 +42,6 @@ export async function upsertWebmentionOutbox(
   }
 }
 
-/** The worker's batch: due `pending` rows — NULL waterline first, then retry time
- *  (SQLite ASC sorts NULLs first). */
 export async function pickDueWebmentionOutbox(db: Database, now: Date, limit: number): Promise<WebmentionOutboxRow[]> {
   return db
     .select()

@@ -16,17 +16,12 @@ export interface PendingEncryptedUpload {
   uploadPath: string
   fileName: string
   expiresAt: number
-  /** A decrypt is staging from this entry — concurrent decrypts of the same
-   *  token must not interleave (a release would rm the dir under the other
-   *  reader). */
   inFlight: boolean
 }
 
 const pending = new Map<string, PendingEncryptedUpload>()
 
 function sweepDir(dir: string): void {
-  // Best-effort: the boot-time sweep is the backstop. An open read stream can
-  // pin the dir (Windows file locks) and must never fail an unrelated park.
   try {
     rmSync(dir, { recursive: true, force: true })
   } catch (error) {

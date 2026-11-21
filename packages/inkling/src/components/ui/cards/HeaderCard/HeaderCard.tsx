@@ -253,9 +253,6 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
 
   const correctedBackgroundSize = backgroundSize === 'contain' && backgroundImageSrc ? 'contain' : 'cover'
 
-  // Tailwind scans source text, so no runtime interpolation — map the
-  // alignment vocabulary to full class names ('' reads as left, the element's
-  // default)
   const buttonAlignmentClass = alignment === 'center' ? 'text-center' : 'text-left'
 
   const getButtonSize = (layoutString: string) => (layoutString === 'full' ? 'large' : 'medium')

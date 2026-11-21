@@ -56,8 +56,6 @@ describe('useIosNoZoomOnFocus — pointerdown-time acquisition', () => {
     render(<Probe />)
 
     pointerDownOn(document.querySelector('[data-testid="name"]')!)
-    // Locked with no focus event at all — the acquisition precedes the tap's
-    // default action, which is where WebKit decides the zoom.
     expect(meta.content).toBe(LOCKED_CONTENT)
   })
 

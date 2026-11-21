@@ -1,8 +1,5 @@
 import type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 
-// Attributes the nested callout editor legitimately produces. A[href] is
-// additionally validated with the render context's URL policy; CODE[style]
-// is constrained to Lexical's known inline-code serialization.
 const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
   A: ['href', 'rel', 'target'],
   CODE: ['spellcheck', 'style'],
@@ -12,7 +9,6 @@ const CODE_STYLE_REGEX = /^white-space:\s*pre-wrap;?$/
 function cleanAttributes(element: Element, allowedAttributes: Record<string, string[]>, context: RenderContext) {
   const allowed = allowedAttributes[element.tagName] ?? []
 
-  // snapshot the live NamedNodeMap since attributes are removed while iterating
   for (const attribute of Array.from(element.attributes)) {
     if (!allowed.includes(attribute.name)) {
       element.removeAttribute(attribute.name)
@@ -29,9 +25,6 @@ function cleanAttributes(element: Element, allowedAttributes: Record<string, str
   }
 }
 
-// nodeType, not instanceof: the cleaned document may be another jsdom
-// realm's, where instanceof fails. nodeType 1 (ELEMENT_NODE) is realm-proof
-// and genuinely discriminates — every node with nodeType 1 IS an Element.
 function isElementNode(node: ChildNode): node is Element {
   return node.nodeType === 1
 }

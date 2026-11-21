@@ -14,10 +14,6 @@ import {
 import { renderCalloutNode } from '@kobato/inkling-internal/nodes/base/nodes/callout/callout-renderer'
 import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 
-// The card's nested-editor spec lives here, beside the class it types — the
-// declaration imports it from this module. The editor is `nullable`: the
-// markdown round-trip detaches it. The MINIMAL_NODES import runs against the
-// layer grain but closes no cycle — see the captionEditorSpecBase note.
 export const calloutNestedEditors = [
   {
     name: 'calloutTextEditor',
@@ -34,7 +30,6 @@ export interface CalloutData {
   backgroundColor?: string
 }
 
-/** Transient nested-editor fields the wrapper layer passes through the constructor. */
 interface CalloutEditorDataset {
   calloutTextEditor?: LexicalEditor
 }
@@ -58,10 +53,7 @@ export const calloutImportSpec = {
       guardClass: 'inkling-callout-card',
       reads: [
         { name: 'calloutText', kind: 'html', selector: '.inkling-callout-text', trim: true, fallback: '' },
-        // the hand-written parser's `|| ''` yields '' (not the '💡' default)
-        // on a missing emoji element, so the fallback must be explicit
         { name: 'calloutEmoji', kind: 'html', selector: '.inkling-callout-emoji', trim: true, fallback: '' },
-        // omitted on no class match, coalescing to the 'blue' default
         { name: 'backgroundColor', kind: 'classMap', classMap: [{ pattern: /inkling-callout-card-(\w+)/ }] },
       ],
     },
@@ -74,17 +66,10 @@ export class BaseCalloutNode extends generateDecoratorNode({
   defaultRenderFn: renderCalloutNode,
   importSpec: calloutImportSpec,
 }) {
-  /* override */
   constructor(
     { calloutText, calloutEmoji, backgroundColor, calloutTextEditor }: CalloutData & CalloutEditorDataset = {},
     key?: string,
   ) {
-    // Forward the callout text and a passed-in editor so the generated
-    // constructor can run the nested-editor setup/populate for wrapper
-    // subclasses that adopt a `nestedEditors` spec (a no-op on this class).
-    // __calloutText is set by super from the same value (?? '' matches || ''
-    // for the string-typed dataset); only the keys super never received are
-    // assigned here.
     super({ calloutText, calloutTextEditor }, key)
     this.__calloutEmoji = calloutEmoji ?? '💡'
     this.__backgroundColor = backgroundColor ?? 'blue'

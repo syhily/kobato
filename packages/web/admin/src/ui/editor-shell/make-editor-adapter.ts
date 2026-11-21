@@ -35,7 +35,6 @@ export interface EditorAdapterConfig<
   entityKind: 'post' | 'page'
   entityLabelId: UiMessageId
   listPath: string
-  /** Public URL prefix for the post-save preview banner (`/posts` / ``). */
   bannerBasePath: string
   publicPath: (slug: string) => string
   analyticsPath?: (id: string) => string

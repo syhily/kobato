@@ -1,16 +1,3 @@
-// The CONTENT language contract — deliberately separate from the four UI
-// locales in `locales.ts`.
-//
-// A post/page may declare the language its own prose is written in. That is
-// author-supplied metadata: it never selects a UI catalog, never triggers
-// translation or detection, and never rewrites the content. The public detail
-// route renders it as the body container's HTML `lang`; when unset the body
-// inherits the document's UI locale (see `entry.server.tsx`).
-//
-// Any well-formed BCP 47 tag is legal (not just `SUPPORTED_LOCALES`), and the
-// stored spelling is canonical — `Intl.getCanonicalLocales` owns the grammar
-// and the casing, so `zh-hant-tw` is persisted as `zh-Hant-TW`.
-
 export const CONTENT_LANGUAGE_MAX_LENGTH = 63
 
 export function canonicalContentLanguage(value: string | null | undefined): string | null {

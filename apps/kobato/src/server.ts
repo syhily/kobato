@@ -46,7 +46,6 @@ const app = await createHonoServer<Env>({
   configure(app) {
     configureMiddleware(app)
   },
-  // Keep `async` — dropping the await on `buildLoadContext` would lose `hydrateBlogSettings`.
   async getLoadContext(c) {
     return buildLoadContext(c)
   },
@@ -61,11 +60,6 @@ if (!hmr?.secretsMigrated) {
   await refreshBlogSettings(getDb())
 }
 
-// Runs after settings hydration and before the schedulers start, so background jobs are traced from their first
-// run; failures are isolated inside the domain and never block the site.
-// HMR can re-evaluate `@kobato/settings/snapshot` (module-level state), so a fresh snapshot module reads back empty;
-// `hydrateBlogSettings` is single-flight — cached when the snapshot survived, DB re-read when the module was
-// re-created.
 await hydrateBlogSettings(getDb())
 await syncObservabilityRuntime()
 
@@ -95,7 +89,6 @@ try {
   )
 }
 
-// PROD: warm the worker pool up-front — the lazy default would tax the first upload; dev runs sharp inline.
 if (import.meta.env.PROD) {
   try {
     await getProcessPool()

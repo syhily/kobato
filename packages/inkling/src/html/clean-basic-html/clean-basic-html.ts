@@ -2,7 +2,6 @@ export interface CleanBasicHtmlOptions {
   allowBr?: boolean
   firstChildInnerContent?: boolean
   createDocument?: (html: string) => Document
-  /** Parse within this document (an element's `ownerDocument`) — the port that makes headless jsdom import work. */
   ownerDocument?: Document
 }
 

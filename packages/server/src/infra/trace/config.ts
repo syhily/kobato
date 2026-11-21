@@ -19,12 +19,7 @@ const MAX_AUTHORIZATION_HEADER_LENGTH = 8192
 export interface FrontendRumRelay {
   endpoint: string
   organization: string
-  /** The provisioned RUM client token, injected into every relayed batch. */
   clientToken: string
-  /**
-   * `forward`: attach the trusted-proxy-resolved client address and the
-   * original User-Agent to the relayed batch (consent-gated on the client).
-   */
   clientIdentity: RumClientIdentity
 }
 
@@ -36,16 +31,11 @@ export interface TraceLogsRuntimeConfig {
 export interface ServerTraceRuntimeConfig {
   endpoint: string
   organization: string
-  /** Exact server-only OTLP authorization value. Never projected to the browser. */
   authorizationHeader: string
   sampleRate: number
   includeRedactedSql: boolean
   otlpTracesUrl: string
   otlpMetricsUrl: string
-  /**
-   * Non-null only when the pipeline is active AND the logs switch is on.
-   * Logs reuse the traces/metrics endpoint, organization, and credential.
-   */
   logs: TraceLogsRuntimeConfig | null
 }
 
@@ -60,22 +50,15 @@ export type TraceDiagnosticCode = 'trace-invalid-config' | 'trace-frontend-inval
 export interface TraceConfigDiagnostic {
   code: TraceDiagnosticCode
   level: 'warn' | 'error'
-  /** Settings keys only — never a configured value. */
   fields: readonly string[]
 }
 
 export type TraceConfigStatus = 'disabled' | 'active' | 'invalid'
 
 export interface TraceConfigResolution {
-  /**
-   * `disabled`: no provider should be started. `active`: the server pipeline
-   * (and optionally frontend RUM) is fully configured. `invalid`: tracing was
-   * requested but the server configuration failed validation.
-   */
   status: TraceConfigStatus
   server: ServerTraceRuntimeConfig | null
   frontend: FrontendRumBootstrap | null
-  /** Server-only relay target for `/api/rum/intake`; null whenever `frontend` is. */
   frontendRelay: FrontendRumRelay | null
   diagnostics: readonly TraceConfigDiagnostic[]
 }

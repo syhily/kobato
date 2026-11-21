@@ -2,13 +2,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// `packages/ui/src/styles/dark-variant.css` is the single source of kobato's
-// class-or-media `dark` variant. Every Tailwind compilation whose `dark:`
-// utilities must obey the site's theme class has to import it UNLAYERED and
-// BEFORE the stylesheet that triggers the utility compile — otherwise that
-// compilation falls back to Tailwind's default media-only variant, whose rules
-// fire under a dark OS even when the site is class-locked to light.
-
 const STYLES = resolve(process.cwd(), 'packages/ui/src/styles')
 
 const read = (name: string) => readFileSync(resolve(STYLES, name), 'utf8')

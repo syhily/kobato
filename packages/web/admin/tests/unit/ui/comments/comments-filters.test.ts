@@ -74,7 +74,6 @@ describe('singleDateFilterLabel', () => {
 })
 
 describe('resolveSingleDateFilterBounds', () => {
-  // Bounds are local-timezone; mirror the SUT's construction so the test passes in any TZ.
   function expectedBounds(date: string) {
     const start = new Date(date)
     start.setHours(0, 0, 0, 0)

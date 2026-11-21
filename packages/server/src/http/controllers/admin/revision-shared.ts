@@ -23,10 +23,6 @@ export interface MakeRevisionRouterOptions<TMeta, TPreview> {
   impl: RevisionRouterImplementer
   adapter: ContentEntityAdapter<TMeta, TPreview>
   audit: RevisionRouterAudit
-  /**
-   * Whether `saveBody` receives `context.viewer` so the adapter's access gate
-   * can evaluate ownership — posts pass it, pages (admin-only) don't.
-   */
   passViewerToSaveBody: boolean
 }
 

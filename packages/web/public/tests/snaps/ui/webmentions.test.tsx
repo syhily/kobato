@@ -26,7 +26,6 @@ describe('snapshot: WebmentionList (public)', () => {
     const mentions = [makeMention(), makeMention({ id: '2', authorName: null, title: null, summary: null })]
     const html = stableHtml(renderToHtml(<WebmentionList mentions={mentions} />))
     expect(html).toContain('引用与回应')
-    // SSR interleaves text nodes with <!-- --> separators around the count.
     expect(html).toMatch(/\(.*?2.*?\)/)
     expect(html).toContain('Jane Doe')
     expect(html).toContain('提及了你的文章')

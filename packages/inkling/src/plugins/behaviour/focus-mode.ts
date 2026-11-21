@@ -3,11 +3,6 @@ import type { LexicalEditor } from 'lexical'
 export const FOCUS_MODE_CLASS = 'inkling-focus-mode'
 export const FOCUS_ACTIVE_ATTRIBUTE = 'data-inkling-focus-active'
 
-// The top-level block element the native selection is anchored in: the
-// anchor's ancestor that is a direct child of the root. A root-anchored
-// selection (Lexical's node-selection shape, e.g. a selected card) resolves
-// to the child at the anchor offset. Null when the selection sits outside
-// this root — unfocused renders every block normally.
 export function getFocusedBlockElement(rootElement: HTMLElement): HTMLElement | null {
   const nativeSelection = window.getSelection()
   if (!nativeSelection || nativeSelection.rangeCount === 0) {

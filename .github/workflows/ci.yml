@@ -29,9 +29,6 @@ jobs:
           pnpm exec vite build apps/inkling-demo
       - run: pnpm run test --coverage
         env:
-          # Shared 4-core runners suspend whole vitest workers for tens of
-          # seconds under the full suite; a 10s budget fails whichever
-          # timer-dependent test is in flight when the stall lands.
           VITEST_TEST_TIMEOUT: '60000'
       - uses: actions/upload-artifact@v7
         with:

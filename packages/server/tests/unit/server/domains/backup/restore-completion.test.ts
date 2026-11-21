@@ -10,12 +10,8 @@ const lifecycleModule = await import('@kobato/server/infra/lifecycle')
 const jobRegistryModule = await import('@kobato/server/infra/job-registry')
 const restoreModule = await import('@kobato/server/domains/backup/services/restore')
 
-// The restart boundary rebinds the whole process; it is observed, not run.
 const restartServer = vi.spyOn(lifecycleModule, 'restartServer').mockResolvedValue(undefined as never)
-// The audit scheduler only registers when its module loads; the real lookup
-// is a no-op here and the call is what pins the ordering.
 const scheduleRegisteredJob = vi.spyOn(jobRegistryModule, 'scheduleRegisteredJob')
-// Rollback/cleanup run for real against the pinned engine paths.
 const rollbackPreRestoreFiles = vi.spyOn(restoreModule, 'rollbackPreRestoreFiles')
 const cleanupPreRestoreFiles = vi.spyOn(restoreModule, 'cleanupPreRestoreFiles')
 

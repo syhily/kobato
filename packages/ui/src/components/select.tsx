@@ -52,10 +52,6 @@ function SelectContent({
 }) {
   return (
     <BaseSelect.Portal>
-      {/*
-       * `alignItemWithTrigger={false}` disables Base UI's macOS overlay mode, which
-       * detaches the popup from the trigger.
-       */}
       <BaseSelect.Positioner
         align={align}
         side="bottom"

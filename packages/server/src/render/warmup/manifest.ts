@@ -40,7 +40,6 @@ export function getWarmupManifest(): WarmupManifest | null {
 
   try {
     const __dirname = dirname(fileURLToPath(import.meta.url))
-    // SEA: the manifest is embedded, not on disk.
     const assetsDir = testAssetsDir ?? join(__dirname, '..', '..', 'client', 'assets')
     const raw = readAssetTextOrDisk(
       `${SEA_CLIENT_ASSET_PREFIX}assets/warmup-manifest.json`,
@@ -73,7 +72,6 @@ function readClientManifest(): RouteManifest | null {
   }
 
   try {
-    // Under SEA the client assets live in the mounted VFS — same dir listing.
     const root = seaVfsRoot()
     const assetsDir =
       testAssetsDir ??

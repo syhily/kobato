@@ -8,11 +8,8 @@ export type Database = NodeSQLiteDatabase
 export interface DatabaseHandle {
   db: Database
   client: DatabaseSync
-  /** The path the handle was opened with (`:memory:` included). */
   path: string
-  /** Decided once at open: the in-memory special case. */
   inMemory: boolean
-  /** Set by `closeDatabase` — close is idempotent. */
   closed: boolean
 }
 
@@ -38,17 +35,12 @@ export function openDatabase(databasePath: string): DatabaseHandle {
   client.exec('PRAGMA synchronous = NORMAL')
   client.exec('PRAGMA foreign_keys = ON')
   client.exec('PRAGMA busy_timeout = 5000')
-  // ~20 MiB page cache, in-memory temp tables, 256 MiB mmap window.
   client.exec('PRAGMA cache_size = -20000')
   client.exec('PRAGMA temp_store = MEMORY')
   client.exec('PRAGMA mmap_size = 268435456')
   return { db: drizzle({ client }), client, path: databasePath, inMemory, closed: false }
 }
 
-/**
- * SQLite-recommended close pattern (optimize, fold WAL, close).
- * Idempotent.
- */
 export function closeDatabase(handle: DatabaseHandle): void {
   if (handle.closed) {
     return

@@ -113,8 +113,6 @@ describe('infra/config — loadConfig', () => {
     const path = configPathIn(dir)
     writeConfig(path, { storage: { database: '/data/from-file.db' } })
     withConfigArg(path)
-    // 40 digits: exact-looking to the Number grammar, but a z.string() slot
-    // must keep it verbatim — as a Number it would lose precision AND type.
     const secret = '1234567890123456789012345678901234567890'
     vi.stubEnv('security__sessionSecret', secret)
 
@@ -204,8 +202,6 @@ describe('infra/config — loadConfig', () => {
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
     const dir = makeTmpDir()
-    // worker_threads cannot process.chdir(); spy on cwd instead so the
-    // candidate path resolves inside the empty tmp dir.
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(dir)
     try {
       process.argv = [realArgv[0]!, realArgv[1]!]

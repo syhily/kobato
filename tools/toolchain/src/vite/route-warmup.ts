@@ -142,13 +142,11 @@ export function routeWarmupPlugin(): Plugin {
     writeBundle: {
       order: 'post',
       async handler(options, _bundle) {
-        // Client build fires first; run in the SSR environment so both assets and the manifest exist.
         const env = unsafeCast<{ environment?: { name?: string } }>(this).environment
 
         if (env?.name === 'client') {
           return
         }
-        // If no environment API (older Vite), skip SSR builds
         if (!env && unsafeCast<{ ssr?: boolean }>(options).ssr) {
           return
         }

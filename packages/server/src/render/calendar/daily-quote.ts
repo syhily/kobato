@@ -16,8 +16,6 @@ export interface DailyQuote {
   author: string
 }
 
-// FNV-1a over the ISO date: deterministic per date, and every bank entry
-// stays reachable (unlike day-of-year modulo for banks > 366).
 export function pickForDate(bank: readonly DailyQuote[], date: Date): DailyQuote {
   const key = format(date, 'yyyy-MM-dd')
   let hash = 0x811c9dc5

@@ -49,7 +49,6 @@ export async function signUpInitialAdminWithSession(
     return { type: 'error', message: descriptor.fallbackMessage, descriptor }
   }
 
-  // bcrypt stays outside the transaction: node:sqlite transactions are sync.
   const hashedPassword = await hashAdminPassword(password)
   const admin = db.transaction((tx) => {
     const users = insertAdmin(tx, name, email, hashedPassword)

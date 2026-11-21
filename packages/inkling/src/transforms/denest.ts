@@ -26,11 +26,6 @@ function $isInvalidListItemNode(node: LexicalNode) {
   return !$isListNode(parent)
 }
 
-// A list item hoisted to the root has to be unwrapped here, at insertion time.
-// Moving this to a follow-up transform is not possible: Lexical's built-in
-// ListItemNode $transform is seeded with the node class, so it always runs
-// ahead of any editor-registered transform and wraps a root-level orphan in a
-// fresh list before a self-validity transform could observe it.
 function $unwrapListItemForRootInsertion(child: ListItemNode, parent: ElementNode) {
   const paragraphNode = $createParagraphNode()
   paragraphNode.append(...child.getChildren())

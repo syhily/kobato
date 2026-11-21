@@ -66,7 +66,6 @@ describe('backup crypto', () => {
 
   it('rejects a tampered auth tag (auth failure)', async () => {
     const ciphertext = await encrypt(Buffer.from('sensitive', 'utf8'), 'secret-password')
-    // Flip the last byte — inside the trailing GCM tag.
     ciphertext[ciphertext.length - 1] = ciphertext[ciphertext.length - 1]! ^ 0xff
     const error = await decryptError(ciphertext, 'secret-password')
     expect(error.kind).toBe('auth')
@@ -128,7 +127,6 @@ describe('backup crypto', () => {
 
   it('rejects a header declaring an invalid scrypt cost (format failure)', async () => {
     const ciphertext = await encrypt(Buffer.from('sensitive', 'utf8'), 'secret-password')
-    // N field: magic (8) + salt (16) → bytes 24..28. N=1 is not a legal scrypt cost.
     ciphertext.writeUInt32BE(1, 24)
     const error = await decryptError(ciphertext, 'secret-password')
     expect(error.kind).toBe('format')
@@ -136,8 +134,6 @@ describe('backup crypto', () => {
   })
 
   it('rejects a header declaring N above the cap BEFORE running scrypt', async () => {
-    // A legal-looking header with N = 2^18 > MAX_SCRYPT_N (2^17) is rejected before
-    // scryptSync, so a hostile header cannot become a CPU/memory bomb.
     const header = Buffer.alloc(HEADER_BYTES)
     BACKUP_ENCRYPTION_MAGIC.copy(header, 0)
     randomBytes(16).copy(header, 8)

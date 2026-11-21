@@ -756,11 +756,6 @@
     background-color: var(--typeset-table-stripe);
   }
 
-  /* Code-block chrome injected client-side by useCodeCopyButtons into the
-     rendered post/page body — plain CSS because src/client/** sits outside
-     the Tailwind @source scan. Scoped to .post-content (NOT .typeset-post):
-     the editor canvas also carries typeset-post, but inkling renders its own
-     code block there and must not pick up this chrome. */
   .post-content .code-block-wrapper {
     position: relative;
     margin: 0 0 1rem;

@@ -24,8 +24,6 @@ const twoColumnNestedEditors = [
   { ...TWO_COLUMN_NESTED_EDITORS[1]!, nodes: EDITOR_BASE_NODES, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
 
-// The merged interface self-types the spec-driven nested-editor fields (the inkling
-// BaseToggleNode idiom); the declaration-merging exemption is inkling's oxlint scope.
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseTwoColumnNode extends CardSpecFieldMapFor<readonly [], typeof twoColumnNestedEditors> {}
 export class BaseTwoColumnNode extends generateDecoratorNode({

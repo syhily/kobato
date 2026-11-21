@@ -4,13 +4,8 @@ import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-ty
 import { safeFetch } from '@kobato/server/infra/safe-fetch'
 import { isHttpUrl } from '@kobato/utils/safe-url'
 
-// W3C §4.1 discovery: the Link response header wins over the HTML
-// `<link>`/`<a rel="webmention">` fallback; regex-based, best-effort by
-// design (size-capped document, no HTML parser).
-
 const MAX_DISCOVERY_BYTES = 1024 * 1024
 
-// `<url>; rel="webmention"`, several per header line; rel may carry multiple tokens.
 const LINK_HEADER_ENTRY_RE = /<([^>]*)>\s*;[^,]*?rel\s*=\s*"([^"]*)"/gi
 const LINK_OR_ANCHOR_TAG_RE = /<(?:link|a)\b[^>]*>/gi
 const REL_ATTR_RE = /\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
@@ -29,8 +24,6 @@ function resolveEndpoint(href: string, finalUrl: string): string | null {
   }
 }
 
-/** Link header first, then the first HTML `<link>`/`<a>` listing webmention;
- *  relative endpoints resolve against the FINAL (post-redirect) URL. */
 export function parseWebmentionEndpoint(linkHeader: string | null, html: string, finalUrl: string): string | null {
   if (linkHeader !== null) {
     for (const match of linkHeader.matchAll(LINK_HEADER_ENTRY_RE)) {

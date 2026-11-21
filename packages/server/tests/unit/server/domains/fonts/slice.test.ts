@@ -3,14 +3,9 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Schema-drift canary for the vendored cn-font-split WASM bundle: a version split between
-// cnfs.mjs and cnfs.wasm breaks the protobuf round-trip.
-
 const TTF_PATH = join(import.meta.dirname, '../../../../fixtures/fonts/Barlow-Regular.ttf')
 
 describe('sliceFont', () => {
-  // Each fontSplit call instantiates the wasm fresh — nothing to reset.
-
   it('slices a real TTF into a non-empty result.css + woff2 chunks', async () => {
     const source = await readFile(TTF_PATH)
     expect(source.length).toBeGreaterThan(0)
@@ -22,8 +17,6 @@ describe('sliceFont', () => {
     expect(cssText).toMatch(/\.woff2['")]/)
     expect(cssText).toContain('Barlow')
 
-    // woff2 chunks carry the `wOF` prefix (77 4F 46), not always the
-    // canonical `wOFF` — assert the shared prefix and a non-empty body.
     expect(result.chunkCount).toBeGreaterThan(0)
     expect(result.chunks.length).toBe(result.chunkCount)
     for (const chunk of result.chunks) {
@@ -36,5 +29,5 @@ describe('sliceFont', () => {
 
     const expectedTotal = result.css.length + result.chunks.reduce((n, c) => n + c.data.length, 0)
     expect(result.totalBytes).toBe(expectedTotal)
-  }, 60_000) // Slicing runs on the single-threaded WASM path; keep headroom for slow CI.
+  }, 60_000)
 })

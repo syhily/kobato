@@ -8,14 +8,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll } from 'vitest'
 
-/**
- * SQLite test harness owned entirely by `@kobato/db` — open, migrate, close.
- * `getTestDb` lazily creates the migrated shared in-memory handle (`:memory:`
- * is per-connection, so one handle shares the data); the per-file `afterAll`
- * closes it, so the next file in an `isolate: false` worker migrates a fresh
- * database. `createTestDatabaseFile` opts into a real temp file with the same
- * lifecycle.
- */
 const fileHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
 let sharedHandle: DatabaseHandle | null = null

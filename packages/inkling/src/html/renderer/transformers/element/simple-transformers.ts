@@ -9,9 +9,6 @@ import { $isHeadingNode, $isQuoteNode } from '@lexical/rich-text'
 import { $isParagraphNode } from 'lexical'
 /* c8 ignore stop */
 
-// Element `format` exports as an inline text-align style (upstream
-// exportDOM parity), so the alignment kept by opted-in surfaces survives
-// the HTML leg; the importer reads it back via $setFormatFromDOM.
 function formatAttribute(node: ElementNode): string {
   const format = node.getFormatType()
   return format === '' ? '' : ` style="text-align: ${format}"`

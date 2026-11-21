@@ -12,8 +12,6 @@ import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const throughSpy = vi.spyOn(await import('@kobato/server/infra/cache/registry'), 'through')
-// The renderer has its own real-canvas coverage; here it is replaced with a
-// cheap real PNG so the route + cache semantics stay fast to exercise.
 const PNG = await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 1, g: 2, b: 3 } } })
   .png()
   .toBuffer()
@@ -137,14 +135,11 @@ describe('serveCalendar', () => {
   })
 
   it('responds 304 on a CACHE HIT without regenerating the render', async () => {
-    // The calendar bucket bypasses cache reads outside PROD (dev always
-    // re-renders); the hit path is the production behavior under test.
     vi.stubEnv('PROD', true as never)
     const serve = await importServeCalendar()
     const first = await serve({ year: '2026', time: '0617' }, options())
     const etag = first.headers.get('ETag')!
     expect(renderCalendarSpy).toHaveBeenCalledTimes(1)
-    // writeEntry is fire-and-forget; wait until the entry file has landed.
     await vi.waitFor(async () => {
       expect(await countEntryFiles('calendar')).toBe(1)
     })

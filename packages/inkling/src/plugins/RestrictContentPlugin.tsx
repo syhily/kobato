@@ -13,9 +13,6 @@ export const RestrictContentPlugin = ({ paragraphs, allowBr }: { paragraphs: num
       editor.registerCommand(
         PASTE_COMMAND,
         (clipboardEvent) => {
-          // PASTE_COMMAND's payload is ClipboardEvent | InputEvent |
-          // KeyboardEvent (Lexical dispatches InputEvent from its beforeinput
-          // paste path); only ClipboardEvent carries clipboardData
           if (!(clipboardEvent instanceof ClipboardEvent)) {
             return false
           }
@@ -29,13 +26,6 @@ export const RestrictContentPlugin = ({ paragraphs, allowBr }: { paragraphs: num
             skipCardShortcutGuard: true,
           })
         },
-        // HIGH so the restriction preempts InklingBehaviourPlugin's general
-        // LOW-priority paste handler regardless of mount order — same-priority
-        // listeners run in registration order and the composable editor mounts
-        // the behaviour plugin first, which would otherwise consume plain
-        // text with allowBr: true and leak <br> into restricted editors. The
-        // at-link paste guard (also HIGH) registers earlier still, so paste
-        // inside at-link nodes keeps winning.
         COMMAND_PRIORITY_HIGH,
       ),
     )

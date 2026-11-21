@@ -14,7 +14,6 @@ const clientMock = vi.hoisted(() => ({
   createO2Client: vi.fn(),
 }))
 
-// The O2 client is the observability backend's network boundary.
 const createO2Client = vi
   .spyOn(await import('@kobato/server/domains/observability/o2-client'), 'createO2Client')
   .mockImplementation((...args: unknown[]) => clientMock.createO2Client(...(args as [])))

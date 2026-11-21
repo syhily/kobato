@@ -11,11 +11,6 @@ function createTestEditor() {
   })
 }
 
-// jsdom has no ClipboardEvent implementation, so the handler's HTML-paste
-// branch (`clipboardEvent instanceof ClipboardEvent`) cannot be reached here;
-// that coverage stays with e2e. What is pinned here is the card-input guard:
-// pasting while an inner element (e.g. a card input) has focus must be
-// swallowed so Lexical's default paste cannot replace the card.
 describe('registerPasteHandler', () => {
   let editor: LexicalEditor
 

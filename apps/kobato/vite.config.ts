@@ -38,10 +38,6 @@ const pkg = pkgSchema.parse(JSON.parse(readFileSync(resolve(projectRoot, 'packag
 
 const appDeclared = new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})])
 
-// External dep → the workspace package that declares it. Under pnpm
-// isolation a bare include hint resolves only against THIS package's
-// node_modules, so a sibling-owned dep needs the nested `owner > dep` form
-// that resolves through the owning package's own node_modules.
 const manifests = [
   'packages/api',
   'packages/db',
@@ -66,14 +62,6 @@ const manifests = [
 ].map((dir) => workspacePkgSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8'))))
 
 const depOwner = new Map<string, string>()
-// External dep → the workspace package that declares it. Under pnpm
-// isolation a bare include hint resolves only against THIS package's
-// node_modules, so a sibling-owned dep needs the nested `owner > dep` form
-// that resolves through the owning package's own node_modules. Vite resolves
-// the OWNER from this app first, so the owner must itself be declared here —
-// otherwise the basedir falls back to the app root, where isolation makes
-// the dep unresolvable (e.g. dompurify owned by the undeclared
-// @kobato/sanitize). App-declared owners therefore register first.
 for (const appDeclaredOnly of [true, false]) {
   for (const manifest of manifests) {
     if (appDeclared.has(manifest.name) !== appDeclaredOnly) {
@@ -103,17 +91,10 @@ function optimizeIncludeHints(entries: readonly string[]): string[] {
   })
 }
 
-// The sanitize facade (@kobato/sanitize/sanitize-html.ts) imports the node
-// engine (DOMPurify over a process-cached JSDOM). For the browser bundle this
-// plugin swaps that specifier to the browser engine, keeping jsdom's
-// Node-only dependency chain out of the client — per-environment
-// `resolve.alias` is not a thing in vite, so it takes a plugin.
 const sanitizeEngineAliasPlugin = (): Plugin => ({
   name: 'sanitize-html-engine-alias',
   enforce: 'pre',
   resolveId: {
-    // Matches both the bare package specifier and the intra-package relative
-    // form ('./engine.node') the facade uses since the monorepo split.
     filter: { id: /(^|\/)engine\.node(\.ts)?$/ },
     handler() {
       if (this.environment.name === 'client') {
@@ -128,49 +109,26 @@ export default defineConfig(({ command }) => ({
   ssr:
     command === 'serve'
       ? {
-          // emoji-mart's CJS `main` defeats cjs-module-lexer's named-export
-          // analysis (parcel $parcel$export helpers) in the dev SSR module
-          // runner. Inlining it lets Vite pick the ESM `module` build.
           noExternal: ['emoji-mart'],
         }
       : {
           noExternal: true,
           target: 'node',
-          // sharp / @napi-rs/canvas / @duckdb/node-api can never be
-          // bundled (their .node loads are unloadable). External here,
-          // inlined (and redirected) by vite.sea.config.ts there.
           external: ['sharp', '@napi-rs/canvas', '@duckdb/node-api'],
         },
   environments: {
     client: {
       build: {
-        // The inkling editor island (~2.2 MB min / 673 kB gzip) is the one
-        // chunk above the 500 kB default. It is only reachable through lazy
-        // boundaries — the editor routes (route-level chunks fetched on
-        // navigation) and the interaction-gated comment composer
-        // (`LazyCommentBodyEditor`) — never through the public pages' static
-        // import graph. Keep the limit just above it so genuine regressions
-        // elsewhere still warn.
         chunkSizeWarningLimit: 2500,
       },
     },
     ssr: {
-      // React Router ≥8.2 strips the `node` resolve condition from the ssr
-      // environment unless a Node adapter (@react-router/node etc.) appears
-      // in `dependencies` — ours live in devDependencies by convention (see
-      // AGENTS.md). Without `node`, packages that only expose
-      // node-conditional exports (e.g. mailgun.js) fail to resolve. Restore
-      // the condition explicitly — dev SSR needs it just as much as build.
       resolve: {
         conditions: ['node'],
       },
       ...(command === 'build'
         ? {
             build: {
-              // Emit assets referenced by the server graph (the cnfs.wasm
-              // `?init` import) into build/server/assets — Vite 8 defaults
-              // this off for non-client consumers, and React Router's
-              // `build.ssrEmitAssets` is no longer honored per-environment.
               emitAssets: true,
               rolldownOptions: {
                 input: 'src/server.ts',
@@ -195,15 +153,6 @@ export default defineConfig(({ command }) => ({
     tsconfigPaths: true,
   },
   optimizeDeps: {
-    // Pin every dep reachable from the client route graph so the FIRST
-    // optimize pass covers them: the static scanner only finds a subset,
-    // and each late-discovered batch forces a re-optimization plus a
-    // full-page reload on cold start (observable via DEBUG=vite:deps).
-    //
-    // pnpm isolation resolves a bare include hint against THIS package's
-    // node_modules, so a dep owned by a sibling workspace package needs the
-    // nested form (`@kobato/web-admin > date-fns`) that resolves through the
-    // owning package — the crawl reaches it through that package's imports.
     include: optimizeIncludeHints([
       'react/compiler-runtime',
       'lucide-react',
@@ -285,9 +234,6 @@ export default defineConfig(({ command }) => ({
       '@codemirror/view',
       '@lezer/highlight',
       'emoji-mart',
-      // NOT @emoji-mart/data: its entry is a bare JSON file
-      // (sets/15/native.json), which can never match the optimizer's JS entry
-      // pattern — pinning it only warns and Vite serves JSON deps unbundled.
       'react-colorful',
       'fast-average-color',
       'markdown-it',
@@ -298,11 +244,6 @@ export default defineConfig(({ command }) => ({
       'markdown-it-sup',
       'yjs',
       'y-websocket',
-      // Route modules import server orchestrators directly; React Router
-      // strips loaders/actions from client chunks only AFTER dep discovery,
-      // so these leak into the client optimizer's crawl. Pinning them keeps
-      // cold starts single-pass instead of triggering re-optimization
-      // reloads. The browser never fetches them at runtime.
       'pino',
       'jsdom',
       '@hono/node-server',

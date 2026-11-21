@@ -4,7 +4,6 @@ export const EMBEDDED_FONT_ROUTE_PREFIX = '/fonts/embedded/'
 export type AssetUrlRoute = typeof STORAGE_ROUTE_PREFIX | typeof EMBEDDED_FONT_ROUTE_PREFIX
 
 export interface ParsedAssetUrl {
-  /** Storage key the URL maps to (`fonts/<hash>/<file>` on the embedded-font route). */
   key: string
   route: AssetUrlRoute
 }

@@ -10,7 +10,6 @@ declare global {
 const Navigator = () => {
   const navigate = useNavigate()
 
-  // Workaround: lets Playwright navigate without triggering a full page reload.
   useEffect(() => {
     window.navigate = navigate
   }, [navigate])

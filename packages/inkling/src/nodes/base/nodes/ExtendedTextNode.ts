@@ -2,12 +2,6 @@ import type { DOMConversion, LexicalNode, SerializedTextNode } from 'lexical'
 
 import { $isTextNode, TextNode } from 'lexical'
 
-// TextNode is foundational to all Lexical packages, including the plain text
-// use case, so rich-text logic cannot live on it. Extend it instead to
-// serialize/deserialize HTML/CSS styling for full fidelity between JSON <-> HTML.
-//
-// https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
-
 export class ExtendedTextNode extends TextNode {
   static getType() {
     return 'extended-text'
@@ -18,7 +12,6 @@ export class ExtendedTextNode extends TextNode {
   }
 
   static importDOM() {
-    // Optional since the $config() protocol port (see ExtendedHeadingNode).
     const importers = TextNode.importDOM?.()
     return {
       ...importers,
@@ -88,17 +81,12 @@ function patchConversion(
 function convertSpanElement(lexicalNode: TextNode, domNode: HTMLElement) {
   const span = domNode
 
-  // Word uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === 'bold' || span.parentElement?.style.fontWeight === 'bold'
-  // Word uses span tags + font-style for italic text
   const hasItalicFontStyle = span.style.fontStyle === 'italic' || span.parentElement?.style.fontStyle === 'italic'
-  // Word uses span tags + text-decoration for underline text
   const hasUnderlineTextDecoration =
     span.style.textDecoration === 'underline' || span.parentElement?.style.textDecoration === 'underline'
-  // Word uses span tags + "Strikethrough" class for strikethrough text
   const hasStrikethroughClass =
     span.classList.contains('Strikethrough') || span.parentElement?.classList.contains('Strikethrough')
-  // Word uses span tags + "Highlight" class for highlighted text
   const hasHighlightClass = span.classList.contains('Highlight') || span.parentElement?.classList.contains('Highlight')
 
   let node = lexicalNode

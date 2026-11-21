@@ -3,11 +3,6 @@
 @import './variants.css';
 
 @import 'tailwindcss/theme';
-/* The token table is reference-imported: it participates in compilation
-   (utility generation, `@apply`) but Tailwind does not emit it onto
-   `:root,:host`, so the published sheet never claims the host page's root
-   scope. The runtime defaults are hand-written under `.inkling-lexical`
-   below; tests/inkling/unit/theme-tokens.test.ts pins parity between them. */
 @import './theme.css' reference;
 
 @import './preflight.css' layer(inkling);
@@ -17,10 +12,7 @@
 @import './components/react-colorful' layer(inkling);
 @import 'tailwindcss/utilities' layer(inkling);
 
-/* This package owns its complete utility scan; consumers import this entry directly. */
 @source '..';
-
-/* The dark variant is package-owned and imported above before utility generation. */
 
 @layer theme {
   .inkling-lexical {

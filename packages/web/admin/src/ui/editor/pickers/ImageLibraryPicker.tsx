@@ -14,8 +14,6 @@ import { isValidElement, useState } from 'react'
 export interface ImageLibraryPickerProps {
   trigger?: React.ReactNode
   onPick: (image: AdminImageDto) => void
-  /** Optional controlled-open pair — drive the dialog imperatively (e.g.
-   *  editor slash-command) instead of a `trigger` click; `trigger` becomes optional. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }

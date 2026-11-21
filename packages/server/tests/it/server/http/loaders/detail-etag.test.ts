@@ -243,7 +243,6 @@ describe('detail representation ETags', () => {
       await seedPost(`filler-${i}`)
     }
 
-    // 17:30Z is still 11-08 in UTC but already 11-09 in Shanghai.
     vi.setSystemTime(new Date('2026-11-08T17:30:00.000Z'))
     const shanghai = await readPost('etag-post', {
       localization: { ...LOCALIZATION, timeZone: 'Asia/Shanghai' },

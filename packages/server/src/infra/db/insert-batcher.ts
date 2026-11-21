@@ -9,11 +9,6 @@ import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 export interface InsertBatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
-  /**
-   * Hard cap on buffered events (`DEFAULT_MAX_BUFFER_SIZE` when omitted): a
-   * stalled writer would otherwise let a flood grow the heap without bound —
-   * past this point events are dropped and counted.
-   */
   maxBufferSize?: number
 }
 
@@ -71,11 +66,6 @@ export abstract class FlushLoop<Pending, Result> {
     }
   }
 
-  /**
-   * Quiesce the loop for an external consistency window: drain, then
-   * hold pushes and timers until `resume`. Teardown flushes still drain
-   * inside the window.
-   */
   async pause(): Promise<void> {
     if (this.paused) {
       return
@@ -106,20 +96,10 @@ export abstract class FlushLoop<Pending, Result> {
     return this.drain()
   }
 
-  /**
-   * Teardown flush (shutdown hook, restore swap): drains even while
-   * paused — the last chance to write rows before `dispose()` drops them.
-   */
   async flushForTeardown(): Promise<Result> {
     return this.drain()
   }
 
-  /**
-   * Join an in-flight flush WITHOUT draining pending payload — the quiesce
-   * point for a teardown that closes the writer underneath (engine swap,
-   * test-side handle close). Never rejects: a failed flush already reported
-   * itself through onWriteFailed.
-   */
   settle(): Promise<Result> {
     return (this.flushing ?? Promise.resolve(this.emptyResult)).catch(() => this.emptyResult)
   }

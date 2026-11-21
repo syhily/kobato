@@ -109,7 +109,6 @@ export function BackupFileList({
                           />
                         </span>
                       )}
-                      {/* break-all: the hex + `.enc` tail has no wrap points — without it the cell's min-content overflows the card. */}
                       <span className="break-all">{file.fileName}</span>
                     </span>
                   </td>

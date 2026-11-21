@@ -1,16 +1,3 @@
-// - Mount snapshot: Lexical consumes the initial state only at editor creation, so
-//   the lazy state pins the mount-time seed — later `initialBody` prop changes must
-//   NOT recreate the composer.
-// - Imperative reseed: a `bodyKey` change (draft adopt, conflict resolution,
-//   reply-form reset, switching the edited comment) re-parses the seed into the live
-//   editor. An `initialBody` identity change alone re-runs the effect but early-outs
-//   on the key check.
-// - Stable change emitter: `onBodyChange` rides a ref so the per-keystroke
-//   `handleChange` never changes identity. The emitter casts instead of zod-parsing:
-//   each surface's body type is the same JSON restricted to its whitelist, and the
-//   server re-validates on save.
-// surface's legacy math-fence downgrade).
-
 import type { LexicalEditor, SerializedEditorState } from '@kobato/inkling'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast'

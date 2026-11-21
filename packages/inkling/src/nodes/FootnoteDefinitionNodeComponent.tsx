@@ -26,11 +26,6 @@ export function FootnoteDefinitionNodeComponent({
   const index = useFootnoteHandleState((state) => state.indices[targetKey] ?? 0)
   const focusRequest = useFootnoteHandleState((state) => state.focusRequest)
 
-  // Focus handoff: the caret trigger files a request for its fresh
-  // definition (the nested editor doesn't exist at insert time); the row
-  // claims it once mounted and clears it. `defaultSelection: 'rootEnd'`
-  // places the caret at the content's end (Lexical's focus callback runs
-  // without an active editor state — no $-helpers allowed inside).
   React.useEffect(() => {
     if (focusRequest?.targetKey !== targetKey) {
       return

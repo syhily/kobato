@@ -12,7 +12,6 @@ import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
-// Any mail the flows emit really flows into the in-process capture server.
 const mail = await createCaptureMailFixture()
 
 beforeEach(async () => {

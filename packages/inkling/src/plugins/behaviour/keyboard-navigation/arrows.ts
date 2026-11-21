@@ -46,7 +46,6 @@ function registerVerticalArrowCommand(
     (event) => {
       const selection = $getSelection()
 
-      // Lexical does not extend selections over decorator nodes.
       if (event.shiftKey) {
         if ($isRangeSelection(selection)) {
           return $extendSelectionAcrossCardBoundary(direction, selection, event)
@@ -82,7 +81,6 @@ function registerVerticalArrowCommand(
           }
         }
 
-        // Default Lexical behaviour skips over cards.
         const adjacentCard = $getLogicallyAdjacentCard(logicalDirection, currentNode)
         if (adjacentCard) {
           $selectDecoratorNode(adjacentCard)

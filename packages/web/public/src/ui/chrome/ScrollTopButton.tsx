@@ -5,7 +5,6 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useShowOnScroll } from '@kobato/ui/lib/use-show-on-scroll'
 import { ArrowUpIcon } from 'lucide-react'
 
-// `opacity` + `pointer-events` (not `display`) avoids iOS Safari scroll ghosting; `transform-gpu` keeps opacity GPU-accelerated.
 export function ScrollTopButton() {
   const show = useShowOnScroll()
   const { t } = useI18n()

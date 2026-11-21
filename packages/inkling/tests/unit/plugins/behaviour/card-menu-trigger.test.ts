@@ -1,19 +1,4 @@
 import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
-// Characterization pins for the card-menu trigger module: the slash
-// valid-press grammar, the slash query/close verdicts, and the plus caret/
-// hover/selectionchange policy, driven headlessly through the registrations
-// and resolvers. The mounted-plugin wiring (keypress → open, verdict →
-// render) stays pinned in SlashCardMenuPlugin.test.tsx and
-// PlusCardMenuPlugin.test.tsx.
-//
-// Harness notes:
-// - The editor is non-editable so Lexical never reconciles the DOM selection
-//   (mirroring at-link.test.ts).
-// - The native-selection facts the module reads come from a window.getSelection
-//   mock (the same seam both plugin suites use): a real setBaseAndExtent
-//   makes jsdom fire an async 'selectionchange' that Lexical answers with a
-//   commit of its own, racing the verdict assertions.
-// - jsdom has no document.elementFromPoint — hover cases stub it directly.
 import {
   isSlashTriggerPress,
   registerPlusCardMenuTrigger,
@@ -92,12 +77,6 @@ function getEditorTextNode(rootElement: HTMLElement): Text {
   return textNode as Text
 }
 
-// The native selection as plain facts for the module's resolvers; anchorNode
-// null models "no native selection" (rangeCount 0). The mocked facts must
-// mirror the editor-state selection: Lexical re-derives the pending editor
-// selection from the DOM selection at the start of every editor.update
-// ($internalCreateSelection), so a disagreeing mock silently rewrites the
-// selection the next update sees.
 function mockNativeSelection(
   anchorNode: Node | null,
   { anchorOffset = 0, focusNode, focusOffset }: { anchorOffset?: number; focusNode?: Node; focusOffset?: number } = {},

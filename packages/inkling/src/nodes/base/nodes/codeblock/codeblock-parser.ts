@@ -1,6 +1,3 @@
-// Hand-written (no import spec): the conversion-abort guards on child presence
-// and the first-child-must-be-CODE check are structural, not flat per-property
-// reads.
 import type { LexicalNode } from 'lexical'
 
 import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
@@ -8,7 +5,6 @@ import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/util
 export function parseCodeBlockNode(BaseCodeBlockNode: new (data: Record<string, unknown>) => LexicalNode) {
   return {
     figure: (nodeElem: HTMLElement) => {
-      // tagName is guaranteed by Lexical's nodeName dispatch ('figure' key)
       const pre = nodeElem.querySelector('pre')
       if (pre) {
         return {
@@ -16,7 +12,6 @@ export function parseCodeBlockNode(BaseCodeBlockNode: new (data: Record<string, 
             const code = pre.querySelector('code')
             const figcaption = domNode.querySelector('figcaption')
 
-            // if there's no caption the pre key should pick it up
             if (!code || !figcaption) {
               return null
             }
@@ -37,13 +32,12 @@ export function parseCodeBlockNode(BaseCodeBlockNode: new (data: Record<string, 
             const node = new BaseCodeBlockNode(payload)
             return { node }
           },
-          priority: 2 as const, // falls back to pre if no caption
+          priority: 2 as const,
         }
       }
       return null
     },
     pre: () => ({
-      // tagName is guaranteed by Lexical's nodeName dispatch ('pre' key)
       conversion(domNode: HTMLElement) {
         const [codeElement] = domNode.children
 

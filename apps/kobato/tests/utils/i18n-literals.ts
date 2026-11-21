@@ -15,7 +15,6 @@ export type ScanRule =
 
 export interface ScanViolation {
   rule: ScanRule
-  /** Repo-relative, POSIX-separated path. */
   file: string
   line: number
   column: number
@@ -23,16 +22,12 @@ export interface ScanViolation {
 }
 
 export interface ScanAllowlistEntry {
-  /** Repo-relative file path, or a directory prefix (matched as `path/…`). */
   path: string
-  /** Restrict the exemption to these rules; omit to exempt every rule in the path. */
   rules?: readonly ScanRule[]
-  /** Restrict the exemption to a match whose trimmed text equals this snippet. */
   text?: string
 }
 
 export interface ScanOptions {
-  /** Repo-relative files or directory prefixes to scan. */
   roots: readonly string[]
   allowlist?: readonly ScanAllowlistEntry[]
 }
@@ -41,7 +36,6 @@ export interface ScanResult {
   violations: ScanViolation[]
   allowlisted: ScanViolation[]
   scannedFiles: string[]
-  /** Content-store files reached under the roots but never read or parsed. */
   skippedFiles: string[]
 }
 

@@ -6,8 +6,6 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The transports are covered elsewhere; these spies pass through to the
-// real senders (mail is disabled in the test bundle, so they stay quiet).
 const emailModule = await import('@kobato/server/domains/comments/services/email')
 vi.spyOn(emailModule, 'sendApprovedComment')
 vi.spyOn(emailModule, 'sendNewComment')

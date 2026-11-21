@@ -32,11 +32,8 @@ const SEVERITY_NUMBERS: Readonly<Record<LogSeverityText, SeverityNumber>> = {
 }
 
 export interface LogPipeline {
-  /** Installed into the Pino writable's sink slot by the runtime. */
   readonly sink: LogSink
-  /** Bounded flush; resolves, never rejects. */
   forceFlush(timeoutMillis?: number): Promise<void>
-  /** Idempotent provider shutdown; resolves, never rejects. */
   shutdown(): Promise<void>
 }
 

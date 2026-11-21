@@ -600,9 +600,6 @@ describe('package DAG', () => {
         if (file.startsWith(`${pkg.dir}/tests/`)) {
           continue
         }
-        // Cross-package test imports may only pull the shared fixture/helper
-        // layer (`tests/utils/`), and only from another package's test tree —
-        // a test file itself, or any src-tree reach into `tests/`, is banned.
         const sharedHelper = match[2] !== undefined && match[2].startsWith('utils/')
         if (!importingFromTestTree || !sharedHelper) {
           offenders.push(`${file}: ${specifier}`)
@@ -716,8 +713,6 @@ describe('package DAG', () => {
           specifier !== '@kobato/inkling/host-cards' &&
           !specifier.startsWith('@kobato/inkling/styles/')
         ) {
-          // The shared Lexical test fixture (`tests/utils/`) is the one other
-          // deep surface: only another package's test tree may import it.
           if (specifier.startsWith('@kobato/inkling/tests/utils/') && file.includes('/tests/')) {
             continue
           }

@@ -18,7 +18,6 @@ export function CommentAvatar({ comment, depth }: { comment: CommentItemType; de
   const imageRef = useRef<HTMLImageElement>(null)
   const [loadState, setLoadState] = useState<AvatarLoadState>('loading')
 
-  // A cached image can finish before hydration attaches `onLoad`; resolve that case on mount.
   useEffect(() => {
     const image = imageRef.current
     if (!image) {

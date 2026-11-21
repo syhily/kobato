@@ -14,14 +14,11 @@ type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
 export interface MakeRequestContextOptions {
   request?: Request
   session?: BlogSession
-  /** `undefined` derives the viewer from `session.data.user`; explicit `null` forces anonymous. */
   user?: SessionUser | null
   clientAddress?: string
   db?: Database
   cspNonce?: string
-  /** Explicit override; omitted means the lazy settings-snapshot pair (like production). */
   localization?: LocalizationOverride
-  /** Explicit override; omitted means the lazy settings-snapshot bundle (like production). */
   settings?: BlogSettingsBundle | null
   markSessionDirty?: () => void
 }

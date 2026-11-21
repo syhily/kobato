@@ -33,8 +33,6 @@ function article(container: HTMLElement): HTMLElement {
 describe('CommentRow flash class', () => {
   it('renders without the flash class and gains it only when the store flashes its id', () => {
     const { container } = renderRow()
-    // Hydration parity: the streamed HTML never carries `active` — the flash
-    // id arrives post-hydration through use-focus-hash.
     expect(article(container).className).not.toContain('active')
 
     act(() => {

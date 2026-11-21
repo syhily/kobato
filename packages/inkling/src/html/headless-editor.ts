@@ -5,16 +5,6 @@ import { DEFAULT_CONFIG } from '@kobato/inkling-internal/nodes/base'
 import { registerRemoveAtLinkNodesTransform } from '@kobato/inkling-internal/transforms'
 import { createHeadlessEditor } from '@lexical/headless'
 
-// The one headless-editor factory for the HTML surface (renderer, plain-text
-// leg, importer). The node-merge policy is named because the two semantics
-// differ on purpose:
-//
-// - 'additive' (renderer, plain text): the caller's nodes are registered
-//   AFTER the complete Inkling HTML defaults, so a same-type custom entry
-//   wins (Lexical keeps the last registration per type).
-// - 'wholesale' (importer): the caller's editorConfig replaces the defaults
-//   — nothing is merged. Do NOT unify these.
-
 export function defaultOnError(error: Error) {
   void error
 }

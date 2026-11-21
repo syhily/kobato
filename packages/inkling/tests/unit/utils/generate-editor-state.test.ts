@@ -92,7 +92,6 @@ describe('Utils: generateEditorState', () => {
     })
   })
 
-  // https://github.com/facebook/lexical/issues/2807
   test('handles whitespace between list items', function () {
     const html = '<ul><li>Test</li> <li>Test2</li></ul>'
     const editorState = runGenerateEditorState(html)

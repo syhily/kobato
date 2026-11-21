@@ -7,10 +7,7 @@ const CSS_PATH = resolve(process.cwd(), 'packages/ui/src/styles/tailwind.css')
 
 const BUILTIN_NAMESPACES = new Set(['breakpoint', 'container'])
 
-const ALLOWED_UNREGISTERED_NAMESPACES = new Set([
-  // `@keyframes` declarations live inside `@theme inline` in Tailwind v4
-  'keyframes',
-])
+const ALLOWED_UNREGISTERED_NAMESPACES = new Set(['keyframes'])
 
 const KNOWN_THEME_NAMESPACES = [
   'spacing',

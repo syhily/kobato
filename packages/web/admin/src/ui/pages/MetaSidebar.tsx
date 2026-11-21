@@ -36,10 +36,7 @@ export interface MetaSidebarProps {
   draft: PageMetaDraft
   onChange: (next: PageMetaDraft) => void
   disabled?: boolean
-  /** Lifecycle status for the basic-info badge; `null` falls back to `never-saved`. */
   publishStatus?: SidebarPublishStatus | null
-  /** Persisted (server-side) slug for the `/images/og/:slug.png` preview — reads
-   *  `page.slug`, not `draft.slug`, so the preview stays live while typing. */
   ogPreviewSlug?: string | null
   revisionSummary?: SidebarRevisionSummary | null
   saveStatus: SidebarSaveStatus

@@ -16,7 +16,6 @@ const strategies: SafeHtmlStrategy[] = [
 ]
 
 function clean(html: string, strategy: SafeHtmlStrategy): string {
-  // Leading ZWSP shields the first element from a happy-dom-only DOMPurify quirk.
   return sanitizeHtmlEngine('​' + html, strategyToConfig(strategy))
 }
 
@@ -73,7 +72,6 @@ describe('sanitize/engine.browser', () => {
     })
 
     it('strips a bare line tag with its contents', () => {
-      // DOMPurify drops a bare <line> with its contents regardless of ALLOWED_TAGS.
       const result = clean('<line class="line">code</line>', 'shiki')
       expect(result).not.toContain('<line')
       expect(result).not.toContain('class="line"')

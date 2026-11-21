@@ -105,7 +105,6 @@ export interface DetailCriticalPayload {
   currentUser: CommentFormUser | undefined
   admin: boolean
   recentComments: LatestComment[]
-  /** Digest of the streamed comment thread; part of the detail ETag. */
   commentsFingerprint: string
 }
 
@@ -116,7 +115,6 @@ export const contentPostBySlugInputSchema = z.object({
 
 export interface PostDetailPayload {
   post: DetailPostShell
-  /** Saved `body_html` projection (inkling exportDOM); sanitized at the render boundary. */
   bodyHtml: string
   visibleTags: ClientTag[]
   sidebarPosts: SidebarPostLink[]
@@ -140,7 +138,6 @@ export const contentPageBySlugInputSchema = z.object({
 
 export interface PageDetailPayload {
   page: DetailPageShell
-  /** Saved `body_html` projection (inkling exportDOM); sanitized at the render boundary. */
   bodyHtml: string
   friends: Friend[]
   showFriends: boolean

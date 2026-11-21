@@ -198,9 +198,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       return
     }
     if (audio.paused) {
-      void audio.play().catch(() => {
-        // Play interrupted or autoplay policy rejection
-      })
+      void audio.play().catch(() => undefined)
     } else {
       audio.pause()
     }

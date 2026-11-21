@@ -3,12 +3,6 @@ import { ANCHOR_POPUP_GAP, fitRectWithin } from '@kobato/inkling-internal/utils/
 import { $getSelection, type LexicalEditor } from 'lexical'
 
 export const POPUP_VERTICAL_GAP = ANCHOR_POPUP_GAP
-/**
- * Max height of the scrollable results list inside a selection-anchored popup, single
- * sourced here: the CSS side reads POPUP_LIST_MAX_HEIGHT as an inline style (a Tailwind
- * arbitrary value cannot reference a JS constant) and the flip rule reserves the same
- * height through popupMaxHeightBudget, so the two cannot drift.
- */
 export const POPUP_LIST_MAX_HEIGHT_VH = 30
 export const POPUP_LIST_MAX_HEIGHT = `${POPUP_LIST_MAX_HEIGHT_VH}vh`
 

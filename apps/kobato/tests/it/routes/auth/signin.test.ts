@@ -207,7 +207,6 @@ function extractData(result: unknown): Record<string, unknown> {
   return (result as { data?: Record<string, unknown> }).data ?? {}
 }
 
-// The OTP code out of the actually-delivered email (hex colors stripped).
 async function extractOtpFromMail(): Promise<string> {
   const sent = await parseMail(mail)
   const match = /\b\d{6}\b/.exec(sent.body.replace(/#[0-9a-fA-F]{3,8}/g, ''))
@@ -547,10 +546,6 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
-
-  // The thrown-error leg of sendOtpSafely maps to the SAME descriptor as the
-  // ok:false leg above and is unreachable with real mail infrastructure; the
-  // send-fails test above pins the shared UX.
 
   it('rejects verifyotp when no pendingOtpUser in session', async () => {
     const result = await callAction('verifyotp', otpFormData('123456'))

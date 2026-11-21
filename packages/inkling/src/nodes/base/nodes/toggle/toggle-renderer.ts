@@ -7,8 +7,6 @@ interface ToggleNodeData {
   content: string
 }
 
-// heading is plain text and gets escaped; content is nested-editor HTML and
-// gets DOMPurify-sanitized (not escaped) — both via the render context.
 function sanitize(node: ToggleNodeData, context: RenderContext) {
   return {
     safeHeading: context.escapeText(node.heading),

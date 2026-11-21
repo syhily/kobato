@@ -12,20 +12,15 @@ import { WASI } from 'node:wasi'
 
 const log = getLogger('fonts.wasm')
 
-// Under SEA the wasm bytes are a file in the mounted VFS (see `@kobato/distribution/sea-assets`); instantiate per call like `?init`.
 async function instantiateEmbeddedWasm(imports: WebAssembly.Imports): Promise<WebAssembly.Instance> {
   const path = seaAssetPath(SEA_WASM_CNFS_KEY)
   if (path === null) {
     throw new Error(`Embedded wasm asset missing: ${SEA_WASM_CNFS_KEY}`)
   }
   const bytes = await readFile(path)
-  // Fresh Uint8Array copy — `BufferSource` needs an ArrayBuffer-backed view, which `Buffer` isn't.
   const result = await WebAssembly.instantiate(new Uint8Array(bytes), imports)
   return result.instance
 }
-
-// Minimal WASM glue for the vendored cn-font-split wasm core via `node:wasi`;
-// the binary is imported with Vite's `?init` query.
 
 export interface FontSplitCssProps {
   fontFamily?: string
@@ -51,13 +46,11 @@ export interface FontSplitOutputFile {
   data: Uint8Array
 }
 
-/** Run the wasm core against `props`, returning every file it emits (the caller partitions css vs chunks). Temp dir is always removed in `finally`. */
 export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputFile[]> {
   const key = randomBytes(8).toString('hex')
   const root = await mkdtemp(join(tmpdir(), 'cnfs-'))
 
   try {
-    // The wasm core reads `/tmp/fonts/<key>` and writes `/tmp/<key>/`.
     await mkdir(join(root, 'tmp', 'fonts'), { recursive: true })
     await mkdir(join(root, 'tmp', key), { recursive: true })
 
@@ -91,7 +84,6 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
       preopens: { '/': root },
     })
 
-    // No-op pthread mutex stubs — the core links pthreads but runs single-threaded.
     const imports = {
       wasi_snapshot_preview1: wasi.wasiImport,
       env: {
@@ -102,7 +94,6 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
       },
     }
 
-    // Fresh instance per call (`?init` semantics) — the core is stateful and runs `main` once.
     const instance = isSea() ? await instantiateEmbeddedWasm(imports) : await initWasm(imports)
     wasi.start(instance)
 

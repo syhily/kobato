@@ -1,14 +1,3 @@
-// The server-side translator: the same ICU engine the client uses
-// (react-intl's `createIntl`), formatting the merged UI + server catalog for
-// one locale. Background jobs, email and notification producers resolve their
-// locale explicitly through `createServerTranslator` — no module-level
-// "current locale" state lives here; the only state is the immutable
-// locale-keyed cache below.
-//
-// Catalog validation is checked once per process, and a failure degrades to
-// the English catalogs with an error log: `shared/` cannot log, so this
-// boundary owns the catch.
-
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { ServerMessageId, ServerMessages } from '@kobato/i18n/messages/server/en-US'
 import type { UiMessageId, UiMessages } from '@kobato/i18n/messages/ui/en-US'
@@ -38,16 +27,9 @@ export type RichMessageParams = Record<string, string | number | boolean | Date 
 type MergedMessages = UiMessages & ServerMessages
 
 export interface ServerTranslator {
-  /** The locale actually formatted against (English when the catalogs failed validation). */
   readonly locale: AppLocale
   readonly messages: MergedMessages
   format(id: MessageId, params?: MessageParams): string
-  /**
-   * Format a message that contains `<tag>…</tag>` placeholders. The caller
-   * supplies one renderer per tag name, so a single translated sentence can
-   * embed a link (e.g. the email footer's site-name link) without concatenating
-   * translated fragments in JSX.
-   */
   formatRich(id: MessageId, params?: RichMessageParams): ReactNode
 }
 
@@ -98,7 +80,6 @@ export function createServerTranslator(locale: AppLocale): ServerTranslator {
     },
     formatRich(id, params) {
       const message = requireMessage(id)
-      // react-intl turns the tag functions into React nodes (`toKeyedReactNodeArray`).
       const formatted = intl.formatMessage(
         { id, defaultMessage: message },
         params as Parameters<typeof intl.formatMessage>[1],

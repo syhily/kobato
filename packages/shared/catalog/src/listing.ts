@@ -8,10 +8,8 @@ export interface ListingPageLoaderData<TExtra = undefined> {
   resolvedPosts: ListingPostCardWithMetadata[]
   title?: string
   description?: string
-  /** Pre-computed `MetaDescriptor[]` ready to return from `meta()`. */
   seo: MetaDescriptor[]
   extra: TExtra
-  /** ISO instant captured once per loader run; thread into `formatShowDate` so SSR matches hydration. */
   listingNowIso: string
 }
 

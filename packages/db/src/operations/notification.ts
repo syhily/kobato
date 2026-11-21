@@ -6,21 +6,13 @@ import { notification, notificationRecipient } from '@kobato/db/schema/notificat
 import { user } from '@kobato/db/schema/user'
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, notInArray, or, type SQL } from 'drizzle-orm'
 
-/**
- * Recipient rows per INSERT. SQLite binds at most 32 766 variables per
- * statement; at 3 columns per row a single broadcast insert died past
- * ~10 922 recipients. 500 keeps the statement far under the ceiling while
- * staying inside ONE transaction (atomicity preserved).
- */
 const FAN_OUT_CHUNK_SIZE = 500
 
 export interface NewNotificationRow {
   kind: NotificationKind
   senderId: number | null
-  /** English fallback (`titleKey` resolves at read time) or the user's original text. */
   title: string
   body: string
-  /** System-notification descriptor; NULL for direct/broadcast rows. */
   titleKey?: string | null
   titleParams?: string | null
   bodyKey?: string | null
@@ -86,7 +78,6 @@ export interface NotificationInboxRow {
 export interface InboxFilters {
   kinds?: readonly NotificationKind[]
   unreadOnly?: boolean
-  /** Page anchor: only messages with id < cursor. */
   cursorId?: number
   limit: number
 }
@@ -172,7 +163,6 @@ export function findNotificationById(db: Database, id: number): NotificationRow 
 }
 
 export interface RecallNotificationResult {
-  /** True only for the call that actually set the flag. */
   recalled: boolean
   row: NotificationRow
 }

@@ -10,15 +10,6 @@ import { $insertDataTransferForRichText } from '@lexical/clipboard'
 import { DRAG_DROP_PASTE } from '@lexical/rich-text'
 import { $getRoot, $getSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, DROP_COMMAND } from 'lexical'
 
-// File drop: the headless policies behind DragDropPastePlugin (the mime-claim rules
-// live in file-drop-routing). Dropped files always insert at the selection left
-// behind, never at the drop point.
-//
-// DRAG_DROP_PASTE: upstream defines the command but registers no handler — inkling
-// borrows it as the public files-arrived bus (ExternalControlPlugin.insertFiles and
-// hosts dispatch it), and the registration below is its single handler. The false
-// return is deliberate: it lets host-registered lower-priority handlers also run.
-
 export interface FileDropPorts {
   hasUploader: () => boolean
   fileTypes: () => FileUploader['fileTypes']
@@ -36,11 +27,6 @@ export function handleFileDrop(editor: LexicalEditor, files: File[], ports: File
   })
 }
 
-/**
- * DROP_COMMAND routes file drops onto the DRAG_DROP_PASTE bus, pre-empting
- * Lexical's default, which would insert at the drop point; the bus's handler
- * focuses the editor and claims the files.
- */
 export function registerFileDropCommands(editor: LexicalEditor, ports: FileDropPorts): () => void {
   const unregisterDrop = editor.registerCommand(
     DROP_COMMAND,

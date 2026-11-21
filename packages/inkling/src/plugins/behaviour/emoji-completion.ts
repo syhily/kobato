@@ -13,11 +13,6 @@ export interface EmojiSkin {
   native: string
 }
 
-/** The emoji-mart search-result shape consumers rely on (SearchIndex.search
- * returns `any`; the boundary validates against this before handing results
- * out). `skins` is a non-empty tuple because every consumer reads
- * `skins[0].native` — an entry without a skin is an insertion-time crash, so
- * the boundary drops it instead of modelling it. */
 export interface EmojiSearchResult {
   id: string
   skins: readonly [EmojiSkin, ...EmojiSkin[]]
@@ -28,11 +23,6 @@ export interface EmojiCommitResult {
   native: string
 }
 
-// emoji-mart's runtime (@emoji-mart/data's inlined JSON + SearchIndex) stays
-// out of the editor island: it loads through this import port on the first
-// typeahead query, and init() rides the chunk's module eval (ESM caching is
-// the exactly-once guard). The cached promise makes the load itself
-// exactly-once and lets every search path await the same first load.
 export interface EmojiSearchIndexChunk {
   searchEmojiMartIndex: (query: string) => Promise<unknown>
 }

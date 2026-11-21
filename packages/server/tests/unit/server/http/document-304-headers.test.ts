@@ -7,11 +7,6 @@ import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// The REAL React Router document-header reducer (v8.5.1). It is not part of
-// the public export surface, so the test loads the installed runtime module
-// by file path — the same code `createRequestHandler` runs for every document.
-// The app workspace package is the one that declares react-router (pnpm does
-// not hoist it to the root node_modules).
 const requireFromApp = createRequire(`${process.cwd()}/apps/kobato/package.json`)
 const { getDocumentHeaders } = requireFromApp(
   './node_modules/react-router/dist/development/lib/server-runtime/headers.js',

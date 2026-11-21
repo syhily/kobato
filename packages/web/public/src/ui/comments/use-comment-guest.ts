@@ -64,8 +64,6 @@ function removeProfile(): void {
   } catch {}
 }
 
-// `useSyncExternalStore` needs a referentially stable snapshot — cache the
-// parsed profile against the raw storage string (same idiom as use-thumbhash-bg).
 let cachedRaw: string | null | undefined
 let cachedProfile: CommentGuestProfile | null = null
 
@@ -103,9 +101,6 @@ function emitChange(): void {
 }
 
 export function useCommentGuest() {
-  // SSR-consistent prefill: the server snapshot is always null so SSR and
-  // hydration agree; React re-renders with the stored profile right after
-  // hydration, and SPA navigations read it on first render.
   const profile = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const saveProfile = useCallback((next: CommentGuestProfile) => {

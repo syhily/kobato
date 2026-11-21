@@ -4,12 +4,6 @@ import { requireMultiplayerConfig } from '@kobato/inkling-internal/services/mult
 import { WebsocketProvider } from 'y-websocket'
 import { Doc } from 'yjs'
 
-// The events Lexical's Provider interface registers handlers for. Of these,
-// y-websocket's WebsocketProvider only ever emits 'sync' and 'status' — its
-// typed event map doesn't even admit 'update' or 'reload' — so adapt by
-// multiplexing: handlers register in a local map and the two events the
-// provider really emits are forwarded into it. 'update'/'reload' handlers
-// never fire, exactly as when they were registered on the provider directly.
 type ProviderEventCallbacks = {
   sync: (isSynced: boolean) => void
   update: (arg0: unknown) => void
@@ -58,15 +52,6 @@ export function adaptWebsocketProvider(provider: WebsocketProvider): ReturnType<
   }
 
   return {
-    // y-protocols' Awareness and Lexical's ProviderAwareness describe the same
-    // runtime object, but TS 6 won't reconcile them statically: Awareness
-    // declares its state maps with `any`-valued index signatures while
-    // UserState has required named fields (anchorPos/color/...), and index
-    // signatures no longer satisfy required properties, so not even a
-    // single-step assertion is accepted. The plugin populates and reads the
-    // state itself through setLocalState/setLocalStateField, so a runtime
-    // guard over the six ProviderAwareness members is the bridge — every
-    // other member of the adapter is structural.
     awareness: requireProviderAwareness(provider.awareness),
     connect: () => provider.connect(),
     disconnect: () => provider.disconnect(),
@@ -81,10 +66,6 @@ export interface WebsocketProviderFactoryConfig {
   debug?: boolean
 }
 
-// The provider factory Lexical's CollaborationPlugin expects: one shared Doc
-// per id in the doc map (created on first use, reloaded when reused), a
-// room-scoped WebsocketProvider that stays disconnected until the plugin
-// connects it, and optional status logging.
 export function createWebsocketProviderFactory({
   endpoint,
   docId,

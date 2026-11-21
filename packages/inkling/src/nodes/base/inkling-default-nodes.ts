@@ -58,19 +58,10 @@ export const DEFAULT_CONFIG = {
   },
 }
 
-// The extended-node pairs live in a cycle-free leaf (extended-node-pairs.ts) so
-// MINIMAL_NODES can compose them; the barrel re-exports them here.
 export { EXTENDED_HEADING_NODE_PAIR, EXTENDED_QUOTE_NODE_PAIR, EXTENDED_TEXT_NODE_PAIR }
 
-/** The entity-node tail closing the editor's node sets. */
 export const ENTITY_TAIL_NODES = [TKNode, AtLinkNode, AtLinkSearchNode, ZWNJNode, MathInlineNode, FootnoteRefNode]
 
-// The React-free base-class node set: the extended-node pairs, then every
-// declaration's base node in declaration order (MarkdownNode/AsideNode head the
-// run — no declaration), closing with the entity tail. Excludes the assembled
-// wrapper cards, which only the editor surface composes (`EDITOR_BASE_NODES`);
-// registration order carries no runtime semantics. Pinned by
-// `tests/inkling/unit/nodes/derived-node-sets.test.ts`.
 export const DEFAULT_BASE_NODES = [
   ...EXTENDED_TEXT_NODE_PAIR,
   ...EXTENDED_HEADING_NODE_PAIR,

@@ -1,16 +1,3 @@
-// Nested-editor protocol: the shared vocabulary and choreography nested editors
-// (card sub-editors and caption editors) use to talk to their parent.
-//
-// Provenance rides on the re-dispatched KeyboardEvent itself — the same event
-// crosses to the parent — so writers mark before dispatching and readers call
-// getEventProvenance. Only this module knows the marker property names, so
-// writers and readers cannot drift.
-//
-// Lexical fires same-priority listeners in registration order and the first
-// `true` stops the chain, so specific branches register BEFORE the Enter
-// hand-off. A `false` pass-through does not kill the event: it propagates up
-// the parent-editor chain, so the parent's handlers still see it, unmarked.
-
 import {
   $createNodeSelection,
   $getSelection,

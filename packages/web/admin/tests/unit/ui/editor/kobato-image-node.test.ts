@@ -1,21 +1,3 @@
-// Unit tests for the KobatoImageNode: the subclass of inkling's assembled
-// ImageNode that persists the four kobato-owned keys
-// (thumbhash/storagePath/imageId/layout). Pins the serialization round-trip,
-// clone survival, the exportDOM markup (both variants, through the direct
-// method override + the barrel's createRenderContext), the import-spec paste
-// path, and the instanceof gates the stock behaviours rely on ($isImageNode
-// covers upload intent / drop surgery).
-//
-// Lexical 0.53's constructor invariants require an active editor, and every
-// read path (generated accessors, exportJSON, exportDOM) goes through
-// getLatest(), which throws #195 without an active editor state — so each
-// case runs its construction AND its reads inside a single `editor.update`.
-// The node lives in the pending state's node map for the duration of that
-// update; nothing needs to survive the commit. The editor comes from the
-// inkling bundle's OWN createHeadlessEditor re-export: an external
-// @lexical/headless would carry a second Lexical module state and could never
-// host these classes.
-
 import { $isImageNode, createHeadlessEditor, ImageNode, type LexicalEditor } from '@kobato/inkling'
 import { FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html'
 import {

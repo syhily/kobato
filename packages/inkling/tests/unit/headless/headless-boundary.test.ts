@@ -1,20 +1,3 @@
-/**
- * The headless document model's React-free boundary.
- *
- * `src/headless/` is React-free by construction — the surface `server/`,
- * `db`, `contracts`, and `catalog` consume. That promise is transitive: the
- * runtime-import closure of every headless module (following value imports,
- * value re-exports, and dynamic imports; `import type` edges are erased)
- * must never reach `react` / `react-dom` / `@lexical/react` nor leave the
- * React-free roots of the package. The serialization planes (`html/`,
- * `markdown/`, `transforms/`), `nodes/`, `utils/`, and `themes/` are part of
- * the closure by design — they stay React-free too.
- *
- * The one sanctioned runtime edge into `nodes/` is
- * `nodes/base/generate-decorator-node` (the host-card assembly entry every
- * dist entry builds its own classes through); every other `nodes/**` reach
- * from headless is `import type` only.
- */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
@@ -41,12 +24,6 @@ function walk(dir: string, out: string[]): string[] {
   return out
 }
 
-/**
- * Runtime (non-type) specifiers: `import type … from` and `export type { … } from`
- * statements are erased, and a named-import block survives only when it binds at
- * least one runtime name (`import { type A, B }`). Plain `from`, side-effect,
- * dynamic-import, and `export { … } from` forms all count as runtime edges.
- */
 function runtimeImportSpecifiers(source: string): string[] {
   let stripped = source
   stripped = stripped.replace(/import\s+type\s[\s\S]{0,800}?from\s+['"][^'"]+['"]/g, '')

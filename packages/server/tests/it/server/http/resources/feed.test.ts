@@ -18,8 +18,6 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Feeds are generated for real from the seeded database; the spy counts
-// generations to prove cache hits without regeneration.
 const generateFeeds = vi.spyOn(await import('@kobato/server/render/feed/generator'), 'generateFeeds')
 
 const db = getTestDb()

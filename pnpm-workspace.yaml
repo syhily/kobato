@@ -5,9 +5,6 @@ packages:
   - 'packages/shared/*'
   - 'packages/web/*'
 
-# Single version source for every dependency. package.json references these
-# entries as "catalog:" — taze updates this table (catalogs are first-class
-# taze targets), so version bumps happen in exactly one place.
 catalog:
   '@aws-sdk/client-s3': ^3.1175.0
   '@base-ui/react': ^1.9.0
@@ -170,17 +167,6 @@ allowBuilds:
   fsevents: false
 minimumReleaseAge: 0
 
-# Peer-version acceptances for the editor/build toolchain:
-#
-# - @emnapi/core / @emnapi/runtime '1': @napi-rs/wasm-runtime@1.2.0 peers on
-#   2.0.0-alpha.3, but the only consumers are wasm32-wasi FALLBACK bindings
-#   (oxc-parser, oxc-resolver, rolldown) that never execute here — every
-#   dev/CI platform runs the native binding. The stable 1.x line that the
-#   rest of the tree already uses is accepted.
-# - oxc-transform-react '^0.158.0': @vitejs/plugin-react@6.3.0's peer range
-#   lags the 0.x line and excludes this newer binding under 0.x caret semantics.
-#   The catalog and this acceptance track the same binding used by the root
-#   react-compiler plugin.
 peerDependencyRules:
   allowedVersions:
     '@emnapi/core': '1'

@@ -6,7 +6,6 @@ export type SessionSortDirection = 'asc' | 'desc'
 
 export interface SessionSortOption<T extends string = SessionSortField> {
   value: T
-  /** Display label message id — the select resolves it through the UI translator. */
   labelId: UiMessageId
   defaultDirection: SessionSortDirection
 }

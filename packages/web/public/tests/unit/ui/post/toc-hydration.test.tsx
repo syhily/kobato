@@ -6,9 +6,6 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToPipeableStream } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-// Hydration contract for the TOC (audit: React error #418):
-// SSR must keep the closed-drawer DOM in the stream (a null fallback
-// drops it) and hydrate cleanly even with the motion chunk preloaded.
 function renderToPipeableStreamString(node: React.ReactNode): Promise<string> {
   return new Promise((resolve, reject) => {
     let out = ''

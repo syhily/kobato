@@ -233,8 +233,6 @@ export function projectError(error: unknown): ErrorProjection {
   const code = safeCode(readField(error, 'code'))
   const status = safeStatus(readField(error, 'status'))
 
-  // oRPC leaves `Error.name` generic; its stable code + HTTP status pair is the
-  // structural signature. No message/input is involved.
   if (code !== null && status !== null) {
     return { type: 'ORPCError', category: `orpc_${code}` }
   }

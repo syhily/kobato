@@ -57,9 +57,6 @@ export function registerLinkMatching(editor: LexicalEditor, deps: LinkMatchingDe
         const linkTextNode = $createTextNode(link)
         linkNode.append(linkTextNode)
 
-        // Lexical lands the cursor inside the link on insertion (0.53):
-        // inserting a trailing space and immediately removing it puts the
-        // selection after the link node instead.
         const spaceTextNode = $createTextNode(' ')
         $insertNodes([linkNode, spaceTextNode])
         spaceTextNode.remove()

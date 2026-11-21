@@ -17,10 +17,6 @@ import { PencilIcon } from 'lucide-react'
 import { type ReactNode, Suspense, useMemo } from 'react'
 import { Await, Link } from 'react-router'
 
-// No lazy boundary around the TOC: its closed-drawer DOM must be in the SSR output, and a
-// `fallback={null}` boundary would drop it and mismatch on re-render (#418). The streamed
-// Comments boundary is safe because its SSR fallback is a real placeholder.
-
 const DRAFT_MARKER_LABEL_IDS = {
   draft: { sr: 'public.posts.draftPrefix', visible: 'public.posts.draftBadge' },
   'unpublished-draft': {
@@ -53,13 +49,7 @@ export interface DetailBodyChromeProps {
   draftMarker?: DraftMarker
   metaExtra?: ReactNode
   afterLikeButton?: ReactNode
-  /** Saved `body_html` projection — sanitized with the 'body' preset at this render boundary. */
   bodyHtml: string
-  /**
-   * Author-declared prose language (BCP 47), stamped as the body container's `lang`; absent
-   * leaves it inheriting the UI locale. Never selects a catalog or changes copy. A set value
-   * also stamps `dir="auto"` on the body only, so RTL prose does not flip the UI chrome.
-   */
   contentLanguage?: string | null
   children?: ReactNode
   postContentRef: React.RefObject<HTMLDivElement | null>

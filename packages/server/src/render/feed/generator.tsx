@@ -20,13 +20,9 @@ import { joinUrl } from '@kobato/utils/urls'
 import { Feed } from 'feed'
 
 export interface FeedOptions {
-  /** The request's AppLocale — drives `<language>` / `xml:lang`. Explicit, never inferred. */
   locale: AppLocale
   category?: string
   tag?: string
-  /** The settings snapshot the caller pinned (request capture / background send-time
-   *  resolve); omitted = the current process snapshot. The feed resource always passes
-   *  it, so the rendered bytes match the cache key's `settingsRevision`. */
   settings?: BlogSettingsBundle | null
 }
 

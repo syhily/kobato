@@ -88,7 +88,6 @@ describe('secret-encryption', () => {
 
     it('decryptIfNeeded throws on corrupted ciphertext', async () => {
       const { decryptIfNeeded } = await importModule(MOCK_KEY)
-      // Valid format but garbage bytes — AES-GCM auth tag check should fail
       const fake = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
       expect(() => decryptIfNeeded(fake)).toThrow('Secret decryption failed')
     })

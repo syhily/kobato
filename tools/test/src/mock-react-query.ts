@@ -8,7 +8,6 @@ export interface TanstackQueryControl {
   [slot: string]: any
 }
 
-// Per-test-file singleton — Vitest isolates module graphs per file.
 const control: TanstackQueryControl = {
   query: {
     data: null as unknown,
@@ -47,7 +46,6 @@ const control: TanstackQueryControl = {
   },
 }
 
-// Vitest hoists vi.mock to module top, so importing this helper installs the mock.
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {

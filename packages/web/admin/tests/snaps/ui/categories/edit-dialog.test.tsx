@@ -45,7 +45,6 @@ describe('snapshot: EditCategoryDialog (extra branches)', () => {
     const html = stableHtml(renderToHtml(<OpenDialog category={category} />))
     expect(html).toContain('编辑分类')
     expect(html).toContain('修改分类的展示信息；文章通过 id 关联分类，重命名后所有引用自动生效。')
-    // Input values hydrate on a second render pass that renderToString skips — assert the static submit label instead.
     expect(html).toContain('保存')
     expect(html).toContain('请先填写 slug / host 后再上传')
     expect(html).toContain('仅允许小写字母、数字、短横线')

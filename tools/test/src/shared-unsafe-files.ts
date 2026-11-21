@@ -1,7 +1,3 @@
-// Files still failing under the shared (isolate: false) projects — module or
-// process state that leaks across files (env races, fetch stubs, module
-// singletons). This is migration debt: fix the leak, delete the entry, and
-// the file returns to the shared project automatically.
 export const SHARED_UNSAFE_TEST_FILES: readonly string[] = [
   'packages/server/tests/unit/server/infra/config.test.ts',
   'packages/server/tests/unit/server/render/calendar/daily-quote.test.ts',

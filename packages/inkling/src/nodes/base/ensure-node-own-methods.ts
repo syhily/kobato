@@ -1,7 +1,3 @@
-/**
- * Lexical validates node classes with `hasOwnProperty`, so methods a subclass
- * only inherits fail validation; copy them on as own properties.
- */
 export function ensureLexicalNodeOwnMethods(nodeClass: unknown) {
   if (typeof nodeClass !== 'function') {
     return

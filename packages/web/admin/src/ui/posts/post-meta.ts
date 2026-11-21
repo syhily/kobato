@@ -13,14 +13,12 @@ export interface PostMetaDraft {
   webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
-  /** Empty string = unset (renders no `lang`); the server canonicalizes valid tags. */
   contentLanguage: string
   visible: boolean
   pinned: boolean
   categoryId: string
   tags: string[]
   alias: string[]
-  /** `<input type="datetime-local">` value (no timezone). Empty = leave server publishedAt alone. */
   publishedAt: string
 }
 
@@ -67,7 +65,6 @@ export interface PostMetaToggleField {
   id: string
   labelId: UiMessageId
   descriptionId: UiMessageId
-  /** When set, the toggle is only rendered if the feature flag is enabled. */
   featureGate?: 'featurePosts'
 }
 

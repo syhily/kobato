@@ -114,9 +114,6 @@ export async function runUploadIntent<TNode extends LexicalNode, TMeta = undefin
   }
 
   if (prePatch) {
-    // the microtask yields are load-bearing: Lexical commits non-discrete
-    // updates on a microtask, and the reset must be visible BEFORE the upload
-    // begins (the prePatch is the early src reset the preview/progress UX reads)
     editor.update(() => {
       $updateCardNode(nodeKey, guard, prePatch)
     })

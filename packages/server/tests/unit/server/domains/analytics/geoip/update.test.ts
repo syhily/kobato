@@ -19,7 +19,6 @@ function downloadResponse(bytes: Buffer = MMDB): Response {
   return new Response(new Uint8Array(gzipSync(bytes)), { status: 200 })
 }
 
-// AbortSignal.timeout's reason is a real TimeoutError DOMException, which isTimeoutError's instanceof Error check expects.
 function timeoutError(): DOMException {
   return new DOMException('The operation timed out.', 'TimeoutError')
 }
@@ -169,7 +168,6 @@ describe('analytics/geoip-update', () => {
 
     it('propagates the size-guard DomainError from the stream and cleans the staged file', async () => {
       meta({ version: '1.0.86', source: 'remote' })
-      // 101 MB of zeroes gzip down to ~100 KB but decompress past the 100 MB guard.
       vi.stubGlobal(
         'fetch',
         vi
@@ -189,7 +187,6 @@ describe('analytics/geoip-update', () => {
     it('still succeeds when the meta sidecar write fails after the swap', async () => {
       meta({ version: '1.0.86', source: 'remote' })
       rmSync(MAXMIND_META_PATH, { force: true })
-      // A directory at the sidecar path makes the post-swap write fail for real.
       mkdirSync(MAXMIND_META_PATH)
       vi.stubGlobal(
         'fetch',

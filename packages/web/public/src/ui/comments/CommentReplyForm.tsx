@@ -26,7 +26,6 @@ import { useRef, useState } from 'react'
 export interface CommentReplyFormProps {
   commentKey: string
   user?: CommentFormUser
-  /** Currently active reply target id; 0 means top-level reply. */
   replyToId: number
   replyTarget?: CommentItemType
   onCancel: () => void

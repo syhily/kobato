@@ -6,7 +6,6 @@ import { useAssetsSettingsOptional } from '@kobato/web-client/settings/blog-sett
 
 export interface BrandLogoProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   className?: string
-  /** Accessible name — the configured site title, or `''` when the logo is decorative. */
   alt: string
 }
 

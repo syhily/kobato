@@ -29,7 +29,6 @@ describe('server/images/process — processImageBuffer', () => {
     expect(result.height).toBe(480)
     expect(result.byteSize).toBe(result.buffer.byteLength)
     expect(result.buffer.subarray(0, 2).toString('hex')).toBe('ffd8')
-    // Thumbhash is a base64 string between 16 and 32 chars typically.
     expect(typeof result.thumbhash).toBe('string')
     expect(result.thumbhash.length).toBeGreaterThan(8)
   })

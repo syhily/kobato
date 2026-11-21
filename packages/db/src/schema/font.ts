@@ -3,9 +3,6 @@ import type { StorageDriver } from '@kobato/settings/types'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
-// Self-hosted web-font packages (cn-font-split), served via a self-hosted
-// <link> (`cssKey` is the public entry point) so no external font origin
-// enters the CSP. `hash` = sha256 of the source file (unique dedup key), `etag` = sha256 of `result.css` (cache-buster).
 export const font = sqliteTable(
   'font',
   {

@@ -15,17 +15,6 @@ export interface ModifierState {
 
 const modifierStates = new WeakMap<LexicalEditor, ModifierState>()
 
-// One modifier-state object per editor, created lazily. The `{ current: boolean }`
-// shape is shared with `LinkMatchingDeps.isShiftPressed`. The first call attaches
-// one document keydown/keyup pair writing `event.shiftKey`: reading the held state
-// off every key event (rather than toggling on `e.key === 'Shift'`) covers the
-// dual-shift corner, where releasing one of two held Shift keys still reports
-// `shiftKey: true`.
-//
-// There is no teardown by convention (Lexical editors have no destroy hook). The
-// listeners close over the state object only, never the editor, so the editor
-// stays collectible; a destroyed editor leaves an inert listener pair until page
-// unload.
 export function getModifierState(editor: LexicalEditor): ModifierState {
   const existing = modifierStates.get(editor)
   if (existing) {
@@ -33,8 +22,6 @@ export function getModifierState(editor: LexicalEditor): ModifierState {
   }
   const state: ModifierState = { current: false }
   modifierStates.set(editor, state)
-  // Guarded for SSR/headless environments: `getModifierState` runs during
-  // plugin render, where `document` may not exist.
   if (typeof document !== 'undefined') {
     const writeShiftState = (event: KeyboardEvent) => {
       state.current = event.shiftKey

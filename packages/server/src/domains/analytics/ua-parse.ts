@@ -1,13 +1,6 @@
 import DeviceDetector from 'node-device-detector'
 import ClientHints from 'node-device-detector/client-hints'
 
-// Field vocabularies must stay comparable with historical rows: os/browser
-// names normalized to the historical spellings (macOS, Edge, Mobile Chrome, …),
-// deviceType from mobile/tablet/desktop/wearable/smarttv/console/embedded,
-// browserType from crawler/fetcher/inapp/email/mediaplayer/library (consumed by
-// the bot gate in `enrich.ts`), and device is the marketing name, never a raw
-// model number.
-
 export interface UaClientHints {
   model?: string | null
   platform?: string | null
@@ -88,7 +81,6 @@ const hintsParser = new ClientHints()
 
 const MAX_RAW_LABEL = 80
 
-/** `Sec-CH-UA-Platform` is a structured string — the raw header keeps its quotes. */
 function normalizePlatformHint(hint: string | null | undefined): string | null {
   const unquoted = hint?.replace(/^"|"$/g, '') ?? ''
   return unquoted === '' ? null : unquoted
@@ -96,12 +88,6 @@ function normalizePlatformHint(hint: string | null | undefined): string | null {
 
 export const UNKNOWN_UA_LABEL = 'Unknown device'
 
-/**
- * Short session-list label, rendered server-side because the detector dataset
- * must never enter the browser bundle. Shares this module's configured detector
- * instance. `platformHint` (`Sec-CH-UA-Platform`) wins over the parsed OS
- * because desktop-mode iOS sends a macOS-like UA.
- */
 export function formatUaLabel(
   ua: string | null | undefined,
   platformHint?: string | null,

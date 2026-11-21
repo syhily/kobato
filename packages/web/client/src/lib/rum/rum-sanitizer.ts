@@ -19,7 +19,6 @@ export interface RumEventPolicyOptions {
   maxResourcesPerSession?: number
   maxErrorsPerSession?: number
   budgetStore?: RumBudgetStore
-  /** Trusted values for the SDK's modifiable `service`/`version` fields. */
   service?: string
   version?: string
 }

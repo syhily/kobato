@@ -13,10 +13,6 @@ test('aligns the sidebar brand, search trigger, and active menu edges', async ({
   await expect(search).toBeVisible()
   await expect(activeMenu).toBeVisible()
 
-  // Measure in-page in one shot and poll until all three boxes are visible:
-  // the post-hydration re-render can replace the SSR sidebar nodes in the gap
-  // between Playwright's visibility check and a locator boundingBox() call,
-  // which then comes back null (see replaceInput's comment in support/journey).
   const boxesHandle = await adminPage.waitForFunction(
     () => {
       const rect = (element: Element | null | undefined) => {

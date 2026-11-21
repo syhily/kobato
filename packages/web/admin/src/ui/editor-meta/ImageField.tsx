@@ -15,7 +15,6 @@ import { useState, type ReactNode } from 'react'
 export interface ImageFieldProps {
   id: string
   label: string
-  /** Current override URL. Empty string ⇒ "use default / unset". */
   value: string
   onChange: (next: string) => void
   disabled?: boolean
@@ -204,7 +203,6 @@ export function ImageField({
 
 export interface GeneratedOgPreviewProps {
   slug: string
-  /** Editor-side cover URL — folded into the cache-buster so the preview refreshes when the operator swaps covers. */
   cover: string
   title: string
   summary: string

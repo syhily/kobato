@@ -6,27 +6,10 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getNodeByKey } from 'lexical'
 
 export interface CardPickerHandle {
-  /**
-   * Open the card's picker (CONTEXT.md: "pick seam") for the given node.
-   * No-ops when the editor is not editable (a read-only surface never
-   * originates pick requests — the picker host's mount gate alone would
-   * leave the write queued until the next editable mount), when the node is
-   * gone, or when its card has no registered picker (host spec `picker` or
-   * a variant override) — a pickerless card keeps its placeholder static.
-   */
   open: (nodeKey: NodeKey) => void
   close: () => void
 }
 
-/**
- * The card component's half of the pick seam (CONTEXT.md: "pick seam"): the
- * unresolved placeholder's click and the resolved card's replace affordance
- * both call `open(nodeKey)`; the picker host plugin
- * (`@kobato/inkling-internal/plugins/CardPickerHostPlugin`) renders the picker registered for
- * the node's type. Dispatch is by node KEY, never the node instance — the
- * pick write resolves the latest instance inside `editor.update()` (Lexical
- * #195).
- */
 export function useCardPicker(): CardPickerHandle {
   const [editor] = useLexicalComposerContext()
   const store = useCardPickerStore()

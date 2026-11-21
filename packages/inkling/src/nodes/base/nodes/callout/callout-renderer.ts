@@ -12,9 +12,6 @@ export function renderCalloutNode(node: CalloutNodeData, context: RenderContext)
   const document = context.createDocument()
   const element = document.createElement('div')
 
-  // `rgba(0, 0, 0, 0)` from old mobiledoc paste is invalid in a class name, so
-  // fall back to `white`. Computed locally: a render fn must not write to the
-  // node (read-only context; a write here clone-on-writes during export).
   const backgroundColor = /^[a-zA-Z\d-]+$/.test(node.backgroundColor) ? node.backgroundColor : 'white'
 
   element.classList.add('inkling-card', 'inkling-callout-card', `inkling-callout-card-${backgroundColor}`)

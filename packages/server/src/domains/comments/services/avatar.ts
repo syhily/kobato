@@ -19,7 +19,6 @@ import { z } from 'zod'
 const MAX_REDIRECT_HOPS = 5
 const FETCH_TIMEOUT_MS = 30_000
 
-// Clamp for `?s=` — the range the Gravatar/QQ upstreams serve.
 const MIN_AVATAR_SIZE = 16
 const MAX_AVATAR_SIZE = 512
 
@@ -52,8 +51,6 @@ export function defaultAvatarPath(): string {
   return `/images/default-avatar.png${suffix}`
 }
 
-// Absolute form for the external gravatar `d=` fallback: mirrors can only
-// redirect to a fully qualified URL, never to a site-relative path.
 export function defaultAvatarUrl(): string {
   return joinUrl(requireBlogSettingsSection('siteIdentity').website, defaultAvatarPath())
 }
@@ -67,8 +64,6 @@ interface SafeFetchOptions {
   allowRedirect?: boolean
 }
 
-// Avatar upstreams answer with a few KB at `?s=<=512`; anything larger is an
-// unbounded body from a hostile/compromised mirror, buffered on the main thread.
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024
 
 async function safeFetchAvatar(
@@ -122,9 +117,6 @@ export async function fetchAvatarImage(hash: string, size: number): Promise<Buff
   return compressImage(buffer)
 }
 
-// Connectivity probe behind the admin mirror dropdown: any HTTP status —
-// including the 404 that `d=404` yields for an unknown hash — proves the
-// mirror answers; only network-level failures count as unreachable.
 const MIRROR_PROBE_TIMEOUT_MS = 5_000
 
 const MIRROR_PROBE_HASH = 'd41d8cd98f00b204e9800998ecf8427e'
@@ -162,7 +154,6 @@ export function getQQAvatarUrl(email: string, size: number): string | null {
   if (!match) {
     return null
   }
-  // qlogo serves only fixed sizes (spec=4=100px, spec=5=640px); pick the smallest covering `size`.
   const spec = size > 100 ? 5 : 4
   return `https://q.qlogo.cn/headimg_dl?dst_uin=${match[1]}&spec=${spec}`
 }
@@ -297,7 +288,6 @@ export async function resolveAvatarInfo(
 
 export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' }
 
-// Only md5 (32) / sha256 (64) hex digests can resolve on gravatar mirrors.
 const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
 
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {

@@ -21,15 +21,9 @@ export interface ImageEditorCanvasProps {
   file: File
   rotation: 0 | 90 | 180 | 270
   jpegQuality: number
-  /** Locked aspect ratio; the encoded output is resized to exactly `width × height`. */
   locked?: LockedAspect
-  /** Free-aspect output width override (source px); when smaller than the crop width the
-   *  encoder downscales to exactly this width, preserving aspect. */
   outputWidth?: number
-  /** Current crop rect after every mutation — lets the parent clamp a target-width input without duplicating the crop state machine. */
   onCropChange?: (cropWidth: number, cropHeight: number) => void
-  /** Imperative handle: parent calls this to read the encoded blob; returning
-   *  a Promise defers the canvas → blob work to the moment the operator clicks. */
   onReady: (encoder: () => Promise<{ blob: Blob; width: number; height: number }>) => void
 }
 

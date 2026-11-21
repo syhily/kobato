@@ -207,7 +207,6 @@ describe('snapshot: BackupFileList', () => {
       ),
     )
     expect(html).toContain('加载更多')
-    // SSR comment markers split the count — assert the pieces separately.
     expect(html).toMatch(/已展示.*2.*个备份文件/su)
   })
 })

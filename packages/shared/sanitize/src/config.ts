@@ -13,19 +13,9 @@ export interface SanitizeStrategyConfig {
   tags: readonly string[]
   attributes: readonly (string | RegExp)[]
   schemes: readonly string[]
-  /** Per-property CSS allowlist (shiki + body); values must match one pattern. */
   styles?: Readonly<Record<string, readonly RegExp[]>>
-  /**
-   * Per-tag attribute allowlist added on top of the global `attributes`; a
-   * hook narrows non-global attributes by tagName so e.g. `src` survives on
-   * <img> but not on <p>.
-   */
   tagAttributes?: Readonly<Record<string, readonly string[]>>
-  /** Reject protocol-relative URLs (`//host/path`) via a stricter URI regexp
-   * with a `(?!\/\/)` negative lookahead. */
   noProtocolRelative?: boolean
-  /** Rewrite rel="noopener noreferrer nofollow" on every <a target="_blank">,
-   * replacing the whole rel value rather than merging into it. */
   noopenerOnBlankTarget?: boolean
 }
 
@@ -178,11 +168,6 @@ const COMMENT_TAGS = [
   'sub',
 ] as const
 
-// inkling `exportDOM` additions over BASE: inline marks (u/s/sup/sub/mark),
-// media wrappers (figure/figcaption/audio), the footnotes <section>, and the
-// solution card's inline SVG QED mark. `viewbox` is spelled lowercase because
-// DOMPurify matches attributes case-insensitively against the HTML parser's
-// camelCase-adjusted SVG attribute names.
 const BODY_TAGS = ['u', 's', 'sup', 'sub', 'mark', 'figure', 'figcaption', 'section', 'audio', 'svg', 'rect'] as const
 
 const BODY_ATTRIBUTES = [

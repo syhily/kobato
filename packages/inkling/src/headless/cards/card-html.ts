@@ -1,6 +1,5 @@
 export interface CardRenderContext {
   readonly createDocument: () => Document
-  /** URL policy: returns `value` when it is safe for `kind`, `''` otherwise. */
   readonly safeUrl: (kind: 'navigation' | 'media', value: string) => string
   readonly sanitizeBasicHtml: (html: string) => string
   readonly escapeText: (value: string) => string

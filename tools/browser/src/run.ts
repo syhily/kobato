@@ -14,9 +14,7 @@ import { join, resolve as resolvePath } from 'node:path'
 const SHUTDOWN_TIMEOUT_MS = 15_000
 
 export interface BrowserSuiteOptions {
-  /** Built SEA binary (managed mode only). Defaults to `dist-sea/kobato`. */
   binaryPath?: string
-  /** Boot the SEA binary even when KOBATO_BROWSER_BASE_URL is set (`sea:browser`). */
   forceBoot?: boolean
 }
 
@@ -25,8 +23,6 @@ function uniquePostSlug() {
 }
 
 function runPlaywright(extraEnv: Record<string, string>) {
-  // Run Playwright through the package that owns it, so its config and the
-  // CLI resolve from tools/browser/node_modules instead of the workspace root.
   const configPath = resolvePath(import.meta.dirname, '../playwright.config.ts')
   const args = ['--filter', '@kobato/browser', 'exec', 'playwright', 'test', '--config', configPath]
   const grep = process.env.KOBATO_BROWSER_TEST_GREP
@@ -36,7 +32,6 @@ function runPlaywright(extraEnv: Record<string, string>) {
   const result = spawnSync('pnpm', args, {
     cwd: repoRoot,
     stdio: 'inherit',
-    // pnpm is a .cmd shim on Windows.
     shell: process.platform === 'win32',
     env: {
       ...process.env,

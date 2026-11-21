@@ -89,7 +89,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         }
 
         const dragPreviewElement = document.createElement('div')
-        // classes kept so Tailwind picks up usage
         dragPreviewElement.className =
           'absolute flex size-16 flex-col items-center justify-center rounded bg-white shadow-sm'
         Object.assign(dragPreviewElement.style, style)
@@ -98,7 +97,6 @@ function useDragDropReorder(editor: LexicalEditor): void {
         iconWrapper.className = 'flex items-center'
         dragPreviewElement.appendChild(iconWrapper)
 
-        // Icon is a React component — render synchronously via flushSync
         const iconRoot = document.createElement('div')
         iconWrapper.appendChild(iconRoot)
         const reactRoot = createRoot(iconRoot)

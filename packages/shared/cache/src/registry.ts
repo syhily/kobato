@@ -1,16 +1,11 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 export interface CacheDeclaration {
-  /** Stable discriminator — also the cache directory name. */
   readonly id: string
   readonly labelId: UiMessageId
-  /** Key-shape description, interpolated with `{ prefix }` at render time. */
   readonly descriptionId: UiMessageId
-  /** Prefix used until an admin renames it (tunable only). */
   readonly defaultPrefix: string
-  /** TTL used until an admin tunes it (tunable only). */
   readonly defaultTtlSeconds: number
-  /** Whether the bucket owns a prefix + TTL settings slot. */
   readonly tunable: boolean
 }
 

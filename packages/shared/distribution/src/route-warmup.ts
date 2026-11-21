@@ -1,7 +1,3 @@
-// Sentinel in the bundled route-warmup inline script, replaced with
-// `JSON.stringify(chunks)` by `RouteWarmupScript` (SSR). Must survive
-// minification as a string literal and stay unique in the bundle; the
-// build-time `includes()` guard fails loudly on drift.
 export const CHUNKS_SENTINEL = '__ROUTE_WARMUP_CHUNKS__'
 
 export const WARMUP_GLOBAL_EXCLUDED_PATTERNS = ['^canvas-', '^ImageEditorCanvas-', '^qrcode', '^music-player-']

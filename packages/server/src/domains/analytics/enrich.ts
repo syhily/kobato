@@ -9,7 +9,6 @@ import { isBot } from '@kobato/server/infra/http/is-bot'
 import { createHash } from 'node:crypto'
 
 function hashIp(ip: string): string {
-  // SHA-256 truncated to 32 hex chars; collision-safe at personal-blog volumes.
   return createHash('sha256')
     .update(ip + getDailySalt())
     .digest('hex')

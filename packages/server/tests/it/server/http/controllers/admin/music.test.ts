@@ -13,8 +13,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Music search hits external providers; the controller mapping is pinned
-// through function-level doubles.
 const searchMusic = vi
   .spyOn(await import('@kobato/server/domains/music/services/search'), 'searchMusic')
   .mockImplementation(() => Promise.resolve({ results: [] }) as never)

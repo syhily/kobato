@@ -89,10 +89,6 @@ function stubContext(feed = false): CardRenderContext {
   }
 }
 
-/** Serializes markup through jsdom so void-tag/boolean-attribute spelling
- * differences between React and the template strings normalize away. React
- * 19's static renderer hoists `<link rel="preload" as="image">` for `<img>`
- * tags — an SSR fetch hint, not chrome markup — so those are stripped. */
 function normalized(html: string): string {
   const body = new JSDOM(`<body>${html}</body>`).window.document.body
   for (const link of body.querySelectorAll('link[rel="preload"]')) {
@@ -332,7 +328,6 @@ describe('music-player pick seam', () => {
           lyric: '[00:01.00]hi',
         }),
       )
-      // Lexical 0.53 commits the pick write on a microtask — drain it
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 

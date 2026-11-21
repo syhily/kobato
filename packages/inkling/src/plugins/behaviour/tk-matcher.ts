@@ -10,8 +10,6 @@ export function getTKMatch(initialText: string): { start: number; end: number } 
   }
 
   function isValidMatch(match: RegExpExecArray) {
-    // No negative lookbehind before Safari 16.4: capture the preceding char
-    // and test it here instead.
     if (match[1]?.trim() && WORD_CHAR_REGEX.test(match[1]) && match[2].slice(0, 1) !== '—') {
       return false
     }

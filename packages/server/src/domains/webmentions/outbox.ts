@@ -20,7 +20,6 @@ const log = getLogger('webmentions.outbox')
 export const OUTBOX_BATCH_SIZE = 5
 export const OUTBOX_MAX_ATTEMPTS = 5
 
-// The response body is worthless (W3C success is a status code) — cap it.
 const MAX_RESPONSE_BYTES = 16 * 1024
 
 function senderUa(): string {

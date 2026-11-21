@@ -15,7 +15,6 @@ export interface PageMetaDraft {
   showUpdated: boolean
   contentLanguage: string
   showFriends: boolean
-  /** `<input type="datetime-local">` value (no timezone). Empty = leave server publishedAt alone. */
   publishedAt: string
 }
 

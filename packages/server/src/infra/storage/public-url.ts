@@ -33,11 +33,6 @@ function appendVersion(url: string, version: number | undefined): string {
 }
 
 export interface ResolveAssetUrlOptions {
-  /**
-   * Site route override (leading + trailing slash required); `stripPrefix`
-   * drops a matching storage-key prefix first. Driver-neutral: the route
-   * shape (e.g. `/fonts/embedded/`) applies no matter where the bytes live.
-   */
   route?: string
   stripPrefix?: string
 }
@@ -67,16 +62,7 @@ export function safeResolveAssetUrl(storagePath: string, updatedAtMs?: number): 
 }
 
 export interface ParseAssetUrlOptions {
-  /**
-   * Site origin (e.g. `https://example.com`). Required to accept ABSOLUTE
-   * URLs: only this exact origin parses. Origin-relative forms always parse.
-   */
   siteOrigin?: string
-  /**
-   * Domain-move mode: accept the site-owned path grammar on ANY http(s)
-   * origin. Reserved for the images matcher and the asset-URL backfill,
-   * which must resolve references baked under a previous domain.
-   */
   anyOrigin?: boolean
 }
 

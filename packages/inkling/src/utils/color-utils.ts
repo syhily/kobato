@@ -2,7 +2,6 @@ export interface ColorInstance {
   hex(): string
   red(): number
   green(): number
-  /** The Lab b-channel, not RGB blue: an intentional upstream quirk that flips #cccccc to white text. */
   b(): number
 }
 

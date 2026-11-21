@@ -25,8 +25,6 @@ export function requestTimeout(
     const clientSignal = c.req.raw.signal
     const combined = AbortSignal.any([clientSignal, controller.signal])
 
-    // Wrap the raw request with the combined signal; some runtimes (Vite dev)
-    // reject `new Request()` on the incoming request, so fall back to a Proxy.
     try {
       unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Request(c.req.raw, { signal: combined })
     } catch {

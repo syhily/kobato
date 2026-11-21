@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 
 describe('storage path resolvers', () => {
   it('passes :memory: through instead of resolving it to a cwd file', () => {
-    // `:memory:` must stay a literal sentinel — path.resolve would yield `<cwd>/:memory:`.
     expect(resolveDatabasePath()).toBe(':memory:')
     expect(resolveAnalyticsPath()).toBe(':memory:')
   })

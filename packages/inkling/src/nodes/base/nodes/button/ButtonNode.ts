@@ -24,7 +24,6 @@ export const buttonImportSpec = {
       reads: [
         { name: 'buttonUrl', kind: 'attribute', attribute: 'href', selector: '.inkling-btn', fallback: '' },
         { name: 'buttonText', kind: 'text', selector: '.inkling-btn', fallback: '' },
-        // omitted on no class match, coalescing to the 'center' default
         { name: 'alignment', kind: 'classMap', classMap: [{ pattern: /inkling-align-(left|center)/ }] },
       ],
     },

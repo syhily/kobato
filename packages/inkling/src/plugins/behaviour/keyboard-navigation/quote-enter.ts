@@ -11,16 +11,6 @@ import {
   KEY_ENTER_COMMAND,
 } from 'lexical'
 
-// Enter inside a blockquote: plain Enter opens a new paragraph inside the SAME
-// blockquote, Enter on an empty quote leaves it. Upstream's QuoteNode.insertNewAfter
-// always opens a plain paragraph after the quote.
-//
-// "Paragraph inside a blockquote" must be a DOUBLE LINE BREAK, not a paragraph node:
-// the denest transform evicts non-inline children from element nodes, and the HTML
-// import converter (ExtendedQuoteNode) flattens blockquote paragraphs into two line
-// breaks for that reason. Two breaks also keep the markdown export's quote contiguous
-// (a blank '>' line).
-
 function $exitQuote(quote: QuoteNode): void {
   const paragraph = $createParagraphNode()
   paragraph.setDirection(quote.getDirection())

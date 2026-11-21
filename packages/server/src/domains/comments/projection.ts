@@ -1,6 +1,3 @@
-// Drizzle types bigint ids and Date timestamps, which JSON.stringify mangles;
-// the DTOs declare the wire shape (string ids, ISO timestamps).
-
 import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments'
 import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared'
 import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types'

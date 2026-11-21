@@ -308,7 +308,6 @@ describe('server/infra/http/etag — listing calendar day', () => {
   it("buckets by the payload's own instant, so a site-midnight crossing cannot split body and tag", () => {
     expect(listingCalendarDay({ listingNowIso: '2026-11-08T15:59:59.000Z' }, LOCALIZATION)).toBe('2026-11-08')
     expect(listingCalendarDay({ listingNowIso: '2026-11-08T16:00:01.000Z' }, LOCALIZATION)).toBe('2026-11-09')
-    // Same instants in UTC sit on the same day — the bucket follows the SITE zone.
     expect(
       listingCalendarDay({ listingNowIso: '2026-11-08T16:00:01.000Z' }, { ...LOCALIZATION, timeZone: 'UTC' }),
     ).toBe('2026-11-08')

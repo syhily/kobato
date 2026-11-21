@@ -20,8 +20,6 @@ export function SettingsSelect<Value>({ save, name, onValueChange, ...props }: S
       {...props}
       name={name}
       onValueChange={(value, eventDetails) => {
-        // Base UI ignores the promise; own the rejection so a failed upstream
-        // guard never becomes an unhandled rejection, and never save after it.
         void (async () => {
           try {
             const verdict = await onValueChange?.(value, eventDetails)

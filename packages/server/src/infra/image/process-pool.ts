@@ -24,11 +24,6 @@ import { Worker } from 'node:worker_threads'
 
 const log = getLogger('image:process-pool')
 
-/**
- * Cap the Node worker count — libvips is already multi-threaded internally,
- * so one or two workers keep the request thread responsive without
- * saturating CPU.
- */
 export const POOL_SIZE = Math.min(4, Math.max(1, availableParallelism()))
 
 export const JOB_TIMEOUT_MS = 60_000
@@ -367,15 +362,6 @@ export function __resetWorkerFactory(): void {
 
 function defaultCreateWorker(): Worker {
   if (isSea()) {
-    // SEA: the worker bundle is eval'd with `--input-type=module` — workers
-    // cannot start from (or even see) VFS paths, so eval dispatch stays. The
-    // eval keeps `import.meta.url` a file: URL — required by the inlined
-    // sharp code's module-scope `createRequire(import.meta.url)`.
-    //
-    // Reading the bundle: main thread → plain fs from the mounted VFS. A
-    // worker thread (the `--smoke-worker` entry spawns NESTED pool workers)
-    // has no view of the mount, so it falls back to the `node:sea` blob
-    // channel, which works in any isolate.
     const bundlePath = seaAssetPath(SEA_PROCESS_WORKER_BUNDLE_KEY)
     const code =
       bundlePath !== null

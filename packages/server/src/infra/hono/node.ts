@@ -100,7 +100,6 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
 
   app.route(basename, reactRouterApp)
 
-  // Patch https://github.com/remix-run/react-router/issues/12295
   if (basename) {
     app.route(`${basename}.data`, reactRouterApp)
   }

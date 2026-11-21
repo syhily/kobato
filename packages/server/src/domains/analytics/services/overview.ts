@@ -6,10 +6,6 @@ import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics'
 import { queryCounters } from '@kobato/db/duckdb/queries/counters'
 import { queryMetric } from '@kobato/db/duckdb/queries/metric'
 
-/**
- * views series and the heatmap are deliberately absent — SSR buckets would be
- * UTC-bound, so the client fetches both in its own timezone.
- */
 export async function loadAnalyticsOverview(
   reader: AnalyticsReader,
   input: ResolvedAnalyticsQuery,

@@ -19,7 +19,6 @@ interface FooterSiteLinkProps {
   children: React.ReactNode
 }
 
-/** Footer copyright link: only the site name is linked; the © year stays plain text. */
 function FooterSiteLink({ href, children }: FooterSiteLinkProps) {
   return (
     <Link

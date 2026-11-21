@@ -8,14 +8,11 @@ export interface RestoreJobStatus {
   phase: RestorePhase
   startedAt: string
   error?: string
-  /** Set on the terminal report when the restore also replaced the config
-   *  file (effective on the next process restart). */
   configApplied?: boolean
 }
 
 export interface RestoreMachineDeps {
   drain(): Promise<void> | void
-  /** Flush batchers and close the live database handle — MUST run before the swap. */
   prepareForSwap(): Promise<void> | void
   reopenAfterSwap(): Promise<Database>
   complete(success: boolean, error?: Error): Promise<void>

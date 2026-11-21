@@ -12,15 +12,6 @@ interface FootnoteDefinitionNodeData {
   getFootnoteIndex(): number
 }
 
-/**
- * <li id="user-content-fn-N">…<a data-footnote-backref href="#user-content-fnref-N">↩</a></li>
- * — one definition row. The `<section class="footnotes">` wrapper is NOT the
- * renderer's business: the doc-end-run invariant (the footnote behaviour
- * module's RootNode transform) guarantees every definition exports as one
- * trailing run, so the section wrap is a mechanical string-layer step in
- * `@kobato/inkling-internal/html/renderer/convert-to-html-string`. Anchors come from the single
- * contract owner (`@kobato/inkling-internal/nodes/footnote/footnote-anchors`).
- */
 export function renderFootnoteDefinitionNode(node: FootnoteDefinitionNodeData, context: RenderContext) {
   const document = context.createDocument()
   const index = node.getFootnoteIndex()

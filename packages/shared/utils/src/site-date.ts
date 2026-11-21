@@ -21,8 +21,6 @@ function pickLocale(config: FormatterLocale): {
   return config
 }
 
-// Invalid input must keep the previous Intl.DateTimeFormat garbage-in
-// behavior: a RangeError('Invalid time value'), never NaN-filled output.
 function requireValidZonedDate(source: Date, timeZone: string): TZDate {
   const zoned = new TZDate(source, timeZone)
   if (Number.isNaN(zoned.getTime())) {
@@ -46,8 +44,6 @@ export function formatLocalDate(source: string | Date, format: string | undefine
   const { locale, timeZone, timeFormat } = pickLocale(config)
   const zoned = requireValidZonedDate(new Date(source), timeZone)
   const pattern = format ?? timeFormat
-  // `null` = follow the locale: the short date + short time Intl default
-  // (zh-CN → `2026/11/8 14:30`), still rendering in the site time zone.
   if (pattern === null) {
     return zonedDateFormatter(locale, timeZone).format(zoned)
   }

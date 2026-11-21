@@ -1,32 +1,3 @@
-/**
- * Server-internal layer + cross-domain DAG guard.
- *
- * `packages/server/AGENTS.md` pins the one-way server graph: `infra/` is the
- * technical-leaf layer, `domains/` sits on `infra/` plus the shared leaf
- * packages, `http/` and `render/` orchestrate domains, and `bootstrap/` is
- * the composition root. Package-level edges are enforced by
- * `package-dag.test.ts`; its "product source trees use package-root imports"
- * rule keeps every intra-server specifier package-anchored
- * (`@kobato/server/...`), so this guard can read the real import graph
- * textually — static `from`, side-effect and dynamic `import()`, value and
- * type imports alike (any `from`/`import` shape counts):
- *
- *  a. no relative specifier inside `packages/server/src` — the completeness
- *     precondition for the graph below (package-dag pins the same rule; it is
- *     re-asserted here because this file's edges are built from it);
- *  b. `infra/*` imports no `domains/`, `http/`, `render/`, `bootstrap/` module;
- *  c. `domains/*` imports no `bootstrap/`, `http/`, `render/` module;
- *  d. `render/*` imports no `http/` module, and its domain consumers equal
- *     the audited RENDER_DOMAIN_IMPORTS module-pair set exactly;
- *  e. cross-domain edges equal ALLOWED_CROSS_DOMAIN_IMPORTS exactly — every
- *     discovered edge is allowlisted, every allowlisted edge exists, and
- *     every domain folder carries an allowlist line.
- *
- * `bootstrap/*` (composition root) and `http/*` (perimeter) may reach every
- * lower layer by design; same-domain imports are free; `src/assets/` holds
- * static asset blobs rather than code and, like the package root, sits
- * outside the layer graph.
- */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'

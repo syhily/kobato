@@ -27,11 +27,8 @@ export interface UseEditorShellPersistMutationsArgs<
   noteActionLegSucceeded: (slug: string) => void
   cancelActionBanner: () => void
   dismissPreviewBanner: () => void
-  /** Body snapshot of the in-flight manual save — cleared on any error. */
   manualSaveBodyRef: React.RefObject<LexicalEditorState | null>
-  /** Pre-publish server publishedAt, restored when the publish leg fails. */
   publishedAtBeforePublishRef: React.RefObject<string | null>
-  /** The orchestrator's body-save interpreter, mirrored through a ref. */
   handleBodySavedRef: React.RefObject<(payload: SaveBodyOutput) => void>
 }
 

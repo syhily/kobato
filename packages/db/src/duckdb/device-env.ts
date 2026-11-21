@@ -13,14 +13,6 @@ import {
   type DuckDBValue,
 } from '@duckdb/node-api'
 
-/**
- * `device_env_server` — the request-side half of the environment analytics: one
- * row per event, written by the enrich pipeline in the same batch as the main
- * row. Holds the high-entropy UA Client Hints (`Accept-CH` negotiated) plus the
- * complete Accept-Language list, which the main table's blob6 truncates to its
- * first token. A session's first hits arrive without hints, so empty strings are
- * legitimate values, not missing writes.
- */
 export const DEVICE_ENV_SERVER_DDL = `
 CREATE TABLE IF NOT EXISTS device_env_server (
   event_id UUID PRIMARY KEY,
@@ -74,15 +66,11 @@ export interface DeviceEnvServerRow {
   platform: string
   platformVersion: string
   model: string
-  /** NULL = no `Sec-CH-UA-Mobile` hint was received. */
   mobile: boolean | null
-  /** Raw `Sec-CH-UA-Full-Version-List` value. */
   brands: string
   arch: string
   bitness: string
-  /** Raw `Sec-CH-UA-Form-Factors` header value (e.g. `"Desktop", "Laptop"`), truncated to 128 chars. */
   formFactors: string
-  /** Full Accept-Language preference list, truncated to 256 characters. */
   acceptLanguage: string
 }
 
@@ -98,14 +86,10 @@ export interface DeviceEnvClientRow {
   dpr: number | null
   colorDepth: number | null
   touchPoints: number | null
-  /** `'coarse'` / `'fine'` / `''`. */
   pointer: string
-  /** `'hover'` / `'none'` / `''`. */
   hover: string
-  /** `'dark'` / `'light'` / `''`. */
   colorScheme: string
   reducedMotion: boolean | null
-  /** `'slow-2g'` / `'2g'` / `'3g'` / `'4g'` / `''`. */
   netEffectiveType: string
   netDownlink: number | null
   netRtt: number | null
@@ -114,7 +98,6 @@ export interface DeviceEnvClientRow {
   timezone: string
   hardwareConcurrency: number | null
   deviceMemory: number | null
-  /** Whether this beacon carried the session-static block. */
   hasStatic: boolean
 }
 

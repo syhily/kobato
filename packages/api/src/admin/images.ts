@@ -9,9 +9,6 @@ import {
 import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
-// Admin images RPC contract — author base on the server. `upload` carries a
-// `Blob` (oRPC serializes it as multipart/form-data); the site-global kinds
-// (category/friend) stay admin-only at the handler level.
 export const adminImagesContract = {
   list: oc.route({ method: 'GET', path: '/admin/images/list' }).input(adminImagesListInput).output(listImagesOutputDto),
   delete: oc.route({ method: 'POST', path: '/admin/images/remove' }).input(adminImageIdInput).output(voidOutput),

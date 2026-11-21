@@ -2,19 +2,7 @@ import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
 import { getImageFilenameFromSrc } from '@kobato/inkling-internal/nodes/base/utils/content-image-url'
 
-/**
- * The one fill policy mapping an image card's drag dataset onto the
- * GalleryImage shape (the mirror persists only ALLOWED_IMAGE_PROPS — this
- * mapping is what decides which dataset fields survive a drop).
- *
- * Policy: src is required (a dataset without one is not an image, and the
- * caller rejects the drop); the filename falls back to the src-derived one
- * inside the mapping; width/height fall back to the probe's natural size
- * (the one DOM read, injected); alt, row, and caption carry when present.
- */
-
 export interface GalleryImageFillOptions {
-  /** The dragged element's natural size — injected so the policy is testable without layout. */
   naturalSize?: { width?: number; height?: number } | null
 }
 

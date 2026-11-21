@@ -33,8 +33,6 @@ export function useFocusHash(): void {
     const isCommentHash = hash.startsWith('#user-comment-')
 
     const focusOnce = (): boolean => {
-      // Exact ID lookup — a user-controlled hash is not a valid CSS selector
-      // (e.g. `#1:foo`), and `querySelector` would throw a SyntaxError.
       const target = document.getElementById(hash.slice(1))
       if (target === null) {
         return false

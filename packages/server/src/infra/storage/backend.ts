@@ -16,9 +16,7 @@ export interface PutObjectInput {
   key: string
   body: Buffer
   contentType: string
-  /** `Cache-Control` header. Defaults to the visibility-appropriate immutable value. */
   cacheControl?: string
-  /** `public` assets are CDN-cacheable; `private` ones (branding/backup) get a private cache. Defaults to `public`. */
   visibility?: ObjectVisibility
 }
 
@@ -26,11 +24,7 @@ export interface PutStreamInput {
   key: string
   body: Readable
   contentType: string
-  /** `Cache-Control` header, carried verbatim by backend-to-backend copies. Defaults
-   *  to the `visibility`-derived value; without a `visibility`, the private value
-   *  (streams are backups). */
   cacheControl?: string
-  /** Visibility class the default `cacheControl` derives from (see `key-policy`). */
   visibility?: ObjectVisibility
 }
 
@@ -44,22 +38,14 @@ export interface StorageBackend {
   readonly driver: StorageDriver
   isAvailable(): boolean
   put(input: PutObjectInput): Promise<StoredObjectMeta>
-  /** Streaming put for large/unknown-length bodies (backups). `size` in the result is the exact stored byte count. */
   putStream(input: PutStreamInput): Promise<StoredObjectMeta>
   get(key: string): Promise<Buffer>
   getStream(key: string): Promise<Readable>
-  /** Streams an object with its stored Content-Type / Cache-Control headers so a
-   *  backend-to-backend migration can copy them verbatim; omitted by backends with no
-   *  stored headers (local FS), where the migration uses key-based defaults. */
   getStreamWithMeta?(key: string): Promise<StreamWithMeta>
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>
   deleteMany(keys: string[]): Promise<void>
   deletePrefix(prefix: string): Promise<void>
-  /**
-   * List objects under `prefix` in lexicographic key order. `startAfter`
-   * resumes strictly after the given key (migration checkpointing).
-   */
   list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]>
 }
 

@@ -1,31 +1,17 @@
 export interface StructureNode {
-  /** Lowercased tag name. */
   tag: string
-  /** Sorted class tokens (intersected with `classTokens` when given). */
   classes: string[]
-  /** data-* attributes, keyed without the `data-` prefix. */
   data: Record<string, string>
-  /** Non-data attributes named by `attributes` (e.g. `src`, `alt`). */
   attributes: Record<string, string>
-  /** Whitespace-collapsed direct text — present only under `compareText`. */
   text?: string
   children: StructureNode[]
 }
 
 export interface StructureCompareOptions {
-  /** CSS selectors for subtrees to drop before comparing — interactive chrome only
-   * the live component renders. Matched on both sides; removed wholesale. */
   prune?: readonly string[]
-  /** Restrict compared class tokens to this set: behavior-only classes (hover
-   * variants, state hooks) then fall out of the comparison. */
   classTokens?: readonly string[]
-  /** Restrict compared data-* attributes to these names (no `data-` prefix);
-   * defaults to every one. Pass `[]` when there is no shared data contract. */
   dataAttributes?: readonly string[]
-  /** Also compare these non-data attributes (e.g. `['src', 'alt']`); an attribute
-   * absent on one side diffs like a data-* mismatch. */
   attributes?: readonly string[]
-  /** Also compare whitespace-normalized direct text content. */
   compareText?: boolean
 }
 

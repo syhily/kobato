@@ -16,11 +16,6 @@ export * from '@kobato/inkling-internal/transforms/remove-alignment'
 export * from '@kobato/inkling-internal/transforms/remove-at-link-nodes'
 
 export interface DefaultTransformsOptions {
-  /**
-   * 'strip' (default) resets element `format` (text-align) so imported or
-   * pasted alignment can't linger invisible on surfaces without alignment
-   * UI; 'keep' preserves it for surfaces that expose alignment controls.
-   */
   alignment?: 'strip' | 'keep'
 }
 

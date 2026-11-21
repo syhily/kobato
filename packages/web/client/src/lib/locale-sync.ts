@@ -2,27 +2,12 @@ import type { AppLocale } from '@kobato/i18n/locales'
 
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 
-/**
- * Cross-tab settings-locale announcements. The channel carries an
- * ANNOUNCEMENT, never state: peers reload from the server after flushing
- * their own dirty cards and never re-publish, so a message cannot bounce back
- * and forth. `origin` is per mounted provider, not per tab — BroadcastChannel
- * delivers to every same-named channel object in the same document too, so a
- * provider must ignore its own echo.
- */
-
 export const SETTINGS_LOCALE_CHANNEL = 'kobato.settings.locale'
 
 const MESSAGE_KIND = 'settings.locale-changed'
 
 export interface LocaleChangeAnnouncement {
   locale: AppLocale
-  /**
-   * The sender's bootstrap settings `revision` (`<bootId>:<counter>`). An
-   * OPAQUE dedupe token, never an ordering key: a repeated announcement from a
-   * third tab carries the same token and is ignored after the first handling.
-   * Absent when the publisher has no bootstrap payload.
-   */
   revision?: string
 }
 
@@ -60,8 +45,6 @@ export function publishLocaleChange(locale: AppLocale, origin: string, revision?
     }
     channel.postMessage(message)
   } catch {
-    // Unsupported or blocked (older Safari, sandboxed iframe): cross-tab sync
-    // degrades to "the peer picks the new locale up on its next navigation".
   } finally {
     channel?.close()
   }

@@ -7,12 +7,6 @@ import { compactLexicalEditorState } from '@kobato/inkling-internal/headless/dia
 import { withDOM } from '@lexical/headless/dom'
 import { describe, expect, it } from 'vitest'
 
-// Contract between the compact storage dialect and the real 0.53 parser:
-// re-parsing a compacted document through `parseEditorState` must heal every
-// stripped default key, reproducing the full export byte-for-byte. If a
-// Lexical upgrade changes a serializer default or stops healing one, this
-// corpus fails before stored payloads silently change meaning.
-
 const CORPUS = {
   root: {
     type: 'root',

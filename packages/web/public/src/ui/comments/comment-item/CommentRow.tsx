@@ -40,9 +40,6 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
   const actions = useCommentsActions('CommentRow')
   const flags = commentFlags(comment, identity)
   const isPending = pending ?? comment.isPending ?? false
-  // The flash id arrives from use-focus-hash after the scroll settles — never
-  // during SSR or hydration (server snapshot is null), so the `active` class
-  // can never mismatch the streamed HTML.
   const flashedId = useSyncExternalStore(subscribeCommentFlash, getCommentFlashSnapshot, getCommentFlashServerSnapshot)
   const isFlashed = flashedId !== null && flashedId === comment.id
   return (

@@ -1,10 +1,6 @@
 import type { SanitizeStrategyConfig } from '@kobato/sanitize/config'
 import type createDOMPurify from 'dompurify'
 
-// Shared DOMPurify core for both sanitize engines. The engines differ only in
-// where the DOM comes from (browser global vs a process-cached jsdom); every
-// behavioral rule lives here once so SSR bytes and hydration bytes cannot drift.
-
 type Purify = ReturnType<typeof createDOMPurify>
 
 const ALLOWED_URI = /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
@@ -75,12 +71,6 @@ export function createPurifySanitizer(purify: Purify): (html: string, config: Sa
     activeTagAttributes = config.tagAttributes
     activeNoopenerOnBlankTarget = config.noopenerOnBlankTarget === true
     try {
-      // ALLOWED_ATTR is string-only; a RegExp entry (the `data-*` pattern) maps
-      // to ALLOW_DATA_ATTR instead. The flag is passed ALWAYS: DOMPurify's own
-      // default is `true`, which would silently let every `data-*` through for a
-      // preset that never opted in (feed / comment-email). Those presets
-      // enumerate the exact data attributes they need in ALLOWED_ATTR, so
-      // `false` keeps them while dropping undeclared ones.
       const hasDataAttr = config.attributes.some((attr) => attr instanceof RegExp)
       const allowedAttr = [
         ...config.attributes.filter((attr): attr is string => typeof attr === 'string'),

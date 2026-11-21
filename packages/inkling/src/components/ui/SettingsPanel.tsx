@@ -44,8 +44,6 @@ export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab,
   }, [tabs, tabContent])
 
   return (
-    // No Portal: a portal would dodge Chromium's transformed-ancestor
-    // positioning bug (20574) but breaks drag/drop and focus handling.
     <div className={`!mt-0 touch-none ${darkMode ? 'dark' : ''} ${className ?? ''}`}>
       <div
         ref={ref}

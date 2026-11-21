@@ -1,12 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-// Test files that hold module-level mock calls (`vi.mock(` / `vi.doMock(`).
-// Under `isolate: false` the module registry is shared per worker, so a
-// file's mock wiring leaks into every other file — mock holders must keep
-// per-file isolation. They run in the dedicated `*-iso-*` projects;
-// de-mocking a file moves it back into the shared project automatically
-// (the list is scanned, not pinned).
 const MOCK_MARKERS = ['vi.mock(', 'vi.doMock('] as const
 
 export function mockIsolatedTestFiles(absRoot: string, repoRoot: string): string[] {

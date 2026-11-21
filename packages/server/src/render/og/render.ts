@@ -11,8 +11,6 @@ import { isHttpUrl, redactUrlForLog } from '@kobato/utils/safe-url'
 import { Canvas, loadImage } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 
-// Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
-
 const COVER_TIMEOUT_MS = 5_000
 const COVER_MAX_BYTES = 8 * 1024 * 1024
 
@@ -23,9 +21,6 @@ function resolveCoverUrl(cover: string, website: string): string | null {
   return isHttpUrl(cover) ? cover : null
 }
 
-/** `@napi-rs/canvas`'s `loadImage` does its own unbounded HTTP GET (20
- *  redirects, no timeout, no size cap, no SSRF guard), so cover bytes are
- *  fetched through `safeFetch` and decoded from the buffer. */
 async function loadCover(cover: string, website: string): Promise<Image> {
   if (/^\s*data:/i.test(cover)) {
     return loadImage(cover)

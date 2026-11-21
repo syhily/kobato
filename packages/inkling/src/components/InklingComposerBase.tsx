@@ -28,8 +28,6 @@ import React from 'react'
 
 export type { InklingInitialEditorState }
 
-// Lexical's update error hook: throwing aborts the update; swallowing lets
-// Lexical recover gracefully without losing user data.
 function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
   if (import.meta.env.DEV) {
     console.error(error)
@@ -87,9 +85,6 @@ const InklingComposerBase = ({
     [initialEditorState],
   )
 
-  // Frozen at mount: LexicalExtensionComposer rebuilds the editor (losing its
-  // state) when the extension identity changes — the lazy useState initializer is
-  // the mount-scoped equivalent for hosts passing inline props.
   const [rootExtension] = React.useState(() =>
     buildInklingRootExtension({
       nodes,

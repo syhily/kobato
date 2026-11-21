@@ -13,9 +13,6 @@ export interface UseAutosaveOptions<TBody> {
   body: TBody
   enabled: boolean
   flush: (body: TBody) => Promise<AutosaveFlushOutcome | undefined>
-  /** Mount-time persisted baseline (the opening body): the first tick with
-   *  zero edits short-circuits instead of re-flushing. Read once at mount —
-   *  later prop changes are ignored; advance the baseline via `setBaseline`. */
   initialBaseline?: TBody | null
   debounceMs?: number
   hardCapMs?: number

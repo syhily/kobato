@@ -16,7 +16,6 @@ export interface MailTransportConfig {
 }
 
 export interface SendOptions {
-  /** Optional BCC list. Used by admin-author-invite to keep the inviter on the audit trail. */
   bcc?: string[]
 }
 

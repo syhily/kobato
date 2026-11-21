@@ -13,9 +13,6 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-// 26.10.0 fixed the VFS addon loader's dlopen flags forwarding
-// (nodejs/node#65909); a SEA built on an earlier 26.x ships a binary whose
-// linux native loads die in glibc (`invalid mode for dlopen()`).
 const REQUIRED_NODE_VERSION = '26.10.0'
 
 function ensureNodeVersion() {

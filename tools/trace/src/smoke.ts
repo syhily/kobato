@@ -1,16 +1,3 @@
-// `pnpm run trace:smoke` — real end-to-end OpenObserve smoke.
-// Brings up a throwaway single-container OpenObserve, provisions the same
-// retention/pipeline/dashboards as `trace:init`, boots the REAL DEV server
-// (react-router dev) with a throwaway config, drives Chromium through public
-// pages, an oRPC call, an SPA navigation and a sanitized error, then queries
-// OpenObserve for the actual stored traces/metrics/RUM/server logs. Finally it
-// stops OpenObserve, proves the site keeps working, and checks that no outage
-// data is replayed after the restart. Server logs must land in the independent
-// `kobato_logs` stream with the closed projected columns and correlate with the
-// same request's `http.server` span by trace_id AND span_id.
-// Everything is synthetic and loopback-only. Ordinary `pnpm test` never runs
-// this file; it requires Docker and Playwright.
-
 import type { O2Context, TraceState } from '@kobato/trace/lib'
 import type { BrowserContext, Page } from '@playwright/test'
 
@@ -163,8 +150,6 @@ async function saveObservabilitySettings(session: AdminSession, patch: Record<st
 }
 
 async function readObservabilityStatus(session: AdminSession): Promise<ObservabilityStatus> {
-  // oRPC's GET transport carries the serialized request envelope in `data`,
-  // not the bare input: `{"json":{}}` (empty query input).
   const data = encodeURIComponent(JSON.stringify({ json: {} }))
   const res = await session.client.get(`/rpc/admin/observability/status?data=${data}`, {
     headers: { accept: 'application/json', 'x-csrf-token': session.csrfToken },
@@ -508,8 +493,6 @@ async function loginAsAdmin(page: Page, fx: SmokeFixtures): Promise<void> {
 
 async function uploadLargeImage(page: Page, jpeg: Buffer): Promise<number> {
   const base64 = jpeg.toString('base64')
-  // Vite dev serves modules outside the app root through `/@fs` URLs; the API
-  // client lives in the web-client package, not under the app's own src/.
   const clientModulePath = resolveFromRepo('packages/web/client/src/api/client.ts')
   await page.goto('/admin', { waitUntil: 'networkidle' })
   const started = Date.now()
@@ -619,8 +602,6 @@ async function ingestUnknownFieldRumEvent(
     view_first_byte: 1_000_000,
     view_loading_time: 3_000_000,
     view_cumulative_layout_shift: 0.25,
-    // Real flattened SDK shape: O2 stores this as view_performance_inp_duration
-    // in nanoseconds; the pipeline must convert to 40_000 us.
     view_performance_inp_duration: 40_000_000,
     _o2: { format_version: 2, trace_id: traceId },
     unknown_secret_field: fx.search,
@@ -898,10 +879,6 @@ async function main(): Promise<void> {
     }, searchPath)
     await page.waitForTimeout(1500)
 
-    // A real same-origin oRPC call from the page. The token comes from the
-    // document's React Router handoff (`csrfToken` in the root loader data),
-    // so it belongs to this browser session; RUM's fetch instrumentation adds
-    // the W3C traceparent.
     const html = await page.content()
     const tokenMatch = /"csrfToken":"([0-9a-f]{64})"/.exec(html) ?? /csrfToken[^0-9a-f]{0,16}([0-9a-f]{64})/.exec(html)
     assert(
@@ -1280,10 +1257,6 @@ async function main(): Promise<void> {
       const sums = sumRows.map((row) => Number(row.value))
       assertAllPositive(counts, 'image execution count')
       assertAllPositive(sums, 'image execution sum')
-      // DELTA emits a data point only for an interval that recorded an
-      // observation. One image transform therefore yields a handful of points
-      // at most, while CUMULATIVE re-emits the growing snapshot on every 10s
-      // collection for the rest of the server lifetime.
       assert(counts.length <= 5, `image execution count has ${counts.length} points; looks cumulative`)
       assert(sums.length <= 5, `image execution sum has ${sums.length} points; looks cumulative`)
       const totalExecutions = counts.reduce((total, value) => total + value, 0)

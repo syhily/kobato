@@ -148,7 +148,6 @@ em-emoji-picker .search input[type='search'] {
   fill: #fff;
 }
 
-/* tailwind `hidden` class conflicts with inkling styles */
 .inkling-cardmenu-card-hover button {
   display: none;
 }

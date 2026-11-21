@@ -30,7 +30,6 @@ type UsersListPage = { users: AdminUserDto[]; total: number; hasMore: boolean }
 
 export interface UserDetailViewProps {
   userId: string
-  /** The signed-in admin's id — the operations card hides self-targeting actions. */
   currentUserId: string
   navigate: NavigateFunction
   passkeyEnabled: boolean

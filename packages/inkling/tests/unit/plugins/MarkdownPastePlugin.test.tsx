@@ -38,9 +38,6 @@ const originalDataTransfer = globalThis.DataTransfer
 function createTestEditor() {
   return createEditor({
     namespace: 'test',
-    // CodeBlockNode and HorizontalRuleNode are registered so the paste-dialect
-    // pins exercise the real import paths (pre/code → code block card, footnote
-    // <hr> → rule card), matching DEFAULT_NODES.
     nodes: [HeadingNode, CodeBlockNode, HorizontalRuleNode],
     onError: () => {},
     theme: {},

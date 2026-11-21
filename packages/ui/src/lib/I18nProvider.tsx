@@ -8,19 +8,11 @@ import { IntlContext, IntlProvider } from 'react-intl'
 
 const log = getLogger('i18n')
 
-/**
- * ICU values accepted by react-intl, including the rich-text form (`<link>{title}</link>` —
- * a function receiving the tag's chunks). Never build sentences by concatenating fragments.
- */
 export type I18nMessageParams = Record<
   string,
   string | number | Date | null | undefined | ReactNode | ((chunks: ReactNode[]) => ReactNode)
 >
 
-/**
- * Scalar params for `localizeMessage`. `boolean` arrives over the wire and is stringified here
- * (react-intl cannot format it); `null` is an explicit empty value, `undefined` counts as missing.
- */
 export type I18nPlainMessageParams = Record<string, string | number | boolean | null | undefined>
 
 const LOCALIZE_FALLBACK_ID: UiMessageId = 'error.api.badRequest'
@@ -40,13 +32,7 @@ function toIcuValues(params?: I18nPlainMessageParams): Record<string, string | n
 export interface I18nValue {
   locale: AppLocale
   t: (id: UiMessageId, params?: I18nMessageParams) => string
-  /** Rich-text form: one message per locale holds the whole sentence, tag included. */
   tRich: (id: UiMessageId, params: I18nMessageParams) => ReactNode
-  /**
-   * Translate a message-id string when it is a registered catalog key; return any other string
-   * unchanged, so Zod's own default messages pass through and raw ids never reach the UI. A
-   * missing param or unformattable template logs and degrades to a generic localized sentence.
-   */
   localizeMessage: (value: string, params?: I18nPlainMessageParams) => string
 }
 
@@ -83,7 +69,6 @@ export function useI18n(): I18nValue {
   const t = useCallback<I18nValue['t']>(
     (id, params) => {
       const formatted = intl.formatMessage({ id }, params)
-      // Plain messages never carry rich tags, so react-intl returns a string.
       return typeof formatted === 'string' ? formatted : ''
     },
     [intl],
@@ -93,8 +78,6 @@ export function useI18n(): I18nValue {
     throw new Error('useI18n() requires the root <I18nProvider> (see src/root.tsx).')
   }
   const localizeMessage = (value: string, params?: I18nPlainMessageParams): string => {
-    // react-intl types `messages` as raw strings or pre-parsed ASTs depending on the
-    // provider; only string catalogs are fed here, so narrow structurally.
     const messages: Record<string, unknown> = intl.messages
     const candidate = Object.hasOwn(messages, value) ? messages[value] : undefined
     if (typeof candidate !== 'string') {
@@ -104,8 +87,6 @@ export function useI18n(): I18nValue {
       return candidate
     }
     const values = toIcuValues(params)
-    // react-intl is the ONE formatter; missing params make it report an error
-    // and answer the raw template (or the id), which must never reach the UI.
     try {
       const formatted = intl.formatMessage({ id: value }, values)
       if (typeof formatted === 'string' && formatted !== value && formatted !== candidate) {

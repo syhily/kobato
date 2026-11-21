@@ -48,7 +48,6 @@ export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {
   id: ReservedCacheBucketId
-  /** Label message id — resolved by the admin surface's translator. */
   labelId: UiMessageId
   descriptionId: UiMessageId
 }

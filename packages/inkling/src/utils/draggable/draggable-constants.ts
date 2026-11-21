@@ -1,8 +1,5 @@
 import { kebabCase } from '@kobato/inkling-internal/utils/objects'
 
-// Data attributes rather than classes: a draggable/droppable element's class attribute may
-// be dynamically generated, which would remove DnD classes when changed.
-
 export const CONTAINER_DATA_ATTR = 'inklingDndContainer'
 export const CONTAINER_SELECTOR = `[data-${kebabCase(CONTAINER_DATA_ATTR)}]`
 
@@ -15,8 +12,6 @@ export const DROPPABLE_SELECTOR = `[data-${kebabCase(DROPPABLE_DATA_ATTR)}]`
 export const DRAG_DISABLED_DATA_ATTR = 'inklingDndDisabled'
 export const DRAG_DISABLED_SELECTOR = `[data-${kebabCase(DRAG_DISABLED_DATA_ATTR)}]`
 
-// the drop indicator is per-handler (each DragDropHandler owns its element), so it carries
-// a data attribute rather than a document-unique id
 export const DROP_INDICATOR_DATA_ATTR = 'inklingDragDropIndicator'
 export const DROP_INDICATOR_SELECTOR = `[data-${kebabCase(DROP_INDICATOR_DATA_ATTR)}]`
 export const DROP_INDICATOR_ZINDEX = 10000

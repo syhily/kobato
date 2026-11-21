@@ -1,18 +1,8 @@
-// SEA injection: get the blob into a copy of the Node executable.
-// `node --build-sea` is the only injector, and it does not codesign on darwin,
-// so the modified copy must be re-signed ad-hoc afterwards.
-
 import { writeSeaConfig } from '@kobato/pack/sea/blob'
 import { fail, run, tryRun } from '@kobato/pack/sea/exec'
 import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from '@kobato/pack/sea/paths'
 import { mkdir, readFile } from 'node:fs/promises'
 
-/**
- * Official Node.js builds carry the sentinel fuse; shared-library builds
- * (Homebrew, some distro packages) do not.
- * A universal binary carries one sentinel per slice, which `--build-sea`
- * also rejects.
- */
 async function ensureSentinelFuse() {
   const binary = await readFile(process.execPath)
   let occurrences = 0
@@ -46,8 +36,6 @@ async function ensureSentinelFuse() {
 
 function resignDarwinBinary(out: string) {
   tryRun('codesign', ['--remove-signature', out])
-  // REQUIRED on darwin: a modified binary must be ad-hoc re-signed or the
-  // OS refuses to execute it.
   run('codesign', ['--sign', '-', '--force', out])
 }
 

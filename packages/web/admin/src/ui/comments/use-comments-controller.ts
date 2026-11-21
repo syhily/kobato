@@ -132,7 +132,6 @@ export interface CommentActions extends CommentIntents {
   rejectDeletion(comment: AdminComment): void
   filterByPage(pageKey: string, pageTitle: string): void
   filterByAuthor(userId: string, name: string): void
-  /** Per-comment pending gates: mutations are shared, so a button disables only while its comment is in flight. */
   isApproving(comment: AdminComment): boolean
   isRemoving(comment: AdminComment): boolean
   isResolvingDeletion(comment: AdminComment): boolean
@@ -187,7 +186,6 @@ export function parseCommentFiltersFromSearchParams(
 }
 
 export interface UseCommentsControllerOptions {
-  /** Live pill state, owned by the view's `useFilterPills`, which also produced `queryInput`. */
   filters: ActiveFilter<CommentFilterFieldKey>[]
   dispatch: Dispatch<FilterPillsAction<CommentFilterFieldKey>>
   queryInput: CommentsFilterQuery

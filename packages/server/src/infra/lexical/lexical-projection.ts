@@ -37,11 +37,8 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import katex from 'katex'
 
 export interface BodyProjections {
-  /** Full-fidelity HTML — SSR/public rendering. */
   bodyHtml: string
-  /** Plain text — search corpus and revision diffs. */
   bodyText: string
-  /** Feed-degraded HTML (math→TeX, code→plain pre, host-card substitution). */
   bodyHtmlFeed: string
 }
 

@@ -1,7 +1,3 @@
-/**
- * Unique-constraint detection: node:sqlite `errcode` 2067/1555, `constraintName`
- * matched against the message text, `cause` unwrapped one level for drizzle.
- */
 const SQLITE_CONSTRAINT_PRIMARYKEY = 1555
 const SQLITE_CONSTRAINT_UNIQUE = 2067
 

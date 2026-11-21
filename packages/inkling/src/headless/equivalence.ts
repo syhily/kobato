@@ -4,17 +4,6 @@ import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling-internal/headless/art
 import { isRecord } from '@kobato/utils/type-guards'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
-// Semantic equality for Lexical editor states — the save pipeline's no-op
-// short-circuit (`content/repos/mutate`) and the editor shell's dirty check.
-//
-// Both sides MUST already be parsed through `lexicalEditorStateSchema`: that
-// pass strips unknown keys and pins the required-field shape. Server-filled
-// artifact slots (`@kobato/inkling-internal/headless/artifacts`) are excluded — they are
-// recomputed deterministically on every save and must not mark a body dirty.
-// Key order is normalized away by the sorted-key serializer; empty
-// objects/arrays are NOT elided: Lexical serialization is canonical, so `{}`
-// vs absent is a real difference worth honoring.
-
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[]
 
 function semanticJson(value: unknown): Json {

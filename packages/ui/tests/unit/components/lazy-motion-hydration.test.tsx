@@ -5,10 +5,6 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToPipeableStream } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-// Hydration contract for the root MotionConfig (React error #418): the eager
-// provider emits no Suspense boundary, so SSR and the first client render have
-// the same tree. A post-hydration lazy boundary would also replace its fallback
-// when the chunk arrives, resetting interactive state anywhere inside the app.
 function renderToPipeableStreamString(node: React.ReactNode): Promise<string> {
   return new Promise((resolve, reject) => {
     let out = ''
@@ -43,8 +39,6 @@ describe('ui/components/lazy-motion — MotionConfig hydration contract', () => 
       </LazyMotionConfig>,
     )
     expect(html).toContain('<p>content</p>')
-    // No boundary markers at all: a boundary would leave `<!--$?-->` /
-    // `<!--$-->` markers that a cold hydration pass must reconcile.
     expect(html).not.toContain('<!--$')
     expect(html).not.toContain('<template')
   })

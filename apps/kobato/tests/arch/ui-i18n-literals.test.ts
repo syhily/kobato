@@ -132,7 +132,6 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/inkling/src/components/ui/LibrarySelector.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/inkling/src/nodes/FootnoteDefinitionNodeComponent.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/inkling/src/plugins/TKPlugin.tsx', rules: ['jsx-text'], text: 'TK' },
-  // emoji-mart's own locale id (third-party picker data), never rendered as copy.
   { path: 'packages/inkling/src/components/ui/EmojiPickerPortal.tsx', rules: ['hardcoded-locale'], text: 'en' },
   {
     path: 'packages/server/src/domains/auth/primitives.ts',

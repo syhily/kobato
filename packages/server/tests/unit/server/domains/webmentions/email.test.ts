@@ -4,8 +4,6 @@ import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/Adm
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
-// The transport itself is covered by the notifications suite; this suite
-// pins the subject/element mapping through a capturing function spy.
 const sendAdminNotification = vi
   .spyOn(await import('@kobato/server/infra/email/admin-notification'), 'sendAdminNotification')
   .mockImplementation(async () => ({ ok: true }) as never)

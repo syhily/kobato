@@ -4,7 +4,6 @@ import type { ElementNode, Klass, LexicalEditor } from 'lexical'
 import { registerNodeTransformIfPresent } from '@kobato/inkling-internal/transforms/register-node-transform'
 
 export function removeAlignmentTransform(node: ElementNode) {
-  // on element nodes format===text-align in Lexical
   if (node.getFormatType() !== '') {
     node.setFormat('')
   }

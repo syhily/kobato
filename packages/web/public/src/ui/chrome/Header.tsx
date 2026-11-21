@@ -34,8 +34,6 @@ export interface HeaderProps {
   currentUser: HeaderCurrentUser | null
   pathname: string
   logoutRedirectTo: string
-  /** BaseLayout owns the shell's one unread-count subscription — never re-subscribe here.
-   *  `null` = unknown (not loaded / failed), distinct from a confirmed `0`. */
   unreadCount: number | null
   onOpenNotifications: () => void
 }

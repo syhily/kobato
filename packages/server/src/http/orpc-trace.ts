@@ -14,11 +14,6 @@ function procedureName(path: readonly string[]): string {
   return joined.length === 0 ? 'unknown' : joined
 }
 
-/**
- * Build the interceptor for one transport. The generic return type lets the
- * function satisfy oRPC's own `Interceptor` shape without importing
- * `@orpc/shared` (a transitive, version-pinned package).
- */
 export function createOrpcTraceInterceptor(
   transport: OrpcTraceTransport,
 ): <TOutput>(options: OrpcTraceInterceptorOptions<TOutput>) => Promise<TOutput> {

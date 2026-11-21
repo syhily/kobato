@@ -1,8 +1,6 @@
 import { makeToken } from '@kobato/auth/security'
 import { describe, expect, it } from 'vitest'
 
-// makeToken feeds like-tokens and CSRF tokens; the base64url alphabet keeps tokens URL-embeddable.
-
 const BASE64URL_RE = /^[A-Za-z0-9_-]+$/
 
 describe('utils/security — makeToken', () => {

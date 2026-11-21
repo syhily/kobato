@@ -48,10 +48,6 @@ export const assertTransform = function (
 
   const afterState = JSON.parse(JSON.stringify(editor.getEditorState().toJSON())) as unknown
 
-  // Compare semantics, not key-level byte shape: the expected fixture round-
-  // trips through the same parse→export pipeline, so serializer-owned keys
-  // (checked/direction/mode defaults) line up on both sides regardless of the
-  // installed Lexical version's export conventions.
   const expectedState = JSON.parse(JSON.stringify(editor.parseEditorState(JSON.stringify(after)).toJSON())) as unknown
 
   assert.deepEqual(afterState, expectedState)

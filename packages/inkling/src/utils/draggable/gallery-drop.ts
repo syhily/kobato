@@ -1,9 +1,3 @@
-/**
- * The application half of the gallery drag-and-drop: reorder-rules decides, this module
- * applies — external add, internal reorder splice, drag-out source removal — as pure
- * transitions over plain data; the one DOM read arrives behind the probe port.
- */
-
 import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 
 import { datasetToGalleryImage } from '@kobato/inkling-internal/nodes/base/utils/gallery-image-fill'
@@ -22,7 +16,6 @@ export interface GalleryDragFacts {
   }
 }
 
-/** The dragged element's natural size — the one DOM read, injected so the policy is testable without layout. */
 export interface GalleryDropProbe {
   naturalSize: { width?: number; height?: number } | null
 }
@@ -33,12 +26,6 @@ export function isGalleryImageDrag(facts: { type?: string; cardName?: string }):
   return facts.type === 'image' || facts.cardName === 'image'
 }
 
-/**
- * Applies a resolved drop to the images list, returning the new list or null to reject. An
- * external image (`draggableIndex` -1) is added; an internal image is re-ordered by splice.
- * An empty gallery has no droppables to derive an index from (the drop is container-level),
- * so the first image deliberately lands at slot 0.
- */
 export function resolveGalleryDrop(
   images: GalleryImage[],
   facts: GalleryDragFacts,
@@ -54,8 +41,6 @@ export function resolveGalleryDrop(
   const { dataset } = facts
 
   if (draggableIndex === -1) {
-    // Image card datasets may not carry every detail; the shared fill policy (filename
-    // fallback, probe natural size) completes them and rejects a src-less dataset.
     const newImage = datasetToGalleryImage(dataset, { naturalSize: probe.naturalSize })
     if (!newImage) {
       return null
@@ -66,8 +51,6 @@ export function resolveGalleryDrop(
     return updatedImages
   }
 
-  // Located by position, not by src value: duplicate srcs (or preview-phase images whose
-  // src is still undefined) would make a value find grab the wrong instance.
   const draggedImage = images[draggableIndex]
   if (!draggedImage) {
     return null
@@ -77,11 +60,6 @@ export function resolveGalleryDrop(
   return filtered
 }
 
-/**
- * The drag-out source removal: the dragged image leaves the list when its drop succeeded in
- * another container. Located by position (the same duplicate-src reason as the reorder
- * path). Returns null when the index is out of range.
- */
 export function resolveGallerySourceRemoval(images: GalleryImage[], draggableIndex: number): GalleryImage[] | null {
   if (draggableIndex < 0 || draggableIndex >= images.length) {
     return null

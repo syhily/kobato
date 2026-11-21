@@ -50,7 +50,6 @@ describe('FloatingFormatToolbar', () => {
     fireEvent.input(screen.getByTestId('link-input'), { target: { value: 'https://example.com' } })
     fireEvent.keyDown(screen.getByTestId('link-input'), { key: 'Enter' })
 
-    // Lexical defers the commit of non-discrete updates to a microtask
     await tick()
 
     editor.getEditorState().read(() => {

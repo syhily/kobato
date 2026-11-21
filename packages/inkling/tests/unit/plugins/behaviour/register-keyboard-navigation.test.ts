@@ -74,8 +74,6 @@ function mountEditor(editor: LexicalEditor) {
 
   const activeElementSpy = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(root)
 
-  // jsdom has no layout engine; provide a default rect so Lexical can sync
-  // the DOM selection after updates without throwing.
   const boundingClientRectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     bottom: 0,
     height: 0,

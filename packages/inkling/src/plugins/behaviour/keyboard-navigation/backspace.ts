@@ -22,12 +22,6 @@ import {
   KEY_BACKSPACE_COMMAND,
 } from 'lexical'
 
-// Convert a top-level list item to a paragraph when backspace lands at the item's
-// start boundary. Two anchor shapes: an EMPTY item (the selection anchor IS the
-// item) rides Lexical's INSERT_PARAGRAPH_COMMAND so list structure stays correct;
-// a POPULATED item (the anchor is its child) is replaced by a paragraph carrying
-// its children. Runs after the firefox-workaround and empty-block checks, which
-// cannot match a ListItemNode anchor.
 function $convertListItemToParagraph(anchorNode: LexicalNode, editor: LexicalEditor): boolean {
   if ($isListItemNode(anchorNode) && anchorNode.getIndent() === 0 && anchorNode.isEmpty()) {
     editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined)
@@ -67,7 +61,6 @@ export function registerBackspaceCommand(editor: LexicalEditor, deps: KeyboardNa
 
           const atStartOfElement = selection.anchor.offset === 0 && selection.focus.offset === 0
 
-          // Firefox-only upstream bug: https://github.com/facebook/lexical/issues/5226
           if (atStartOfElement && $isLinkNode(anchorNode.getPreviousSibling())) {
             const linkNode = anchorNode.getPreviousSibling()
             if ($isLinkNode(linkNode)) {

@@ -63,13 +63,10 @@ export const blobColumns = unsafeCast<{ [N in BlobName]: BlobsKey }>(
 export interface EnrichedAccessEvent {
   eventId: string
   ts: Date
-  /** Daily-salted SHA-256 of the client IP — the ONLY visitor identifier ever stored. */
   visitorHash: string
   path: string
-  /** Entity kind feeding `index1`; null for site-level views. */
   entityType: 'post' | 'page' | null
   entityId: number | null
-  /** Minimized referer (query/hash/userinfo stripped). */
   referer: string | null
   refererHost: string | null
   country: string | null

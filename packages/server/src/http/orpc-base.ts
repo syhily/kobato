@@ -39,7 +39,6 @@ export interface HandlerContext {
   clientAddress: string
   responseHeaders: Headers
   db: Database
-  /** The request's pinned settings bundle (same capture as `localization`). */
   settings: BlogSettingsBundle | null
   localization: AppLocalization
 }
@@ -183,10 +182,6 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   return next({})
 })
 
-/**
- * Must be placed BEFORE `.input(...)`: comment bodies carry a whole Lexical state, so
- * oRPC would otherwise parse a ≤10 MB schema before the bucket is consulted. Admins exempt.
- */
 export const commentPostRateLimit = root.middleware(async ({ context, next }) => {
   if (context.viewer?.role === 'admin') {
     return next({})

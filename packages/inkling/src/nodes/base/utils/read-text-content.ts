@@ -1,12 +1,9 @@
 import { $getRoot } from 'lexical'
 
-// when used nodes are used client-side their data attributes may be an editor
-// instance rather than a string in the case of nested editors
 export default function readTextContent(node: Record<string, unknown>, property: string) {
   const propertyName = `__${property}`
   const propertyEditorName = `${propertyName}Editor`
 
-  // prefer the editor if it exists as the underlying value isn't written until export
   const value = node[propertyEditorName] || node[propertyName]
 
   if (!value) {
@@ -21,11 +18,6 @@ export default function readTextContent(node: Record<string, unknown>, property:
     return value.toString()
   }
 
-  // the editor case: nested editors are created by `createEditor` and stored
-  // on the node (`@kobato/inkling-internal/nodes/nested-editors`). The check stays
-  // structural (not instanceof LexicalEditor) so a second embedded Lexical
-  // copy can't defeat it: prove each call shape before invoking instead of
-  // asserting the whole chain
   if (typeof value === 'object' && value !== null && 'getEditorState' in value) {
     const { getEditorState } = value
     if (typeof getEditorState !== 'function') {

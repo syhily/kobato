@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 
 // Adapted from lexical-react/src/LexicalTypeaheadMenuPlugin: matching on
-// punctuation as well as a leading space is not possible with lexical's version.
 
 export interface TypeaheadTriggerMatchResult {
   leadOffset: number

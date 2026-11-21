@@ -12,11 +12,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll } from 'vitest'
 
-/**
- * Shared in-memory DB harness. `getTestDb` is the migrated lifecycle global (`:memory:`
- * is per-connection, so one handle shares the data); `createTestDatabaseFile` opts into a
- * real temp file.
- */
 const openHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
 

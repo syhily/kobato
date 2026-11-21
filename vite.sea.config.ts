@@ -1,35 +1,3 @@
-// SEA bundle config — the single-executable pipeline (`pnpm run sea:build`,
-// see tools/pack/src/sea/). Three self-contained outputs into
-// dist-sea/intermediates/, one per `vite build` invocation (the Vite CLI
-// takes a single config; tools/pack/src/sea/build.ts selects the bundle via the
-// SEA_BUNDLE env var):
-//
-//   SEA_BUNDLE=server  server.mjs         — the INJECTED main of the
-//                      binary (`mainFormat: "module"`): the sea-cli /
-//                      sea-bootstrap entry shim
-//                      (tools/pack/src/sea/server-entry.ts) plus the whole
-//                      vite-built server inlined into ONE ESM file. Must
-//                      stay ESM: src/server.ts uses top-level await,
-//                      which no bundler can express in CJS.
-//   SEA_BUNDLE=worker  process-worker.mjs — the image worker, embedded as
-//                      a text asset and started via
-//                      `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`.
-//   SEA_BUNDLE=smoke   smoke-worker.mjs   — the `--smoke-worker` entry
-//                      (tools/pack/src/sea/smoke-worker.ts). Embedded as the
-//                      `worker/smoke-worker.mjs` asset and dispatched by
-//                      the binary's `--smoke-worker` flag via the same
-//                      eval-worker mechanism.
-//
-// sharp / sharp-ico / @napi-rs/canvas ARE statically imported and inlined
-// (`ssr.noExternal: true`); the redirect-native-requires plugin rewrites
-// their internal platform loads to `nativeRequire(...)` so only node
-// builtins stay external. The inline-package-data plugin (registered in
-// BOTH configs — these packages reach the SEA bundle via the prebuilt
-// build/server graph) swaps runtime data-file reads the binary cannot
-// survive (jsdom's module-scope sync-XHR worker `require.resolve`,
-// stubbed with a placeholder path) for inlined literals. Node builtins are external
-// automatically for SSR builds — no externals config is needed.
-
 import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data'
 import { redirectNativeRequiresPlugin } from '@kobato/pack/sea/redirect-native-requires'
 import { readFileSync } from 'node:fs'
@@ -70,14 +38,7 @@ export default defineConfig({
   root: projectRoot,
   logLevel: 'info',
   define: {
-    // Baked into the bundle from package.json — a single executable has
-    // no package.json to read at runtime (see `@/server/infra/sea-cli`).
     __SEA_APP_VERSION__: JSON.stringify(pkg.version),
-    // The same six `__APP_*__` globals vite.config.ts defines for the
-    // regular build: `@kobato/distribution/app` is consumed by the server
-    // graph (self-update domain, `kobato rollback` / `kobato doctor` via
-    // binary-rollback.ts and self-update-gate.ts), so the binary needs
-    // them too.
     __APP_NAME__: JSON.stringify(pkg.name),
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_DESCRIPTION__: JSON.stringify(pkg.description),
@@ -88,36 +49,23 @@ export default defineConfig({
   plugins: [redirectNativeRequiresPlugin(), inlinePackageDataPlugin()],
   build: {
     outDir: 'dist-sea/intermediates',
-    // The three builds run sequentially into the same dir — never wipe it
-    // (tools/pack/src/sea/build.ts cleans the intermediates dir up front).
     emptyOutDir: false,
     target: 'node26',
-    // Minified single files: the bundles ship inside the binary and are
-    // never debugged from disk. Runtime name lookups are safe — every
-    // error-name contract (`DomainError`, `WorkerDomainError`) is an
-    // explicit `this.name = …` assignment, not class-name inference.
     minify: true,
     sourcemap: false,
     ssr: bundle.entry,
     rolldownOptions: {
       checks: {
-        // @lexical/react's published prod dist ships /*#__PURE__*/ in front of
-        // `return` STATEMENTS (LexicalCollaborationContext, LexicalContentEditable,
-        // …) — valid only on call/new expressions, so rolldown flags them when it
-        // re-parses the react-router-built build/server graph. The annotations are
-        // DCE hints with no semantic value, and src/ carries none of its own.
         invalidAnnotation: false,
       },
       output: {
         format: bundle.format,
-        // Single-file output (the deprecated `inlineDynamicImports: true`).
         codeSplitting: false,
         entryFileNames: bundle.fileName,
       },
     },
   },
   ssr: {
-    // Inline every dependency (node builtins stay external automatically).
     noExternal: true,
   },
 })

@@ -14,7 +14,6 @@ const log = getLogger('audit.archive')
 
 const S3_ARCHIVE_PREFIX = 'audit-log/archive/'
 const ARCHIVE_PAGE_SIZE = 5000
-// Keep IN lists under SQLite's bound-parameter limit (32766).
 const DELETE_BATCH_SIZE = 5000
 
 function s3ArchiveAvailable(): boolean {
@@ -47,7 +46,6 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
 
   const dayRows = await db
     .select({
-      // createdAt is epoch ms — divide by 1000 for `unixepoch`.
       day: sql<string>`date(${auditLog.createdAt} / 1000, 'unixepoch')`,
       count: sql<number>`count(*)`,
     })

@@ -10,8 +10,6 @@ const commentPublicQuery = await import('@kobato/server/domains/comments/service
 const likes = await import('@kobato/server/domains/comments/services/likes')
 const sidebar = await import('@kobato/server/http/loaders/sidebar')
 
-// Loader composition is pinned through spies so delay injection can prove
-// parallelism; the underlying services are covered by their own suites.
 const ensureCommentPage = vi.spyOn(commentShared, 'ensureCommentPage').mockImplementation(async () => seedMetric())
 const loadCommentsSpy = vi.spyOn(commentPublicQuery, 'loadComments')
 vi.spyOn(commentPublicQuery, 'parseComments').mockImplementation(async () => [])

@@ -2,8 +2,6 @@ import type { ContentRedirectSignal, ContentSignal } from '@kobato/contracts/con
 
 import { ORPCError } from '@orpc/server'
 
-// Loader helpers signal 301/302/304/404 by throwing `Response`s, which oRPC cannot
-// carry: 30x/304 map onto the signal union, 404 becomes NOT_FOUND, anything else propagates.
 export function translateThrownResponse(error: unknown, allowed: 'redirect-only'): ContentRedirectSignal
 export function translateThrownResponse(error: unknown): ContentSignal
 export function translateThrownResponse(error: unknown): ContentSignal {

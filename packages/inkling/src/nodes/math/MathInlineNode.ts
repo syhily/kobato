@@ -19,17 +19,6 @@ export interface SerializedMathInlineNode extends SerializedLexicalNode {
   svg: string
 }
 
-/**
- * Inline math (cards are block-level, so this cannot join the card pipeline): one
- * hand-written inline decorator carrying the TeX source plus the host's
- * server-prerendered artifacts (`mathml`/`svg` slots, default ''). Not a
- * mark/format — Lexical formats are bit flags and cannot carry the `tex` payload.
- *
- * The editor preview renders the stored artifacts straight from createDOM
- * (CSP-safe: no wasm, no render runtime in the browser); the host owns the
- * editing UI — inkling only dispatches `EDIT_MATH_INLINE_COMMAND`
- * (`@kobato/inkling-internal/plugins/behaviour/math-inline`).
- */
 export class MathInlineNode extends DecoratorNode<null> {
   __tex: string
   __mathml: string

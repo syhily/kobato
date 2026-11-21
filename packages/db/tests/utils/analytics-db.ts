@@ -28,9 +28,6 @@ export async function closeTestAnalyticsDb(handle: AnalyticsHandle): Promise<voi
   if (index !== -1) {
     handles.splice(index, 1)
   }
-  // Seeded appends are awaited by the callers, so the native connections are
-  // quiescent here — closing under an in-flight append is a native
-  // use-after-free.
   await closeAnalyticsDatabase(handle)
 }
 
@@ -45,12 +42,9 @@ export async function closeAllTestAnalyticsDbs(): Promise<void> {
   }
 }
 
-// Per-file safety net: a suite that opens handles in `beforeEach` without a
-// closing hook still gets its native connections and temp dirs released.
 afterAll(() => closeAllTestAnalyticsDbs())
 
 export interface SeedAccessEvent {
-  /** Pin the primary key so a device_env_client row can join on it. */
   eventId?: string
   ts: Date
   visitorHash?: string

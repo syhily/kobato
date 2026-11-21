@@ -12,13 +12,11 @@ import { getEmbeddedAsset, requireExternal } from '@kobato/server/infra/sea/sea'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { join } from 'node:path'
 
-/** Mirrors sharp's `runtimePlatformArch()`: `${platform}${libc}-${arch}`, libc=`musl` on non-glibc linux. */
 function sharpPlatform(): string {
   const libc = process.platform === 'linux' && isMuslLinux() ? 'musl' : ''
   return `${process.platform}${libc}-${process.arch}`
 }
 
-/** napi-rs triple: `darwin-x64`, `win32-x64-msvc`, `linux-x64-gnu|musl`. */
 function canvasTriple(): string {
   if (process.platform === 'linux') {
     return `linux-${process.arch}-${isMuslLinux() ? 'musl' : 'gnu'}`
@@ -29,7 +27,6 @@ function canvasTriple(): string {
   return `${process.platform}-${process.arch}`
 }
 
-/** Mirrors napi-rs/detect-libc musl detection: no glibc runtime version in the report means musl. */
 function isMuslLinux(): boolean {
   if (typeof process.report?.getReport !== 'function') {
     return false
@@ -38,7 +35,6 @@ function isMuslLinux(): boolean {
   return report.header?.glibcVersionRuntime === undefined
 }
 
-/** duckdb.js's `getRuntimePlatformArch()`: `${platform}-${arch}`, plus the musl suffix on musl linux. */
 function duckdbPlatformArch(): string {
   return process.platform === 'linux' && isMuslLinux()
     ? `linux-${process.arch}-musl`
@@ -79,7 +75,6 @@ export function nativeRequire(specifier: string): unknown {
 
   switch (specifier) {
     case SHARP_ADDON_SPEC:
-      // Under SEA the addon must load by absolute path — no package layout in the flat dir.
       return requireExternal(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SHARP_ADDON_KEY)) : specifier)
     case CANVAS_ADDON_SPEC:
       return requireExternal(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SKIA_ADDON_KEY)) : specifier)
@@ -92,16 +87,10 @@ export function nativeRequire(specifier: string): unknown {
     case SHARP_PACKAGE_SPEC:
       return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_SHARP_PACKAGE_KEY) : requireExternal(specifier)
     case SHARP_VERSIONS_SPEC:
-      // Only win32 platform packages ship this asset; elsewhere the throw is absorbed by sharp's own fallback.
       return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_SHARP_VERSIONS_KEY) : requireExternal(specifier)
     case LIBVIPS_LIB_SPEC:
       return underSea ? nativesDir : requireExternal(specifier)
     default:
-      // The error MUST carry a `code` — sharp aggregates every failed load
-      // attempt via `err.code.endsWith('MODULE_NOT_FOUND')` and crashes on a
-      // codeless error, masking the real failure behind the reporter's own
-      // TypeError. A distinctive code also keeps the message in sharp's
-      // report (MODULE_NOT_FOUND entries are skipped as expected misses).
       throw Object.assign(new Error(`native-require: unresolvable specifier: ${specifier}`), {
         code: 'ERR_NATIVE_SPECIFIER_UNRESOLVABLE',
       })

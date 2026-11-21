@@ -15,8 +15,6 @@ import RestrictContentPlugin from '@kobato/inkling-internal/plugins/RestrictCont
 import React from 'react'
 
 const Placeholder = ({ text = 'Type here', className = '' }) => {
-  // line-clamp-1, not truncate: truncate adds 'white-space: nowrap', which
-  // often breaks overflow in parent cards
   return (
     <div className={`placeholder not-inkling-prose pointer-events-none h-0 cursor-text overflow-visible`}>
       <div className={`xs:overflow-visible line-clamp-1 translate-y-[-100%] ${className}`}>{text}</div>

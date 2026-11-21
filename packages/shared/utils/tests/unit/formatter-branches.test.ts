@@ -43,7 +43,6 @@ describe('utils/formatter — formatShowDate far-past branch', () => {
 describe('utils/formatter — formatLocalDate token substitution', () => {
   it('substitutes every supported token', () => {
     const iso = '2024-03-05T06:07:08Z'
-    // Asia/Shanghai is UTC+8 → 14:07:08 local. We assert each token appears.
     const out = formatLocalDate(iso, 'yyyy-LL-MM-dd HH:mm:ss', SETTINGS)
     expect(out).toBe('2024-03-03-05 14:07:08')
   })
@@ -72,7 +71,6 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 下午')
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'HH:mm a', SETTINGS)).toBe('14:07 下午')
     expect(formatLocalDate('2024-03-05T18:07:08Z', 'hh:mm a', SETTINGS)).toBe('02:07 上午')
-    // March 5 in New York is EST (UTC-5) → 01:07 AM.
     expect(formatLocalDate('2024-03-05T06:07:08Z', 'hh:mm a', NEW_YORK)).toBe('01:07 AM')
   })
 
@@ -89,7 +87,6 @@ describe('utils/formatter — formatLocalDate token substitution', () => {
 
   it('substitutes all nine documented tokens when they stand alone', () => {
     const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy|LL|MM|dd|HH|hh|mm|ss|a', SETTINGS)
-    // Asia/Shanghai is UTC+8 → 14:07:08, so `HH` is 14 and `hh` is 02 (下午).
     expect(out).toBe('2024|03|03|05|14|02|07|08|下午')
   })
 

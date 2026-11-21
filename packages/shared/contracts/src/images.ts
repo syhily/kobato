@@ -44,8 +44,6 @@ export type AdminImageIdInput = z.infer<typeof adminImageIdInput>
 export const adminImageNoteInput = z.object({ id: z.string().min(1), note: z.string().nullable().optional() })
 export type AdminImageNoteInput = z.infer<typeof adminImageNoteInput>
 
-// oRPC serializes `Blob` inputs as multipart/form-data natively — the upload
-// dialog's `File` passes straight through.
 export const adminImageUploadInput = z.object({
   file: z.instanceof(Blob),
   metadata: uploadImageMetadataSchema,

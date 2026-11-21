@@ -1,20 +1,3 @@
-// Same-origin browser RUM intake relay: the slim SDK posts batches here and the route
-// forwards them to the verified upstream `/rum/v1/<org>/rum`. The OpenObserve endpoint
-// never reaches a document; every inbound `o2-api-key` is discarded in favor of the
-// provisioned token; nothing about the upstream (URL, status body, token) is reflected
-// to the caller. The inbound organization segment is opaque: fail closed on the track
-// shape and always forward to the organization from the verified gate entry. The body
-// is relayed as decoded UTF-8 text, so a `content-encoding` other than `identity` is
-// vetoed (415) instead of being corrupted on the way out. Every terminal outcome
-// increments the closed-vocabulary `rum.relay.outcomes` counter, and the 429/502
-// rejections carry a best-effort `Retry-After` backoff hint. In `forward` identity mode
-// the relay attaches `X-Forwarded-For` + the original User-Agent; the fail-closed VRL
-// pipeline still strips them upstream, and the browser only collects in `forward` mode
-// after the visitor's explicit privacy consent.
-// Mounted in EVERY build — the gate is read per request because a settings change
-// never re-mounts the router — and exempt from the install gate, HTTP traces, and
-// RUM activity by path.
-
 import type { Env } from '@kobato/server/http/hono-env'
 
 import { getLogger } from '@kobato/server/infra/logger'
@@ -35,11 +18,9 @@ const RUM_TRACK_PATTERN = /^\/rum\/v1\/([^/]+)\/rum$/
 
 const MAX_BATCH_BYTES = 1024 * 1024
 const MAX_QUERY_BYTES = 4096
-/** The upstream answers an empty/`{"code":200}` body; cap what we buffer. */
 const MAX_UPSTREAM_RESPONSE_BYTES = 64 * 1024
 const UPSTREAM_TIMEOUT_MS = 5_000
 
-/** The SDK posts `text/plain;charset=UTF-8`; allow only closed content types. */
 function relayContentType(raw: string | undefined): string {
   if (raw === undefined) {
     return 'text/plain;charset=UTF-8'
@@ -104,10 +85,6 @@ export const rumIntakeRouter = new Hono<Env>().post(`${RUM_INTAKE_PATH}/*`, asyn
     return c.json({ error: { message: 'Batch too large' } }, 413)
   }
 
-  // The relay forwards the body as decoded UTF-8 text and never forwards a
-  // content-encoding; a compressed batch would be corrupted on the way out.
-  // Veto instead of guessing (browsers/sendBeacon never compress request
-  // bodies, so this only rejects non-standard clients).
   const contentEncoding = c.req.header('content-encoding')
   if (contentEncoding !== undefined && contentEncoding.trim().toLowerCase() !== 'identity') {
     return c.json({ error: { message: 'Compressed RUM batches are not accepted' } }, 415)

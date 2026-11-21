@@ -104,9 +104,7 @@ describe('buildAdminListConditions — date filter', () => {
     const conditions = buildAdminListConditions({ createdAfter: after })
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
-    // Order-tolerant: Drizzle may render the column before or after the operator.
     expect(sql).toMatch(/(created_at.*>=|>=.*created_at)/i)
-    // timestamp_ms columns parameterise `Date` values as epoch ms.
     expect(params).toEqual([after.getTime()])
   })
 

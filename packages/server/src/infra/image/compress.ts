@@ -2,15 +2,10 @@ import type { Buffer } from 'node:buffer'
 
 import sharp from 'sharp'
 
-// sharp is statically imported — the SEA bundler redirects its platform loads to `nativeRequire`.
-
 export interface CompressImageOptions {
   preserveAlpha?: boolean
 }
 
-// sharp decodes the WHOLE image before anything is resized: the library default
-// (~268 M px ≈ 1 GB RGBA) would let one crafted upload exhaust the main thread.
-// Matches the pooled upload path's cap (infra/image/process-worker).
 const MAX_INPUT_PIXELS = 50_000_000
 
 export async function imageWidth(buf: Buffer): Promise<number | undefined> {

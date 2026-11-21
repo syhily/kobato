@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# Build the kobato deb from a SEA binary (CI runner; dpkg-deb is native on
-# ubuntu images).
-#   build-deb.sh <sea-binary> <raw-version> <output-dir>
-# Normalizes the raw package version for Debian ('-' -> '~'), writes
-# <output-dir>/kobato_<version>_amd64.deb, and echoes its path.
 set -euo pipefail
 
 BINARY="${1:?usage: build-deb.sh <sea-binary> <raw-version> <output-dir>}"

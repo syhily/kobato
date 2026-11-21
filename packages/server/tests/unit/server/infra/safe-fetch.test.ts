@@ -501,7 +501,6 @@ describe('infra/safe-fetch — method and body', () => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'source=https%3A%2F%2Fa.dev&target=https%3A%2F%2Fb.dev',
     })
-    // A 202 is a success (`response.ok`), the webmention accept semantics.
     expect(result).toMatchObject({ ok: true })
     expect(fn).toHaveBeenCalledWith(
       'https://wm.example.com/endpoint',

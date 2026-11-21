@@ -1,6 +1,4 @@
-// GeoLite2-City from the `geolite2-city` npm package mirrored on jsDelivr
 // (CC-BY-NC-SA-4.0 / MaxMind GeoLite2 EULA, attribution required). Installed
-// state lives in a JSON sidecar next to the database file.
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 

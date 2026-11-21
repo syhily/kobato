@@ -4,11 +4,6 @@ import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-rou
 import { resolveAppLocalization } from '@kobato/settings/app-localization'
 import { formatBytes } from '@kobato/utils/format'
 
-/**
- * Font *package* upload as a native Hono route: 60 MiB sources exceed the
- * oRPC bridge's body limit (mounted before `createApiApp` for its own
- * bodyLimit). The sync slice runs in-request; the row inserts on success.
- */
 export const fontsPackageRouter = adminUploadRoute({
   path: '/api/admin/fonts/package/upload',
   maxSize: FONT_MAX_BYTES,

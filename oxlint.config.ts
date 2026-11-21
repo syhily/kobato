@@ -348,21 +348,10 @@ export default defineConfig({
       },
     },
     {
-      // packages/inkling keeps its former package conventions (public barrel,
-      // intentional Lexical cycles, declaration merging, editor-chrome a11y
-      // exemptions, and the keeper rules the rest of the repo is not yet
-      // clean under). apps/inkling-demo/ renders the same editor chrome, so it shares
-      // the scope.
       files: ['packages/inkling/**', 'apps/inkling-demo/**'],
       rules: {
         'oxc/no-barrel-file': 'off',
-        // Lexical's editor/node module graph is intentionally cyclic; the
-        // layering that matters is pinned by
-        // packages/inkling/tests/unit/nodes/card-layering-imports.test.ts.
         'import/no-cycle': 'off',
-        // Lexical DecoratorNode subclasses intentionally use
-        // class+interface declaration merging — the base no-redeclare
-        // rule flags every merged pair.
         'typescript/no-unsafe-declaration-merging': 'off',
         'no-redeclare': 'off',
         'jsx_a11y/no-autofocus': 'off',

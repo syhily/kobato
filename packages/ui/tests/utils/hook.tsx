@@ -5,7 +5,6 @@ import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-rout
 
 export interface RenderHookOptions<THookResult> {
   initialPath?: string
-  /** Actions applied sequentially during the same render pass. */
   actions?: Array<(result: THookResult) => void>
   wrapper?: React.ComponentType<{ children: React.ReactNode }>
 }

@@ -3,7 +3,6 @@ import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('fonts.slice')
 
-// No manual chunkSize / languageAreas / subsets — the wasm core's defaults win.
 export interface SliceOptions {
   fontFamily?: string
 }

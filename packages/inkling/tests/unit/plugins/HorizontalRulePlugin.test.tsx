@@ -63,8 +63,6 @@ describe('HorizontalRulePlugin shortcut listener', () => {
     })
     vi.spyOn(window, 'getSelection').mockImplementation(() => {
       const dom = lastAnchorKey ? editor.getElementByKey(lastAnchorKey) : null
-      // Lexical's selection reconciler writes through the native Selection on
-      // forced syncs (e.g. undo); no-op the write to keep jsdom quiet
       return {
         anchorNode: dom?.firstChild ?? null,
         setBaseAndExtent: () => {},

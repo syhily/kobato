@@ -9,14 +9,11 @@ import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, Wre
 
 export interface NotificationMeta {
   icon: LucideIcon
-  /** Kind label message id — the consumer resolves it with its own `t`. */
   kindLabelId: UiMessageId
 }
 
 const [ZEABUR_MAIL_CLEANUP_SOURCE, JOB_RUN_SOURCE] = NOTIFICATION_SOURCES
 
-// Kind drives the default chrome; `source` lets system producers override the icon (the Zeabur
-// cleanup alert reads as a mail problem, not a generic one).
 export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>): NotificationMeta {
   if (item.source === ZEABUR_MAIL_CLEANUP_SOURCE) {
     return { icon: MailWarningIcon, kindLabelId: 'notifications.kind.system' }
@@ -36,9 +33,7 @@ export function notificationMeta(item: Pick<NotificationDto, 'kind' | 'source'>)
 
 export interface NotificationTimeOptions {
   locale: AppLocale
-  /** The SITE time zone — calendar-day math for the "yesterday"-style buckets. */
   timeZone: string
-  /** Reference instant from `useNow()`; the same value for every call in a render pass. */
   now: number | Date
 }
 

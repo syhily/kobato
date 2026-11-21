@@ -1,26 +1,3 @@
-// Behaviour pins for the headless half of the emoji picker: the query policy
-// with the emoticon alias table, the exact-match `:shortcode:` completion,
-// and the two insertion surgeries. The mounted-plugin wiring lives in
-// EmojiPickerPlugin.test.tsx.
-//
-// Harness notes:
-// - The tests run against the REAL emoji-mart SearchIndex (initialized once
-//   via ensureEmojiSearchReady) — the index is pure data + string matching
-//   and works headless. The once-guard's exact-once property stays pinned by
-//   the plugin test, which mocks emoji-mart and counts init calls.
-// - No root element is attached: the module never touches the DOM selection,
-//   and commands are dispatched straight into the editor. Lexical's own
-//   editor-priority KEY_DOWN handler makes dispatchCommand return true
-//   regardless of this module's listener, so only the observable effects are
-//   pinned (text, commit callback, defaultPrevented).
-// - node.select() leaves selection.format at 0; buildParagraph syncs the
-//   caret node's format onto the selection to emulate the browser-side
-//   reconciled-selection sync.
-// - The completion tests pin the keydown-time caret shape (text ':query',
-//   caret right after the query). jsdom has no keydown default action, and in
-//   real browsers the registration's preventDefault lands inside the
-//   keydown's microtask window, so the closing ':' never reaches the text
-//   before the splice runs.
 import {
   $insertEmojiCompletion,
   $insertSelectedEmoji,
@@ -56,9 +33,6 @@ function createTestEditor() {
     theme: {},
   })
 }
-
-// Lexical commits listener-triggered work on microtasks — a macrotask
-// wait (tick) drains the search promise and the completion update.
 
 function $syncSelectionFormat(caretNode: TextNode) {
   const selection = $getSelection()

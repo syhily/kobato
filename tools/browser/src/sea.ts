@@ -7,8 +7,6 @@ const arg = process.argv[2]
 if (arg?.startsWith('--')) {
   fail('Usage: node tools/browser/src/sea.ts [path-to-binary]')
 }
-// The package script runs with cwd at tools/browser; resolve a relative CLI
-// path against the repository root, as the root scripts always have.
 const binaryPath = arg === undefined ? seaBinaryPath() : resolvePath(repoRoot, arg)
 
 try {

@@ -47,8 +47,6 @@ const recalculateThumbhash = impl.recalculateThumbhash.handler(async ({ input, c
   return { image }
 })
 
-// oRPC serializes `Blob` inputs as multipart/form-data natively — the
-// upload dialog's `File` passes straight through.
 const upload = impl.upload.handler(async ({ input, context }) => {
   const settings = requireBlogSettingsSection('assets')
   const rejection = checkImageUpload(input.file, settings.upload.maxBytes)

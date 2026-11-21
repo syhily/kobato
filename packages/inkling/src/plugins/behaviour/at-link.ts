@@ -212,10 +212,6 @@ function $shouldConvertInsertedAt(): boolean {
   return textBeforeRegExp.test(textBeforeAnchor) && textAfterRegExp.test(textAfterAnchor)
 }
 
-// Native 'input' fallback for the rare case where Lexical lets the browser
-// insert text without dispatching CONTROLLED_TEXT_INSERTION_COMMAND.
-// Detection-only: the update phase deletes the just-inserted '@' and
-// delegates to the shared $insertAtLink.
 function registerNativeAtLinkInsertion(editor: LexicalEditor) {
   const rootElement = editor.getRootElement()
   if (!rootElement) {

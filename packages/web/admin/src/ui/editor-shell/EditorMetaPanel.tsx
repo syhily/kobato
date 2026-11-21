@@ -38,7 +38,6 @@ export interface EditorMetaPanelDeleteRestore {
 export interface EditorMetaPanelProps<TMeta> {
   entityKind: 'post' | 'page'
   entityLabelId: UiMessageId
-  /** Edit-mode entity; `undefined` in create mode (extras stay unmounted). */
   entity: { id: string; slug: string; title: string; deletedAt: string | null } | undefined
   metaOpen: boolean
   setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>

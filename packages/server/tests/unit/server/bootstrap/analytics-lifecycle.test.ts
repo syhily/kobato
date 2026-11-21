@@ -148,7 +148,6 @@ describe('snapshotAnalyticsTo', () => {
       }
       return realWriter.run(sql)
     }
-    // Prototype delegation fails on DuckDB (private-field receivers) — forward explicitly.
     decorated.runAndReadAll = (sql: string, params?: never) => realWriter.runAndReadAll(sql, params)
     const realReader = analyticsHandle.reader
     const decoratedReader = Object.create(realReader) as AnalyticsHandle['reader']

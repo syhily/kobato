@@ -216,7 +216,6 @@ async function checkShutdown(server: SmokeServer) {
   if (outcome.timeout) {
     throw new Error(`still running ${SHUTDOWN_TIMEOUT_MS / 1000}s after SIGTERM (sent SIGKILL)`)
   }
-  // Windows delivers no SIGTERM — TerminateProcess is the expected outcome there.
   if (process.platform === 'win32') {
     return `terminated after ${elapsed}s (win32: SIGTERM maps to TerminateProcess)`
   }
@@ -470,8 +469,6 @@ async function runManaged(binaryPath: string) {
                 throw new Error(`page view ${i + 1}: expected 200, got ${res.status}`)
               }
             }
-            // Wait out the batcher's 1s flush interval: on win32 the kill
-            // below is TerminateProcess (no shutdown hooks, no flush).
             await sleep(1_500)
             return `${PAGE_VIEWS} GET / with a browser UA`
           })

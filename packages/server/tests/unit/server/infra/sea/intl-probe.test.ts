@@ -9,10 +9,6 @@ import {
 import { formatDuration } from '@kobato/utils/format'
 import { describe, expect, it } from 'vitest'
 
-// The probe is what `kobato --smoke-intl` runs inside the SEA binary. These
-// tests pin the actual ICU output per locale (so a Node/ICU bump that changes
-// the bundled data is review-visible) and the per-locale success report.
-
 describe('server/infra/sea/intl-probe', () => {
   it('uses a fixed UTC instant', () => {
     expect(INTL_PROBE_INSTANT.toISOString()).toBe('2026-01-02T15:04:05.000Z')

@@ -20,11 +20,6 @@ import { captionEditorSpecBase } from '@kobato/inkling-internal/nodes/base/nodes
 import { formatVideoDuration } from '@kobato/inkling-internal/nodes/base/nodes/video/format-video-duration'
 import { renderVideoNode } from '@kobato/inkling-internal/nodes/base/nodes/video/video-renderer'
 
-// The card's spec arrays live here, beside the class they type — the
-// declaration imports them from this module. `as const` keeps the literal
-// `name`s and value types on the arrays' types so the `__*` field maps derive
-// both (CardSpecFieldMap / CardSpecFieldMapFor). The nested editor is
-// `nullable`: the markdown round-trip detaches it.
 export const videoNestedEditors = [
   { ...captionEditorSpecBase, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
@@ -35,8 +30,6 @@ export const videoTransientProps = [
 ] as const satisfies readonly TransientPropSpec[]
 
 const videoProperties = [
-  // the blob guard as spec data: an upload-in-progress data-string src must
-  // not be persisted (the generated exportJSON redacts it)
   { name: 'src', default: '', urlType: 'url', redactDataUrl: true },
   { name: 'caption', default: '', urlType: 'html', wordCount: true },
   { name: 'fileName', default: '' },
@@ -59,8 +52,6 @@ export const videoImportSpec = {
       priority: 1,
       guardClass: 'inkling-video-card',
       reads: [
-        // property reads, not attributes — `.src` absolutizes; required:
-        // a card figure with no playable video aborts the conversion
         {
           name: 'src',
           kind: 'property',
@@ -72,8 +63,6 @@ export const videoImportSpec = {
         {
           name: 'cardWidth',
           kind: 'classMap',
-          // token-anchored to reproduce the old classList.contains semantics
-          // exactly (a `\b` pattern would also match `foo-inkling-width-full`)
           classMap: [
             { pattern: /(?:^|\s)inkling-width-(full)(?=\s|$)/ },
             { pattern: /(?:^|\s)inkling-width-(wide)(?=\s|$)/ },
@@ -86,8 +75,6 @@ export const videoImportSpec = {
           selector: '.inkling-video-duration',
           trim: true,
           omit: 'falsy',
-          // video's m:ss parse — deliberately not unified with audio's
-          // Number/isInteger variant
           parse: (raw) => {
             const [rawMinutes, rawSeconds = '0'] = raw.split(':')
             const minutes = Number.parseInt(rawMinutes.trim(), 10)
@@ -98,7 +85,6 @@ export const videoImportSpec = {
         { name: 'thumbnailSrc', kind: 'attribute', attribute: 'data-inkling-thumbnail', omit: 'falsy' },
         { name: 'customThumbnailSrc', kind: 'attribute', attribute: 'data-inkling-custom-thumbnail', omit: 'falsy' },
         { name: 'caption', kind: 'caption', omit: 'falsy' },
-        // truthy-guarded so a 0 width/height is excluded
         {
           name: 'width',
           kind: 'property',
@@ -122,8 +108,6 @@ export type VideoData = DecoratorNodeData<typeof videoProperties>
 
 export type SerializedVideoNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof videoProperties>>
 
-// the merged interface self-types the spec-driven fields/accessors — see the
-// BaseAudioNode note
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseVideoNode extends CardSpecFieldMapFor<typeof videoTransientProps, typeof videoNestedEditors> {}
 export class BaseVideoNode extends generateDecoratorNode({

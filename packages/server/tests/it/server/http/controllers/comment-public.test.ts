@@ -16,8 +16,6 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The transports are covered elsewhere; these spies pass through to the
-// real senders (mail is disabled in the test bundle, so they stay quiet).
 const emailModule = await import('@kobato/server/domains/comments/services/email')
 vi.spyOn(emailModule, 'sendApprovedComment')
 vi.spyOn(emailModule, 'sendNewComment')
@@ -71,7 +69,6 @@ async function seedPost(slug: string): Promise<number> {
 }
 
 async function seedMetricRow(type: 'post' | 'page', ownerId: number, publicId: string): Promise<string> {
-  // voteUp must start at 0, not NULL — `NULL + 1` is NULL in SQLite.
   await db.insert(metric).values({ type, ownerId, publicId, voteUp: 0, pv: 0 })
   return publicId
 }

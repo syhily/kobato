@@ -57,7 +57,6 @@ export interface MyCommentEntityOption {
 export interface MyCommentsViewProps {
   status: MyCommentsStatus
   q: string
-  /** `${type}:${ownerId}` if the URL pins a specific post / page, else null. */
   entity: string | null
   entityOptions: MyCommentEntityOption[]
   currentUser: { id: string; name: string; email: string }

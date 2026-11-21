@@ -43,8 +43,6 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
       return next()
     }
 
-    // Chunked or no length headers: stream through a byte-counting passthrough
-    // (Transfer-Encoding wins per RFC 7230) — never buffer the whole payload.
     let size = 0
     const rawReader = c.req.raw.body.getReader()
 
@@ -57,8 +55,6 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
         }
         size += value.byteLength
         if (size > maxSize) {
-          // Cancel the upstream reader first — an un-cancelled chunked body can
-          // trickle forever; the catch swallows cancel-on-errored-stream rejections.
           void rawReader.cancel().catch(() => undefined)
           controller.error(localizedHttpException(413, 'error.api.payloadTooLarge'))
           return

@@ -48,7 +48,6 @@ export interface CountersSummary {
 }
 
 export interface ViewsPoint {
-  /** Bucket label in `clientTimezone`: `%Y-%m-%d %H:%M` / `%Y-%m-%d %H` / `%Y-%m-%d` by unit. */
   time: string
   visits: number
   visitors: number
@@ -61,9 +60,7 @@ export interface ViewsSeries {
 }
 
 export interface HeatmapCell {
-  /** ISO weekday: 1 = Monday … 7 = Sunday. */
   weekday: number
-  /** 0–23, in `clientTimezone`. */
   hour: number
   visits: number
   visitors: number

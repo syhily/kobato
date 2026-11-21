@@ -19,8 +19,6 @@ export const getSrcsetAttribute = function ({
     return
   }
 
-  // The local-content check reads siteUrl/imageBaseUrl from the context, so
-  // callers cannot drop the forwarding.
   if (context.isLocalContentImage(src) && context.canTransformImage && !context.canTransformImage(src)) {
     return
   }
@@ -38,15 +36,12 @@ export const getSrcsetAttribute = function ({
 
     srcsetWidths.forEach((srcsetWidth) => {
       if (srcsetWidth === width) {
-        // use original image path if width matches exactly (avoids 302s from size->original)
-        // unless a specific output format was requested
         if (format) {
           srcs.push(`${imagesPath}/size/w${srcsetWidth}/format/${format}/${filename} ${srcsetWidth}w`)
         } else {
           srcs.push(`${src} ${srcsetWidth}w`)
         }
       } else if (srcsetWidth <= width) {
-        // avoid creating srcset sizes larger than intrinsic image width
         if (format) {
           srcs.push(`${imagesPath}/size/w${srcsetWidth}/format/${format}/${filename} ${srcsetWidth}w`)
         } else {
@@ -66,9 +61,6 @@ export const setSrcsetAttribute = function (
   image: { src: string; width: number },
   context: RenderContext,
 ) {
-  // both call sites (image-renderer, gallery-renderer) pass an <img>; a
-  // <source> in picture context carries srcset, not src, so the guard
-  // narrows to IMG only
   if (elem?.tagName !== 'IMG' || !elem.getAttribute('src')) {
     return
   }

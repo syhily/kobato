@@ -21,24 +21,13 @@ interface BroadcastMessage {
 }
 
 export interface UseDraftSessionArgs<TBody, TLoaded> {
-  /** Storage key for this session, or null while the draft surface is inactive. */
   key: string | null
-  /**
-   * When the key embeds a rotating token (`<prefix><entityId>:<token>`), the
-   * stable entity prefix so `clearDraft` sweeps orphaned rotated predecessors
-   * too. Omit for token-free keys.
-   */
   clearPrefix?: string
   broadcastName: string
   draftType: DraftType
   bodySchema: ZodType<TBody>
   body: TBody
   meta?: unknown
-  /**
-   * Map a version- and schema-valid record to the adapter's loaded-draft
-   * shape. Return null to reject the record — it is purged like a
-   * version/schema mismatch.
-   */
   mapLoaded: (record: DraftRecord, parsedBody: TBody) => TLoaded | null
 }
 
@@ -178,9 +167,7 @@ export function useDraftSession<TBody, TLoaded>({
           setLoadedDraft(null)
         }
       })
-    } catch {
-      // BroadcastChannel unavailable (older Safari).
-    }
+    } catch {}
     return () => {
       bc?.close()
     }

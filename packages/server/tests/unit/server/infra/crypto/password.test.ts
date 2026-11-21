@@ -30,8 +30,6 @@ describe('auth/password — bcryptjs contract we rely on', () => {
   })
 
   it('silently truncates passwords longer than 72 bytes (known bcrypt limit)', async () => {
-    // bcrypt drops everything beyond byte 72, so two passwords sharing the first 72 bytes
-    // hash identically; a swap to a non-bcrypt algorithm must make that explicit.
     const base = 'a'.repeat(72)
     const hash = await bcrypt.hash(base, 4)
     expect(await bcrypt.compare(`${base}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`, hash)).toBe(true)

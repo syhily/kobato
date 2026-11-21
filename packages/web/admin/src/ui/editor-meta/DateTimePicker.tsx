@@ -10,10 +10,6 @@ import { formatWallClockDateTime, formatWallClockMonth } from '@kobato/web-admin
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-// The picker edits BROWSER-LOCAL wall-clock parts. Every rendered value is
-// normalized onto UTC and formatted in UTC, so SSR and the first client render
-// produce identical text on any host; the parts themselves are zone-free.
-
 export interface DateTimePickerProps {
   value: string
   onChange: (next: string) => void

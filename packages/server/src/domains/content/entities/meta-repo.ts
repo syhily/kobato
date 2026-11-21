@@ -30,7 +30,6 @@ export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>
     },
 
     findMetaBySlugForUpdate(db, slug) {
-      // The lock is real: node:sqlite serializes writers, so no write interleaves mid-transaction.
       const rows: unknown[] = db.select().from(table).where(eq(table.slug, slug)).limit(1).all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },

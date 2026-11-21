@@ -188,7 +188,6 @@ describe('cache registry (integration)', () => {
   })
 
   it('devBypass re-runs the loader in dev but still writes the entry', async () => {
-    // Vitest runs with PROD === false, so devBypass re-runs the loader on every through.
     const loader = vi.fn().mockResolvedValue(Buffer.from('png-1'))
     const params = {
       slug: 'post-x',

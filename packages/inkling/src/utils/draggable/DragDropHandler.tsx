@@ -32,18 +32,13 @@ export interface DraggableContainerHandle {
 
 export interface DragDropHandlerOptions {
   editorContainerElement?: HTMLElement
-  // forwarded to the ScrollHandler (e.g. its document scroll container override)
   scrollHandlerOptions?: ScrollHandlerOptions
-  // the handler publishes its own isDragging truth — consumers subscribe here instead of a
-  // container adapter mirroring the flag through the lifecycle callbacks
   onDraggingChange?: (isDragging: boolean) => void
 }
 
 export class DragDropHandler {
   editorContainerElement: HTMLElement | null = null
   containers: DragDropContainer[] = []
-  // grab-phase state: set on mousedown, consumed or discarded when the drag-start
-  // threshold is met — everything the initiated drag owns lives in _activeDrag instead
   grabbedElement: HTMLElement | null = null
   sourceContainer: DragDropContainer | null = null
   scrollHandler: ScrollHandler
@@ -58,7 +53,6 @@ export class DragDropHandler {
 
   isDragging: boolean = false
 
-  // the in-flight drag's info; null between drags
   get draggableInfo(): DraggableInfo | null {
     return this._activeDrag?.draggableInfo ?? null
   }
@@ -87,7 +81,6 @@ export class DragDropHandler {
     const container = new DragDropContainer(element, options)
     this.containers.push(container)
 
-    // a minimal handle: DragDropHandler manages containers, callers never hold the instance
     return {
       enableDrag: () => {
         container.enableDrag()
@@ -108,24 +101,17 @@ export class DragDropHandler {
     }
   }
 
-  // remove all containers and event handlers, useful when leaving an editor route
   cleanup() {
     this.containers.forEach((container) => container.disableDrag())
     this.containers = []
     this._resetDrag()
   }
 
-  // test seam: runs the grab → drag-start choreography synchronously so unit tests need no
-  // real mousemove sequences or wall-clock sleeps. Dispatches a real mousedown, then drives
-  // the pending drag-start session past its threshold — the drag has been initiated (or
-  // never started) when this returns
   simulateDrag(element: HTMLElement, start: DragSessionPoint = { x: 10, y: 10 }): void {
     element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: start.x, clientY: start.y, button: 0 }))
     this._dragStartSession?.move({ x: start.x + DRAG_START_THRESHOLD + 1, y: start.y })
   }
 
-  // custom drag detection instead of native drag events: better tracking across multiple
-  // containers and more flexibility for touch events later
   _onMouseDown(event: MouseEvent) {
     if (!this.isDragging && event.button === 0) {
       const target = event.target instanceof Element ? event.target : null
@@ -133,7 +119,6 @@ export class DragDropHandler {
       this.grabbedElement = grabbedElement instanceof HTMLElement ? grabbedElement : null
 
       if (this.grabbedElement) {
-        // some elements disable dragging explicitly — captions, to allow text selection
         const dragDisabledElement = getParent(target, DRAG_DISABLED_SELECTOR)
         if (dragDisabledElement && this.grabbedElement.contains(dragDisabledElement)) {
           return
@@ -179,8 +164,6 @@ export class DragDropHandler {
       }
 
       this.containers.forEach((container) => {
-        // the sourceHandled report belongs to the drop target alone — every
-        // other container must still remove its source on a successful drop
         container.onDropEnd(drag.draggableInfo, success, sourceHandled && container === dropTarget)
       })
     }
@@ -194,12 +177,7 @@ export class DragDropHandler {
     }
   }
 
-  // Begins a drag-start session: temporary document listeners (move/release/native drag)
-  // decide whether the press becomes a drag (movement past the start threshold) or is
-  // discarded. The threshold policy lives in @kobato/inkling-internal/utils/draggable/drag-session; the
-  // session's listeners and resolution are the ports declared here.
   _beginDragStartSession(startEvent: MouseEvent) {
-    // a new grab replaces any still-pending session
     this._dragStartSession?.cancel()
     this._dragStartSession = createDragStartSession(
       { x: startEvent.clientX, y: startEvent.clientY },
@@ -216,7 +194,6 @@ export class DragDropHandler {
           }
         },
         onStart: () => {
-          // stop the drag creating a selection
           window.getSelection()?.removeAllRanges()
           this._initiateDrag(startEvent)
         },
@@ -240,8 +217,6 @@ export class DragDropHandler {
       return
     }
 
-    // per-handler indicator, appended to the editor's element rather than body; attach is
-    // idempotent
     this.dropIndicator.attach()
 
     const draggableInfo: DraggableInfo = {
@@ -253,8 +228,6 @@ export class DragDropHandler {
       },
     }
 
-    // one object owns everything this drag creates (listeners included), so reset is
-    // disposal rather than a field-nulling checklist
     const activeDrag = new ActiveDrag({
       draggableInfo,
       listeners: {
@@ -273,8 +246,6 @@ export class DragDropHandler {
       draggableInfo.element.style.opacity = '0.5'
     }
 
-    // cache the preview position to avoid costly getBoundingClientRect calls in the
-    // mousemove handler
     const dragPreview = this.sourceContainer.createDragPreviewElement(draggableInfo)
     if (dragPreview) {
       this._dragPreviewContainerElement?.appendChild(dragPreview.element)
@@ -294,17 +265,12 @@ export class DragDropHandler {
 
     this.scrollHandler.dragStart(draggableInfo)
 
-    // hover + text-caret suppression ride the one data-inkling-dragging
-    // attribute (the stylesheet owns both effects)
     this._setHoverSuppression(true)
 
     this._handleDrag()
   }
 
   _setHoverSuppression(suppress: boolean) {
-    // this handler's own editor root only: the container may sit inside the
-    // [data-inkling="editor"] root or wrap it — never the first editor in
-    // the document
     const container = this.editorContainerElement
     const editorRoot =
       container?.closest<HTMLElement>('[data-inkling="editor"]') ??
@@ -318,9 +284,6 @@ export class DragDropHandler {
     }
   }
 
-  // The transition machine (hover-transitions) decides; this adapter measures the frame,
-  // applies the next state, and interprets the ordered effects — container callbacks, the
-  // indicator, and the drop resolution write.
   _handleDrag() {
     const drag = this._activeDrag
     if (!drag || !this._dragPreviewContainerElement) {
@@ -328,8 +291,6 @@ export class DragDropHandler {
     }
     const { draggableInfo } = drag
 
-    // hide the drag preview element so that it's not picked up by elementFromPoint
-    // when determining the target element under the mouse
     this._dragPreviewContainerElement.hidden = true
     const target = document.elementFromPoint(draggableInfo.mousePosition.x, draggableInfo.mousePosition.y)
     draggableInfo.target = target instanceof HTMLElement ? target : null
@@ -383,8 +344,6 @@ export class DragDropHandler {
           if (drag.overContainer) {
             drag.overContainer.onDragOverDroppable(effect.droppable, effect.position)
           }
-          // false = drop not allowed; the answer is the drop's resolution, handed to onDrop
-          // at mouse-up so what the indicator showed is exactly what the drop consumes
           const resolution = drag.overContainer?.getIndicatorPosition(draggableInfo, effect.droppable, effect.position)
           if (resolution) {
             drag.dropResolution = resolution
@@ -399,8 +358,6 @@ export class DragDropHandler {
     }
   }
 
-  // single writer for the handler's isDragging truth: the field and the published port flip
-  // together, so subscribers can never observe a state the handler itself doesn't hold
   _setIsDragging(value: boolean) {
     if (this.isDragging === value) {
       return
@@ -424,7 +381,6 @@ export class DragDropHandler {
   }
 
   _resetDrag() {
-    // cancel a grab still waiting for its start threshold (e.g. destroyed mid-grab)
     this._dragStartSession?.cancel()
     this._dragStartSession = null
     this.dropIndicator.hide()
@@ -439,8 +395,6 @@ export class DragDropHandler {
     this.grabbedElement = null
     this.sourceContainer = null
 
-    // disposal owns the whole per-drag teardown: listeners plus the drag preview (element
-    // removal + producer dispose hook)
     const activeDrag = this._activeDrag
     this._activeDrag = null
     activeDrag?.dispose()
@@ -472,8 +426,6 @@ export class DragDropHandler {
     this._dragPreviewContainerElement?.remove()
   }
 
-  // the grab (mousedown) listener is the handler's only permanent listener; the per-drag
-  // move/release/escape listeners live on ActiveDrag
   _addGrabListeners() {
     this._addEventListener('mousedown', (event) => this._onMouseDown(event), { passive: false })
   }
@@ -490,7 +442,6 @@ export class DragDropHandler {
     if (!this._listenerDetach[e]) {
       const handler = method.bind(this)
       document.addEventListener(e, handler, options)
-      // no listener uses capture, so the 2-arg removal form is sufficient
       this._listenerDetach[e] = () => {
         document.removeEventListener(e, handler)
       }

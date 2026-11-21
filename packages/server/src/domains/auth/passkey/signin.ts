@@ -48,7 +48,6 @@ export async function signInWithPasskey(
       return { type: 'error', message: err.message, descriptor: err.descriptor }
     }
     if (err instanceof Error) {
-      // Third-party (SimpleWebAuthn) technical message, surfaced raw.
       return { type: 'error', message: err.message }
     }
     return authFlowError('auth.passkey.error.verifyFailed')

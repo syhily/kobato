@@ -4,9 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
-// Vitest never runs as a single executable, so `readAssetTextOrDisk` always takes the disk
-// path here; the VFS branch only exists inside the binary's mount.
-
 const tmpDirs: string[] = []
 
 function makeTmpDir(): string {

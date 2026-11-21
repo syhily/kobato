@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-// W3C receive payload — form-encoded `source` + `target`; the caps stop a
-// junk POST from smuggling a large body into the parser (the route also caps content-length).
 const MAX_URL_LENGTH = 2048
 
 const httpUrlField = (name: string) =>

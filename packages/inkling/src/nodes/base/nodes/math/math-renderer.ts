@@ -22,7 +22,6 @@ export function renderMathNode(node: MathNodeData, context: RenderContext) {
 
   const artifact = resolveMathArtifact(node)
   if (artifact) {
-    // Server-prerendered artifact: emitted verbatim modulo sanitization.
     const container = document.createElement('div')
     container.setAttribute('class', 'inkling-card inkling-math-card')
     container.innerHTML = context.sanitizeCardHtml(artifact.html, MATH_HTML_CONFIG)

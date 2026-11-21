@@ -178,10 +178,8 @@ function getSetCookie(result: Response & { data?: any }): string | null {
   return init?.headers?.['Set-Cookie'] ?? null
 }
 
-// The OTP code out of the actually-delivered email — the e2e pattern.
 async function extractOtpFromMail(): Promise<string> {
   const sent = await parseMail(mail)
-  // Hex colors in the template styling (e.g. #334155) are 6-digit noise.
   const match = /\b\d{6}\b/.exec(sent.body.replace(/#[0-9a-fA-F]{3,8}/g, ''))
   expect(match).not.toBeNull()
   return match![0]!
@@ -379,7 +377,6 @@ describe('integration: OTP login flow (real DB)', () => {
       testSession.unset('otpFailCount')
     }
 
-    // Three sends really happened (three mails at the capture server).
     for (let i = 0; i < 3; i++) {
       expect((await parseMail(mail)).to).toContain('admin@example.com')
     }

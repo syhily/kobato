@@ -138,7 +138,6 @@ export interface RecalledMessage {
   id: number
   kind: NotificationKind
   recalledAt: Date
-  /** False for the second (no-op) call — the caller skips its audit row. */
   newlyRecalled: boolean
 }
 

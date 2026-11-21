@@ -16,11 +16,6 @@ export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const
 export const loginMethodSchema = z.enum(LOGIN_METHODS)
 export type LoginMethod = z.infer<typeof loginMethodSchema>
 
-/**
- * The one new-password rule set (bcrypt byte ceiling + complexity), shared by
- * setup, reset and account change. Custom messages are typed UI-catalog ids,
- * never prose: the server maps them into wire descriptors at the boundary.
- */
 export const passwordValidationMessages = {
   passwordTooShort: 'auth.validation.passwordTooShort',
   passwordTooLong: 'auth.validation.passwordTooLong',
@@ -146,8 +141,6 @@ export const passkeyAuthBeginInputSchema = z.object({
 })
 export type PasskeyAuthBeginInput = z.input<typeof passkeyAuthBeginInputSchema>
 
-// WebAuthn options blobs come from `@simplewebauthn/server` — opaque to the
-// wire schema (`z.any()`), validated inside the auth domain.
 export const passkeyOptionsOutputSchema = z.object({ options: z.any() })
 
 export const accountProfileOutputSchema = z.object({

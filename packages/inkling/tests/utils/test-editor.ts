@@ -2,12 +2,6 @@ import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/deco
 import { createHeadlessEditor } from '@lexical/headless'
 import { createEditor, type LexicalEditor } from 'lexical'
 
-// Lexical reconciliation calls decorate(), which resolves through the
-// injection port the `.` barrel fills in production. Register the adapter here
-// so rendered-editor specs get production wiring without importing the barrel.
-// This must stay a per-test-file import, NOT move into tests/inkling/setup.ts:
-// setup files evaluate before a spec's hoisted vi.mock registrations, and
-// pre-evaluating the component tree there defeats those mocks.
 registerCardDecorateAdapter()
 
 type HeadlessEditorArgs = NonNullable<Parameters<typeof createHeadlessEditor>[0]>
@@ -36,10 +30,6 @@ export function updateEditor(
         try {
           updateFn()
         } catch (error) {
-          // Lexical routes an updateFn throw to onError (often a no-op in
-          // tests), and 0.52+ drops the pending update so onUpdate never
-          // fires — reject so the spec fails fast with the real error
-          // instead of hanging to the timeout.
           reject(error)
           throw error
         }

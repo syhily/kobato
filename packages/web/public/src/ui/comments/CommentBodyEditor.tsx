@@ -14,16 +14,11 @@ import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/web-public/ui/comments/ed
 import { useCallback } from 'react'
 
 export interface CommentBodyEditorProps {
-  /** Initial comment state; reseeded on mount and when `bodyKey` changes. */
   initialBody: CommentEditorState
   bodyKey: string
   onBodyChange: (body: CommentEditorState) => void
   disabled?: boolean
   className?: string
-  /**
-   * Label overlay for the composer. Workspace documents omit it (the root payload
-   * supplies the table); public documents pass the table the lazy wrapper loaded.
-   */
   labels?: InklingLabelsInput
 }
 
@@ -47,10 +42,6 @@ export function CommentBodyEditor({
     prepareSeed: safeInitialState,
   })
 
-  // Click-to-focus fallback for residual non-editable hits, and for a click React's
-  // selective hydration replayed after this boundary hydrated: the replayed untrusted
-  // mousedown never focuses the contenteditable, but the replayed click runs this handler.
-  // Skipped while the editor owns focus so in-editor caret placement is undisturbed.
   const focusEditor = useCallback(() => {
     if (disabled === true) {
       return

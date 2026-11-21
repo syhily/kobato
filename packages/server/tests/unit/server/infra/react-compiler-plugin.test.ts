@@ -38,7 +38,6 @@ describe('reactCompilerPlugin', () => {
     expect(result).not.toBeNull()
     expect(result?.code).toContain('react/compiler-runtime')
     expect(result?.code).toContain('_c(')
-    // JSX stays intact for Vite's native Oxc transform downstream.
     expect(result?.code).toContain('<button')
   }, 30_000)
 

@@ -23,7 +23,6 @@ export interface ConfirmState {
 }
 
 export interface ConfirmDialogProps {
-  /** Pass a state object to open the dialog; pass `null` to close. */
   state: ConfirmState | null
   onClose: () => void
 }

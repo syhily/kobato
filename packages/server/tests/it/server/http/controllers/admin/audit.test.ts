@@ -28,7 +28,6 @@ async function seedAuditRows(count: number, overrides: Partial<typeof auditLog.$
     createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)),
     ...overrides,
   }))
-  // node:sqlite caps bound variables per statement — chunk the insert.
   for (let i = 0; i < values.length; i += 500) {
     await db.insert(auditLog).values(values.slice(i, i + 500))
   }

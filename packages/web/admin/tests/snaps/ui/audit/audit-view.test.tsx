@@ -100,7 +100,6 @@ describe('snapshot: AuditLogRow', () => {
 
     expect(html).toContain('2024-01-15 10:30:00')
 
-    // SSR emits `<!-- -->` between literal prefix and dynamic value — assert each segment separately.
     expect(html).toContain('IP:')
     expect(html).toContain('203.0.113.*')
     expect(html).toContain('会话')
@@ -109,7 +108,6 @@ describe('snapshot: AuditLogRow', () => {
   it('falls back to actor id when name is null', () => {
     const row = makeRow({ actorName: null, actorId: 'user-42' })
     const html = stableHtml(renderToHtml(<AuditLogRow row={row} />))
-    // SSR `<!-- -->` splits "ID:" and the id — assert segments separately.
     expect(html).toContain('ID:')
     expect(html).toContain('user-42')
   })
@@ -124,7 +122,6 @@ describe('snapshot: AuditLogRow', () => {
     const row = makeRow({ resourceType: 'post', resourceId: '128' })
     const html = stableHtml(renderToHtml(<AuditLogRow row={row} />))
     expect(html).toContain('文章')
-    // React SSR splits "#" and the id with a `<!-- -->` marker.
     expect(html).toContain('#')
     expect(html).toContain('128')
   })

@@ -7,15 +7,11 @@ export type SocialDisplayType = 'link' | 'qrcode'
 
 export interface SocialNetworkMeta {
   network: SocialNetwork
-  /** Editor/navigation label message id. */
   labelId: UiMessageId
-  /** Locale-neutral brand name (proper noun) for server interpolations. */
   brandName: string
   type: SocialDisplayType
-  /** Input label message id for the platform's display mode. */
   linkLabelId: UiMessageId
   linkPlaceholder: string
-  /** Default text for the QR-code popup subtitle (`socials[].name`); editors can override per-row. */
   defaultName: string
 }
 

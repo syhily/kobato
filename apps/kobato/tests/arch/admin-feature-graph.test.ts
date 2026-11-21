@@ -1,20 +1,3 @@
-/**
- * The intra-`@kobato/web-admin` feature graph.
- *
- * The admin leaf is one package with ~25 feature directories under
- * `packages/web/admin/src/ui/`. Its current shape is deliberate: `ui/shared`
- * is the only reuse hub, the editor family wires strictly one way
- * (`editor` → `editor-shell` → `editor-meta`, consumed by `posts`/`pages`),
- * and domain folders reach each other only through audited edges
- * (`account` → `sessions`, `dashboard` → `analytics`, `shell` → `music`, …).
- *
- * Nothing else pins this — package-dag governs cross-package imports and
- * web-direction the three-leaf seam, but a new lateral feature import inside
- * this package would pass silently. This guard freezes today's graph with
- * the same exact-set discipline as `server-layers.test.ts`: every discovered
- * cross-feature edge is allowlisted, every allowlisted edge exists, and every
- * feature folder carries a row (empty row = leaf feature).
- */
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'

@@ -59,8 +59,6 @@ describe('buildUserUpdatePayload', () => {
 
   it('derives the payload type from the router input (compile-time pin)', () => {
     const payload = buildUserUpdatePayload(makeFields())
-    // If the payload type ever degrades to `any` or a loose Record, the
-    // expect-error directive below stops suppressing and the typecheck fails.
     // @ts-expect-error — the router-derived input declares no `bogus` key
     expect(payload.bogus).toBeUndefined()
   })

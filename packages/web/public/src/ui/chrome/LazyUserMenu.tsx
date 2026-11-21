@@ -6,11 +6,6 @@ import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Suspense, lazy, useState } from 'react'
 
-// The dropdown chrome (Base UI menu, logout, notification entries) rides a lazy chunk so
-// anonymous visitors never download logged-in-only JS. The trigger below is the static half,
-// byte-stable across SSR and hydration; the first click swaps it for the real UserMenu with
-// the menu already open. Trigger-subtree parity with UserMenu is pinned by
-// tests/unit/ui/public/chrome/lazy-user-menu.test.tsx.
 const UserMenu = lazy(() =>
   import('@kobato/web-public/ui/chrome/UserMenu').then((module) => ({ default: module.UserMenu })),
 )

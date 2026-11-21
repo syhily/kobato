@@ -12,13 +12,6 @@ export function normalizeCardWidth(width: unknown): CardWidth | undefined {
   return isCardWidth(width) ? width : undefined
 }
 
-/**
- * The runtime-width cards' `decorateTarget.width` mapper (image, video):
- * normalize the node's `cardWidth`, defaulting to `'regular'`. One home so
- * the per-card lambda — and its cast — is never re-typed per declaration.
- */
 export function decorateCardWidth(node: LexicalNode): CardWidth {
-  // only the runtime-width cards carry cardWidth; the Reflect read keeps the
-  // widened LexicalNode signature honest without an assertion
   return normalizeCardWidth(Reflect.get(node, 'cardWidth')) ?? 'regular'
 }

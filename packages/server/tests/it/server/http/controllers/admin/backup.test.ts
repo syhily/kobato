@@ -22,8 +22,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-// Restore flows run against real archives created through the create
-// endpoint; the two spies keep argument/short-circuit observability.
 const backupModule = await import('@kobato/server/domains/backup/services/backup')
 const restoreModule = await import('@kobato/server/domains/backup/services/restore')
 const getBackupStream = vi.spyOn(backupModule, 'getBackupStream')
@@ -351,8 +349,6 @@ describe('adminBackupRouter.restore', () => {
     const admin = await seedAdmin()
     const plain = await createRealBackup(admin)
     const enc = await createRealBackup(admin, 'one-off-password')
-    // Corrupt the plain backup in place: its registry row stays plain while
-    // the stored bytes are swapped for the encrypted archive.
     const encBody = s3Memory.store.get(`backup/${enc.fileName}`)!.body
     await s3Memory.backend.put({
       key: `backup/${plain.fileName}`,

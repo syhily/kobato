@@ -4,7 +4,6 @@ export interface AdminSessionItem {
   userName: string
   userEmail: string
   userRole: 'admin' | 'author' | 'visitor' | null
-  /** Server-rendered UA label (the browser never parses UAs). */
   label: string
   ip: string
   loginAtIso: string
@@ -15,7 +14,6 @@ export interface AdminSessionItem {
 
 export interface MySessionItem {
   sid: string
-  /** Server-rendered UA label (the browser never parses UAs). */
   label: string
   ip: string
   loginAtIso: string

@@ -143,7 +143,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       expect((output.chunkFileNames as (c: { name: string }) => string)({ name: 'server-build' })).toBe(
         'assets/server-build.js',
       )
-      // other chunks -> hashed asset path template (Vite interpolates [name]/[hash]).
       expect((output.chunkFileNames as (c: { name: string }) => string)({ name: 'other' })).toBe(
         'assets/[name]-[hash].js',
       )

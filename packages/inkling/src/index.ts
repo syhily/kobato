@@ -158,10 +158,6 @@ export type { InsertCardPayload } from '@kobato/inkling-internal/plugins/behavio
 
 export { OPEN_IMAGE_LIBRARY_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
 
-/* Editor factory for host-side node tests: Lexical forbids constructing nodes
- * with no active editor. Source consumption resolves a single Lexical instance
- * for host and inkling alike, so this is one import for a test's whole node
- * kit. */
 export { createHeadlessEditor } from '@lexical/headless'
 
 export { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
@@ -178,12 +174,6 @@ export { InklingDecoratorNode } from '@kobato/inkling-internal/nodes/base/Inklin
 export type { CardNodeClass } from '@kobato/inkling-internal/nodes/assemble-card-node'
 
 export type { RenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
-// A host VARIANT subclassing an assembled card class (kobato's KobatoImageNode)
-// overrides exportDOM and needs the entry-internal context factory:
-// `renderFn(this, createRenderContext(options))`. React-free (it already sits
-// in the headless graph via generateDecoratorNode), but the headless surface
-// keeps it unexported — server-side projection classes are spec-built fresh and
-// never delegate.
 export { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 export type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
 export * from '@kobato/inkling-internal/utils'

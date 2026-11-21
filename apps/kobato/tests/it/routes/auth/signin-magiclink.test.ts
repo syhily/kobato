@@ -195,7 +195,6 @@ async function auditRowsFor(actionName: string) {
   return db.select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
-// The magic-link URL out of an already-parsed mail body.
 function linkFromBody(body: string): string {
   const match = /https?:\/\/[^\s"'<]*token=[^\s"'<]+/.exec(body.replace(/&amp;/g, '&'))
   expect(match).not.toBeNull()

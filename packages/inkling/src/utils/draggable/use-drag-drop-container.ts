@@ -5,20 +5,11 @@ import { useDragDropHandleState } from '@kobato/inkling-internal/context/DragDro
 import React from 'react'
 
 export interface UseDragDropContainerOptions extends ContainerDragHandlers {
-  // Registered once both the element and the DragDropHandler (published to the drag-drop
-  // handle by DragDropReorderPlugin) exist.
   element: HTMLElement | null
   enabled?: boolean
-  // Changed value re-registers to re-scan the DOM (e.g. the gallery's images array);
-  // callbacks are ref-forwarded and need no re-registration.
   reRegisterKey?: unknown
 }
 
-// The one drag-drop registration adapter: owns the registerContainer effect against the
-// drag-drop handle's handler, the enable/disable effect pair, and callback stability.
-// Callers pass plain closures — ref-forwarded, so fresh render closures reach the
-// registered container without re-registering. Returns a stable handle forwarding to the
-// live registration (a no-op before registration).
 export function useDragDropContainer({
   element,
   enabled = true,
@@ -42,9 +33,6 @@ export function useDragDropContainer({
     destroy: () => containerRef.current?.destroy(),
   }))
 
-  // Declared before the registration effect on purpose: on the render where registration
-  // happens the proxy is still empty, so the initial enabled state is the registered
-  // draggable.isDragEnabled and toggles apply only once `enabled` changes.
   React.useEffect(() => {
     if (enabled) {
       container.enableDrag()
@@ -58,10 +46,6 @@ export function useDragDropContainer({
       return
     }
 
-    // Wrappers read the latest callbacks through the ref, so the registered container never
-    // holds stale render closures. Selectors are the exception: registration-time config,
-    // read from the render scope and part of the dependency array — a changed selector
-    // re-registers.
     const current = () => callbacksRef.current
     const registered = handler.registerContainer(element, {
       draggable: {
@@ -92,8 +76,6 @@ export function useDragDropContainer({
     })
     containerRef.current = registered
 
-    // destroy() after the handler itself was destroyed is harmless (DragDropHandler
-    // disables and filters)
     return () => {
       registered.destroy()
       containerRef.current = null

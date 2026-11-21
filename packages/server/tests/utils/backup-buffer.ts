@@ -80,9 +80,7 @@ export function unpackTar(buffer: Buffer): TarEntry[] {
 }
 
 export interface BackupPayload {
-  /** The SQLite content database — null on an analytics-only restore. */
   content: Buffer | null
-  /** The DuckDB analytics sidecar — null when the upload carries none. */
   analytics: Buffer | null
 }
 

@@ -94,7 +94,6 @@ export async function incrementMetricPvBatch(db: Database, deltas: Map<string, n
   })
 }
 
-// Sync (node:sqlite): called inside the unlike transaction; MAX(a, b) is scalar here, not the aggregate.
 export function decrementMetricVotes(db: Database, target: EntityTarget): void {
   db.update(metric)
     .set({ voteUp: sql`MAX(${metric.voteUp} - 1, 0)` })

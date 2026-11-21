@@ -12,9 +12,6 @@ import { createEditor } from 'lexical'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The pin is the conditional mount of the nested WordCountPlugin, not
-// Lexical's nested composer machinery, so everything below the conditional is
-// mocked out.
 vi.mock('@lexical/react/LexicalNestedComposer', () => ({
   LexicalNestedComposer: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))

@@ -1,14 +1,3 @@
-// The `solution` host card's editing-side assembly. The base node class is built
-// from the headless spec (`@kobato/inkling/headless/cards/solution`) through the
-// entry's `generateDecoratorNode` — a DISTINCT class object from the server
-// projection's (each dist entry ships its own Lexical copy, so the `defineCard`
-// instanceof gate demands the entry-local factory); the spec module keeps both
-// sides byte-identical in behavior.
-//
-// The decorate chrome (`SolutionCardView`) and the exportDOM markup share the
-// spec module's class/copy constants — the WYSIWYG gate
-// (packages/inkling/tests/unit/host-cards/) pins the parity.
-
 import type { CardSpecFieldMapFor, NestedEditorSpec } from '@kobato/inkling-internal/nodes/base/card-specs'
 import type { ReactNode } from 'react'
 
@@ -34,8 +23,6 @@ const solutionNestedEditors = [
   { ...SOLUTION_NESTED_EDITOR, nodes: EDITOR_BASE_NODES, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
 
-// The merged interface self-types the spec-driven nested-editor fields (the inkling
-// BaseToggleNode idiom); the declaration-merging exemption is inkling's oxlint scope.
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseSolutionNode extends CardSpecFieldMapFor<readonly [], typeof solutionNestedEditors> {}
 export class BaseSolutionNode extends generateDecoratorNode({

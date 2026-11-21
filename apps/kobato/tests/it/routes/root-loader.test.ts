@@ -14,7 +14,6 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 const db = getTestDb()
 const session = makeSession({ csrfToken: 'test-csrf-token' })
 
-// No warmup assets are staged, so the real manifest resolvers return null.
 const emptyAssetsDir = mkdtempSync(join(tmpdir(), 'kobato-root-loader-'))
 __setWarmupAssetsDirForTests(emptyAssetsDir)
 

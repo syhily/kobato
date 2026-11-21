@@ -15,11 +15,6 @@ import { normalizeCardWidth, type CardWidth } from '@kobato/inkling-internal/nod
 import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 import { $canShowPlaceholderCurry } from '@lexical/text'
 
-// The card's nested-editor spec lives here, beside the class it types — the
-// declaration imports it from this module. Header's dataset exposes the
-// editors but not their initial states (`exposeInitialStateInDataset: false`).
-// The MINIMAL_NODES import runs against the layer grain but closes no cycle —
-// see the captionEditorSpecBase note.
 export const headerNestedEditors = [
   {
     name: 'headerTextEditor',
@@ -62,21 +57,11 @@ const headerProperties = [
 
 export type HeaderData = DecoratorNodeData<typeof headerProperties>
 
-/**
- * Header's layout→width mapping: a `split` layout renders at `full` width,
- * every other layout is itself the card width (or undefined when the layout
- * is not a valid width). The node's `getCardWidth()` and the declaration's
- * decorate-target width both delegate to this one mapper. Kept on the base
- * module: the declaration imports it from here, so the base node never
- * imports its declaration (no import cycle).
- */
 export const headerCardWidth = (node: LexicalNode): CardWidth | undefined => {
   const layout = $isHeaderNode(node) ? node.layout : undefined
   return normalizeCardWidth(layout === 'split' ? 'full' : layout)
 }
 
-// the merged interface self-types the spec-driven nested-editor fields — see
-// the BaseAudioNode note
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseHeaderNode extends NestedEditorFieldMap<typeof headerNestedEditors> {}
 export class BaseHeaderNode extends generateDecoratorNode({
@@ -92,12 +77,7 @@ export class BaseHeaderNode extends generateDecoratorNode({
     return headerCardWidth(this)
   }
 
-  // isEmpty must check the nested editors rather than the raw header/subheader
-  // data properties (the serialized HTML trails until export)
   isEmpty() {
-    // Unset on spec-less base instances — guard so the field type stays
-    // honest (the BaseToggleNode.isEmpty idiom). A header without editors is
-    // never auto-removed.
     if (!this.__headerTextEditor || !this.__subheaderTextEditor) {
       return false
     }

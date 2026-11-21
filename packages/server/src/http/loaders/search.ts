@@ -21,7 +21,6 @@ export interface SearchLoaderOptions {
   keyword: string | undefined
   num: string | undefined
   locale: AppLocale
-  /** Request-pinned settings bundle — the same capture the caller renders with. */
   settings: BlogSettingsBundle | null
   forceNoindex?: boolean
   auditContext?: AuditContext

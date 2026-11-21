@@ -8,14 +8,9 @@ import { and, count, desc, eq, inArray, isNull, like, or, type SQL, sql } from '
 
 export interface AdminImagesListFilters {
   q?: string
-  /**
-   * Filter by `kind` derived from `storagePath` prefix: `'category'` /
-   * `'friend'` match their prefix, `'generic'` is the negation of both.
-   */
   kind?: 'generic' | 'category' | 'friend' | 'all'
   offset?: number
   limit?: number
-  /** Default `false`: list view hides soft-deleted rows. */
   includeDeleted?: boolean
 }
 

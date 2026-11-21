@@ -11,11 +11,7 @@ export interface SecretFieldConfig {
   path: string
   field: string
   maskKey: keyof SecretMasks
-  /** Typed read of this secret from the in-memory bundle; `undefined`
-   *  when the section or the secret slot is absent. */
   read: (bundle: BlogSettingsBundle) => string | undefined
-  /** Typed copy-with-secret-blanked for the admin redaction path.
-   *  Returns the input reference when there is nothing to blank. */
   redact: (bundle: BlogSettingsBundle) => BlogSettingsBundle
 }
 

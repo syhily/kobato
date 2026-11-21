@@ -16,8 +16,5 @@ afterAll(async () => {
       await import('@kobato/server/infra/scheduler-utils')
     stopAllScheduledJobs()
     __resetSchedulerTaskStatesForTests()
-  } catch {
-    // Isolated files may partially mock scheduler-utils' import graph; a
-    // shared worker never mocks, so the cleanup net only matters there.
-  }
+  } catch {}
 })

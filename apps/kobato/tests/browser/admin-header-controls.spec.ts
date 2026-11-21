@@ -172,7 +172,6 @@ test('uses shared sizes for dashboard quick actions and analytics export', async
       return { left, right, top, bottom }
     })
 
-  // Desktop: the export action sits immediately right of the include-unknown switch.
   const [desktopLabel, desktopButton] = await Promise.all([box(includeUnknown), box(exportButton)])
   expect(desktopButton.top).toBeLessThan(desktopLabel.bottom)
   expect(desktopButton.bottom).toBeGreaterThan(desktopLabel.top)
@@ -180,7 +179,6 @@ test('uses shared sizes for dashboard quick actions and analytics export', async
   expect(desktopButton.left - desktopLabel.right).toBeLessThanOrEqual(32)
   await adminPage.screenshot({ path: test.info().outputPath('header-admin-analytics.png') })
 
-  // Mobile: same row as the switch, flush with the time-range picker row's right edge.
   await adminPage.setViewportSize({ width: 390, height: 844 })
   const [mobileLabel, mobileButton, mobilePicker] = await Promise.all([
     box(includeUnknown),

@@ -11,8 +11,6 @@ import { createCanvas } from '@napi-rs/canvas'
 import { getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
-// Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
-
 const WIDTH = 600
 const HEIGHT = 880
 

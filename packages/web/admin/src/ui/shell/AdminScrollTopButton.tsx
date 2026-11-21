@@ -7,7 +7,6 @@ import { useShowOnScroll } from '@kobato/ui/lib/use-show-on-scroll'
 import { ArrowUpIcon } from 'lucide-react'
 
 export interface AdminScrollTopButtonProps {
-  /** When set (live preview / focus mode), depth is read from `<main>` instead of `window`. */
   scrollRootRef?: RefObject<HTMLElement | null>
   lifted?: boolean
 }

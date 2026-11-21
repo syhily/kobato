@@ -9,7 +9,6 @@ function readForwardedProto(header: string | null): string | null {
   if (!header) {
     return null
   }
-  // RFC 7239: `Forwarded: for=…;proto=https;host=…`, possibly several hops.
   const firstHop = header.split(',')[0] ?? ''
   for (const pair of firstHop.split(';')) {
     const eq = pair.indexOf('=')
@@ -51,17 +50,6 @@ function trustProxyGate(): { host: string } | null {
   return cachedGate
 }
 
-/**
- * Trust-proxy scheme fix. TLS-terminating proxies (nginx, Cloudflare, …) forward plain
- * HTTP, so `@hono/node-server` builds `request.url` with `http:` while the browser's
- * `Origin` is `https:`, and React Router's `throwIfPotentialCSRFAttack` then rejects every
- * `.data` action POST. When the gate is on, rewrite the URL to the public scheme: the
- * proxy's `X-Forwarded-Proto` / RFC 7239 `Forwarded` header when present, else `https`
- * when the request addresses the canonical host.
- *
- * With an http or absent website the headers are ignored: direct http access (dev, LAN)
- * needs no fix, and a spoofed header gains a direct client nothing.
- */
 export const trustProxy = createMiddleware<Env>(async (c, next) => {
   const gate = trustProxyGate()
   if (gate !== null) {

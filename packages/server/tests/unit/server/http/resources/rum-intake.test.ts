@@ -16,8 +16,6 @@ const upstream = {
   } as SafeFetchResult,
 }
 
-// The relay HTTP hop is the unit boundary here; the guarded fetch is
-// captured at the function level.
 const safeFetch = vi
   .spyOn(await import('@kobato/server/infra/safe-fetch'), 'safeFetch')
   .mockImplementation(async (url: string, options?: SafeFetchOptions) => {
@@ -170,7 +168,6 @@ describe('rumIntakeRouter', () => {
   })
 
   it('answers 429 with a Retry-After hint when the real per-IP relay bucket is exhausted', async () => {
-    // The real bucket allows 240 per minute; exhaust it for this IP.
     for (let i = 0; i < 240; i++) {
       expect((await postBatch('/api/rum/intake/rum/v1/default/rum')).status).toBe(202)
     }

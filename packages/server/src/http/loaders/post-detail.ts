@@ -13,9 +13,6 @@ import { notFound } from '@kobato/server/infra/http/status'
 export interface PostPreviewResult {
   sourcePost: Post
   post: DetailPostShell
-  /** `draft` means the controller must NOT carry or honour a published ETag:
-   *  a swapped draft body can share the stale `published_at` stamp, so the
-   *  published tag would wrongly answer 304. */
   draftMarker: DraftMarker
 }
 

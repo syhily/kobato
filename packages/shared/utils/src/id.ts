@@ -1,8 +1,3 @@
-/**
- * Database ids are SQLite `integer` (JS `number`) while the wire uses `idString`;
- * this converts at the perimeter so a bad shape throws early instead of putting
- * `NaN` into a query.
- */
 export function idFromString(value: string | number): number {
   if (typeof value === 'number') {
     if (!Number.isSafeInteger(value) || value < 0) {

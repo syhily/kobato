@@ -5,9 +5,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// `extractNatives` runs against a fake embedded-asset source and a temp cache dir
-// (`bootstrapSeaRuntime` is a no-op outside SEA mode): extraction, reuse, repair, GC.
-
 const CURRENT_TARGET = `${process.platform}-${process.arch}`
 
 const tmpDirs: string[] = []

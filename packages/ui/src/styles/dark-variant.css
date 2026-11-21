@@ -1,15 +1,3 @@
-/*
- * The kobato `dark` variant: explicit class, or system preference when no
- * class is set. Imported unlayered by every Tailwind compilation whose
- * utilities must obey it; without it the inkling package's utilities compile
- * falls back to Tailwind's media-only default and fires under a dark OS even
- * when the site is class-locked to light.
- *
- * Tailwind rejects `@custom-variant` inside a cascade layer, so this file
- * must be imported OUTSIDE any `layer(...)` modifier. The inkling demo
- * imports `@/inkling/styles/variants.css` instead — keep the two semantics
- * distinct.
- */
 @custom-variant dark {
   &:where(.dark, .dark *) {
     @slot;

@@ -93,7 +93,6 @@ export interface ScheduledJobTask {
 
 export interface ScheduledJobOptions {
   name: string
-  /** Milliseconds until the next fire, or `null` to suspend (re-check after `suspendedRetryMs`); computed fresh on every reschedule. */
   nextDelayMs: () => number | null
   run: () => Promise<void> | void
   suspendedRetryMs?: number

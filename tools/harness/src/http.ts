@@ -45,7 +45,6 @@ export class E2eClient {
     return res
   }
 
-  /** Plain GET; `init` lets a journey send conditional headers (If-None-Match). */
   get(path: string, init: Omit<RequestInit, 'method'> = {}): Promise<Response> {
     return this.send(path, { ...init, method: 'GET' })
   }

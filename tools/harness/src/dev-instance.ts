@@ -20,7 +20,6 @@ export interface DevServer {
 }
 
 export interface BootDevServerOptions {
-  /** Repository root the dev server runs from (`pnpm exec react-router dev`). */
   repoRoot: string
   configPath: string
   port: number

@@ -201,8 +201,6 @@ describe('render/calendar/daily-quote — local sources', () => {
   })
 
   it('keeps every entry of a large bank reachable across years', () => {
-    // The built-in bank holds 10k+ entries; day-of-year modulo would only
-    // ever show the first 366. The hash pick must spread across the bank.
     const bank = Array.from({ length: 5000 }, (_, i) => ({ content: `一言${i}`, author: '作者' }))
     const picked = new Set<(typeof bank)[number]>()
     for (let year = 2024; year < 2034; year++) {

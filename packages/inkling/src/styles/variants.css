@@ -1,2 +1,1 @@
-/* Inkling's package-owned dark variant, imported unlayered by index.css before utility generation. */
 @custom-variant dark (&:is(.dark *));

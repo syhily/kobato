@@ -2,12 +2,6 @@ export const MIN_PASSWORD_LENGTH = 10
 
 export const MAX_PASSWORD_LENGTH = 128
 
-/**
- * bcrypt silently truncates at 72 BYTES, so a longer "password" is really just its
- * 72-byte prefix and two distinct secrets could compare equal. Creation paths cap by
- * byte length; signin keeps the 128-char DoS cap because a compare truncates both
- * sides identically, keeping legacy long passwords working.
- */
 export const MAX_PASSWORD_BYTES = 72
 
 export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
@@ -16,9 +10,6 @@ export function passwordWithinBcryptLimit(value: string): boolean {
   return new TextEncoder().encode(value).byteLength <= MAX_PASSWORD_BYTES
 }
 
-// Cryptographically random URL-safe token of `length` chars. base64url
-// (RFC 4648 §5) → ~6 bits per char. The byte pool is oversized so the
-// encoded output always reaches `length`, then sliced.
 export function makeToken(length: number): string {
   if (length <= 0) {
     return ''

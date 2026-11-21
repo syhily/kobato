@@ -28,7 +28,6 @@ describe('cache/registry — neutral metadata', () => {
     )
     expect(tZhCN(og.descriptionId, { prefix: 'custom:' })).toContain('custom:<slug>-<hash>')
     expect(tEnUS(og.descriptionId, { prefix: 'og:' })).toContain('og:<slug>-<hash>')
-    // Angle-bracket key segments survive ICU parsing (they are quoted literals).
     const feed = CACHE_DECLARATIONS.find((entry) => entry.id === 'feed')!
     expect(tZhCN(feed.descriptionId, { prefix: 'feed:xml:' })).toContain('feed:xml:cat:<slug>')
   })

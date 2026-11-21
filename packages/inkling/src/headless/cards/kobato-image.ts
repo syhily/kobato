@@ -66,7 +66,6 @@ export function resolveKobatoImageRenderEnv(context: CardRenderContext): KobatoI
 
 export interface KobatoImageDataset {
   src: string
-  /** Inline HTML (the caption nested editor's cleaned serialization). */
   caption: string
   title: string
   alt: string
@@ -157,13 +156,6 @@ export function kobatoImageTextContent(node: { __alt?: unknown }): string {
   return alt === '' ? '' : `${alt}\n\n`
 }
 
-/**
- * Port of inkling's `readImageAttributesFromElement` (not exported from the
- * dist entries) — the composite img read of the import spec: src / width /
- * height / alt / title off the img element, href off a wrapping anchor.
- * tagName checks instead of instanceof: the imported document can come from
- * another realm (a separate jsdom in tests).
- */
 export function readKobatoImageAttributes(element: Element): Record<string, string | number> {
   const attrs: Record<string, string | number> = {}
   if (element.tagName !== 'IMG') {

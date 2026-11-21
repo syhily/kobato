@@ -3,16 +3,10 @@ import type { DOMConversionMap, LexicalNode } from 'lexical'
 
 import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
 
-/**
- * The card declaration's DOM-import knowledge, from which the generated node
- * derives `importDOM`. Cards whose parsing is structural keep hand-written
- * parsers and leave the spec unset.
- */
 export interface CardImportSpec {
   conversions: readonly ImportConversionSpec[]
 }
 
-/** One tag conversion; `guardClass`/`guardSelector` mirror the hand-written parsers' guards. */
 export interface ImportConversionSpec {
   tag: string
   priority: 0 | 1 | 2 | 3 | 4
@@ -21,31 +15,18 @@ export interface ImportConversionSpec {
   reads: readonly ImportReadSpec[]
 }
 
-/** One class-regex entry: the first whose `pattern` matches wins; capture group 1 is the raw value, optionally translated through `map`. */
 export interface ImportClassMapEntry {
   pattern: RegExp
   map?: Record<string, string>
 }
 
-/**
- * One per-property read of a conversion, discriminated on `kind`. `attribute` /
- * `property` are `getAttribute` vs the element property — never substitute one
- * for the other, since `.src` absolutizes.
- */
 interface ImportReadSpecBase {
-  /** The card property the read writes; must name a key of the node's `properties` (enforced by `validateImportSpec`). */
   name: string
-  /** `querySelector` locating the element to read from; reads the matched element itself when unset. */
   selector?: string
-  /** Trim the extracted string before later steps. */
   trim?: boolean
-  /** Value used when extraction yields null/undefined; the key is omitted when absent. */
   fallback?: unknown
-  /** Post-process the extracted string; an `undefined` result omits the key. */
   parse?: (raw: string) => unknown
-  /** `'falsy'` drops falsy results, both before `parse` and after it. */
   omit?: 'falsy'
-  /** Abort the whole conversion when the extracted value is falsy. */
   required?: boolean
 }
 
@@ -64,25 +45,15 @@ export type ImportReadSpec =
       classMap: readonly ImportClassMapEntry[]
     })
   | {
-      /** The writes are actually named by `provides`. */
       name: string
       kind: 'composite'
-      /** `querySelector` locating the element to read from; reads the matched element itself when unset. */
       selector?: string
       read: (element: Element) => Record<string, unknown>
-      /** The payload keys the helper provides; each must name a card property. */
       provides: readonly string[]
     }
 
-// The generated node constructors accept a plain payload record alongside their
-// typed partial dataset, so this boundary constructs through that union member.
 type ImportNodeClass = new (data: Record<string, unknown>) => LexicalNode
 
-/**
- * Throws when an import-spec read names a property absent from the node's
- * `properties` (composite reads via `provides`), and re-checks the per-kind
- * required fields for untyped consumers.
- */
 export function validateImportSpec(
   spec: CardImportSpec,
   properties: readonly DecoratorNodeProperty[],
@@ -115,11 +86,6 @@ export function validateImportSpec(
   })
 }
 
-/**
- * Derives a Lexical `importDOM` conversion map from a card's import spec;
- * `nodeClass` is the class `importDOM` was invoked on, so assembled/wrapper
- * subclasses construct themselves.
- */
 export function buildImportConversions(spec: CardImportSpec, nodeClass: ImportNodeClass): DOMConversionMap {
   const map: Record<string, DOMConversionMap[string]> = {}
 
@@ -148,13 +114,6 @@ export function buildImportConversions(spec: CardImportSpec, nodeClass: ImportNo
   return map
 }
 
-/**
- * Runs one conversion's reads against the matched element; returns `null` when
- * the conversion aborts (a `required` read came up falsy, or a composite read's
- * located element is missing). Pipeline per read (order matters): locate →
- * extract per kind → `required` → `fallback`/omit → `trim` → `omit: 'falsy'` →
- * `parse` → `omit: 'falsy'` again.
- */
 function readImportPayload(conversion: ImportConversionSpec, domNode: HTMLElement): Record<string, unknown> | null {
   const payload: Record<string, unknown> = {}
 
@@ -218,8 +177,6 @@ function readImportPayload(conversion: ImportConversionSpec, domNode: HTMLElemen
   return payload
 }
 
-// Narrowed past the `composite` and `classMap` kinds, which the caller handles
-// before extraction, so the switch stays exhaustive by construction
 type ElementValueReadSpec = Exclude<ImportReadSpec, { kind: 'classMap' } | { kind: 'composite' }>
 
 function extractValue(read: ElementValueReadSpec, element: Element): unknown {

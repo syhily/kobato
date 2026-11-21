@@ -13,7 +13,6 @@ export type RestoreProgressStage =
 
 export interface RestoreProgressDto {
   stage: RestoreProgressStage
-  /** 0-100, or null when the stage total is unknown (extraction). */
   percent: number | null
   error?: string
 }

@@ -1,5 +1,3 @@
-// Zod 4.5 auto-compilation (3–9x parse on objects/unions) must evaluate before any module that constructs schemas.
-// Server-only: the browser bundle keeps `jitless` (see `@/zod-config`), under which compile stands down.
 import 'zod/compile'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { RenderToPipeableStreamOptions } from 'react-dom/server'
@@ -52,7 +50,6 @@ export default function handleRequest(
 ) {
   responseHeaders.set('Content-Language', documentLocale(routerContext))
 
-  // https://httpwg.org/specs/rfc9110.html#HEAD
   if (request.method.toUpperCase() === 'HEAD') {
     return new Response(null, {
       status: responseStatusCode,
@@ -62,8 +59,6 @@ export default function handleRequest(
 
   const nonce = loadContext.get(requestContext).cspNonce
 
-  // WORKAROUND: omit the FrameworkContext nonce in dev so server/client render the CSS <link> identically.
-  // https://github.com/remix-run/react-router/issues/14666
   const serverRouterNonce = import.meta.env.DEV ? undefined : nonce
 
   return new Promise<Response>((resolve, reject) => {
@@ -101,8 +96,6 @@ export default function handleRequest(
     let statusCode = responseStatusCode
     const userAgent = request.headers.get('user-agent')
 
-    // Bots and SPA-mode renders must wait for all content before responding.
-    // https://react.dev/reference/react-dom/server/renderToPipeableStream#waiting-for-all-content-to-load-for-crawlers-and-static-generation
     const readyOption: keyof RenderToPipeableStreamOptions =
       isBot(userAgent) || routerContext.isSpaMode ? 'onAllReady' : 'onShellReady'
 

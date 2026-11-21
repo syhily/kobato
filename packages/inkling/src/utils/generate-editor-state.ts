@@ -26,8 +26,6 @@ export default function generateEditorState({
 
         $insertNodes(nodes)
 
-        // $insertNodes focuses the editor (https://github.com/facebook/lexical/issues/4546),
-        // breaking autofocus when initial filling happens after mount; components manage focus instead.
         if (nodes.length) {
           $setSelection(null)
         }

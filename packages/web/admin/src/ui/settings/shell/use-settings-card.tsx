@@ -57,7 +57,6 @@ function isFieldErrorRecord(value: unknown): value is Record<string, unknown> {
   return isRecord(value)
 }
 
-// Zod issue paths are PropertyKey[]; RHF error trees key by string — coerce via `String()`.
 function pathKey(p: PropertyKey): string {
   return typeof p === 'string' ? p : String(p)
 }

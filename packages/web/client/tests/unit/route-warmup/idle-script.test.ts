@@ -77,7 +77,6 @@ describe('startRouteWarmup', () => {
     expect(links.map((l) => l.href)).toEqual(chunks.slice(0, 5))
     expect(links.every((l) => l.rel === 'modulepreload')).toBe(true)
 
-    // No requestIdleCallback in node: fallback setTimeout(run, 100) drains the rest.
     vi.advanceTimersByTime(100)
     expect(doc.createElement).toHaveBeenCalledTimes(7)
 

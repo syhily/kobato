@@ -36,7 +36,6 @@ describe('ensureLexicalNodeOwnMethods', () => {
   })
 
   it('inherited static methods should NOT be own properties on subclass', () => {
-    // This is the core issue: hasOwnProperty returns false for inherited statics
     expect(Object.hasOwn(OuterNode, 'getType')).toBe(false)
     expect(Object.hasOwn(OuterNode, 'clone')).toBe(false)
     expect(Object.hasOwn(OuterNode, 'importJSON')).toBe(false)

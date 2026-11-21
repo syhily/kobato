@@ -40,7 +40,6 @@ export function useKeyboardListSelection<T>({
   const handleKeydown = React.useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
-        // The stop propagation is required for Safari
         event.preventDefault()
         event.stopPropagation()
         setHasNavigated(true)
@@ -83,7 +82,6 @@ export function useKeyboardListSelection<T>({
   )
 
   React.useEffect(() => {
-    // The capture phase is required for Safari
     window.addEventListener('keydown', handleKeydown, { capture: true })
     return () => {
       window.removeEventListener('keydown', handleKeydown, { capture: true })

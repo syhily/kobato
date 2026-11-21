@@ -1,11 +1,6 @@
 import { WEBMENTION_TYPES } from '@kobato/contracts/webmentions'
 import { normalizeForMatch } from '@kobato/server/domains/webmentions/verify'
 
-// mf2 response-type classification for received webmentions. Only
-// markers carried ON the anchor count — a marker on a wrapper element
-// classifies as `mention`; verification never depends on the type, so a
-// miss costs presentation grouping, never acceptance.
-
 export type WebmentionType = (typeof WEBMENTION_TYPES)[number]
 
 const ANCHOR_TAG_RE = /<a\b[^>]*>/gi

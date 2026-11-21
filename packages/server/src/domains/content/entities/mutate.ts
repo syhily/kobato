@@ -46,7 +46,6 @@ export function makeEntityMutations<
 ): EntityMutations<TInput, TAdminDto> {
   const { repos, mutations } = descriptor
 
-  /** `db.transaction` without drizzle's Promise-guard conditional: every callback here is sync (node:sqlite). */
   function syncTransaction<T>(db: Database, fn: (tx: Database) => T): T {
     return unsafeCast<(fn: (tx: Database) => T) => T>(db.transaction.bind(db))(fn)
   }

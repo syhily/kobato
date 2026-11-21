@@ -12,9 +12,7 @@ export interface EventsDimension {
 
 export interface EnvDimension {
   source: 'env'
-  /** Display expression — also the GROUP BY key and the filter's left side. */
   select: RawBuilder<unknown>
-  /** Extra rows the bucket requires (e.g. static block present). */
   require?: RawBuilder<boolean>
 }
 

@@ -40,7 +40,6 @@ export class TKNode extends TextNode {
   }
 }
 
-/** A `#tag` text entity (e.g. `#lexical`). */
 export function $createTKNode(text: string) {
   return $applyNodeReplacement(new TKNode(text))
 }

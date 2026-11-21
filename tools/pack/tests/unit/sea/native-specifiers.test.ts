@@ -15,7 +15,6 @@ function packageRoot(name: string): string {
   try {
     return realpathSync(join(process.cwd(), 'node_modules', name))
   } catch {
-    // Transitive packages have no top-level node_modules symlink under pnpm.
     try {
       const requireFromRepo = createRequire(join(process.cwd(), 'package.json'))
       return realpathSync(dirname(requireFromRepo.resolve(`${name}/package.json`)))

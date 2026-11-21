@@ -5,11 +5,6 @@ import { getLogger } from '@kobato/server/infra/logger'
 
 const leakedResponseLog = getLogger('http.leaked-response')
 
-/**
- * Defensive wrapper around `app.fetch`: Hono's `onError` doesn't catch thrown
- * `Response`s, which RR loaders use as control flow — intercept the leak,
- * log it, and return it normally.
- */
 export function wrapFetchWithLeakedResponseHandler<E extends BlankEnv>(app: Hono<E>): void {
   const originalFetch = app.fetch.bind(app)
   const logLeaked = (request: unknown, e: Response) => {

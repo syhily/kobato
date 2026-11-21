@@ -1,19 +1,13 @@
-// SMTP capture server for out-of-process e2e journeys — the mail seam OTP /
-// magic-link journeys extract their secrets from; nothing ever leaves the
-// machine. Speaks just enough SMTP for nodemailer's plaintext path.
-
 import { createServer, type Server, type Socket } from 'node:net'
 
 export interface CapturedMail {
   from: string
   to: string
-  /** Raw DATA payload (headers + body, CRLF line endings, dot-terminated). */
   raw: string
 }
 
 const CAPTURE_HOST = '127.0.0.1'
 
-/** `MAIL FROM:<addr> [params]` / `RCPT TO:<addr> [params]` → the bare address. */
 function envelopeAddress(commandLine: string): string {
   const match = /<(?:[^:@>]+@[^:>]+|postmaster)>/.exec(commandLine)
   return match ? match[0]!.slice(1, -1) : commandLine
@@ -29,7 +23,6 @@ export class SmtpCapture {
     this.server = createServer((socket) => this.handle(socket))
   }
 
-  /** Bind on an ephemeral loopback port; returns the chosen port. */
   start(): Promise<number> {
     return new Promise((resolve, reject) => {
       this.server.once('error', reject)
@@ -51,7 +44,6 @@ export class SmtpCapture {
     await new Promise<void>((resolve) => this.server.close(() => resolve()))
   }
 
-  /** The next captured message (or an already-buffered one), with a timeout. */
   nextMessage(timeoutMs = 15_000): Promise<CapturedMail> {
     const buffered = this.messages.shift()
     if (buffered !== undefined) {
@@ -119,7 +111,6 @@ export class SmtpCapture {
 
         const verb = line.slice(0, 4).toUpperCase()
         if (verb === 'EHLO' || verb === 'HELO') {
-          // No AUTH, no STARTTLS — nodemailer falls back to a plain send.
           reply('250-capture.kobato.local greets you')
           reply('250 SIZE 10485760')
         } else if (verb === 'MAIL') {

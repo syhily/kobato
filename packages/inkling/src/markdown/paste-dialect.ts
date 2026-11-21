@@ -32,14 +32,6 @@ const namedHeaders = function ({ inklingVersion }: RenderOptions = {}) {
       env: Env | undefined,
       self: Renderer,
     ) {
-      // Dedup state must live on the per-render `env` (markdown-it creates a
-      // fresh env object for every render() call) — keeping it in a closure
-      // would leak heading ids across renders of the cached MarkdownIt
-      // instance, while a fresh tracker per heading would never dedupe. The
-      // slot is validated rather than asserted: env is caller-controlled, so
-      // a foreign value must reset the tracker instead of corrupting it.
-      // render() always hands its env bag to the rules; a direct rules call
-      // without one gets a throwaway tracker scope.
       const envBag: Env = env ?? {}
       let trackHeadingId: (base: string) => string
       if (isHeadingIdTracker(envBag.headingIdTracker)) {

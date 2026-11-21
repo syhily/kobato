@@ -23,6 +23,5 @@ export function renderHtmlNode(node: HtmlNodeData, context: RenderContext): Html
   const textarea = document.createElement('textarea')
   textarea.value = wrappedHtml
 
-  // `type: 'value'` will render the value of the textarea element
   return { element: textarea, type: 'value' as const }
 }

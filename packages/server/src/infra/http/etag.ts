@@ -75,15 +75,9 @@ function stableStringify(value: unknown, skipKeys?: ReadonlySet<string>): string
 
 export interface DetailEtagInput {
   id: string | number
-  /** The published revision — republishing without a new `published_at` still changes the tag. */
   publishedRevisionId: string | number | null
   publishedAt: Date | undefined
   representation: RepresentationFingerprint
-  /**
-   * The EXACT payload the response carries (post shell, body html, tags,
-   * sidebar, critical). Hashing it is what makes a 304 safe: the tag only
-   * matches when every byte of the representation is identical.
-   */
   payload: unknown
 }
 
@@ -116,18 +110,7 @@ const LISTING_VOLATILE_KEYS: ReadonlySet<string> = new Set(['listingNowIso'])
 
 export interface ListingEtagInput {
   representation: RepresentationFingerprint
-  /**
-   * The EXACT listing payload the response carries (pagination slice with the
-   * metadata counters, SEO descriptors, sidebar/feature extra, categories or
-   * archives rows). A 304 is only safe when all of it is identical.
-   */
   payload: unknown
-  /**
-   * Site calendar day (`yyyy-MM-dd`) of the request. The listing's relative
-   * date labels are bucketed by this day, and using it instead of the raw
-   * `listingNowIso` keeps the tag stable across reloads within one day while
-   * still rotating at midnight.
-   */
   calendarDay: string
 }
 
@@ -164,13 +147,6 @@ export function contentEtag(content: string | Uint8Array): string {
   return `"${hash.digest('hex').slice(0, 32)}"`
 }
 
-/**
- * `If-None-Match` comparison. The header is a LIST (`*` allowed), so a
- * single-value equality check would miss stored tags; the comparison is WEAK
- * (`W/"x"` matches `"x"`), which is what RFC 9110 prescribes for this header.
- * The oRPC wire has no header channel, so the same string may arrive as an
- * input field on the HTML detail paths.
- */
 export function etagHeaderMatches(header: string | null | undefined, etag: string): boolean {
   if (header === null || header === undefined) {
     return false

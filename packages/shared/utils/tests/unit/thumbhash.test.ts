@@ -10,8 +10,6 @@ import { join } from 'node:path'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 
-// Snapshots generated once from npm thumbhash@0.1.1; regenerate them if the
-// algorithm ever changes intentionally.
 const SNAPSHOTS: Array<{
   name: string
   source: { w: number; h: number }
@@ -99,7 +97,6 @@ describe('thumbhash', () => {
     expect(hash).toBeInstanceOf(Uint8Array)
     expect(hash.length).toBeGreaterThan(0)
     const decoded = thumbHashToRGBA(hash)
-    // thumbhash decodes to a fixed minimum size regardless of original dimensions
     expect(decoded.w).toBeGreaterThanOrEqual(1)
     expect(decoded.h).toBeGreaterThanOrEqual(1)
     expect(decoded.rgba).toBeInstanceOf(Uint8Array)

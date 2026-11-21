@@ -11,8 +11,6 @@ import { Hono } from 'hono'
 import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The calendar renderer has its own real-canvas coverage; the route test pins
-// the year/time/theme/locale routing through a fast spy.
 const serveCalendarSpy = vi.spyOn(await import('@kobato/server/http/resources/calendar'), 'serveCalendar')
 serveCalendarSpy.mockImplementation(
   async (params: { year?: string; time?: string }, options: { theme: string; locale: string }) => {

@@ -7,16 +7,10 @@ interface EmojiMartInstance extends HTMLElement {
 
 type EmojiMartPickerConstructor = new (options: Record<string, unknown>) => EmojiMartInstance
 
-// emoji-mart's Picker export is typed `any`; narrow constructor candidates at
-// runtime instead of asserting
 function isEmojiMartPickerConstructor(value: unknown): value is EmojiMartPickerConstructor {
   return typeof value === 'function'
 }
 
-// options passed through to emoji-mart's Picker, per
-// https://github.com/missive/emoji-mart#options--props — emoji-mart's own
-// types are `any` throughout, so these are declared here with no index
-// signature: a misspelled option fails typecheck instead of leaking silently
 export type EmojiMartPickerOptions = {
   data: unknown
   onEmojiSelect?: (emoji: { native?: string }) => void

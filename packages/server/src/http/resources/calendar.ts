@@ -22,11 +22,8 @@ function httpNotFound(): never {
 
 export interface CalendarRequestOptions {
   theme: CalendarTheme
-  /** The request's AppLocale — explicit, never inferred from the cache key. */
   locale: AppLocale
-  /** The pinned settings generation — part of the cache key, not of the renderer input. */
   settingsRevision: string
-  /** The request's pinned settings bundle (daily-quote source & custom bank). */
   settings: BlogSettingsBundle | null
   ifNoneMatch: string | null
 }

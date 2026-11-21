@@ -63,13 +63,6 @@ function serviceUnavailable(locale: AppLocale): Response {
   })
 }
 
-/**
- * Re-encode a DECODED storage key for the Location header, one path segment at
- * a time. The `/storage/*` route (and the fonts route) decode before the
- * allowlist check, so a key holding `?`, `#`, `%`, or a space would otherwise
- * be interpolated raw — truncating the CDN path (`a?b.png` → file `a` plus a
- * query) or emitting a fragment. Slashes stay separators.
- */
 function encodeKeyForUrl(key: string): string {
   return key.split('/').map(encodeURIComponent).join('/')
 }

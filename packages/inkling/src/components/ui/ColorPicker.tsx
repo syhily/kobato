@@ -32,10 +32,6 @@ interface ColorPickerProps {
   children?: ReactNode
 }
 
-// null-safe composer read (the picker can render without one in isolated
-// unit tests — useLexicalComposerContext would throw); the accent probe
-// scopes to this editor's root so two editors on one page each resolve
-// their own accent, falling back to the document-wide lookup when unmounted
 function useEditorRootElement(): HTMLElement | null {
   const composerContext = useContext(LexicalComposerContext)
   return composerContext?.[0]?.getRootElement() ?? null

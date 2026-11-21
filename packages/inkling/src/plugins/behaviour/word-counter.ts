@@ -159,9 +159,6 @@ export function createWordCounter({
         const state = getWordCountState(topLevelEditor)
 
         topLevelEditor.getEditorState().read(() => {
-          // NOTE: RootNode.getTextContent() cannot be used here — it returns
-          // cached text when there are no dirty nodes, which is the case for
-          // changes in nested editors
           const wordCount = collectDocumentWordCount(state, currentLanguage)
           if (forceEmission || wordCount !== state.lastWordCount) {
             state.lastWordCount = wordCount
@@ -338,8 +335,6 @@ export function createWordCounter({
           editor.registerCommand(
             BLUR_COMMAND,
             (_event, fromEditor) => {
-              // Lexical propagates commands up the parent-editor chain; a
-              // nested editor's blur must not clear the parent's ledger
               if (fromEditor !== editor) {
                 return false
               }

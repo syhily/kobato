@@ -48,7 +48,7 @@ describe('auth: network boundary', () => {
     })
 
     it('allows public addresses outside the transition prefixes', () => {
-      expect(isBlockedFetchHost('64:ff9b:1::808:808')).toBe(false) // RFC 8215 local-use prefix
+      expect(isBlockedFetchHost('64:ff9b:1::808:808')).toBe(false)
       expect(isBlockedFetchHost('2003::1')).toBe(false)
       expect(isBlockedFetchHost('2606:4700::1')).toBe(false)
     })
@@ -61,7 +61,7 @@ describe('auth: network boundary', () => {
     })
 
     it('blocks zone-ID-suffixed spellings of private IPv6 addresses', () => {
-      expect(isBlockedFetchHost('fe80::1%eth0')).toBe(true) // RFC 6874 zone-ID
+      expect(isBlockedFetchHost('fe80::1%eth0')).toBe(true)
       expect(isBlockedFetchHost('fe80::1%25eth0')).toBe(true)
       expect(isBlockedFetchHost('[fe80::1%eth0]')).toBe(true)
       expect(isBlockedFetchHost('fc00::1%1')).toBe(true)

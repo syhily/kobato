@@ -10,10 +10,6 @@ import { describe, expect, it, vi } from 'vitest'
 const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
 __setDnsLookupForTests(dnsSeam)
 
-// No byte-for-byte PNG hash: it would break on every node-canvas / sharp / OS font-hinting
-// upgrade. The structural invariants are pinned instead — a PNG buffer of the configured
-// size.
-
 async function makeCoverBuffer(): Promise<Buffer> {
   return sharp({
     create: {

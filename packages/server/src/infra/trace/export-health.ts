@@ -2,7 +2,6 @@ export type ExportSignal = 'traces' | 'metrics' | 'logs'
 
 export interface ExportFailure {
   signal: ExportSignal
-  /** Error class name only — never a message, which could carry a URL or a credential. */
   error: string
   at: number
 }

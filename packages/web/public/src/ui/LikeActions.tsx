@@ -19,17 +19,13 @@ import { HeartIcon } from 'lucide-react'
 import { startTransition, Suspense, lazy, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
 
 export interface LikeButtonProps {
-  /** Stable URL — used as the `localStorage` namespace for the like token. */
   permalink: string
-  /** Metric `public_id` UUID — the wire key the like API actions expect. */
   commentKey: string
   likes: number
 }
 
 const LIKE_TOKENS_KEY = 'like-tokens'
 
-// Lazy, interaction-only chrome; the plain-number fallback keeps SSR and the
-// first hydrated render byte-identical.
 const NumberFlow = lazy(() => import('@number-flow/react'))
 
 function isRecordOfStrings(value: unknown): value is Record<string, string> {
@@ -75,7 +71,6 @@ function removeLikeToken(permalink: string): void {
 }
 
 export interface LikeButtonState {
-  /** Mirrors the API wire `key` — the metric's public UUID. */
   commentKey: string
   likes: number
   liked: boolean
@@ -130,9 +125,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         tokenRef.current = data.token
         try {
           writeLikeToken(permalink, data.token)
-        } catch {
-          // localStorage full or unavailable; the ref still holds the token for this mount.
-        }
+        } catch {}
       }
     },
   })

@@ -16,7 +16,6 @@ interface SocketEnv extends Env {
   }
 }
 
-/** Unlocks hono's conninfo helper in dev. */
 export function bindIncomingRequestSocketInfo() {
   return createMiddleware<SocketEnv>((c, next) => {
     c.env.server = {

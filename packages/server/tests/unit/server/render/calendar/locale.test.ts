@@ -61,7 +61,6 @@ describe('calendar locale copy', () => {
 
   it('maps EVERY 宜 term lunar-typescript can emit for the traditional locales', () => {
     const emitted = new Set<string>()
-    // Two full solar cycles cover the library's fixed term table (leap months included).
     for (let year = 2020; year < 2028; year++) {
       for (let month = 1; month <= 12; month++) {
         for (let day = 1; day <= 28; day++) {

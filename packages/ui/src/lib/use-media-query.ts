@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react'
 
-/** Reactive `window.matchMedia` boolean — server snapshot avoids hydration mismatches. */
 export function useMediaQuery(query: string, defaultMatch = false): boolean {
   return useSyncExternalStore(
     (cb) => {

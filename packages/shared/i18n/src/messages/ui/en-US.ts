@@ -1,11 +1,3 @@
-// English is the baseline catalog: it defines `UiMessageId`, and every other
-// locale is type-checked against it. English plural categories are also the
-// reference shape for reviewers — writing the countable message in English
-// forces the author to decide one/other before translating.
-//
-// Placeholders are ICU: `{name}` interpolation, `{count, plural, …}`,
-// `{kind, select, …}`, and `<tag>…</tag>` rich text (rendered via react-intl).
-
 export const uiMessagesEnUS = {
   'common.action.back': 'Back',
   'common.action.cancel': 'Cancel',

@@ -9,9 +9,6 @@ const tailwindCss = readFileSync(resolve(process.cwd(), 'packages/ui/src/styles/
 
 const restoreRule = /\.kobato-page-editor\s+\[data-inkling-card='[^']+'\][^{]*\{([^}]*)\}/.exec(editorCss)
 
-// Tailwind v4 default text scale (the kobato theme only overrides --text-md
-// and --text-2xl, parsed from tailwind.css below). A tailwind upgrade that
-// changes the defaults fails this pin on purpose.
 const TAILWIND_DEFAULT_TEXT_SCALE: Record<string, string> = {
   xs: '0.75rem',
   sm: '0.875rem',

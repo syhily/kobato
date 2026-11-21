@@ -70,9 +70,6 @@ function renderPlugin(editor: ReturnType<typeof createTestEditor>) {
 }
 
 describe('EmojiPickerPlugin', () => {
-  // The index chunk loads lazily on the first query and its module eval runs
-  // emoji-mart's init side effect; the port caches the promise per module
-  // registry.
   it('initializes emoji-mart data once, not per mount', async () => {
     const editor = createTestEditor()
     const first = renderPlugin(editor)
@@ -117,8 +114,6 @@ describe('EmojiPickerPlugin', () => {
     try {
       const editor = createTestEditor()
       const { unmount } = renderPlugin(editor)
-      // The first query in a test file awaits the emoji-mart chunk import before
-      // the search fires: settle it, then flush the search microtasks.
       await act(async () => typeaheadCapture.props?.onQueryChange('smi'))
       await act(async () => typeaheadCapture.props?.onQueryChange('smile'))
       await vi.dynamicImportSettled()

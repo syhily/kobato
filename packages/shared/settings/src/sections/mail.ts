@@ -7,9 +7,6 @@ export const mailValidationMessages = {
   hostnameInvalid: 'admin.settings.mail.error.hostnameInvalid',
 } as const satisfies Record<string, UiMessageId>
 
-// Mailgun interpolates the domain into `https://api.mailgun.net/v3/<domain>/messages`,
-// so it is a hostname — never a URL, port, path, or IP literal. Empty means
-// "provider not configured yet" and stays valid.
 const HOSTNAME_LABEL = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/i
 const NUMERIC_LABEL = /^\d+$/
 

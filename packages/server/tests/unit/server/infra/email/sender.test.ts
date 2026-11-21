@@ -211,9 +211,6 @@ describe('infra/email/sender — sendEmail', () => {
     const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(1)
     expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
-    // A stored `false` for either TLS flag must reach the transport, not fall back to
-    // nodemailer's `true` defaults; the transport-level `?? true` is pinned in
-    // `transports/smtp.test.ts`.
     expect(SmtpCtorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         host: 'smtp.example.com',

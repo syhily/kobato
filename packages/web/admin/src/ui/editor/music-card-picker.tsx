@@ -1,10 +1,3 @@
-// The music card's pick-seam glue: the picker DIALOG is host data flow (it
-// queries the music library over RPC and uploads through the admin surface), so
-// the card assembly in `@kobato/inkling/host-cards` ships without one and the
-// host registers this renderer at module scope — before any composer mounts.
-// `autoOpenOnInsert` rides the registration, so menu inserts open the picker
-// exactly as they did when the spec carried it inline.
-
 import type { AdminMusicDto } from '@kobato/contracts/music'
 import type { MusicPlayerCardMeta } from '@kobato/inkling/headless/cards/music-player'
 

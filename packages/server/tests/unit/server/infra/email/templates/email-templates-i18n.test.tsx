@@ -85,7 +85,6 @@ describe('email templates — footer copyright (one rich-text sentence)', () => 
     )
 
     expect(html).toMatch(/<a [^>]*>Kobato<\/a> © \d{4}/)
-    // The copyright year must never be part of the anchor.
     expect(html).not.toMatch(/© \d{4}<\/a>/)
     expect(html).not.toMatch(/<a [^>]*>Kobato © \d{4}<\/a>/)
   })

@@ -9,9 +9,7 @@ export interface ActionBannerState {
 
 export interface ActionBannerController {
   banner: ActionBannerState | null
-  /** Arm the countdown for a save flow — the banner appears once `legs` successful legs are noted; the caller owns the leg count. */
   begin: (kind: ActionBannerKind, legs: number) => void
-  /** Record one successful leg; shows the banner with `slug` once the countdown reaches zero. */
   noteLeg: (slug: string) => void
   cancel: () => void
   dismiss: () => void

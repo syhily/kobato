@@ -1,4 +1,3 @@
-/** Geist's signature easing curve (design-system "Motion" spec). */
 export const geistEase = [0.175, 0.885, 0.32, 1.1] as [number, number, number, number]
 
 export const defaultTransition = { duration: 0.15, ease: geistEase }

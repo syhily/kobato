@@ -1,15 +1,3 @@
-// SEA command-line surface — evaluates FIRST in the injected server bundle.
-// Flags: --version|-v, --help|-h, --smoke-natives, --smoke-worker, --smoke-vfs,
-// --smoke-intl, rollback, doctor [--json], hidden --doctor-config-probe;
-// anything else falls through to the server graph.
-// --version/--help exit with ZERO side effects; nothing here may touch the
-// env-validated graph (config loads only behind the probe's dynamic import).
-// --smoke-worker dispatches the embedded bundle via new Worker(code, { eval: true })
-// — worker threads cannot start from VFS paths, so eval is the only way.
-// --smoke-intl is a PURE Intl probe: it imports the locale contract and the
-// shared display formatter (for the real `formatDuration` output), reads no
-// configuration and touches no database (`packages/server/src/infra/sea/intl-probe.ts`).
-
 import {
   SEA_CLIENT_ASSET_PREFIX,
   SEA_DRIZZLE_ASSET_PREFIX,
@@ -94,9 +82,6 @@ Optional environment variables:
                    (default: $XDG_CACHE_HOME/kobato or ~/.cache/kobato)
 `
 
-/** Prove the embedded natives extract and load, one real operation each.
- * Dynamic imports after bootstrapSeaRuntime — sharp's platform detection
- * runs at module evaluation and needs KOBATO_NATIVES_DIR set first. */
 async function smokeNatives(quiet = false): Promise<void> {
   bootstrapSeaRuntime()
 
@@ -162,9 +147,6 @@ async function smokeWorker(): Promise<void> {
   }
 }
 
-/** Prove the useVfs mount: expected top-level layout, node:fs reads of raw
- * assets, the read-only guarantee (EROFS on write), and the writev repair
- * (a buffered WriteStream flushing against the real file system). */
 async function smokeVfs(): Promise<void> {
   const root = seaVfsRoot()
   if (root === null) {
@@ -181,7 +163,6 @@ async function smokeVfs(): Promise<void> {
       throw new Error(`SEA VFS layout is missing ${expected} (mount root has: ${[...topLevel].join(', ')})`)
     }
   }
-  // The manifest asset is a raw VFS file — readable through plain node:fs.
   const manifest: unknown = JSON.parse(readFileSync(join(root, SEA_MANIFEST_KEY), 'utf-8'))
   if (typeof manifest !== 'object' || manifest === null || !('files' in manifest)) {
     throw new Error(`SEA manifest read through the VFS is malformed: ${SEA_MANIFEST_KEY}`)

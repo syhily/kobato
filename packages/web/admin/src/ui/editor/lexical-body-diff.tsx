@@ -7,10 +7,6 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { diff_match_patch } from 'diff-match-patch'
 
-// Diffs the top-level children of two editor states. Lexical's serialized nodes
-// carry no stable `_key`, so 'unchanged' anchors are semantic fingerprints and
-// 'changed' pairing falls back on same-type + text similarity.
-
 export interface DiffEntry {
   key: string
   status: 'unchanged' | 'changed' | 'leftOnly' | 'rightOnly'
@@ -177,7 +173,6 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         if (onlyOtherSide) {
           return (
             <li
-              // `idx` disambiguates repeat fingerprints (two identical paragraphs).
               // oxlint-disable-next-line react/no-array-index-key
               key={`${idx}-${entry.status}`}
               className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"

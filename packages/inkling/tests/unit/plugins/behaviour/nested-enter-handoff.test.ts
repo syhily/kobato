@@ -6,9 +6,6 @@ import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internal
 import { COMMAND_PRIORITY_LOW, createEditor, KEY_ENTER_COMMAND, type LexicalCommand, type LexicalEditor } from 'lexical'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// The nested editor is built WITHOUT a parent so Lexical's own command
-// propagation up the parent-editor chain can't leak events into the captured
-// parent: every event the parent sees here came through the hand-off itself.
 function createTestEditor(parentEditor?: LexicalEditor): LexicalEditor {
   return createEditor({
     namespace: 'test',

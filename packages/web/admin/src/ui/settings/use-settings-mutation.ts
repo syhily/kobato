@@ -12,7 +12,6 @@ import { toast } from 'sonner'
 export type SettingsCommitResult = { ok: true; section: unknown } | { ok: false }
 
 export interface UseSettingsMutationResult {
-  /** Commit a section payload; the response is authoritative — adopt it, never revalidate. */
   commit: <Section extends SettingsSection>(
     section: Section,
     payload: SettingsSectionPatch<Section>,

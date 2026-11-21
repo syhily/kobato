@@ -23,10 +23,6 @@ interface HeaderV2NodeData {
   accentColor: string
 }
 
-// Colors come from document JSON, not just the color picker — constrain to
-// values the picker can produce before interpolating into style/attributes.
-// The predicate is single-sourced in the render-context module; note header
-// legitimately falls back to 'transparent', which the predicate accepts.
 function safeColor(value: string, fallback: string): string {
   return isSafeColorValue(value) ? value : fallback
 }
@@ -49,8 +45,6 @@ function cardTemplate(nodeData: HeaderV2NodeData, context: RenderContext) {
   const backgroundAccent = nodeData.backgroundColor === 'accent' ? 'inkling-style-accent' : ''
   const buttonAccent = nodeData.buttonColor === 'accent' ? 'inkling-style-accent' : ''
   const buttonStyle = nodeData.buttonColor !== 'accent' ? `background-color: ${buttonColor};` : ``
-  // symmetric with the parser (inkling-align-left ⇔ 'left'): legacy '' and
-  // out-of-vocabulary values emit no class, the button renderer's idiom
   const alignment =
     nodeData.alignment === 'left' || nodeData.alignment === 'center' ? `inkling-align-${nodeData.alignment}` : ''
   const backgroundImageStyle =
@@ -128,8 +122,6 @@ export function renderHeaderNodeV2(nodeData: HeaderV2NodeData, context: RenderCo
   element.innerHTML = htmlString.trim()
 
   const rootElement = getFirstHtmlElement(element, 'renderHeaderV2Node')
-  // getFirstHtmlElement validates the namespace, not the tag — tagName, not
-  // instanceof: the rendered tree may be another jsdom realm's
   if (!isDivElement(rootElement)) {
     throw new Error('renderHeaderV2Node must render a div root element')
   }

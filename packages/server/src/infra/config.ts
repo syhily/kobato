@@ -111,11 +111,6 @@ export interface ConfigCandidateEnv {
   sea: boolean
   cwd: string
   home: string
-  /**
-   * Explicit config path from `KOBATO_CONFIG_FILE`. Development tooling that
-   * cannot use `--config` (the Vite CLI owns that flag) points the DEV server
-   * at a throwaway config without touching the repository's own file.
-   */
   configFile?: string
 }
 
@@ -132,7 +127,6 @@ export function configCandidates(argv: string[], env?: ConfigCandidateEnv): stri
   const candidates: (string | null)[] = [
     explicit,
     envConfig,
-    // Non-SEA execPath is the node binary itself — only the SEA binary owns its path.
     sea ? join(dirname(process.execPath), CONFIG_FILE_NAME) : null,
     join(cwd, CONFIG_FILE_NAME),
     join(home, '.config', CONFIG_FILE_NAME),
@@ -208,11 +202,6 @@ function setPath(obj: Record<string, unknown>, path: readonly string[], value: u
   node[path[path.length - 1]] = value
 }
 
-/** Ghost's `parseValues`: env strings land in the file as native JSON types.
- *  A coercion the entry's own schema would reject on the next boot — a
- *  numeric-looking SECRET landing as a Number in a z.string() slot (32+
- *  digits also lose precision), or a boolean into a string slot — corrupts
- *  the file being written, so the raw string is kept instead. */
 function parseEnvValue(entry: ConfigEntry, raw: string): unknown {
   let value: unknown = raw
   if (/^-?\d+(\.\d+)?$/.test(raw)) {
@@ -348,7 +337,6 @@ export class ConfigFileError extends Error {
 }
 
 export interface ParsedConfigFile {
-  /** The raw stripped JSON `loadConfig` keeps in memory — never the transformed output. */
   data: Record<string, unknown>
   migrated: boolean
   notes: string[]

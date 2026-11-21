@@ -14,12 +14,6 @@ export function isUiMessageId(value: string): value is UiMessageId {
   return Object.hasOwn(uiMessagesEnUS, value)
 }
 
-/**
- * Structural probe for "carries a descriptor", not `instanceof`: a
- * `worker_threads` clone, a duplicate bundle or `vi.resetModules()` give the
- * producing class a different identity, and the boundary must still find the
- * descriptor. Used by the Hono/oRPC guards and the self-update job status.
- */
 export function carriesErrorMessageDescriptor(value: unknown): value is { descriptor: ErrorMessageDescriptor } {
   if (typeof value !== 'object' || value === null || !('descriptor' in value)) {
     return false

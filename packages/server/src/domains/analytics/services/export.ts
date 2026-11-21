@@ -7,7 +7,6 @@ const CSV_COLUMNS = ['path', 'views', 'visitors', 'referers'] as const
 
 const FORMULA_PREFIX = /^[\t\r ]*[=+\-@]/
 
-/** RFC 4180 cell escaping: quote values carrying a comma, quote, or newline. */
 export function csvCell(value: string | number | null | undefined): string {
   let text = value === null || value === undefined ? '' : String(value)
   if (FORMULA_PREFIX.test(text)) {

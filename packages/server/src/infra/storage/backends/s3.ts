@@ -20,10 +20,6 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createHash } from 'node:crypto'
 import { Readable, Transform } from 'node:stream'
 
-// The SDK is loaded lazily via `getAwsSdk()`: `@aws-sdk/core`'s ESM index
-// imports a file without a `.js` extension, which Node ESM and the Vitest
-// SSR loader reject at module-eval time.
-
 const log = getLogger('storage.s3')
 
 type AwsSdk = typeof import('@aws-sdk/client-s3')
@@ -54,10 +50,7 @@ async function newS3Client(sdk: AwsSdk, storage: S3StorageConfig): Promise<S3Cli
       accessKeyId: storage.accessKeyId,
       secretAccessKey: storage.secretAccessKey ?? '',
     },
-    // Some S3-compatible services return base64 Content-MD5 (SDK expects hex) — WHEN_REQUIRED skips validation unless asked.
     responseChecksumValidation: 'WHEN_REQUIRED' as const,
-    // SDK v3 defaults to request checksums, which fail on unknown-length streams —
-    // WHEN_REQUIRED keeps them off; callers wanting integrity pass `ChecksumAlgorithm`.
     requestChecksumCalculation: 'WHEN_REQUIRED' as const,
   }
   const client = new sdk.S3Client(config)
@@ -113,9 +106,6 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
   return { client, bucket: storage.bucket }
 }
 
-// SDK v3 sends CRC32 checksums on `DeleteObjects`, which several S3-compatible
-// providers reject (`ErrMissingContentMD5`) — they only honor `Content-MD5` for
-// this operation. This middleware strips the modern checksums and sets `Content-MD5`.
 function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance): void {
   const middleware: FinalizeRequestMiddleware<ServiceInputTypes, ServiceOutputTypes> =
     (next, context: HandlerExecutionContext) => async (args) => {
@@ -420,11 +410,6 @@ export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBack
 
 export type S3ValidationResult = { ok: true } | { ok: false; descriptor: ErrorMessageDescriptor }
 
-/**
- * Connectivity probe for a candidate config: HeadBucket first, with a ListObjectsV2(MaxKeys=1)
- * fallback for providers that deny HeadBucket. Distinguishes unreachable / bad credentials /
- * missing bucket so the caller can show an actionable message.
- */
 export async function validateS3Config(storage: S3StorageConfig): Promise<S3ValidationResult> {
   const sdk = await getAwsSdk()
   const client = await newS3Client(sdk, storage)

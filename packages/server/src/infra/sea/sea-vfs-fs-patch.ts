@@ -1,32 +1,3 @@
-// Runtime repair for an upstream Node.js bug that ships with the SEA VFS
-// (`"useVfs": true`, still unfixed as of Node 26.13.0 — re-pinned by
-// `pnpm run sea:probe` on the 26.13.0 toolchain):
-//
-// Async readv/writev: the mounted-VFS handler table
-// (`lib/internal/vfs/setup.js`) implements `readvSync`/`writevSync` but NOT
-// the async `readv`/`writev`, while the callback `fs.readv`/`fs.writev`
-// (`lib/fs.js`) call `h.readv(fd, …)` / `h.writev(fd, …)` unguarded whenever
-// any VFS layer is mounted. The result: ANY async `fs.writev` — most
-// importantly `WriteStream._writev`, which fires whenever two chunks queue
-// on a `fs.createWriteStream` — kills the process with
-// `TypeError: h.writev is not a function`, on REAL files outside the mount
-// too (observed killing backup/restore mid-extraction).
-//
-// The repair replaces both entry points on the public `fs` exports with
-// sequential single-operation fallbacks. WriteStream/ReadStream resolve
-// `this[kFs].writev` per call against that same exports object, so one
-// replacement covers every stream created after the patch. Semantics match
-// the originals: positional writes advance per buffer, a partial operation
-// reports the partial total (the stream layer retries the remainder), an
-// error reports the total completed so far, a non-number position means the
-// current offset. The promises API (`FileHandle.writev`, `writeFile`)
-// bypasses the handler table entirely and needs no repair.
-//
-// Scope guard: main thread of a real SEA only — worker threads have no VFS
-// layer (their handler table is null) and non-SEA runtimes never install
-// one, so the originals are fine there.
-//
-
 import { isSea } from '@kobato/server/infra/sea/sea'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import fs from 'node:fs'
@@ -163,9 +134,6 @@ export function installSeaVfsRuntimePatches(): void {
     return
   }
   installed = true
-  // The factories cover the optional-position overloads; typeof fs.writev /
-  // fs.readv additionally carry the promisify custom symbols, which the
-  // sequential fallbacks intentionally do not reproduce.
   fs.writev = unsafeCast<typeof fs.writev>(createSequentialWritev(fs.write.bind(fs)))
   fs.readv = unsafeCast<typeof fs.readv>(createSequentialReadv(fs.read.bind(fs)))
 }

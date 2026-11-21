@@ -12,13 +12,6 @@ const exportList = function (node: ElementNode, exportChildren: ExportChildren):
   const tag = node.getTag()
   const start = node.getStart()
 
-  // track an open <li> outside the child loop so nested lists land inside
-  // <li> elements that already have their contents rendered, e.g.:
-  // <li>one
-  //   <ol>
-  //     <li>one.two</li>
-  //   </ol>
-  // </li>
   let liOpen = false
 
   const exportListContent = (listNode: ListNode): string => {

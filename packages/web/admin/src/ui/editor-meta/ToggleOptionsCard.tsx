@@ -13,7 +13,6 @@ export interface ToggleField {
 
 export interface ToggleOptionsCardProps<TField extends ToggleField> {
   fields: ReadonlyArray<TField>
-  /** Hide a field (e.g. a feature-gated toggle); omit to show every field. */
   fieldVisible?: (field: TField) => boolean
   value: (key: TField['key']) => boolean
   onToggle: (key: TField['key'], value: boolean) => void

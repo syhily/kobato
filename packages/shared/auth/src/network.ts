@@ -1,8 +1,5 @@
 const IPV4_PRIVATE = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
 
-/** One dotted-quad segment per the WHATWG IPv4 rules: decimal by
- *  default, `0x`-prefixed hex, `0`-prefixed octal. Null when the
- *  segment is not numeric in its radix (a name, not an IP literal). */
 function parseIpv4Segment(segment: string): number | null {
   if (segment === '') {
     return null
@@ -27,8 +24,6 @@ function parseIpv4Segment(segment: string): number | null {
   return Number.parseInt(digits, radix)
 }
 
-/** IPv4 literal in any WHATWG spelling (dotted, short-dot, hex,
- *  octal, decimal integer) → 32-bit value; null for non-IP hosts. */
 function parseIpv4(host: string): number | null {
   const input = host.endsWith('.') ? host.slice(0, -1) : host
   const segments = input.split('.')
@@ -68,7 +63,7 @@ const BLOCKED_IPV4_CIDRS: ReadonlyArray<{ base: number; prefix: number }> = [
   { base: 0xac100000, prefix: 12 },
   { base: 0xc0000000, prefix: 24 },
   { base: 0xc0a80000, prefix: 16 },
-  { base: 0xc6120000, prefix: 15 }, // 198.18.0.0/15 benchmarking
+  { base: 0xc6120000, prefix: 15 },
   { base: 0xe0000000, prefix: 3 },
 ]
 
@@ -77,9 +72,6 @@ function ipv4InCidr(ip: number, base: number, prefix: number): boolean {
   return ip >>> shift === base >>> shift
 }
 
-/** Private/reserved check on a 32-bit IPv4 value. The CIDR table is the
- *  authoritative numeric verdict; `IPV4_PRIVATE` is only the name-level
- *  fast path (`127.0.0.1.nip.io`) and deliberately stays narrow. */
 function isPrivateIpv4Number(ip: number): boolean {
   return BLOCKED_IPV4_CIDRS.some(({ base, prefix }) => ipv4InCidr(ip, base, prefix))
 }
@@ -150,8 +142,6 @@ function isPrivateIpv6(hextets: number[]): boolean {
   if (hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff) {
     return isPrivateIpv4Number(hextets[6] * 0x10000 + hextets[7])
   }
-  // IPv4-compatible IPv6 (`::a.b.c.d`, RFC 4291 §2.5.5.1) is not
-  // special-cased: current runtimes don't route it.
   return hextets.every((h, i) => h === (i === 7 ? 1 : 0)) || hextets.every((h) => h === 0)
 }
 

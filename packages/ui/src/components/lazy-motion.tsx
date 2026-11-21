@@ -9,7 +9,6 @@ const MotionH1 = lazy(() => import('motion/react').then((module) => ({ default: 
 const MotionP = lazy(() => import('motion/react').then((module) => ({ default: module.motion.p })))
 const AnimatePresenceImpl = lazy(() => import('motion/react').then((module) => ({ default: module.AnimatePresence })))
 
-// Animation-only props, stripped from the static fallback (React warns on unknown DOM attributes).
 const ANIMATION_ONLY_PROPS = new Set([
   'initial',
   'animate',
@@ -116,7 +115,6 @@ export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeo
   )
 }
 
-/** Eager: suspending this root provider would replace its fallback and reset the app's state. */
 export function LazyMotionConfig({ children, ...props }: ComponentProps<typeof MotionConfig>) {
   return <MotionConfig {...props}>{children}</MotionConfig>
 }

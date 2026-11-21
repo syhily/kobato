@@ -3,23 +3,14 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 export type ErrorMessageParams = Record<string, string | number | boolean | null>
 
 export interface ErrorMessageDescriptor {
-  /** Catalog id (UI catalog: the same corpus the client renders). */
   messageKey: UiMessageId
   params?: ErrorMessageParams
-  /** English text for logs, old clients and diagnostics. */
   fallbackMessage: string
 }
 
 export interface ErrorIssueWire extends ErrorMessageDescriptor {
-  /**
-   * The issue's complete user-readable text in the REQUEST locale; the key
-   * itself never rides this field. The descriptor fields stay for consumers
-   * that localize themselves or map issues back to fields.
-   */
   message: string
-  /** Producer code (a Zod issue code, or a domain-specific tag). */
   code?: string
-  /** Field path, outermost first (`['rateLimit', 'signIn', 'maxAttempts']`). */
   path?: string[]
 }
 

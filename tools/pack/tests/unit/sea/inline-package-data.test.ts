@@ -4,13 +4,6 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Contract test: the server bundle inlines jsdom (the sanitize engine), which
-// resolves its sync-XHR worker path at module scope — a code path the server
-// never takes, but the resolve must not throw inside the single-file ESM SEA
-// binary. The plugin rewrites the exact call site; this test pins its shape in
-// the INSTALLED package so an upstream release that changes it fails here
-// instead of in the smoke.
-
 function packageRoot(name: string): string {
   const requireFromRepo = createRequire(join(process.cwd(), 'package.json'))
   return dirname(realpathSync(requireFromRepo.resolve(`${name}/package.json`)))

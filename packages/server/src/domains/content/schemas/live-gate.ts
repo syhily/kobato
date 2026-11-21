@@ -49,7 +49,6 @@ export function liveContentWhere(columns: LiveContentColumns, options: LiveConte
   ]
   if (!options.includeScheduled) {
     const asOf = options.asOf ?? new Date()
-    // Bare `Date` is not bindable by node:sqlite — bind epoch ms.
     conditions.push(sql`${columns.publishedAt} <= ${asOf.getTime()}`)
   }
   return and(...conditions)!

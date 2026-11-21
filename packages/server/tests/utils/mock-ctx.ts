@@ -12,14 +12,10 @@ export interface MockCtxOptions {
   sessionId?: string
   clientAddress?: string
   url?: string
-  /** Raw `Cookie` header — lands in `requestFacts.cookie`. */
   cookie?: string
-  /** CSRF token the session stub answers for the `csrfToken` key. */
   csrfToken?: string
   db?: Database
-  /** Explicit request-localization projection (partial: missing fields come from the lazy capture). */
   localization?: LocalizationOverride
-  /** Explicit pinned settings bundle; omitted means the lazy snapshot capture. */
   settings?: BlogSettingsBundle | null
 }
 

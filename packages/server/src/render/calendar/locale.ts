@@ -10,10 +10,6 @@ export interface LunarCopy {
 
 export interface AuspiciousCopy {
   prefix: string
-  /**
-   * Simplified term → traditional term. `null` for zh-CN (the library's own
-   * text IS the target). A lookup miss yields `null` (omit the line).
-   */
   terms: Readonly<Record<string, string>> | null
 }
 

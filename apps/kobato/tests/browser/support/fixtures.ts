@@ -1,5 +1,3 @@
-// Playwright's fixture `use` callback is not React's `use` hook; the
-// react-hooks rule cannot tell the two apart in this file.
 /* eslint-disable react-hooks/rules-of-hooks */
 
 import type { BrowserContext, Page } from '@playwright/test'
@@ -11,8 +9,6 @@ import { SettingsApi } from '@tests/browser/support/settings-api'
 
 interface WorkerFixtures {
   authState: Awaited<ReturnType<BrowserContext['storageState']>>
-  /** One context shared by every test in the worker — BroadcastChannel peers
-   *  need a single browser context (origin + process), exactly like two tabs. */
   adminContext: BrowserContext
   settingsApi: SettingsApi
 }

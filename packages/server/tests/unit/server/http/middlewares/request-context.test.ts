@@ -42,8 +42,6 @@ describe('requestContextMiddleware', () => {
     const user = adminUser()
     const session = makeSession({ user })
     if (options.presetCsrfToken !== false) {
-      // A pre-issued token keeps ensureCsrfToken idempotent; without it every
-      // first authenticated request legitimately dirties the session.
       session.set('csrfToken', 'preset-token')
     }
     resolveSessionContext.mockImplementation(async () => ({ session, user, dirty: false, ...sessionCtx }) as never)

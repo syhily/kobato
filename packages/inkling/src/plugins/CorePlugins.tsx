@@ -88,7 +88,6 @@ export const CORE_PLUGINS: readonly CorePluginEntry[] = [
   },
   {
     key: 'history',
-    // adds undo/redo; in multiplayer that's handled by yjs
     when: (scope) => !scope.isCollabActive,
     render: (scope) => <HistoryPlugin externalHistoryState={scope.historyState} />,
   },

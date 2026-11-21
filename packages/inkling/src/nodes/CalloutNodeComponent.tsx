@@ -16,8 +16,6 @@ function isCalloutColorName(color: string | undefined): color is CalloutColorNam
   return color !== undefined && Object.hasOwn(CALLOUT_COLORS, color)
 }
 
-// emoji-mart yields `{ native }` for standard emojis; custom emojis (this
-// picker isn't configured with any) carry `src` instead
 function getNativeEmoji(emoji: unknown): string | undefined {
   if (typeof emoji === 'object' && emoji !== null && 'native' in emoji && typeof emoji.native === 'string') {
     return emoji.native

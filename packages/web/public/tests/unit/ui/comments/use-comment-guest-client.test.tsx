@@ -6,8 +6,6 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Client snapshot reads localStorage, so SSR and hydration agree on empty
-// and React re-renders after hydration; happy-dom lacks localStorage — stub it.
 const STORAGE_KEY = 'comment-guest-profile'
 
 const VALID_PROFILE: CommentGuestProfile = {

@@ -40,9 +40,7 @@ export interface UpsertMetaInputBase {
   webmentionsEnabled?: boolean
   showToc?: boolean
   showUpdated?: boolean
-  /** `null` clears the content language; omitted = leave untouched. */
   contentLanguage?: string | null
-  /** `null` cancels a pending schedule (drops back to unpublished); omitted = leave untouched. */
   publishedAt?: Date | null
 }
 

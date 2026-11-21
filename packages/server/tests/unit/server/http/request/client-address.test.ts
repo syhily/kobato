@@ -24,8 +24,6 @@ describe('server/http/request/client-address — getClientAddress', () => {
     expect(getClientAddress(req, 'port:43210')).toBe('port:43210')
   })
 
-  // Behind a Unix-socket reverse proxy the direct peer IP is undefined; trusting proxy
-  // headers there lets any remote client spoof its IP and bypass every IP-keyed limit.
   it('does NOT trust cf-connecting-ip when the direct peer is unavailable', () => {
     const req = buildRequest({ 'cf-connecting-ip': '198.51.100.5' })
     expect(getClientAddress(req, undefined)).toBe('unknown')

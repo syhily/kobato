@@ -2,9 +2,6 @@ import { browserEnv } from '@kobato/browser/browser-env'
 import { defineConfig } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 
-// The journeys are authored in the app tree; this config lives in the package
-// that owns Playwright so its own imports resolve through node_modules beside
-// it (Playwright loads the config without tsconfig path mapping).
 const BROWSER_TEST_DIR = fileURLToPath(new URL('../../apps/kobato/tests/browser', import.meta.url))
 const APP_TMP_DIR = fileURLToPath(new URL('../../apps/kobato/tmp', import.meta.url))
 

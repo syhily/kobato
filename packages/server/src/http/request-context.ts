@@ -17,24 +17,8 @@ export interface RequestContext {
   requestFacts: RequestFacts
   db: Database
   cspNonce: string
-  /**
-   * PINNED settings bundle, captured together with `localization` on the first
-   * access of either getter then frozen: renderers take their inputs from here so
-   * the bytes they produce match the `revision` in the cache key.
-   */
   readonly settings: BlogSettingsBundle | null
-  /**
-   * Resolved from the same pinned snapshot as `settings`.
-   *
-   * Lazily memoized because this context is derived BEFORE `buildLoadContext`
-   * awaits `hydrateBlogSettings`; only loaders/controllers read it, so first
-   * access happens after hydration and the snapshot is authoritative.
-   */
   readonly localization: AppLocalization
-  /**
-   * Mark the session mutated — the middleware commits it after the response (the ONLY
-   * commit point; sid-changing flows keep their own channel).
-   */
   markSessionDirty(): void
 }
 

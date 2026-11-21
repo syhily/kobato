@@ -20,8 +20,5 @@ afterAll(async () => {
     stopAllScheduledJobs()
     __resetSchedulerTaskStatesForTests()
     invalidateMailTransportCache()
-  } catch {
-    // Isolated files may partially mock this import graph; a shared worker
-    // never mocks, so the cleanup net only matters there.
-  }
+  } catch {}
 })

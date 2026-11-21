@@ -14,8 +14,6 @@ import { isValidElement, useState } from 'react'
 export interface MusicPickerDialogProps {
   trigger?: React.ReactNode
   onPick: (music: AdminMusicDto) => void
-  /** Optional controlled-open pair — drive the dialog imperatively (e.g.
-   *  editor slash-command) instead of a `trigger` button click. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }

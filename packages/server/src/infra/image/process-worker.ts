@@ -5,9 +5,6 @@ import { rgbaToThumbHash } from '@kobato/utils/thumbhash'
 import { parentPort, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
 
-// sharp must stay a static import: the bundler redirects its platform loads
-// to `nativeRequire` (`tools/pack/src/sea/redirect-native-requires.ts`).
-
 const THUMBHASH_MAX_DIMENSION = 100
 const MAX_INPUT_PIXELS = 50_000_000
 

@@ -1,7 +1,3 @@
-// Editor wall-clock formatting: the BROWSER-LOCAL wall-clock parts are
-// normalized onto UTC and formatted in UTC, so SSR and the first client render
-// agree on any host. The zone is fixed, never the site zone.
-
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { calendarWallClockDate } from '@kobato/ui/components/calendar'

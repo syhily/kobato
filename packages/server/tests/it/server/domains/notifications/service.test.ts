@@ -49,7 +49,6 @@ function viewer(id: number, role: Role, name = 'user'): SessionUser {
   return { id: String(id), name, email: `${name}@example.com`, website: null, role }
 }
 
-/** `fn` is synchronous (node:sqlite), so a rejecting-promise capture would not see the throw. */
 function captureError(fn: () => void): unknown {
   try {
     fn()

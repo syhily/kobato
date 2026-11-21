@@ -1,10 +1,3 @@
-// Legacy comment bodies may still carry `math` / `math-inline` nodes, which the
-// trimmed composer does not register: `parseEditorState` would abort at seed
-// time (Lexical error #17) and the comment would fail to open. Downgrade ahead of
-// parsing — `math` → ```math codeblock (tex → code), `math-inline` → `$tex$` text
-// — so the seed parses through the trimmed node set and the next save persists
-// the fence form. Pure state → state; the input is never mutated.
-
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import type { LexicalNodeJson } from '@kobato/inkling/headless/schema'
 

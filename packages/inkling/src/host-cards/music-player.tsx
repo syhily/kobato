@@ -30,10 +30,6 @@ export function isMusicPlayerCardNode(node: unknown): node is MusicPlayerCardNod
   return node instanceof BaseMusicPlayerNode
 }
 
-// The picker DIALOG is host data flow (it queries the music library over RPC),
-// so it stays in the host: web-admin registers it through the pick seam
-// (`registerCardPicker`, with `autoOpenOnInsert`). The card here only opens the
-// registered picker by node KEY.
 export function musicCardToolbarItems(
   {
     onReplace,
@@ -68,12 +64,6 @@ export function musicCardToolbarItems(
   ]
 }
 
-// The component renders from a PLAIN meta snapshot and never touches the node
-// instance: the generated property getters call getLatest(), which throws when
-// React re-renders outside Lexical's commit or against a node instance a later edit
-// already replaced (Lexical #195). Reading the dataset inside `render(node)` below
-// is safe because decorate() runs inside the reconciler's active read. Everything
-// the pick seam and the chrome need crosses as the node KEY.
 export function MusicPlayerCardComponent({ meta, nodeKey }: { meta: MusicPlayerCardMeta; nodeKey: string }) {
   const { t } = useI18n()
   const picker = useCardPicker()

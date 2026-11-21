@@ -8,11 +8,8 @@ import {
 } from 'react'
 
 export type ScrubBarProps = {
-  /** 0..1 */
   value: number
-  /** Live preview while dragging; the parent may mirror it into the UI. */
   onScrub?: (value: number) => void
-  /** Committed value on pointer-up and on keyboard steps (seek semantics). */
   onSeek: (value: number) => void
   ariaLabel: string
   className?: string

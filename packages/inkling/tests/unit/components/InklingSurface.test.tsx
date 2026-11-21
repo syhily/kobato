@@ -46,8 +46,6 @@ function createNestedEditor() {
 }
 
 async function setText(editor: LexicalEditor, text: string) {
-  // discrete commits synchronously; the push tag stops Lexical history
-  // from merging edits made within its merge-delay window
   await updateEditor(
     editor,
     () => {

@@ -5,10 +5,6 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
-// This module lives at packages/server/src/infra/image/ — five levels below
-// the repository root. The process cwd varies (build runs in apps/kobato,
-// `pnpm dev` runs vite from the repository root), so every path must be
-// anchored on import.meta.url, never on process.cwd().
 const REPO_ROOT = fileURLToPath(new URL('../../../../../', import.meta.url))
 const WORKER_ENTRY = fileURLToPath(new URL('./process-worker.ts', import.meta.url))
 const OUTPUT_DIR = resolve(REPO_ROOT, 'apps/kobato/build/server')
@@ -28,7 +24,6 @@ export function processWorkerEntryPlugin(): Plugin {
       const outFile = resolve(OUTPUT_DIR, OUTPUT_FILE)
       rmSync(outFile, { force: true })
 
-      // `write: false` lets us write the chunk ourselves: stable filename, no hash.
       const result = await build({
         configFile: false,
         logLevel: 'warn',
@@ -39,8 +34,6 @@ export function processWorkerEntryPlugin(): Plugin {
           ssr: true,
           rolldownOptions: {
             input: WORKER_ENTRY,
-            // `sharp` resolves from node_modules here (the SEA bundle inlines it);
-            // node builtins stay external either way.
             external: ['sharp', 'pg', 'node:worker_threads', 'node:buffer', 'node:module', 'node:os', 'node:path'],
             output: {
               format: 'es',
@@ -48,10 +41,6 @@ export function processWorkerEntryPlugin(): Plugin {
             },
           },
         },
-        // This isolated build (configFile: false) has no tsconfig resolver,
-        // and product packages never self-link (pinned by package-dag), so
-        // exports resolution cannot cover the worker's `@kobato/server`
-        // self-imports — these aliases are the only resolution layer here.
         resolve: {
           alias: {
             '@kobato/server': resolve(REPO_ROOT, 'packages/server/src'),

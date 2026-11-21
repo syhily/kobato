@@ -40,9 +40,6 @@ describe('update/job startUpdateJob', () => {
     job.startUpdateJob('v9.9.9', { restart })
     expect(job.getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v9.9.9' })
 
-    // NB: `vi.resetModules()` gives job.ts its own copy of the errors
-    // module, so `instanceof` cannot cross the registry boundary here —
-    // assert the DomainError shape by its properties instead.
     let caught: unknown
     try {
       job.startUpdateJob('v9.9.9', { restart })

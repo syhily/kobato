@@ -13,12 +13,6 @@ export const LOCALE_LABELS = {
 
 export type JourneyLocale = keyof typeof LOCALE_LABELS
 
-/**
- * Establish a real server session for the worker's browser context. The sign-in form
- * is not driven through the UI: its two-step flow keeps the email in React state, and
- * filling step one before hydration lands posts an empty email. This is the same
- * credential POST the HTTP e2e suite issues, so the cookies match a browser login.
- */
 export async function signInAdmin(context: BrowserContext, env: BrowserEnv): Promise<void> {
   const request = context.request
   const page = await request.get('/admin/signin')
@@ -40,11 +34,8 @@ export async function signInAdmin(context: BrowserContext, env: BrowserEnv): Pro
 export async function waitForSettingsReady(page: Page): Promise<void> {
   await expect(page.locator('#general-locale')).toBeVisible()
   await waitForHydration(page, '#general-description')
-  // RHF seeds `defaultValues` from a mount effect that can land after hydration;
-  // filling earlier is silently reverted. The baseline proves the seeding ran.
   await expect(page.locator('#general-title')).toHaveValue(BASELINE_GENERAL.title)
   await expect(page.locator('#general-description')).toHaveValue(BASELINE_GENERAL.description)
-  // A post-hydration re-render can replace the SSR inputs and the select's portal items.
   await page.waitForTimeout(400)
 }
 

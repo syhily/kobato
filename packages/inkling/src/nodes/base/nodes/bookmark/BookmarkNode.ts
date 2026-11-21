@@ -27,15 +27,9 @@ export interface BookmarkData {
   caption?: string
 }
 
-// the card's spec arrays live here, beside the class they type — see the
-// videoNestedEditors note
 export const bookmarkNestedEditors = [captionEditorSpecBase] as const satisfies readonly NestedEditorSpec[]
 
 export const bookmarkTransientProps = [
-  // true only for a card constructed from a bare url before its metadata was
-  // fetched — the component's metadata-fetch effect keys off it. The initial
-  // value reads the dataset the base constructor forwards to the generated
-  // constructor.
   { name: 'createdWithUrl', initial: (dataset): boolean => !!dataset.url && !dataset.metadata },
 ] as const satisfies readonly TransientPropSpec[]
 
@@ -52,8 +46,6 @@ function isBookmarkMetadataKey(key: string): key is keyof BookmarkMetadata {
   return BOOKMARK_METADATA_KEYS.has(key)
 }
 
-// importJSON receives untrusted JSON: keep only the string fields the
-// BookmarkMetadata shape declares instead of asserting the whole payload
 function asBookmarkMetadata(value: unknown): BookmarkMetadata | undefined {
   if (typeof value !== 'object' || value === null) {
     return undefined
@@ -79,12 +71,6 @@ const bookmarkProperties = [
   { name: 'thumbnail', urlPath: 'metadata.thumbnail', default: '', urlType: 'url' },
 ] as const satisfies readonly DecoratorNodeProperty[]
 
-/**
- * The bookmark's serialized shape — the flat dataset fields are REMAPPED on
- * export (the metadata fields nest under `metadata`, so the serialized node
- * is not SerializedGeneratedDecoratorNode<dataset>; the generator's third
- * type parameter carries this instead).
- */
 export interface SerializedBookmarkNode extends SerializedLexicalNode {
   url: string
   metadata: {
@@ -98,10 +84,6 @@ export interface SerializedBookmarkNode extends SerializedLexicalNode {
   caption: string
 }
 
-// the merged interface self-types the spec-driven fields — see the
-// BaseAudioNode note. The dataset accessors and `__*` dataset fields need no
-// declaration here: the generated instance type already carries them
-// (DecoratorNodeValueMap / PrivateDatasetFields).
 export interface BaseBookmarkNode
   // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
   extends CardSpecFieldMapFor<typeof bookmarkTransientProps, typeof bookmarkNestedEditors> {}
@@ -114,7 +96,6 @@ export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkPrope
     return parseBookmarkNode(this)
   }
 
-  /* override */
   constructor(
     {
       url,
@@ -124,13 +105,6 @@ export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkPrope
     }: BookmarkData & CardSpecNestedEditorDataset<typeof bookmarkNestedEditors> = {},
     key?: string,
   ) {
-    // Forward the url, metadata, caption, and a passed-in caption editor so
-    // the generated constructor can run the nested-editor setup/populate and
-    // the transient-prop initialization (`createdWithUrl` reads url/metadata)
-    // for subclasses that adopt the specs — both no-ops on this class. The
-    // assignments below re-set the fields from the same values (?? '' matches
-    // || '' for the string-typed dataset); the metadata remap covers the keys
-    // super never received.
     super({ url, metadata, caption, captionEditor }, key)
     this.__url = url || ''
     this.__icon = metadata?.icon || ''
@@ -141,11 +115,8 @@ export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkPrope
     this.__thumbnail = metadata?.thumbnail || ''
   }
 
-  /* @override */
   getDataset(): Record<string, unknown> {
     const self = this.getLatest()
-    // appendNestedEditorDataset adds the caption editor keys for wrapper
-    // subclasses that adopt a `nestedEditors` spec; a no-op on this class
     return this.appendNestedEditorDataset({
       url: self.__url,
       metadata: {
@@ -160,7 +131,6 @@ export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkPrope
     })
   }
 
-  /* @override */
   static importJSON(serializedNode: Record<string, unknown>) {
     const { url, metadata, caption } = serializedNode
     const node = new this({
@@ -171,10 +141,7 @@ export class BaseBookmarkNode extends generateDecoratorNode<typeof bookmarkPrope
     return node
   }
 
-  /* @override */
   exportJSON(): SerializedBookmarkNode {
-    // serializeNestedEditorHtml re-serializes the caption editor for wrapper
-    // subclasses that adopt a `nestedEditors` spec; a no-op on this class
     return this.serializeNestedEditorHtml({
       type: 'bookmark',
       version: 1,

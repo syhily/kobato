@@ -29,10 +29,6 @@ export const setFontSlotInputDto = z.object({
 })
 export type SetFontSlotInput = z.infer<typeof setFontSlotInputDto>
 
-// Admin fonts wire — the single Zod source the `@kobato/api` fonts contract
-// composes and the server validates against. (`upload` lives in a separate
-// Hono resource route — 60 MiB sources exceed the oRPC bridge's body limit.)
-
 export const adminFontsListInput = z.object({}).optional()
 export type AdminFontsListInput = z.infer<typeof adminFontsListInput>
 

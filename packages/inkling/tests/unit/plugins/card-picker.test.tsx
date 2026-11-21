@@ -493,10 +493,6 @@ describe('the insert-then-pick undo entry (fromInsert)', () => {
     await mountHistoryAndRegistrar()
     const nodeKey = await insertWithAutoOpen()
 
-    // The write seam's mergeHistory option applies Lexical's HISTORY_MERGE_TAG.
-    // The block body matters: Lexical treats a listener's return value as a
-    // cleanup registration — an expression body returning push()'s length
-    // would break the next commit.
     const seenTags: string[][] = []
     editor.registerUpdateListener(({ tags }) => {
       seenTags.push([...tags])

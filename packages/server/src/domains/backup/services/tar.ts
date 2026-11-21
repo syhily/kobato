@@ -4,8 +4,6 @@ import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 
-/** The tar block size — exported so the test-tier reader in
- *  tests/_helpers/backup-buffer.ts shares the offset math. */
 export const TAR_BLOCK = 512
 const BLOCK = TAR_BLOCK
 const USTAR_OFFSET = 257
@@ -42,7 +40,6 @@ export function tarEntryHeader(name: string, size: number): Buffer {
   writeString(header, 263, 2, '00')
   writeString(header, 265, 6, 'kobato')
   writeString(header, 297, 6, 'kobato')
-  // USTAR checksum: the header summed with the chksum field as eight spaces.
   writeString(header, 148, 8, '        ')
   let sum = 0
   for (const byte of header) {
@@ -82,7 +79,6 @@ export interface TarEntryMeta {
   size: number
 }
 
-/** Read a NUL-terminated latin1 string (tar's fixed-width fields). */
 export function readCString(buffer: Buffer): string {
   const end = buffer.indexOf(0)
   return buffer.toString('latin1', 0, end === -1 ? buffer.length : end)

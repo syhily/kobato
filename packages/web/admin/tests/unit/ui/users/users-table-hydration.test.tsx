@@ -4,14 +4,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-set
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
 import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'
 // @vitest-environment jsdom
-/**
- * `formatShowDate` is RELATIVE ("today" / "yesterday"), so a render-time
- * `new Date()` reads the server clock on the server and the browser clock on
- * the client. A hydration that crosses local midnight therefore renders
- * different copy and React reports a mismatch. The table must
- * read the root loader's `nowIso` during SSR + hydration (the `useChromeClock`
- * pattern) and only advance after mount.
- */
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
@@ -20,10 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const config = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!
 
-// Site zone is Asia/Shanghai (UTC+8). The row was registered on Nov 8 01:00 local.
 const CREATED_AT = '2026-11-07T17:00:00.000Z'
 const SSR_NOW = '2026-11-08T15:59:00.000Z'
-// Browser hydration instant, one minute later: 00:00:30 local, Nov 9 → "yesterday".
 const CLIENT_NOW = '2026-11-08T16:00:30.000Z'
 
 const rows = [makeAdminUser({ id: 'user-1', name: 'Alice', createdAt: CREATED_AT })]

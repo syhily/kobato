@@ -15,9 +15,7 @@ export function assembleWhere(conditions: SQL[]): SQL | undefined {
 }
 
 export interface AdminListPage {
-  /** Zero-based offset. Values `<= 0` are ignored (same as omitting). */
   offset?: number
-  /** Page size. When undefined, all matching rows are returned. */
   limit?: number
 }
 

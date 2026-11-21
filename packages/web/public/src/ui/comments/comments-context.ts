@@ -11,8 +11,6 @@ export interface CommentTreeState {
   rootsLoaded: number
   rootsTotal: number
   replyToId: number
-  /** Owned comments keyed by stringified id; lives in the reducer so ownership
-   *  and the tree update atomically in one dispatch. */
   myComments: Map<string, MyCommentOwnership>
 }
 

@@ -241,7 +241,6 @@ describe('utils/format — display names and collation', () => {
   })
 
   it('handles unknown and malformed codes without throwing', () => {
-    // Structurally valid but unassigned region: Intl's localized "unknown" name.
     expect(formatDisplayName('region', 'ZZ', { locale: 'zh-CN' })).toBe('未知地区')
     expect(formatDisplayName('region', 'ZZ', { locale: 'en-US' })).toBe('Unknown Region')
     expect(formatDisplayName('region', 'not-a-region', { locale: 'zh-CN' })).toBe('not-a-region')

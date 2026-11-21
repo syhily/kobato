@@ -1,15 +1,3 @@
-// The semantic display-formatting facade: the ONE surface UI code uses for
-// user-visible dates, numbers, byte sizes, durations and region/language names.
-//
-// Every function takes an EXPLICIT locale, and every date function an explicit site
-// time zone — no runtime-default locale anywhere, so SSR and hydration always agree.
-// Formatter instances are cached by immutable keys (locale + options, FIFO-evicted)
-// because construction reads locale data.
-//
-// What must NOT go through here: ISO timestamps, `<input type="datetime-local">`
-// values, calendar URL parts, feed/sitemap/API wire formats, analytics bucket labels
-// — machine formats stay machine formats.
-
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { Locale as DateFnsLocale } from 'date-fns'
 
@@ -99,20 +87,15 @@ function displayNamesFormatter(
   return formatter
 }
 
-/** Invalid input keeps Intl's garbage-in behavior: a RangeError, never NaN-filled output. */
 function toDate(value: Date | string): Date {
   return value instanceof Date ? value : new Date(value)
 }
 
 export interface DateFormatOptions extends Omit<Intl.DateTimeFormatOptions, 'timeZone'> {
   locale: AppLocale
-  /** The SITE time zone (never the visitor's). */
   timeZone: string
 }
 
-// `dateStyle` / `timeStyle` are mutually exclusive with component options
-// (`year`, `month`, …) in Intl — only apply the shorthand default when the
-// caller supplied no explicit parts.
 function hasComponentOptions(options: Intl.DateTimeFormatOptions): boolean {
   return [
     'weekday',
@@ -145,11 +128,8 @@ export function formatDateTime(value: Date | string, options: DateTimeFormatOpti
 
 export interface RelativeTimeOptions {
   locale: AppLocale
-  /** The site time zone used for calendar-day math. */
   timeZone: string
-  /** Reference instant; pass the loader's `nowIso` so SSR and hydration agree. */
   now?: Date | string
-  /** Force one unit instead of picking the largest applicable one. */
   unit?: Intl.RelativeTimeFormatUnit
 }
 
@@ -162,11 +142,6 @@ export interface SiteDateParts {
   second: number
 }
 
-/**
- * Calendar fields of an instant in the SITE time zone. The one extraction the
- * date facade and `@kobato/utils/formatter`'s primitives share; invalid input
- * keeps Intl's garbage-in behavior (a RangeError).
- */
 export function siteDateParts(value: Date | string, timeZone: string): SiteDateParts {
   const zoned = new TZDate(toDate(value), timeZone)
   if (Number.isNaN(zoned.getTime())) {
@@ -218,7 +193,6 @@ function displayMonthsBetween(from: SiteDateParts, to: SiteDateParts): number {
 }
 
 export interface RelativeValueOptions {
-  /** `auto` renders today/yesterday/last week; `always` renders `0 days ago` / `1 week ago`. */
   numeric?: 'auto' | 'always'
 }
 
@@ -270,9 +244,7 @@ const RECENT_WINDOW_DAYS = 210
 
 export interface RecentDateOptions {
   locale: AppLocale
-  /** The site time zone used for calendar-day and week-start math. */
   timeZone: string
-  /** Reference instant; pass the loader's `nowIso` so SSR and hydration agree. */
   now?: Date | string
 }
 
@@ -308,7 +280,6 @@ export function formatRecentDate(value: Date | string, options: RecentDateOption
 
 type SingularUnit = 'year' | 'quarter' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
 
-/** Every `Intl.RelativeTimeFormatUnit` spelling maps onto one singular unit. */
 const SINGULAR_UNITS = {
   year: 'year',
   years: 'year',
@@ -399,8 +370,6 @@ export function formatDuration(ms: number, options: { locale: AppLocale }): stri
     }).format(ms / 1000)
   }
   const minutes = Math.floor((ms % 3_600_000) / 60_000)
-  // Staircase truncation: the smaller unit is floored, never rounded — rounding
-  // would emit `1 分 60 秒` for 119.5s.
   const seconds = Math.floor((ms % 60_000) / 1000)
   const parts =
     ms >= 3_600_000
@@ -438,8 +407,6 @@ export function formatDisplayName(
     const formatter = displayNamesFormatter(options.locale, type, fallback)
     return formatter.of(code) ?? code
   } catch {
-    // Malformed codes (or a runtime without Intl.DisplayNames) must not crash
-    // a render — show the raw code.
     return code
   }
 }

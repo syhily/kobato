@@ -1,24 +1,3 @@
-/**
- * The autolink policy behind `InklingAutoLinkPlugin`: the matcher set plus
- * the boundary separators, headless so the semantics are a synchronous test
- * table. Matches the host's tiptap `Link.configure({ autolink: true })`
- * surface (tiptap 3.31, linkify defaults):
- *
- * - Scheme URLs (`http(s)`/`ftp(s)://…`) link verbatim.
- * - `www.`-prefixed and bare domains with an alpha TLD (2+ letters) link with
- *   tiptap's `defaultProtocol` (`http://`) prepended. IPv4 literals never
- *   match (the TLD must be alphabetic).
- * - Emails link as `mailto:`.
- * - Trailing punctuation (`.,;:!?`, quotes) and unbalanced closing brackets
- *   are excluded from the match — `(https://x.com)` links without the parens,
- *   and a Wikipedia-style `…/Foo_(bar)` keeps its balanced `)`.
- *
- * The plugin machinery is upstream `registerAutoLink` (`@lexical/link`); the
- * React `AutoLinkPlugin` wrapper cannot take a `separatorRegex`, so the
- * plugin mounts the register call directly to widen the boundary set
- * (upstream's default `/[.,;\s]/` would reject a link hugged by `!?()[]`).
- */
-
 import type { LinkMatcher } from '@lexical/link'
 
 export const AUTOLINK_SEPARATOR = /[\s.,;:!?'"()[\]{}<>]/

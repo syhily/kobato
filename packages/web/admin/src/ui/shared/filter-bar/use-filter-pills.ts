@@ -24,13 +24,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 const SEARCH_DEBOUNCE_MS = 250
 
 export interface UseFilterPillsOptions<K extends string> {
-  /** Field specs — stable identity (module-scope constant or memoized). */
   fields: readonly FilterFieldSpec<K>[]
-  /** Uncontrolled seed (comments: the URL-restored pills). */
   initial?: ActiveFilter<K>[]
-  /** Controlled value — the URL stays the source of truth, adopted on change. */
   value?: ActiveFilter<K>[]
-  /** Controlled sink — fired after every state-changing dispatch with the resulting filters and action. */
   onChange?: (next: ActiveFilter<K>[], action: FilterPillsAction<K>) => void
 }
 
@@ -132,7 +128,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     return out
   }, [searchFields, searchResults, debouncedInputs, filters])
 
-  // Return-only TQuery is the call-site typing API (`queryInput<PostsFilterQuery>()`).
   // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
   const queryInput = useCallback(<TQuery extends object = Record<string, string>>(): TQuery => {
     const out: Record<string, string> = {}

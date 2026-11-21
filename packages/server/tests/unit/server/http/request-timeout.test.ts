@@ -39,19 +39,12 @@ describe('requestTimeout', () => {
     let signalAborted = false
     app.get('/check', async (c) => {
       const signal = c.req.raw.signal
-      // Resolve on the abort itself instead of sleeping past the timeout —
-      // a fixed wall-clock sleep is the first casualty when CI's 4 cores
-      // stall under the full suite (observed as a 10s TestTimeoutError with
-      // the sibling tests green); the generous per-test timeout rides out
-      // the same stall.
       await new Promise<void>((resolve) => {
         const onAbort = () => {
           signalAborted = true
           resolve()
         }
         signal.addEventListener('abort', onAbort, { once: true })
-        // Middleware regression (abort never fires) resolves at 5s with
-        // signalAborted still false → clean assertion failure, not a hang.
         setTimeout(resolve, 5_000)
       })
       return c.json({ aborted: signalAborted })

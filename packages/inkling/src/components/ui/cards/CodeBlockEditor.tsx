@@ -49,10 +49,6 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
     }
   }, [])
 
-  // Sync CodeMirror's current document back to the Lexical node when the
-  // editor unmounts. This catches operations such as undo/redo and cut that
-  // don't always fire @uiw/react-codemirror's onChange in Playwright/Chrome
-  // for Testing, so the display-mode render and serialized state stay correct.
   React.useEffect(() => {
     return () => {
       const view = viewRef.current

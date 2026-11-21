@@ -19,10 +19,6 @@ export function registerDeleteLineCommand(editor: LexicalEditor, deps: KeyboardN
         return true
       }
 
-      // Lexical's default DELETE_LINE can pull in a card adjacent to the first visual
-      // line of a paragraph. On that one-line case: backward deletes from the paragraph
-      // start to the caret (keeping later text and lines) and removes the block only
-      // once empty; forward removes the whole block. Either then selects the card.
       const selection = $getSelection()
       if ($isRangeSelection(selection)) {
         if (selection.isCollapsed()) {

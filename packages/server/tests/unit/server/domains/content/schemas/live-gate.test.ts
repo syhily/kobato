@@ -111,7 +111,6 @@ describe('content/schemas/live-gate — liveContentWhere', () => {
   it('uses the provided asOf for the publishedAt comparison', () => {
     const asOf = new Date('2026-06-01T12:00:00.000Z')
     const query = toQuery(liveContentWhere(postColumns, { asOf }))
-    // Raw `sql` params bind epoch ms on timestamp_ms columns.
     expect(query.params).toContain(asOf.getTime())
   })
 

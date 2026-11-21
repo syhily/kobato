@@ -2,8 +2,6 @@ import type { ComponentProps } from 'react'
 
 import { Switch } from '@kobato/ui/components/switch'
 
-// `<Switch>` + immediate save: upstream `onCheckedChange` fires first, then `save(name)` commits this field.
-
 type SwitchProps = ComponentProps<typeof Switch>
 
 interface SettingsSwitchProps extends Omit<SwitchProps, 'onCheckedChange' | 'name'> {

@@ -96,7 +96,6 @@ export const GROUP_ORDER: readonly TaskGroup[] = ['system', 'content', 'maintena
 export interface TaskCapabilities {
   action?: 'backup' | 'migration'
   link?: { to: string; labelId: UiMessageId }
-  /** Status badge + progress lines come from the migration DTO, not job runs. */
   usesMigrationStatus?: boolean
 }
 

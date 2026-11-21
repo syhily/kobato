@@ -161,8 +161,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const activePostFonts = wantsPostFonts ? postFonts : []
   const activeCodeFonts = wantsPostFonts ? codeFonts : []
 
-  // Hint origins carry the source's own scheme — an https-prefixed hint for an
-  // http origin (local dev, embedded self-hosted fonts) is a dead connection.
   const fontOrigins = new Set<string>()
   for (const f of [...globalFonts, ...activePostFonts, ...activeCodeFonts]) {
     if (!f.href) {

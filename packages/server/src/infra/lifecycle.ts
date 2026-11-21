@@ -68,7 +68,6 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
       if (err) {
         log.warn('HTTP server close error', { err: String(err) })
       }
-      // Node.js server.close() callback fires at most once.
       resolve()
     })
   })
@@ -123,8 +122,6 @@ async function performShutdown(reason: string): Promise<void> {
 
 process.once('SIGTERM', () => requestShutdown('SIGTERM'))
 process.once('SIGINT', () => requestShutdown('SIGINT'))
-// Windows console control events: SIGHUP (window closed) / SIGBREAK (Ctrl+Break)
-// stand in for SIGTERM (no delivery there); on POSIX they extend graceful shutdown.
 process.once('SIGHUP', () => requestShutdown('SIGHUP'))
 process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
 

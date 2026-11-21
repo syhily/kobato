@@ -29,7 +29,6 @@ export async function listPostTitlesByCategoryId(db: Database, id: number): Prom
 
 export interface CountPostsByTaxonomyOptions {
   kind: 'category' | 'tag'
-  /** `admin` counts live posts incl. scheduled; `public` counts live AND `visible`. */
   gate: 'admin' | 'public'
   name?: string
   names?: readonly string[]

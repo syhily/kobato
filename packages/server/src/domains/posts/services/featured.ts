@@ -109,7 +109,6 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
 }
 
 export interface SidebarSelection {
-  /** Request-pinned `blog.sidebar` section — never the global snapshot. */
   settings: SidebarSettings
   seed: string
 }

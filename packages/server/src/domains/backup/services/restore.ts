@@ -44,7 +44,6 @@ export const MAX_BACKUP_FILE_SIZE = 500 * 1024 * 1024
 
 const SQLITE_MAGIC = Buffer.from('SQLite format 3\0', 'latin1')
 
-/** DuckDB's storage magic: 4 ASCII bytes after the 8-byte checksum. */
 const DUCKDB_MAGIC_OFFSET = 8
 const DUCKDB_MAGIC = 'DUCK'
 
@@ -90,8 +89,6 @@ export class EncryptedBackupPasswordRequired extends Error {
   }
 }
 
-/** The supplied password failed the GCM tag check — the only retryable
- *  staging failure, so the decrypt endpoint keeps the parked upload for it. */
 export class BackupPasswordError extends ActionFailure {
   constructor() {
     super(400, descriptorFor('backup.error.passwordWrong'))
@@ -118,8 +115,6 @@ async function readPrefix(path: string, length: number): Promise<Buffer> {
 }
 
 async function copyRange(sourcePath: string, offset: number, size: number, destPath: string): Promise<void> {
-  // A zero-length tar entry would compute end = start - 1, which
-  // createReadStream rejects synchronously with ERR_OUT_OF_RANGE.
   if (size === 0) {
     await writeFile(destPath, '')
     return
@@ -219,7 +214,6 @@ export async function stageBackup(source: Buffer | Readable, options: StageBacku
 
     const magic = await readPrefix(payloadSource, 2)
     if (magic.length >= 2 && magic[0] === GZIP_MAGIC_1 && magic[1] === GZIP_MAGIC_2) {
-      // Abort in-stream the moment the decompressed cap trips (gzip-bomb guard).
       const extractCounter = options.onProgress
         ? byteCounter((done) => options.onProgress?.('extracting', done, null))
         : null
@@ -439,7 +433,6 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
       continue
     }
     try {
-      // Windows cannot rename over an existing file — remove the swap first.
       await rm(target, { force: true })
       await rename(backupPath, target)
     } catch (error: unknown) {
@@ -470,7 +463,6 @@ export interface RestoreOptions {
 }
 
 export interface RestoreResult {
-  /** Takes effect only on the next process restart — config is a process-level snapshot. */
   configApplied: boolean
 }
 

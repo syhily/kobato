@@ -74,9 +74,6 @@ async function setupSlashPlugin() {
         get focusNode() {
           return getAnchorNode()
         },
-        // Lexical reads the offsets when deriving a selection from the DOM
-        // (e.g. during a command dispatch); missing offsets throw
-        // $validatePoint inside $beginUpdate, silently swallowed by onError
         anchorOffset: 0,
         focusOffset: 0,
         get isCollapsed() {
@@ -87,8 +84,6 @@ async function setupSlashPlugin() {
         },
         removeAllRanges: () => {},
         addRange: () => {},
-        // Lexical's commit phase reconciles the DOM selection through this;
-        // without it the KEY_ENTER dispatch commit throws into onError
         setBaseAndExtent: () => {},
         getRangeAt: () => ({}) as Range,
         toString: () => '',

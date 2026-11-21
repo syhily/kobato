@@ -165,7 +165,6 @@ export async function issueOtpToken(db: Database, userId: number): Promise<OtpTo
 
 export async function verifyOtpToken(db: Database, userId: number, rawOtpCode: string): Promise<ValidatedToken | null> {
   try {
-    // Sync transaction (node:sqlite): writers serialise on the connection.
     return db.transaction((tx) => {
       const rows = tx
         .select({

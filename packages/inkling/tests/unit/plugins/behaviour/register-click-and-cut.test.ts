@@ -76,8 +76,6 @@ describe('registerClickAndCut', () => {
     document.body.appendChild(root)
     editor.setRootElement(root)
 
-    // jsdom has no layout engine; provide a default rect so Lexical can sync
-    // the DOM selection after updates without throwing.
     const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
       bottom: 0,
       height: 0,

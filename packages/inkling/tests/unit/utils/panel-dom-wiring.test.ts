@@ -27,8 +27,6 @@ class ResizeObserverStub {
   }
 }
 
-// jsdom ships neither ResizeObserver nor Event.composedPath; the wiring's
-// DOM assembly needs both, so the harness stubs them
 globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
 
 let composedPathStub: (() => Element[]) | null = null

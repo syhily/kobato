@@ -75,7 +75,7 @@ function frontendTemplate(node: BookmarkNodeData, document: Document, context: R
   const nodePublisher = node.publisher
   if (nodePublisher) {
     const publisher = document.createElement('span')
-    publisher.setAttribute('class', 'inkling-bookmark-author') // NOTE: This is NOT in error. The classes are reversed for theme backwards-compatibility.
+    publisher.setAttribute('class', 'inkling-bookmark-author')
     publisher.textContent = nodePublisher
     metadata.appendChild(publisher)
   }
@@ -83,7 +83,7 @@ function frontendTemplate(node: BookmarkNodeData, document: Document, context: R
   const nodeAuthor = node.author
   if (nodeAuthor) {
     const author = document.createElement('span')
-    author.setAttribute('class', 'inkling-bookmark-publisher') // NOTE: This is NOT in error. The classes are reversed for theme backwards-compatibility.
+    author.setAttribute('class', 'inkling-bookmark-publisher')
     author.textContent = nodeAuthor
     metadata.appendChild(author)
   }
@@ -96,7 +96,7 @@ function frontendTemplate(node: BookmarkNodeData, document: Document, context: R
     const thumbnail = document.createElement('img')
     thumbnail.src = safeThumbnail
     thumbnail.alt = ''
-    thumbnail.setAttribute('onerror', `this.style.display = 'none'`) // Hide thumbnail div if image fails to load
+    thumbnail.setAttribute('onerror', `this.style.display = 'none'`)
     thumbnailDiv.appendChild(thumbnail)
   }
 

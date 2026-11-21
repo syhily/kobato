@@ -1,7 +1,3 @@
-// Owns the "embedded asset under SEA, real file on disk otherwise" read
-// for text resources (warmup/client manifests, migration SQL). Under SEA
-// (`useVfs`) the asset is a plain file in the mounted VFS — same read.
-
 import { seaAssetPath } from '@kobato/server/infra/sea/sea'
 import { existsSync, readFileSync } from 'node:fs'
 

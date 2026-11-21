@@ -17,10 +17,6 @@ import {
 } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
 import { renderAudioNode } from '@kobato/inkling-internal/nodes/base/nodes/audio/audio-renderer'
 
-// The card's transient-prop spec lives here, beside the class it types — the
-// declaration imports it from this module. `as const` keeps the literal `name`s
-// and `initial` value types on the array's type so the `__*` field maps derive
-// both (CardSpecFieldMap / CardSpecFieldMapFor).
 export const audioTransientProps = [
   transientTriggerFileDialogProp,
   transientInitialFileProp,
@@ -42,7 +38,6 @@ export const audioImportSpec = {
       guardClass: 'inkling-audio-card',
       reads: [
         { name: 'title', kind: 'html', selector: '.inkling-audio-title', trim: true },
-        // property reads, not attributes — `.src` absolutizes
         { name: 'src', kind: 'property', property: 'src', selector: '.inkling-audio-player-container audio' },
         {
           name: 'thumbnailSrc',
@@ -57,8 +52,6 @@ export const audioImportSpec = {
           selector: '.inkling-audio-duration',
           trim: true,
           omit: 'falsy',
-          // audio's m:ss parse — deliberately not unified with video's
-          // parseInt variant
           parse: (raw) => {
             const [rawMinutes, rawSeconds = '0'] = raw.split(':')
             const minutes = Number(rawMinutes.trim())
@@ -75,16 +68,6 @@ export type AudioData = DecoratorNodeData<typeof audioProperties>
 
 export type SerializedAudioNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof audioProperties>>
 
-// Every base card class is named `Base*` (never the card's plain name, which
-// belongs to the spec-adopting wrapper/assembled class one layer up). The
-// uniform convention also covers the original collision that started it: the
-// DOM's global Web Audio `AudioNode` interface — declaration bundlers merge
-// the global into their collision scope and mis-rename both.
-//
-// The merged interface self-types the spec-driven fields/accessors the
-// generated class assigns dynamically (the spec arrays above are their single
-// source). The fields are initialized only on spec-adopting assembled classes
-// — a raw `new BaseAudioNode()` leaves them unset.
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseAudioNode extends CardSpecFieldMapFor<typeof audioTransientProps> {}
 export class BaseAudioNode extends generateDecoratorNode({

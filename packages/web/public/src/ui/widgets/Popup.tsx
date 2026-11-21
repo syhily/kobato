@@ -13,12 +13,9 @@ export type PopupSize = 'sm' | 'md' | 'lg'
 export interface PopupProps {
   open: boolean
   onClose: () => void
-  /** Body max-width preset. Defaults to `sm` (300px / fit-content). */
   size?: PopupSize
-  /** Initial focus target. `dialog` avoids activating a field on open. */
   initialFocus?: 'control' | 'dialog'
   'aria-label'?: string
-  /** Element id whose textContent names the dialog. Takes precedence over aria-label. */
   'aria-labelledby'?: string
   children: ReactNode
 }

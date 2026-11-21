@@ -46,15 +46,7 @@ const DEFAULT_DESCRIPTORS = {
 export class DomainError extends Error {
   readonly code: DomainErrorCode
   readonly issues?: DomainErrorIssue[]
-  /**
-   * Localizable user-facing copy. Absent for raw-string messages, where the
-   * transports wrap `message` in the passthrough key instead.
-   */
   readonly descriptor?: ErrorMessageDescriptor
-  /**
-   * Queue-worker hint: transient, retryable on a backoff waterline; absent
-   * means terminal. HTTP mapping never reads it.
-   */
   readonly retryable?: boolean
 
   constructor(
@@ -76,11 +68,6 @@ export class DomainError extends Error {
   }
 }
 
-/**
- * `DomainError` flattened for the worker_threads structured-clone boundary;
- * the main thread rehydrates it via `domainErrorFromWire`. Descriptors are
- * plain objects, so they survive the clone unchanged.
- */
 export interface DomainErrorWire {
   name: string
   code?: string

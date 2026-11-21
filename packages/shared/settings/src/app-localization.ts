@@ -9,21 +9,9 @@ import { representationRevisionsFor } from '@kobato/settings/representation-scop
 
 export interface AppLocalization {
   locale: AppLocale
-  /** The SITE time zone. Never a visitor/browser zone. */
   timeZone: string
-  /** `null` = follow the locale's Intl default. Part of the representation fingerprint. */
   timeFormat: string | null
-  /**
-   * Process-unique request identity (`<bootId>:<counter>`) — locale sync and
-   * request correlation only. NEVER use it to key a cache: a settings save
-   * would invalidate every representation. Use `revisions.<scope>` instead.
-   */
   revision: string
-  /**
-   * Content-addressed generation per representation scope (detail, listing,
-   * feed, calendar, og, manifest, comments), hashed from the sections that
-   * scope actually renders. Restart-stable for identical settings.
-   */
   revisions: RepresentationRevisions
 }
 

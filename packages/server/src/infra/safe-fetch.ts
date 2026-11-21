@@ -20,37 +20,16 @@ export function __setDnsLookupForTests(fn: TestDnsLookup | null): void {
 }
 
 export interface SafeFetchOptions {
-  /** Per-request timeout (each redirect hop gets a fresh budget). */
   timeoutMs?: number
-  /** Byte cap enforced against both the Content-Length header (before the
-   *  body is read) and the actual buffered body. Omit for no cap. */
   maxBytes?: number
   headers?: Record<string, string>
-  /** Redirect budget. `0` rejects the first 3xx outright. */
   maxRedirects?: number
-  /** Per-hop veto after the SSRF guard, before the hop is fetched; return `false` to stop with `redirect-vetoed`. */
   shouldFollowRedirect?: (nextUrl: URL) => boolean
-  /** HTTP method (default GET). Redirects follow the fetch spec: 303 (always) and 301/302 (for POST) become a bodiless GET; 307/308 carry forward. */
   method?: string
   body?: string
-  /** Return the final response with its body still streaming (cap-guarded when `maxBytes` is given) instead of buffering it into `body`. */
   stream?: boolean
-  /** Opt out of the 80/443 port allowlist. Reserved for compile-time-fixed
-   *  provider endpoints on non-standard ports (e.g. the ONE daily-quote API
-   *  on :8000) — never set it for a user-influenced URL. Applies to the
-   *  redirect hops too. */
   allowNonStandardPort?: boolean
-  /**
-   * Exact origin (`https://host[:port]`) of a fixed, admin-validated backend —
-   * e.g. the self-hosted OpenObserve endpoint from the `observability`
-   * settings. Only a request whose origin EQUALS this value bypasses the
-   * private-host blocklist and the port allowlist, including at connect-time
-   * DNS validation; every redirect target to another origin is still fully
-   * guarded. Never derive it from an inbound request or a redirect Location.
-   */
   trustedOrigin?: string
-  /** Closed telemetry operation name. The URL/host/query are never
-   *  recorded; omit and the span uses the fixed `unspecified` label. */
   operation?: SafeFetchOperation
 }
 
@@ -71,8 +50,6 @@ export type SafeFetchFailureReason =
 export interface SafeFetchFailure {
   ok: false
   reason: SafeFetchFailureReason
-  /** The URL that triggered the failure — the initial URL, the redirect
-   *  target that was rejected, or the hop whose fetch failed. */
   url: string
   status: number | null
   error: unknown
@@ -81,8 +58,6 @@ export interface SafeFetchFailure {
 export interface SafeFetchSuccess {
   ok: true
   url: string
-  /** The final response. Its body has already been buffered into `body`,
-   *  so read the bytes from there, not from the response. */
   response: Response
   body: ArrayBuffer
 }
@@ -90,7 +65,6 @@ export interface SafeFetchSuccess {
 export interface SafeFetchStreamSuccess {
   ok: true
   url: string
-  /** The final response with its body still live (NOT buffered); with `maxBytes` the body errors mid-stream past the cap. */
   response: Response
 }
 
@@ -107,7 +81,6 @@ function failure(
 }
 
 function isTimeoutError(error: unknown): boolean {
-  // undici's `AbortSignal.timeout` rejects with a DOMException named 'TimeoutError'.
   return error instanceof Error && error.name === 'TimeoutError'
 }
 
@@ -381,7 +354,6 @@ async function performSafeFetch(
       if (shouldFollowRedirect !== undefined && !shouldFollowRedirect(nextUrl)) {
         return failure('redirect-vetoed', nextUrl.toString())
       }
-      // Fetch spec: 303 (and 301/302 for POST) become a bodiless GET; 307/308 carry forward.
       const becomesGet =
         response.status === 303 || ((response.status === 301 || response.status === 302) && hopMethod === 'POST')
       if (becomesGet) {

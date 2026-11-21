@@ -14,7 +14,6 @@ export interface DraftConflictDialogProps {
   localSavedAt: number | null
   serverUpdatedAt: number | null
   onChooseLocal: () => void
-  /** Adopt the server copy and discard the local draft. */
   onChooseServer: () => void
 }
 

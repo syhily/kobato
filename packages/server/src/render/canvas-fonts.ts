@@ -7,8 +7,6 @@ import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { access, readFile } from 'node:fs/promises'
 
-// Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
-
 const log = getLogger('images.assets')
 
 export interface FontSlot {

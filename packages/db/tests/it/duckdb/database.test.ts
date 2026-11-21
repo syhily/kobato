@@ -9,7 +9,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
-/** Mirror of the MainHeader layout the module reads: checksum(8), "DUCK"(4), version(uint64 LE). */
 async function readStorageVersion(filePath: string): Promise<bigint> {
   const handle = await open(filePath, 'r')
   try {
@@ -66,7 +65,6 @@ describe('analytics sidecar storage format', () => {
     const analyticsPath = join(makeDir(), 'analytics.duckdb')
     const log = captureLogger()
 
-    // Build a v68 file the way DuckDB 1.5.x wrote it.
     const legacy = await DuckDBInstance.create(analyticsPath, { storage_compatibility_version: 'v1.5.6' })
     const legacyWriter = await legacy.connect()
     for (const ddl of ANALYTICS_DDL) {

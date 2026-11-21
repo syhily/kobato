@@ -1,7 +1,3 @@
-// SEA natives bootstrap — the only SEA-runtime piece that touches disk.
-// Embedded native libraries extract into a FLAT `<cacheDir>/natives-<hash>/` dir.
-// Runs ahead of the server graph: never the env-validating logger or config facade.
-
 import type { Logger } from '@kobato/server/infra/logger'
 
 import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/distribution/sea-assets'
@@ -13,7 +9,6 @@ import { dirname, join } from 'node:path'
 export interface SeaManifestFile {
   key: string
   path: string
-  /** sha256 of the RAW (uncompressed) bytes — verification is codec-agnostic. */
   sha256: string
   codec?: SeaAssetCodec
   size?: number
@@ -194,7 +189,6 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
   return { dir, nativesDir: dir, extracted, reused }
 }
 
-/** No-op outside SEA. Sets `KOBATO_NATIVES_DIR` so `nativeRequire` resolves the extracted libraries; runs before the server graph evaluates. */
 export function bootstrapSeaRuntime(): void {
   if (!isSea()) {
     return

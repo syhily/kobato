@@ -30,7 +30,7 @@ export const MINIMAL_DOCUMENT: SerializedEditorState = {
     format: '',
     indent: 0,
     type: 'root',
-    // oxlint-disable-next-line typescript/no-deprecated -- see the note on FULL_EMPTY_PARAGRAPH
+    // oxlint-disable-next-line typescript/no-deprecated -- persisted payloads carry the deprecated key; a live export still emits it
     version: 1,
   },
 }

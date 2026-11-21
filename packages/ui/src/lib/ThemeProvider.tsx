@@ -85,7 +85,6 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
     } catch (err) {
       logger.warn('Failed to persist theme preference', { error: err, theme: next })
     }
-    // flushSync lands the render and applyTheme inside the view-transition update window.
     transitionViewIfSupported(() => {
       flushSync(() => setThemeState(next))
     })

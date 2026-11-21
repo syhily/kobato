@@ -16,8 +16,6 @@ import { notFound } from '@kobato/server/infra/http/status'
 import { createRouterClient, ORPCError, type RouterClient } from '@orpc/server'
 import { redirect } from 'react-router'
 
-// In-process oRPC caller for SSR loaders: zero HTTP, zero serialization — `Date`s and
-// un-awaited `Promise`s pass through untouched, so streaming stays intact.
 export type SsrCaller = RouterClient<ApiRouter>
 
 const ssrTraceInterceptor = createOrpcTraceInterceptor('in_process')
@@ -30,14 +28,9 @@ type SsrCallerArgs = {
 export type SsrCallerResult = {
   caller: SsrCaller
   cspNonce: string
-  /** The request's minted analytics event id — public loaders publish it as loader data `eid`. */
   analyticsEventId: string
   viewer: SessionUser | null
   session: BlogSession
-  /**
-   * The request's localization projection — `unwrapDetail` stamps a thrown 304 from THIS
-   * object (never the global snapshot), so tag, language header and body agree.
-   */
   localization: AppLocalization
 }
 

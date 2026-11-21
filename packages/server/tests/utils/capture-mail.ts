@@ -5,25 +5,15 @@ import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobat
 import { createServer } from 'node:net'
 
 export interface CaptureMailFixture {
-  /** The in-process SMTP capture server's port. */
   readonly port: number
-  /** A loopback port with no listener — a real ECONNREFUSED dial. */
   readonly deadPort: number
-  /** Point mail settings at the capture server (and drop cached transports). */
   useCapture(): void
-  /** Override ONLY the mail section on the currently-installed bundle. */
   applyCaptureMail(): void
-  /** Point mail settings at the dead port — every send fails for real. */
   useDeadTransport(): void
-  /** Restore the default test bundle and drop cached transports. */
   restore(): void
-  /** Drop any buffered messages (between tests in a file). */
   drain(): Promise<void>
-  /** The next message that actually arrived at the capture server. */
   nextMessage(timeoutMs?: number): Promise<CapturedMail>
-  /** True when NO message arrived within the window. */
   noMessage(timeoutMs?: number): Promise<boolean>
-  /** Close the capture server. */
   close(): Promise<void>
 }
 
@@ -57,7 +47,6 @@ function decodeQuotedPrintable(body: string): string {
 }
 
 function decodeMimeWords(header: string): string {
-  // Whitespace between adjacent encoded words is a transport artifact (RFC 2047).
   const joined = header.replace(/[?]=\s+[=][?]/g, '?==?')
   return joined.replace(
     /[=][?]([^?]+)\?([BbQq])\?([^?]*)\?[=]/g,
@@ -77,14 +66,11 @@ export interface ParsedMail {
   body: string
 }
 
-/** The next captured message, fully decoded: headers parsed, QP/base64 body decoded. */
 export async function parseMail(fixture: CaptureMailFixture, timeoutMs?: number): Promise<ParsedMail> {
   const captured = await fixture.nextMessage(timeoutMs)
   const separator = /\r?\n\r?\n/.exec(captured.raw)
   const headerBlock = separator ? captured.raw.slice(0, separator.index) : captured.raw
   const body = separator ? captured.raw.slice((separator.index ?? 0) + separator[0].length) : ''
-  // RFC 5322 unfolding first: continuation lines (leading space/tab) join the
-  // previous line, then each header is a plain single-line match.
   const unfolded: string[] = []
   for (const line of headerBlock.split(/\r?\n/)) {
     if (/^[ \t]/.test(line) && unfolded.length > 0) {

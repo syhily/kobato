@@ -20,7 +20,6 @@ import { pipeline } from 'node:stream/promises'
 
 const log = getLogger('storage.local')
 
-// Reject ASCII control characters (NUL–US, DEL) anywhere in a key.
 // eslint-disable-next-line no-control-regex -- intentional security guard
 const UNSAFE_KEY_CHARS = /[\x00-\x1f\x7f]/
 

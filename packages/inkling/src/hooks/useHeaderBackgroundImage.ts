@@ -26,9 +26,6 @@ export function useHeaderBackgroundImage({
   write,
   openFileDialog,
 }: UseHeaderBackgroundImageOptions): UseHeaderBackgroundImageResult {
-  // null-safe composer read (isolated unit tests mount the hook without one —
-  // useLexicalComposerContext would throw); the accent backfill scopes to
-  // this editor's root so a second editor on the page can't supply the accent
   const composerContext = useContext(LexicalComposerContext)
   const editor = composerContext?.[0] ?? null
   const [showBackgroundImage, setShowBackgroundImage] = useState<boolean>(Boolean(backgroundImageSrc))

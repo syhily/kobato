@@ -16,10 +16,7 @@ export interface TraceContextCarrier {
 export interface SpanOptions {
   kind?: SpanKind
   attributes?: SpanAttributes
-  /** Continue an inbound W3C trace context (Hono request boundary only). */
   traceContext?: TraceContextCarrier
-  /** Explicit start, epoch milliseconds. Used when a backend reports a
-   *  completed operation together with its duration (SQLite diagnostics). */
   startTime?: number
 }
 
@@ -36,7 +33,6 @@ export interface Span {
 export interface ActiveTraceIds {
   traceId: string
   spanId: string
-  /** W3C trace flags; 1 means sampled. */
   traceFlags: number
   traceState?: string
 }

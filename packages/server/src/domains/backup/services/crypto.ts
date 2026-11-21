@@ -1,18 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto'
 import { Transform, type TransformCallback } from 'node:stream'
 
-/**
- * Streaming password-based encryption for backup archives (chunked AES-256-GCM).
- *
- * Header: 8-byte magic + 16-byte scrypt salt + 4-byte scrypt cost N (BE;
- * r=8/p=1 fixed). Records: `[u32 ctLen][1B flags][12B IV][ct][16B tag]`, up to
- * 4 MiB plaintext each, per-record random IVs (nonce-safe while streaming).
- * Seq ‖ flags ride as GCM AAD, so reorder/drop/replay fails authentication;
- * bit 0 of flags marks the FINAL record (exactly one per stream), so a
- * truncated tail is caught by the format, not the inner gzip CRC. The first
- * record's tag failure is how a wrong password surfaces.
- */
-
 export const BACKUP_ENCRYPTION_MAGIC = Buffer.from('KOBENC01', 'latin1')
 
 const SALT_BYTES = 16
@@ -22,8 +10,6 @@ const TAG_BYTES = 16
 const KEY_BYTES = 32
 const CHUNK_SIZE = 4 * 1024 * 1024
 const DEFAULT_SCRYPT_N = 1 << 15
-/** Header-declared N beyond this is rejected — a hostile header must not turn
- *  scryptSync into a memory bomb (scrypt needs ~128·N·r bytes: ≈128 MiB). */
 const MAX_SCRYPT_N = 1 << 17
 const SCRYPT_R = 8
 const SCRYPT_P = 1
@@ -31,11 +17,6 @@ const HEADER_BYTES = BACKUP_ENCRYPTION_MAGIC.length + SALT_BYTES + 4
 const RECORD_OVERHEAD = 4 + FLAGS_BYTES + IV_BYTES + TAG_BYTES
 const FLAG_FINAL = 1
 
-/** Wrong password, tampered ciphertext, or a truncated/malformed stream.
- *  `kind` splits the two failure families: 'auth' failures (the GCM tag
- *  check) are retryable with a different password, so the decrypt perimeter
- *  keeps the parked upload; 'format' failures (header, framing, truncation)
- *  fail identically on every retry — the perimeter releases the upload. */
 export class BackupDecryptionError extends Error {
   readonly kind: 'auth' | 'format'
 
@@ -106,8 +87,6 @@ function decryptRecord(key: Buffer, record: Buffer, expectedSeq: number): { plai
   }
 }
 
-/** Concats at most once per transform call, not once per incoming chunk
- *  (O(n²) memcpy of 16-64 KiB gzip chunks against a 4 MiB pending buffer). */
 class ByteAccumulator {
   private chunks: Buffer[] = []
   private buffered = 0
@@ -179,7 +158,6 @@ export function createBackupCipher(password: string): Transform {
   })
 }
 
-/** The first record's GCM tag is the password check — a wrong password fails mid-stream. */
 export function createBackupDecipher(password: string): Transform {
   const incoming = new ByteAccumulator()
   let key: Buffer | null = null

@@ -1,26 +1,3 @@
-/**
- * The external surface of `@kobato/server`.
- *
- * The package's exports map stays `./*` (its own src imports itself through
- * the package root), so nothing structural narrows what other packages may
- * reach. This guard is the contract instead: every `@kobato/server/...`
- * module imported from a non-server product tree must be on the audited
- * list below, and every listed module must actually be consumed — the same
- * exact-set discipline as `server-layers.test.ts`.
- *
- * The list is organized by consuming seam:
- *
- *  - `apps/kobato/src/server.ts` boot wiring (schedulers, lifecycles, config);
- *  - the SSR entry/root pair (`entry.server.tsx`, `root.tsx`);
- *  - the audited route groups — `route-server-surface.test.ts` pins the
- *    finer per-group lists inside `src/routes/`;
- *  - build-time tools: the email preview generator (`tools/email`) and the
- *    SEA packer (`tools/pack`).
- *
- * A new entry is a deliberate architecture change: audit the seam first, then
- * extend the list — importing server internals ad hoc is exactly what this
- * guard exists to prevent.
- */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
@@ -48,7 +25,6 @@ const CONSUMING_TREES = [
 ] as const
 
 const SERVER_PUBLIC_SURFACE: readonly string[] = [
-  // composition root + boot wiring (apps/kobato/src/server.ts)
   '@kobato/server/bootstrap/db-lifecycle',
   '@kobato/server/domains/analytics/geoip/scheduler',
   '@kobato/server/domains/audit/services/scheduler',
@@ -77,7 +53,6 @@ const SERVER_PUBLIC_SURFACE: readonly string[] = [
   '@kobato/server/infra/lifecycle',
   '@kobato/server/infra/logger',
 
-  // SSR entry + root document (entry.server.tsx, root.tsx)
   '@kobato/server/http/request-context',
   '@kobato/server/http/route-cache-headers',
   '@kobato/server/http/ssr-caller',
@@ -90,7 +65,6 @@ const SERVER_PUBLIC_SURFACE: readonly string[] = [
   '@kobato/server/infra/trace/react-router',
   '@kobato/server/render/warmup/manifest',
 
-  // audited route groups (route-server-surface.test.ts owns the per-group pin)
   '@kobato/server/domains/auth/csrf',
   '@kobato/server/domains/auth/passkey/signin',
   '@kobato/server/domains/auth/rbac',
@@ -107,7 +81,6 @@ const SERVER_PUBLIC_SURFACE: readonly string[] = [
   '@kobato/server/http/loaders/signin',
   '@kobato/server/infra/rate-limit',
 
-  // build-time tooling (tools/email preview generator, tools/pack SEA runtime)
   '@kobato/server/infra/email/render',
   '@kobato/server/infra/email/templates/AdminNotificationEmail',
   '@kobato/server/infra/email/templates/ApprovedComment',

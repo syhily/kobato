@@ -66,7 +66,6 @@ const verifyButton = () => screen.getByRole('button', { name: /Passkey 登陆/ }
 describe('LoginForm passkey chain', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // happy-dom has no WebAuthn API; the check only needs the constructor.
     vi.stubGlobal('PublicKeyCredential', class {})
     mocks.authBegin.mockResolvedValue({
       options: { challenge: 'Y2hhbGxlbmdl', rpId: 'yufan.me', userVerification: 'required' },

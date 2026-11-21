@@ -51,7 +51,6 @@ describe('snapshot: routes/public/layout', () => {
 
   it('renders the error boundary inside the chrome', () => {
     const Boundary = asRoute(ErrorBoundary)
-    // isRouteErrorResponse needs internal/data — reuse the ErrorView snapshot's 404 shape.
     const notFound = { status: 404, statusText: 'Not Found', internal: false, data: null }
     const html = renderRoutes(
       [

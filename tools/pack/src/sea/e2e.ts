@@ -78,7 +78,6 @@ async function main() {
     const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'apps/kobato/tests/e2e/vitest.config.ts'], {
       cwd: repoRoot,
       stdio: 'inherit',
-      // pnpm is a .cmd shim on Windows.
       shell: process.platform === 'win32',
       env: {
         ...process.env,

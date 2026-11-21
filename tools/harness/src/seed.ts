@@ -5,15 +5,12 @@ import { DatabaseSync } from 'node:sqlite'
 
 export interface SeedAdminOptions {
   email: string
-  /** bcrypt hash of the admin's password (placeholder when the caller never logs in). */
   passwordHash: string
 }
 
 export interface SeedInstanceOptions {
-  /** `blog.general` title (default: the SEA smoke identity). */
   title?: string
   description?: string
-  /** Website origin baked into `blog.general` — a cover-less post's default OG cover is fetched from `<website>/`. */
   website?: string
 }
 

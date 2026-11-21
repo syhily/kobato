@@ -20,7 +20,6 @@ export interface PublishStatusRowProps {
   status: SidebarPublishStatus
   revisionSummary: SidebarRevisionSummary | null
   saveStatus: SidebarSaveStatus
-  /** Current `<input type="datetime-local">` value (`''` = unset). */
   publishedAt: string
   onChangePublishedAt: (value: string) => void
   disabled?: boolean

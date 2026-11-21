@@ -20,12 +20,6 @@ export function registerCardInteraction(
   const isSelected = () => store.getState().selectedCardKey === nodeKey
   const isEditing = () => isSelected() && store.getState().isEditingCard
 
-  // the selection as it was BEFORE this mousedown's side effects: Lexical's
-  // root-level capture-phase mousedown handling selects a clicked decorator
-  // and the card selection store syncs at that commit — all before any
-  // container listener (bubble or capture, the root sits above it) runs.
-  // The guard below needs the pre-click truth ("was this card already
-  // selected?"), captured at document capture, which descends first.
   let selectedKeyBeforeMousedown: NodeKey | null = null
   const snapshotSelection = () => {
     selectedKeyBeforeMousedown = store.getState().selectedCardKey

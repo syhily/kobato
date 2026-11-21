@@ -9,13 +9,9 @@ export interface CommentIdentity {
 }
 
 export interface CommentFlags {
-  /** Token-claimed ownership from the anonymous "my comments" merge. */
   isMine: boolean
-  /** Session-user ownership (`comment.userId` matches the logged-in viewer). */
   isOwnedByCurrentUser: boolean
-  /** The author asked for deletion; the comment awaits admin action. */
   hasPendingDelete: boolean
-  /** Edit-token expiry (ms epoch) behind the editable hint, when mine. */
   myExpiresAt: number | undefined
 }
 

@@ -1,7 +1,3 @@
-/**
- * Word count after stripping HTML tags. Regex path derived from
- * https://github.com/sparksuite/simplemde-markdown-editor with extra diacritics matching.
- */
 export interface SafeStringLike {
   string: string
 }

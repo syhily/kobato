@@ -1,5 +1,4 @@
 // Adapted from lexical's useLexicalTextEntity: upstream binds to TextNode, this
-// variant targets the ExtendedTextNode subclass.
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, $createTextNode, $isTextNode, type LexicalEditor, type LexicalNode, TextNode } from 'lexical'

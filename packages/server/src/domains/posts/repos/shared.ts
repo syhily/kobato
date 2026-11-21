@@ -19,10 +19,6 @@ export interface ListPostsFilters extends MetaListFiltersBase {
   visible?: boolean
   sortBy?: 'publishedAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
-  /**
-   * Lifecycle bucket through the promoted gate: `'published'` is promoted;
-   * `'draft'` includes the `published=true` row with a NULL `published_revision_id`.
-   */
   lifecycle?: 'draft' | 'published'
 }
 

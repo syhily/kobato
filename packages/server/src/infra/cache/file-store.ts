@@ -32,8 +32,6 @@ const TRASH_INFIX = '.trash-'
 
 export interface FileStoreSetOptions {
   ttlSeconds?: number
-  /** Absolute deadline (epoch ms, `0` = never). The registry passes the deadline
-   *  it also stores in L1, so both planes share one value. */
   expiresAtMs?: number
 }
 
@@ -358,9 +356,7 @@ function isExpiredHeader(header: Buffer, now: number): boolean {
 }
 
 export interface CacheBucketUsage {
-  /** Entries the read path would serve: valid `KBC1` and not expired. */
   keyCount: number
-  /** Bytes of every entry file in the shards (envelope included; expired/malformed still occupy disk). */
   byteSize: number
 }
 

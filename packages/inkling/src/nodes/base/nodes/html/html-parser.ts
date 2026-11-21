@@ -1,5 +1,3 @@
-// Hand-written (no import spec): a comment-delimited sibling walker that
-// removes nodes as it goes is structural, not flat per-property reads.
 import type { LexicalNode } from 'lexical'
 
 export function parseHtmlNode(BaseHtmlNode: new (data: Record<string, unknown>) => LexicalNode) {
@@ -32,7 +30,6 @@ export function parseHtmlNode(BaseHtmlNode: new (data: Record<string, unknown>) 
                 } else if (currentNode.nodeType === 3 && currentNode.textContent) {
                   html.push(currentNode.textContent)
                 }
-                // remove consumed nodes so they do not go through the parser
                 currentNode.remove()
               }
 
@@ -72,8 +69,6 @@ function isHtmlEndComment(node: Node) {
   return node.nodeType === 8 && node.nodeValue?.trim().match(/^inkling-card-end:\s?html$/)
 }
 
-// nodeType, not instanceof: the source document may be another jsdom
-// realm's, where instanceof fails
 function isElementNode(node: Node): node is Element {
   return node.nodeType === 1
 }

@@ -15,21 +15,6 @@ const loadJsdom: LoadJsdom = async () => {
 
 let cachedDefaultDom: Promise<ExportDOMDom> | undefined
 
-/**
- * The headless DOM port — the only module in the layer that knows jsdom (an
- * import guard enforces it). Resolves the DOM for one headless conversion: an
- * injected `options.dom` wins, then a global `window.document` (mirroring the
- * render context's createDocument chain), then a lazily imported,
- * process-cached JSDOM. The import stays lazy to keep jsdom evaluation off the
- * boot path and to preserve the one-importer discipline the guard pins; the
- * `load` injection port exists so tests can exercise the failure leg without
- * module mocking — any loader failure is rethrown as the named error.
- *
- * The cache stores the load PROMISE, not the resolved DOM, so concurrent
- * first calls share one JSDOM construction instead of racing into several.
- * A failed load clears the cache again, so a later call retries instead of
- * rethrowing a cached rejection.
- */
 export async function resolveHeadlessDom(injected?: ExportDOMDom, load: LoadJsdom = loadJsdom): Promise<ExportDOMDom> {
   if (injected) {
     return injected

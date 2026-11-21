@@ -7,8 +7,6 @@ import { getExportImageDimensions } from '@kobato/inkling-internal/nodes/base/ut
 import { renderEmptyContainer } from '@kobato/inkling-internal/nodes/base/utils/render-empty-container'
 import { setSrcsetAttribute } from '@kobato/inkling-internal/nodes/base/utils/srcset-attribute'
 
-// the renderer can only lay out images that carry these fields; isValidImage
-// narrows the canonical (all-optional) GalleryImage to this stricter view
 interface ValidGalleryImage extends GalleryImage {
   fileName: string
   src: string
@@ -32,8 +30,6 @@ function isValidImage(image: unknown, context: RenderContext): image is ValidGal
   const height = candidate.height
   const row = candidate.row
 
-  // the predicate vouches for the whole ValidGalleryImage shape, so the
-  // optional string fields must be string-or-absent too, not just present-or-not
   const optionalStringsValid = (['alt', 'title', 'href', 'caption', 'previewSrc'] as const).every(
     (key) => candidate[key] === undefined || typeof candidate[key] === 'string',
   )
@@ -102,7 +98,6 @@ export function renderGalleryNode(node: GalleryNodeData, context: RenderContext)
         img.setAttribute('height', String(resizedDimensions.height))
       }
 
-      // add srcset+sizes
       setSrcsetAttribute(img, image, context)
 
       if (img.getAttribute('srcset') && image.width >= 720) {

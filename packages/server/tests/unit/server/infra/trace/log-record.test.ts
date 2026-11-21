@@ -365,7 +365,6 @@ describe('projectLogLine — timestamp and drop reasons', () => {
     expect(Buffer.byteLength(oversize, 'utf8')).toBeGreaterThan(LOG_LINE_MAX_BYTES)
     expectDrop(projectLogLine(oversize, NOW), 'oversize')
 
-    // Multi-byte characters count as their UTF-8 width, not one code unit.
     const multibyte = line({ level: 'info', msg: '界'.repeat(LOG_LINE_MAX_BYTES / 3) })
     expect(Buffer.byteLength(multibyte, 'utf8')).toBeGreaterThan(LOG_LINE_MAX_BYTES)
     expectDrop(projectLogLine(multibyte, NOW), 'oversize')

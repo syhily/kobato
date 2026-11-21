@@ -8,12 +8,6 @@ export type UseMusicPlaybackOptions = {
 
 let cachedVolumeSupport: boolean | null = null
 
-/**
- * iOS Safari ignores programmatic `audio.volume` — the level is read-only
- * and owned by the hardware keys, so a software volume slider can never
- * take effect there. Probe once by writing and reading back. SSR defaults
- * to true so static markup keeps the control.
- */
 export function isProgrammaticVolumeSupported(): boolean {
   if (typeof document === 'undefined') {
     return true
@@ -30,12 +24,6 @@ export function __resetProgrammaticVolumeSupportForTests(): void {
   cachedVolumeSupport = null
 }
 
-/**
- * Playback core for the music-player card: owns a detached HTMLAudioElement
- * and exposes state + actions. `currentTime` is polled with
- * requestAnimationFrame while playing (the `timeupdate` event fires at ~4Hz,
- * too coarse for a smooth progress bar and line-synced lyrics).
- */
 export function useMusicPlayback({ src, initialVolume = 0.7, onError }: UseMusicPlaybackOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -127,9 +115,7 @@ export function useMusicPlayback({ src, initialVolume = 0.7, onError }: UseMusic
       return
     }
     if (audio.paused) {
-      void audio.play().catch(() => {
-        // Ignore autoplay policy rejections
-      })
+      void audio.play().catch(() => undefined)
     } else {
       audio.pause()
     }

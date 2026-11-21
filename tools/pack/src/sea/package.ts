@@ -34,8 +34,6 @@ async function sha256File(path: string): Promise<string> {
     .digest('hex')
 }
 
-// Mirrors the `sha256sum -c` / `shasum -a 256 -c` belt-and-braces the CI shell
-// steps used to run: write the sidecar, then re-read it against a fresh hash.
 async function writeVerifiedChecksum(artifactPath: string, sidecarPath: string, subject: string): Promise<void> {
   await writeFile(sidecarPath, `${await sha256File(artifactPath)}  ${subject}\n`)
   const sidecar = await readFile(sidecarPath, 'utf-8')
@@ -44,7 +42,6 @@ async function writeVerifiedChecksum(artifactPath: string, sidecarPath: string, 
   }
 }
 
-// build-deb.sh prints the resulting .deb path on stdout; exec.run inherits stdio.
 function capture(command: string, args: string[]): string {
   const result = spawnSync(command, args, { cwd: repoRoot, encoding: 'utf-8' })
   if (result.error || result.status !== 0) {
@@ -85,8 +82,6 @@ async function archiveBinary(target: string, deb: boolean): Promise<void> {
   const binPath = join(dist, binName)
   const tarName = `kobato-${target}.tar.gz`
 
-  // tar must run with cwd inside dist-sea so archive members carry the bare
-  // binary name, not the absolute path.
   const tar = spawnSync('tar', ['-czf', tarName, binName], { cwd: dist })
   if (tar.error || tar.status !== 0) {
     fail(`tar failed for ${tarName}: ${tar.error?.message ?? `exit ${tar.status ?? 'unknown'}`}`)

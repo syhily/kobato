@@ -3,14 +3,7 @@ import type { DOMConversion } from 'lexical'
 
 import { HeadingNode } from '@lexical/rich-text'
 
-// the aria-level → tag mapping as data: HEADING_TAGS[level - 1], no assertion
 const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const satisfies readonly HeadingTagType[]
-
-// HeadingNode is foundational to Lexical rich-text, so replacing it outright
-// would force every package to work with a custom node. Extend the default
-// with custom parsing via Lexical's node override/replacement mechanism.
-//
-// https://lexical.dev/docs/concepts/serialization#handling-extended-html-styling
 
 export class ExtendedHeadingNode extends HeadingNode {
   static getType() {
@@ -22,8 +15,6 @@ export class ExtendedHeadingNode extends HeadingNode {
   }
 
   static importDOM() {
-    // Optional since the $config() protocol port: the runtime still synthesizes
-    // the base importer, but the static is typed as possibly absent.
     const importers = HeadingNode.importDOM?.()
     return {
       ...importers,
@@ -32,9 +23,6 @@ export class ExtendedHeadingNode extends HeadingNode {
   }
 
   static importJSON(serializedNode: SerializedHeadingNode): ExtendedHeadingNode {
-    // updateFromJSON restores the full element-level shape (textFormat /
-    // textStyle included), which the manual setFormat/setIndent/setDirection
-    // trio dropped
     return new ExtendedHeadingNode(serializedNode.tag).updateFromJSON(serializedNode)
   }
 
@@ -55,8 +43,6 @@ type DOMConverterFn = ((node: HTMLElement) => DOMConversion | null) | undefined
 
 function patchParagraphConversion(originalDOMConverter: DOMConverterFn) {
   return (node: HTMLElement) => {
-    // Original matches Google Docs p node to a null conversion so it's
-    // child span is parsed as a heading. Don't prevent that here
     const original = originalDOMConverter?.(node)
     if (original) {
       return original
@@ -64,8 +50,6 @@ function patchParagraphConversion(originalDOMConverter: DOMConverterFn) {
 
     const p = node
 
-    // Word uses paragraphs with role="heading" to represent headings
-    // and an aria-level="x" to represent the heading level
     const hasAriaHeadingRole = p.getAttribute('role') === 'heading'
     const hasAriaLevel = p.getAttribute('aria-level')
 

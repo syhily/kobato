@@ -6,12 +6,9 @@ import path from 'node:path'
 
 export interface AnalyticsHandle {
   instance: DuckDBInstance
-  /** Writer (batcher appends, retention deletes, DDL). */
   writer: DuckDBConnection
-  /** Dashboard read queries. */
   reader: DuckDBConnection
   path: string
-  /** Decided once at open: the in-memory special case. */
   inMemory: boolean
   closed: boolean
 }
@@ -22,12 +19,6 @@ export interface DuckDBLogger {
   error(message: string, context?: Record<string, unknown>): void
 }
 
-/**
- * DuckDB MainHeader layout: 8-byte checksum, the "DUCK" magic, then the
- * uint64 storage version. 999 is what DuckDB 2.0 stamps on fresh files;
- * 1.x files carry 64–68. A fresh-file assertion lives in the integration
- * test, so a future engine bump that changes the number fails loudly.
- */
 const STORAGE_VERSION_OFFSET = 12
 const DUCKDB2_STORAGE_VERSION = 999n
 
@@ -50,12 +41,6 @@ async function readStorageVersion(filePath: string): Promise<bigint | null> {
 
 const quoteSqlString = (value: string): string => `'${value.replaceAll("'", "''")}'`
 
-/**
- * Rewrite a 1.x-format file into the 2.0 format: copy through a scratch
- * in-memory instance into a sibling file (ATTACH replays the legacy WAL,
- * so the copy sees everything), then swap. The stale WAL belongs to the
- * old header and must not survive the rename.
- */
 async function upgradeStorageFormat(analyticsPath: string, logger: DuckDBLogger | undefined): Promise<void> {
   const tmpPath = `${analyticsPath}.v2-upgrade`
   await rm(tmpPath, { force: true })
@@ -81,7 +66,6 @@ export async function openAnalyticsDatabase(
   ddl: string | string[],
   logger?: DuckDBLogger,
 ): Promise<AnalyticsHandle> {
-  // mkdir first — a custom path in a missing directory must exist before DuckDB opens.
   const inMemory = isInMemoryPath(analyticsPath)
   if (!inMemory) {
     mkdirSync(path.dirname(analyticsPath), { recursive: true })

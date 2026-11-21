@@ -7,20 +7,6 @@ import {
   ZWNJNode,
 } from '@kobato/inkling-internal/nodes/base'
 import { BookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
-// Characterization pins for the at-link registrations (insertion, session,
-// guards, shape transform, commit). Mounted-plugin gating and popup wiring
-// live in AtLinkPlugin.test.tsx.
-//
-// Harness notes:
-// - The root element is attached before registering so the native 'input'
-//   fallback listener attaches (it only attaches when a root element exists).
-// - The editor is non-editable: in jsdom the DOM-selection round-trip and the
-//   session's update listener normalize the caret against each other until
-//   Lexical's cascade guard trips. Editability only gates DOM-selection
-//   writes; the pinned editor-state transitions are identical either way.
-// - Paste-into-search-node is deliberately unpinned: jsdom has no
-//   ClipboardEvent, so the guard's `instanceof ClipboardEvent` branch is
-//   unreachable.
 import {
   $commitAtLinkSelection,
   registerAtLinkGuards,
@@ -53,9 +39,6 @@ import {
 } from 'lexical'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// jsdom's Selection lacks the (non-standard) modify() API that
-// RangeSelection.deleteCharacter routes through on the native fallback's
-// delete-the-'@' step; polyfill just the collapsed-text character cases.
 if (!Selection.prototype.modify) {
   const adjacentTextNode = (node: Node, direction: 'previous' | 'next'): Text | null => {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
@@ -279,9 +262,6 @@ describe('at-link behaviour (headless registrations)', () => {
   const lastSession = () => sessionSnapshots[sessionSnapshots.length - 1]
 
   async function dispatchNativeAt() {
-    // Mirror the Lexical caret into the DOM selection first — in a real
-    // browser it is already there when the input event fires, and the
-    // fallback's deleteCharacter step extends it via Selection.modify.
     editor.getEditorState().read(() => {
       const selection = $getSelection()
       if ($isRangeSelection(selection) && selection.isCollapsed() && selection.anchor.type === 'text') {

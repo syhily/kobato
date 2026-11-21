@@ -23,8 +23,6 @@ export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: Mu
   const { t } = useI18n()
   const playback = useMusicPlayback({ src: url })
   const [lyricsOpen, setLyricsOpen] = useState(false)
-  // Touch has no hover (and iOS never focuses buttons on tap), so the
-  // hover/focus-revealed slider would stay unreachable — keep it expanded.
   const isCoarsePointer = useMediaQuery('(hover: none)')
 
   const hasLrc = Boolean(lrc)

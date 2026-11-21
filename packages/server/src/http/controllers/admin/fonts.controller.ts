@@ -5,8 +5,6 @@ import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services
 import { implementAdmin } from '@kobato/server/http/orpc-base'
 import { idFromString } from '@kobato/utils/id'
 
-// `upload` lives in a separate Hono resource route (`fonts-package.ts`):
-// (`fonts-package.ts`): 60 MiB sources exceed the oRPC bridge's body limit.
 const impl = implementAdmin(adminFontsContract)
 
 const list = impl.list.handler(async ({ context }) => ({ fonts: await listFonts(context.db) }))

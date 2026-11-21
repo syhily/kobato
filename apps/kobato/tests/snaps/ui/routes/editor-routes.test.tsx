@@ -2,9 +2,6 @@ import type { ReactNode } from 'react'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { asRoute } from '@kobato/test/route-test-utils'
-// SSR-render the editor route Component wrappers (loader gate, navigate wiring, layout
-// context). The TipTap editors cannot fully SSR, so assert the wrapper renders without
-// throwing.
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'

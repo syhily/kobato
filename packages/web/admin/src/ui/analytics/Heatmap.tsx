@@ -17,9 +17,6 @@ import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 
-// Self-fetching with clientTimezone: loader cells are bucketed in Etc/UTC, so
-// the skeleton stays up until the client query resolves (hour columns would shift).
-
 const WEEKDAY_LABEL_IDS: readonly UiMessageId[] = [
   'admin.analytics.weekday.mon',
   'admin.analytics.weekday.tue',

@@ -1,22 +1,3 @@
-// Save-time projection input shaping: the headless inkling renderer
-// (`lexicalStateToHtml` / `lexicalStateToPlainText`) parses the serialized
-// state into a real editor, so this module produces the state copies that parse
-// yields the wanted output from. Two concerns:
-//
-// 1. Feed downgrade (`feed: true`) is a state transform, not HTML
-//    post-processing — inkling's exportPolicy key set is closed. Stripping the
-//    server-prerendered artifacts makes `math` / `math-inline` / `codeblock`
-//    export escaped-tex `<pre><code>` / `<code>` without the Shiki embed; the
-//    host-card feed shapes are NOT transforms — the card renderers produce them
-//    from the `FEED_VARIANT_META_KIND` render-meta flag.
-//
-// 2. Host-card survival (defensive). `renderableHostCardTypes` normally covers
-//    every type; the substitution stays armed because an unregistered type
-//    aborts `parseEditorState` at first encounter and every block AFTER the
-//    card vanishes from the projection (Lexical error #17). Unregistered
-//    `music-player` becomes a text paragraph with its save-time meta snapshot
-//    (or the placeholder), `solution` / `two-column` are dropped.
-
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
 import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/inkling/headless/cards/music-player'
@@ -24,9 +5,7 @@ import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/inkling/headless/node-white
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface ProjectionStateOptions {
-  /** Strip the server-prerendered artifact slots (feed variant). */
   feed: boolean
-  /** Host card types the renderer has real node classes for; they pass through. */
   renderableHostCardTypes?: ReadonlySet<string>
 }
 

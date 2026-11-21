@@ -10,8 +10,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockFetch = installFetch()
 
-// testDefine pins a -dev version; the update flow only runs on release
-// builds, so this file simulates one.
 vi.mock('@kobato/distribution/app', () => ({
   APP_NAME: 'kobato',
   APP_VERSION: '6.4.0',

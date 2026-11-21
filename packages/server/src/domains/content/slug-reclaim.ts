@@ -23,7 +23,6 @@ export function reclaimSlugOnRestore(
   try {
     insertSlugRegistry(tx, { slug, entityType, entityId })
   } catch (err) {
-    // SQLite names columns, not the index.
     if (!isUniqueConstraintError(err, 'slug_registry.slug')) {
       throw err
     }

@@ -16,11 +16,6 @@ import BASIC_NODES from '@kobato/inkling-internal/nodes/BasicNodes'
 import MINIMAL_NODES from '@kobato/inkling-internal/nodes/MinimalNodes'
 import { $canShowPlaceholderCurry } from '@lexical/text'
 
-// The card's nested-editor spec lives here, beside the class it types — the
-// declaration imports it from this module. Both editors are `nullable`: the
-// markdown round-trip detaches them. The MINIMAL/BASIC node-set imports run
-// against the layer grain but close no cycle — see the captionEditorSpecBase
-// note.
 export const toggleNestedEditors = [
   {
     name: 'titleEditor',
@@ -61,8 +56,6 @@ export type ToggleData = DecoratorNodeData<typeof toggleProperties>
 
 export type SerializedToggleNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof toggleProperties>>
 
-// the merged interface self-types the spec-driven nested-editor fields — see
-// the BaseAudioNode note
 // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
 export interface BaseToggleNode extends NestedEditorFieldMap<typeof toggleNestedEditors> {}
 export class BaseToggleNode extends generateDecoratorNode({
@@ -72,11 +65,6 @@ export class BaseToggleNode extends generateDecoratorNode({
   importSpec: toggleImportSpec,
 }) {
   isEmpty() {
-    // Null only inside the headless markdown round-trip editor (the toggle
-    // card transformer nulls both nested editors after plain-text import),
-    // and unset on spec-less base instances; isEmpty is dispatched from
-    // commands those transient nodes never see — guard so the field type
-    // stays honest. A nulled toggle is never auto-removed.
     if (!this.__titleEditor || !this.__contentEditor) {
       return false
     }

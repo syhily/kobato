@@ -19,22 +19,15 @@ import { renderGalleryNode } from '@kobato/inkling-internal/nodes/base/nodes/gal
 import { MAX_IMAGES, MAX_PER_ROW } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
 import { pick } from '@kobato/inkling-internal/utils/objects'
 
-// the card's spec arrays live here, beside the class they type — see the
-// videoNestedEditors note; the nested editor is `nullable` because the
-// markdown round-trip detaches it
 export const galleryNestedEditors = [
   { ...captionEditorSpecBase, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
 
-// the insert-time "open the file picker" flag — same shared spec entry the
-// four upload cards carry, so the menu entry's insertParams lands on the node
 export const galleryTransientProps = [transientTriggerFileDialogProp] as const satisfies readonly TransientPropSpec[]
 
 const galleryProperties = [
   {
     name: 'images',
-    // getter default: every construction/property-default read gets a fresh
-    // array, so default nodes never share one instance
     get default(): GalleryImage[] {
       return []
     },
@@ -46,11 +39,8 @@ export type GalleryData = DecoratorNodeData<typeof galleryProperties>
 
 export type SerializedGalleryNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof galleryProperties>>
 
-// canonical homes are gallery-rows.ts (the row-layout module); re-exported
-// here so the node shim, parser, and `@kobato/inkling-internal/nodes/base` importers keep working
 export { MAX_IMAGES, MAX_PER_ROW }
 
-// keep client-side-only properties (e.g. preview blob urls) out of the persisted payload
 export const ALLOWED_IMAGE_PROPS = [
   'row',
   'src',
@@ -67,8 +57,6 @@ export function recalculateImageRows(images: GalleryImage[]) {
   })
 }
 
-// the merged interface self-types the spec-driven fields/accessors — see the
-// BaseAudioNode note
 export interface BaseGalleryNode
   // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
   extends CardSpecFieldMapFor<typeof galleryTransientProps, typeof galleryNestedEditors> {}
@@ -78,7 +66,6 @@ export class BaseGalleryNode extends generateDecoratorNode({
   defaultRenderFn: renderGalleryNode,
   hasEditMode: false,
 }) {
-  /* override */
   static get urlTransformMap() {
     return {
       caption: 'html',
@@ -93,12 +80,6 @@ export class BaseGalleryNode extends generateDecoratorNode({
     return parseGalleryNode(this)
   }
 
-  // Image-list mutation helpers the card spec doesn't cover live on the base
-  // node: the registered card class is assembled from the declaration and
-  // inherits them; renderer surfaces never invoke them.
-  // TODO: move to inkling-default-nodes? — packaging decision about where
-  // `setImages` lives (its view→node writes are mirrored through
-  // @kobato/inkling-internal/hooks/gallery-images-mirror).
   setImages(images: GalleryImage[]) {
     const datasetImages = images.slice(0, MAX_IMAGES).map((image) => pick(image, ALLOWED_IMAGE_PROPS))
 

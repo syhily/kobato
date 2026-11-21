@@ -3,8 +3,6 @@ import type { EditorConfig } from 'lexical'
 import { themeClassList } from '@kobato/inkling-internal/themes/inkling-theme-classes'
 import { $applyNodeReplacement, TextNode } from 'lexical'
 
-// Represents the search query string inside an AtLinkNode. Used in place of a
-// regular TextNode to allow for :after styling to be applied to work as a placeholder
 export class AtLinkSearchNode extends TextNode {
   __placeholder: string | null = null
 
@@ -23,9 +21,6 @@ export class AtLinkSearchNode extends TextNode {
     return new AtLinkSearchNode(node.__text, node.__placeholder, node.__key)
   }
 
-  // A temporary node, never serialized in practice; importJSON exists to
-  // satisfy the serializer contract and match expected types. The
-  // AtLinkPlugin replaces this node when needed.
   static importJSON(serializedNode: ReturnType<AtLinkSearchNode['exportJSON']>) {
     return $createAtLinkSearchNode(serializedNode.text, serializedNode.placeholder)
   }
@@ -58,9 +53,6 @@ export class AtLinkSearchNode extends TextNode {
     return super.updateDOM(prevNode, dom, config)
   }
 
-  // This is an editor-only placeholder node. Return an empty element and
-  // `type: 'inner'` so downstream serializers emit no HTML while still
-  // receiving a non-null DOM element.
   exportDOM() {
     const span = document.createElement('span')
     return { element: span, type: 'inner' as const }
@@ -85,9 +77,6 @@ export class AtLinkSearchNode extends TextNode {
     return self.__placeholder
   }
 
-  // Lexical misreads this node as an element node when the cursor is placed
-  // via the SVG icon in the parent AtLinkNode; these overrides avoid the
-  // resulting errors and otherwise leave behaviour unaffected.
   getChildrenSize() {
     return 0
   }

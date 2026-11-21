@@ -39,7 +39,6 @@ import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 const PERMALINK = '/posts/hello'
 const TOKENS_KEY = 'like-tokens'
 
-// happy-dom lacks localStorage; stub a Map-backed one per test.
 const store = new Map<string, string>()
 vi.stubGlobal('localStorage', {
   getItem(key: string) {

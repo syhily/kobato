@@ -12,11 +12,6 @@ interface PasteHandlerDeps {
   isNested?: boolean
 }
 
-// Word and other Office apps generate HTML with `white-space: pre-wrap` on
-// inline elements. Lexical treats the newline characters inside those elements
-// as line breaks, which splits formatting (e.g. italic text ends up in a plain
-// node and an empty em node). Stripping `pre-wrap` lets the browser collapse
-// the newlines so formatting stays intact.
 function normalizePastedHtml(html: string): string {
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
@@ -59,14 +54,6 @@ export function registerPasteHandler(editor: LexicalEditor, deps: PasteHandlerDe
 
       const html = clipboardData.getData(MIME_TEXT_HTML)
 
-      // Override Lexical's default image paste behaviour: Lexical ignores
-      // files when the clipboard carries text/html or text/plain, so images
-      // copied from e.g. Slack never paste. Paste only when there is a single
-      // image file and the html contains an <img /> tag.
-      //
-      // Lexical code:
-      // https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.ts#L492-L494
-      // https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.ts#L1035
       const files = Array.from(clipboardData.files)
       const imageFiles = files.filter((file): file is File => file instanceof File && file.type.startsWith('image/'))
       const imgTagMatch = /<\s*img\b/i.exec(html) !== null

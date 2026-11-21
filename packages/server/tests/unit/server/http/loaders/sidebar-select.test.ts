@@ -54,7 +54,6 @@ describe('sidebar selection — seed composition', () => {
   })
 
   it('uses the SITE calendar day (time zone), not the server/UTC day', () => {
-    // 17:30Z is still 11-08 in UTC but already 11-09 in Shanghai.
     const instant = new Date('2026-11-08T17:30:00.000Z')
     const shanghai = sidebarSelection({
       settings: SIDEBAR_SETTINGS,

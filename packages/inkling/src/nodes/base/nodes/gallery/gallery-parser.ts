@@ -1,10 +1,5 @@
-// Hand-written (no import spec): the `images` collection property, sibling
-// walking with node removal, and the SQS branch's DOM mutation are structural,
-// not flat per-property reads.
 import type { LexicalNode } from 'lexical'
 
-// MAX_PER_ROW comes straight from its canonical home — importing it via
-// GalleryNode would close a GalleryNode → parser → GalleryNode import cycle
 import { MAX_PER_ROW } from '@kobato/inkling-internal/nodes/base/nodes/gallery/gallery-rows'
 import { readCaptionFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-caption-from-element'
 import { readImageAttributesFromElement } from '@kobato/inkling-internal/nodes/base/utils/read-image-attributes-from-element'
@@ -40,7 +35,6 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
       return null
     },
     div: (nodeElem: HTMLElement) => {
-      // Medium "graf" galleries
       function isGrafGallery(node: Element) {
         return (
           node.tagName === 'DIV' && node.getAttribute('data-paragraph-count') && node.querySelectorAll('img').length > 0
@@ -53,7 +47,6 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
             const payload: Record<string, unknown> = {}
             const captions = [readCaptionFromElement(domNode)].filter((caption): caption is string => Boolean(caption))
 
-            // These galleries exist as a series of divs containing multiple figure+img
             let imgs = Array.from(domNode.querySelectorAll('img'))
 
             let nextNode = domNode.nextElementSibling
@@ -68,7 +61,6 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
 
               nextNode = currentNode.nextElementSibling
 
-              // remove consumed nodes so they do not go through the parser
               currentNode.remove()
             }
 
@@ -85,7 +77,6 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
         }
       }
 
-      // Squarespace SQS galleries
       function isSqsGallery(node: HTMLElement) {
         return (
           node.tagName === 'DIV' && /sqs-gallery-container/.exec(node.className) && !node.className.includes('summary-')
@@ -97,9 +88,6 @@ export function parseGalleryNode(BaseGalleryNode: new (data: Record<string, unkn
           conversion(domNode: HTMLElement) {
             const payload: Record<string, unknown> = {}
 
-            // Each image exists twice...
-            // The first image is wrapped in `<noscript>`
-            // The second image contains image dimensions but the src property needs to be taken from `data-src`.
             let imgs: HTMLImageElement[] = Array.from(domNode.querySelectorAll('img.thumb-image'))
 
             imgs = imgs

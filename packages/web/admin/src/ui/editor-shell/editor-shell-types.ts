@@ -79,11 +79,8 @@ export interface UseEditorShellStateArgs<
   publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
 
-  /** Build the upsertMeta payload from the meta draft — common fields are
-   *  built here; entity-specific fields come from the caller. */
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
 
-  /** Direct oRPC `saveDraft` for autosave + force-save — `mutate()` returns no promise, so await-driven flows need a raw caller. */
   directSaveDraft: (input: {
     id: string
     body: LexicalEditorState

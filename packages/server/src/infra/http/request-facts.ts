@@ -1,16 +1,11 @@
 export interface RequestFacts {
-  /** Minted once per request — the analytics join key shared by the
-   *  server-side row and the client beacon. */
   analyticsEventId: string
   path: string
-  /** True for React Router data requests (client navigation / fetcher revalidation). */
   isDataRequest: boolean
   userAgent: string | null
   referer: string | null
   acceptLanguage: string | null
-  /** `Purpose` header, falling back to `Sec-Purpose` (prefetch hints). */
   purpose: string | null
-  /** Raw `Cookie` header — domains parse the cookies they own out of it. */
   cookie: string | null
   clientHints: {
     model: string | null

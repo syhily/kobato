@@ -16,18 +16,6 @@ import { $createImageNode, $isImageNode, ImageNode } from '@kobato/inkling-inter
 import { $createToggleNode, type ToggleNode } from '@kobato/inkling-internal/nodes/ToggleNode'
 import { $createVideoNode, type VideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
 
-/**
- * The per-card markdown transformer vocabulary: a payload table keyed exhaustively
- * by the fence-eligible declarations' node types, projected into transformers by
- * `CARD_MARKDOWN_DECLARATIONS`. Eligibility and exemption are declaration data
- * (`CardMarkdownSpec`); this module holds only the payload vocabulary.
- *
- * The payloads cannot live in the declaration modules: Lexical requires every node
- * constructed inside an editor to match the registered class exactly, so each
- * transformer's `createNode`/`replace` must construct the wrapper class, and the
- * declarations must never import wrappers.
- */
-
 export const IMAGE_CARD_TRANSFORMER: ElementTransformer = {
   dependencies: [ImageNode],
   export: (node) => {

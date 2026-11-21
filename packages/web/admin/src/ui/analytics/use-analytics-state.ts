@@ -12,7 +12,6 @@ export type HeatmapMetric = 'visits' | 'visitors'
 
 export interface AnalyticsScope {
   entityType?: 'post' | 'page'
-  /** Numeric domain id — the wire schema's coerced form; string route/DTO ids convert once at the boundary (`idFromString`). */
   entityId?: number
 }
 
@@ -22,7 +21,6 @@ export interface AnalyticsState {
   filters: Filters
   viewMode: AnalyticsViewMode
   heatmapMetric: HeatmapMetric
-  /** Whether geo-unknown events (country blob = '') are included — excluded by default. */
   includeUnknown: boolean
   setPreset: (preset: PresetKey) => void
   setRange: (range: DateRange) => void

@@ -6,9 +6,6 @@ export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden']
 
 export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
 
-// Webmention response type (W3C / IndieWeb mf2 classification): detected from
-// `u-in-reply-to` / `u-repost-of` / `u-like-of` markers, no marker = `mention`;
-// presentational grouping only — moderation and verification treat all types alike.
 export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
 
 export const WEBMENTION_OUTBOX_STATUSES = ['pending', 'sent', 'no-endpoint', 'failed'] as const
