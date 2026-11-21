@@ -32,17 +32,28 @@ describe('requestTimeout', () => {
     expect(capturedSignal!.aborted).toBe(false)
   })
 
-  it('cancels the combined signal when timeout fires', async () => {
+  it('cancels the combined signal when timeout fires', { timeout: 30_000 }, async () => {
     const app = new Hono<Env>()
     app.use(requestTimeout(50))
 
     let signalAborted = false
     app.get('/check', async (c) => {
       const signal = c.req.raw.signal
-      signal.addEventListener('abort', () => {
-        signalAborted = true
+      // Resolve on the abort itself instead of sleeping past the timeout —
+      // a fixed wall-clock sleep is the first casualty when CI's 4 cores
+      // stall under the full suite (observed as a 10s TestTimeoutError with
+      // the sibling tests green); the generous per-test timeout rides out
+      // the same stall.
+      await new Promise<void>((resolve) => {
+        const onAbort = () => {
+          signalAborted = true
+          resolve()
+        }
+        signal.addEventListener('abort', onAbort, { once: true })
+        // Middleware regression (abort never fires) resolves at 5s with
+        // signalAborted still false → clean assertion failure, not a hang.
+        setTimeout(resolve, 5_000)
       })
-      await new Promise((r) => setTimeout(r, 150))
       return c.json({ aborted: signalAborted })
     })
 
