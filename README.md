@@ -11,7 +11,8 @@
 **Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily)
 — the engine behind [且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC,
 with a built-in `/admin` console for everything.
-Content is stored as **Lexical** editor state and authored through the built-in **inkling** editor; saved server-side HTML projections power SSR, feeds, and search.
+Content is stored as **Lexical** editor state and authored through the built-in **inkling** editor;
+saved server-side HTML projections power SSR, feeds, and search.
 
 This repository is the complete product: public site, admin SPA, API, SSR renderer, install gate, and database migrations.
 The whole deployment is one process — content lives in an embedded **SQLite** database, analytics in an

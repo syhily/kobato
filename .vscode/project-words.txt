@@ -85,6 +85,7 @@ fontconfig
 fontsource
 footgun
 forencrypt
+formatjs
 fouc
 fsevents
 fumadocs
@@ -148,6 +149,7 @@ koanughi
 koaunghi
 kobato
 kubepods
+kysely
 labelledby
 lafoyer
 lanczos
@@ -178,6 +180,7 @@ mathml
 maxmind
 mboker
 meilisearch
+messageformat
 metas
 mhchem
 miantiao
@@ -348,6 +351,7 @@ typegen
 typname
 ultrahtml
 unconfigured
+undici
 unlayered
 unpic
 unpooled
