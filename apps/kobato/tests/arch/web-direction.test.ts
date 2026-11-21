@@ -105,4 +105,23 @@ describe('web direction', () => {
 
     expect([...actual].sort()).toEqual([...ADMIN_PUBLIC_IMPORTS].sort())
   })
+
+  it('keeps route title/meta resolution in the app layer: no web leaf imports @kobato/catalog/seo', () => {
+    const files: string[] = []
+    walk(`${REPO_ROOT}/${PUBLIC_ROOT}`, files)
+    for (const root of ADMIN_ROOTS) {
+      walk(`${REPO_ROOT}/${root}`, files)
+    }
+
+    const offenders: string[] = []
+    for (const file of files.sort()) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (specifier === '@kobato/catalog/seo' || specifier.startsWith('@kobato/catalog/seo/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
 })

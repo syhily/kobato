@@ -1,10 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { MetaDescriptor } from 'react-router'
 
-import { fallbackMessages } from '@kobato/i18n/fallback-messages'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 import {
   bundleFromMatches,
   i18nFromMatches,
@@ -13,7 +9,11 @@ import {
   routeMeta,
   seoForPage,
   seoForPost,
-} from '@kobato/seo/meta'
+} from '@kobato/catalog/seo/meta'
+import { fallbackMessages } from '@kobato/i18n/fallback-messages'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 import { setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { beforeEach, describe, expect, it } from 'vitest'
 

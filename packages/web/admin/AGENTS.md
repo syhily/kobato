@@ -24,7 +24,7 @@ The direction is strictly `@kobato/web-admin` → `@kobato/web-public` → `@kob
   `@kobato/web-client/api/client`); wire DTO shapes come from `@kobato/api/contracts`. Server stays a tests-only fixture
   dependency.
 - Imports use `@kobato/web-admin/...` inside this package and the sanctioned external specifiers
-  (`@kobato/web-public/...`, `@kobato/web-client/...`, `@kobato/ui/...`, the shared leaves — never `@kobato/seo`,
-  `@kobato/inkling` across packages).
+  (`@kobato/web-public/...`, `@kobato/web-client/...`, `@kobato/ui/...`, the shared leaves — never `@kobato/catalog/seo`
+  (route title/meta resolution lives in the app layer), never `@kobato/inkling` across packages).
 - Subdirectory conventions load additively: `src/ui/AGENTS.md` (+ `src/ui/settings/AGENTS.md`) and
   `src/styles/AGENTS.md`; test conventions in `tests/AGENTS.md`.

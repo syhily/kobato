@@ -13,7 +13,6 @@ const SOURCE_DIRS = [
   'packages/shared/auth/src',
   'packages/shared/catalog/src',
   'packages/shared/distribution/src',
-  'packages/shared/seo/src',
   'packages/shared/utils/src',
   'packages/shared/i18n/src',
   'packages/shared/cache/src',

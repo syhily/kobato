@@ -1,4 +1,4 @@
-import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/seo/meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/catalog/seo/meta'
 import { detailHeaders } from '@kobato/server/http/route-cache-headers'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller'
 import { PostDetailBody } from '@kobato/web-public/ui/post/PostDetailBody'

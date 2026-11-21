@@ -1,6 +1,6 @@
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
-import { metaWithFallback } from '@kobato/seo/meta'
+import { metaWithFallback } from '@kobato/catalog/seo/meta'
 import { listingHeaders } from '@kobato/server/http/route-cache-headers'
 import { createSsrCaller, unwrapListing } from '@kobato/server/http/ssr-caller'
 import { PostListingBody } from '@kobato/web-public/ui/post/PostListViews'

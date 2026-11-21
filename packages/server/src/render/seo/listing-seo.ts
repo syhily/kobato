@@ -2,7 +2,7 @@ import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { MetaDescriptor } from 'react-router'
 
-import { type FeedLinkOptions, routeMeta } from '@kobato/seo/meta'
+import { type FeedLinkOptions, routeMeta } from '@kobato/catalog/seo/meta'
 import { pagePath } from '@kobato/server/domains/content/urls'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 

@@ -1,4 +1,4 @@
-import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@kobato/seo/meta'
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@kobato/catalog/seo/meta'
 import { detailHeaders } from '@kobato/server/http/route-cache-headers'
 import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller'
 import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm'

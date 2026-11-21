@@ -33,7 +33,6 @@ const SHARED_SPLIT = [
   '@kobato/settings',
   '@kobato/assets',
   '@kobato/sanitize',
-  '@kobato/seo',
 ] as const
 
 // The shared leaves @kobato/api depends on (rpc procedures + contracts schemas) — every new edge changes exactly this
@@ -63,7 +62,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 
   '@kobato/utils': ['@kobato/i18n', '@kobato/test'],
   '@kobato/auth': ['@kobato/i18n', '@kobato/test'],
-  '@kobato/catalog': ['@kobato/inkling', '@kobato/test'],
+  '@kobato/catalog': ['@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
   '@kobato/distribution': ['@kobato/test'],
   '@kobato/i18n': ['@kobato/test'],
   '@kobato/cache': ['@kobato/i18n', '@kobato/utils', '@kobato/test'],
@@ -71,7 +70,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/assets': ['@kobato/test'],
 
   '@kobato/sanitize': ['@kobato/test'],
-  '@kobato/seo': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/api': [...API_SHARED_DEPS, '@kobato/test'],
   '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
@@ -149,14 +147,13 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-public'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
-  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling'],
+  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
   '@kobato/distribution': ['@kobato/distribution'],
   '@kobato/i18n': ['@kobato/i18n'],
   '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils'],
   '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils'],
   '@kobato/assets': ['@kobato/assets'],
   '@kobato/sanitize': ['@kobato/sanitize'],
-  '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
 
   '@kobato/api': ['@kobato/api', ...API_SHARED_DEPS],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/utils'],
@@ -215,7 +212,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/catalog',
     '@kobato/i18n',
     '@kobato/inkling',
-    '@kobato/seo',
     '@kobato/server',
     '@kobato/settings',
     '@kobato/ui',

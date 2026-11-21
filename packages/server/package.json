@@ -30,7 +30,6 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/sanitize": "workspace:*",
-    "@kobato/seo": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",

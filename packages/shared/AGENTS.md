@@ -1,6 +1,6 @@
 # Shared umbrella conventions
 
-`packages/shared/` is not a package: it is an umbrella of ten workspace leaf packages (`packages/shared/<name>` ↔
+`packages/shared/` is not a package: it is an umbrella of nine workspace leaf packages (`packages/shared/<name>` ↔
 `@kobato/<name>`). There is deliberately no umbrella package.json, test directory, barrel, or way to import "shared" as
 one unit. The `shared-unit` and `shared-snaps` project definitions live in `tools/test/src/projects/`.
 
@@ -18,21 +18,21 @@ one unit. The `shared-unit` and `shared-snaps` project definitions live in `tool
   re-exports, no leaf-level `index.ts`.
 - **Error handling.** No logger here (server and client bring their own): throw, and let the boundary catch and log.
 
-## The ten leaves
+## The nine leaves
 
 `utils` (pure isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, `network`
 SSRF/CIDR + passkey RP checks), `i18n` (locale contract, ICU catalogs, `catalog-scope`, `fallback-messages`,
 `inkling-labels`), `cache` (bucket declaration registry — never a storage plane), `catalog` (public content read model +
-projections), `settings` (Section schema/default/secret registry, admin projections, `snapshot` slot, representation
-scopes, RUM client identity, and the `telemetry/` observability protocol layer — RUM vocabulary, bootstrap/intake,
-OpenObserve stream/metric names, privacy-pipeline identity; server-only write validation stays in server), `assets`
-(asset-URL grammar, image kinds, avatar rule, Gravatar mirror, code-block highlight languages), `sanitize` (isomorphic
-DOMPurify stack, `sanitize-url`, `escape-html`), `distribution` (`__APP_*__` identity, SEA asset keys, route-warmup
-manifest contract), `seo` (`meta` / `og-image` builders). The wire vocabulary (per-domain Zod schemas + DTOs,
-`api-error`, `merge-patch`) lives in the API SDK: `@kobato/api/contracts`.
+projections, plus the `seo/` presentation-metadata layer), `settings` (Section schema/default/secret registry, admin
+projections, `snapshot` slot, representation scopes, RUM client identity, and the `telemetry/` observability protocol
+layer — RUM vocabulary, bootstrap/intake, OpenObserve stream/metric names, privacy-pipeline identity; server-only write
+validation stays in server), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror, code-block
+highlight languages), `sanitize` (isomorphic DOMPurify stack, `sanitize-url`, `escape-html`), `distribution`
+(`__APP_*__` identity, SEA asset keys, route-warmup manifest contract). The wire vocabulary (per-domain Zod schemas +
+DTOs, `api-error`, `merge-patch`) lives in the API SDK: `@kobato/api/contracts`.
 
-Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → inkling headless (type-only); `cache` → i18n + utils;
-`settings` → i18n + cache + assets + utils (never `@kobato/api`); `seo` → settings + i18n + utils. Pinned by
+Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → settings + i18n + utils + inkling headless (type-only);
+`cache` → i18n + utils; `settings` → i18n + cache + assets + utils (never `@kobato/api`). Pinned by
 `apps/kobato/tests/arch/package-dag.test.ts`.
 
 ## Client API usage

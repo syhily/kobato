@@ -3,9 +3,9 @@ import type { Database } from '@kobato/db/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { ogImagePathForSlug } from '@kobato/catalog/seo/og-image'
 import { findCategoriesByNames } from '@kobato/db/operations/category'
 import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html'
-import { ogImagePathForSlug } from '@kobato/seo/og-image'
 import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html'
 import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed'
 import {

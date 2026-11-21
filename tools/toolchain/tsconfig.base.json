@@ -58,8 +58,6 @@
       "@kobato/assets/tests/*": ["../../packages/shared/assets/tests/*"],
       "@kobato/sanitize/*": ["../../packages/shared/sanitize/src/*"],
       "@kobato/sanitize/tests/*": ["../../packages/shared/sanitize/tests/*"],
-      "@kobato/seo/*": ["../../packages/shared/seo/src/*"],
-      "@kobato/seo/tests/*": ["../../packages/shared/seo/tests/*"],
       "@kobato/toolchain/*": ["../../tools/toolchain/*"],
       "@kobato/test/*": ["../../tools/test/src/*"],
       "@kobato/harness/*": ["../../tools/harness/src/*"],
