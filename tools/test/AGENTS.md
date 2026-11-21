@@ -4,7 +4,7 @@
 
 ## Import surface
 
-Import generic helpers as `@kobato/test/<name>.ts`: `deep-freeze`, `dom-structure` (normalized DOM-tree diff), `duckdb-files` (the exact list of files that spin up the real DuckDB engine), `env`, `fake-broadcast-channel`, `fetch` (responder queue with call capture), `in-memory-metric-reader`, `mock-files` (scans test files for module-level `vi.mock(`/`vi.doMock(` — mock holders poison the shared module registry under `isolate: false`, so the iso projects include exactly the scanned list), `vitest-base` (`vitestTestBase`, the workspace-wide pool/isolate defaults every project config spreads), `log-message-literals` (the AST scanner behind the static-log-message guard), `mock-react-query`, `route-test-utils`, `silence-local-storage-warning`, `virtual-modules`, `setup/{unit,it,snaps}` (product-free project setups), `vitest.define` (`testDefine`, the compile-time `__APP_*__` constants).
+Import generic helpers as `@kobato/test/<name>.ts`: `deep-freeze`, `dom-structure` (normalized DOM-tree diff), `duckdb-files` (the exact list of files that spin up the real DuckDB engine), `env`, `fake-broadcast-channel`, `fetch` (responder queue with call capture), `in-memory-metric-reader`, `mock-files` (scans test files for module-level `vi.mock(`/`vi.doMock(` — mock holders poison the shared module registry under `isolate: false`, so the iso projects include exactly the scanned list), `vitest-base` (`vitestTestBase`, the workspace-wide pool/isolate defaults every project config spreads), `log-message-literals` (the AST scanner behind the static-log-message guard), `mock-react-query`, `route-test-utils`, `silence-local-storage-warning`, `virtual-modules`, `setup/{unit,it,snaps}` (product-free project setups), `vitest.define` (`testDefine`, the compile-time `__APP_*__` constants). `projects/{shared-unit,shared-snaps,web-unit,web-snaps}.ts` owns the multi-package Vitest projects; there are no non-package `packages/{shared,web}/tests/` coordination trees.
 
 Out-of-process helpers do NOT live here — everything that drives a real kobato instance as a separate process lives in `@kobato/harness`.
 
@@ -14,7 +14,7 @@ Integration suites run on a shared in-memory SQLite database per test file; file
 
 ## Setup files
 
-`setup/{unit,it,snaps}.ts` are product-free; a project config points at a local wrapper under `<pkg>/tests/utils/setup/` that imports the base and applies product state. `setup/unit.ts` imports `@date-fns/tz` up front so `TZDate` binds the real `Date` constructor before any `vi.useFakeTimers()` (a fake-Date-derived `TZDate` silently falls back to the system timezone).
+`setup/{unit,it,snaps}.ts` are product-free; a project config points at a product-state owner's wrapper under `<pkg>/tests/utils/setup/` that imports the base and applies product state. The shared projects use `@kobato/settings`' wrappers; web projects use `@kobato/web-admin`'s wrappers for the admin-wide mutation mock. `setup/unit.ts` imports `@date-fns/tz` up front so `TZDate` binds the real `Date` constructor before any `vi.useFakeTimers()` (a fake-Date-derived `TZDate` silently falls back to the system timezone).
 
 ## Worker isolation
 

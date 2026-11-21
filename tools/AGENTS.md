@@ -3,7 +3,7 @@
 `tools/` is the top-level umbrella for development-support workspace packages — nothing under it ships in the product (no SEA bundle, no client/server graph, no runtime import from the deployed binary). Each directory is a workspace package (`tools/<name>` ↔ `@kobato/<specifier>`):
 
 - `toolchain` — the shared TypeScript configuration (`tsconfig.base.json`, the single workspace path table) plus the app's build-time Vite plugins (`src/vite/`).
-- `test` — in-process Vitest fixtures/doubles only.
+- `test` — in-process Vitest fixtures/doubles, shared setup, and multi-package project definitions.
 - `harness` — the out-of-process instance harness.
 - `trace` — OpenObserve DEV container tooling.
 - `browser` — the real-browser Playwright journey runner (`test:browser` / `sea:browser`) and the Playwright config itself.

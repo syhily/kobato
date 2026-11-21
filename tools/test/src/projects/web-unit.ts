@@ -1,9 +1,11 @@
 import { vitestTestBase } from '@kobato/test/vitest.base.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { configDefaults } from 'vitest/config'
 
-const SETUP_FILE = path.resolve(import.meta.dirname, '../utils/setup/unit.ts')
+const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
+const SETUP_FILE = path.resolve(REPO_ROOT, 'packages/web/admin/tests/utils/setup/unit.ts')
 const TIME_LABELS_TEST = 'packages/web/admin/tests/unit/ui/analytics/time-labels.test.ts'
 
 export const webUnitProjects = [

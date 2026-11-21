@@ -4,4 +4,4 @@ The cache DECLARATION layer — not a storage plane. Owner of: `registry` (one `
 
 - Allowed deps: `@kobato/i18n` (UiMessageId), `@kobato/utils` (unsafe-cast). Never contracts, settings, or any product package.
 - Bans: NO file store, L1 memory store, eviction, or lifecycle logic — the on-disk plane, the process-local L1, and the behavior registry live in `@kobato/server/src/infra/cache`. This package only declares what buckets exist.
-- Tests: `tests/unit/` (umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`).
+- Tests: `tests/unit/` in the `shared-unit` project defined at `tools/test/src/projects/shared-unit.ts`.

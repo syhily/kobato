@@ -369,6 +369,42 @@ describe('package DAG', () => {
     }
     expect(offenders).toEqual([])
   })
+  it('workspace links match each package’s actual source, test, and config imports', () => {
+    const missing: string[] = []
+    const unused: string[] = []
+
+    for (const pkg of REPO_PACKAGES) {
+      const declared = new Set(declaredInternalDeps(pkg.name))
+      const actual = new Set<string>()
+      for (const file of sourceFiles(pkg.dir)) {
+        for (const specifier of importSpecifiers(readSource(file))) {
+          const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
+          if (target !== undefined) {
+            actual.add(target)
+          }
+        }
+      }
+
+      const tsconfig = `${REPO_ROOT}/${pkg.dir}/tsconfig.json`
+      if (existsSync(tsconfig) && readFileSync(tsconfig, 'utf8').includes('@kobato/toolchain/')) {
+        actual.add('@kobato/toolchain')
+      }
+
+      for (const target of actual) {
+        if (target !== pkg.name && target !== '@kobato/inkling-demo' && !declared.has(target)) {
+          missing.push(`${pkg.dir} imports ${target} without declaring it`)
+        }
+      }
+      for (const dep of declared) {
+        if (!actual.has(dep)) {
+          unused.push(`${pkg.dir}/package.json declares unused ${dep}`)
+        }
+      }
+    }
+
+    expect(missing).toEqual([])
+    expect(unused).toEqual([])
+  })
   it('src trees import @kobato/* only along the DAG, only as declared targets', () => {
     const offenders: string[] = []
     const exceptionKeys = new Set(SRC_IMPORT_EXCEPTIONS.map((entry) => `${entry.file}:${entry.specifier}`))

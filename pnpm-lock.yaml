@@ -619,6 +619,9 @@ importers:
       '@kobato/pack':
         specifier: workspace:*
         version: link:tools/pack
+      '@kobato/test':
+        specifier: workspace:*
+        version: link:tools/test
       '@kobato/toolchain':
         specifier: workspace:*
         version: link:tools/toolchain
@@ -1468,9 +1471,6 @@ importers:
       '@kobato/settings':
         specifier: workspace:*
         version: link:../settings
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
       '@kobato/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1633,9 +1633,6 @@ importers:
       '@kobato/cache':
         specifier: workspace:*
         version: link:../../shared/cache
-      '@kobato/catalog':
-        specifier: workspace:*
-        version: link:../../shared/catalog
       '@kobato/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts

@@ -5,7 +5,7 @@
 - `admin/` — `@kobato/web-admin`: the admin frontend (admin components, domain controllers, the page editor composition, the admin style adapters).
 - `public/` — `@kobato/web-public`: the public frontend (public chrome, comments, widgets, music player) plus the cross-surface `ui/shared`/`ui/lib` tiers.
 - `client/` — `@kobato/web-client`: the browser platform below both product leaves (document-level hooks, the oRPC client, the root settings contexts, the cross-surface editor platform).
-- `tests/` — a non-package coordination directory for the umbrella Vitest roots and setup wrappers; cross-leaf contract pins live in the app test tree.
+- There is no umbrella test directory. The `web-unit`, `web-tz-unit`, and `web-snaps` project definitions live in `tools/test/src/projects/`; cross-leaf contract pins live in the app test tree.
 
 ## Module seam and direction
 

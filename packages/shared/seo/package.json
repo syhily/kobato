@@ -9,7 +9,6 @@
   "devDependencies": {
     "@kobato/i18n": "workspace:*",
     "@kobato/settings": "workspace:*",
-    "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
     "react-router": "catalog:",
     "vitest": "catalog:"

@@ -23,6 +23,6 @@ export default defineConfig({
       'packages/web/public/tests/snaps/**/*.test.{ts,tsx}',
     ],
     exclude: [...configDefaults.exclude],
-    setupFiles: [path.resolve(import.meta.dirname, '../utils/setup/snaps.ts')],
+    setupFiles: [path.resolve(REPO_ROOT, 'packages/web/admin/tests/utils/setup/snaps.ts')],
   },
 })

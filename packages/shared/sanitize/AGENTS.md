@@ -4,4 +4,4 @@ The isomorphic DOMPurify stack — the single reason SSR and hydration bytes can
 
 - Allowed deps: none — this is a leaf (dompurify + jsdom are the only externals, both devDependencies).
 - The ONE node exception in the shared umbrella: `engine.node.ts` imports jsdom; the `sanitize-html-engine-alias` vite plugin swaps the specifier to `engine.browser.ts` in the client bundle (pinned by `apps/kobato/tests/arch/client-bundle.test.ts`'s jsdom `allowedIn` entry).
-- Tests: `tests/unit/` — parity, node, and browser engine suites (umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`).
+- Tests: `tests/unit/` — parity, node, and browser engine suites in the `shared-unit` project defined at `tools/test/src/projects/shared-unit.ts`.

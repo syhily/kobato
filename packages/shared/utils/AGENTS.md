@@ -6,4 +6,4 @@ Moved out (do not move back): role/security primitives **and the SSRF/passkey ne
 
 - Allowed deps: `@kobato/i18n` only (locale types). Never contracts, settings, cache, assets, sanitize, or any product package.
 - Bans: no React, no `node:*` value imports (umbrella rules in `packages/shared/AGENTS.md` apply).
-- Tests: `tests/unit/` (runs through the umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`). The ThumbHash snapshot corpus is this package's own `tests/fixtures/thumbhash/`; keep it local to its only consumer.
+- Tests: `tests/unit/` in the `shared-unit` project defined at `tools/test/src/projects/shared-unit.ts`. The ThumbHash snapshot corpus is this package's own `tests/fixtures/thumbhash/`; keep it local to its only consumer.

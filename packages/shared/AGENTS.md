@@ -1,6 +1,6 @@
 # Shared umbrella conventions
 
-`packages/shared/` is not a package: it is an umbrella of twelve workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`). There is deliberately no umbrella package.json, no barrel, no way to import "shared" as one unit. `packages/shared/tests/` holds only the umbrella vitest roots.
+`packages/shared/` is not a package: it is an umbrella of twelve workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`). There is deliberately no umbrella package.json, test directory, barrel, or way to import "shared" as one unit. The `shared-unit` and `shared-snaps` project definitions live in `tools/test/src/projects/`.
 
 ## Umbrella rules (every leaf)
 

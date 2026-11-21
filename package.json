@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@kobato/pack": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",

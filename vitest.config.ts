@@ -1,10 +1,13 @@
+import sharedSnapsProject from '@kobato/test/projects/shared-snaps.ts'
+import sharedUnitProject from '@kobato/test/projects/shared-unit.ts'
+import webSnapsProject from '@kobato/test/projects/web-snaps.ts'
+import { webUnitProjects } from '@kobato/test/projects/web-unit.ts'
 import { defineConfig } from 'vitest/config'
 
 import { appItProjects } from './apps/kobato/tests/it/vitest.config.ts'
 import { appUnitProjects } from './apps/kobato/tests/unit/vitest.config.ts'
 import { serverItProjects } from './packages/server/tests/it/vitest.config.ts'
 import { serverUnitProjects } from './packages/server/tests/unit/vitest.config.ts'
-import { webUnitProjects } from './packages/web/tests/unit/vitest.config.ts'
 
 export default defineConfig({
   resolve: {
@@ -18,8 +21,8 @@ export default defineConfig({
     // projects do not inherit this config's test options — each spreads
     // @kobato/test/vitest.base.ts instead (only inline projects extend it).
     projects: [
-      'packages/shared/tests/unit/vitest.config.ts',
-      'packages/shared/tests/snaps/vitest.config.ts',
+      sharedUnitProject,
+      sharedSnapsProject,
       'packages/api/tests/unit/vitest.config.ts',
       'packages/db/tests/unit/vitest.config.ts',
       'packages/db/tests/it/vitest.config.ts',
@@ -28,7 +31,7 @@ export default defineConfig({
       'packages/ui/tests/unit/vitest.config.ts',
       'packages/ui/tests/snaps/vitest.config.ts',
       ...webUnitProjects,
-      'packages/web/tests/snaps/vitest.config.ts',
+      webSnapsProject,
       'packages/inkling/tests/vitest.config.ts',
       'tools/trace/tests/unit/vitest.config.ts',
       'tools/pack/tests/unit/vitest.config.ts',

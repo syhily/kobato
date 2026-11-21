@@ -4,4 +4,4 @@ Site-owned asset vocabulary. Owner of: `asset-url` (the ONE asset-URL path gramm
 
 - Allowed deps: none — this is a leaf. Never any other shared leaf or product package.
 - Bans: no storage backend knowledge (S3/local drivers and the CDN template application live in `@kobato/server/src/domains/storage` / `src/infra/storage`); no React.
-- Tests: `tests/unit/` (umbrella `shared-unit` project — see `packages/shared/tests/AGENTS.md`).
+- Tests: `tests/unit/` in the `shared-unit` project defined at `tools/test/src/projects/shared-unit.ts`.

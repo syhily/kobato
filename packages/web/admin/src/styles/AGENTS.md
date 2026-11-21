@@ -7,4 +7,4 @@
 - `inkling-editor.css` is imported with Inkling's own `index.css` by `PageBodyEditor`; the comment canvas twin (`inkling-comment-editor.css`) lives with the comment composer in `packages/web/public/src/styles/`. This package owns only unlayered host rules.
 - The page canvas uses `zoom: 2/3`, token/spacing bridges, and host-card token restores. The comment canvas has no zoom because it breaks contenteditable IME painting.
 - Inkling owns its own preflight, dark variant, layer, utilities, and source scan. Web-admin never imports Inkling's sheet through another Tailwind compile and never scans Inkling sources.
-- Contracts: `packages/web/tests/contract/editor-canvas-scope.test.ts`, `editor-host-card-tokens.test.ts`, and the app-level `tailwind-source-ownership.test.ts`.
+- Contracts: `apps/kobato/tests/arch/editor-canvas-scope.test.ts`, `editor-host-card-tokens.test.ts`, and `tailwind-source-ownership.test.ts`.
