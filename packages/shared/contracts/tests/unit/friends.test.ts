@@ -53,7 +53,7 @@ describe('contracts/friends — upsertFriendSchema', () => {
   const valid = {
     website: 'Site',
     homepage: 'https://a.com',
-    poster: 'https://a.com/p.png',
+    poster: '/storage/images/links/a.com.jpg',
   }
 
   it('accepts a minimal create payload and defaults visible to true', () => {
@@ -97,11 +97,30 @@ describe('contracts/friends — upsertFriendSchema', () => {
       id: '10',
       website: '羽忆江南',
       homepage: 'https://lizihao.com',
-      poster: '/storage/images/links/yyjn.org.jpg',
+      poster: '/storage/images/links/lizihao.com.jpg',
       visible: true,
       description: '喜于情，爱于心，言于表',
     })
     expect(result.success).toBe(true)
+  })
+
+  it('accepts an absolute uploaded poster URL with a cache version', () => {
+    const result = upsertFriendSchema.safeParse({
+      ...valid,
+      poster: 'https://site.example/storage/images/links/a.com.jpg?v=123',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects custom remote and generic storage poster URLs', () => {
+    expect(upsertFriendSchema.safeParse({ ...valid, poster: 'https://a.com/p.png' }).success).toBe(false)
+    expect(upsertFriendSchema.safeParse({ ...valid, poster: '/storage/images/2026/p.jpg' }).success).toBe(false)
+  })
+
+  it('rejects an uploaded poster whose path belongs to another homepage host', () => {
+    expect(upsertFriendSchema.safeParse({ ...valid, poster: '/storage/images/links/other.com.jpg' }).success).toBe(
+      false,
+    )
   })
 
   it('rejects website longer than 80 chars', () => {

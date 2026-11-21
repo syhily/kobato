@@ -1,4 +1,4 @@
-import { isOnSiteOrigin, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { isOnSiteOrigin, parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
 
 export type AdminImageKind = 'generic' | 'category' | 'friend'
 
@@ -43,6 +43,54 @@ export function isSafeImageSegment(value: string): boolean {
     return false
   }
   return SAFE_PATH_SEGMENT.test(trimmed)
+}
+
+export function friendPosterStoragePath(homepage: string): string | null {
+  const host = extractFriendHostSafe(homepage)
+  return host === null ? null : `images/links/${host}.jpg`
+}
+
+export function friendPosterStoragePathFromUrl(poster: string): string | null {
+  const trimmed = poster.trim()
+  let pathname: string
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    const suffixIndex = trimmed.search(/[?#]/)
+    pathname = suffixIndex === -1 ? trimmed : trimmed.slice(0, suffixIndex)
+  } else {
+    try {
+      const url = new URL(trimmed)
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return null
+      }
+      pathname = url.pathname
+    } catch {
+      return null
+    }
+  }
+  const parsed = parseAssetUrlPath(pathname)
+  if (parsed?.route !== STORAGE_ROUTE_PREFIX || !/^images\/links\/[a-z0-9._-]+\.jpg$/.test(parsed.key)) {
+    return null
+  }
+  return parsed.key
+}
+
+export function retargetFriendPosterUrl(poster: string, homepage: string): string | null {
+  if (friendPosterStoragePathFromUrl(poster) === null) {
+    return null
+  }
+  const target = friendPosterStoragePath(homepage)
+  if (target === null) {
+    return null
+  }
+  const trimmed = poster.trim()
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    const suffixIndex = trimmed.search(/[?#]/)
+    const suffix = suffixIndex === -1 ? '' : trimmed.slice(suffixIndex)
+    return `${STORAGE_ROUTE_PREFIX}${target}${suffix}`
+  }
+  const url = new URL(trimmed)
+  url.pathname = `${STORAGE_ROUTE_PREFIX}${target}`
+  return url.toString()
 }
 
 export interface ImageUrlOptions {

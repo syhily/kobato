@@ -83,12 +83,24 @@ describe('snapshot: FriendsView pending bucket', () => {
     expect(html).toContain('删除友链 申请者')
   })
 
+  it('keeps approve disabled for a custom remote poster until it is uploaded', () => {
+    queryMocks.query = {
+      ...queryMocks.query,
+      data: {
+        friends: [makePendingFriend({ poster: 'https://applicant.example.com/cover.jpg' })],
+      },
+    }
+    const html = stableHtml(renderInRouter(<FriendsView />, '/admin/links'))
+    expect(html).toContain('请先编辑友链并从后台上传封面图，再通过审核')
+    expect(html).toContain('disabled=""')
+  })
+
   it('keeps approve disabled until a poster is filled in', () => {
     queryMocks.query = { ...queryMocks.query, data: { friends: [makePendingFriend()] } }
     const html = stableHtml(renderInRouter(<FriendsView />, '/admin/links'))
     expect(html).toContain('待审核申请')
     expect(html).toContain('无封面')
-    expect(html).toContain('缺少封面图，请先编辑补充')
+    expect(html).toContain('请先编辑友链并从后台上传封面图，再通过审核')
     expect(html).toContain('通过友链 申请者')
   })
 })

@@ -1,11 +1,22 @@
 import { friend } from '@kobato/db/schema/friend'
+import { image } from '@kobato/db/schema/media'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
+const mem = makeMemoryBackend()
 
 beforeEach(async () => {
+  __setStorageBackendForTests('s3', mem.backend)
   await clearAllTables(db)
+})
+
+afterEach(() => {
+  __resetStorageBackendsForTests()
+  mem.reset()
 })
 
 async function seedFriend(opts: Partial<typeof friend.$inferInsert> = {}): Promise<number> {
@@ -21,6 +32,23 @@ async function seedFriend(opts: Partial<typeof friend.$inferInsert> = {}): Promi
     })
     .returning({ id: friend.id })
   return rows[0]!.id
+}
+
+function posterFor(homepage: string): string {
+  return `/storage/images/links/${new URL(homepage).hostname}.jpg`
+}
+
+async function seedUploadedPoster(homepage: string, body = Buffer.from('friend poster')): Promise<void> {
+  const storagePath = `images/links/${new URL(homepage).hostname}.jpg`
+  await db.insert(image).values({
+    storagePath,
+    storageDriver: 's3',
+    mimeType: 'image/jpeg',
+    width: 1280,
+    height: 425,
+    byteSize: body.length,
+  })
+  mem.store.set(storagePath, { body, contentType: 'image/jpeg' })
 }
 
 describe('friends/service — toPublicFriend', () => {
@@ -140,7 +168,7 @@ describe('friends/service — upsertAdminFriend (create)', () => {
     const dto = await upsertAdminFriend(db, {
       website: 'New',
       homepage: 'https://new.com',
-      poster: '/p.png',
+      poster: posterFor('https://new.com'),
       visible: true,
     })
     expect(dto.id).toBeTruthy()
@@ -153,7 +181,7 @@ describe('friends/service — upsertAdminFriend (create)', () => {
       upsertAdminFriend(db, {
         website: 'Dup',
         homepage: 'https://dup.com',
-        poster: '/p.png',
+        poster: posterFor('https://dup.com'),
         visible: true,
       }),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
@@ -164,22 +192,46 @@ describe('friends/service — upsertAdminFriend (create)', () => {
       website: 'X',
       description: '   ',
       homepage: 'https://x.com',
-      poster: '/p.png',
+      poster: posterFor('https://x.com'),
       visible: true,
     })
     expect(dto.description).toBeNull()
+  })
+
+  it('rejects custom remote posters and posters for another host', async () => {
+    const { upsertAdminFriend } = await import('@kobato/server/domains/friends/service')
+    const base = { website: 'X', homepage: 'https://x.com', visible: true }
+    await expect(upsertAdminFriend(db, { ...base, poster: 'https://x.com/custom.jpg' })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      descriptor: { messageKey: 'friends.error.posterUploadRequired' },
+    })
+    await expect(
+      upsertAdminFriend(db, { ...base, poster: '/storage/images/links/other.com.jpg' }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('rejects an off-site absolute URL even when its path matches', async () => {
+    const { upsertAdminFriend } = await import('@kobato/server/domains/friends/service')
+    await expect(
+      upsertAdminFriend(db, {
+        website: 'X',
+        homepage: 'https://x.com',
+        poster: 'https://attacker.invalid/storage/images/links/x.com.jpg',
+        visible: true,
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
   })
 })
 
 describe('friends/service — upsertAdminFriend (update)', () => {
   it('updates an existing friend by id', async () => {
-    const id = await seedFriend({ website: 'Old' })
+    const id = await seedFriend({ website: 'Old', homepage: 'https://updated.com' })
     const { upsertAdminFriend } = await import('@kobato/server/domains/friends/service')
     const dto = await upsertAdminFriend(db, {
       id,
       website: 'Updated',
       homepage: 'https://updated.com',
-      poster: '/p.png',
+      poster: posterFor('https://updated.com'),
       visible: true,
     })
     expect(dto.website).toBe('Updated')
@@ -191,7 +243,7 @@ describe('friends/service — upsertAdminFriend (update)', () => {
         id: 9999,
         website: 'X',
         homepage: 'https://x.com',
-        poster: '/p.png',
+        poster: posterFor('https://x.com'),
         visible: true,
       }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
@@ -205,7 +257,7 @@ describe('friends/service — upsertAdminFriend (update)', () => {
         id,
         website: 'X',
         homepage: 'https://other.com',
-        poster: '/p.png',
+        poster: posterFor('https://other.com'),
         visible: true,
       }),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
@@ -217,10 +269,75 @@ describe('friends/service — upsertAdminFriend (update)', () => {
       id,
       website: 'Renamed',
       homepage: 'https://same.com',
-      poster: '/p.png',
+      poster: posterFor('https://same.com'),
       visible: true,
     })
     expect(dto.website).toBe('Renamed')
+  })
+
+  it('moves the uploaded poster object and metadata when the homepage host changes', async () => {
+    const previousHomepage = 'https://old.example.com/about'
+    const homepage = 'https://new.example.com/blog'
+    await seedUploadedPoster(previousHomepage)
+    const id = await seedFriend({
+      homepage: previousHomepage,
+      poster: `${posterFor(previousHomepage)}?v=123`,
+    })
+    const { upsertAdminFriend } = await import('@kobato/server/domains/friends/service')
+
+    const dto = await upsertAdminFriend(db, {
+      id,
+      website: 'Moved',
+      homepage,
+      poster: `${posterFor(homepage)}?v=123`,
+      visible: true,
+    })
+
+    expect(dto.poster).toBe('/storage/images/links/new.example.com.jpg?v=123')
+    expect(mem.store.has('images/links/old.example.com.jpg')).toBe(false)
+    expect(mem.store.get('images/links/new.example.com.jpg')?.body.toString()).toBe('friend poster')
+    const images = await db.select().from(image)
+    expect(images).toHaveLength(1)
+    expect(images[0]?.storagePath).toBe('images/links/new.example.com.jpg')
+  })
+
+  it('uses an already uploaded target poster without removing its previous object', async () => {
+    const previousHomepage = 'https://old.example.com'
+    const homepage = 'https://new.example.com'
+    await seedUploadedPoster(previousHomepage, Buffer.from('old'))
+    await seedUploadedPoster(homepage, Buffer.from('new'))
+    const id = await seedFriend({ homepage: previousHomepage, poster: posterFor(previousHomepage) })
+    const { upsertAdminFriend } = await import('@kobato/server/domains/friends/service')
+
+    const dto = await upsertAdminFriend(db, {
+      id,
+      website: 'Moved',
+      homepage,
+      poster: `${posterFor(homepage)}?v=456`,
+      visible: true,
+    })
+
+    expect(dto.poster).toBe('/storage/images/links/new.example.com.jpg?v=456')
+    expect(mem.store.get('images/links/old.example.com.jpg')?.body.toString()).toBe('old')
+    expect(mem.store.get('images/links/new.example.com.jpg')?.body.toString()).toBe('new')
+  })
+
+  it('does not update the friend when the previous uploaded poster is missing', async () => {
+    const previousHomepage = 'https://old.example.com'
+    const id = await seedFriend({ homepage: previousHomepage, poster: posterFor(previousHomepage) })
+    const { upsertAdminFriend } = await import('@kobato/server/domains/friends/service')
+
+    await expect(
+      upsertAdminFriend(db, {
+        id,
+        website: 'Moved',
+        homepage: 'https://new.example.com',
+        poster: posterFor('https://new.example.com'),
+        visible: true,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', descriptor: { messageKey: 'images.error.objectMissing' } })
+    const [unchanged] = await db.select().from(friend).where(eq(friend.id, id))
+    expect(unchanged?.homepage).toBe(previousHomepage)
   })
 })
 

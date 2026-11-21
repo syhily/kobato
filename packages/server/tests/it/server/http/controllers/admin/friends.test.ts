@@ -116,7 +116,7 @@ describe('adminFriendsRouter.upsert', () => {
       {
         website: 'Example',
         homepage: 'https://example.com',
-        poster: 'https://example.com/poster.jpg',
+        poster: '/storage/images/links/example.com.jpg',
       },
       { context: adminCtx() },
     )
@@ -133,8 +133,8 @@ describe('adminFriendsRouter.upsert', () => {
     const res = await upsertOverHttp(app, {
       id: String(id),
       website: '羽忆江南',
-      homepage: 'https://lizihao.com',
-      poster: '/storage/images/links/yyjn.org.jpg',
+      homepage: 'https://example.example.com',
+      poster: '/storage/images/links/example.example.com.jpg',
       visible: true,
       description: '喜于情，爱于心，言于表',
     })
@@ -143,8 +143,20 @@ describe('adminFriendsRouter.upsert', () => {
     const body = (await res.json()) as { json: { friend: { poster: string; website: string } } }
     expect(body.json.friend).toMatchObject({
       website: '羽忆江南',
-      poster: '/storage/images/links/yyjn.org.jpg',
+      poster: '/storage/images/links/example.example.com.jpg',
     })
+  })
+
+  it('rejects a custom poster URL over real HTTP without creating a row', async () => {
+    const app = adminApiApp()
+    const res = await upsertOverHttp(app, {
+      website: 'Example',
+      homepage: 'https://example.com',
+      poster: 'https://example.com/custom-poster.jpg',
+    })
+
+    expect(res.status).toBe(400)
+    expect(await db.select().from(friend).where(eq(friend.homepage, 'https://example.com'))).toHaveLength(0)
   })
 
   it('still rejects the same mutation without a CSRF token', async () => {
@@ -157,7 +169,7 @@ describe('adminFriendsRouter.upsert', () => {
         id: String(id),
         website: 'Example',
         homepage: 'https://example.example.com',
-        poster: '/storage/images/links/example.jpg',
+        poster: '/storage/images/links/example.example.com.jpg',
       },
       null,
     )

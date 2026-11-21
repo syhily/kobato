@@ -1,5 +1,6 @@
 import type { AdminFriendDto } from '@kobato/contracts/friends'
 
+import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
 import { Badge } from '@kobato/ui/components/badge'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { safeHref } from '@kobato/utils/safe-url'
@@ -26,6 +27,8 @@ export const PendingFriendRow = memo(function PendingFriendRow({
   const { t } = useI18n()
   const homepageHref = safeHref(friend.homepage)
   const hasPoster = friend.poster.trim() !== ''
+  const posterPath = friendPosterStoragePathFromUrl(friend.poster)
+  const hasUploadedPoster = posterPath !== null && posterPath === friendPosterStoragePath(friend.homepage)
 
   return (
     <div className="group relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
@@ -87,9 +90,9 @@ export const PendingFriendRow = memo(function PendingFriendRow({
       <button
         type="button"
         onClick={onApprove}
-        disabled={disabled || approving || !hasPoster}
+        disabled={disabled || approving || !hasUploadedPoster}
         aria-label={t('admin.friends.row.approve', { website: friend.website })}
-        title={hasPoster ? t('admin.friends.row.approveTitle') : t('admin.friends.row.missingPoster')}
+        title={hasUploadedPoster ? t('admin.friends.row.approveTitle') : t('admin.friends.row.missingPoster')}
         className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-line-muted text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
       >
         <CheckIcon className="size-4" />

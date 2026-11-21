@@ -1,6 +1,6 @@
 import type { AdminFriendDto } from '@kobato/contracts/friends'
 
-import { extractFriendHostSafe } from '@kobato/assets/images'
+import { extractFriendHostSafe, retargetFriendPosterUrl } from '@kobato/assets/images'
 import { Button } from '@kobato/ui/components/button'
 import { Checkbox } from '@kobato/ui/components/checkbox'
 import {
@@ -102,11 +102,13 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
         <form
           onSubmit={(e) => {
             e.preventDefault()
+            const homepage = draft.homepage.trim()
+            const poster = draft.poster.trim()
             const payload: UpsertFriendInput = {
               ...(isEditing && friend ? { id: friend.id } : {}),
               website: draft.website.trim(),
-              homepage: draft.homepage.trim(),
-              poster: draft.poster.trim(),
+              homepage,
+              poster: retargetFriendPosterUrl(poster, homepage) ?? poster,
               visible: draft.visible,
             }
             const description = draft.description.trim()
@@ -138,7 +140,13 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
               id="friend-homepage"
               type="url"
               value={draft.homepage}
-              onChange={(e) => setDraft((prev) => ({ ...prev, homepage: e.target.value }))}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  homepage: e.target.value,
+                  poster: retargetFriendPosterUrl(prev.poster, e.target.value) ?? prev.poster,
+                }))
+              }
               placeholder={t('admin.friends.form.homepagePlaceholder')}
               required
             />

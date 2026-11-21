@@ -169,7 +169,7 @@ describe('infra/db/operations/image — insertImage / upsertImageByStoragePath',
   })
 })
 
-describe('infra/db/operations/image — softDeleteImage / updateImageNote / updateImageThumbhash', () => {
+describe('infra/db/operations/image — softDeleteImage / updates', () => {
   it('softDeleteImage returns the row when present', async () => {
     const { softDeleteImage } = await import('@kobato/db/operations/image')
     expect(await softDeleteImage(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
@@ -201,6 +201,16 @@ describe('infra/db/operations/image — softDeleteImage / updateImageNote / upda
   it('updateImageNoteWithUploader returns null when the update returns null', async () => {
     const { updateImageNoteWithUploader } = await import('@kobato/db/operations/image')
     expect(await updateImageNoteWithUploader(createMockDb([]), 1, 'note')).toBeNull()
+  })
+
+  it('updateImageStoragePath returns the moved row when present', async () => {
+    const { updateImageStoragePath } = await import('@kobato/db/operations/image')
+    expect(await updateImageStoragePath(createMockDb([{ id: 1 }]), 1, 'images/links/new.com.jpg')).toEqual({ id: 1 })
+  })
+
+  it('updateImageStoragePath returns null when absent', async () => {
+    const { updateImageStoragePath } = await import('@kobato/db/operations/image')
+    expect(await updateImageStoragePath(createMockDb([]), 1, 'images/links/new.com.jpg')).toBeNull()
   })
 
   it('updateImageThumbhash returns the row when present', async () => {

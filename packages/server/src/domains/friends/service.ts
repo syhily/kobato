@@ -3,6 +3,8 @@ import type { AdminFriendDto } from '@kobato/contracts/friends'
 import type { Database } from '@kobato/db/database'
 import type { FriendRow } from '@kobato/db/types'
 
+import { isOnSiteOrigin } from '@kobato/assets/asset-url'
+import { extractFriendHostSafe, friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
 import {
   type AdminFriendsListFilters,
   countAdminFriends,
@@ -14,12 +16,15 @@ import {
   listPublicFriendRows,
   updateFriend,
 } from '@kobato/db/operations/friend'
+import { findImagesByStoragePaths, updateImageStoragePath } from '@kobato/db/operations/image'
 import { sendNewFriendApplication } from '@kobato/server/domains/friends/email'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
+import { getGeneralWebsite } from '@kobato/server/infra/storage/public-url'
+import { backendFor } from '@kobato/server/infra/storage/registry'
 
 const log = getLogger('friends.service')
 
@@ -93,6 +98,7 @@ export interface UpsertFriendInputs {
 export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs): Promise<AdminFriendDto> {
   const description = normaliseNullable(input.description)
   const rssUrl = normaliseNullable(input.rssUrl)
+  const poster = assertUploadedPoster(input.homepage, input.poster)
 
   if (input.id === undefined) {
     const dup = await findFriendByHomepage(db, input.homepage)
@@ -105,7 +111,7 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
       website: input.website,
       description,
       homepage: input.homepage,
-      poster: input.poster,
+      poster,
       rssUrl,
       visible: input.visible,
     })
@@ -124,11 +130,12 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
       ])
     }
   }
+  const nextPoster = await relocatePosterForHomepage(db, existing.homepage, existing.poster, input.homepage, poster)
   const updated = await updateFriend(db, input.id, {
     website: input.website,
     description,
     homepage: input.homepage,
-    poster: input.poster,
+    poster: nextPoster,
     rssUrl,
     visible: input.visible,
   })
@@ -136,6 +143,73 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
     throw new DomainError('NOT_FOUND', descriptorFor('friends.error.notFound'))
   }
   return toAdminFriendDto(updated)
+}
+
+function invalidPosterError(): DomainError {
+  return new DomainError('BAD_REQUEST', descriptorFor('friends.error.posterUploadRequired'), [
+    { ...descriptorFor('friends.error.posterUploadRequired'), path: ['poster'] },
+  ])
+}
+
+function assertUploadedPoster(homepage: string, poster: string): string {
+  const trimmed = poster.trim()
+  const expected = friendPosterStoragePath(homepage)
+  if (expected === null || friendPosterStoragePathFromUrl(trimmed) !== expected) {
+    throw invalidPosterError()
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    if (!isOnSiteOrigin(new URL(trimmed), getGeneralWebsite())) {
+      throw invalidPosterError()
+    }
+  }
+  return trimmed
+}
+
+async function relocatePosterForHomepage(
+  db: Database,
+  previousHomepage: string,
+  previousPoster: string,
+  homepage: string,
+  poster: string,
+): Promise<string> {
+  if (extractFriendHostSafe(previousHomepage) === extractFriendHostSafe(homepage)) {
+    return poster
+  }
+  const previousPath = friendPosterStoragePath(previousHomepage)
+  const targetPath = friendPosterStoragePath(homepage)
+  if (previousPath === null || targetPath === null || friendPosterStoragePathFromUrl(previousPoster) !== previousPath) {
+    return poster
+  }
+  const rows = await findImagesByStoragePaths(db, [previousPath, targetPath])
+  if (rows.some((row) => row.storagePath === targetPath)) {
+    return poster
+  }
+  const source = rows.find((row) => row.storagePath === previousPath)
+  if (source === undefined) {
+    throw new DomainError('NOT_FOUND', descriptorFor('images.error.objectMissing'))
+  }
+  const backend = backendFor(source.storageDriver)
+  try {
+    const body = await backend.get(previousPath)
+    await backend.put({ key: targetPath, body, contentType: source.mimeType, visibility: 'public' })
+  } catch (error) {
+    log.error('Failed to copy friend poster to the new homepage host', { previousPath, targetPath, error })
+    throw new DomainError('INTERNAL', descriptorFor('friends.error.posterMoveFailed'))
+  }
+  try {
+    const moved = await updateImageStoragePath(db, source.id, targetPath)
+    if (moved === null) {
+      throw new Error('Image metadata disappeared during friend poster move')
+    }
+  } catch (error) {
+    await backend.delete(targetPath).catch(() => undefined)
+    log.error('Failed to update friend poster metadata after storage move', { previousPath, targetPath, error })
+    throw new DomainError('INTERNAL', descriptorFor('friends.error.posterMoveFailed'))
+  }
+  await backend.delete(previousPath).catch((error) => {
+    log.warn('Failed to remove the previous friend poster object after moving it', { previousPath, error })
+  })
+  return poster
 }
 
 export async function deleteAdminFriend(db: Database, id: number): Promise<boolean> {

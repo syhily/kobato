@@ -220,13 +220,15 @@ describe('integration / friends apply → admin approve', () => {
     expect(await listPublicFriends(db)).toEqual([])
 
     const adminId = await seedAdmin()
+    const uploadedPoster = '/storage/images/links/approve.example.com.jpg'
+    await db.update(friend).set({ poster: uploadedPoster }).where(eq(friend.id, before[0]!.id))
     const approveRes = await call(
       adminFriendsRouter.upsert,
       {
         id: String(before[0]!.id),
         website: before[0]!.website,
         homepage: before[0]!.homepage,
-        poster: before[0]!.poster,
+        poster: uploadedPoster,
         visible: true,
       },
       { context: adminCtx(adminId) },
@@ -241,7 +243,7 @@ describe('integration / friends apply → admin approve', () => {
     expect(publicFriends[0]).toMatchObject({
       website: '准友链',
       homepage: 'https://approve.example.com',
-      poster: 'https://approve.example.com/cover.jpg',
+      poster: uploadedPoster,
     })
   })
 })

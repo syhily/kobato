@@ -2051,7 +2051,7 @@ export const uiMessagesEnUS = {
   'admin.friends.row.pending': 'Pending',
   'admin.friends.row.approve': 'Approve friend link {website}',
   'admin.friends.row.approveTitle': 'Approve',
-  'admin.friends.row.missingPoster': 'A poster is required; edit the link to add one',
+  'admin.friends.row.missingPoster': 'Edit the link and upload its poster in the admin before approving',
   'admin.friends.form.newTitle': 'New friend link',
   'admin.friends.form.editTitle': 'Edit friend link',
   'admin.friends.form.editDescription': 'Edit the friend link; hiding it removes it from the public site.',
@@ -2061,7 +2061,7 @@ export const uiMessagesEnUS = {
   'admin.friends.form.homepagePlaceholder': 'https://example.com',
   'admin.friends.form.poster': 'Poster (1280×425)',
   'admin.friends.form.posterChanged':
-    'Note: the homepage URL changed; the new poster is written to the S3 object for the new host and the old object becomes an orphan you must delete in Images.',
+    'The homepage host changed. Saving moves the uploaded poster and its metadata to the new host path.',
   'admin.friends.form.posterHint':
     "Crop, rotate and tune the quality; the poster uploads to images/links/'<host>'.jpg.",
   'admin.friends.form.description': 'Description (optional)',
@@ -3146,6 +3146,8 @@ export const uiMessagesEnUS = {
   'friends.error.alreadyApplied':
     'A friend-link application for this homepage has already been submitted; do not submit it again.',
   'friends.error.homepageSubmitted': 'This homepage URL has already been submitted',
+  'friends.error.posterUploadRequired': 'Upload the poster in the admin; custom image URLs are not allowed',
+  'friends.error.posterMoveFailed': 'Could not move the poster to the new homepage host; please try again',
   'newsletter.error.disabled': 'Email subscriptions are not open on this site yet.',
   'newsletter.error.invalidConfirm': 'The confirmation link is invalid or has expired; subscribe again.',
   'newsletter.error.invalidUnsubscribe': 'The unsubscribe link is invalid.',

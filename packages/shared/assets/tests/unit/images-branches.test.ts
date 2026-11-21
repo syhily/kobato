@@ -1,9 +1,12 @@
 import {
   classifyImageKind,
   extractFriendHostSafe,
+  friendPosterStoragePath,
+  friendPosterStoragePathFromUrl,
   getImageSrcset,
   getImageUrl,
   isSafeImageSegment,
+  retargetFriendPosterUrl,
 } from '@kobato/assets/images'
 import { describe, expect, it } from 'vitest'
 
@@ -62,6 +65,34 @@ describe('assets/images — isSafeImageSegment', () => {
     expect(isSafeImageSegment('Foo')).toBe(false)
     expect(isSafeImageSegment('a/b')).toBe(false)
     expect(isSafeImageSegment('a b')).toBe(false)
+  })
+})
+
+describe('assets/images — friend poster paths', () => {
+  it('derives the storage path from the normalized homepage host', () => {
+    expect(friendPosterStoragePath('https://Example.COM:8443/about')).toBe('images/links/example.com.jpg')
+    expect(friendPosterStoragePath('not-a-url')).toBeNull()
+  })
+
+  it('accepts only uploaded friend poster URLs', () => {
+    expect(friendPosterStoragePathFromUrl('/storage/images/links/example.com.jpg?v=12')).toBe(
+      'images/links/example.com.jpg',
+    )
+    expect(friendPosterStoragePathFromUrl('https://site.example/storage/images/links/example.com.jpg?v=12')).toBe(
+      'images/links/example.com.jpg',
+    )
+    expect(friendPosterStoragePathFromUrl('https://example.com/poster.jpg')).toBeNull()
+    expect(friendPosterStoragePathFromUrl('/storage/images/2026/example.jpg')).toBeNull()
+  })
+
+  it('retargets relative and absolute poster URLs while preserving their version', () => {
+    expect(retargetFriendPosterUrl('/storage/images/links/old.com.jpg?v=12', 'https://new.com/about')).toBe(
+      '/storage/images/links/new.com.jpg?v=12',
+    )
+    expect(
+      retargetFriendPosterUrl('https://site.example/storage/images/links/old.com.jpg?v=12', 'https://new.com'),
+    ).toBe('https://site.example/storage/images/links/new.com.jpg?v=12')
+    expect(retargetFriendPosterUrl('https://old.com/custom.jpg', 'https://new.com')).toBeNull()
   })
 })
 

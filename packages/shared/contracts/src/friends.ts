@@ -1,4 +1,4 @@
-import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
 import { honeypotField, idString, isoDateTime, okDto } from '@kobato/contracts/primitives'
 import { isHttpUrl } from '@kobato/utils/safe-url'
 import { HTTP_URL_MESSAGE } from '@kobato/utils/url-schema'
@@ -42,24 +42,29 @@ export const friendIdSchema = z.object({
 })
 export type FriendIdInput = z.infer<typeof friendIdSchema>
 
-export const upsertFriendSchema = z.object({
-  id: z.string().min(1).optional(),
-  website: z.string().trim().min(1).max(80),
-  description: optionalText(999),
-  homepage: z.url().max(500),
-  poster: z.union([
-    z.url().max(500),
-    z
-      .string()
-      .max(500)
-      .refine((value) => parseAssetUrlPath(value)?.route === STORAGE_ROUTE_PREFIX),
-  ]),
-  rssUrl: z
-    .union([z.url().max(500), z.literal(''), z.null()])
-    .optional()
-    .transform((value) => (value === null || value === undefined || value === '' ? undefined : value)),
-  visible: z.boolean().optional().default(true),
-})
+export const upsertFriendSchema = z
+  .object({
+    id: z.string().min(1).optional(),
+    website: z.string().trim().min(1).max(80),
+    description: optionalText(999),
+    homepage: z.url().max(500),
+    poster: z.string().trim().min(1).max(500),
+    rssUrl: z
+      .union([z.url().max(500), z.literal(''), z.null()])
+      .optional()
+      .transform((value) => (value === null || value === undefined || value === '' ? undefined : value)),
+    visible: z.boolean().optional().default(true),
+  })
+  .superRefine((input, context) => {
+    const expected = friendPosterStoragePath(input.homepage)
+    if (expected !== null && friendPosterStoragePathFromUrl(input.poster) !== expected) {
+      context.addIssue({
+        code: 'custom',
+        message: 'friends.error.posterUploadRequired',
+        path: ['poster'],
+      })
+    }
+  })
 export type UpsertFriendInput = z.infer<typeof upsertFriendSchema>
 
 export const adminFriendsListOutputDto = z.object({

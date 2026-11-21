@@ -175,6 +175,11 @@ export async function updateImageNoteWithUploader(
   return imageUploader.updateThenRefetch(db, id, (d, rowId) => updateImageNote(d, rowId, note))
 }
 
+export async function updateImageStoragePath(db: Database, id: number, storagePath: string): Promise<ImageRow | null> {
+  const rows = await db.update(image).set({ storagePath, updatedAt: new Date() }).where(eq(image.id, id)).returning()
+  return rows[0] ?? null
+}
+
 export async function updateImageThumbhash(db: Database, id: number, thumbhash: string): Promise<ImageRow | null> {
   const rows = await db.update(image).set({ thumbhash, updatedAt: new Date() }).where(eq(image.id, id)).returning()
   return rows[0] ?? null
