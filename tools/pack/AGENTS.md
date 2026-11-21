@@ -3,10 +3,12 @@
 Packaging tooling for the single-executable distribution. Nothing here ships inside the product binary.
 
 - `src/sea/` — the SEA pipeline (asset discovery/embedding, injection, smoke/probe/e2e, self-update).
+- `src/vite/` — the shared `vite.config.ts` building blocks (app define tables, dev-server `optimizeDeps`, sanitize
+  engine alias); `check-bundle.ts` derives its defined-globals table from `seaAppDefines`.
 - `src/release.ts` — version sync and release preparation (`release:bump` / `release:prepare-next` / `release:tag` /
   `version:sync`).
-- Build-time configs import the plugins through `@kobato/pack/sea/*`; the one relative import left is the build-output
-  entry (`src/sea/server-entry.ts`).
+- Build-time configs import the plugins through `@kobato/pack/sea/*` and `@kobato/pack/vite/*`; the one relative import
+  left is the build-output entry (`src/sea/server-entry.ts`).
 
 ## Runtime shape
 

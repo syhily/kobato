@@ -13,7 +13,7 @@ package (`tools/<name>` ↔ `@kobato/<specifier>`):
   itself.
 - `email` — localized email-template previews (`emails:generate`).
 - `i18n` — regional terminology diff report (`i18n:regional-diff`).
-- `pack` — packaging tooling: the SEA pipeline and release automation.
+- `pack` — packaging tooling: the SEA pipeline, release automation, and the shared vite config helpers (`src/vite/`).
 
 ## Boundary rules
 

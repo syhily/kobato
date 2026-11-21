@@ -1,6 +1,6 @@
-import { HIGHLIGHT_LANGUAGES } from '@kobato/server/infra/lexical/languages'
+import { HIGHLIGHT_LANGUAGES } from '@kobato/assets/highlight-languages'
 import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/lexical/shiki'
-import { bundledLanguages, createHighlighter } from 'shiki'
+import { bundledLanguages } from 'shiki'
 import { describe, expect, it } from 'vitest'
 
 const SAMPLES: { language: string; code: string }[] = [
@@ -16,8 +16,8 @@ const SAMPLES: { language: string; code: string }[] = [
   { language: 'objective-c', code: 'NSString *s = @"hi";\n' },
 ]
 
-describe('infra/lexical/shiki — fine-grained highlighter', () => {
-  it('SHIKI_SUPPORTED_LANGUAGES equals HIGHLIGHT_LANGUAGES (and the old bundle filter)', () => {
+describe('infra/lexical/shiki — bundled highlighter', () => {
+  it('SHIKI_SUPPORTED_LANGUAGES equals HIGHLIGHT_LANGUAGES, all present in the shiki bundle', () => {
     expect([...SHIKI_SUPPORTED_LANGUAGES].sort()).toEqual([...HIGHLIGHT_LANGUAGES].sort())
     for (const lang of HIGHLIGHT_LANGUAGES) {
       expect(SHIKI_SUPPORTED_LANGUAGES.has(lang), lang).toBe(lang in bundledLanguages)
@@ -36,17 +36,11 @@ describe('infra/lexical/shiki — fine-grained highlighter', () => {
     }
   })
 
-  it('produces byte-identical HTML to the full shiki bundle', async () => {
-    const [fine, full] = await Promise.all([
-      createShikiHighlighter(),
-      createHighlighter({
-        langs: HIGHLIGHT_LANGUAGES.filter((lang) => lang in bundledLanguages),
-        themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
-      }),
-    ])
+  it('highlights the real-code samples', async () => {
+    const highlighter = await createShikiHighlighter()
     for (const { language, code } of SAMPLES) {
-      const options = { lang: language, themes: SHIKI_THEMES, defaultColor: false } as const
-      expect(fine.codeToHtml(code, options), language).toBe(full.codeToHtml(code, options))
+      const html = highlighter.codeToHtml(code, { lang: language, themes: SHIKI_THEMES, defaultColor: false })
+      expect(html, language).toContain('class="shiki')
     }
   })
 

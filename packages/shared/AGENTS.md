@@ -25,10 +25,10 @@ SSRF/CIDR + passkey RP checks), `i18n` (locale contract, ICU catalogs, `catalog-
 `inkling-labels`), `cache` (bucket declaration registry — never a storage plane), `catalog` (public content read model +
 projections), `settings` (Section schema/default/secret registry, admin projections, `snapshot` slot, representation
 scopes, RUM client identity; server-only write validation stays in server), `assets` (asset-URL grammar, image kinds,
-avatar rule, Gravatar mirror), `sanitize` (isomorphic DOMPurify stack, `sanitize-url`, `escape-html`), `contracts` (the
-wire: per-domain Zod schemas + DTOs, `api-error`, `merge-patch`, cross-boundary shapes), `telemetry` (RUM vocabulary,
-OpenObserve stream/metric names, privacy-pipeline identity), `distribution` (`__APP_*__` identity, SEA asset keys,
-route-warmup manifest contract), `seo` (`meta` / `og-image` builders).
+avatar rule, Gravatar mirror, code-block highlight languages), `sanitize` (isomorphic DOMPurify stack, `sanitize-url`,
+`escape-html`), `contracts` (the wire: per-domain Zod schemas + DTOs, `api-error`, `merge-patch`, cross-boundary
+shapes), `telemetry` (RUM vocabulary, OpenObserve stream/metric names, privacy-pipeline identity), `distribution`
+(`__APP_*__` identity, SEA asset keys, route-warmup manifest contract), `seo` (`meta` / `og-image` builders).
 
 Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → inkling headless (type-only); `cache` → i18n + utils;
 `telemetry` → settings; `settings` → i18n + cache + assets + utils (never contracts); `contracts` → auth + catalog +

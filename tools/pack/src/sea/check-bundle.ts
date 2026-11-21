@@ -1,19 +1,12 @@
 import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from '@kobato/pack/sea/paths'
+import { readAppPackage, seaAppDefines } from '@kobato/pack/vite/app-metadata'
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 
-export const SEA_BUNDLE_DEFINED_GLOBALS = [
-  '__SEA_APP_VERSION__',
-  '__APP_NAME__',
-  '__APP_VERSION__',
-  '__APP_DESCRIPTION__',
-  '__APP_AUTHOR_NAME__',
-  '__APP_HOMEPAGE__',
-  '__APP_REPOSITORY__',
-]
+export const SEA_BUNDLE_DEFINED_GLOBALS = Object.keys(seaAppDefines(readAppPackage()))
 
 const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])

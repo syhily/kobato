@@ -32,7 +32,7 @@ describe('scanBundleText: undefined build-time globals', () => {
     )
   })
 
-  it('tolerates every global vite.sea.config.ts actually defines', () => {
+  it('tolerates every global the seaAppDefines helper actually defines', () => {
     const text = [
       'const cliVersion = __SEA_APP_VERSION__',
       'export const APP_NAME = __APP_NAME__',
@@ -45,7 +45,7 @@ describe('scanBundleText: undefined build-time globals', () => {
     expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual([])
   })
 
-  it('pins the define table to the seven globals vite.sea.config.ts declares', () => {
+  it('pins the define table to the seven globals seaAppDefines declares', () => {
     expect([...SEA_BUNDLE_DEFINED_GLOBALS].sort()).toEqual(
       [
         '__APP_AUTHOR_NAME__',
