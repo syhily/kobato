@@ -22,7 +22,7 @@
   },
   "oxc.disableNestedConfig": true,
   "oxc.requireConfig": true,
-  "oxc.tsConfigPath": "${workspaceRoot}/tsconfig.json",
+  "oxc.tsConfigPath": "tsconfig.json",
   "oxc.typeAware": true,
   "oxc.useExecPath": false,
   "editor.defaultFormatter": "oxc.oxc-vscode",
@@ -40,7 +40,7 @@
     "*.css": "tailwindcss"
   },
   "npm.scriptRunner": "pnpm",
-  "tailwindCSS.experimental.configFile": "${workspaceRoot}/apps/kobato/src/styles/public.css",
+  "tailwindCSS.experimental.configFile": "apps/kobato/src/styles/public.css",
   "tailwindCSS.classFunctions": ["cn"],
   "tailwindCSS.includeLanguages": {
     "mdx": "html"
