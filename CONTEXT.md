@@ -170,3 +170,11 @@ Engine specifics are injected once by the composition root via `wireRestoreMachi
 or phase names. The `complete` recovery policy — rollback → reopen → reschedule → migrate → ANALYZE → restart, including
 the never-restart-into-a-dead-handle invariant — lives in `domains/backup/restore-completion.ts`, built by
 `createRestoreCompletion`. _Avoid_: restore orchestrator
+
+**Public contract**: the stability-guaranteed public groups of the `@kobato/api` contract tree — `content`, `comments`,
+`likes`, `notifications`, `friends`, `webmentions`, `avatar`, `newsletter` — the wire an external headless frontend
+builds against. Everything else (`admin.*`, `account`/`passkey`, the `music`/`images`/`github` helpers) is workspace
+surface that may churn with any release. _Avoid_: Public Content API, SDK, `/api/content/v1`
+
+**Headless**: an externally deployed frontend rendering the public site through the public contract — a consumption mode
+of the same binary, never a runtime mode, build target, or product cutover. _Avoid_: headless-only, `headless.enabled`
