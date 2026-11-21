@@ -7,7 +7,7 @@ the SERVER during the admin connection test. Nothing here writes `kobato.config.
 
 - `src/up.ts` / `down.ts` / `init.ts` / `provision.ts` / `status.ts` — container lifecycle; `src/smoke.ts` — the real
   end-to-end signal check.
-- Shared protocol names come from `@kobato/telemetry`; dashboard/VRL assets are read from
+- Shared protocol names come from `@kobato/settings/telemetry`; dashboard/VRL assets are read from
   `packages/server/src/domains/observability/assets` (never copied).
 
 Full manual: `docs/manual/Trace.md`.

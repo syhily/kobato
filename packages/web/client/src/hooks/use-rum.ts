@@ -1,7 +1,7 @@
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { FrontendRumBootstrap } from '@kobato/settings/telemetry/rum'
 import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 
-import { frontendRumBootstrapSchema } from '@kobato/telemetry/rum'
+import { frontendRumBootstrapSchema } from '@kobato/settings/telemetry/rum'
 import { rumRouteContextFromMatches } from '@kobato/web-client/lib/rum/rum-route'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'

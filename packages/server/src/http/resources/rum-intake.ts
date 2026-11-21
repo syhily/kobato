@@ -6,7 +6,7 @@ import { tryRumIntakeRateLimit } from '@kobato/server/infra/rate-limit'
 import { safeFetch } from '@kobato/server/infra/safe-fetch'
 import { activeFrontendRelay } from '@kobato/server/infra/trace/config'
 import { recordRumRelayOutcome } from '@kobato/server/infra/trace/metrics'
-import { RUM_INTAKE_PATH } from '@kobato/telemetry/rum'
+import { RUM_INTAKE_PATH } from '@kobato/settings/telemetry/rum'
 import { Hono } from 'hono'
 
 const log = getLogger('rum.intake')

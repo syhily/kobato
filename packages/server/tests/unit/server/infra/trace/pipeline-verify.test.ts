@@ -10,7 +10,7 @@ import {
   RUM_PRIVACY_FUNCTION_NAME,
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
   RUM_PRIVACY_PIPELINE_NAME,
-} from '@kobato/telemetry/pipeline'
+} from '@kobato/settings/telemetry/pipeline'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'

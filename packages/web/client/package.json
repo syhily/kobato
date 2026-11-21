@@ -16,7 +16,6 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
-    "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",

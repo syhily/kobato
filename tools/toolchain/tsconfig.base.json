@@ -52,7 +52,6 @@
       "@kobato/catalog/tests/*": ["../../packages/shared/catalog/tests/*"],
       "@kobato/distribution/*": ["../../packages/shared/distribution/src/*"],
       "@kobato/distribution/tests/*": ["../../packages/shared/distribution/tests/*"],
-      "@kobato/telemetry/*": ["../../packages/shared/telemetry/src/*"],
       "@kobato/settings/*": ["../../packages/shared/settings/src/*"],
       "@kobato/settings/tests/*": ["../../packages/shared/settings/tests/*"],
       "@kobato/assets/*": ["../../packages/shared/assets/src/*"],

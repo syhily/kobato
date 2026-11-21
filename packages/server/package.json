@@ -32,7 +32,6 @@
     "@kobato/sanitize": "workspace:*",
     "@kobato/seo": "workspace:*",
     "@kobato/settings": "workspace:*",
-    "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
     "@kobato/utils": "workspace:*",

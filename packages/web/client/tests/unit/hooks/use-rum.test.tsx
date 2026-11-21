@@ -1,4 +1,4 @@
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { FrontendRumBootstrap } from '@kobato/settings/telemetry/rum'
 import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 
 import {

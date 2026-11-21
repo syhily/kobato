@@ -12,7 +12,6 @@ const SOURCE_DIRS = [
   'packages/api/src/contracts',
   'packages/shared/auth/src',
   'packages/shared/catalog/src',
-  'packages/shared/telemetry/src',
   'packages/shared/distribution/src',
   'packages/shared/seo/src',
   'packages/shared/utils/src',
@@ -111,10 +110,10 @@ describe('trace SDK source boundary', () => {
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/resource.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/log-record.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/logger/sink.ts'),
-      join(PROJECT_ROOT, 'packages/shared/telemetry/src/rum.ts'),
-      join(PROJECT_ROOT, 'packages/shared/telemetry/src/logs.ts'),
-      join(PROJECT_ROOT, 'packages/shared/telemetry/src/metrics.ts'),
-      join(PROJECT_ROOT, 'packages/shared/telemetry/src/pipeline.ts'),
+      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/rum.ts'),
+      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/logs.ts'),
+      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/metrics.ts'),
+      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/pipeline.ts'),
     ]
 
     expect(collectTelemetryViolations(protectedModules)).toEqual([])

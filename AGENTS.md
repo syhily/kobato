@@ -10,7 +10,7 @@ pnpm monorepo with four top-level roots; nothing else is created at the root:
   node:sqlite/Drizzle + DuckDB persistence), `@kobato/api` (the API SDK: `src/contracts/` wire Zod schemas + DTOs,
   `src/rpc/` oRPC procedure metadata), `@kobato/ui` (design system), `@kobato/inkling` (Lexical editor: React runtime,
   React-free `/headless/` document model, `/host-cards/` assemblies), `packages/web/*` (`web-client`, `web-public`,
-  `web-admin`), and eleven isomorphic React-free leaves under `packages/shared/*`.
+  `web-admin`), and ten isomorphic React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`toolchain`, `test`, `harness`, `browser`, `email`, `i18n-tools`, `trace`, `pack`);
   nothing ships in the product binary, and product `src/` never imports a tools package.
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in

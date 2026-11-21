@@ -30,6 +30,17 @@ const PUBLIC_ENTRY_DIRS = ['apps/kobato/src/routes/public'] as const
 
 const SERVER_ONLY_PREFIXES = ['packages/server/src/'] as const
 
+// `sections/observability.ts` composes the public RUM bootstrap vocabulary (`rumClientIdentitySchema`), so its module
+// rides the public bundle; the admin write-validation keys it declares are inert schema constants consumed by the
+// server registry, never runtime lookups from public code. Any NEW workspace-only key in the module fails loudly.
+const DECLARED_WORKSPACE_KEYS: Record<string, readonly string[]> = {
+  'packages/shared/settings/src/sections/observability.ts': [
+    'admin.settings.observability.error.endpointInvalid',
+    'admin.settings.observability.error.endpointHttps',
+    'admin.settings.observability.error.organizationInvalid',
+  ],
+}
+
 const CATALOG_KEYS = new Set(Object.keys(uiMessagesEnUS))
 
 function listSources(dir: string, out: string[]): void {
@@ -140,13 +151,27 @@ describe('public message namespaces', () => {
   it('never references a workspace-only message key from the public module graph', () => {
     const offenders: string[] = []
     for (const [file, source] of collectPublicGraph()) {
+      const rel = repoRelative(file)
+      const declared = DECLARED_WORKSPACE_KEYS[rel] ?? []
       for (const key of referencedMessageKeys(source)) {
-        if (!isPublicMessageKey(key)) {
-          offenders.push(`${repoRelative(file)} → ${key}`)
+        if (!isPublicMessageKey(key) && !declared.includes(key)) {
+          offenders.push(`${rel} → ${key}`)
         }
       }
     }
     expect(offenders).toEqual([])
+  })
+
+  it('pins the declared workspace keys to the files that still reference them', () => {
+    for (const [rel, keys] of Object.entries(DECLARED_WORKSPACE_KEYS)) {
+      const source = readFileSync(join(REPO_ROOT, rel), 'utf8')
+      expect(
+        referencedMessageKeys(source)
+          .filter((key) => !isPublicMessageKey(key))
+          .sort(),
+        `${rel} carries workspace-only keys beyond the pinned list`,
+      ).toEqual([...keys].sort())
+    }
   })
 
   it('keeps every allowlist entry non-empty and backed by real catalog keys', () => {

@@ -1,5 +1,5 @@
 import type { RumClientIdentity } from '@kobato/settings/sections/observability'
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { FrontendRumBootstrap } from '@kobato/settings/telemetry/rum'
 
 import { getLogger } from '@kobato/server/infra/logger'
 import {

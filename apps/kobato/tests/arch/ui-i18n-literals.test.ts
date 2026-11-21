@@ -15,7 +15,6 @@ const SCAN_ROOTS = [
   'packages/api/src/contracts',
   'packages/shared/auth/src',
   'packages/shared/catalog/src',
-  'packages/shared/telemetry/src',
   'packages/shared/distribution/src',
   'packages/shared/seo/src',
   'packages/shared/utils/src',

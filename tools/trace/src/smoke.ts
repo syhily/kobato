@@ -6,8 +6,8 @@ import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http'
 import { pickFreePort, sleep } from '@kobato/harness/process'
 import { callE2eRpc } from '@kobato/harness/rpc'
 import { seedInstalledInstance } from '@kobato/harness/seed'
-import { TRACE_METRIC_STREAMS } from '@kobato/telemetry/metrics'
-import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline'
+import { TRACE_METRIC_STREAMS } from '@kobato/settings/telemetry/metrics'
+import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/settings/telemetry/pipeline'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/trace/lexical-fixtures'
 import {
   buildState,

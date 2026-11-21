@@ -2,10 +2,10 @@
 
 `@kobato/web-client` (`packages/web/client/`) is the browser platform layer: document-level hooks, the oRPC client, the
 root settings contexts, route warmup, and the cross-surface editor platform. It may import the shared leaves it declares
-(`@kobato/{utils,i18n,settings,telemetry,distribution}`), `@kobato/api` (the wire contracts), `@kobato/ui`,
-`@kobato/inkling`. It must NOT import `@kobato/web-admin` or `@kobato/web-public` (a client module needing a product
-component moves up to that leaf), and must NOT import `@kobato/server` or use Node-only APIs — the oRPC client is typed
-exclusively through `ContractRouterClient<typeof apiContract>` from `@kobato/api`.
+(`@kobato/{utils,i18n,settings,distribution}`), `@kobato/api` (the wire contracts), `@kobato/ui`, `@kobato/inkling`. It
+must NOT import `@kobato/web-admin` or `@kobato/web-public` (a client module needing a product component moves up to
+that leaf), and must NOT import `@kobato/server` or use Node-only APIs — the oRPC client is typed exclusively through
+`ContractRouterClient<typeof apiContract>` from `@kobato/api`.
 
 ## Structure
 

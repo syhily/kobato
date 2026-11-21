@@ -10,7 +10,7 @@ import type {
 
 import { counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade'
 import { sanitizeAttributeValue } from '@kobato/server/infra/trace/sanitize'
-import { TRACE_METRIC_NAMES } from '@kobato/telemetry/metrics'
+import { TRACE_METRIC_NAMES } from '@kobato/settings/telemetry/metrics'
 
 export const METRIC = TRACE_METRIC_NAMES
 

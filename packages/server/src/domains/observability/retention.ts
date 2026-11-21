@@ -5,9 +5,9 @@ import { isObservabilityConnectionVerified } from '@kobato/server/domains/observ
 import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs'
-import { isTraceMetricStreamName } from '@kobato/telemetry/metrics'
-import { RUM_STREAM_NAME } from '@kobato/telemetry/pipeline'
+import { TRACE_LOG_STREAM } from '@kobato/settings/telemetry/logs'
+import { isTraceMetricStreamName } from '@kobato/settings/telemetry/metrics'
+import { RUM_STREAM_NAME } from '@kobato/settings/telemetry/pipeline'
 
 const log = getLogger('observability.retention')
 

@@ -3,7 +3,7 @@ import type {
   ServerTraceRuntimeConfig,
   TraceConfigResolution,
 } from '@kobato/server/infra/trace/config'
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { FrontendRumBootstrap } from '@kobato/settings/telemetry/rum'
 
 import { activeFrontendRelay, activeFrontendRum, traceEnvironment } from '@kobato/server/infra/trace/config'
 import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade'

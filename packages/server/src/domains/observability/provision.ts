@@ -13,7 +13,7 @@ import {
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
   RUM_PRIVACY_PIPELINE_NAME,
   RUM_STREAM_NAME,
-} from '@kobato/telemetry/pipeline'
+} from '@kobato/settings/telemetry/pipeline'
 
 const log = getLogger('observability.provision')
 

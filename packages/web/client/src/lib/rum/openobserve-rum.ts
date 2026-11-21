@@ -1,10 +1,10 @@
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { FrontendRumBootstrap } from '@kobato/settings/telemetry/rum'
 import type { RumBudgetSnapshot, RumBudgetStore } from '@kobato/web-client/lib/rum/rum-budget'
 import type { RumRouteContext } from '@kobato/web-client/lib/rum/rum-route'
 import type { DatadogRum, RumInitConfiguration } from '@openobserve/browser-rum-slim'
 
 import { APP_VERSION } from '@kobato/distribution/app'
-import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN } from '@kobato/telemetry/rum'
+import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN } from '@kobato/settings/telemetry/rum'
 import { getLogger } from '@kobato/ui/lib/logger'
 import { createRumEventPolicy } from '@kobato/web-client/lib/rum/rum-sanitizer'
 import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@kobato/web-client/lib/rum/rum-url-policy'

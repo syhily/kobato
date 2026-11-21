@@ -1,4 +1,4 @@
-import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline'
+import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/settings/telemetry/pipeline'
 import {
   containerExists,
   containerRunning,

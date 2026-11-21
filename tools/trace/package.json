@@ -20,7 +20,7 @@
     "@kobato/harness": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/pack": "workspace:*",
-    "@kobato/telemetry": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@playwright/test": "catalog:",

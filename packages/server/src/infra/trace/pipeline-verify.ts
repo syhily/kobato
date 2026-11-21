@@ -8,7 +8,7 @@ import {
   RUM_PRIVACY_VRL_SHA256,
   RUM_STREAM_NAME,
   RUM_PRIVACY_VERSION_MARKER,
-} from '@kobato/telemetry/pipeline'
+} from '@kobato/settings/telemetry/pipeline'
 import { isRecord } from '@kobato/utils/type-guards'
 import { createHash } from 'node:crypto'
 
