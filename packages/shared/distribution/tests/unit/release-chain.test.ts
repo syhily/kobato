@@ -3,6 +3,14 @@ import { describe, expect, it } from 'vitest'
 
 const sea = readFileSync('.github/workflows/sea.yml', 'utf-8')
 const releaseTs = readFileSync('tools/pack/src/release.ts', 'utf-8')
+const packageTs = readFileSync('tools/pack/src/sea/package.ts', 'utf-8')
+
+function buildBlock(): string {
+  const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
+  const build = jobBlocks.find((b) => b.startsWith('build:'))
+  expect(build, 'sea.yml job block for build').toBeDefined()
+  return build as string
+}
 
 describe('release chain: the draft-release flow stays triggerable', () => {
   it('release.ts pushes the tag BEFORE creating the release (the event the chain rides on)', () => {
@@ -27,21 +35,16 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(pushBlock).toMatch(/branches: \[develop\]/)
     expect(pushBlock).toMatch(/tags: \['\*'\]/)
 
-    const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
-    for (const job of ['build', 'build-darwin', 'build-windows']) {
-      const block = jobBlocks.find((b) => b.startsWith(`${job}:`))
-      expect(block, `sea.yml job block for ${job}`).toBeDefined()
-      expect(block).not.toMatch(/github\.ref == 'refs\/heads\/main'/)
-    }
+    expect(buildBlock()).not.toMatch(/github\.ref == 'refs\/heads\/main'/)
   })
 
-  it('sea.yml build matrix gate admits tag pushes — anchored per release-upload dependency job', () => {
-    const tagGate = /if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/
-    const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
-    for (const job of ['build', 'build-darwin', 'build-windows']) {
-      const block = jobBlocks.find((b) => b.startsWith(`${job}:`))
-      expect(block, `sea.yml job block for ${job}`).toBeDefined()
-      expect(block).toMatch(tagGate)
+  it('sea.yml build matrix gate admits tag pushes', () => {
+    expect(buildBlock()).toMatch(/if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/)
+  })
+
+  it('the merged build matrix still covers all five delivery targets', () => {
+    for (const target of ['linux-x64', 'linux-arm64', 'darwin-arm64', 'win32-x64', 'win32-arm64']) {
+      expect(buildBlock(), `matrix entry for ${target}`).toMatch(new RegExp(`target: ${target}\n`))
     }
   })
 
@@ -52,8 +55,8 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(sea).toMatch(/gh release edit "[^"]*" --draft=false/)
   })
 
-  it('sea.yml release-upload stays gated on the full matrix and uploads BEFORE publishing (fix-review)', () => {
-    expect(sea).toMatch(/release-upload:[\s\S]*?needs: \[build, build-darwin, build-windows\]/)
+  it('sea.yml release-upload stays gated on the full build matrix and uploads BEFORE publishing (fix-review)', () => {
+    expect(sea).toMatch(/release-upload:[\s\S]*?needs: build\n/)
     const uploadIdx = sea.indexOf('gh release upload')
     const publishIdx = sea.indexOf('--draft=false')
     expect(uploadIdx).toBeGreaterThan(-1)
@@ -68,17 +71,34 @@ describe('release chain: the draft-release flow stays triggerable', () => {
 
   it('ships the tested Ubuntu x64 deb and its checksum as release assets', () => {
     const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
-    const build = jobBlocks.find((block) => block.startsWith('build:'))
     const releaseUpload = jobBlocks.find((block) => block.startsWith('release-upload:'))
 
-    expect(build).toMatch(
-      /Package Ubuntu x64 deb with checksum[\s\S]*?if: matrix\.target == 'linux-x64'[\s\S]*?build-deb\.sh/,
-    )
-    expect(build).toMatch(/dist-sea\/kobato_\*_amd64\.deb\n/)
-    expect(build).toMatch(/dist-sea\/kobato_\*_amd64\.deb\.sha256\n/)
+    expect(buildBlock()).toMatch(/sea:package archive --target \$\{\{ matrix\.target \}\} --deb[\s\S]*?if: matrix\.deb/)
+    expect(buildBlock()).toMatch(/dist-sea\/kobato_\*_amd64\.deb\n/)
+    expect(buildBlock()).toMatch(/dist-sea\/kobato_\*_amd64\.deb\.sha256\n/)
     expect(releaseUpload).toMatch(
       /gh release upload "\$\{\{ github\.ref_name \}\}"[^\n]*dist-sea\/kobato-\*[^\n]*dist-sea\/kobato_\*_amd64\.deb[^\n]*dist-sea\/kobato_\*_amd64\.deb\.sha256[^\n]*--clobber/,
     )
+  })
+
+  it('sea:package owns the platform packaging the per-OS shell steps used to do (checksums via node:crypto)', () => {
+    expect(packageTs).toMatch(/createHash\('sha256'\)/)
+    expect(packageTs).toMatch(/kobato-\$\{target\}\.tar\.gz/)
+    expect(packageTs).toMatch(/writeVerifiedChecksum/)
+    expect(packageTs).toMatch(/build-deb\.sh/)
+  })
+
+  it('sea.yml release-upload deletes the workflow artifacts after the release is published', () => {
+    const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
+    const releaseUpload = jobBlocks.find((block) => block.startsWith('release-upload:'))
+
+    const publishIdx = sea.indexOf('--draft=false')
+    const deleteIdx = sea.indexOf('actions/artifacts/')
+    expect(publishIdx).toBeGreaterThan(-1)
+    expect(deleteIdx).toBeGreaterThan(-1)
+    expect(publishIdx).toBeLessThan(deleteIdx)
+    expect(releaseUpload).toMatch(/actions: write/)
+    expect(releaseUpload).toMatch(/GITHUB_RUN_ID/)
   })
 
   it('no workflow consumes the `published` release event — the chain ends at release-upload (M2: the ghcr chain is gone)', () => {

@@ -8,6 +8,7 @@ export function fail(message: string): never {
 
 interface RunOptions {
   env?: NodeJS.ProcessEnv
+  cwd?: string
 }
 
 // shell is REQUIRED on Windows: the .bin tools are .cmd shims only cmd.exe can run.

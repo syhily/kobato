@@ -4,20 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches: [develop]
-    # The automated release flow enters HERE: tools/pack/src/release.ts pushes
-    # the tag and then creates the GitHub release as a DRAFT, and GitHub
-    # fires NO workflow events for draft releases — a `release:` trigger
-    # alone leaves the whole chain dead (the draft never publishes, no
-    # assets upload).
     tags: ['*']
   pull_request:
     branches: [main, develop]
   release:
-    # `created` fires only for NON-draft releases (i.e. manual ones made
-    # in the UI); the automated flow rides the tag push above.
     types: [created]
 
-# Never cancel — a release build must run to completion.
 concurrency:
   group: sea-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -29,9 +21,7 @@ jobs:
   build:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    # develop pushes and PRs run the single-platform build-develop job
-    # below instead — the full matrix stays on tags/release/dispatch.
+    timeout-minutes: ${{ matrix.timeout }}
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     strategy:
       fail-fast: false
@@ -39,248 +29,123 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: linux-x64
+            timeout: 30
+            deep-verify: true
+            deb: true
+            artifacts: |
+              dist-sea/kobato-linux-x64.tar.gz
+              dist-sea/kobato-linux-x64.tar.gz.sha256
+              dist-sea/kobato-linux-x64.sha256
+              dist-sea/kobato_*_amd64.deb
+              dist-sea/kobato_*_amd64.deb.sha256
           - os: ubuntu-24.04-arm
             target: linux-arm64
-    # The deep smoke boots the server against per-run temp files (SQLite +
-    # DuckDB — embedded, no service container needed on any platform).
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 26.13.1
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      # patchelf rewrites the sharp addon's rpath during sea:build (see
-      # tools/pack/src/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
-      # image — this guards against image changes.
-      - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
-      - run: pnpm run sea:build
-      - name: Rename output to kobato-<target>
-        env:
-          BIN: kobato-${{ matrix.target }}
-        working-directory: dist-sea
-        run: |
-          sha256sum -c kobato.sha256
-          mv kobato "$BIN"
-          rm kobato.sha256
-      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
-      # True HTTP e2e against the SEA-booted instance (tests/e2e). Linux
-      # only — the e2e suite needs no services but the extra minutes buy
-      # nothing the darwin/win32 smokes don't already cover.
-      - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
-      # Real-Chromium journeys (dirty-card flush veto, cross-tab sync, public
-      # composer/hydration). CI uses Playwright's bundled Chromium; local runs
-      # default to the system Chrome channel (see tools/browser/playwright.config.ts).
-      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
-      - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}"
-        env:
-          KOBATO_BROWSER_CHANNEL: chromium
-      # Two checksums ship per target: one over the archive (verified
-      # pre-extraction) and one over the raw binary (verified on the
-      # extracted file) — the self-update pipeline checks both, so a
-      # defective extraction can never swap in a corrupt executable.
-      - name: Package tar.gz with checksum
-        env:
-          BIN: kobato-${{ matrix.target }}
-        working-directory: dist-sea
-        run: |
-          tar -czf "$BIN.tar.gz" "$BIN"
-          sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
-          sha256sum -c "$BIN.tar.gz.sha256"
-          sha256sum "$BIN" > "$BIN.sha256"
-      # The release deb reuses the exact linux-x64 binary that passed the
-      # managed smoke, HTTP e2e and real-browser journeys above.
-      - name: Package Ubuntu x64 deb with checksum
-        if: matrix.target == 'linux-x64'
-        run: |
-          raw_version="$(node -p "require('./apps/kobato/package.json').version")"
-          deb="$(basename "$(bash scripts/build-deb.sh dist-sea/kobato-linux-x64 "$raw_version" dist-sea)")"
-          (cd dist-sea && sha256sum "$deb" > "$deb.sha256" && sha256sum -c "$deb.sha256")
-      - uses: actions/upload-artifact@v7
-        with:
-          name: kobato-${{ matrix.target }}
-          retention-days: 7
-          path: |
-            dist-sea/kobato-${{ matrix.target }}.tar.gz
-            dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
-            dist-sea/kobato-${{ matrix.target }}.sha256
-            dist-sea/kobato_*_amd64.deb
-            dist-sea/kobato_*_amd64.deb.sha256
-
-  # macOS targets: separate job for the runner image only. The smoke is
-  # the FULL managed lifecycle — the embedded databases need no service
-  # container, so macOS coverage matches Linux (minus the e2e suite).
-  build-darwin:
-    name: build (${{ matrix.target }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
+            timeout: 30
+            deep-verify: true
+            artifacts: |
+              dist-sea/kobato-linux-arm64.tar.gz
+              dist-sea/kobato-linux-arm64.tar.gz.sha256
+              dist-sea/kobato-linux-arm64.sha256
           - os: macos-15
             target: darwin-arm64
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 26.13.1
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run sea:build
-      - name: Rename output to kobato-<target>
-        env:
-          BIN: kobato-${{ matrix.target }}
-        working-directory: dist-sea
-        # macOS has no sha256sum; shasum -a 256 is flag-compatible.
-        run: |
-          shasum -a 256 -c kobato.sha256
-          mv kobato "$BIN"
-          rm kobato.sha256
-      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
-      - name: Package tar.gz with checksum
-        env:
-          BIN: kobato-${{ matrix.target }}
-        working-directory: dist-sea
-        run: |
-          tar -czf "$BIN.tar.gz" "$BIN"
-          shasum -a 256 "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
-          shasum -a 256 -c "$BIN.tar.gz.sha256"
-          shasum -a 256 "$BIN" > "$BIN.sha256"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: kobato-${{ matrix.target }}
-          retention-days: 7
-          path: |
-            dist-sea/kobato-${{ matrix.target }}.tar.gz
-            dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
-            dist-sea/kobato-${{ matrix.target }}.sha256
-
-  # Windows targets: same split as macOS — separate job for the runner
-  # image, full managed smoke (no service container needed). The
-  # rename/package steps run under Git Bash (sha256sum/tar); the binary
-  # is kobato.exe.
-  build-windows:
-    name: build (${{ matrix.target }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
+            timeout: 45
+            artifacts: |
+              dist-sea/kobato-darwin-arm64.tar.gz
+              dist-sea/kobato-darwin-arm64.tar.gz.sha256
+              dist-sea/kobato-darwin-arm64.sha256
           - os: windows-2025
             target: win32-x64
+            timeout: 45
+            exe: .exe
+            artifacts: |
+              dist-sea/kobato-win32-x64.tar.gz
+              dist-sea/kobato-win32-x64.tar.gz.sha256
+              dist-sea/kobato-win32-x64.sha256
           - os: windows-11-arm
             target: win32-arm64
+            timeout: 45
+            exe: .exe
+            artifacts: |
+              dist-sea/kobato-win32-arm64.tar.gz
+              dist-sea/kobato-win32-arm64.tar.gz.sha256
+              dist-sea/kobato-win32-arm64.sha256
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 26.13.1
-          cache: 'pnpm'
+      - uses: pnpm/setup@v3
       - run: pnpm install --frozen-lockfile
+      - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
+        if: runner.os == 'Linux'
       - run: pnpm run sea:build
       - name: Rename output to kobato-<target>
+        run: pnpm run sea:package rename --target ${{ matrix.target }}
+      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
+      - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
+        if: matrix.deep-verify
+      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
+        if: matrix.deep-verify
+      - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
+        if: matrix.deep-verify
         env:
-          BIN: kobato-${{ matrix.target }}
-        working-directory: dist-sea
-        shell: bash
-        run: |
-          sha256sum -c kobato.sha256
-          mv kobato.exe "$BIN.exe"
-          rm kobato.sha256
-      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}.exe"
+          KOBATO_BROWSER_CHANNEL: chromium
       - name: Package tar.gz with checksum
-        env:
-          BIN: kobato-${{ matrix.target }}
-        working-directory: dist-sea
-        shell: bash
-        run: |
-          tar -czf "$BIN.tar.gz" "$BIN.exe"
-          sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
-          sha256sum -c "$BIN.tar.gz.sha256"
-          sha256sum "$BIN.exe" > "$BIN.sha256"
+        run: pnpm run sea:package archive --target ${{ matrix.target }}
+      - name: Package Ubuntu x64 deb with checksum
+        run: pnpm run sea:package archive --target ${{ matrix.target }} --deb
+        if: matrix.deb
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
           retention-days: 7
-          path: |
-            dist-sea/kobato-${{ matrix.target }}.tar.gz
-            dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
-            dist-sea/kobato-${{ matrix.target }}.sha256
+          path: ${{ matrix.artifacts }}
 
-  # develop validation: pushes to develop and PRs to main run ONLY this
-  # job — a single linux-x64 sea:build + the full managed smoke + the
-  # real-HTTP e2e journeys against the just-built binary. The e2e suite
-  # was added to this job (audit D-2/P2-5): the binary already exists
-  # here, so the 18 journeys cost a few minutes and keep CSRF/session/
-  # restore regressions from reaching main unobserved.
-  build-develop:
-    name: build (linux-x64, develop)
+  build-verification:
+    name: build (linux-x64, verification)
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 26.13.1
-          cache: 'pnpm'
+      - uses: pnpm/setup@v3
       - run: pnpm install --frozen-lockfile
-      # patchelf rewrites the sharp addon's rpath during sea:build (see
-      # tools/pack/src/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
-      # image — this guards against image changes.
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
-      # Real-Chromium journeys against the same binary (bundled Chromium on CI).
       - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
       - run: pnpm run sea:browser dist-sea/kobato
         env:
           KOBATO_BROWSER_CHANNEL: chromium
 
-  # Release assets are uploaded for the events that actually occur in the
-  # release flow — the tag push (automated: tools/pack/src/release.ts pushes the
-  # tag, then creates the release as a DRAFT) and non-draft release events
-  # (manual) — in a separate job so the elevated contents:write token
-  # never reaches the build matrix. The publish step at the end flips the
-  # draft public only after every asset is attached, so users can never
-  # see a release with missing assets.
   release-upload:
     name: upload release assets
     if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
-    needs: [build, build-darwin, build-windows]
+    needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/download-artifact@v8
         with:
           pattern: kobato-*
           path: dist-sea
           merge-multiple: true
-      # `github.ref_name` is the tag on both tag-push and release events
-      # (`github.event.release` is null on tag pushes).
       - name: Upload packages to the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 --clobber
-      # Publish only now: while the release is a draft, users cannot see or
-      # download it, so the async upload above can never expose a partial
-      # release. If any build or the upload failed, this step never runs
-      # and the draft is left for manual inspection/fixing — never
-      # auto-publish a release with missing assets.
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: gh release edit "${{ github.ref_name }}" --draft=false
+      - name: Delete uploaded build artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ids="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --jq '.artifacts[].id')"
+          for id in $ids; do
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/$id"
+          done
