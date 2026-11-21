@@ -25,7 +25,7 @@ type PageableQuery<TRow> = PromiseLike<TRow[]> & {
 }
 
 export function applyPage<TRow>(query: PageableQuery<TRow>, page: AdminListPage): Promise<TRow[]> {
-  if (page.limit !== undefined) {
+  if (page.limit !== undefined && page.limit > 0) {
     if (page.offset !== undefined && page.offset > 0) {
       return Promise.resolve(query.limit(page.limit).offset(page.offset))
     }

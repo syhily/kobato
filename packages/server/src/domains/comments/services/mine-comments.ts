@@ -155,9 +155,9 @@ export async function countMyComments(
   const rows = await db
     .select({
       total: count(),
-      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`,
-      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`,
-      deleted: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NOT NULL)`,
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`.mapWith(Number),
+      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`.mapWith(Number),
+      deleted: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NOT NULL)`.mapWith(Number),
     })
     .from(comment)
     .where(mineWhere(userId, filters, cutoff))

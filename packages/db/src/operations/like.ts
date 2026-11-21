@@ -96,7 +96,7 @@ export async function commentCountsByOwnerIds(
     return []
   }
   const rows = await db
-    .select({ ownerId: comment.ownerId, count: sql<number>`COUNT(*)` })
+    .select({ ownerId: comment.ownerId, count: sql<number>`COUNT(*)`.mapWith(Number) })
     .from(comment)
     .where(
       and(

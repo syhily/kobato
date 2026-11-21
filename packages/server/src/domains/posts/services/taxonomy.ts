@@ -49,7 +49,7 @@ export async function countPostsByTaxonomy(
 
   if (options.kind === 'category') {
     const base = db
-      .select({ name: categoryTable.name, count: sql<number>`count(${postMetaTable.id})` })
+      .select({ name: categoryTable.name, count: sql<number>`count(${postMetaTable.id})`.mapWith(Number) })
       .from(categoryTable)
       .leftJoin(postMetaTable, and(eq(postMetaTable.categoryId, categoryTable.id), gate))
       .$dynamic()
@@ -68,7 +68,7 @@ export async function countPostsByTaxonomy(
   }
 
   const base = db
-    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})` })
+    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})`.mapWith(Number) })
     .from(tagTable)
     .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
     .leftJoin(postMetaTable, and(eq(postMetaTable.id, postTag.postId), gate))

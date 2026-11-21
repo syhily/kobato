@@ -143,7 +143,7 @@ export function latestJobRunsByTask(): Map<string, JobRunRow> {
   }
   const db = resolveDb()
   const latestIds = db
-    .select({ id: sql<number>`MAX(${jobRun.id})`.as('id') })
+    .select({ id: sql<number>`MAX(${jobRun.id})`.mapWith(Number).as('id') })
     .from(jobRun)
     .groupBy(jobRun.taskKey)
     .all()

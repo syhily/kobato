@@ -25,7 +25,7 @@ export async function countCommentsAndRoots(
   const rows = await db
     .select({
       total: count(),
-      roots: sql<number>`COUNT(*) FILTER (WHERE ${comment.rootId} = 0)`,
+      roots: sql<number>`COUNT(*) FILTER (WHERE ${comment.rootId} = 0)`.mapWith(Number),
     })
     .from(comment)
     .where(and(...baseConditions))

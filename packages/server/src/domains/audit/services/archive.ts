@@ -47,7 +47,7 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
   const dayRows = await db
     .select({
       day: sql<string>`date(${auditLog.createdAt} / 1000, 'unixepoch')`,
-      count: sql<number>`count(*)`,
+      count: sql<number>`count(*)`.mapWith(Number),
     })
     .from(auditLog)
     .where(lt(auditLog.createdAt, cutoff))

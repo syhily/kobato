@@ -24,7 +24,7 @@ export async function listAdminTagRows(db: Database, filters: AdminTagsListFilte
   const q = where
     ? db.select().from(tag).where(where).orderBy(asc(tag.name))
     : db.select().from(tag).orderBy(asc(tag.name))
-  if (filters.limit !== undefined) {
+  if (filters.limit !== undefined && filters.limit > 0) {
     if (filters.offset !== undefined && filters.offset > 0) {
       return q.limit(filters.limit).offset(filters.offset)
     }

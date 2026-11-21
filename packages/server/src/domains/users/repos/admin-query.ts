@@ -77,7 +77,7 @@ export async function countAdminUsers(db: Database, filters: AdminUsersListFilte
 export type AdminUsersSortOrder = 'recent' | 'commentCount'
 
 function lastCommentAtAggregate() {
-  return max(comment.createdAt).mapWith((value: Date | string) => (value instanceof Date ? value : new Date(value)))
+  return max(comment.createdAt)
 }
 
 interface CommentStats {
@@ -96,8 +96,11 @@ async function aggregateCommentStats(db: Database, userIds: readonly number[]): 
   const rows = await db
     .select({
       userId: comment.userId,
-      commentCount: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
-      pendingCount: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
+      commentCount: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`.mapWith(Number),
+      pendingCount:
+        sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`.mapWith(
+          Number,
+        ),
       lastCommentAt: lastCommentAtAggregate(),
     })
     .from(comment)
@@ -123,7 +126,9 @@ export async function listAdminUsers(
   const conditions = buildAdminUsersConditions(filters)
 
   if (sortBy === 'commentCount') {
-    const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
+    const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`.mapWith(
+      Number,
+    )
     const rows = await db
       .select({
         id: user.id,
@@ -139,9 +144,15 @@ export async function listAdminUsers(
         createdAt: user.createdAt,
         deletedAt: user.deletedAt,
         commentCount: commentCountSql,
-        pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
+        pendingCount:
+          sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`.mapWith(
+            Number,
+          ),
         lastCommentAt: lastCommentAtAggregate(),
-        passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
+        passkeyCount:
+          sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`.mapWith(
+            Number,
+          ),
         loginMethod: user.loginMethod,
       })
       .from(user)
@@ -176,7 +187,10 @@ export async function listAdminUsers(
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
-      passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
+      passkeyCount:
+        sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`.mapWith(
+          Number,
+        ),
       loginMethod: user.loginMethod,
     })
     .from(user)
@@ -216,7 +230,10 @@ export async function findAdminUserById(db: Database, id: number): Promise<Admin
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
-      passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
+      passkeyCount:
+        sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`.mapWith(
+          Number,
+        ),
       loginMethod: user.loginMethod,
     })
     .from(user)

@@ -153,10 +153,10 @@ export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends 
       const where = options.buildWhere(filters)
       const builder = where
         ? db
-            .select({ count: sql<number>`count(*)` })
+            .select({ count: sql<number>`count(*)`.mapWith(Number) })
             .from(table)
             .where(where)
-        : db.select({ count: sql<number>`count(*)` }).from(table)
+        : db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(table)
       const rows = await builder
       return rows[0]?.count ?? 0
     },

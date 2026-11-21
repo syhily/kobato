@@ -154,5 +154,6 @@ main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION_
 - Only native-dynamic-library packages required at production runtime belong in the ROOT `package.json` `dependencies`:
   `@napi-rs/canvas`, `sharp`, `@duckdb/node-api`. Everything else is a devDependencies entry of the importing package —
   the SEA binary builds from the full dev install.
-- `drizzle-orm` / `drizzle-kit` stay pinned at `1.0.0-rc.5`; when drizzle 1.0 stable ships, upgrade the pair together
-  and re-run the migration contract tests before unpinning.
+- `drizzle-orm` / `drizzle-kit` stay pinned at `1.0.0-rc.6`; when drizzle 1.0 stable ships, upgrade the pair together
+  and re-run the migration contract tests before unpinning. Raw integer `sql` fields in mapped selects need an explicit
+  `.mapWith(Number)` — rc.6 decodes them as `bigint` on `node:sqlite`.

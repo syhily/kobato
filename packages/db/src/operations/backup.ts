@@ -20,10 +20,10 @@ export async function findBackupByTimestamp(db: Database, timestamp: string): Pr
 
 export async function listBackupRows(db: Database, limit?: number, offset = 0): Promise<BackupRow[]> {
   const base = db.select().from(backup).orderBy(desc(backup.createdAt))
-  if (limit !== undefined && offset > 0) {
+  if (limit !== undefined && limit > 0 && offset > 0) {
     return base.limit(limit).offset(offset)
   }
-  if (limit !== undefined) {
+  if (limit !== undefined && limit > 0) {
     return base.limit(limit)
   }
   if (offset > 0) {

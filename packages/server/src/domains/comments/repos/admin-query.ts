@@ -100,10 +100,19 @@ export async function countAdminComments(
   const conditions = buildAdminListConditions({ ...baseFilters, status: 'all' })
   const rows = await db
     .select({
-      all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
-      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE AND ${comment.deleteRequestedAt} IS NULL)`,
-      approved: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = FALSE AND ${comment.deleteRequestedAt} IS NULL)`,
-      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.deleteRequestedAt} IS NOT NULL)`,
+      all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`.mapWith(Number),
+      pending:
+        sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE AND ${comment.deleteRequestedAt} IS NULL)`.mapWith(
+          Number,
+        ),
+      approved:
+        sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = FALSE AND ${comment.deleteRequestedAt} IS NULL)`.mapWith(
+          Number,
+        ),
+      deleteRequested:
+        sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.deleteRequestedAt} IS NOT NULL)`.mapWith(
+          Number,
+        ),
     })
     .from(comment)
     .where(and(...conditions))

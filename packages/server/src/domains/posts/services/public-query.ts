@@ -31,7 +31,7 @@ export async function countPublicPosts(
 ): Promise<number> {
   const where = buildPublicPostsWhere(filters, now)
   const rows = await db
-    .select({ count: sql<number>`count(*)` })
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(postMetaTable)
     .where(where)
   return rows[0]?.count ?? 0
