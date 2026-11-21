@@ -10,16 +10,6 @@ export default defineConfig({
   },
   test: {
     silent: 'passed-only',
-    // Directory discovery: each package test tree owns its config files and
-    // joins the run by its location (`vitest.config.ts` plus the
-    // `vitest.<name>.config.ts` convention for sibling halves like the iso
-    // projects and duckdb). apps/kobato/tests/e2e needs a live SEA-booted
-    // instance (driven by `pnpm run sea:e2e`) and must never join the default
-    // run. File-based projects do not inherit this config's test options —
-    // each spreads @kobato/test/vitest.base.ts itself; the four cross-family
-    // aggregates (shared-*, web-*) have no single owner tree, so they stay
-    // inline imports from @kobato/test/projects (the shared and web
-    // umbrellas are deliberately not packages with test trees).
     projects: [
       sharedUnitProject,
       sharedSnapsProject,
@@ -49,10 +39,6 @@ export default defineConfig({
         'packages/ui/src/**',
         'packages/web/admin/src/ui/**',
         'packages/web/public/src/ui/**',
-        // The inkling editor tree is covered by its own vitest project
-        // (packages/inkling/tests, jsdom) whose historical thresholds
-        // (~56/54/49) sit below the root 60 — excluding it here keeps the
-        // root gate measuring only the layers it was calibrated for.
         'packages/inkling/**',
         'apps/kobato/src/env.d.ts',
         'apps/kobato/src/routes.ts',

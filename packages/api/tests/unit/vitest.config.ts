@@ -1,9 +1,7 @@
+import { REPO_ROOT } from '@kobato/test/repo-root'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
-import { fileURLToPath } from 'node:url'
 import { configDefaults, defineConfig } from 'vitest/config'
-
-const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
 
 export default defineConfig({
   root: REPO_ROOT,

@@ -1,4 +1,5 @@
 import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files'
+import { REPO_ROOT } from '@kobato/test/repo-root'
 import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
@@ -12,23 +13,14 @@ export default defineConfig({
   test: {
     ...vitestTestBase,
     name: 'duckdb',
-    // The list spans three packages' tests trees, so the project root must BE
-    // the repository root for its include patterns to resolve (glob patterns
-    // cannot climb above their root). Vitest resolves bare setup specifiers
-    // against that root only, and @kobato/test links per-package — hence the
-    // absolute paths below.
-    root: path.resolve(import.meta.dirname, '../../..'),
+    root: REPO_ROOT,
     include: [...DUCKDB_TEST_FILES],
     setupFiles: [
-      path.resolve(import.meta.dirname, 'utils/setup/unit.ts'),
-      path.resolve(import.meta.dirname, 'utils/setup/it.ts'),
+      path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/unit.ts'),
+      path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/it.ts'),
     ],
     testTimeout: 30_000,
     hookTimeout: 120_000,
-    // The native engine is thread-safe and every file builds its own
-    // throwaway DuckDB database under its own mkdtemp dir, and both setups
-    // reset the shared analytics executor between files — so the files share
-    // workers like every other project (16s → 11s on this suite).
     isolate: false,
   },
 })

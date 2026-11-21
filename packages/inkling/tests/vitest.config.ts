@@ -1,16 +1,15 @@
 import { mockIsolatedTestFiles } from '@kobato/test/mock-files'
+import { REPO_ROOT } from '@kobato/test/repo-root'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import svgr from 'vite-plugin-svgr'
 import { configDefaults, defineConfig } from 'vitest/config'
 
-const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 const TESTS_ROOT = 'packages/inkling/tests'
 const MOCK_FILES = mockIsolatedTestFiles(path.resolve(import.meta.dirname), REPO_ROOT)
-const SETUP_FILE = path.resolve(import.meta.dirname, './setup.ts')
+const SETUP_FILE = path.resolve(REPO_ROOT, 'packages/inkling/tests/setup.ts')
 
 const INCLUDE = [
   `${TESTS_ROOT}/unit/**/*.test.{js,jsx,ts,tsx}`,
