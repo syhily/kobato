@@ -1,6 +1,6 @@
 {
   "name": "@kobato/server",
-  "version": "8.0.3-dev",
+  "version": "8.2.0",
   "private": true,
   "type": "module",
   "exports": {
