@@ -1,4 +1,4 @@
-import type { AdminPostDetailDto } from '@kobato/contracts/posts'
+import type { AdminPostDetailDto } from '@kobato/api/contracts/posts'
 import type { Database } from '@kobato/db/database'
 import type { PostMetaRow } from '@kobato/db/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'

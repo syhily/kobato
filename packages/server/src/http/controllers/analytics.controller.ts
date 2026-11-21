@@ -1,7 +1,7 @@
-import type { AnalyticsQuery } from '@kobato/contracts/analytics'
+import type { AnalyticsQuery } from '@kobato/api/contracts/analytics'
 import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
 
-import { analyticsContract } from '@kobato/api/analytics'
+import { analyticsContract } from '@kobato/api/rpc/analytics'
 import { queryCounters } from '@kobato/db/duckdb/queries/counters'
 import { queryHeatmap } from '@kobato/db/duckdb/queries/heatmap'
 import { queryMetric } from '@kobato/db/duckdb/queries/metric'

@@ -1,11 +1,11 @@
-import { adminJobsContract } from '@kobato/api/admin/jobs'
 import {
   TASK_CATALOG,
   type JobHistoryOutput,
   type JobRunDto,
   type JobSummaryDto,
   type JobsListDto,
-} from '@kobato/contracts/jobs'
+} from '@kobato/api/contracts/jobs'
+import { adminJobsContract } from '@kobato/api/rpc/admin/jobs'
 import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration'
 import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats'
 import { implementAdmin } from '@kobato/server/http/orpc-base'

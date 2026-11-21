@@ -1,4 +1,4 @@
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { InviteAuthorDialog } from '@kobato/web-admin/ui/users/InviteAuthorDialog'
 import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'

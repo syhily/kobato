@@ -1,4 +1,4 @@
-import { adminCommentsContract } from '@kobato/api/admin/comments'
+import { adminCommentsContract } from '@kobato/api/rpc/admin/comments'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {

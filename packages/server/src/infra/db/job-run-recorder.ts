@@ -1,6 +1,6 @@
 import type { Database } from '@kobato/db/database'
 
-import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@kobato/contracts/jobs'
+import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@kobato/api/contracts/jobs'
 import { jobRun } from '@kobato/db/schema/job-run'
 import { getLogger } from '@kobato/server/infra/logger'
 import { count, desc, eq, inArray, lt, sql } from 'drizzle-orm'

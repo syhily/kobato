@@ -1,11 +1,11 @@
-import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/api-error'
 import type { Database } from '@kobato/db/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { z } from 'zod'
 
-import { zodIssueParams } from '@kobato/contracts/api-error'
+import { zodIssueParams } from '@kobato/api/contracts/api-error'
 import { checkMailReady } from '@kobato/server/infra/email/sender'
 import { descriptorFor, isUiMessageId, messageDescriptor } from '@kobato/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@kobato/server/infra/i18n'

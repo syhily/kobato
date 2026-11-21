@@ -1,4 +1,4 @@
-import type { MetingSource, SearchMusicOutput } from '@kobato/contracts/music'
+import type { MetingSource, SearchMusicOutput } from '@kobato/api/contracts/music'
 
 import { getProvider } from '@kobato/server/domains/music/providers/registry'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'

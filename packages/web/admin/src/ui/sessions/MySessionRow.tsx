@@ -1,4 +1,4 @@
-import type { MySessionItem } from '@kobato/contracts/sessions'
+import type { MySessionItem } from '@kobato/api/contracts/sessions'
 
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'

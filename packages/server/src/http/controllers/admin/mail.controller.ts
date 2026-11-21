@@ -1,4 +1,4 @@
-import { adminMailContract } from '@kobato/api/admin/mail'
+import { adminMailContract } from '@kobato/api/rpc/admin/mail'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { implementAdmin } from '@kobato/server/http/orpc-base'
 import { sendTestMail } from '@kobato/server/infra/email/sender'

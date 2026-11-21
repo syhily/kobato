@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
 import type { CategoryRow } from '@kobato/db/types'
 
 export function toAdminCategoryDto(row: CategoryRow, postCount: number): AdminCategoryDto {

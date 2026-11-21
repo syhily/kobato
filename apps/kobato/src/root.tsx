@@ -1,5 +1,5 @@
 import '@/zod-config'
-import type { ContentBootstrapI18n } from '@kobato/contracts/content'
+import type { ContentBootstrapI18n } from '@kobato/api/contracts/content'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope'

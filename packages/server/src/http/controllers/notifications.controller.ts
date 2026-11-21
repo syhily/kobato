@@ -1,4 +1,4 @@
-import { notificationsContract } from '@kobato/api/notifications'
+import { notificationsContract } from '@kobato/api/rpc/notifications'
 import {
   getThread,
   listInbox,

@@ -1,5 +1,5 @@
+import type { AdminPageDto } from '@kobato/api/contracts/pages'
 import type { Page } from '@kobato/catalog/model'
-import type { AdminPageDto } from '@kobato/contracts/pages'
 import type { ContentRow, PageMetaRow } from '@kobato/db/types'
 
 import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection'

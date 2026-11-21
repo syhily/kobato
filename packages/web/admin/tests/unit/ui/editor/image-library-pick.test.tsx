@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { AdminImageDto } from '@kobato/contracts/images'
+import type { AdminImageDto } from '@kobato/api/contracts/images'
 import type { ImageLibraryPickerProps } from '@kobato/web-admin/ui/editor/pickers/ImageLibraryPicker'
 
 import { createHeadlessEditor } from '@kobato/inkling'

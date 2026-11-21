@@ -10,12 +10,12 @@ queries and wire schemas.
 
 Moved out (do not move back): role/security primitives and the SSRF/passkey network boundary → `@kobato/auth`; `toc` →
 `@kobato/inkling/headless`; avatar URL rules and the Gravatar mirror policy → `@kobato/assets`; app identity (`version`)
-→ `@kobato/distribution/app`; Zod helpers (`safeBoolean`/`honeypotField`, `zod-issue-bounds`) → `@kobato/contracts`;
-comment entity parse/serialize and the `Comments` count summary → `@kobato/contracts/comments`; `is-bot` →
+→ `@kobato/distribution/app`; Zod helpers (`safeBoolean`/`honeypotField`, `zod-issue-bounds`) → `@kobato/api/contracts`;
+comment entity parse/serialize and the `Comments` count summary → `@kobato/api/contracts/comments`; `is-bot` →
 `@kobato/server/infra/http`; session sort → `@kobato/web-admin/ui/sessions`.
 
-- Allowed deps: `@kobato/i18n` only (locale types). Never contracts, settings, cache, assets, sanitize, or any product
-  package.
+- Allowed deps: `@kobato/i18n` only (locale types). Never the api contracts, settings, cache, assets, sanitize, or any
+  product package.
 - Bans: no React, no `node:*` value imports (umbrella rules in `packages/shared/AGENTS.md` apply).
 - Tests: `tests/unit/` (`shared-unit`). The ThumbHash snapshot corpus is this package's own `tests/fixtures/thumbhash/`;
   keep it local to its only consumer.

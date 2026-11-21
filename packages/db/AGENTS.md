@@ -3,8 +3,7 @@
 `@kobato/db` owns the content database's SQLite/Drizzle implementation AND the DuckDB analytics sidecar's persistence
 layer: connection primitives, schema, row types, query operations, migrations, SQLite error classification, and the
 DuckDB DDL/appender/query modules. It depends on `@kobato/settings`, `@kobato/inkling` (headless — the comment document
-schema), `@kobato/utils`, never on `@kobato/contracts` (the wire), `@kobato/server`, `@kobato/web-admin`, or
-`@kobato/ui`.
+schema), `@kobato/utils`, never on `@kobato/api` (the wire), `@kobato/server`, `@kobato/web-admin`, or `@kobato/ui`.
 
 - Callers import source modules directly as `@kobato/db/<path>.ts`; there is no barrel. Imports within this package also
   use the package root.
@@ -21,12 +20,12 @@ schema), `@kobato/utils`, never on `@kobato/contracts` (the wire), `@kobato/serv
   (legacy `access_log` one-shot), and `query.ts` (Kysely as a compile-only SQL builder — DummyDriver, identifier
   whitelist, bound parameters only — plus the `setAnalyticsQueryExecutor` telemetry seam). Dashboard read queries live
   in `duckdb/queries/`. DuckDB diagnostics log through an INJECTED `DuckDBLogger` — this package never reaches for a
-  logger or imports server trace. Wire twins live in `@kobato/contracts/analytics`; URL parsing, SSE caps, CSV
+  logger or imports server trace. Wire twins live in `@kobato/api/contracts/analytics`; URL parsing, SSE caps, CSV
   serialization, overview fan-out, and every lifecycle concern stay in `@kobato/server`. Test setups reset the executor
   to `null` after each test.
 - `schema/` contains only persistence schema, including the persistence-canonical enum lists that generate the drizzle
-  `text({ enum })` columns and SQL CHECK literals. Domain validation and wire DTOs stay in `@kobato/contracts` or the
-  owning server domain — every duplicated list is pinned value-identical by
+  `text({ enum })` columns and SQL CHECK literals. Domain validation and wire DTOs stay in `@kobato/api/contracts` or
+  the owning server domain — every duplicated list is pinned value-identical by
   `packages/server/tests/unit/server/infra/db/wire-parity.test.ts`.
 - `operations/` contains reusable Drizzle queries and engine operations (including `maintenance.ts`'s
   `vacuumDatabaseInto` / `analyzeDatabase`). Domain orchestration and transport errors stay in `@kobato/server`.

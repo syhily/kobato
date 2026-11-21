@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { DomainErrorCode } from '@kobato/server/infra/http/errors'
 
 export interface GateFailure {

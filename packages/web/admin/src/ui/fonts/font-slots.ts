@@ -1,4 +1,4 @@
-import type { FontSlot } from '@kobato/contracts/fonts'
+import type { FontSlot } from '@kobato/api/contracts/fonts'
 import type { FontsSettings } from '@kobato/settings/types'
 
 import { arrayMove } from '@dnd-kit/sortable'

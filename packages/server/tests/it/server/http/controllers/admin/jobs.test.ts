@@ -1,4 +1,4 @@
-import { TASK_CATALOG } from '@kobato/contracts/jobs'
+import { TASK_CATALOG } from '@kobato/api/contracts/jobs'
 import { markWebmentionInboxRetry, upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox'
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
 import { webmentionInbox, webmentionOutbox } from '@kobato/db/schema/webmention'

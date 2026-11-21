@@ -1,4 +1,4 @@
-import { adminFontsContract } from '@kobato/api/admin/fonts'
+import { adminFontsContract } from '@kobato/api/rpc/admin/fonts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
 import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'

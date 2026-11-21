@@ -1,9 +1,9 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
 import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields'
 import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminComment } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'

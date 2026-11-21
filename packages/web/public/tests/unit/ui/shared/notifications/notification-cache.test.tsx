@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications'
+import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/notifications'
 import type { ReactElement, ReactNode } from 'react'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'

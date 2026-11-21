@@ -1,6 +1,6 @@
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { AdminPostDto } from '@kobato/api/contracts/posts'
 import type { Post } from '@kobato/catalog/model'
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
-import type { AdminPostDto } from '@kobato/contracts/posts'
 import type { Database } from '@kobato/db/database'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'

@@ -1,4 +1,4 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { comment } from '@kobato/db/schema/comment'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

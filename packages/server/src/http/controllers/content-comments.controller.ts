@@ -1,4 +1,4 @@
-import { contentCommentsContract } from '@kobato/api/content'
+import { contentCommentsContract } from '@kobato/api/rpc/content'
 import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared'
 import { loadCommentsAndItems } from '@kobato/server/http/loaders/comments'
 import { implementPublic } from '@kobato/server/http/orpc-base'

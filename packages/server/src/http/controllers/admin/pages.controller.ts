@@ -1,4 +1,4 @@
-import { adminPagesContract } from '@kobato/api/admin/pages'
+import { adminPagesContract } from '@kobato/api/rpc/admin/pages'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   listPagesForAdmin,

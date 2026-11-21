@@ -1,6 +1,6 @@
-import type { Comments as CommentsData } from '@kobato/contracts/comments'
+import type { Comments as CommentsData } from '@kobato/api/contracts/comments'
 
-import { makeComment } from '@kobato/contracts/tests/utils/catalog'
+import { makeComment } from '@kobato/api/tests/utils/catalog'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'

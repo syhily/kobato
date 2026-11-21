@@ -1,7 +1,7 @@
 import type { auditLog } from '@kobato/db/schema/config'
 import type { z } from 'zod'
 
-import { auditLogItemDto } from '@kobato/contracts/audit'
+import { auditLogItemDto } from '@kobato/api/contracts/audit'
 import { maskIp, maskUserAgent, stripL3Markers } from '@kobato/server/domains/audit/privacy'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { isRecord } from '@kobato/utils/type-guards'

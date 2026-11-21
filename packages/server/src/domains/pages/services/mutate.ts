@@ -1,4 +1,4 @@
-import type { AdminPageDto } from '@kobato/contracts/pages'
+import type { AdminPageDto } from '@kobato/api/contracts/pages'
 import type { Database } from '@kobato/db/database'
 import type { PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared'
 

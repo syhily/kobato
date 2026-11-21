@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/contracts/images'
+import type { AdminImageDto } from '@kobato/api/contracts/images'
 import type { FragmentInstance, Ref } from 'react'
 
 import { getImageUrl } from '@kobato/assets/images'

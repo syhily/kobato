@@ -1,4 +1,4 @@
-import type { RealtimeEvent } from '@kobato/contracts/analytics'
+import type { RealtimeEvent } from '@kobato/api/contracts/analytics'
 
 import { useEffect, useRef, useState } from 'react'
 

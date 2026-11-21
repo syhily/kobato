@@ -1,5 +1,5 @@
+import type { LatestComment } from '@kobato/api/contracts/comments'
 import type { ClientTag, SidebarPostLink } from '@kobato/catalog/model'
-import type { LatestComment } from '@kobato/contracts/comments'
 import type { ReactNode } from 'react'
 
 import { Tooltip } from '@kobato/ui/components/tooltip'

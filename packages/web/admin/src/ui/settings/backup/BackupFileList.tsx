@@ -1,4 +1,4 @@
-import type { BackupFileDto } from '@kobato/contracts/backup'
+import type { BackupFileDto } from '@kobato/api/contracts/backup'
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import {

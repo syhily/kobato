@@ -1,4 +1,4 @@
-import type { MySessionItem } from '@kobato/contracts/sessions'
+import type { MySessionItem } from '@kobato/api/contracts/sessions'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller'

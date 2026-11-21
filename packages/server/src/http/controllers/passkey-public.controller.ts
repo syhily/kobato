@@ -1,4 +1,4 @@
-import { passkeyContract } from '@kobato/api/passkey'
+import { passkeyContract } from '@kobato/api/rpc/passkey'
 import { generateAuthenticationOptions } from '@kobato/server/domains/auth/passkey/service'
 import { implementPublic, passkeyGuard } from '@kobato/server/http/orpc-base'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'

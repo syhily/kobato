@@ -3,7 +3,7 @@ import type {
   AdminPendingDashboardDto,
   AdminPendingItemDto,
   CommentTextMatch,
-} from '@kobato/contracts/comments'
+} from '@kobato/api/contracts/comments'
 import type { Database } from '@kobato/db/database'
 import type { AdminListFilters, AdminPendingKind } from '@kobato/server/domains/comments/repos/shared'
 import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'

@@ -1,5 +1,5 @@
+import { makePage } from '@kobato/api/tests/utils/catalog'
 import { toDetailPageShell } from '@kobato/catalog/projection'
-import { makePage } from '@kobato/contracts/tests/utils/catalog'
 import { asRoute } from '@kobato/test/route-test-utils'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'

@@ -1,4 +1,4 @@
-import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/contracts/music'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/api/contracts/music'
 
 import { Button } from '@kobato/ui/components/button'
 import {

@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
 import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import type { ReactNode } from 'react'
 

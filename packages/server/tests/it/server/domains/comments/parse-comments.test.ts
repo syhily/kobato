@@ -1,6 +1,6 @@
 import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { describe, expect, it } from 'vitest'
 
 const { parseComments, MAX_THREAD_CHILDREN } = await import('@kobato/server/domains/comments/services/public-query')

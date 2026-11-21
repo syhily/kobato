@@ -1,4 +1,4 @@
-import type { CacheBucketStats } from '@kobato/contracts/cache'
+import type { CacheBucketStats } from '@kobato/api/contracts/cache'
 import type { BackupLoaderShape } from '@kobato/settings/projection'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'

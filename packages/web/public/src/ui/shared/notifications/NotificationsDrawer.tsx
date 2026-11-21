@@ -1,4 +1,4 @@
-import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications'
+import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/notifications'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { Button } from '@kobato/ui/components/button'

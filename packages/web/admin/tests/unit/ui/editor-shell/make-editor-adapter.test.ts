@@ -1,4 +1,4 @@
-import type { SaveBodyOutput } from '@kobato/contracts/revision'
+import type { SaveBodyOutput } from '@kobato/api/contracts/revision'
 import type { EditorAdapterConfig } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter'
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'

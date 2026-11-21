@@ -1,6 +1,6 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
-import { accountContract } from '@kobato/api/account'
+import { accountContract } from '@kobato/api/rpc/account'
 import { findSafeUserById } from '@kobato/db/operations/user'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'

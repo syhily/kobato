@@ -1,4 +1,4 @@
-import type { AccountProfile } from '@kobato/contracts/users'
+import type { AccountProfile } from '@kobato/api/contracts/users'
 import type { Database } from '@kobato/db/database'
 
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user'

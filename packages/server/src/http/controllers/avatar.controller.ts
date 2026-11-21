@@ -1,4 +1,4 @@
-import { avatarContract } from '@kobato/api/avatar'
+import { avatarContract } from '@kobato/api/rpc/avatar'
 import { avatarImageUrl } from '@kobato/assets/avatar'
 import { resolveAvatarForEmail } from '@kobato/server/domains/comments/services/avatar'
 import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'

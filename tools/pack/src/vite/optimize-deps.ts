@@ -30,7 +30,6 @@ const WORKSPACE_PACKAGE_DIRS = [
   'packages/shared/settings',
   'packages/shared/assets',
   'packages/shared/sanitize',
-  'packages/shared/contracts',
   'packages/shared/seo',
   'packages/inkling',
 ]

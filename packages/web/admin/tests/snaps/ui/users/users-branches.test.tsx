@@ -1,7 +1,7 @@
-import type { AdminUserDto } from '@kobato/contracts/users'
+import type { AdminUserDto } from '@kobato/api/contracts/users'
 import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters'
 
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { UsersView } from '@kobato/web-admin/ui/users/UsersView'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'

@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/music'
 import type { Database } from '@kobato/db/database'
 import type { MusicRow, NewMusic } from '@kobato/db/types'
 import type { ProviderTrack } from '@kobato/server/domains/music/providers/types'

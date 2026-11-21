@@ -1,4 +1,4 @@
-import { adminCacheContract } from '@kobato/api/admin/cache'
+import { adminCacheContract } from '@kobato/api/rpc/admin/cache'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { implementAdmin } from '@kobato/server/http/orpc-base'
 import { clearAdminCache, getAdminCacheStats } from '@kobato/server/infra/cache/admin-ops'

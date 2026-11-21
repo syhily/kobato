@@ -1,6 +1,6 @@
 import type { EntityTarget } from '@kobato/db/target'
 
-import { contentDetailContract } from '@kobato/api/content'
+import { contentDetailContract } from '@kobato/api/rpc/content'
 import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html'
 import { listAllFriends } from '@kobato/server/domains/friends/service'
 import { selectSidebarPosts } from '@kobato/server/domains/posts/services/featured'

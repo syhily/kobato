@@ -1,5 +1,5 @@
+import type { DetailPageComments } from '@kobato/api/contracts/comments'
 import type { CommentFormUser, DetailPageShell, DraftMarker } from '@kobato/catalog/model'
-import type { DetailPageComments } from '@kobato/contracts/comments'
 import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'

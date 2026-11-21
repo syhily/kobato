@@ -2,7 +2,7 @@ import type { SidebarSelection } from '@kobato/server/domains/posts/services/fea
 import type { AppLocalization } from '@kobato/settings/app-localization'
 import type { SidebarSettings } from '@kobato/settings/types'
 
-import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog'
+import { makePost, makeTag } from '@kobato/api/tests/utils/catalog'
 import { selectSidebarTags, sidebarSelection, sidebarSelectionSeed } from '@kobato/server/http/loaders/sidebar-select'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'

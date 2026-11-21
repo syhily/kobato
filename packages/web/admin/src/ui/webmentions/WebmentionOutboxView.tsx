@@ -1,4 +1,4 @@
-import type { AdminWebmentionOutboxWire } from '@kobato/contracts/webmentions'
+import type { AdminWebmentionOutboxWire } from '@kobato/api/contracts/webmentions'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { Badge, type BadgeProps } from '@kobato/ui/components/badge'

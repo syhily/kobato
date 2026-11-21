@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 
 import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'

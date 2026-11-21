@@ -1,8 +1,8 @@
-import type { AdminPostDto } from '@kobato/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/posts'
 import type { PostFilterFieldKey } from '@kobato/web-admin/ui/posts/filter-fields'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { makeAdminPost } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminPost } from '@kobato/api/tests/utils/catalog'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { PostsView } from '@kobato/web-admin/ui/posts/PostsView'

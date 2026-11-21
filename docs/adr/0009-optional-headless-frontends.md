@@ -16,8 +16,9 @@ The architecture already provides the seams:
 - `@kobato/api` is contract-first: every procedure's `method`/`path`/`input`/`output` is declared once in the contract
   tree; the server implements through the `implement{Public,Authed,Author,Admin}` bases under a full-tree parity test,
   and the browser client is typed exclusively through `apiContract`.
-- `@kobato/contracts` owns the wire Zod schemas; `@kobato/catalog` owns the public content read model and projections;
-  `@kobato/inkling` publishes its document model React-free under `/headless`.
+- `@kobato/api` owns the wire Zod schemas (in its `contracts/` layer) and the contract tree; `@kobato/catalog` owns the
+  public content read model and projections; `@kobato/inkling` publishes its document model React-free under
+  `/headless`.
 - The web family splits along the same boundary — `@kobato/web-public` renders the public site and never imports the
   server — and public SSR consumes the same `apiRouter` in process through `createSsrCaller`.
 
@@ -57,7 +58,8 @@ consumer.
 - The built-in frontend's SSR calls the same `apiRouter` in process through `createSsrCaller` — a performance seam, not
   a privilege: identical contract, inputs, outputs, and errors, with no HTTP hop.
 - An external frontend calls `/rpc/*` from its server through an oRPC HTTP client typed by the same `@kobato/api`
-  contract tree, and depends on the workspace packages (`@kobato/api`, `@kobato/contracts`, the shared leaves).
+  contract tree, and depends on the workspace packages (`@kobato/api` — whose `contracts/` layer carries the wire Zod
+  schemas — and the shared leaves).
 
 No SDK packages ship to npm. Consumers consume the workspace source — publishing packages is a separate decision, taken
 only when a consumer that cannot live inside the workspace actually exists.

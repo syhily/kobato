@@ -44,7 +44,7 @@ export function processWorkerEntryPlugin(): Plugin {
         resolve: {
           alias: {
             '@kobato/server': resolve(REPO_ROOT, 'packages/server/src'),
-            '@kobato/contracts': resolve(REPO_ROOT, 'packages/shared/contracts/src'),
+            '@kobato/api': resolve(REPO_ROOT, 'packages/api/src'),
           },
         },
       })

@@ -1,4 +1,4 @@
-import type { AdminCommentStatus, CommentTextMatch, MyCommentsStatus } from '@kobato/contracts/comments'
+import type { AdminCommentStatus, CommentTextMatch, MyCommentsStatus } from '@kobato/api/contracts/comments'
 import type { Database } from '@kobato/db/database'
 import type { EntityTarget, EntityType } from '@kobato/db/target'
 import type { CommentAndUser } from '@kobato/server/domains/comments/types'

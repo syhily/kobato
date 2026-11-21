@@ -1,6 +1,6 @@
-import type { AdminMusicDto } from '@kobato/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/music'
 
-import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'

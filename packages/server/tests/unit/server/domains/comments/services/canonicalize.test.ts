@@ -1,6 +1,6 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { describe, expect, it } from 'vitest'

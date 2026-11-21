@@ -1,6 +1,6 @@
 # Shared umbrella conventions
 
-`packages/shared/` is not a package: it is an umbrella of twelve workspace leaf packages (`packages/shared/<name>` ↔
+`packages/shared/` is not a package: it is an umbrella of eleven workspace leaf packages (`packages/shared/<name>` ↔
 `@kobato/<name>`). There is deliberately no umbrella package.json, test directory, barrel, or way to import "shared" as
 one unit. The `shared-unit` and `shared-snaps` project definitions live in `tools/test/src/projects/`.
 
@@ -18,7 +18,7 @@ one unit. The `shared-unit` and `shared-snaps` project definitions live in `tool
   re-exports, no leaf-level `index.ts`.
 - **Error handling.** No logger here (server and client bring their own): throw, and let the boundary catch and log.
 
-## The twelve leaves
+## The eleven leaves
 
 `utils` (pure isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, `network`
 SSRF/CIDR + passkey RP checks), `i18n` (locale contract, ICU catalogs, `catalog-scope`, `fallback-messages`,
@@ -26,14 +26,13 @@ SSRF/CIDR + passkey RP checks), `i18n` (locale contract, ICU catalogs, `catalog-
 projections), `settings` (Section schema/default/secret registry, admin projections, `snapshot` slot, representation
 scopes, RUM client identity; server-only write validation stays in server), `assets` (asset-URL grammar, image kinds,
 avatar rule, Gravatar mirror, code-block highlight languages), `sanitize` (isomorphic DOMPurify stack, `sanitize-url`,
-`escape-html`), `contracts` (the wire: per-domain Zod schemas + DTOs, `api-error`, `merge-patch`, cross-boundary
-shapes), `telemetry` (RUM vocabulary, OpenObserve stream/metric names, privacy-pipeline identity), `distribution`
-(`__APP_*__` identity, SEA asset keys, route-warmup manifest contract), `seo` (`meta` / `og-image` builders).
+`escape-html`), `telemetry` (RUM vocabulary, OpenObserve stream/metric names, privacy-pipeline identity), `distribution`
+(`__APP_*__` identity, SEA asset keys, route-warmup manifest contract), `seo` (`meta` / `og-image` builders). The wire
+vocabulary (per-domain Zod schemas + DTOs, `api-error`, `merge-patch`) lives in the API SDK: `@kobato/api/contracts`.
 
 Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → inkling headless (type-only); `cache` → i18n + utils;
-`telemetry` → settings; `settings` → i18n + cache + assets + utils (never contracts); `contracts` → auth + catalog +
-settings + i18n + utils + inkling headless + assets + cache; `seo` → settings + i18n + utils. Pinned by
-`apps/kobato/tests/arch/package-dag.test.ts`.
+`telemetry` → settings; `settings` → i18n + cache + assets + utils (never `@kobato/api`); `seo` → settings + i18n +
+utils. Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 
 ## Client API usage
 

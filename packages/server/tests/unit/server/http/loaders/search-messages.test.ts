@@ -1,4 +1,4 @@
-import type { ErrorMessageParams } from '@kobato/contracts/api-error'
+import type { ErrorMessageParams } from '@kobato/api/contracts/api-error'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 

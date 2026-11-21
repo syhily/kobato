@@ -1,6 +1,6 @@
-import type { MetricGroup, MetricRow, MetricType } from '@kobato/contracts/analytics'
+import type { MetricGroup, MetricRow, MetricType } from '@kobato/api/contracts/analytics'
 
-import { METRIC_GROUP_TABS } from '@kobato/contracts/analytics'
+import { METRIC_GROUP_TABS } from '@kobato/api/contracts/analytics'
 import { Card } from '@kobato/ui/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
 import { cn } from '@kobato/ui/lib/cn'

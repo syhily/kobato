@@ -1,4 +1,4 @@
-import { friendsContract } from '@kobato/api/friends'
+import { friendsContract } from '@kobato/api/rpc/friends'
 import { applyFriend } from '@kobato/server/domains/friends/service'
 import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
 

@@ -1,11 +1,11 @@
-import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/contracts/content'
+import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/api/contracts/content'
 import type { Database } from '@kobato/db/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { contentListingsContract } from '@kobato/api/content'
+import { contentListingsContract } from '@kobato/api/rpc/content'
 import { toListingPostCard } from '@kobato/catalog/projection'
 import { trackPageView } from '@kobato/server/domains/analytics/track'
 import {

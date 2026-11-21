@@ -1,4 +1,4 @@
-import type { AuditLogItemDto } from '@kobato/contracts/audit'
+import type { AuditLogItemDto } from '@kobato/api/contracts/audit'
 
 import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@kobato/auth/roles'
 import { sanitizeHtml } from '@kobato/sanitize/sanitize-html'

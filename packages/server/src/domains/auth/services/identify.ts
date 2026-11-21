@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 
 import { findUserByEmail } from '@kobato/db/operations/user'
 import { isPasskeySigninUser } from '@kobato/server/domains/auth/passkey/gate'

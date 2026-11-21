@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
 import type { Database } from '@kobato/db/database'
 import type { CategoryRow } from '@kobato/db/types'
 import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup'

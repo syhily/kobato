@@ -1,4 +1,4 @@
-import { type UpsertPageMetaInput, upsertPageMetaSchema } from '@kobato/contracts/pages'
+import { type UpsertPageMetaInput, upsertPageMetaSchema } from '@kobato/api/contracts/pages'
 import {
   EMPTY_PAGE_META_DRAFT,
   PAGE_META_TOGGLE_FIELDS,

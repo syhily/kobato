@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/comments'
 
 import {
   AlertDialog,

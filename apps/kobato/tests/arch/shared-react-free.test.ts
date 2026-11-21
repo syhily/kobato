@@ -8,8 +8,10 @@ const SHARED_SRC_ROOTS = readdirSync(join(PROJECT_ROOT, 'packages/shared'), { wi
   .map((entry) => join(PROJECT_ROOT, 'packages/shared', entry.name, 'src'))
   .filter((srcDir) => existsSync(srcDir))
 
+const SDK_SRC_ROOTS = [join(PROJECT_ROOT, 'packages/api/src')]
+
 const sourceFiles: string[] = []
-for (const root of SHARED_SRC_ROOTS) {
+for (const root of [...SHARED_SRC_ROOTS, ...SDK_SRC_ROOTS]) {
   walk(root, (filePath) => sourceFiles.push(filePath))
 }
 
@@ -61,31 +63,66 @@ function isReactSpecifier(specifier: string): boolean {
   )
 }
 
-describe('arch: the shared leaf packages are UI-runtime-free', () => {
+function isPackageOrSubpath(specifier: string, pkg: string): boolean {
+  return specifier === pkg || specifier.startsWith(`${pkg}/`)
+}
+
+function importViolations(files: readonly string[], matches: (specifier: string) => boolean): string[] {
+  const violations: string[] = []
+  for (const filePath of files) {
+    for (const specifier of collectImportSpecifiers(readFileSync(filePath, 'utf8'))) {
+      if (matches(specifier)) {
+        violations.push(`${relativePath(filePath)} -> ${specifier}`)
+      }
+    }
+  }
+  return violations
+}
+
+const contractsFiles: string[] = []
+walk(join(PROJECT_ROOT, 'packages/api/src/contracts'), (filePath) => contractsFiles.push(filePath))
+
+describe('arch: the shared leaf packages and the api SDK are UI-runtime-free', () => {
   it('discovers the shared leaf src trees automatically', () => {
     expect(
       SHARED_SRC_ROOTS.length,
-      'expected at least the twelve documented leaves — the umbrella collapsed or moved',
-    ).toBeGreaterThanOrEqual(12)
+      'expected at least the eleven documented leaves — the umbrella collapsed or moved',
+    ).toBeGreaterThanOrEqual(11)
   })
 
   it('has no .tsx source files', () => {
     const tsxFiles = sourceFiles.filter((filePath) => filePath.endsWith('.tsx'))
     expect(
       tsxFiles.map(relativePath),
-      `React components found in the shared leaf packages (move them to @kobato/web-admin):\n${tsxFiles.map(relativePath).join('\n')}`,
+      `React components found in the shared leaf packages or the api SDK (move them to @kobato/web-admin):\n${tsxFiles.map(relativePath).join('\n')}`,
     ).toEqual([])
   })
 
   it('never imports react / react-dom (value or type)', () => {
-    const violations: string[] = []
-    for (const filePath of sourceFiles) {
-      for (const specifier of collectImportSpecifiers(readFileSync(filePath, 'utf8'))) {
-        if (isReactSpecifier(specifier)) {
-          violations.push(`${relativePath(filePath)} -> ${specifier}`)
-        }
-      }
-    }
-    expect(violations, `react imports found in the shared leaf packages:\n${violations.join('\n')}`).toEqual([])
+    const violations = importViolations(sourceFiles, isReactSpecifier)
+    expect(
+      violations,
+      `react imports found in the shared leaf packages or the api SDK:\n${violations.join('\n')}`,
+    ).toEqual([])
+  })
+})
+
+describe('arch: the api contracts layer stays transport-free', () => {
+  it('discovers the contracts src tree', () => {
+    expect(contractsFiles.length, 'the wire vocabulary lives under packages/api/src/contracts').toBeGreaterThan(20)
+  })
+
+  it('imports no @orpc/* package — schema-only consumers never pull the RPC runtime', () => {
+    expect(importViolations(contractsFiles, (specifier) => isPackageOrSubpath(specifier, '@orpc'))).toEqual([])
+  })
+
+  it('never imports the rpc or client layers of the SDK', () => {
+    expect(
+      importViolations(
+        contractsFiles,
+        (specifier) =>
+          isPackageOrSubpath(specifier, '@kobato/api/rpc') || isPackageOrSubpath(specifier, '@kobato/api/client'),
+      ),
+    ).toEqual([])
   })
 })

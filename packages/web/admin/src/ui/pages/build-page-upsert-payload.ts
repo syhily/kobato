@@ -1,4 +1,4 @@
-import type { UpsertPageMetaInput } from '@kobato/contracts/pages'
+import type { UpsertPageMetaInput } from '@kobato/api/contracts/pages'
 import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta'
 
 import { isContentLanguageInput } from '@kobato/i18n/content-language'

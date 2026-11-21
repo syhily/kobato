@@ -1,6 +1,6 @@
-import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications'
+import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/notifications'
 
-import { NOTIFICATION_TABS } from '@kobato/contracts/notifications'
+import { NOTIFICATION_TABS } from '@kobato/api/contracts/notifications'
 import { isRecord } from '@kobato/utils/type-guards'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import {

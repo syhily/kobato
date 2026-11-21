@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 

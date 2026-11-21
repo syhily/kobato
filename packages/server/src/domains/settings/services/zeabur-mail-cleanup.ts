@@ -1,7 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 
-import { NOTIFICATION_SOURCES, type NotificationSource } from '@kobato/contracts/notifications'
+import { NOTIFICATION_SOURCES, type NotificationSource } from '@kobato/api/contracts/notifications'
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { getLogger } from '@kobato/server/infra/logger'

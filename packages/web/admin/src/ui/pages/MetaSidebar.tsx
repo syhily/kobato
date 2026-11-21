@@ -1,4 +1,4 @@
-import type { AdminPageDto } from '@kobato/contracts/pages'
+import type { AdminPageDto } from '@kobato/api/contracts/pages'
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,

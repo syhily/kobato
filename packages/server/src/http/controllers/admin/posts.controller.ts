@@ -1,4 +1,4 @@
-import { adminPostsContract } from '@kobato/api/admin/posts'
+import { adminPostsContract } from '@kobato/api/rpc/admin/posts'
 import { findTagNamesByPostId } from '@kobato/db/operations/post-tag'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle'
 import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview'

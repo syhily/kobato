@@ -1,4 +1,4 @@
-import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/contracts/jobs'
+import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/api/contracts/jobs'
 import { jobRun } from '@kobato/db/schema/job-run'
 import {
   JOB_FAILURE_NOTIFY_DEDUPE_MS,

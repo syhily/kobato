@@ -1,4 +1,4 @@
-import type { MyCommentItem, MyCommentsStatus } from '@kobato/contracts/comments'
+import type { MyCommentItem, MyCommentsStatus } from '@kobato/api/contracts/comments'
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import type { ReactNode } from 'react'
 

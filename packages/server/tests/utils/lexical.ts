@@ -1,4 +1,4 @@
-import type { PublicMusicMeta } from '@kobato/contracts/music'
+import type { PublicMusicMeta } from '@kobato/api/contracts/music'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds'
 

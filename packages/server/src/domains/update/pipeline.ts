@@ -1,4 +1,4 @@
-import type { UpdateJobState } from '@kobato/contracts/update'
+import type { UpdateJobState } from '@kobato/api/contracts/update'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
 import { APP_REPOSITORY } from '@kobato/distribution/app'

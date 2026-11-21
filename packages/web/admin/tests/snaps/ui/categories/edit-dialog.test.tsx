@@ -1,6 +1,6 @@
-import type { AdminCategoryDto } from '@kobato/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
 
-import { makeAdminCategory } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminCategory } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog'
 import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'

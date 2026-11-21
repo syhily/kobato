@@ -11,7 +11,7 @@ import {
   type StorageMigrationPhase,
   type StorageMigrationStatus,
   type StorageMigrationVerification,
-} from '@kobato/contracts/storage'
+} from '@kobato/api/contracts/storage'
 import { backup as backupTable } from '@kobato/db/schema/backup'
 import { font as fontTable } from '@kobato/db/schema/font'
 import { image, music } from '@kobato/db/schema/media'

@@ -1,4 +1,4 @@
-import type { RevisionContract } from '@kobato/api/admin/revision'
+import type { RevisionContract } from '@kobato/api/rpc/admin/revision'
 import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '@kobato/server/domains/content/lifecycle'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 

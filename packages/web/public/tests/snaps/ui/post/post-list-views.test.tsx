@@ -1,6 +1,6 @@
 import type { ClientPostWithMetadata } from '@kobato/catalog/model'
 
-import { makePost } from '@kobato/contracts/tests/utils/catalog'
+import { makePost } from '@kobato/api/tests/utils/catalog'
 import { renderInRouter, renderToHtml } from '@kobato/web-client/tests/utils/render'
 import { PostListingBody, PostSquare } from '@kobato/web-public/ui/post/PostListViews'
 import { describe, expect, it } from 'vitest'

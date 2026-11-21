@@ -1,9 +1,9 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
-import type { ObservabilityProvisionOutcome } from '@kobato/contracts/observability'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ObservabilityProvisionOutcome } from '@kobato/api/contracts/observability'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 import type { AuthedHandlerContext } from '@kobato/server/http/orpc-base'
 
-import { adminObservabilityContract } from '@kobato/api/admin/observability'
+import { adminObservabilityContract } from '@kobato/api/rpc/admin/observability'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { currentObservabilityAssetFingerprint } from '@kobato/server/domains/observability/assets'
 import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'

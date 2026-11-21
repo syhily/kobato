@@ -1,4 +1,4 @@
-import type { DetailCriticalPayload } from '@kobato/contracts/content'
+import type { DetailCriticalPayload } from '@kobato/api/contracts/content'
 import type { EntityTarget } from '@kobato/db/target'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 

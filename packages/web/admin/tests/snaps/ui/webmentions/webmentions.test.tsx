@@ -1,4 +1,4 @@
-import type { AdminWebmentionWire } from '@kobato/contracts/webmentions'
+import type { AdminWebmentionWire } from '@kobato/api/contracts/webmentions'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { WebmentionInboxView } from '@kobato/web-admin/ui/webmentions/WebmentionInboxView'

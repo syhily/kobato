@@ -1,4 +1,4 @@
-import { TASK_CATALOG } from '@kobato/contracts/jobs'
+import { TASK_CATALOG } from '@kobato/api/contracts/jobs'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'

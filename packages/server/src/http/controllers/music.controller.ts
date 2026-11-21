@@ -1,4 +1,4 @@
-import { musicContract } from '@kobato/api/music'
+import { musicContract } from '@kobato/api/rpc/music'
 import { getMusicMetaForPlayer } from '@kobato/server/domains/music/services/read'
 import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/server/http/orpc-base'
 

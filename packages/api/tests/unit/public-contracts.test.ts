@@ -1,27 +1,3 @@
-import { accountContract } from '@kobato/api/account'
-import { analyticsContract } from '@kobato/api/analytics'
-import { avatarContract } from '@kobato/api/avatar'
-import {
-  commentsAuthedContract,
-  commentsContract,
-  commentsPublicContract,
-  commentsTokenContract,
-} from '@kobato/api/comments'
-import {
-  contentBootstrapContract,
-  contentCommentsContract,
-  contentContract,
-  contentDetailContract,
-  contentListingsContract,
-} from '@kobato/api/content'
-import { friendsContract } from '@kobato/api/friends'
-import { githubContract } from '@kobato/api/github'
-import { imagesContract } from '@kobato/api/images'
-import { musicContract } from '@kobato/api/music'
-import { newsletterContract } from '@kobato/api/newsletter'
-import { notificationsContract } from '@kobato/api/notifications'
-import { passkeyContract } from '@kobato/api/passkey'
-import { webmentionsContract } from '@kobato/api/webmentions'
 import {
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
@@ -33,7 +9,7 @@ import {
   analyticsQuerySchema,
   countersDto,
   viewsDto,
-} from '@kobato/contracts/analytics'
+} from '@kobato/api/contracts/analytics'
 import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
@@ -58,7 +34,7 @@ import {
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
-} from '@kobato/contracts/comments'
+} from '@kobato/api/contracts/comments'
 import {
   contentArchivesInputSchema,
   contentArchivesOutputSchema,
@@ -77,17 +53,17 @@ import {
   contentPostsListOutputSchema,
   contentSearchInputSchema,
   contentSearchOutputSchema,
-} from '@kobato/contracts/content'
-import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/contracts/friends'
-import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/contracts/github'
-import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/contracts/images'
-import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/contracts/music'
+} from '@kobato/api/contracts/content'
+import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/api/contracts/friends'
+import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/github'
+import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/api/contracts/images'
+import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/music'
 import {
   newsletterConfirmSchema,
   newsletterOkOutputSchema,
   newsletterSubscribeSchema,
   newsletterUnsubscribeSchema,
-} from '@kobato/contracts/newsletter'
+} from '@kobato/api/contracts/newsletter'
 import {
   listNotificationsInput,
   listNotificationsOutput,
@@ -98,8 +74,8 @@ import {
   replyNotificationInput,
   replyNotificationOutput,
   unreadCountOutput,
-} from '@kobato/contracts/notifications'
-import { successDto } from '@kobato/contracts/primitives'
+} from '@kobato/api/contracts/notifications'
+import { successDto } from '@kobato/api/contracts/primitives'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
@@ -116,8 +92,32 @@ import {
   accountUpdateProfileOutputSchema,
   passkeyAuthBeginInputSchema,
   passkeyOptionsOutputSchema,
-} from '@kobato/contracts/users'
-import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/contracts/webmentions'
+} from '@kobato/api/contracts/users'
+import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/api/contracts/webmentions'
+import { accountContract } from '@kobato/api/rpc/account'
+import { analyticsContract } from '@kobato/api/rpc/analytics'
+import { avatarContract } from '@kobato/api/rpc/avatar'
+import {
+  commentsAuthedContract,
+  commentsContract,
+  commentsPublicContract,
+  commentsTokenContract,
+} from '@kobato/api/rpc/comments'
+import {
+  contentBootstrapContract,
+  contentCommentsContract,
+  contentContract,
+  contentDetailContract,
+  contentListingsContract,
+} from '@kobato/api/rpc/content'
+import { friendsContract } from '@kobato/api/rpc/friends'
+import { githubContract } from '@kobato/api/rpc/github'
+import { imagesContract } from '@kobato/api/rpc/images'
+import { musicContract } from '@kobato/api/rpc/music'
+import { newsletterContract } from '@kobato/api/rpc/newsletter'
+import { notificationsContract } from '@kobato/api/rpc/notifications'
+import { passkeyContract } from '@kobato/api/rpc/passkey'
+import { webmentionsContract } from '@kobato/api/rpc/webmentions'
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 

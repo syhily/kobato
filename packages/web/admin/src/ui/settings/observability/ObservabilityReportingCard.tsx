@@ -1,4 +1,4 @@
-import type { ObservabilityStatusOutput } from '@kobato/contracts/observability'
+import type { ObservabilityStatusOutput } from '@kobato/api/contracts/observability'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { RumClientIdentity } from '@kobato/settings/sections/observability'

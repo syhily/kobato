@@ -1,10 +1,10 @@
-import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/api/contracts/comments'
 import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared'
 import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types'
 import type { Assert, Equals } from '@kobato/utils/type-equals'
 import type { z } from 'zod'
 
-import { commentBaseDto } from '@kobato/contracts/comments'
+import { commentBaseDto } from '@kobato/api/contracts/comments'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { entityPermalink, trimSiteSuffix } from '@kobato/server/domains/content/urls'
 

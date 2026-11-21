@@ -1,4 +1,4 @@
-import type { MetricRow, MetricType } from '@kobato/contracts/analytics'
+import type { MetricRow, MetricType } from '@kobato/api/contracts/analytics'
 
 import { Button } from '@kobato/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog'

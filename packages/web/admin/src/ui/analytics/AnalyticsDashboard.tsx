@@ -1,6 +1,6 @@
-import type { CountersDto, MetricGroup, MetricRow, MetricType } from '@kobato/contracts/analytics'
+import type { CountersDto, MetricGroup, MetricRow, MetricType } from '@kobato/api/contracts/analytics'
 
-import { METRIC_GROUPS } from '@kobato/contracts/analytics'
+import { METRIC_GROUPS } from '@kobato/api/contracts/analytics'
 import { Card } from '@kobato/ui/components/card'
 import { Switch } from '@kobato/ui/components/switch'
 import { cn } from '@kobato/ui/lib/cn'

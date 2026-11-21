@@ -1,4 +1,4 @@
-import { likesContract } from '@kobato/api/likes'
+import { likesContract } from '@kobato/api/rpc/likes'
 import {
   decreaseLikes,
   increaseLikes,

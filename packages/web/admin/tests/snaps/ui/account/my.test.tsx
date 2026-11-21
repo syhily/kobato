@@ -1,4 +1,4 @@
-import type { MySessionItem } from '@kobato/contracts/sessions'
+import type { MySessionItem } from '@kobato/api/contracts/sessions'
 import type { MyProfileUser, MyProfileCounts } from '@kobato/web-admin/ui/account/MyProfileView'
 
 import { LoginMethodCard } from '@kobato/web-admin/ui/account/LoginMethodCard'

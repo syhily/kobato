@@ -1,4 +1,4 @@
-import type { AdminPageDetailDto, AdminPageDto } from '@kobato/contracts/pages'
+import type { AdminPageDetailDto, AdminPageDto } from '@kobato/api/contracts/pages'
 import type { Database } from '@kobato/db/database'
 import type { ListPagesFilters } from '@kobato/server/domains/pages/repo'
 

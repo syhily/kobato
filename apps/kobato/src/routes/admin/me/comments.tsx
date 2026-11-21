@@ -1,6 +1,6 @@
-import type { MyCommentsStatus } from '@kobato/contracts/comments'
+import type { MyCommentsStatus } from '@kobato/api/contracts/comments'
 
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/api/contracts/comments'
 import { requireRole } from '@kobato/server/domains/auth/rbac'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView'

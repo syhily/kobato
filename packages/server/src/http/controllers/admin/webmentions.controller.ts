@@ -1,4 +1,4 @@
-import { adminWebmentionsContract } from '@kobato/api/admin/webmentions'
+import { adminWebmentionsContract } from '@kobato/api/rpc/admin/webmentions'
 import { countWebmentions } from '@kobato/db/operations/webmention'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asAdminWebmentionWire } from '@kobato/server/domains/webmentions/projection'

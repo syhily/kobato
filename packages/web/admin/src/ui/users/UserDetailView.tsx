@@ -1,5 +1,5 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
-import type { AdminUserDto } from '@kobato/contracts/users'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
+import type { AdminUserDto } from '@kobato/api/contracts/users'
 import type { NavigateFunction } from 'react-router'
 
 import { avatarImageUrl } from '@kobato/assets/avatar'

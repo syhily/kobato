@@ -1,4 +1,4 @@
-import type { UpsertPostMetaInput } from '@kobato/contracts/posts'
+import type { UpsertPostMetaInput } from '@kobato/api/contracts/posts'
 import type { PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta'
 
 import { isContentLanguageInput } from '@kobato/i18n/content-language'

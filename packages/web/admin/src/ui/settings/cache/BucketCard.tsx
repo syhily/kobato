@@ -1,5 +1,5 @@
+import type { CacheBucketStats } from '@kobato/api/contracts/cache'
 import type { CacheBucketId } from '@kobato/cache/types'
-import type { CacheBucketStats } from '@kobato/contracts/cache'
 import type { CacheSettings } from '@kobato/settings/types'
 import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
 

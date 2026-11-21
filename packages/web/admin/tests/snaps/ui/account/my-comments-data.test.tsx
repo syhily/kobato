@@ -1,6 +1,6 @@
-import type { MyCommentItem } from '@kobato/contracts/comments'
+import type { MyCommentItem } from '@kobato/api/contracts/comments'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'

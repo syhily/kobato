@@ -1,4 +1,4 @@
-import type { AdminRevisionDto } from '@kobato/contracts/revision'
+import type { AdminRevisionDto } from '@kobato/api/contracts/revision'
 import type { Database } from '@kobato/db/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type {

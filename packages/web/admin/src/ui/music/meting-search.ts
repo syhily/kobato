@@ -1,4 +1,4 @@
-import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/contracts/music'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/api/contracts/music'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 export const SOURCE_OPTIONS = [

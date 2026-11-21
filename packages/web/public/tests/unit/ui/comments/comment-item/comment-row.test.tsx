@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { makeComment } from '@kobato/contracts/tests/utils/catalog'
+import { makeComment } from '@kobato/api/tests/utils/catalog'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render'

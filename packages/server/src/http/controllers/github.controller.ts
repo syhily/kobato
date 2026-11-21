@@ -1,4 +1,4 @@
-import { githubContract } from '@kobato/api/github'
+import { githubContract } from '@kobato/api/rpc/github'
 import { fetchGithubAvatarDataUrl } from '@kobato/server/domains/comments/services/avatar'
 import { fetchLatestRelease } from '@kobato/server/domains/update/release'
 import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'

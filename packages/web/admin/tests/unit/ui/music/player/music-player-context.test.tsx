@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/music'
 
 import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {

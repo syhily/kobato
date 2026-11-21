@@ -1,6 +1,6 @@
-import type { CommentReq } from '@kobato/contracts/comments'
+import type { CommentReq } from '@kobato/api/contracts/comments'
 
-import { commentsPublicContract } from '@kobato/api/comments'
+import { commentsPublicContract } from '@kobato/api/rpc/comments'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection'
 import { verifyCommentAccess } from '@kobato/server/domains/comments/services/access'

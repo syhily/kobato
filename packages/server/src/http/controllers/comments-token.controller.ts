@@ -1,4 +1,4 @@
-import { commentsTokenContract } from '@kobato/api/comments'
+import { commentsTokenContract } from '@kobato/api/rpc/comments'
 import { asCommentItemsWire } from '@kobato/server/domains/comments/projection'
 import { findCommentsByIds } from '@kobato/server/domains/comments/services/lookup'
 import { parseComments } from '@kobato/server/domains/comments/services/public-query'

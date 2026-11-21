@@ -1,4 +1,4 @@
-import type { AdminMusicDto, ListMusicOutput } from '@kobato/contracts/music'
+import type { AdminMusicDto, ListMusicOutput } from '@kobato/api/contracts/music'
 
 import { Button } from '@kobato/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog'

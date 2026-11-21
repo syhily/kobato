@@ -1,5 +1,5 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
-import type { AdminRevisionDto } from '@kobato/contracts/revision'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { AdminRevisionDto } from '@kobato/api/contracts/revision'
 import type { Database } from '@kobato/db/database'
 import type { ContentRow } from '@kobato/db/types'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'

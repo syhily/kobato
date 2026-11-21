@@ -1,4 +1,4 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { comment } from '@kobato/db/schema/comment'
 import { post } from '@kobato/db/schema/post'
 import { user } from '@kobato/db/schema/user'

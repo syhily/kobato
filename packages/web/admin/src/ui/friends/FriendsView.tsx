@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/friends'
 
 import { Button } from '@kobato/ui/components/button'
 import { Checkbox } from '@kobato/ui/components/checkbox'

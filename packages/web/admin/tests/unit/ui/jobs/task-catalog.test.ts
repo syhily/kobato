@@ -1,4 +1,4 @@
-import { TASK_CATALOG } from '@kobato/contracts/jobs'
+import { TASK_CATALOG } from '@kobato/api/contracts/jobs'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import { TASK_CAPABILITIES } from '@kobato/web-admin/ui/jobs/meta'

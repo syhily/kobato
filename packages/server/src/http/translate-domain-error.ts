@@ -1,4 +1,4 @@
-import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { ServerTranslator } from '@kobato/server/infra/i18n'
 
 import { descriptorMessage, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor'

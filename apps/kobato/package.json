@@ -33,10 +33,10 @@
   },
   "devDependencies": {
     "@hono/node-server": "catalog:",
+    "@kobato/api": "workspace:*",
     "@kobato/auth": "workspace:*",
     "@kobato/browser": "workspace:*",
     "@kobato/catalog": "workspace:*",
-    "@kobato/contracts": "workspace:*",
     "@kobato/db": "workspace:*",
     "@kobato/distribution": "workspace:*",
     "@kobato/harness": "workspace:*",

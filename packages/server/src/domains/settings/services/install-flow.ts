@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { Database } from '@kobato/db/database'
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { AssetsSettings, SiteIdentitySettings } from '@kobato/settings/types'

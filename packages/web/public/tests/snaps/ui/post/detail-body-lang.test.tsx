@@ -1,4 +1,4 @@
-import type { DetailPageComments } from '@kobato/contracts/comments'
+import type { DetailPageComments } from '@kobato/api/contracts/comments'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { renderInRouter } from '@kobato/web-client/tests/utils/render'

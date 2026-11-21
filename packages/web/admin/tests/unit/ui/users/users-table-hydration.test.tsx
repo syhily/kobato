@@ -1,4 +1,4 @@
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider'

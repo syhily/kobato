@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '@kobato/contracts/users'
+import type { AdminUserDto } from '@kobato/api/contracts/users'
 
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard'

@@ -1,6 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { contentBootstrapContract } from '@kobato/api/content'
+import { contentBootstrapContract } from '@kobato/api/rpc/content'
 import { uiMessagesForScope } from '@kobato/i18n/catalog'
 import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope'
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'

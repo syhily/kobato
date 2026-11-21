@@ -1,4 +1,4 @@
-import { adminImagesContract } from '@kobato/api/admin/images'
+import { adminImagesContract } from '@kobato/api/rpc/admin/images'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { userSession } from '@kobato/server/domains/auth/primitives'
 import {

@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/tags'
 
 import { Button } from '@kobato/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'

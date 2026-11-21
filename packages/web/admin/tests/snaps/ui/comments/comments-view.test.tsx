@@ -1,7 +1,7 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
 import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller'
 
-import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminComment } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { AdminCommentRow } from '@kobato/web-admin/ui/comments/AdminCommentRow'
 import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'

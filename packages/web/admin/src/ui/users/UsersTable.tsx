@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '@kobato/contracts/users'
+import type { AdminUserDto } from '@kobato/api/contracts/users'
 import type { SiteIdentitySettings } from '@kobato/settings/types'
 import type { FragmentInstance, Ref } from 'react'
 

@@ -1,4 +1,4 @@
-import type { ObservabilityProvisionSummary, ObservabilityStatusOutput } from '@kobato/contracts/observability'
+import type { ObservabilityProvisionSummary, ObservabilityStatusOutput } from '@kobato/api/contracts/observability'
 
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

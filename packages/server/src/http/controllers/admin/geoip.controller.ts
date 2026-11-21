@@ -1,4 +1,4 @@
-import { adminGeoipContract } from '@kobato/api/admin/geoip'
+import { adminGeoipContract } from '@kobato/api/rpc/admin/geoip'
 import { getGeoipDbStatus, runRemoteGeoipUpdate } from '@kobato/server/domains/analytics/geoip/update'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { implementAdmin } from '@kobato/server/http/orpc-base'

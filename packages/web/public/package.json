@@ -11,10 +11,10 @@
     ]
   },
   "devDependencies": {
+    "@kobato/api": "workspace:*",
     "@kobato/assets": "workspace:*",
     "@kobato/auth": "workspace:*",
     "@kobato/catalog": "workspace:*",
-    "@kobato/contracts": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/sanitize": "workspace:*",

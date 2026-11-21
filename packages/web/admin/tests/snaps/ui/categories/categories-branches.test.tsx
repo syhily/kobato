@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
 
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'

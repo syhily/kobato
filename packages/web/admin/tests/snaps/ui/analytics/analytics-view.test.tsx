@@ -1,4 +1,4 @@
-import type { CountersDto, MetricRow } from '@kobato/contracts/analytics'
+import type { CountersDto, MetricRow } from '@kobato/api/contracts/analytics'
 import type { ReactNode } from 'react'
 
 import { makeAnalyticsState } from '@kobato/web-admin/tests/utils/analytics-state'

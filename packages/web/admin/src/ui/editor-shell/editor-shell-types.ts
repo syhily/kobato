@@ -1,4 +1,4 @@
-import type { SaveBodyInput, SaveBodyOutput } from '@kobato/contracts/revision'
+import type { SaveBodyInput, SaveBodyOutput } from '@kobato/api/contracts/revision'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft'
 import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft'

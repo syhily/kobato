@@ -1,11 +1,11 @@
-import type { CommentFormUser } from '@kobato/catalog/model'
 import type {
   CommentItemWire as CommentItemType,
   Comments as CommentsData,
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,
-} from '@kobato/contracts/comments'
+} from '@kobato/api/contracts/comments'
+import type { CommentFormUser } from '@kobato/catalog/model'
 
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

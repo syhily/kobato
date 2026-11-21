@@ -1,4 +1,4 @@
-import type { UpdateCheckResult, UpdateJobState } from '@kobato/contracts/update'
+import type { UpdateCheckResult, UpdateJobState } from '@kobato/api/contracts/update'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@kobato/distribution/app'

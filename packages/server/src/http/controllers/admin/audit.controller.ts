@@ -1,6 +1,6 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
-import { adminAuditContract } from '@kobato/api/admin/audit'
+import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
 import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv'
 import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight'
 import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection'

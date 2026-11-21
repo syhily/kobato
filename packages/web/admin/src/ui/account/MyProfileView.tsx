@@ -1,6 +1,6 @@
+import { type AccountUpdateProfileInput, type LoginMethod } from '@kobato/api/contracts/users'
 import { avatarImageUrl } from '@kobato/assets/avatar'
 import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
-import { type AccountUpdateProfileInput, type LoginMethod } from '@kobato/contracts/users'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'

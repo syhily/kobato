@@ -1,5 +1,5 @@
+import type { AdminFriendDto } from '@kobato/api/contracts/friends'
 import type { Friend } from '@kobato/catalog/model'
-import type { AdminFriendDto } from '@kobato/contracts/friends'
 import type { Database } from '@kobato/db/database'
 import type { FriendRow } from '@kobato/db/types'
 

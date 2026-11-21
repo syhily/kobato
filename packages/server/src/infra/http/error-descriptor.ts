@@ -1,9 +1,9 @@
-import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error'
+import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/api-error'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { ServerTranslator } from '@kobato/server/infra/i18n'
 import type { z } from 'zod'
 
-import { zodIssueParams } from '@kobato/contracts/api-error'
+import { zodIssueParams } from '@kobato/api/contracts/api-error'
 import { BASE_LOCALE } from '@kobato/i18n/locales'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import { createServerTranslator } from '@kobato/server/infra/i18n'

@@ -1,4 +1,4 @@
-import { adminUsersAdminContract } from '@kobato/api/admin/users'
+import { adminUsersAdminContract } from '@kobato/api/rpc/admin/users'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service'
 import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin'

@@ -4,15 +4,25 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./tests/*": "./tests/*",
     "./*": [
       "./src/*.ts",
       "./src/*.tsx"
     ]
   },
   "devDependencies": {
-    "@kobato/contracts": "workspace:*",
+    "@kobato/assets": "workspace:*",
+    "@kobato/auth": "workspace:*",
+    "@kobato/cache": "workspace:*",
+    "@kobato/catalog": "workspace:*",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/inkling": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/utils": "workspace:*",
     "@orpc/contract": "catalog:",
-    "vitest": "catalog:"
+    "@types/node": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
   }
 }

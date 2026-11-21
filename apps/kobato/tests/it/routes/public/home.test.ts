@@ -1,5 +1,5 @@
+import type { HomeExtra } from '@kobato/api/contracts/content'
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
-import type { HomeExtra } from '@kobato/contracts/content'
 
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'

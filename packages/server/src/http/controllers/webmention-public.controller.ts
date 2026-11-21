@@ -1,4 +1,4 @@
-import { webmentionsContract } from '@kobato/api/webmentions'
+import { webmentionsContract } from '@kobato/api/rpc/webmentions'
 import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared'
 import { loadPublicWebmentionsForTarget } from '@kobato/server/domains/webmentions/service'
 import { implementPublic } from '@kobato/server/http/orpc-base'

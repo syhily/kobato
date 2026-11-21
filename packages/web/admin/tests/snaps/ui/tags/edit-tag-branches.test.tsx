@@ -1,6 +1,6 @@
-import type { AdminTagDto } from '@kobato/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/tags'
 
-import { makeAdminTag } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminTag } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog'
 import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'

@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { BlogSession, PendingOtpUser } from '@kobato/server/domains/auth/session-storage'
 
 import { findUserById } from '@kobato/db/operations/user'

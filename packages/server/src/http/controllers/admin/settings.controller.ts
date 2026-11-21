@@ -1,6 +1,6 @@
 import type { BlogSettingsBundle, SettingsBundle } from '@kobato/settings/types'
 
-import { adminSettingsContract } from '@kobato/api/admin/settings'
+import { adminSettingsContract } from '@kobato/api/rpc/admin/settings'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { projectSectionForAdmin } from '@kobato/server/domains/settings/services/admin-projection'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'

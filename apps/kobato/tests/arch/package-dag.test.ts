@@ -34,8 +34,20 @@ const SHARED_SPLIT = [
   '@kobato/settings',
   '@kobato/assets',
   '@kobato/sanitize',
-  '@kobato/contracts',
   '@kobato/seo',
+] as const
+
+// The shared leaves @kobato/api depends on (rpc procedures + contracts schemas) — every new edge changes exactly this
+// list.
+const API_SHARED_DEPS = [
+  '@kobato/auth',
+  '@kobato/catalog',
+  '@kobato/settings',
+  '@kobato/i18n',
+  '@kobato/utils',
+  '@kobato/inkling',
+  '@kobato/assets',
+  '@kobato/cache',
 ] as const
 
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
@@ -61,20 +73,9 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/assets': ['@kobato/test'],
 
   '@kobato/sanitize': ['@kobato/test'],
-  '@kobato/contracts': [
-    '@kobato/auth',
-    '@kobato/catalog',
-    '@kobato/settings',
-    '@kobato/i18n',
-    '@kobato/utils',
-    '@kobato/inkling',
-    '@kobato/assets',
-    '@kobato/cache',
-    '@kobato/test',
-  ],
   '@kobato/seo': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
-  '@kobato/api': ['@kobato/contracts', '@kobato/test'],
+  '@kobato/api': [...API_SHARED_DEPS, '@kobato/test'],
   '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
 
   '@kobato/server': [
@@ -106,7 +107,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/assets',
     '@kobato/sanitize',
-    '@kobato/contracts',
   ],
 
   '@kobato/web-client': [
@@ -118,13 +118,13 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/telemetry',
     '@kobato/distribution',
-    '@kobato/contracts',
     '@kobato/test',
   ],
   '@kobato/web-public': [
     '@kobato/web-client',
     '@kobato/ui',
     '@kobato/inkling',
+    '@kobato/api',
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/auth',
@@ -132,7 +132,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/assets',
     '@kobato/sanitize',
-    '@kobato/contracts',
     '@kobato/test',
   ],
   '@kobato/test': [],
@@ -162,20 +161,9 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils'],
   '@kobato/assets': ['@kobato/assets'],
   '@kobato/sanitize': ['@kobato/sanitize'],
-  '@kobato/contracts': [
-    '@kobato/contracts',
-    '@kobato/auth',
-    '@kobato/catalog',
-    '@kobato/settings',
-    '@kobato/i18n',
-    '@kobato/utils',
-    '@kobato/inkling',
-    '@kobato/assets',
-    '@kobato/cache',
-  ],
   '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
 
-  '@kobato/api': ['@kobato/api', '@kobato/contracts'],
+  '@kobato/api': ['@kobato/api', ...API_SHARED_DEPS],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/utils'],
   '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
@@ -197,7 +185,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/assets',
     '@kobato/sanitize',
-    '@kobato/contracts',
   ],
 
   '@kobato/web-client': [
@@ -210,7 +197,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/telemetry',
     '@kobato/distribution',
-    '@kobato/contracts',
   ],
 
   '@kobato/web-public': [
@@ -218,6 +204,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/web-client',
     '@kobato/ui',
     '@kobato/inkling',
+    '@kobato/api',
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/auth',
@@ -225,15 +212,14 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/settings',
     '@kobato/assets',
     '@kobato/sanitize',
-    '@kobato/contracts',
   ],
   '@kobato/test': ['@kobato/test'],
   '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
   kobato: [
     'kobato',
+    '@kobato/api',
     '@kobato/auth',
     '@kobato/catalog',
-    '@kobato/contracts',
     '@kobato/i18n',
     '@kobato/inkling',
     '@kobato/seo',
@@ -630,7 +616,7 @@ describe('package DAG', () => {
     for (const dir of [
       'packages/shared/settings',
       'packages/shared/i18n',
-      'packages/shared/contracts',
+      'packages/api',
       'packages/server',
       'packages/ui',
       'packages/web/client',

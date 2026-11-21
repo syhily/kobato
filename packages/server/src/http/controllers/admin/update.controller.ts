@@ -1,4 +1,4 @@
-import { adminUpdateContract } from '@kobato/api/admin/update'
+import { adminUpdateContract } from '@kobato/api/rpc/admin/update'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { getUpdateJobStatus } from '@kobato/server/domains/update/job'
 import { applyUpdate, checkForUpdate } from '@kobato/server/domains/update/service'

@@ -1,5 +1,5 @@
+import type { HomeExtra } from '@kobato/api/contracts/content'
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
-import type { HomeExtra } from '@kobato/contracts/content'
 
 import { metaWithFallback } from '@kobato/seo/meta'
 import { listingHeaders } from '@kobato/server/http/route-cache-headers'

@@ -1,5 +1,5 @@
-import { commentsAuthedContract } from '@kobato/api/comments'
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/api/contracts/comments'
+import { commentsAuthedContract } from '@kobato/api/rpc/comments'
 import { asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {
   countMyComments,

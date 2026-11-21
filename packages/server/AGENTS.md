@@ -93,7 +93,7 @@ the only exception (`admin/revision-shared.ts`).
 ### Public content API (`content.*`)
 
 - The public read-only contract is the `content.*` group (Ghost-Content-API style), implemented by
-  `controllers/content-*.controller.ts`, schemas in `@kobato/contracts/content.ts`. Admin SSR lives in the domain
+  `controllers/content-*.controller.ts`, schemas in `@kobato/api/contracts/content.ts`. Admin SSR lives in the domain
   groups; there is deliberately NO page-level aggregate group — loaders compose domain endpoints.
 - Public route loaders and the root loader consume `content.*` through `createSsrCaller` (`ssr-caller.ts`) — in-process,
   no HTTP hop; it also owns `unwrapListing`/`unwrapDetail`.
@@ -128,9 +128,9 @@ limiter that must run BEFORE input parsing rides the implementer; `impl.router({
 
 ### Adding an endpoint
 
-- Schema in `@kobato/contracts/<domain>.ts` (never inline); declare in the domain's `@kobato/api` module; implement with
-  the right `implement*` base; register in `apiRouter` / `apiRouter.admin`.
-- A multi-column field-update procedure MUST use `mergePatchInput` from `@kobato/contracts/merge-patch` —
+- Schema in `@kobato/api/contracts/<domain>.ts` (never inline); declare in the domain's `@kobato/api/rpc/` module;
+  implement with the right `implement*` base; register in `apiRouter` / `apiRouter.admin`.
+- A multi-column field-update procedure MUST use `mergePatchInput` from `@kobato/api/contracts/merge-patch` —
   `clearable(...)` for nullable columns, `splitMergePatch(input)` in the handler (pinned by
   `apps/kobato/tests/arch/merge-patch-controllers.test.ts`; reference `admin.users.update`). Full-record upserts,
   single-field setters, lifecycle actions, and the settings section merge are deliberately NOT merge-patch.

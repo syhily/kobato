@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 

@@ -1,4 +1,4 @@
-import { METRIC_TYPES, type Filters, type MetricType } from '@kobato/contracts/analytics'
+import { METRIC_TYPES, type Filters, type MetricType } from '@kobato/api/contracts/analytics'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
 import { cn } from '@kobato/ui/lib/cn'

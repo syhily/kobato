@@ -4,7 +4,7 @@ import type {
   PublicWebmentionWire,
   WebmentionOutboxStatusCounts,
   WebmentionStatusCounts,
-} from '@kobato/contracts/webmentions'
+} from '@kobato/api/contracts/webmentions'
 import type { Database } from '@kobato/db/database'
 import type { WebmentionOutboxStatus, WebmentionStatus } from '@kobato/db/schema/webmention'
 import type { EntityTarget } from '@kobato/db/target'

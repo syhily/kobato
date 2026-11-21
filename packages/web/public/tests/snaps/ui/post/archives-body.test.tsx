@@ -1,6 +1,6 @@
 import type { ClientPostWithMetadata } from '@kobato/catalog/model'
 
-import { makePost } from '@kobato/contracts/tests/utils/catalog'
+import { makePost } from '@kobato/api/tests/utils/catalog'
 import { renderInRouter } from '@kobato/web-client/tests/utils/render'
 import { ArchivesBody } from '@kobato/web-public/ui/post/ArchivesBody'
 import { describe, expect, it } from 'vitest'

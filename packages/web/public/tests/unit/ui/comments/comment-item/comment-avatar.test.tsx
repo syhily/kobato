@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { makeComment } from '@kobato/contracts/tests/utils/catalog'
+import { makeComment } from '@kobato/api/tests/utils/catalog'
 import { CommentAvatar } from '@kobato/web-public/ui/comments/comment-item/CommentAuthorLine'
 import { fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'

@@ -3,10 +3,10 @@
 `@kobato/web-public` (`packages/web/public/`) is the public-frontend leaf: the public chrome (header/footer/layout), the
 comment thread and composer, the post body projection and its hydration hooks, widgets, the friends grid, and the two
 cross-surface tiers. It may import `@kobato/web-client`, `@kobato/ui`, `@kobato/inkling` (barrel), and the shared leaves
-it declares (`@kobato/{utils,i18n,auth,catalog,settings,assets,sanitize,contracts}` — never `@kobato/seo`; the music
-player family lives in `@kobato/ui/components/music-player/`). It must NOT import `@kobato/web-admin` (direction is
-admin → public, never the reverse) and must NOT import `@kobato/server` or use Node-only APIs. The oRPC client is
-reached through `@kobato/web-client/api/client`.
+it declares (`@kobato/{utils,i18n,auth,catalog,settings,assets,sanitize}` — never `@kobato/seo`; the wire DTOs come from
+`@kobato/api/contracts`; the music player family lives in `@kobato/ui/components/music-player/`). It must NOT import
+`@kobato/web-admin` (direction is admin → public, never the reverse) and must NOT import `@kobato/server` or use
+Node-only APIs. The oRPC client is reached through `@kobato/web-client/api/client`.
 
 ## Structure
 

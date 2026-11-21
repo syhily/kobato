@@ -1,4 +1,4 @@
-import type { AdminImageDto, UploadKind } from '@kobato/contracts/images'
+import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/images'
 
 import { Button } from '@kobato/ui/components/button'
 import { Label } from '@kobato/ui/components/label'

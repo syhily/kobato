@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
 import type { ReactNode } from 'react'
 
-import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminComment } from '@kobato/api/tests/utils/catalog'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

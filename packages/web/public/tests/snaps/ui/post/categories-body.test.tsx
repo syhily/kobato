@@ -1,4 +1,4 @@
-import { makeCategory } from '@kobato/contracts/tests/utils/catalog'
+import { makeCategory } from '@kobato/api/tests/utils/catalog'
 import { renderInRouter } from '@kobato/web-client/tests/utils/render'
 import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody'
 import { describe, expect, it } from 'vitest'

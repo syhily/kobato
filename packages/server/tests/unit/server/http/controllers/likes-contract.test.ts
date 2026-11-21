@@ -1,6 +1,6 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
-import { likesContract } from '@kobato/api/likes'
+import { likesContract } from '@kobato/api/rpc/likes'
 import { likesRouter } from '@kobato/server/http/controllers/likes.controller'
 import { orpcInputValidationInterceptor } from '@kobato/server/http/orpc-base'
 import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'

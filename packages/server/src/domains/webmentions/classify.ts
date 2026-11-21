@@ -1,4 +1,4 @@
-import { WEBMENTION_TYPES } from '@kobato/contracts/webmentions'
+import { WEBMENTION_TYPES } from '@kobato/api/contracts/webmentions'
 import { normalizeForMatch } from '@kobato/server/domains/webmentions/verify'
 
 export type WebmentionType = (typeof WEBMENTION_TYPES)[number]

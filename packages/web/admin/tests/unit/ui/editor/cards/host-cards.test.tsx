@@ -3,7 +3,7 @@
 import type { MusicPickerDialogProps } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog'
 import type { ReactElement } from 'react'
 
-import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
 import { tZhCN, makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import { createHeadlessEditor } from '@kobato/inkling'

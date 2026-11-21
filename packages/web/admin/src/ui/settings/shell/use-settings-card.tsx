@@ -2,7 +2,7 @@ import type { SettingsSection } from '@kobato/settings/sections'
 import type { SettingsSectionPatch } from '@kobato/settings/types'
 import type { z } from 'zod'
 
-import { zodIssueParams } from '@kobato/contracts/api-error'
+import { zodIssueParams } from '@kobato/api/contracts/api-error'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { getLogger } from '@kobato/ui/lib/logger'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'

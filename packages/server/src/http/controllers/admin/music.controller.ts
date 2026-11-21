@@ -1,4 +1,4 @@
-import { adminMusicContract } from '@kobato/api/admin/music'
+import { adminMusicContract } from '@kobato/api/rpc/admin/music'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read'
 import { searchMusic } from '@kobato/server/domains/music/services/search'

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { AuditLogItemDto } from '@kobato/contracts/audit'
+import type { AuditLogItemDto } from '@kobato/api/contracts/audit'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'

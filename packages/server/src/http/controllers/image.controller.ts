@@ -1,4 +1,4 @@
-import { imagesContract } from '@kobato/api/images'
+import { imagesContract } from '@kobato/api/rpc/images'
 import { resolveImageRef } from '@kobato/server/domains/images/services/resolve'
 import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
 

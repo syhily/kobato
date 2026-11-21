@@ -1,5 +1,5 @@
+import { makePost, makeTag } from '@kobato/api/tests/utils/catalog'
 import { toDetailPostShell } from '@kobato/catalog/projection'
-import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog'
 import { asRoute } from '@kobato/test/route-test-utils'
 import { prerenderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'

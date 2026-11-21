@@ -1,4 +1,4 @@
-import { type AdminUserDto, type AdminUserUpdateInput } from '@kobato/contracts/users'
+import { type AdminUserDto, type AdminUserUpdateInput } from '@kobato/api/contracts/users'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { Checkbox } from '@kobato/ui/components/checkbox'

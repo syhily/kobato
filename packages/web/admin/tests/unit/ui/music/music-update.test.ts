@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/music'
 
 import { buildMusicUpdate, splitArtistDraft } from '@kobato/web-admin/ui/music/music-update'
 import { describe, expect, it } from 'vitest'

@@ -12,7 +12,6 @@
   },
   "devDependencies": {
     "@kobato/api": "workspace:*",
-    "@kobato/contracts": "workspace:*",
     "@kobato/distribution": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",

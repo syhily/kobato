@@ -1,4 +1,4 @@
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
 import { UserEditForm } from '@kobato/web-admin/ui/users/UserEditForm'

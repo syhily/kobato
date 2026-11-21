@@ -1,6 +1,6 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/comments'
 
-import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeComment, makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { renderInRouter } from '@kobato/web-client/tests/utils/render'
 import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf'
 import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem'

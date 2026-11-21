@@ -1,4 +1,4 @@
-import { adminNotificationsContract } from '@kobato/api/admin/notifications'
+import { adminNotificationsContract } from '@kobato/api/rpc/admin/notifications'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service'
 import { implementAdmin } from '@kobato/server/http/orpc-base'

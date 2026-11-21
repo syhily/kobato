@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

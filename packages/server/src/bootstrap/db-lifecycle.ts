@@ -1,6 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications'
+import { NOTIFICATION_SOURCES } from '@kobato/api/contracts/notifications'
 import { closeDatabase, openDatabase } from '@kobato/db/database'
 import { migrateDatabase } from '@kobato/db/migrate'
 import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets'

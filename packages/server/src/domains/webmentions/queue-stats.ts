@@ -1,4 +1,4 @@
-import type { QueueTaskStatsDto } from '@kobato/contracts/jobs'
+import type { QueueTaskStatsDto } from '@kobato/api/contracts/jobs'
 import type { Database } from '@kobato/db/database'
 
 import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention'

@@ -1,4 +1,4 @@
-import { newsletterContract } from '@kobato/api/newsletter'
+import { newsletterContract } from '@kobato/api/rpc/newsletter'
 import { confirm, subscribe, unsubscribe } from '@kobato/server/domains/newsletter/service'
 import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/server/http/orpc-base'
 import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit'

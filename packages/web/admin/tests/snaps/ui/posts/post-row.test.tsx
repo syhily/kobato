@@ -1,4 +1,4 @@
-import { makeAdminPost } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminPost } from '@kobato/api/tests/utils/catalog'
 import { PostRow } from '@kobato/web-admin/ui/posts/PostRow'
 import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'

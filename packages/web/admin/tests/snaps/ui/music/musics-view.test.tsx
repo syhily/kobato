@@ -1,6 +1,6 @@
-import type { AdminMusicDto, MetingSearchHit } from '@kobato/contracts/music'
+import type { AdminMusicDto, MetingSearchHit } from '@kobato/api/contracts/music'
 
-import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView'
 import { AlbumCard } from '@kobato/web-admin/ui/music/AlbumCard'

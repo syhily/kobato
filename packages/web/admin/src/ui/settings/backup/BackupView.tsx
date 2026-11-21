@@ -1,4 +1,4 @@
-import type { BackupFileDto } from '@kobato/contracts/backup'
+import type { BackupFileDto } from '@kobato/api/contracts/backup'
 import type { BackupLoaderShape } from '@kobato/settings/projection'
 
 import { Button } from '@kobato/ui/components/button'

@@ -1,5 +1,5 @@
+import type { AdminTagDto } from '@kobato/api/contracts/tags'
 import type { Tag } from '@kobato/catalog/model'
-import type { AdminTagDto } from '@kobato/contracts/tags'
 import type { Database } from '@kobato/db/database'
 import type { TagRow } from '@kobato/db/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'

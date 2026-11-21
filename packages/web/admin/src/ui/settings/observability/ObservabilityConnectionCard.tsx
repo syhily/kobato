@@ -1,4 +1,4 @@
-import type { ObservabilityStatusOutput, ObservabilityTestConnectionOutput } from '@kobato/contracts/observability'
+import type { ObservabilityStatusOutput, ObservabilityTestConnectionOutput } from '@kobato/api/contracts/observability'
 import type { ObservabilitySettings } from '@kobato/settings/types'
 
 import { Button } from '@kobato/ui/components/button'

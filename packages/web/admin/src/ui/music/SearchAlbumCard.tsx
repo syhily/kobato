@@ -1,4 +1,4 @@
-import type { MetingSearchHit } from '@kobato/contracts/music'
+import type { MetingSearchHit } from '@kobato/api/contracts/music'
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

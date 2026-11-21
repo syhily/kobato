@@ -1,4 +1,4 @@
-import type { AdminSessionItem } from '@kobato/contracts/sessions'
+import type { AdminSessionItem } from '@kobato/api/contracts/sessions'
 
 import { avatarImageUrl } from '@kobato/assets/avatar'
 import { ROLE_LABEL_KEYS, ROLE_LEVELS, type Role } from '@kobato/auth/roles'

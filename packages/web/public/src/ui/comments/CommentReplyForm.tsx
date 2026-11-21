@@ -1,10 +1,10 @@
-import type { CommentFormUser } from '@kobato/catalog/model'
 import type {
   CommentItemWire as CommentItemType,
   FindAvatarOutput,
   ReplyCommentInput,
   ReplyCommentOutput,
-} from '@kobato/contracts/comments'
+} from '@kobato/api/contracts/comments'
+import type { CommentFormUser } from '@kobato/catalog/model'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { avatarImageUrl } from '@kobato/assets/avatar'

@@ -1,8 +1,8 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import type { ReactNode } from 'react'
 
-import { makeAdminComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminComment, makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {

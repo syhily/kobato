@@ -1,4 +1,4 @@
-import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@kobato/contracts/music'
+import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@kobato/api/contracts/music'
 import type { Database } from '@kobato/db/database'
 import type { MusicRow } from '@kobato/db/types'
 

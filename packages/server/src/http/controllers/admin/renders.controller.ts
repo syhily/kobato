@@ -1,6 +1,6 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 
-import { adminRendersContract } from '@kobato/api/admin/renders'
+import { adminRendersContract } from '@kobato/api/rpc/admin/renders'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html'
 import { reindexSearchBatch } from '@kobato/server/domains/posts/services/search-reindex'

@@ -21,7 +21,7 @@ The direction is strictly `@kobato/web-admin` → `@kobato/web-public` → `@kob
 
 - Production sources are browser-safe: no `node:*` value imports and no `@kobato/server` imports (value or type). The
   oRPC client is typed by `ContractRouterClient<typeof apiContract>` from `@kobato/api` (reached through
-  `@kobato/web-client/api/client`); wire DTO shapes come from `@kobato/contracts`. Server stays a tests-only fixture
+  `@kobato/web-client/api/client`); wire DTO shapes come from `@kobato/api/contracts`. Server stays a tests-only fixture
   dependency.
 - Imports use `@kobato/web-admin/...` inside this package and the sanctioned external specifiers
   (`@kobato/web-public/...`, `@kobato/web-client/...`, `@kobato/ui/...`, the shared leaves — never `@kobato/seo`,

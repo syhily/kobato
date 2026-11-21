@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/contracts/update'
+import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/api/contracts/update'
 
 import { installFetch, jsonResponse } from '@kobato/test/fetch'
 import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'

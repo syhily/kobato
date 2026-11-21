@@ -1,5 +1,5 @@
+import type { AdminPostDto } from '@kobato/api/contracts/posts'
 import type { Post } from '@kobato/catalog/model'
-import type { AdminPostDto } from '@kobato/contracts/posts'
 import type { ContentRow, PostMetaRow } from '@kobato/db/types'
 
 import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection'

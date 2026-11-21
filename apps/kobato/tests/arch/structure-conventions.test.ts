@@ -111,7 +111,6 @@ describe('structure conventions', () => {
       'packages/inkling/src',
       'packages/db/src',
       'packages/api/src',
-      'packages/shared/contracts/src',
       'packages/shared/settings/src',
     ]
     const offenders: string[] = []
@@ -198,7 +197,7 @@ describe('structure conventions', () => {
   })
 
   it('prefixes every admin API route with /admin', () => {
-    const root = `${REPO_ROOT}/packages/api/src/admin`
+    const root = `${REPO_ROOT}/packages/api/src/rpc/admin`
     const offenders: string[] = []
     for (const file of walk(root).filter((entry) => entry.endsWith('.ts'))) {
       const source = readFileSync(file, 'utf8')
@@ -213,12 +212,11 @@ describe('structure conventions', () => {
   })
 
   it('aligns the public API module names with their contract modules', () => {
-    const apiRoot = `${REPO_ROOT}/packages/api/src`
-    const contractRoot = `${REPO_ROOT}/packages/shared/contracts/src`
+    const apiRoot = `${REPO_ROOT}/packages/api/src/rpc`
+    const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
     const publicModules = readdirSync(apiRoot, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith('.ts'))
       .map((entry) => entry.name)
-      .filter((name) => name !== 'contract.ts')
 
     const ALIASES: Record<string, string> = {
       'account.ts': 'users.ts',
@@ -237,7 +235,7 @@ describe('structure conventions', () => {
     })
     expect(
       orphans,
-      'a public `@kobato/api/<domain>` module needs a matching `@kobato/contracts/<domain>` (same noun)',
+      'a public `@kobato/api/rpc/<domain>` module needs a matching `@kobato/api/contracts/<domain>` (same noun)',
     ).toEqual([])
   })
 })

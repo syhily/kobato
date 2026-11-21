@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/contracts/images'
+import type { AdminImageDto } from '@kobato/api/contracts/images'
 
 import { buildJustifiedRows } from '@kobato/web-admin/ui/images/JustifiedImageGrid'
 import { describe, expect, it } from 'vitest'

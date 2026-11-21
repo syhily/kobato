@@ -1,4 +1,4 @@
-import type { AdminPageDetailDto } from '@kobato/contracts/pages'
+import type { AdminPageDetailDto } from '@kobato/api/contracts/pages'
 import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta'
 
 import { MetaSidebar } from '@kobato/web-admin/ui/pages/MetaSidebar'

@@ -18,7 +18,7 @@ The isomorphic settings model and its single source of truth.
   `presentation`, `timezones` remain isomorphic model helpers. The RUM client identity schema lives in
   `sections/observability.ts`. Admin navigation display metadata belongs to `@kobato/web-admin`, not this package.
 - Allowed deps: `@kobato/i18n`, `@kobato/cache`, `@kobato/assets` (the avatar source vocabulary), `@kobato/utils`. Never
-  `@kobato/contracts`, server, db, web, UI, or React.
+  `@kobato/api` (the wire contracts), server, db, web, UI, or React.
 - Tests: `tests/unit/` (`shared-unit`). `tests/utils/blog-settings.ts` is the WORKSPACE-canonical settings fixture
   (`TEST_BLOG_SETTINGS_BUNDLE`, `setBlogSettingsBundleForTests`, `resetBlogSettingsForTests`) — every other package's
   test trees import it cross-package, never keep a copy. `tests/utils/setup/{unit,snaps}.ts` owns the shared projects'

@@ -1,7 +1,7 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
-import type { AdminUserDto } from '@kobato/contracts/users'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
+import type { AdminUserDto } from '@kobato/api/contracts/users'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
 import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

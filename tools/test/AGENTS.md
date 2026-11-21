@@ -5,9 +5,9 @@ package. Anything that models a product shape (settings bundle, DB lifecycle, oR
 fixtures) lives in ONE canonical owner package's `tests/utils/`; other packages' test trees import it cross-package as
 `@kobato/<owner>/tests/utils/<name>.ts` (the one sanctioned cross-package `tests/` edge, pinned by
 `apps/kobato/tests/arch/package-dag.test.ts`). Canonical owners: `@kobato/settings/tests/utils/blog-settings.ts`,
-`@kobato/i18n/tests/utils/i18n.ts`, `@kobato/contracts/tests/utils/catalog.ts`,
-`@kobato/inkling/tests/utils/lexical.ts`, `@kobato/web-client/tests/utils/render.tsx`,
-`@kobato/ui/tests/utils/i18n-render.tsx` + `hook.tsx`, `@kobato/web-admin/tests/utils/settings-mutation-mock.ts`, and
+`@kobato/i18n/tests/utils/i18n.ts`, `@kobato/api/tests/utils/catalog.ts`, `@kobato/inkling/tests/utils/lexical.ts`,
+`@kobato/web-client/tests/utils/render.tsx`, `@kobato/ui/tests/utils/i18n-render.tsx` + `hook.tsx`,
+`@kobato/web-admin/tests/utils/settings-mutation-mock.ts`, and
 `@kobato/server/tests/utils/{session,capture-mail,integration-db,analytics-db,request-context}.ts`. Product-coupled
 fixtures must not move back here — this is what keeps the workspace graph acyclic.
 

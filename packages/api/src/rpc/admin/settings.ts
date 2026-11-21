@@ -1,0 +1,14 @@
+import {
+  adminSettingsBootstrapOutputSchema,
+  adminSettingsUpdateInput,
+  adminSettingsUpdateOutput,
+} from '@kobato/api/contracts/settings'
+import { oc } from '@orpc/contract'
+
+export const adminSettingsContract = {
+  update: oc
+    .route({ method: 'POST', path: '/admin/settings/update' })
+    .input(adminSettingsUpdateInput)
+    .output(adminSettingsUpdateOutput),
+  bootstrap: oc.route({ method: 'GET', path: '/admin/settings/bootstrap' }).output(adminSettingsBootstrapOutputSchema),
+}

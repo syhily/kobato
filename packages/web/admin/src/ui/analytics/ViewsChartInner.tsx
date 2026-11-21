@@ -1,4 +1,4 @@
-import type { ViewsPoint } from '@kobato/contracts/analytics'
+import type { ViewsPoint } from '@kobato/api/contracts/analytics'
 import type { TimeUnit } from '@kobato/utils/date-range'
 
 import { escapeHtml } from '@kobato/sanitize/escape-html'

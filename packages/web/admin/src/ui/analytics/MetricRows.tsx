@@ -1,4 +1,4 @@
-import type { MetricRow, MetricType } from '@kobato/contracts/analytics'
+import type { MetricRow, MetricType } from '@kobato/api/contracts/analytics'
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

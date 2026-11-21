@@ -1,4 +1,4 @@
-import { adminUsersSessionsContract } from '@kobato/api/admin/users'
+import { adminUsersSessionsContract } from '@kobato/api/rpc/admin/users'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { listAllSessions } from '@kobato/server/domains/auth/services/sessions'

@@ -19,7 +19,7 @@ function toPosix(path: string): string {
 
 const PACKAGE_SRC_ROOTS: Record<string, string> = {
   server: 'packages/server/src',
-  contracts: 'packages/shared/contracts/src',
+  api: 'packages/api/src',
   seo: 'packages/shared/seo/src',
   utils: 'packages/shared/utils/src',
   i18n: 'packages/shared/i18n/src',

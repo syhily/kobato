@@ -12,7 +12,7 @@ const SCAN_ROOTS = [
   'packages/inkling/src',
   'packages/db/src',
   'packages/server/src',
-  'packages/shared/contracts/src',
+  'packages/api/src/contracts',
   'packages/shared/auth/src',
   'packages/shared/catalog/src',
   'packages/shared/telemetry/src',

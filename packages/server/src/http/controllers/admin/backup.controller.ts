@@ -1,4 +1,4 @@
-import { adminBackupContract } from '@kobato/api/admin/backup'
+import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
 import {

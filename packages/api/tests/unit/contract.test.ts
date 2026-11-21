@@ -1,8 +1,13 @@
 import type { AnyContractProcedure } from '@orpc/contract'
 
 import { apiContract } from '@kobato/api/contract'
-import { likesContract } from '@kobato/api/likes'
-import { likeDecreaseInput, likeIncreaseInput, likeIncreaseOutput, likeValidateInput } from '@kobato/contracts/likes'
+import {
+  likeDecreaseInput,
+  likeIncreaseInput,
+  likeIncreaseOutput,
+  likeValidateInput,
+} from '@kobato/api/contracts/likes'
+import { likesContract } from '@kobato/api/rpc/likes'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
@@ -28,7 +33,7 @@ describe('likesContract shape', () => {
     expect(likesContract[key as keyof typeof likesContract]['~orpc'].route).toEqual(route)
   })
 
-  it('composes the @kobato/contracts schemas by reference, never a copy', () => {
+  it('composes the @kobato/api/contracts schemas by reference, never a copy', () => {
     expect(likesContract.increase['~orpc'].inputSchema).toBe(likeIncreaseInput)
     expect(likesContract.increase['~orpc'].outputSchema).toBe(likeIncreaseOutput)
     expect(likesContract.decrease['~orpc'].inputSchema).toBe(likeDecreaseInput)

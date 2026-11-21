@@ -1,4 +1,4 @@
-import { adminFriendsContract } from '@kobato/api/admin/friends'
+import { adminFriendsContract } from '@kobato/api/rpc/admin/friends'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@kobato/server/domains/friends/service'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'

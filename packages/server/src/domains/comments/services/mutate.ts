@@ -1,4 +1,4 @@
-import type { CommentReq } from '@kobato/contracts/comments'
+import type { CommentReq } from '@kobato/api/contracts/comments'
 import type { Database } from '@kobato/db/database'
 import type { NewComment } from '@kobato/db/types'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'

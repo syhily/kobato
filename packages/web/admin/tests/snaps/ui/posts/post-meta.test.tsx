@@ -1,6 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
-import { makeAdminPost } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminPost } from '@kobato/api/tests/utils/catalog'
 import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
 import { localInputValueToIso } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel'

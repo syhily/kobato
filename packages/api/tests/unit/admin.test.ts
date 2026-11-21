@@ -1,40 +1,11 @@
-import { adminAuditContract } from '@kobato/api/admin/audit'
-import { adminBackupContract } from '@kobato/api/admin/backup'
-import { adminCacheContract } from '@kobato/api/admin/cache'
-import { adminCategoriesContract } from '@kobato/api/admin/categories'
-import { adminCommentsContract } from '@kobato/api/admin/comments'
-import { adminFontsContract } from '@kobato/api/admin/fonts'
-import { adminFriendsContract } from '@kobato/api/admin/friends'
-import { adminGeoipContract } from '@kobato/api/admin/geoip'
-import { adminImagesContract } from '@kobato/api/admin/images'
-import { adminJobsContract } from '@kobato/api/admin/jobs'
-import { adminMailContract } from '@kobato/api/admin/mail'
-import { adminMusicContract } from '@kobato/api/admin/music'
-import { adminNotificationsContract } from '@kobato/api/admin/notifications'
-import { adminObservabilityContract } from '@kobato/api/admin/observability'
-import { adminPagesContract } from '@kobato/api/admin/pages'
-import { adminPostsContract } from '@kobato/api/admin/posts'
-import { adminRendersContract } from '@kobato/api/admin/renders'
-import { revisionContract } from '@kobato/api/admin/revision'
-import { adminSettingsContract } from '@kobato/api/admin/settings'
-import { adminStorageContract } from '@kobato/api/admin/storage'
-import { adminTagsContract } from '@kobato/api/admin/tags'
-import { adminUpdateContract } from '@kobato/api/admin/update'
-import {
-  adminUsersAdminContract,
-  adminUsersContract,
-  adminUsersCrudContract,
-  adminUsersSessionsContract,
-} from '@kobato/api/admin/users'
-import { adminWebmentionsContract } from '@kobato/api/admin/webmentions'
-import { adminPostAnalyticsInputSchema, adminPostAnalyticsOutputSchema } from '@kobato/contracts/analytics'
+import { adminPostAnalyticsInputSchema, adminPostAnalyticsOutputSchema } from '@kobato/api/contracts/analytics'
 import {
   auditLogActorsOutput,
   auditLogExportInput,
   auditLogExportOutput,
   auditLogListInput,
   auditLogListOutput,
-} from '@kobato/contracts/audit'
+} from '@kobato/api/contracts/audit'
 import {
   adminBackupCreateInput,
   adminBackupCreateOutputDto,
@@ -44,13 +15,13 @@ import {
   adminBackupRestoreInput,
   adminBackupRestoreOutputDto,
   adminBackupStatusOutputDto,
-} from '@kobato/contracts/backup'
+} from '@kobato/api/contracts/backup'
 import {
   adminCacheClearInput,
   adminCacheGetStatsInput,
   adminCacheStatsDto,
   clearCacheResultDto,
-} from '@kobato/contracts/cache'
+} from '@kobato/api/contracts/cache'
 import {
   adminCategoriesListInput,
   adminCategoriesListOutputDto,
@@ -59,7 +30,7 @@ import {
   adminCategoryIdInput,
   adminCategoryUpsertInput,
   adminCategoryUpsertOutputDto,
-} from '@kobato/contracts/categories'
+} from '@kobato/api/contracts/categories'
 import {
   adminCommentsPendingCountOutputSchema,
   adminAvatarMirrorProbeOutputDto,
@@ -75,8 +46,8 @@ import {
   adminCommentsPendingDashboardInput,
   adminPendingDashboardDto,
   ownCommentMutationDto,
-} from '@kobato/contracts/comments'
-import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base'
+} from '@kobato/api/contracts/comments'
+import { contentRestoreResultDto } from '@kobato/api/contracts/content-admin-base'
 import {
   adminFontDeleteInput,
   adminFontDeleteOutputDto,
@@ -84,20 +55,20 @@ import {
   adminFontSetSlotOutputDto,
   listFontsOutputDto,
   setFontSlotInputDto,
-} from '@kobato/contracts/fonts'
+} from '@kobato/api/contracts/fonts'
 import {
   adminFriendUpsertOutputDto,
   adminFriendsListOutputDto,
   friendIdSchema,
   listFriendsSchema,
   upsertFriendSchema,
-} from '@kobato/contracts/friends'
+} from '@kobato/api/contracts/friends'
 import {
   adminGeoipStatusInput,
   adminGeoipStatusOutputDto,
   adminGeoipUpdateInput,
   adminGeoipUpdateOutputDto,
-} from '@kobato/contracts/geoip'
+} from '@kobato/api/contracts/geoip'
 import {
   adminImageIdInput,
   adminImageMutationOutputDto,
@@ -105,9 +76,9 @@ import {
   adminImageUploadInput,
   adminImagesListInput,
   listImagesOutputDto,
-} from '@kobato/contracts/images'
-import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/contracts/jobs'
-import { adminMailSendTestInput, adminMailSendTestOutputDto } from '@kobato/contracts/mail'
+} from '@kobato/api/contracts/images'
+import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/api/contracts/jobs'
+import { adminMailSendTestInput, adminMailSendTestOutputDto } from '@kobato/api/contracts/mail'
 import {
   addMusicOutputDto,
   adminMusicAddInput,
@@ -119,14 +90,14 @@ import {
   listMusicOutputDto,
   searchMusicOutputDto,
   updateMusicOutputDto,
-} from '@kobato/contracts/music'
+} from '@kobato/api/contracts/music'
 import {
   adminRecallNotificationInput,
   adminRecallNotificationOutput,
   adminSendBroadcastInput,
   adminSendDirectInput,
   adminSendOutput,
-} from '@kobato/contracts/notifications'
+} from '@kobato/api/contracts/notifications'
 import {
   observabilityProvisionInputSchema,
   observabilityProvisionOutputSchema,
@@ -134,7 +105,7 @@ import {
   observabilityStatusOutputSchema,
   observabilityTestConnectionInputSchema,
   observabilityTestConnectionOutputSchema,
-} from '@kobato/contracts/observability'
+} from '@kobato/api/contracts/observability'
 import {
   adminPageDetailDto,
   adminPageIdInput,
@@ -144,7 +115,7 @@ import {
   listPagesOutputDto,
   listPagesSchema,
   upsertPageMetaSchema,
-} from '@kobato/contracts/pages'
+} from '@kobato/api/contracts/pages'
 import {
   adminPostsMySummaryOutputSchema,
   adminPostDetailDto,
@@ -155,33 +126,33 @@ import {
   listPostsOutputDto,
   listPostsSchema,
   upsertPostMetaSchema,
-} from '@kobato/contracts/posts'
-import { successDto, voidOutput } from '@kobato/contracts/primitives'
+} from '@kobato/api/contracts/posts'
+import { successDto, voidOutput } from '@kobato/api/contracts/primitives'
 import {
   adminRenderBatchInput,
   adminRenderMathInput,
   adminRenderMathOutputDto,
   adminRenderReindexOutputDto,
   adminRenderReprojectOutputDto,
-} from '@kobato/contracts/renders'
-import { saveBodyInput, saveResultOutput } from '@kobato/contracts/revision'
+} from '@kobato/api/contracts/renders'
+import { saveBodyInput, saveResultOutput } from '@kobato/api/contracts/revision'
 import {
   adminSettingsBootstrapOutputSchema,
   adminSettingsUpdateInput,
   adminSettingsUpdateOutput,
-} from '@kobato/contracts/settings'
+} from '@kobato/api/contracts/settings'
 import {
   adminStorageStartMigrationInput,
   adminStorageStatsOutputDto,
   storageMigrationStatusDto,
-} from '@kobato/contracts/storage'
+} from '@kobato/api/contracts/storage'
 import {
   adminTagsListInput,
   adminTagsListOutputDto,
   adminTagIdInput,
   adminTagUpsertInput,
   adminTagUpsertOutputDto,
-} from '@kobato/contracts/tags'
+} from '@kobato/api/contracts/tags'
 import {
   adminUpdateApplyInput,
   adminUpdateApplyOutputDto,
@@ -189,7 +160,7 @@ import {
   adminUpdateStatusInput,
   updateCheckResultDto,
   updateJobStatusDto,
-} from '@kobato/contracts/update'
+} from '@kobato/api/contracts/update'
 import {
   adminUserUpdateInput,
   adminUsersCountOutputSchema,
@@ -210,7 +181,7 @@ import {
   adminUserUpdateRoleOutputDto,
   adminUsersListInput,
   adminUsersListOutputDto,
-} from '@kobato/contracts/users'
+} from '@kobato/api/contracts/users'
 import {
   adminWebmentionsPendingCountOutputSchema,
   adminWebmentionDto,
@@ -219,7 +190,36 @@ import {
   adminWebmentionOutboxListSchema,
   adminWebmentionOutboxOutputDto,
   adminWebmentionsLoadAllOutputDto,
-} from '@kobato/contracts/webmentions'
+} from '@kobato/api/contracts/webmentions'
+import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
+import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
+import { adminCacheContract } from '@kobato/api/rpc/admin/cache'
+import { adminCategoriesContract } from '@kobato/api/rpc/admin/categories'
+import { adminCommentsContract } from '@kobato/api/rpc/admin/comments'
+import { adminFontsContract } from '@kobato/api/rpc/admin/fonts'
+import { adminFriendsContract } from '@kobato/api/rpc/admin/friends'
+import { adminGeoipContract } from '@kobato/api/rpc/admin/geoip'
+import { adminImagesContract } from '@kobato/api/rpc/admin/images'
+import { adminJobsContract } from '@kobato/api/rpc/admin/jobs'
+import { adminMailContract } from '@kobato/api/rpc/admin/mail'
+import { adminMusicContract } from '@kobato/api/rpc/admin/music'
+import { adminNotificationsContract } from '@kobato/api/rpc/admin/notifications'
+import { adminObservabilityContract } from '@kobato/api/rpc/admin/observability'
+import { adminPagesContract } from '@kobato/api/rpc/admin/pages'
+import { adminPostsContract } from '@kobato/api/rpc/admin/posts'
+import { adminRendersContract } from '@kobato/api/rpc/admin/renders'
+import { revisionContract } from '@kobato/api/rpc/admin/revision'
+import { adminSettingsContract } from '@kobato/api/rpc/admin/settings'
+import { adminStorageContract } from '@kobato/api/rpc/admin/storage'
+import { adminTagsContract } from '@kobato/api/rpc/admin/tags'
+import { adminUpdateContract } from '@kobato/api/rpc/admin/update'
+import {
+  adminUsersAdminContract,
+  adminUsersContract,
+  adminUsersCrudContract,
+  adminUsersSessionsContract,
+} from '@kobato/api/rpc/admin/users'
+import { adminWebmentionsContract } from '@kobato/api/rpc/admin/webmentions'
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
@@ -594,7 +594,7 @@ describe('admin contracts shape', () => {
     Object.entries(ADMIN_SCHEMAS).flatMap(([domain, schemas]) =>
       Object.entries(schemas).map(([key, pinned]) => [`${domain}.${key}`, domain, key, pinned] as const),
     ),
-  )('%s composes the @kobato/contracts schemas by reference', (_label, domain, key, pinned) => {
+  )('%s composes the @kobato/api/contracts schemas by reference', (_label, domain, key, pinned) => {
     const contract = ADMIN_CONTRACTS[domain as keyof typeof ADMIN_CONTRACTS] as Record<string, AnyContractProcedure>
     const proc = contract[key]['~orpc']
     expect(proc.inputSchema).toBe(pinned.input)

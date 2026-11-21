@@ -1,4 +1,4 @@
-import { makeAdminPage } from '@kobato/contracts/tests/utils/catalog'
+import { makeAdminPage } from '@kobato/api/tests/utils/catalog'
 import { PageRow } from '@kobato/web-admin/ui/pages/PageRow'
 import { PagesSkeleton } from '@kobato/web-admin/ui/pages/PagesSkeleton'
 import { PagesView } from '@kobato/web-admin/ui/pages/PagesView'

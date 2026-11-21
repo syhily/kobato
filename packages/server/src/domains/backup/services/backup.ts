@@ -1,5 +1,5 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
-import type { BackupFileDto } from '@kobato/contracts/backup'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { BackupFileDto } from '@kobato/api/contracts/backup'
 import type { Database } from '@kobato/db/database'
 import type { Readable } from 'node:stream'
 

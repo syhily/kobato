@@ -1,4 +1,4 @@
-import { adminCategoriesContract } from '@kobato/api/admin/categories'
+import { adminCategoriesContract } from '@kobato/api/rpc/admin/categories'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   deleteAdminCategory,

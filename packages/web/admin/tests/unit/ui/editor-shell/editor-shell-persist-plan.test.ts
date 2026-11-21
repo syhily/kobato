@@ -1,4 +1,4 @@
-import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision'
+import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/api/contracts/revision'
 
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
 import {
