@@ -64,17 +64,17 @@ exited 0, not that the copy is good.
 
 ```bash
 # Catalog structure / ICU / representative terms (the term tests added by this document run in the first command)
-pnpm exec vitest run --project unit tests/unit/shared/i18n
+pnpm test packages/shared/i18n/tests/unit
 
 # Four-locale email key completeness and template rendering
-pnpm exec vitest run --project unit tests/unit/server/infra/email
+pnpm test packages/server/tests/unit/server/infra/email
 
 # Language switch / cross-tab
-pnpm exec vitest run --project unit tests/unit/ui/admin/settings tests/unit/client/lib/locale-sync.test.ts
+pnpm test packages/web/admin/tests/unit/ui/settings packages/web/client/tests/unit/lib/locale-sync.test.ts
 
 # Feed / calendar / settings snapshots
-pnpm exec vitest run --project it tests/it/server/http tests/it/server/domains/settings
-pnpm exec vitest run --project unit tests/unit/server/http/resources/calendar.test.ts
+pnpm test packages/server/tests/it/server/http packages/server/tests/it/server/domains/settings
+pnpm test packages/server/tests/unit/server/http/resources/calendar.test.ts
 
 # Real HTTP journeys in four languages (needs the SEA binary; not part of pnpm test)
 pnpm run sea:e2e

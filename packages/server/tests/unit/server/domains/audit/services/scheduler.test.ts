@@ -1,8 +1,6 @@
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.useFakeTimers()
 
 const runArchiveJob = vi
   .spyOn(await import('@kobato/server/domains/audit/services/archive.ts'), 'runArchiveJob')
@@ -27,6 +25,7 @@ function seedHydratedSettings() {
 
 describe('audit scheduler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     __clearLogCaptureForTests()
     currentDb = db

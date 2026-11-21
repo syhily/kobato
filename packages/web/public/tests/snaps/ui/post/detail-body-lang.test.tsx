@@ -1,7 +1,7 @@
 import type { DetailPageComments } from '@kobato/contracts/comments.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-public/tests/utils/blog-settings.ts'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
 import { DetailBodyChrome } from '@kobato/web-public/ui/post/DetailBodyChrome.tsx'
 import { describe, expect, it } from 'vitest'
 

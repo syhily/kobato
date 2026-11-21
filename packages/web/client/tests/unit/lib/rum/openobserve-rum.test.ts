@@ -1,7 +1,6 @@
 import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
 
 import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { makeResourceEvent, makeViewEvent, RUM_TEST_SESSION_ID, RUM_TEST_TRACE_ID } from '@kobato/test/rum-events.ts'
 import {
   __pollRumStatusForTests,
   __resetRumForTests,
@@ -11,6 +10,12 @@ import {
   suspendRum,
 } from '@kobato/web-client/lib/rum/openobserve-rum.ts'
 import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
+import {
+  makeResourceEvent,
+  makeViewEvent,
+  RUM_TEST_SESSION_ID,
+  RUM_TEST_TRACE_ID,
+} from '@kobato/web-client/tests/utils/rum-events.ts'
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'

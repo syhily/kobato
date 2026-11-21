@@ -2,7 +2,7 @@
 
 import type { AuditLogItemDto } from '@kobato/contracts/audit.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-admin/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { AuditLogRow } from '@kobato/web-admin/ui/audit/AuditLogRow.tsx'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'

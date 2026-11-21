@@ -27,7 +27,6 @@
     "@kobato/inkling": "workspace:*",
     "@kobato/sanitize": "workspace:*",
     "@kobato/seo": "workspace:*",
-    "@kobato/server": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",

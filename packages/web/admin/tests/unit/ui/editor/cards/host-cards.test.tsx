@@ -3,7 +3,9 @@
 import type { MusicPickerDialogProps } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx'
 import type { ReactElement } from 'react'
 
+import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog.ts'
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
+import { tZhCN, makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
 import { createHeadlessEditor } from '@kobato/inkling'
 import { lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels.ts'
 import { getHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry.ts'
@@ -47,9 +49,7 @@ import {
   TwoColumnCardView,
   TwoColumnPaneView,
 } from '@kobato/inkling/host-cards'
-import { makeAdminMusic } from '@kobato/web-admin/tests/utils/catalog.ts'
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
-import { tZhCN, makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
 import { MusicCardPicker, musicPickMeta } from '@kobato/web-admin/ui/editor/music-card-picker.tsx'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render } from '@testing-library/react'

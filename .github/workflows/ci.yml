@@ -28,7 +28,7 @@ jobs:
         run: |
           pnpm exec tsc -p apps/inkling-demo/tsconfig.json
           pnpm exec vite build apps/inkling-demo
-      - run: pnpm run test -- --coverage
+      - run: pnpm run test --coverage
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-report
@@ -54,7 +54,7 @@ jobs:
         run: |
           test -d apps/kobato/build/client
           test -d apps/kobato/build/server
-          pnpm exec vitest run --project app-unit apps/kobato/tests/arch/production-rum-bundle.test.ts
+          pnpm run test:production-rum
         env:
           KOBATO_REQUIRE_PRODUCTION_BUILD: '1'
       - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium

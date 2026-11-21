@@ -1,6 +1,6 @@
+import { makeCategory } from '@kobato/contracts/tests/utils/catalog.ts'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { makeCategory } from '@tests/utils/catalog.ts'
-import { renderInRouter, stableHtml } from '@tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import CategoriesRoute from '@/routes/public/categories.tsx'

@@ -1,8 +1,8 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { corsMiddleware } from '@kobato/server/http/middlewares/cors.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

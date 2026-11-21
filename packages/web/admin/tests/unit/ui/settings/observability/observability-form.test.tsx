@@ -4,7 +4,7 @@ import type { ObservabilityStatusOutput } from '@kobato/contracts/observability.
 import type { ObservabilitySettings } from '@kobato/settings/types.ts'
 
 import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-admin/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'

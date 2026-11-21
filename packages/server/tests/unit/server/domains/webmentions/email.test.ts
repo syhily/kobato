@@ -1,7 +1,7 @@
 import type { WebmentionRow } from '@kobato/db/types.ts'
 
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 // The transport itself is covered by the notifications suite; this suite

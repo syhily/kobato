@@ -37,6 +37,10 @@ Extraction writes exactly 5 files (7 on win32) into the FLAT `<cache>/natives-<m
 
 The out-of-process lifecycle behind `sea:smoke` / `sea:e2e` / `sea:browser` lives in `@kobato/harness` — this package keeps the build/inject/budget/bundle-check pipeline and entry scripts only; extend the harness instead (never the reverse).
 
+## Tests
+
+`tests/unit/` runs under the `pack-unit` Vitest project (`tests/unit/vitest.config.ts`, node environment, spread from `@kobato/test/vitest.base.ts`); run with `pnpm test tools/pack` — the config anchors at the REPOSITORY ROOT, so filters resolve from there. The suites pin the SEA compression contract across the writer/reader seam (`sea/sea-compression.test.ts` — `@kobato/pack` writer + `@kobato/server` reader), the `check-bundle` scanner, the inline-package-data rewrite shapes against the INSTALLED packages, and the installed native platform specifiers. Cross-package asset-key pins live in `apps/kobato/tests/arch/`.
+
 ## Commands
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`), budgeted at 230 MB (`BINARY_MAX_BYTES`). Deliberately NOT UPX-compressed — do not re-add. The injector requires an official **single-architecture** Node distribution (`inject.ts` preflights the fuse cases); on an Intel Mac with the universal node, prepend a single-arch `node` to `PATH`. Injection is single-path: **`--build-sea` is the only injector** — no postject, no codesign on darwin.

@@ -10,10 +10,10 @@ import {
   getCounter,
   through,
 } from '@kobato/server/infra/cache/registry.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

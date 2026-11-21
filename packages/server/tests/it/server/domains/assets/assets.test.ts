@@ -3,8 +3,8 @@ import type { BrandingObjectRef, SiteAssetBranding } from '@kobato/settings/type
 import { resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
 import { fetchBrandingObject } from '@kobato/server/domains/assets/services/storage.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const mem = makeMemoryBackend()

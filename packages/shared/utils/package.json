@@ -9,7 +9,6 @@
   "devDependencies": {
     "@date-fns/tz": "catalog:",
     "@kobato/i18n": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "date-fns": "catalog:",
     "sharp": "catalog:",
     "vitest": "catalog:",

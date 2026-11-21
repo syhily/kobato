@@ -1,9 +1,9 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
+import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeComment, makeCommentBody } from '@kobato/web-public/tests/utils/catalog.ts'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render.tsx'
 import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions.tsx'
 import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm.tsx'
 import { LikeButton, LikeShare } from '@kobato/web-public/ui/LikeActions.tsx'

@@ -1,4 +1,3 @@
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { LoginForm } from '@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx'
 import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm.tsx'
 import { LostPasswordForm } from '@kobato/web-admin/ui/auth/LostPasswordForm.tsx'
@@ -6,6 +5,7 @@ import { MagicLinkConfirmForm } from '@kobato/web-admin/ui/auth/MagicLinkConfirm
 import { OtpForm } from '@kobato/web-admin/ui/auth/OtpForm.tsx'
 import { ResetPasswordForm } from '@kobato/web-admin/ui/auth/ResetPasswordForm.tsx'
 import { SetupTokenVerifyForm } from '@kobato/web-admin/ui/auth/SetupTokenVerifyForm.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@simplewebauthn/browser', () => ({

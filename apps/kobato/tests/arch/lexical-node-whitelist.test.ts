@@ -3,7 +3,7 @@ import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/inkling/head
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { PAGE_EDITOR_NODES } from '@kobato/web-admin/ui/editor/page-editor-nodes.ts'
 import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes.ts'
-import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@kobato/web-tests/contract/composer-nodes.ts'
+import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@tests/arch/composer-nodes.ts'
 import { describe, expect, it } from 'vitest'
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {

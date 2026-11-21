@@ -2,7 +2,7 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
 import { __setWarmupAssetsDirForTests } from '@kobato/server/render/warmup/manifest.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { resetBlogSettingsForTests } from '@tests/utils/blog-settings.ts'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { makeLoaderArgs } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
 import { makeSession } from '@tests/utils/session.ts'

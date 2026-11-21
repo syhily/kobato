@@ -1,9 +1,9 @@
 import type { MyCommentItem } from '@kobato/contracts/comments.ts'
 
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeCommentBody } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

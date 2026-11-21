@@ -16,8 +16,8 @@ const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobat
 const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query.ts')
 const { searchPostOptions } = await import('@kobato/server/domains/posts/services/search-query.ts')
 const { liveContentWhere } = await import('@kobato/server/domains/content/schemas/live-gate.ts')
-const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
 
 function liveWhere() {
   return liveContentWhere({

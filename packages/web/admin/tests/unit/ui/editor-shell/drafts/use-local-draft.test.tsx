@@ -22,9 +22,9 @@ afterAll(() => {
 })
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
 import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
-import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
 import { useLocalDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
 
 const config = {

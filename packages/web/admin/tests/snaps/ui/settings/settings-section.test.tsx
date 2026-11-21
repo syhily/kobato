@@ -1,6 +1,6 @@
 import { Input } from '@kobato/ui/components/input.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SettingsRow', () => {
@@ -43,5 +43,18 @@ describe('snapshot: SettingsRow', () => {
     )
     expect(html).toContain('昵称')
     expect(html).toContain('2-20 个字符')
+  })
+
+  it('wires invalid state to the shadcn field and the control', () => {
+    const html = renderToHtml(
+      <SettingsRow label="缓存前缀" htmlFor="cache-prefix" hint="必须以分隔符结尾。" error="前缀冲突">
+        {(controlProps) => <Input id="cache-prefix" {...controlProps} />}
+      </SettingsRow>,
+    )
+
+    expect(html).toContain('data-invalid="true"')
+    expect(html).toContain('aria-invalid="true"')
+    expect(html).toContain('aria-describedby=')
+    expect(html).toContain('前缀冲突')
   })
 })

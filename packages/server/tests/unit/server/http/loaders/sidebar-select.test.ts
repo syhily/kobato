@@ -2,14 +2,14 @@ import type { SidebarSelection } from '@kobato/server/domains/posts/services/fea
 import type { AppLocalization } from '@kobato/settings/app-localization.ts'
 import type { SidebarSettings } from '@kobato/settings/types.ts'
 
+import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog.ts'
 import {
   selectSidebarTags,
   sidebarSelection,
   sidebarSelectionSeed,
 } from '@kobato/server/http/loaders/sidebar-select.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
-import { makePost, makeTag } from '@kobato/server/tests/utils/catalog.ts'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 const SIDEBAR_SETTINGS = TEST_BLOG_SETTINGS_BUNDLE.sidebar!

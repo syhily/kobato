@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/hono-env.ts'
 
 import { __setStorageDirForTests } from '@kobato/server/infra/data-paths.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { Hono } from 'hono'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

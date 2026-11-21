@@ -1,8 +1,8 @@
 import { adminCacheRouter } from '@kobato/server/http/controllers/admin/cache.controller.ts'
 import { setItem } from '@kobato/server/infra/cache/file-store.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 

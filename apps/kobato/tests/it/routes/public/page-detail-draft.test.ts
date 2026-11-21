@@ -2,9 +2,9 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts
 
 import { content as contentTable } from '@kobato/db/schema/content.ts'
 import { page as pageTable } from '@kobato/db/schema/page.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
 import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@tests/utils/lexical.ts'
 import { adminSession, regularSession } from '@tests/utils/session.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

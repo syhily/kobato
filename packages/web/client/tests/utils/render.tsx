@@ -3,17 +3,17 @@ import type { ReactElement, ReactNode } from 'react'
 
 import { uiMessagesFor } from '@kobato/i18n/catalog.ts'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-tests/utils/blog-settings.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 
-const testQueryClient = new QueryClient({
+export const testQueryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: false, gcTime: 0 },
     mutations: { retry: false },

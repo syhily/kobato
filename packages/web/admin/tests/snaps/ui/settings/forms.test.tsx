@@ -9,11 +9,11 @@ import type {
 } from '@kobato/settings/types.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
 import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm.tsx'
 import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
 import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const cacheQueryMocks = mockTanstackQuery()

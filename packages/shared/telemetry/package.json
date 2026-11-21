@@ -8,7 +8,6 @@
   },
   "devDependencies": {
     "@kobato/settings": "workspace:*",
-    "@kobato/telemetry": "workspace:*",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

@@ -25,7 +25,6 @@
     "@kobato/test": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@kobato/web-admin": "workspace:*",
     "@kobato/web-client": "workspace:*",
     "@kobato/web-public": "workspace:*",
     "@lexical/react": "catalog:",

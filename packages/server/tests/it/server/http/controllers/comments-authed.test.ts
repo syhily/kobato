@@ -1,3 +1,4 @@
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { comment } from '@kobato/db/schema/comment.ts'
 import { page } from '@kobato/db/schema/page.ts'
 import { post } from '@kobato/db/schema/post.ts'
@@ -6,7 +7,6 @@ import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-sch
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
 import { commentsAuthedRouter } from '@kobato/server/http/controllers/comments-authed.controller.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { makeCommentBody } from '@kobato/server/tests/utils/catalog.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { call } from '@orpc/server'

@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
 import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { makeRequestContext } from '@tests/utils/request-context.ts'
 // @vitest-environment jsdom
 import { renderToStaticMarkup } from 'react-dom/server'

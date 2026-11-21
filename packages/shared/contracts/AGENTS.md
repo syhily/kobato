@@ -11,4 +11,4 @@ The wire layer — everything that crosses a transport or package boundary as da
 - A UI-only helper never lives here, even when pure (display derivation belongs to the consuming web leaf).
 - Allowed deps: `@kobato/auth`, `@kobato/catalog`, `@kobato/settings`, `@kobato/i18n`, `@kobato/utils`, `@kobato/inkling` (headless), `@kobato/assets`, `@kobato/cache`. Nothing imports "back down" — db/server/ui/web import contracts, never the reverse.
 - Zod DTO single source: each wire DTO is declared once as a Zod schema; its TS type derives in the same module (`z.infer`); no hand-written DTO twins. Exception: SSR output schemas use `z.custom<T>()` over loader-data types (scoped to `content.ts` and the per-domain admin families). `MetaDescriptor` arrives as an erased react-router `import type`.
-- Tests: `tests/unit/` (umbrella `shared-unit` project).
+- Tests: `tests/unit/` (umbrella `shared-unit` project). `tests/utils/catalog.ts` is the workspace-canonical content and DTO fixture; other packages' test trees import it through the sanctioned cross-package helper seam.

@@ -1,7 +1,7 @@
 import { setting } from '@kobato/db/schema/config.ts'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

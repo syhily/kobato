@@ -1,8 +1,8 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
 
-import { makeComment, makeCommentBody } from '@kobato/web-public/tests/utils/catalog.ts'
+import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
 import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf.tsx'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render.tsx'
 import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem.tsx'
 import { describe, expect, it } from 'vitest'
 

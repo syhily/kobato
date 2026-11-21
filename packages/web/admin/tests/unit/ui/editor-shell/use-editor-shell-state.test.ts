@@ -33,7 +33,7 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts', () => ({
 
 import type { EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
 
-import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
 import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
 
 interface Meta {

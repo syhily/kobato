@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/api": "workspace:*",
     "@kobato/contracts": "workspace:*",
     "@kobato/test": "workspace:*",
     "@orpc/contract": "catalog:",

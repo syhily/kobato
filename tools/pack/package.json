@@ -22,12 +22,13 @@
     "@duckdb/node-api": "catalog:",
     "@kobato/distribution": "workspace:*",
     "@kobato/harness": "workspace:*",
-    "@kobato/pack": "workspace:*",
     "@kobato/server": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
     "sharp": "catalog:",
     "vite": "catalog:",
+    "vitest": "catalog:",
     "zod": "catalog:"
   }
 }

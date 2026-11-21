@@ -1,6 +1,6 @@
 import { TASK_CATALOG } from '@kobato/contracts/jobs.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { makeTranslator } from '@kobato/web-admin/tests/utils/i18n.ts'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
 import { TASK_CAPABILITIES } from '@kobato/web-admin/ui/jobs/meta.ts'
 import { describe, expect, it } from 'vitest'
 

@@ -2,7 +2,7 @@ import type { Env } from '@kobato/server/http/hono-env.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
 import { DEFAULT_SVG_ETAG } from '@kobato/server/assets/defaults.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 

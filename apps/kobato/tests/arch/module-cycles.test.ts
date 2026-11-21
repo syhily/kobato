@@ -17,46 +17,14 @@
  * module both sides import — see `plugins/behaviour/selector-insertion` for
  * the reference shape.
  */
+import { REPO_PACKAGES } from '@tests/arch/workspace-packages.ts'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 
-const PACKAGE_DIRS: Record<string, string> = {
-  kobato: 'apps/kobato',
-  '@kobato/inkling': 'packages/inkling',
-  '@kobato/utils': 'packages/shared/utils',
-  '@kobato/auth': 'packages/shared/auth',
-  '@kobato/catalog': 'packages/shared/catalog',
-  '@kobato/distribution': 'packages/shared/distribution',
-  '@kobato/telemetry': 'packages/shared/telemetry',
-  '@kobato/i18n': 'packages/shared/i18n',
-  '@kobato/cache': 'packages/shared/cache',
-  '@kobato/settings': 'packages/shared/settings',
-  '@kobato/assets': 'packages/shared/assets',
-  '@kobato/sanitize': 'packages/shared/sanitize',
-  '@kobato/contracts': 'packages/shared/contracts',
-  '@kobato/seo': 'packages/shared/seo',
-  '@kobato/api': 'packages/api',
-  '@kobato/db': 'packages/db',
-  '@kobato/server': 'packages/server',
-  '@kobato/ui': 'packages/ui',
-  '@kobato/web-admin': 'packages/web/admin',
-  '@kobato/web-tests': 'packages/web/tests',
-  '@kobato/shared-tests': 'packages/shared/tests',
-  '@kobato/web-client': 'packages/web/client',
-  '@kobato/web-public': 'packages/web/public',
-  '@kobato/toolchain': 'tools/toolchain',
-  '@kobato/test': 'tools/test',
-  '@kobato/trace': 'tools/trace',
-  '@kobato/email': 'tools/email',
-  '@kobato/i18n-tools': 'tools/i18n',
-  '@kobato/pack': 'tools/pack',
-  '@kobato/harness': 'tools/harness',
-  '@kobato/browser': 'tools/browser',
-  '@kobato/inkling-demo': 'apps/inkling-demo',
-}
+const PACKAGE_DIRS: Record<string, string> = Object.fromEntries(REPO_PACKAGES.map((pkg) => [pkg.name, pkg.dir]))
 
 const IGNORE_DIRS = new Set(['node_modules', '.git', '.react-router', 'dist', 'build', 'tmp', '.vite'])
 

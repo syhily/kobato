@@ -10,11 +10,11 @@ import {
 } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
 import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

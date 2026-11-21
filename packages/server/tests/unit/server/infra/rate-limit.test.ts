@@ -28,8 +28,8 @@ import {
   __resetRateLimitsForTests,
   type RateLimitResult,
 } from '@kobato/server/infra/rate-limit.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const sampleBucket = { windowSeconds: 60, maxAttempts: 3 }

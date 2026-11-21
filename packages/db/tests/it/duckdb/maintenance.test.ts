@@ -8,7 +8,7 @@ import {
   seedDeviceEnvClientRows,
   seedDeviceEnvServerRows,
 } from '@kobato/db/tests/utils/analytics-db.ts'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 interface CapturedLog {
   level: 'info' | 'warn' | 'error'
@@ -34,8 +34,6 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
     analyticsHandle = await createTestAnalyticsDb()
     log = captureLogger()
   })
-
-  afterAll(async () => {})
 
   it('deletes rows past the 180-day retention, keeps recent rows, logs counts and file sizes', async () => {
     const old = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)

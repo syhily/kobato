@@ -11,7 +11,7 @@ import {
   validateCsrfToken,
   CSRF_HEADER,
 } from '@kobato/server/domains/auth/csrf.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { createSession } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

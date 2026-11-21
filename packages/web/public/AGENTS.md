@@ -21,4 +21,4 @@
 - Production sources are browser-safe (no `node:*` value imports).
 - Interface copy is a UI message id resolved through `useI18n()`; icons are named `lucide-react` imports; conditional classNames go through `cn()`; JS-driven animation only through the `@kobato/ui/components/lazy-motion` facade with constants from `@kobato/web-client/lib/motion`.
 - Never import `shiki` here — highlighted code arrives pre-rendered (SSR-only).
-- Tests live in `packages/web/public/tests/{unit,snaps}`, run by the umbrella `web (unit)`/`web-snaps` projects.
+- Tests live in `packages/web/public/tests/{unit,snaps}`, run by the umbrella `web-unit`/`web-snaps` projects.

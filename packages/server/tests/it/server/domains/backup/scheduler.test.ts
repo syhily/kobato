@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.useFakeTimers()
-
 const createBackup = vi.fn().mockResolvedValue({ path: '/backup' })
 const cleanupOldBackups = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
@@ -26,7 +24,7 @@ vi.mock('@kobato/server/infra/scheduler-utils.ts', async (importOriginal) => {
   }
 })
 
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
 const { rescheduleBackup } = await import('@kobato/server/domains/backup/scheduler.ts')
@@ -48,6 +46,7 @@ function bundleWith(backup: Record<string, unknown>): typeof TEST_BLOG_SETTINGS_
 
 describe('backup scheduler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     stopAllScheduledJobs()

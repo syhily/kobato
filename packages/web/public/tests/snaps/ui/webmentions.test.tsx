@@ -1,6 +1,6 @@
 import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
 
-import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList.tsx'
 import { describe, expect, it } from 'vitest'
 

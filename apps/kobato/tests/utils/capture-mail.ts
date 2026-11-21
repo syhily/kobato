@@ -1,7 +1,7 @@
 import { SmtpCapture, type CapturedMail } from '@kobato/harness/smtp.ts'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender.ts'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { createServer } from 'node:net'
 
 export interface CaptureMailFixture {

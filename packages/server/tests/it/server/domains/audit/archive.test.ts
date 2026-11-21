@@ -1,7 +1,7 @@
 import { auditLog } from '@kobato/db/schema/config.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const sendMock = vi.fn<(command: { input: unknown }) => Promise<unknown>>()

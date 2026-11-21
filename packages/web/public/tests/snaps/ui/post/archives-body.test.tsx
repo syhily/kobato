@@ -1,7 +1,7 @@
 import type { ClientPostWithMetadata } from '@kobato/catalog/model.ts'
 
-import { makePost } from '@kobato/web-public/tests/utils/catalog.ts'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render.tsx'
+import { makePost } from '@kobato/contracts/tests/utils/catalog.ts'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
 import { ArchivesBody } from '@kobato/web-public/ui/post/ArchivesBody.tsx'
 import { describe, expect, it } from 'vitest'
 

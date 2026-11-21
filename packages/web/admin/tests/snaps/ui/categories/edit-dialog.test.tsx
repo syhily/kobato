@@ -1,9 +1,9 @@
 import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
 
+import { makeAdminCategory } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeAdminCategory } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -11,7 +11,7 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
 
 function OpenDialog({ category }: { category: AdminCategoryDto | null }) {
   const [target, setTarget] = useState<AdminCategoryDto | null | undefined>(undefined)

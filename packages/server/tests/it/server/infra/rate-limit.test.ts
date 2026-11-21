@@ -6,7 +6,7 @@ import {
   tryRateLimit,
   __resetRateLimitsForTests,
 } from '@kobato/server/infra/rate-limit.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const T0 = new Date('2026-01-01T00:00:00.000Z').getTime()

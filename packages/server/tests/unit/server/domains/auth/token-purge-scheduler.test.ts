@@ -1,7 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.useFakeTimers()
-
 const db = {}
 
 const purgeExpired = vi
@@ -21,6 +19,7 @@ const advanceToNextRun = () => vi.advanceTimersByTimeAsync(nextDailyMaintenanceD
 
 describe('auth token-purge scheduler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.setSystemTime(PINNED_NOW)
     vi.clearAllMocks()
     currentDb = db

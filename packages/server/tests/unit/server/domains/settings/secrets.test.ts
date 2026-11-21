@@ -1,10 +1,10 @@
 import type { SecretFieldConfig } from '@kobato/settings/secrets.ts'
 import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { representationRevisionsFor, SETTINGS_SECRET_FIELD_NAMES } from '@kobato/settings/representation-scopes.ts'
 import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
 import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 const secretBy = (maskKey: SecretFieldConfig['maskKey']) => SECRET_FIELDS.find((c) => c.maskKey === maskKey)!

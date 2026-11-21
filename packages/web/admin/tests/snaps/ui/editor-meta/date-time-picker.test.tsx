@@ -1,5 +1,5 @@
-import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 const noop = () => undefined

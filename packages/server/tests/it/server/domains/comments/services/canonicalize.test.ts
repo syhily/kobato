@@ -1,4 +1,4 @@
-import { makeCommentBody } from '@kobato/server/tests/utils/catalog.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/infra/lexical/lexical-prerender.ts', () => ({

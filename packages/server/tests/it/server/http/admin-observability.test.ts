@@ -14,11 +14,11 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
 import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { resetBlogSettingsForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

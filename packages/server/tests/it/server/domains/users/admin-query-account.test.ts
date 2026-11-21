@@ -7,8 +7,8 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
 
 const admin = await import('@kobato/server/domains/users/services/admin.ts')
 const account = await import('@kobato/server/domains/users/services/account.ts')

@@ -1,13 +1,13 @@
 import type { AdminMusicDto, MetingSearchHit } from '@kobato/contracts/music.ts'
 
+import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeAdminMusic } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView.tsx'
 import { LyricsDisplay } from '@kobato/web-admin/ui/music/LyricsDisplay.tsx'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView.tsx'
 import { MusicsView, SortIcon } from '@kobato/web-admin/ui/music/MusicsView.tsx'
 import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

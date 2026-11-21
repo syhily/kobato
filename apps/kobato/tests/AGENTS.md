@@ -2,7 +2,7 @@
 
 Test trees for the deployable app, plus the cross-package architecture guards and the two live-instance suites. Vitest trees import app source through `@/...` and helpers through `@tests/...` (React Router's `./+types/*` stays relative). The Playwright tree is the one runner-level exception: its config/support imports stay relative because Playwright loads them before any tsconfig-path resolver.
 
-- **`tests/{unit,it,snaps}/`** (`app-unit`, `app-it`, `app-snaps`) — route-module tests mirroring `apps/kobato/src/routes/`.
+- **`tests/{unit,it,snaps}/`** — route-module tests mirroring `apps/kobato/src/routes/`. `tests/unit/` and `tests/it/` each export two inline projects from one config: `app-unit`/`app-iso-unit` and `app-it`/`app-iso-it`. The shared half excludes the files scanned by `@kobato/test/mock-files.ts` (module-level `vi.mock(` holders), which run under `isolate: true` in the iso half; `app-snaps` stays a single project.
 - **`tests/arch/`** — the architecture/contract guards (package DAG, client-bundle, i18n boundaries, log-message literals); runs inside `app-unit`.
 - **`duckdb`** — every file that spins up the real DuckDB engine, wherever it lives. Membership is owned by `@kobato/test/duckdb-files.ts` (pinned by `tests/arch/duckdb-project-files.test.ts`); parallel threads pool with per-file isolation. Run with `pnpm test:duckdb`.
 - **`tests/e2e/`** — true HTTP e2e over a real kobato instance (the SEA binary booted by `sea:e2e`) via plain `fetch`. No in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`**; the `KOBATO_E2E_*` env contract is injected, plus `KOBATO_E2E_DATABASE` — the one sanctioned seam for state no HTTP surface can stage (use only when no admin RPC exists; always restore). Mail never leaves the machine (in-process SMTP capture via `@kobato/harness/smtp.ts`).
@@ -13,7 +13,8 @@ Cross-cutting integration tests live inside the owning package's `tests/it/` und
 ## Running
 
 ```bash
-npx vitest run --project duckdb
+pnpm run test:duckdb
+pnpm test apps/kobato/tests/unit apps/kobato/tests/arch
 pnpm run test:browser
 pnpm run sea:browser dist-sea/kobato
 KOBATO_BROWSER_HEADLESS=0 pnpm run test:browser

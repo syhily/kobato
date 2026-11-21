@@ -58,7 +58,7 @@ vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-keyboard-shortcuts.ts', ()
 import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
 import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
 
-import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
 import { useAutosave } from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts'
 import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
 

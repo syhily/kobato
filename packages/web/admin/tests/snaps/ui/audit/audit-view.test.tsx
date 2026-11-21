@@ -2,14 +2,14 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/contracts/audit.
 import type { AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AuditLogRow } from '@kobato/web-admin/ui/audit/AuditLogRow.tsx'
 import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView.tsx'
 import { buildAuditFilterFields } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
 import { FilterAddButton } from '@kobato/web-admin/ui/shared/filter-bar/add-button.tsx'
 import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

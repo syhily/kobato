@@ -6,11 +6,11 @@ import { appendAccessEvents } from '@kobato/db/duckdb/access-events.ts'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
 import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env.ts'
 import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema.ts'
-import { settleAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { afterAll } from 'vitest'
 
 const handles: AnalyticsHandle[] = []
 const dirs: string[] = []
@@ -28,20 +28,26 @@ export async function closeTestAnalyticsDb(handle: AnalyticsHandle): Promise<voi
   if (index !== -1) {
     handles.splice(index, 1)
   }
-  // Join any batcher flush still writing through this handle — closing the
-  // DuckDB connections under an in-flight append is a native use-after-free.
-  await settleAllBatchers()
+  // Seeded appends are awaited by the callers, so the native connections are
+  // quiescent here — closing under an in-flight append is a native
+  // use-after-free.
   await closeAnalyticsDatabase(handle)
 }
 
-export function closeAllTestAnalyticsDbs(): void {
+export async function closeAllTestAnalyticsDbs(): Promise<void> {
   for (const handle of handles.splice(0)) {
-    void closeAnalyticsDatabase(handle)
+    try {
+      await closeAnalyticsDatabase(handle)
+    } catch {}
   }
   for (const dir of dirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true })
   }
 }
+
+// Per-file safety net: a suite that opens handles in `beforeEach` without a
+// closing hook still gets its native connections and temp dirs released.
+afterAll(() => closeAllTestAnalyticsDbs())
 
 export interface SeedAccessEvent {
   /** Pin the primary key so a device_env_client row can join on it. */

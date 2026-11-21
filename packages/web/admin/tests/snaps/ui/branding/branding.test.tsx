@@ -1,7 +1,7 @@
 import type { AssetsLoaderShape } from '@kobato/settings/projection.ts'
 
-import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { BrandingView } from '@kobato/web-admin/ui/branding/BrandingView.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('react-router', async () => {

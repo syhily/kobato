@@ -30,10 +30,10 @@ Runtime facts:
 All imports are absolute; the single workspace path table is `@kobato/toolchain/tsconfig.base.json` (root and demo tsconfigs only extend it — no package-level `paths`).
 
 - App source: `@/...`; app test helpers: `@tests/...` (app tests only).
-- Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; package-local test helpers stay in that package's own tests.
+- Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; test trees stay in their own package except the canonical shared fixtures — cross-package `@kobato/<owner>/tests/utils/<name>.ts` imports (settings blog-settings, i18n translator, contracts content, inkling lexical, web-client render) are the sanctioned seam, pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 - Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus its one white-box parity test. Public consumers use `@kobato/inkling`, `/headless*`, `/host-cards`, or `/styles/*`; the demo uses `@kobato/inkling-demo/...`.
 
-No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated probe JavaScript, and import-scanner test fixtures. Build-time configs import through package specifiers like everything else. `apps/kobato/tests/arch/package-dag.test.ts` enforces the table, alias confinement, and the no-relative rule.
+No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated probe JavaScript, import-scanner test fixtures, and the root Vitest config's inline-project definition imports. Other build-time configs import through package specifiers. `apps/kobato/tests/arch/package-dag.test.ts` enforces the table, alias confinement, and the no-relative rule.
 
 ## Layering
 
@@ -61,8 +61,8 @@ Dependency declarations are the enforcement; the arch tests under `apps/kobato/t
 Tests live next to the covered package — no root-level test tree.
 
 - **Single-purpose rule:** unit (pure logic, mocks) → `tests/unit/<mirrored-path>.test.ts`; integration (DB / real RPC) → `tests/it/`; snapshots → `tests/snaps/`. One file never mixes purposes.
-- Import `describe`, `it`, `expect`, `vi` from `vitest`; run one project with `npx vitest run --project <name>`.
-- **Pool/isolation:** every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `pool: 'threads'`, `maxWorkers: 4` (pass `--maxWorkers=<n>` locally for more cores), `isolate: false`. DOM-heavy trees override `pool: 'vmThreads'` (`web (unit)`, `web-snaps`, `ui-unit`, `inkling`) with a fresh VM context per file. `isolate: true` stays on `server-unit`/`server-it`/`app-it` (module-level singletons leak across files) and `duckdb` (per-file throwaway database, parallel). `web (tz-unit)` runs forks for its runtime `process.env.TZ` write.
+- Import `describe`, `it`, `expect`, `vi` from `vitest`; run suites through the root `test*` scripts. Use `pnpm test <path>` for optional path filters; never select Vitest projects on the command line.
+- **Pool/isolation:** every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `pool: 'threads'`, `maxWorkers: 4` (pass `--maxWorkers=<n>` locally for more cores), `isolate: false`. DOM-heavy trees override `pool: 'vmThreads'` (`web-unit`, `web-snaps`, `ui-unit`, `inkling`) with a fresh VM context per file. `isolate: true` stays on the iso halves of the merged `app`/`server` trees (`app-iso-unit`, `app-iso-it`, `server-iso-unit`, `server-iso-it` — mock and shared-unsafe files that leak under a shared module registry) and `duckdb` (per-file throwaway database, parallel). `web-tz-unit` runs forks for its runtime `process.env.TZ` write.
 - Test hygiene under these pools: no `process.chdir()` (spy on `process.cwd`), no runtime `process.env.TZ` writes outside the forks project, "no browser globals" tests declare `@vitest-environment node`, realm-safe DOM comparisons use identity (`!==`).
 - Tests import production code through the same package-root specifiers; test-local helpers may stay relative.
 - **TypeScript pragmatism:** `any`, `as`, `ts-expect-error` are acceptable escapes for intentionally partial mocks; prefer the narrowest.

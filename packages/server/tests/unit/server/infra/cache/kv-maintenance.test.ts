@@ -10,8 +10,6 @@ vi.mock('@kobato/server/infra/cache/file-store.ts', () => fileStoreMock)
 
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
 
-vi.useFakeTimers()
-
 const where = vi.fn().mockResolvedValue(undefined)
 const db = { delete: vi.fn(() => ({ where })) }
 
@@ -27,6 +25,7 @@ setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })
 
 describe('kv-maintenance scheduler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     __clearLogCaptureForTests()
     fileStoreMock.sweepBucket.mockResolvedValue(undefined)
@@ -86,6 +85,7 @@ describe('kv-maintenance scheduler', () => {
 
 describe('sweepExpiredKvEntries', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
     __clearLogCaptureForTests()
     fileStoreMock.sweepBucket.mockResolvedValue(undefined)

@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/catalog": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "react-router": "catalog:",
     "vitest": "catalog:"

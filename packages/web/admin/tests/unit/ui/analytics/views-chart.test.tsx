@@ -1,8 +1,8 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
 import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const control = mockTanstackQuery()

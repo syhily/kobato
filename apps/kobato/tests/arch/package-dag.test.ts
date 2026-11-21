@@ -1,3 +1,4 @@
+import { REPO_PACKAGES } from '@tests/arch/workspace-packages.ts'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
@@ -37,46 +38,10 @@ const SHARED_SPLIT = [
   '@kobato/seo',
 ] as const
 
-const REPO_PACKAGES = [
-  { name: 'kobato', dir: 'apps/kobato' },
-  { name: '@kobato/inkling', dir: 'packages/inkling' },
-  { name: '@kobato/utils', dir: 'packages/shared/utils' },
-  { name: '@kobato/auth', dir: 'packages/shared/auth' },
-  { name: '@kobato/catalog', dir: 'packages/shared/catalog' },
-  { name: '@kobato/distribution', dir: 'packages/shared/distribution' },
-  { name: '@kobato/telemetry', dir: 'packages/shared/telemetry' },
-  { name: '@kobato/i18n', dir: 'packages/shared/i18n' },
-  { name: '@kobato/cache', dir: 'packages/shared/cache' },
-  { name: '@kobato/settings', dir: 'packages/shared/settings' },
-  { name: '@kobato/assets', dir: 'packages/shared/assets' },
-  { name: '@kobato/sanitize', dir: 'packages/shared/sanitize' },
-  { name: '@kobato/contracts', dir: 'packages/shared/contracts' },
-  { name: '@kobato/seo', dir: 'packages/shared/seo' },
-  { name: '@kobato/api', dir: 'packages/api' },
-  { name: '@kobato/db', dir: 'packages/db' },
-  { name: '@kobato/server', dir: 'packages/server' },
-  { name: '@kobato/ui', dir: 'packages/ui' },
-  { name: '@kobato/web-admin', dir: 'packages/web/admin' },
-  { name: '@kobato/web-tests', dir: 'packages/web/tests' },
-  { name: '@kobato/shared-tests', dir: 'packages/shared/tests' },
-  { name: '@kobato/web-client', dir: 'packages/web/client' },
-  { name: '@kobato/web-public', dir: 'packages/web/public' },
-  { name: '@kobato/toolchain', dir: 'tools/toolchain' },
-  { name: '@kobato/test', dir: 'tools/test' },
-  { name: '@kobato/trace', dir: 'tools/trace' },
-  { name: '@kobato/email', dir: 'tools/email' },
-  { name: '@kobato/i18n-tools', dir: 'tools/i18n' },
-  { name: '@kobato/pack', dir: 'tools/pack' },
-  { name: '@kobato/harness', dir: 'tools/harness' },
-  { name: '@kobato/browser', dir: 'tools/browser' },
-  { name: '@kobato/inkling-demo', dir: 'apps/inkling-demo' },
-] as const
-
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/inkling': [
-    '@kobato/inkling',
     '@kobato/i18n',
     '@kobato/sanitize',
     '@kobato/assets',
@@ -85,26 +50,18 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
 
-  '@kobato/utils': ['@kobato/utils', '@kobato/i18n', '@kobato/test'],
-  '@kobato/auth': ['@kobato/auth', '@kobato/i18n', '@kobato/test'],
-  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/test'],
-  '@kobato/distribution': ['@kobato/distribution', '@kobato/test'],
-  '@kobato/telemetry': ['@kobato/telemetry', '@kobato/settings', '@kobato/test'],
-  '@kobato/i18n': ['@kobato/i18n', '@kobato/test'],
-  '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  '@kobato/settings': [
-    '@kobato/settings',
-    '@kobato/i18n',
-    '@kobato/cache',
-    '@kobato/assets',
-    '@kobato/utils',
-    '@kobato/test',
-  ],
-  '@kobato/assets': ['@kobato/assets', '@kobato/test'],
+  '@kobato/utils': ['@kobato/i18n', '@kobato/test'],
+  '@kobato/auth': ['@kobato/i18n', '@kobato/test'],
+  '@kobato/catalog': ['@kobato/inkling', '@kobato/test'],
+  '@kobato/distribution': ['@kobato/test'],
+  '@kobato/telemetry': ['@kobato/settings', '@kobato/test'],
+  '@kobato/i18n': ['@kobato/test'],
+  '@kobato/cache': ['@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/settings': ['@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils', '@kobato/test'],
+  '@kobato/assets': ['@kobato/test'],
 
-  '@kobato/sanitize': ['@kobato/sanitize', '@kobato/test'],
+  '@kobato/sanitize': ['@kobato/test'],
   '@kobato/contracts': [
-    '@kobato/contracts',
     '@kobato/auth',
     '@kobato/catalog',
     '@kobato/settings',
@@ -115,13 +72,12 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/cache',
     '@kobato/test',
   ],
-  '@kobato/seo': ['@kobato/seo', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/seo': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
-  '@kobato/api': ['@kobato/api', '@kobato/contracts', '@kobato/test'],
-  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
+  '@kobato/api': ['@kobato/contracts', '@kobato/test'],
+  '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
 
   '@kobato/server': [
-    '@kobato/server',
     '@kobato/api',
     '@kobato/db',
     '@kobato/inkling',
@@ -130,10 +86,9 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/harness',
     ...SHARED_SPLIT,
   ],
-  '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/ui': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-admin': [
-    '@kobato/web-admin',
     '@kobato/web-client',
     '@kobato/web-public',
     '@kobato/ui',
@@ -155,7 +110,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   ],
 
   '@kobato/web-client': [
-    '@kobato/web-client',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -168,7 +122,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
   '@kobato/web-public': [
-    '@kobato/web-public',
     '@kobato/web-client',
     '@kobato/ui',
     '@kobato/inkling',
@@ -182,26 +135,10 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/contracts',
     '@kobato/test',
   ],
-  '@kobato/web-tests': [
-    '@kobato/catalog',
-    '@kobato/contracts',
-    '@kobato/i18n',
-    '@kobato/inkling',
-    '@kobato/settings',
-    '@kobato/test',
-    '@kobato/ui',
-    '@kobato/utils',
-    '@kobato/web-admin',
-    '@kobato/web-client',
-    '@kobato/web-public',
-  ],
-
-  '@kobato/shared-tests': ['@kobato/settings', '@kobato/test'],
-
-  '@kobato/test': ['@kobato/test'],
+  '@kobato/test': [],
   '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
 
-  '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
+  '@kobato/harness': ['@kobato/settings', '@kobato/utils'],
 
   kobato: INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
@@ -423,7 +360,9 @@ describe('package DAG', () => {
     for (const pkg of REPO_PACKAGES) {
       const allowed = ALLOWED_DECLARED_INTERNAL_DEPS[pkg.name]!
       for (const dep of declaredInternalDeps(pkg.name)) {
-        if (!allowed.includes(dep)) {
+        if (dep === pkg.name) {
+          offenders.push(`${pkg.dir}/package.json declares itself`)
+        } else if (!allowed.includes(dep)) {
           offenders.push(`${pkg.dir}/package.json declares ${dep}`)
         }
       }
@@ -437,7 +376,7 @@ describe('package DAG', () => {
 
     for (const pkg of srcTrees) {
       const allowedTargets = SRC_TARGETS[pkg.name]!
-      const declared = new Set(declaredInternalDeps(pkg.name))
+      const declared = new Set([...declaredInternalDeps(pkg.name), pkg.name])
       for (const file of sourceFiles(`${pkg.dir}/src`)) {
         for (const specifier of importSpecifiers(readSource(file))) {
           const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
@@ -607,16 +546,28 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
-  it('package test aliases stay inside their own package test tree', () => {
+  it('package test aliases stay in their own tree, or reach only cross-package tests/utils helpers', () => {
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'tools')) {
+      const importingFromTestTree = file.includes('/tests/')
       for (const specifier of importSpecifiers(readSource(file))) {
-        const match = /^@kobato\/([^/]+)\/tests(?:\/|$)/.exec(specifier)
+        const match = /^@kobato\/([^/]+)\/tests(?:\/(.+))?$/.exec(specifier)
         if (!match) {
           continue
         }
         const pkg = REPO_PACKAGES.find((entry) => entry.name === `@kobato/${match[1]}`)
-        if (!pkg || !file.startsWith(`${pkg.dir}/tests/`)) {
+        if (!pkg) {
+          offenders.push(`${file}: ${specifier}`)
+          continue
+        }
+        if (file.startsWith(`${pkg.dir}/tests/`)) {
+          continue
+        }
+        // Cross-package test imports may only pull the shared fixture/helper
+        // layer (`tests/utils/`), and only from another package's test tree —
+        // a test file itself, or any src-tree reach into `tests/`, is banned.
+        const sharedHelper = match[2] !== undefined && match[2].startsWith('utils/')
+        if (!importingFromTestTree || !sharedHelper) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
@@ -694,7 +645,7 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
-  it('inkling is reached only through its barrel, headless, or styles entries', () => {
+  it('inkling is reached only through its barrel, headless, styles entries, or test-tree helper imports', () => {
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools')) {
       if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/')) {
@@ -710,6 +661,11 @@ describe('package DAG', () => {
           specifier !== '@kobato/inkling/host-cards' &&
           !specifier.startsWith('@kobato/inkling/styles/')
         ) {
+          // The shared Lexical test fixture (`tests/utils/`) is the one other
+          // deep surface: only another package's test tree may import it.
+          if (specifier.startsWith('@kobato/inkling/tests/utils/') && file.includes('/tests/')) {
+            continue
+          }
           offenders.push(`${file}: ${specifier} (deep import past the entry surfaces)`)
         }
       }

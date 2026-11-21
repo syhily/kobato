@@ -6,7 +6,6 @@ import { postTag } from '@kobato/db/schema/post-tag.ts'
 import { post as postMetaTable } from '@kobato/db/schema/post.ts'
 import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import {
   emptyLexicalBody,
@@ -15,6 +14,7 @@ import {
   stubMusicResolver,
 } from '@kobato/server/tests/utils/lexical.ts'
 import { adminUser } from '@kobato/server/tests/utils/session.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -500,7 +500,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
   })
   it('returns pinned posts first when featureEnabled=true', async () => {
     const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
-    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
+    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: {
@@ -522,7 +522,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
   })
   it('falls back to recent posts when fewer than 3 are pinned', async () => {
     const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
-    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
+    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: {

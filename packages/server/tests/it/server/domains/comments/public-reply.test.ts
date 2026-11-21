@@ -1,4 +1,4 @@
-import { makeCommentBody } from '@kobato/server/tests/utils/catalog.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'

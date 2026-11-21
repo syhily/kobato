@@ -13,7 +13,6 @@ import type {
 } from '@kobato/settings/types.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm.tsx'
 import { AssetsForm } from '@kobato/web-admin/ui/settings/AssetsForm.tsx'
 import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
@@ -28,6 +27,7 @@ import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityFor
 import { SeoForm } from '@kobato/web-admin/ui/settings/SeoForm.tsx'
 import { SidebarForm } from '@kobato/web-admin/ui/settings/sidebar/SidebarForm.tsx'
 import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()

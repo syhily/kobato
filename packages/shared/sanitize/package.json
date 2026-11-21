@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/sanitize": "workspace:*",
     "@types/jsdom": "catalog:",
     "dompurify": "catalog:",
     "jsdom": "catalog:",

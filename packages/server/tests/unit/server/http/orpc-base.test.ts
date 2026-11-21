@@ -11,12 +11,12 @@ import {
 } from '@kobato/server/http/orpc-base.ts'
 import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors.ts'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/server/tests/utils/blog-settings.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+} from '@kobato/settings/tests/utils/blog-settings.ts'
 import { oc } from '@orpc/contract'
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'

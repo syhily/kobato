@@ -1,8 +1,8 @@
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -29,7 +29,7 @@ vi.mock('@kobato/ui/lib/use-debounced-search.ts', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
 
 const debouncedSearch = vi.hoisted(() => ({
   value: '',

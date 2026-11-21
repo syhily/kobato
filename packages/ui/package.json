@@ -19,7 +19,6 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
-    "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",

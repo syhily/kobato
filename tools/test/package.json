@@ -8,7 +8,6 @@
   },
   "devDependencies": {
     "@date-fns/tz": "catalog:",
-    "@kobato/test": "workspace:*",
     "@opentelemetry/sdk-metrics": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/jest-dom": "catalog:",

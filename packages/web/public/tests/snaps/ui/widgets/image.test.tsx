@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/web-public/tests/utils/render.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { Image, RawImage } from '@kobato/web-public/ui/widgets/Image.tsx'
 import { describe, expect, it } from 'vitest'
 

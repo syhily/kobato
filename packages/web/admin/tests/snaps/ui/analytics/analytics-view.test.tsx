@@ -2,7 +2,6 @@ import type { CountersDto, MetricRow } from '@kobato/contracts/analytics.ts'
 import type { ReactNode } from 'react'
 
 import { makeAnalyticsState } from '@kobato/web-admin/tests/utils/analytics-state.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
 import { Counters } from '@kobato/web-admin/ui/analytics/Counters.tsx'
 import { DateRangePicker } from '@kobato/web-admin/ui/analytics/DateRangePicker.tsx'
@@ -12,6 +11,7 @@ import { MetricList } from '@kobato/web-admin/ui/analytics/MetricList.tsx'
 import { MetricName } from '@kobato/web-admin/ui/analytics/MetricName.tsx'
 import { MetricsGroup } from '@kobato/web-admin/ui/analytics/MetricsGroup.tsx'
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 function withAnalyticsState(node: ReactNode): ReactNode {

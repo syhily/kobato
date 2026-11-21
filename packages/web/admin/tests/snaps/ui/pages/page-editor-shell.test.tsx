@@ -3,10 +3,10 @@ import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { PageFilterFieldKey } from '@kobato/web-admin/ui/pages/filter-fields.ts'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
+import { makeAdminPage } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeAdminPage } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { PagesView } from '@kobato/web-admin/ui/pages/PagesView.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

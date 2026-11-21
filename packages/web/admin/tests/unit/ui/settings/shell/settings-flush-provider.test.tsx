@@ -1,8 +1,8 @@
-import { renderToHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import {
   SettingsFlushProvider,
   useSettingsFlushContext,
 } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it, vi } from 'vitest'
 
 function CaptureContext({ onContext }: { onContext: (ctx: ReturnType<typeof useSettingsFlushContext>) => void }) {

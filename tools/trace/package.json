@@ -19,7 +19,6 @@
     "@kobato/pack": "workspace:*",
     "@kobato/telemetry": "workspace:*",
     "@kobato/test": "workspace:*",
-    "@kobato/trace": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",

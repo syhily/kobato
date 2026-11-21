@@ -1,12 +1,12 @@
 import type { NavigateFunction } from 'react-router'
 
-import { makeAdminPost } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
+import { makeAdminPost } from '@kobato/contracts/tests/utils/catalog.ts'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
 import { localInputValueToIso } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
 import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel.tsx'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta.ts'
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web-admin/ui/posts/PostMetaSidebar.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 const noop = () => undefined

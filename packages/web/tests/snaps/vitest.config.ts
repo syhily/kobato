@@ -18,7 +18,6 @@ export default defineConfig({
     pool: 'vmThreads',
     environment: 'happy-dom',
     include: [
-      'packages/web/tests/snaps/**/*.test.{ts,tsx}',
       'packages/web/admin/tests/snaps/**/*.test.{ts,tsx}',
       'packages/web/client/tests/snaps/**/*.test.{ts,tsx}',
       'packages/web/public/tests/snaps/**/*.test.{ts,tsx}',

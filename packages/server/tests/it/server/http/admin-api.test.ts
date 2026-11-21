@@ -16,14 +16,14 @@ import {
   createTestAnalyticsDb,
   seedAccessEvents,
 } from '@kobato/server/tests/utils/analytics-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/server/tests/utils/blog-settings.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
+} from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

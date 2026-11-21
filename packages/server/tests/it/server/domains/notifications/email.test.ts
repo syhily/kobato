@@ -12,8 +12,8 @@ import {
 } from '@kobato/server/domains/notifications/service.ts'
 import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 
 function emailLogs(level: 'warn' | 'error') {

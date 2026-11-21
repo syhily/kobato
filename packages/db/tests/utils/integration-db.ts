@@ -2,10 +2,6 @@ import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
 
 import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
 import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { wipeCache } from '@kobato/server/infra/cache/file-store.ts'
-import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
-import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry.ts'
 import { sql } from 'drizzle-orm'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -13,28 +9,44 @@ import { join } from 'node:path'
 import { afterAll } from 'vitest'
 
 /**
- * Shared in-memory DB harness. `getTestDb` is the migrated lifecycle global (`:memory:`
- * is per-connection, so one handle shares the data); `createTestDatabaseFile` opts into a
- * real temp file.
+ * SQLite test harness owned entirely by `@kobato/db` — open, migrate, close.
+ * `getTestDb` lazily creates the migrated shared in-memory handle (`:memory:`
+ * is per-connection, so one handle shares the data); the per-file `afterAll`
+ * closes it, so the next file in an `isolate: false` worker migrates a fresh
+ * database. `createTestDatabaseFile` opts into a real temp file with the same
+ * lifecycle.
  */
-const openHandles: DatabaseHandle[] = []
+const fileHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
+let sharedHandle: DatabaseHandle | null = null
+
+function openMigratedHandle(path: string): DatabaseHandle {
+  const handle = openDatabase(path)
+  migrateDatabase(handle.db)
+  return handle
+}
 
 export function getTestDb(): Database {
-  return getDatabaseHandle().db
+  sharedHandle ??= openMigratedHandle(':memory:')
+  return sharedHandle.db
 }
 
 export function createTestDatabaseFile(): DatabaseHandle {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-it-'))
   tempDirs.push(dir)
-  const handle = openDatabase(join(dir, 'test.db'))
-  migrateDatabase(handle.db)
-  openHandles.push(handle)
+  const handle = openMigratedHandle(join(dir, 'test.db'))
+  fileHandles.push(handle)
   return handle
 }
 
 export function closeAllTestDatabases(): void {
-  for (const handle of openHandles.splice(0)) {
+  if (sharedHandle !== null) {
+    try {
+      closeDatabase(sharedHandle)
+    } catch {}
+    sharedHandle = null
+  }
+  for (const handle of fileHandles.splice(0)) {
     try {
       closeDatabase(handle)
     } catch {}
@@ -48,7 +60,7 @@ afterAll(() => {
   closeAllTestDatabases()
 })
 
-export async function clearAllTables(db: Database): Promise<void> {
+export function clearAllTables(db: Database): void {
   const rows = db.all<{ name: string }>(sql`
     SELECT name
     FROM sqlite_master
@@ -66,7 +78,4 @@ export async function clearAllTables(db: Database): Promise<void> {
   } finally {
     db.run(sql`PRAGMA foreign_keys = ON`)
   }
-  await wipeCache()
-  __resetMemoryCacheForTests()
-  resetCacheCounterMemo()
 }

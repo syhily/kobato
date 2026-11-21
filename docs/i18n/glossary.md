@@ -281,7 +281,7 @@ catalog first, then sync this table and the test.
    `satisfies`).
 4. Update the anchor table and prose in this document; update the direct assertions in
    `tests/unit/shared/i18n/glossary.test.ts` (representative items only).
-5. Run `pnpm exec vitest run --project unit tests/unit/shared/i18n`.
+5. Run `pnpm test packages/shared/i18n/tests/unit`.
 6. **Do not** add the full difference set to the tests, and **do not** use the number of differences as a
    review-pass criterion.
 

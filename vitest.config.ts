@@ -1,5 +1,11 @@
 import { defineConfig } from 'vitest/config'
 
+import { appItProjects } from './apps/kobato/tests/it/vitest.config.ts'
+import { appUnitProjects } from './apps/kobato/tests/unit/vitest.config.ts'
+import { serverItProjects } from './packages/server/tests/it/vitest.config.ts'
+import { serverUnitProjects } from './packages/server/tests/unit/vitest.config.ts'
+import { webUnitProjects } from './packages/web/tests/unit/vitest.config.ts'
+
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
@@ -17,20 +23,17 @@ export default defineConfig({
       'packages/api/tests/unit/vitest.config.ts',
       'packages/db/tests/unit/vitest.config.ts',
       'packages/db/tests/it/vitest.config.ts',
-      'packages/server/tests/unit/vitest.config.ts',
-      'packages/server/tests/iso-unit/vitest.config.ts',
-      'packages/server/tests/it/vitest.config.ts',
-      'packages/server/tests/iso-it/vitest.config.ts',
+      ...serverUnitProjects,
+      ...serverItProjects,
       'packages/ui/tests/unit/vitest.config.ts',
       'packages/ui/tests/snaps/vitest.config.ts',
-      'packages/web/tests/unit/vitest.config.ts',
+      ...webUnitProjects,
       'packages/web/tests/snaps/vitest.config.ts',
       'packages/inkling/tests/vitest.config.ts',
       'tools/trace/tests/unit/vitest.config.ts',
-      'apps/kobato/tests/unit/vitest.config.ts',
-      'apps/kobato/tests/iso-unit/vitest.config.ts',
-      'apps/kobato/tests/it/vitest.config.ts',
-      'apps/kobato/tests/iso-it/vitest.config.ts',
+      'tools/pack/tests/unit/vitest.config.ts',
+      ...appUnitProjects,
+      ...appItProjects,
       'apps/kobato/tests/snaps/vitest.config.ts',
       'apps/kobato/tests/vitest.duckdb.config.ts',
     ],

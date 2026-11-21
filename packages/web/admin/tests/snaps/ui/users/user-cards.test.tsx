@@ -1,8 +1,8 @@
 import type { AdminUserDto } from '@kobato/contracts/users.ts'
 
-import { renderInRouter, renderToHtml, stableHtml, testQueryClient } from '@kobato/web-admin/tests/utils/render.tsx'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'
+import { renderInRouter, renderToHtml, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {

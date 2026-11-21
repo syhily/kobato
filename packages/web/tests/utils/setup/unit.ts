@@ -1,5 +1,5 @@
 import '@kobato/test/setup/unit.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { ReadableStream, TransformStream, WritableStream } from 'node:stream/web'
 import { afterEach, vi } from 'vitest'
 

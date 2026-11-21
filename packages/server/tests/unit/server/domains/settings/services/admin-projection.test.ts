@@ -3,7 +3,7 @@ import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
 import { projectSectionForAdmin } from '@kobato/server/domains/settings/services/admin-projection.ts'
 import { computeSecretMasks } from '@kobato/server/domains/settings/services/masks.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { describe, expect, it } from 'vitest'
 
 function bundleWithSecrets(): BlogSettingsBundle {

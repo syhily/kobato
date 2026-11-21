@@ -1,11 +1,11 @@
 import type { AdminTagDto } from '@kobato/contracts/tags.ts'
 
+import { makeAdminTag } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeAdminTag } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog.tsx'
 import { TagRow, TagsSkeleton } from '@kobato/web-admin/ui/tags/TagRows.tsx'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -29,7 +29,7 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
 
 function resetInfinite(): void {
   queryMocks.infinite = {

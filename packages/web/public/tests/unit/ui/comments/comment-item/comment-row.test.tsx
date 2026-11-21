@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
+import { makeComment } from '@kobato/contracts/tests/utils/catalog.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
 import { flashCommentTarget, getCommentFlashSnapshot } from '@kobato/web-client/lib/comment-flash.ts'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-public/tests/utils/blog-settings.ts'
-import { makeComment } from '@kobato/web-public/tests/utils/catalog.ts'
 import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf.tsx'
 import { renderWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
 import { CommentRow } from '@kobato/web-public/ui/comments/comment-item/CommentRow.tsx'

@@ -1,5 +1,5 @@
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import PostsAnalyticsRoute from '@/routes/admin/posts/analytics.tsx'

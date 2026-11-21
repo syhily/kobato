@@ -3,9 +3,9 @@ import {
   adminSendDirectInput,
   replyNotificationInput,
 } from '@kobato/contracts/notifications.ts'
-import { makeTranslator } from '@kobato/contracts/tests/utils/i18n.ts'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
 import { describe, expect, it } from 'vitest'
 
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/

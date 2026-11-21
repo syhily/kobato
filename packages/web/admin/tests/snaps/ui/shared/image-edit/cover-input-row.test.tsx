@@ -1,5 +1,5 @@
-import { renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const mod_UploadImageDialog = await import('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx')

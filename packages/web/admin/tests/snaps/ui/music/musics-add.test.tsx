@@ -1,14 +1,14 @@
 import type { MetingSearchHit } from '@kobato/contracts/music.ts'
 
+import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { makeAdminMusic } from '@kobato/web-admin/tests/utils/catalog.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AddMusicDialog } from '@kobato/web-admin/ui/music/AddMusicDialog.tsx'
 import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView.tsx'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView.tsx'
 import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
 import { SearchAlbumCard } from '@kobato/web-admin/ui/music/SearchAlbumCard.tsx'
 import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -110,7 +110,7 @@ vi.mock('motion/react', async () => {
   }
 })
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/test/stubs/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
 
 function makeSearchHit(overrides: Partial<MetingSearchHit> = {}): MetingSearchHit {
   return {

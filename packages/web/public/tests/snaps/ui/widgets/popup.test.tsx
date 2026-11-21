@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/web-public/tests/utils/render.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { Popup } from '@kobato/web-public/ui/widgets/Popup.tsx'
 import { Suspense } from 'react'
 import { describe, expect, it } from 'vitest'

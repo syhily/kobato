@@ -17,7 +17,6 @@
     "@kobato/test": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@kobato/web-client": "workspace:*",
     "@openobserve/browser-rum-slim": "catalog:",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",

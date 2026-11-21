@@ -19,8 +19,8 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
 } from '@kobato/server/tests/utils/analytics-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

@@ -1,7 +1,6 @@
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
-import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
 import { buildMyCommentFilterFields } from '@kobato/web-admin/ui/account/filter-fields.ts'
 import { buildAuditFilterFields, type AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
 import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields.ts'
@@ -14,6 +13,7 @@ import { TextFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/editors
 import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar.tsx'
 import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list.tsx'
 import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill.tsx'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)

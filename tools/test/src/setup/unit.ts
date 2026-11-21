@@ -15,7 +15,7 @@ import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-w
 import '@date-fns/tz'
 import { cleanup } from '@testing-library/react'
 import '@kobato/test/env.ts'
-import { afterAll, afterEach, vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 
 vi.mock('sonner', () => ({
   toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn() },
@@ -35,8 +35,8 @@ afterEach(() => {
   cleanup()
 })
 
-// Shared workers keep one event loop across files; a file that leaves fake
-// timers installed would freeze every later file's timers/setImmediate.
-afterAll(() => {
+// Shared workers keep one event loop across files; restore timers after every
+// test so no file can freeze a later file's timers/setImmediate.
+afterEach(() => {
   vi.useRealTimers()
 })

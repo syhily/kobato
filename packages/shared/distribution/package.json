@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/distribution": "workspace:*",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

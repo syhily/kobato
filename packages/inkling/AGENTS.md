@@ -12,7 +12,7 @@
 ```bash
 pnpm run type        # root tsc — also covers tests/inkling
 pnpm run lint        # oxlint (root config)
-pnpm test:inkling    # vitest run --project inkling
+pnpm test:inkling    # editor tests through the root Vitest config
 pnpm run fmt
 pnpm demo
 ```

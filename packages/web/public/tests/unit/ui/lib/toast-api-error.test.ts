@@ -2,7 +2,7 @@ import { ORPCError } from '@orpc/client'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const toastMock = vi.mocked(toast)
-import { makeTranslator } from '@kobato/web-public/tests/utils/i18n.ts'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
 import { onMutationError, toastApiError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
 
 const tZhCN = makeTranslator('zh-CN')

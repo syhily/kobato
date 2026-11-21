@@ -10,7 +10,6 @@
     "@kobato/assets": "workspace:*",
     "@kobato/cache": "workspace:*",
     "@kobato/i18n": "workspace:*",
-    "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
     "react-intl": "catalog:",

@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/auth": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "react-intl": "catalog:",
     "vitest": "catalog:"

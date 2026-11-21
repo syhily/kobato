@@ -11,7 +11,7 @@ beforeEach(async () => {
 })
 
 const { updateBlogSettingsSection } = await import('@kobato/server/domains/settings/services/core.ts')
-const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
 
 describe('services/settings — passkey domain validation', () => {
   it('rejects passkey enable when website is not set', async () => {

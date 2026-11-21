@@ -7,7 +7,6 @@
     "./*": "./src/*"
   },
   "devDependencies": {
-    "@kobato/assets": "workspace:*",
     "vitest": "catalog:"
   }
 }

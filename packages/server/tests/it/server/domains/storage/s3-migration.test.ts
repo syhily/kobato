@@ -12,11 +12,11 @@ import { updateBlogSettingsSection } from '@kobato/server/domains/settings/servi
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
 import { DEFAULT_PRIVATE_CACHE_CONTROL, DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { lexicalBodyWith, lexicalImage } from '@kobato/server/tests/utils/lexical.ts'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

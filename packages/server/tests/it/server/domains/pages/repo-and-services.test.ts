@@ -12,8 +12,8 @@ const findPageMetaBySlugForUpdate = vi.spyOn(
   'findPageMetaBySlugForUpdate',
 )
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/server/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
 
 const repo = await import('@kobato/server/domains/pages/repo.ts')
 const publicQuery = await import('@kobato/server/domains/pages/services/public-query.ts')

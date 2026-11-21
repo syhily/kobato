@@ -1,10 +1,9 @@
 # Web test conventions
 
-`packages/web/tests/` holds the umbrella Vitest roots, their product-coupled setup wrapper and fixture copies, and cross-leaf contract tests for `@kobato/web-client`, `@kobato/web-public`, and `@kobato/web-admin`. It is not a production package.
+`packages/web/tests/` is a plain coordination directory, not a workspace package. It holds only the umbrella Vitest configs and their product-coupled setup wrappers.
 
-- `package.json` is the private, tests-only `@kobato/web-tests` manifest: it supplies dependency resolution for cross-leaf tests and declares no source surface. Production code must not import it.
-- Leaf suites live in `packages/web/{client,public,admin}/tests/{unit,snaps}` and mirror their owning `src/` trees. Cross-leaf contract pins stay here; a test that imports sibling leaves must not force a reverse package dependency.
-- `tests/unit/vitest.config.ts` declares two nested projects (the `web` prefix is vitest's nested naming): `web (unit)` anchors at the repository root and includes all three leaf unit trees plus this directory's `unit/` and `contract/`; `web (tz-unit)` (forks pool) runs only `time-labels.test.ts`, excluded from `web (unit)` because its runtime `process.env.TZ` write only takes effect in a real process — worker_threads fix their ICU zone at spawn. `tests/snaps/vitest.config.ts` (`web-snaps`) does the same for snapshots.
-- Examples: `contract/lexical-node-whitelist.test.ts` pins both composers against `@kobato/inkling/headless`; `unit/client/editor/use-editor-body-reset.test.ts` pins the client reset hook against the public comment composer.
-- Run with `npx vitest run --project "web (unit)"` / `--project web-snaps` (the `web` prefix is vitest's nested-project naming). Filters resolve from the repository root, for example `npx vitest run --project "web (unit)" packages/web/admin/tests/unit/`.
-- Generic infrastructure (query mocks, dialog stubs, `vitest.define`) comes from `@kobato/test`; cross-leaf render/data fixtures live in this package's `utils/`, and the three leaves keep their own copies under their own `tests/utils/`.
+- Leaf suites live in `packages/web/{client,public,admin}/tests/{unit,snaps}` and mirror their owning `src/` trees.
+- `tests/unit/vitest.config.ts` declares `web-unit` for all three leaf unit trees and `web-tz-unit` for `time-labels.test.ts`, which requires forks for its runtime `process.env.TZ` write. `tests/snaps/vitest.config.ts` declares `web-snaps`.
+- Cross-leaf and cross-package contract tests live in `apps/kobato/tests/arch/` or the app's owning test tree, never here.
+- Run all web-leaf tests with `pnpm test packages/web`. Filters resolve from the repository root.
+- Generic infrastructure comes from `@kobato/test`. Shared fixtures and render helpers use their canonical owners' `tests/utils/`; single-consumer helpers stay in the consuming leaf.

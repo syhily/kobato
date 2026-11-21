@@ -8,9 +8,9 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
 import { decryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db: Database = getTestDb()

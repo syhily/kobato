@@ -4,9 +4,9 @@ import { post } from '@kobato/db/schema/post.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
 import { latestComments, loadComments } from '@kobato/server/domains/comments/services/public-query.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { adminSession, regularSession } from '@kobato/server/tests/utils/session.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

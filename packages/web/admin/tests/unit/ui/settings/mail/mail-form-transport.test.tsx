@@ -13,7 +13,7 @@ import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { projectMailForAdmin } from '@kobato/settings/projection.ts'
 import { mailDefaults } from '@kobato/settings/sections/mail.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/web-admin/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
 import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'

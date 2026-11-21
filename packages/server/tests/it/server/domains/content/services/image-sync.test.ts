@@ -1,5 +1,4 @@
 import { image as imageTable } from '@kobato/db/schema/media.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/server/tests/utils/blog-settings.ts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import {
   emptyLexicalBody,
@@ -7,6 +6,7 @@ import {
   lexicalImage,
   lexicalParagraph,
 } from '@kobato/server/tests/utils/lexical.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

@@ -8,7 +8,6 @@
   },
   "devDependencies": {
     "@kobato/i18n": "workspace:*",
-    "@kobato/seo": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",

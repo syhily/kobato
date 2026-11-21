@@ -2,10 +2,10 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/contracts/audit.
 import type { AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
 
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { tZhCN } from '@kobato/web-admin/tests/utils/i18n.ts'
-import { renderInRouter, stableHtml } from '@kobato/web-admin/tests/utils/render.tsx'
 import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = mockTanstackQuery()

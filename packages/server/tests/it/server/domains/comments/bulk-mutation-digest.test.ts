@@ -7,7 +7,7 @@ import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mai
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/server/tests/utils/blog-settings.ts')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
 
 const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
   await import('@kobato/server/domains/comments/services/moderate.ts')

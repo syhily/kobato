@@ -25,8 +25,8 @@ afterAll(() => {
 })
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
-import { emptyLexicalBody } from '@kobato/web-admin/tests/utils/lexical.ts'
 import {
   draftEditKey,
   useDraftSession,

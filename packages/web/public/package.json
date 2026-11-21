@@ -19,7 +19,6 @@
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@kobato/web-client": "workspace:*",
-    "@kobato/web-public": "workspace:*",
     "@number-flow/react": "catalog:",
     "@orpc/client": "catalog:",
     "@tanstack/react-query": "catalog:",

@@ -1,7 +1,7 @@
 import { toDetailPostShell } from '@kobato/catalog/projection.ts'
+import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog.ts'
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { makePost, makeTag } from '@tests/utils/catalog.ts'
-import { prerenderInRouter, stableHtml } from '@tests/utils/render.tsx'
+import { prerenderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
 import { describe, expect, it } from 'vitest'
 
 import PostDetailRoute from '@/routes/public/post/detail.tsx'

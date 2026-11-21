@@ -26,7 +26,6 @@
   },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
-    "@kobato/db": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
