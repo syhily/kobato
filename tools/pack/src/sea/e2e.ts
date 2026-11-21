@@ -14,7 +14,7 @@ import { join, resolve as resolvePath } from 'node:path'
 const SHUTDOWN_TIMEOUT_MS = 15_000
 
 async function main() {
-  const binaryPath = process.argv[2] ? resolvePath(process.argv[2]) : seaBinaryPath()
+  const binaryPath = process.argv[2] ? resolvePath(repoRoot, process.argv[2]) : seaBinaryPath()
   if (process.argv[2]?.startsWith('--')) {
     fail('Usage: node tools/pack/src/sea/e2e.ts [path-to-binary]')
   }

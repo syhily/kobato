@@ -7,7 +7,7 @@ import { readConvergedConfig, seedInstalledInstance } from '@kobato/harness/seed
 import { makeTempDirs, smokeDatabases } from '@kobato/harness/temp.ts'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget.ts'
 import { fail } from '@kobato/pack/sea/exec.ts'
-import { seaBinaryPath } from '@kobato/pack/sea/paths.ts'
+import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths.ts'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'
@@ -555,7 +555,7 @@ async function main() {
     await runHttpChecks(baseUrl, null)
     await checkCalendar(baseUrl, { optional: true })
   } else if (args[0] === '--binary-only') {
-    const binaryPath = args[1] ? resolvePath(args[1]) : seaBinaryPath()
+    const binaryPath = args[1] ? resolvePath(repoRoot, args[1]) : seaBinaryPath()
     console.log('==> SEA smoke (binary-only)')
     cleanup = await runBinaryOnly(binaryPath)
   } else {
@@ -564,7 +564,7 @@ async function main() {
         'Usage: node tools/pack/src/sea/smoke.ts [--external <baseUrl> | --binary-only [path-to-binary] | path-to-binary]',
       )
     }
-    const binaryPath = args[0] ? resolvePath(args[0]) : seaBinaryPath()
+    const binaryPath = args[0] ? resolvePath(repoRoot, args[0]) : seaBinaryPath()
     console.log('==> SEA smoke (managed)')
     cleanup = await runManaged(binaryPath)
   }
