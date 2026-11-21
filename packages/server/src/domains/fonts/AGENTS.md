@@ -1,8 +1,12 @@
 # Fonts
 
-Self-hosted web-font slicing. `slice.ts` drives the vendored cn-font-split Rust wasm core through Node's built-in `node:wasi` (binding `node:fs` directly) — zero runtime wasm/fs npm dependencies. The wasm binary is imported with Vite's native `?init` query: no plugin, no base85 inlining.
+Self-hosted web-font slicing. `slice.ts` drives the vendored cn-font-split Rust wasm core through Node's built-in
+`node:wasi` (binding `node:fs` directly) — zero runtime wasm/fs npm dependencies. The wasm binary is imported with
+Vite's native `?init` query: no plugin, no base85 inlining.
 
-`vendor/` is a deliberate snapshot: npm publishes cn-font-split `7.4.3` while the Rust core has advanced to `7.6.8` on GitHub, so we pair the Rust wasm binary with a minimal JS glue layer we control plus an `@bufbuild/protobuf` encoder generated from the upstream proto — the only contract between JS and the wasm core.
+`vendor/` is a deliberate snapshot: npm publishes cn-font-split `7.4.3` while the Rust core has advanced on GitHub, so
+we pair the Rust wasm binary with a minimal JS glue layer we control plus an `@bufbuild/protobuf` encoder generated from
+the upstream proto — the only contract between JS and the wasm core.
 
 ## Vendor files
 
@@ -13,12 +17,16 @@ Self-hosted web-font slicing. `slice.ts` drives the vendored cn-font-split Rust 
 | `vendor/cnfs.wasm`     | GitHub release `7.6.8` → `libffi-wasm32-wasip1.wasm`       | The Rust slicing core                                    |
 | `vendor/wasm-split.ts` | This repo (ported from upstream `packages/ffi-js`)         | `fontSplit(props)` — `node:wasi` glue that runs the core |
 
-`node:wasi` binds `node:fs` directly with a real OS temp directory as the wasm's `/`; the SSR build emits the `.wasm` next to the server bundle and reads it via `import.meta.url` — one shape for dev, test, and production. `protoc` is never a build or runtime dependency.
+`node:wasi` binds `node:fs` directly with a real OS temp directory as the wasm's `/`; the SSR build emits the `.wasm`
+next to the server bundle and reads it via `import.meta.url`. `protoc` is never a build or runtime dependency.
 
 ## Updating
 
-- **wasm binary (manual)** — download `libffi-wasm32-wasip1.wasm` for the target release over `vendor/cnfs.wasm`, record the sha256 below, and rely on the real-TTF `sliceFont` unit test as the schema-drift guard.
-- **proto + encoder** — regenerate `vendor/gen/api_pb.ts` from `vendor/api.proto` with `protoc-gen-es` (requires `protoc` on PATH; no repo script exists) and commit; re-fetch `api.proto` from the upstream `release` branch if the schema changes.
+- **wasm binary (manual)** — download `libffi-wasm32-wasip1.wasm` for the target release over `vendor/cnfs.wasm`, record
+  the sha256 below, and rely on the real-TTF `sliceFont` unit test as the schema-drift guard.
+- **proto + encoder** — regenerate `vendor/gen/api_pb.ts` from `vendor/api.proto` with `protoc-gen-es` (requires
+  `protoc` on PATH; no repo script exists) and commit; re-fetch `api.proto` from the upstream `release` branch if the
+  schema changes.
 
 ## Pinned versions
 

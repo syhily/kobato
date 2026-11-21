@@ -2,9 +2,14 @@
 
 The public content read model used by SSR, public/admin rendering, and wire output schemas.
 
-- `model.ts` owns the public post/page/taxonomy/friend/comment shapes, listing-card/detail-shell read models, and the richer `Post`/`Page` catalog records (`bodyHtml`/`bodyState`/`imageSources`/revision columns).
-- `projection.ts` owns the pure `toClientPost` / `toListingPostCard` / `toDetailPostShell` / `toDetailPageShell` / `toSidebarPostLink` projections from catalog records to public shapes.
+- `model.ts` owns the public post/page/taxonomy/friend/comment shapes, listing-card/detail-shell read models, and the
+  richer `Post`/`Page` catalog records (`bodyHtml`/`bodyState`/`imageSources`/revision columns).
+- `projection.ts` owns the pure `toClientPost` / `toListingPostCard` / `toDetailPostShell` / `toDetailPageShell` /
+  `toSidebarPostLink` projections from catalog records to public shapes.
 - `listing.ts` owns the route-level listing loader data (SEO metadata + request identity).
-- Does not own oRPC inputs, mutation DTOs, database rows, React, or server queries. `@kobato/contracts` may depend on this package; this package never depends on contracts.
-- Allowed deps: `@kobato/inkling` (headless, TYPE-ONLY: `LexicalEditorState` / `MarkdownHeading`) for the stored document vocabulary and type-only React Router metadata for listing SEO.
-- Tests: `tests/unit/` under `shared-unit`. The workspace-canonical content fixture lives in `@kobato/contracts/tests/utils/catalog.ts` because it also builds wire DTOs; catalog never depends on contracts.
+- Does not own oRPC inputs, mutation DTOs, database rows, React, or server queries. `@kobato/contracts` may depend on
+  this package; this package never depends on contracts.
+- Allowed deps: `@kobato/inkling` (headless, TYPE-ONLY: `LexicalEditorState` / `MarkdownHeading`) and type-only React
+  Router metadata for listing SEO.
+- Tests: `tests/unit/` (`shared-unit`). The workspace-canonical content fixture lives in
+  `@kobato/contracts/tests/utils/catalog.ts` because it also builds wire DTOs; catalog never depends on contracts.

@@ -2,28 +2,23 @@
 
 Kobato splits configuration into two layers:
 
-- **Runtime settings** — site identity, SEO, comments, navigation, assets,
-  analytics, observability, and everything else users touch live in the admin
-  console's settings sections, stored in the database.
-- **Infrastructure** — secrets, listen address, and data paths live in
-  **`kobato.config.json`**, validated at boot. Observability has no entry here;
-  it is configured exclusively in the admin console.
+- **Runtime settings** — site identity, SEO, comments, navigation, assets, analytics, observability, and everything else
+  users touch live in the admin console's settings sections, stored in the database.
+- **Infrastructure** — secrets, listen address, and data paths live in **`kobato.config.json`**, validated at boot.
+  Observability has no entry here; it is configured exclusively in the admin console.
 
 ## The config file
 
-`kobato.config.json` is always present: it is auto-created with defaults when
-missing (file mode `0600`). The first existing file wins:
+`kobato.config.json` is always present: it is auto-created with defaults when missing (file mode `0600`). The first
+existing file wins:
 
-1. `--config <path>` / `-c <path>` — explicit; the file is created at this
-   path if missing
-2. `KOBATO_CONFIG_FILE` — dev tooling; resolved against the working directory,
-   also treated as explicit
+1. `--config <path>` / `-c <path>` — explicit; the file is created at this path if missing
+2. `KOBATO_CONFIG_FILE` — dev tooling; resolved against the working directory, also treated as explicit
 3. `<binary dir>/kobato.config.json` — SEA binary only
 4. `./kobato.config.json`
 5. `~/.config/kobato.config.json`
 
-See [`kobato.config.example.json`](../../kobato.config.example.json) for the
-full shape:
+See [`kobato.config.example.json`](../../kobato.config.example.json) for the full shape:
 
 ```jsonc
 {
@@ -48,11 +43,10 @@ full shape:
 
 ## Environment variables
 
-Every config path can be set with an environment variable named after the
-nested path joined with a double underscore. Env values override the file
-**and are written back into it** — the file converges to the effective
-configuration, so env is the injection mechanism for services and the file is
-the record. Precedence: schema defaults < config file < environment.
+Every config path can be set with an environment variable named after the nested path joined with a double underscore.
+Env values override the file **and are written back into it** — the file converges to the effective configuration, so
+env is the injection mechanism for services and the file is the record. Precedence: schema defaults < config file <
+environment.
 
 | Variable                     | Config path                 | Description                                                                   |
 | ---------------------------- | --------------------------- | ----------------------------------------------------------------------------- |
@@ -71,30 +65,25 @@ the record. Precedence: schema defaults < config file < environment.
 
 Generate both with `openssl rand -hex 32`; boot fails until they validate:
 
-- `security.sessionSecret` — at least 32 characters. A comma-separated list
-  accepts multiple secrets: the first signs new cookies, the rest keep
-  validating existing sessions, so rotation does not log everyone out.
-- `security.encryptionKey` — at least 32 characters with at least 10 distinct
-  characters (weak repeated keys are rejected). It encrypts secrets at rest in
-  the database; changing it makes previously stored secrets unreadable.
+- `security.sessionSecret` — at least 32 characters. A comma-separated list accepts multiple secrets: the first signs
+  new cookies, the rest keep validating existing sessions, so rotation does not log everyone out.
+- `security.encryptionKey` — at least 32 characters with at least 10 distinct characters (weak repeated keys are
+  rejected). It encrypts secrets at rest in the database; changing it makes previously stored secrets unreadable.
 
 ## Trusted proxies
 
-`security.trustedProxies` lists the direct peers allowed to vouch for
-forwarded headers (`X-Forwarded-For` and friends): exact IP addresses or IPv4
-CIDRs, comma-separated in the string form or a JSON array in the file form.
+`security.trustedProxies` lists the direct peers allowed to vouch for forwarded headers (`X-Forwarded-For` and friends):
+exact IP addresses or IPv4 CIDRs, comma-separated in the string form or a JSON array in the file form.
 
 - Empty (the default) → only loopback peers are trusted.
-- An entry of `0.0.0.0/0` is rejected at boot — it would trust every peer and
-  silently disable all per-IP rate limits and audit attribution.
+- An entry of `0.0.0.0/0` is rejected at boot — it would trust every peer and silently disable all per-IP rate limits
+  and audit attribution.
 
-Behind Docker or a reverse proxy, trust the overlay subnet, e.g.
-`172.18.0.0/16`.
+Behind Docker or a reverse proxy, trust the overlay subnet, e.g. `172.18.0.0/16`.
 
 ## Data directory
 
-`storage.data` (default `./data`, relative to the working directory) holds
-everything persistent:
+`storage.data` (default `./data`, relative to the working directory) holds everything persistent:
 
 ```
 <data>/
@@ -108,14 +97,12 @@ everything persistent:
 └── cache/             # disposable; excluded from backups
 ```
 
-`storage.database` and `storage.analyticsDatabase` override the two database
-files; empty means the defaults above. `storage.defaultFont` points at a font
-file copied into `<data>/fonts` on boot (existing files are never
-overwritten) for server-rendered images.
+`storage.database` and `storage.analyticsDatabase` override the two database files; empty means the defaults above.
+`storage.defaultFont` points at a font file copied into `<data>/fonts` on boot (existing files are never overwritten)
+for server-rendered images.
 
 ## Legacy config files
 
-Older layouts keep loading: `auth.sessionSecret` moves to
-`security.sessionSecret`, `paths.*` to `storage.*`, and `logging.level` to
-`server.loggingLevel`; removed sections (`redis`, the pre-SQLite `database`)
-are dropped. Moves are written back in place and reported on stderr.
+Older layouts keep loading: `auth.sessionSecret` moves to `security.sessionSecret`, `paths.*` to `storage.*`, and
+`logging.level` to `server.loggingLevel`; removed sections (`redis`, the pre-SQLite `database`) are dropped. Moves are
+written back in place and reported on stderr.

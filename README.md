@@ -1,29 +1,22 @@
-<!-- markdownlint-disable MD033 MD041 -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="packages/server/src/assets/defaults/images/blog-poster-dark.png">
-  <img alt="Kobato" src="packages/server/src/assets/defaults/images/blog-poster.png">
-</picture>
+<!-- markdownlint-disable MD033 MD041 --> <picture> <source media="(prefers-color-scheme: dark)" srcset="packages/server/src/assets/defaults/images/blog-poster-dark.png"> <img alt="Kobato" src="packages/server/src/assets/defaults/images/blog-poster.png"> </picture>
 
 # Kobato (こばと。)
 
 > _"A little bird carrying hope, one letter at a time."_
 
-**Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily)
-— the engine behind [且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC,
-with a built-in `/admin` console for everything.
-Content is stored as **Lexical** editor state and authored through the built-in **inkling** editor;
-saved server-side HTML projections power SSR, feeds, and search.
+**Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily) — the engine behind
+[且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC, with a built-in `/admin` console for
+everything. Content is stored as **Lexical** editor state and authored through the built-in **inkling** editor; saved
+server-side HTML projections power SSR, feeds, and search.
 
-This repository is the complete product: public site, admin SPA, API, SSR renderer, install gate, and database migrations.
-The whole deployment is one process — content lives in an embedded **SQLite** database, analytics in an
+This repository is the complete product: public site, admin SPA, API, SSR renderer, install gate, and database
+migrations. The whole deployment is one process — content lives in an embedded **SQLite** database, analytics in an
 embedded **DuckDB** sidecar. There is no database server to run, back up, or upgrade.
 
-> **Contributors:** start at [AGENTS.md](AGENTS.md) — it maps the folder-scoped
-> docs covering the import boundaries, the four-layer `packages/server/src/` graph, the
-> install contract, and the API permission matrix.
+> **Contributors:** start at [AGENTS.md](AGENTS.md) — it maps the folder-scoped docs covering the import boundaries, the
+> four-layer `packages/server/src/` graph, the install contract, and the API permission matrix.
 
-Manuals: [Configuration](docs/manual/Configuration.md) ·
-[Deployment](docs/manual/Deployment.md)
+Manuals: [Configuration](docs/manual/Configuration.md) · [Deployment](docs/manual/Deployment.md)
 
 ## Features
 
@@ -48,9 +41,8 @@ pnpm install
 pnpm run dev
 ```
 
-On first boot a `kobato.config.json` is created in the repo root
-(gitignored) — fill in the two secrets (see [Configuration](docs/manual/Configuration.md)
-for the file shape). The database files create themselves under
+On first boot a `kobato.config.json` is created in the repo root (gitignored) — fill in the two secrets (see
+[Configuration](docs/manual/Configuration.md) for the file shape). The database files create themselves under
 `storage.data` (`./data` by default):
 
 ```jsonc
@@ -62,15 +54,13 @@ for the file shape). The database files create themselves under
 }
 ```
 
-Open `/admin/setup` and enter the setup token printed in the console to
-create the admin account. Settings are seeded automatically.
+Open `/admin/setup` and enter the setup token printed in the console to create the admin account. Settings are seeded
+automatically.
 
 ## Testing
 
-The suite is fully self-contained — integration tests run against a
-shared in-memory SQLite database (temp files only for file-backed
-flows) and temp-file DuckDB sidecars, so no Docker or services are
-needed:
+The suite is fully self-contained — integration tests run against a shared in-memory SQLite database (temp files only
+for file-backed flows) and temp-file DuckDB sidecars, so no Docker or services are needed:
 
 ```bash
 pnpm run test

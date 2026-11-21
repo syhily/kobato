@@ -1,10 +1,27 @@
 # Server test conventions
 
-- **`tests/unit/`** (`server-unit` + `server-iso-unit`) — pure server logic, no database. Sibling project configs `vitest.config.ts` / `vitest.iso.config.ts` per tree, discovered by the root glob: the shared half excludes the files scanned by `@kobato/test/mock-files.ts` (`vi.mock(` holders) and `@kobato/test/shared-unsafe-files.ts`; both lists run under `isolate: true` in the iso half. `tests/it/` follows the same pair shape.
-- Test-only binary fixtures live under `tests/fixtures/` (the font-slicing canary owns `fixtures/fonts/`); never reach into `tools/test` by upward path.
-- **`tests/it/`** (`server-it` + `server-iso-it`) — integration tests needing a real database, mirroring `src/`: `packages/server/src/domains/posts/services/search-query.ts` → `packages/server/tests/it/server/domains/posts/services/search-query.test.ts`.
+- **`tests/unit/`** (`server-unit` + `server-iso-unit`) — pure server logic, no database. Sibling project configs
+  `vitest.config.ts` / `vitest.iso.config.ts` per tree, discovered by the root glob: the shared half excludes the files
+  scanned by `@kobato/test/mock-files.ts` (`vi.mock(` holders) and `@kobato/test/shared-unsafe-files.ts`; both lists run
+  under `isolate: true` in the iso half. `tests/it/` follows the same pair shape.
+- Test-only binary fixtures live under `tests/fixtures/` (the font-slicing canary owns `fixtures/fonts/`); never reach
+  into `tools/test` by upward path.
+- **`tests/it/`** (`server-it` + `server-iso-it`) — integration tests needing a real database, mirroring `src/`:
+  `packages/server/src/domains/posts/services/search-query.ts` →
+  `packages/server/tests/it/server/domains/posts/services/search-query.test.ts`.
 - Cross-cutting integration tests live here under the primary domain they exercise — there is no `features/` bucket.
 - Run with `pnpm test packages/server`; the root script includes unit, integration, and both isolated halves.
-- Tests that exercise the real (unmocked) rate limiter should call `__resetRateLimitsForTests()` from `@kobato/server/infra/rate-limit.ts` in `beforeEach` — the limiter is a process-level Map, so per-IP/email budgets otherwise leak across tests within a file.
-- The unit/it setup wrappers clean scheduler state in `afterAll` through a dynamic `import()` of `scheduler-utils` — the setup must never statically import it (or anything reaching `lifecycle`/`job-run-recorder`): that would instantiate the product modules before a file's `vi.mock` registers and silently defeat the mock. `job-registry.test.ts` alone resets the job handle in its own `beforeEach`; the setup net must not (later files rely on the import-time wiring).
-- Database lifecycle, DuckDB sidecar, and the rest of the harness: server-owned `tests/utils/` helpers (`integration-db`, `analytics-db`, `mock-ctx`, etc.), also consumed by app route suites through the sanctioned cross-package helper seam; generic infrastructure comes from `@kobato/test` (see `tools/test/AGENTS.md`). Pure SQLite/Drizzle operations, migration tests, AND the DuckDB persistence/query modules' tests (engine handle, DDL/appenders, retention, blob migration, dashboard reads) live in `packages/db/tests/`; server composition wiring, batchers, lifecycle, and SQLite-side maintenance stay here. Files touching the real DuckDB engine belong to the dedicated `duckdb` project wherever they live — keep the list in `@kobato/test/duckdb-files.ts` exact.
+- Tests exercising the real (unmocked) rate limiter call `__resetRateLimitsForTests()` from
+  `@kobato/server/infra/rate-limit.ts` in `beforeEach` — the limiter is a process-level Map, so budgets otherwise leak
+  across tests within a file.
+- The unit/it setup wrappers clean scheduler state in `afterAll` through a dynamic `import()` of `scheduler-utils` — the
+  setup must never statically import it (or anything reaching `lifecycle`/`job-run-recorder`): that would instantiate
+  the product modules before a file's `vi.mock` registers and silently defeat the mock. `job-registry.test.ts` alone
+  resets the job handle in its own `beforeEach`; the setup net must not (later files rely on the import-time wiring).
+- Database lifecycle, DuckDB sidecar, and the rest of the harness: server-owned `tests/utils/` helpers
+  (`integration-db`, `analytics-db`, `mock-ctx`, etc.), also consumed by app route suites through the sanctioned
+  cross-package helper seam; generic infrastructure comes from `@kobato/test` (see `tools/test/AGENTS.md`). Pure
+  SQLite/Drizzle operations, migration tests, AND the DuckDB persistence/query modules' tests live in
+  `packages/db/tests/`; server composition wiring, batchers, lifecycle, and SQLite-side maintenance stay here. Files
+  touching the real DuckDB engine belong to the dedicated `duckdb` project wherever they live — keep the list in
+  `@kobato/test/duckdb-files.ts` exact.

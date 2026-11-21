@@ -1,12 +1,28 @@
 # `@kobato/api`
 
-The oRPC contract-first layer: the single source of every RPC procedure's `method`/`path`/`input`/`output` metadata, declared with `@orpc/contract`'s `oc` builder and composed into the contract tree that mirrors the server's `apiRouter` shape. Controllers in `@kobato/server` implement these contracts via the `implement*` bases in `packages/server/src/http/orpc-base.ts`; handlers own no schema or route metadata of their own.
+The oRPC contract-first layer: the single source of every RPC procedure's `method`/`path`/`input`/`output` metadata,
+declared with `@orpc/contract`'s `oc` builder and composed into the contract tree that mirrors the server's `apiRouter`
+shape. Controllers in `@kobato/server` implement these contracts via the `implement*` bases in
+`packages/server/src/http/orpc-base.ts`; handlers own no schema or route metadata of their own.
 
-- Allowed deps: `@kobato/contracts` (the Zod wire schemas — a contract composes those schema objects, never a copy) and `@orpc/contract`. Nothing else product-side; the server implements, it does not declare.
-- Canonical nouns: a countable collection is plural (`posts`, `comments`, `images`, `webmentions`) and the file/tree key matches the `@kobato/contracts/<domain>.ts` module. File names and tree keys are NOT URLs — renaming them never changes a deployed path. Every admin surface sits on `/admin/<domain>/…` — including the comment and webmention moderation groups (the legacy `/comment-admin/*` and `/webmention-admin/*` prefixes were renamed; the typed client follows the tree keys, so only the HTTP literals changed).
-- `src/<domain>.ts` and `src/admin/<domain>.ts` — one module per RPC domain: contract procedures (`oc.route({ method, path }).input(<contracts schema>).output(<contracts schema>)`). Route paths are the stable wire surface and must never drift from deployed URLs. Composite domains such as `content` and `admin/users` mirror the server's nested or merged controller composition; `admin/revision.ts` owns the shared revision-contract factory.
-- `src/contract.ts` — the composition root, mirroring the server's `apiRouter` nesting exactly (`apiRouter.likes` ⇔ `apiContract.likes`). It composes domain contracts into the tree; it does not declare procedures and does not forward or re-export them. Every controller-backed domain is composed here; adding or removing one requires updating this tree and the full server parity test.
-- Runtime-isomorphic and React-free (same rules as the shared umbrella): safe in both bundles, no node/DOM-only APIs, no logger — validation behavior belongs to whatever runtime executes the contract.
-- No barrel `index.ts`, no `export { X } from 'y'` re-exports — consumers import `@kobato/api/<module>.ts` straight from the source file.
-- Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side — a contract carries only transport-visible metadata, never behavior.
-- Tests: `tests/unit/` (`api-unit` project) — contract shape pins: key sets, route method/path values, schema-object identity against `@kobato/contracts`, and input/output parse behavior. `contract.test.ts` pins the complete composition; `public-contracts.test.ts` and `admin.test.ts` pin route/schema identity. The server-side full-tree parity test compares every implemented procedure against this package.
+- Allowed deps: `@kobato/contracts` (a contract composes those Zod schema objects, never a copy) and `@orpc/contract`.
+  Nothing else product-side; the server implements, it does not declare.
+- Canonical nouns: a countable collection is plural (`posts`, `comments`, `images`, `webmentions`) and the file/tree key
+  matches the `@kobato/contracts/<domain>.ts` module. File names and tree keys are NOT URLs — renaming them never
+  changes a deployed path. Every admin surface sits on `/admin/<domain>/…`.
+- `src/<domain>.ts` and `src/admin/<domain>.ts` — one module per RPC domain: contract procedures
+  (`oc.route({ method, path }).input(<contracts schema>).output(<contracts schema>)`). Route paths are the stable wire
+  surface and must never drift from deployed URLs. Composite domains such as `content` and `admin/users` mirror the
+  server's nested or merged controller composition; `admin/revision.ts` owns the shared revision-contract factory.
+- `src/contract.ts` — the composition root, mirroring the server's `apiRouter` nesting exactly (`apiRouter.likes` ⇔
+  `apiContract.likes`). It composes domain contracts into the tree; it does not declare, forward, or re-export
+  procedures. Adding or removing a domain requires updating this tree and the full server parity test.
+- Runtime-isomorphic and React-free (same rules as the shared umbrella): safe in both bundles, no node/DOM-only APIs, no
+  logger — validation behavior belongs to whatever runtime executes the contract.
+- No barrel `index.ts`, no `export { X } from 'y'` re-exports — consumers import `@kobato/api/<module>.ts` straight from
+  the source file.
+- Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side — a contract carries only
+  transport-visible metadata, never behavior.
+- Tests: `tests/unit/` (`api-unit`) — contract shape pins: key sets, route method/path values, schema-object identity
+  against `@kobato/contracts`, input/output parse behavior. `contract.test.ts` pins the complete composition; the
+  server-side full-tree parity test compares every implemented procedure against this package.

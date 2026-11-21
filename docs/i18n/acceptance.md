@@ -1,38 +1,32 @@
 # i18n acceptance matrix
 
-This document answers two questions: **which acceptance items already have automated evidence**, and
-**which still need human review / real-browser verification**. It is both a template and a snapshot of
-the current state.
+This document answers two questions: **which acceptance items already have automated evidence**, and **which still need
+human review / real-browser verification**. It is both a template and a snapshot of the current state.
 
-> Snapshot time: 2026-11-08 21:11 (Asia/Shanghai), worktree `tmp/i18n-executor`.
-> Browser acceptance results were first filled in on 2026-11-08 20:58 and re-run for the last time at
-> 21:03 (§7 / §8).
-> That worktree is being modified by several slices in parallel; the "current state" in this document
-> is a snapshot, not a permanent conclusion. Every acceptance run **appends** a record at the end —
-> never overwrite an older record.
+> Snapshot time: 2026-11-08 21:11 (Asia/Shanghai), worktree `tmp/i18n-executor`. Browser acceptance results were first
+> filled in on 2026-11-08 20:58 and re-run for the last time at 21:03 (§7 / §8). That worktree is being modified by
+> several slices in parallel; the "current state" in this document is a snapshot, not a permanent conclusion. Every
+> acceptance run **appends** a record at the end — never overwrite an older record.
 
 ## 1. Bottom line
 
-- **Automated checks passing ≠ all 2800×4 strings have been human-reviewed.** The planned baseline in
-  plan 002 is 2793×4 = 11,172 UI strings; the 2026-11-08 21:11 script re-check counted
-  **2800 keys/locale = 11,200 strings**. Automation can only prove that keys are complete, ICU
-  structure is consistent, nothing falls back to English, and the designated representative terms have
-  not drifted; it cannot prove that the wording is natural, appropriate, or idiomatic for the region.
-  There are additionally 99 server keys × 4 and 157 Inkling labels × 4.
-- **No independent human review sign-off exists yet.** This document records no reviewer names, no
-  sign-off dates, and no "reviewed" claims unless a reviewer has actually signed the matrix below.
-  Author self-checks are not independent review.
-- **Real-browser results have been filled in and the final re-run is complete.** `@playwright/test`
-  1.65.0 is in the catalog / `devDependencies`, and `tests/browser/**` plus `pnpm run sea:browser` /
-  `pnpm run test:browser` are in place. First recorded 2026-11-08 20:58, final re-run 21:03:
-  **7/7 tests passed** on local Google Chrome 156.0.8078.80 (macOS 15.8.1, 1440×1000); the CI PR gate
-  runs the same suite on bundled Chromium (§7). One local run is not a human review or cross-device
-  acceptance of en-US / zh-HK / zh-TW.
-- **HK/TW natural differences are not frozen wholesale.** At drafting time the UI catalog had 247
-  HK/TW differing values; the 2026-11-08 21:11 script re-check counted **249**. The number of
-  differences changes as the catalog grows; run `regional-diff` for the current value. Inkling editor
-  labels have 0 HK/TW differences. Identical wording is allowed, and the number of differences is not
-  a quality metric.
+- **Automated checks passing ≠ all 2800×4 strings have been human-reviewed.** The planned baseline in plan 002 is
+  2793×4 = 11,172 UI strings; the 2026-11-08 21:11 script re-check counted **2800 keys/locale = 11,200 strings**.
+  Automation can only prove that keys are complete, ICU structure is consistent, nothing falls back to English, and the
+  designated representative terms have not drifted; it cannot prove that the wording is natural, appropriate, or
+  idiomatic for the region. There are additionally 99 server keys × 4 and 157 Inkling labels × 4.
+- **No independent human review sign-off exists yet.** This document records no reviewer names, no sign-off dates, and
+  no "reviewed" claims unless a reviewer has actually signed the matrix below. Author self-checks are not independent
+  review.
+- **Real-browser results have been filled in and the final re-run is complete.** `@playwright/test` 1.65.0 is in the
+  catalog / `devDependencies`, and `tests/browser/**` plus `pnpm run sea:browser` / `pnpm run test:browser` are in
+  place. First recorded 2026-11-08 20:58, final re-run 21:03: **7/7 tests passed** on local Google Chrome 156.0.8078.80
+  (macOS 15.8.1, 1440×1000); the CI PR gate runs the same suite on bundled Chromium (§7). One local run is not a human
+  review or cross-device acceptance of en-US / zh-HK / zh-TW.
+- **HK/TW natural differences are not frozen wholesale.** At drafting time the UI catalog had 247 HK/TW differing
+  values; the 2026-11-08 21:11 script re-check counted **249**. The number of differences changes as the catalog grows;
+  run `regional-diff` for the current value. Inkling editor labels have 0 HK/TW differences. Identical wording is
+  allowed, and the number of differences is not a quality metric.
 
 ## 2. Status legend
 
@@ -59,8 +53,8 @@ the current state.
 
 ## 4. Automated check details
 
-The commands below are the evidence this repository can currently produce; `✅` only means the command
-exited 0, not that the copy is good.
+The commands below are the evidence this repository can currently produce; `✅` only means the command exited 0, not
+that the copy is good.
 
 ```bash
 # Catalog structure / ICU / representative terms (the term tests added by this document run in the first command)
@@ -87,20 +81,19 @@ pnpm run test:browser   # managed SEA boot, or KOBATO_BROWSER_BASE_URL pointing 
 pnpm run i18n:regional-diff --keys
 ```
 
-**What automation can prove:** the four catalogs have identical key sets, ICU parameters and branches
-are valid, the English baseline has no Chinese residue, the root loader uses the current locale, the
-locale is propagated through the email/feed/calendar/settings seams, and the representative terms have
-not drifted.
+**What automation can prove:** the four catalogs have identical key sets, ICU parameters and branches are valid, the
+English baseline has no Chinese residue, the root loader uses the current locale, the locale is propagated through the
+email/feed/calendar/settings seams, and the representative terms have not drifted.
 
-**What automation cannot prove:** whether translations are natural, whether they fit HK/TW regional
-usage, whether there are untranslated sentences that are still grammatical, how email renders in real
-mail clients, whether browser hydration flickers, Focus/Portal interactions, and real two-tab timing.
+**What automation cannot prove:** whether translations are natural, whether they fit HK/TW regional usage, whether there
+are untranslated sentences that are still grammatical, how email renders in real mail clients, whether browser hydration
+flickers, Focus/Portal interactions, and real two-tab timing.
 
 ## 5. Human review matrix (template)
 
-There is currently **no recorded independent review sign-off**. Every status in the table below is
-`Not signed off`, not "passed". The item counts are the current values from the 2026-11-08 21:11 script
-re-check; the planned baseline in plan 002 is UI 2793, Server 99, Inkling 157.
+There is currently **no recorded independent review sign-off**. Every status in the table below is `Not signed off`, not
+"passed". The item counts are the current values from the 2026-11-08 21:11 script re-check; the planned baseline in plan
+002 is UI 2793, Server 99, Inkling 157.
 
 | Scope         | Current item count | Reviewer | Date | Verdict        | Notes                                                |
 | ------------- | ------------------ | -------- | ---- | -------------- | ---------------------------------------------------- |
@@ -119,54 +112,52 @@ re-check; the planned baseline in plan 002 is UI 2793, Server 99, Inkling 157.
 
 Sign-off rules:
 
-1. The reviewer must be someone other than the author of the change; an author's self-check can only be
-   recorded as "self-check", never as "review".
-2. A record must include the **scope** (locale + namespace + key list or file diff), the **date**, the
-   **verdict** (pass / changes required / blocked), and the **uncovered items**.
+1. The reviewer must be someone other than the author of the change; an author's self-check can only be recorded as
+   "self-check", never as "review".
+2. A record must include the **scope** (locale + namespace + key list or file diff), the **date**, the **verdict** (pass
+   / changes required / blocked), and the **uncovered items**.
 3. Re-review the affected keys after any change; do not carry an old sign-off forward.
 4. Do not backfill a retroactive signature; no record means no record.
 
 ## 6. 2800×4 and the limits of "automated pass" (planned baseline 2793×4)
 
-The planned baseline is **2793 UI keys × 4 locales = 11,172 UI strings**; the 2026-11-08 21:11 script
-re-check counted **2800 × 4 = 11,200**, plus 99 server keys × 4 and 157 Inkling labels × 4. The current
-worktree is still appending keys in parallel (UI was 2796 at drafting time and later grew to 2800), so:
+The planned baseline is **2793 UI keys × 4 locales = 11,172 UI strings**; the 2026-11-08 21:11 script re-check counted
+**2800 × 4 = 11,200**, plus 99 server keys × 4 and 157 Inkling labels × 4. The current worktree is still appending keys
+in parallel (UI was 2796 at drafting time and later grew to 2800), so:
 
 - The counts change; `pnpm run i18n:regional-diff` prints the current values.
-- Whether the count is 2793, 2800, or higher, **a passing catalog validation only proves structural
-  completeness**; it says nothing about whether any single string has been human-reviewed.
-- This document refuses to substitute "all tests green" for review sign-off, and refuses to treat
-  "HK/TW has 249 differences" as review completeness.
+- Whether the count is 2793, 2800, or higher, **a passing catalog validation only proves structural completeness**; it
+  says nothing about whether any single string has been human-reviewed.
+- This document refuses to substitute "all tests green" for review sign-off, and refuses to treat "HK/TW has 249
+  differences" as review completeness.
 
 ## 7. Real-browser acceptance
 
-Environment: **Google Chrome 156.0.8078.80** (local system Chrome channel, headless),
-**macOS 15.8.1 (24H32), x86_64**, viewport **1440×1000**. The instance is `dist-sea/kobato` (built with
-the official Node v26.13.0 darwin-x64 build; the local `/usr/local/bin/node` is a universal binary and
-`--build-sea` rejects it because of multiple sentinels). Worktree baseline `bcc0ccfe` plus uncommitted
-changes (commits are forbidden in this worktree, so there is no new SHA). UI locale baseline is zh-CN;
-each journey switches to en-US / zh-HK / zh-TW internally and returns to zh-CN.
+Environment: **Google Chrome 156.0.8078.80** (local system Chrome channel, headless), **macOS 15.8.1 (24H32), x86_64**,
+viewport **1440×1000**. The instance is `dist-sea/kobato` (built with the official Node v26.13.0 darwin-x64 build; the
+local `/usr/local/bin/node` is a universal binary and `--build-sea` rejects it because of multiple sentinels). Worktree
+baseline `bcc0ccfe` plus uncommitted changes (commits are forbidden in this worktree, so there is no new SHA). UI locale
+baseline is zh-CN; each journey switches to en-US / zh-HK / zh-TW internally and returns to zh-CN.
 
-Commands: `pnpm run sea:browser` → exit 0, `7 passed (36.9s)` (final worktree re-run);
-`pnpm run test:browser` (same suite, managed boot) → exit 0, `7 passed (38.0s)`. Trace/screenshot/video
-are kept only on failure; there were no failure attachments this round, and the HTML report is at
-`tmp/browser-report/index.html` (`tmp/` is gitignored).
+Commands: `pnpm run sea:browser` → exit 0, `7 passed (36.9s)` (final worktree re-run); `pnpm run test:browser` (same
+suite, managed boot) → exit 0, `7 passed (38.0s)`. Trace/screenshot/video are kept only on failure; there were no
+failure attachments this round, and the HTML report is at `tmp/browser-report/index.html` (`tmp/` is gitignored).
 
 CI gate (same suite as the local result):
 
-- The `build` job in `.github/workflows/ci.yml` runs, on **pull_request** events (targeting `main` /
-  `develop`), `sea:build` → `pnpm --filter @kobato/browser exec playwright install --with-deps chromium` →
-  `pnpm run sea:browser dist-sea/kobato`, with `KOBATO_BROWSER_CHANNEL=chromium` set; plain pushes in
-  that workflow only run `pnpm run build`.
-- `build-develop` in `.github/workflows/sea.yml` runs the full chain on PRs and develop pushes
-  (`sea:build` → `sea:smoke` → `sea:e2e` → Chromium → `sea:browser`); the `build` matrix runs the same
-  browser journeys on main / tag / release / dispatch.
-- Locally the default is the system Chrome channel; CI uses Playwright's bundled Chromium. The test
-  set, the 7 tests, and the assertions are identical. This document records the local 7/7; the result
-  of a CI PR run is whatever that run's log says and is not countersigned here.
+- The `build` job in `.github/workflows/ci.yml` runs, on **pull_request** events (targeting `main` / `develop`),
+  `sea:build` → `pnpm --filter @kobato/browser exec playwright install --with-deps chromium` →
+  `pnpm run sea:browser dist-sea/kobato`, with `KOBATO_BROWSER_CHANNEL=chromium` set; plain pushes in that workflow only
+  run `pnpm run build`.
+- `build-develop` in `.github/workflows/sea.yml` runs the full chain on PRs and develop pushes (`sea:build` →
+  `sea:smoke` → `sea:e2e` → Chromium → `sea:browser`); the `build` matrix runs the same browser journeys on main / tag /
+  release / dispatch.
+- Locally the default is the system Chrome channel; CI uses Playwright's bundled Chromium. The test set, the 7 tests,
+  and the assertions are identical. This document records the local 7/7; the result of a CI PR run is whatever that
+  run's log says and is not countersigned here.
 
-The 8 acceptance items below correspond to 7 Playwright tests: `Portal focus` is the same assertion
-inside the `dirty card + failed switch` test, not an eighth test.
+The 8 acceptance items below correspond to 7 Playwright tests: `Portal focus` is the same assertion inside the
+`dirty card + failed switch` test, not an eighth test.
 
 | Journey                                 | Pass criteria                                                                                            | Browser / version                   | Build SHA                 | Result | Evidence (Playwright test name)                                                                                                                                                      |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -179,17 +170,15 @@ inside the `dirty card + failed switch` test, not an eighth test.
 | Content language DOM                    | With `contentLanguage` set, the body container emits `lang`; an empty value emits no `lang`              | Same                                | Same                      | Passed | `contentLanguage ar stamps lang and dir=auto on the body only` (the browser only verifies `ar`; the empty case is covered by `tests/snaps/ui/public/post/detail-body-lang.test.tsx`) |
 | Unsaved content on a non-settings page  | No hard refresh; an explicit prompt appears ("another tab has switched the language" + a refresh button) | Same                                | Same                      | Passed | `an editor with unsaved content is not hard-reloaded by the locale broadcast`                                                                                                        |
 
-Record requirements: browser name and full version, operating system, build SHA, locale, viewport,
-result (pass/fail), and screenshot or trace paths. Keep reproduction steps on failure; never write only
-"looks fine".
+Record requirements: browser name and full version, operating system, build SHA, locale, viewport, result (pass/fail),
+and screenshot or trace paths. Keep reproduction steps on failure; never write only "looks fine".
 
 ## 8. Maintenance rules
 
-1. When adding or changing an acceptance item, add both automated evidence and human review scope; writing
-   only "covered" without evidence does not count as acceptance.
+1. When adding or changing an acceptance item, add both automated evidence and human review scope; writing only
+   "covered" without evidence does not count as acceptance.
 2. Append a §8 record before every release and keep the history; failed records are never deleted.
 3. Only the actual reviewer may record a human sign-off; authors must not sign on someone's behalf.
-4. Browser results may only come from real Chromium (or a real browser that is explicitly named); jsdom /
-   happy-dom results must never be presented as browser results.
-5. Terminology decisions are governed by [`glossary.md`](./glossary.md); the acceptance matrix does not
-   redefine terms.
+4. Browser results may only come from real Chromium (or a real browser that is explicitly named); jsdom / happy-dom
+   results must never be presented as browser results.
+5. Terminology decisions are governed by [`glossary.md`](./glossary.md); the acceptance matrix does not redefine terms.

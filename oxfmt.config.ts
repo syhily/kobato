@@ -10,6 +10,7 @@ export default defineConfig({
   jsxSingleQuote: false,
   objectWrap: 'preserve',
   printWidth: 120,
+  proseWrap: 'always',
   quoteProps: 'as-needed',
   tabWidth: 2,
   useTabs: false,

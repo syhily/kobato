@@ -1,8 +1,7 @@
 # i18n glossary — en-US / zh-CN / zh-HK / zh-TW
 
-Terminology and review baseline. This document records only **representative terms** and **explicitly
-agreed message keys**; it is neither a full copy of the four catalogs nor a list of every HK/TW
-difference.
+Terminology and review baseline. This document records only **representative terms** and **explicitly agreed message
+keys**; it is neither a full copy of the four catalogs nor a list of every HK/TW difference.
 
 ## 1. Sources and snapshot
 
@@ -13,40 +12,37 @@ difference.
 | Inkling editor labels                 | `packages/shared/i18n/src/inkling-labels/{en-US,zh-CN,zh-HK,zh-TW}.ts`  | 157                     |
 | Locale self-names                     | `packages/shared/i18n/src/locales.ts` (`LOCALE_DISPLAY_NAMES`)          | 4                       |
 
-- Snapshot date: 2026-11-08; source worktree `tmp/i18n-executor`, baseline commit `bcc0ccfe` plus the
-  current slice's changes.
-- The UI figure 2793 is the planned baseline from plan 002. That worktree is being extended with keys by
-  parallel slices, so the current count per locale is whatever `tools/i18n/src/regional-diff.ts` reports;
-  the **values** in this table are still copied verbatim from the current catalogs.
-- Values in the tables are copied verbatim from the files above, not paraphrased or "suggested"
-  translations. When a catalog changes, update this table and
-  `tests/unit/shared/i18n/glossary.test.ts` in the **same change**.
-- Only the representative items explicitly agreed in this document are pinned; the remaining 200+ natural
-  HK/TW differences are not asserted one by one.
+- Snapshot date: 2026-11-08; source worktree `tmp/i18n-executor`, baseline commit `bcc0ccfe` plus the current slice's
+  changes.
+- The UI figure 2793 is the planned baseline from plan 002. That worktree is being extended with keys by parallel
+  slices, so the current count per locale is whatever `tools/i18n/src/regional-diff.ts` reports; the **values** in this
+  table are still copied verbatim from the current catalogs.
+- Values in the tables are copied verbatim from the files above, not paraphrased or "suggested" translations. When a
+  catalog changes, update this table and `tests/unit/shared/i18n/glossary.test.ts` in the **same change**.
+- Only the representative items explicitly agreed in this document are pinned; the remaining 200+ natural HK/TW
+  differences are not asserted one by one.
 
 ## 2. Non-negotiable principles
 
-1. **No Simplified → Traditional conversion.** OpenCC and character-level mappings are forbidden at build
-   time, runtime, and in batch scripts for producing `zh-HK` / `zh-TW` copy.
-2. **HK and TW are two independent, human-written catalogs.** There is no fallback chain: a missing key in
-   `zh-HK` does not fall back to `zh-TW`, and vice versa. A missing key does fall back to the merged English
-   baseline, but that is a "missing translation" signal, not a regional-variant strategy.
-3. **HK and TW are not required to differ.** Identical wording is often the correct outcome (for example,
-   all 157 Inkling labels are currently identical in HK/TW). Rewriting copy just to "look different" is
-   forbidden.
-4. **No machine translation to fill keys.** A new key must be added to all four catalogs at once; `tsc` and
-   catalog validation enforce structure, human review enforces wording.
-5. **Placeholders and ICU structure are untranslatable.** `{name}`, `{count, plural, …}`,
-   `{kind, select, …}`, and `<tag>…</tag>` stay as-is; translate only the text inside branches. Message keys
-   themselves are never translated.
-6. **User content is not translated.** Posts, pages, comments, usernames, site titles, and other author data
-   stay in their original language; the UI locale affects only the interface and system email. Content
-   language (`contentLanguage`) and UI locale are two different things.
-7. **The calendar is the single shared exception.** The lunar/almanac terms in the calendar image come from
-   one human-reviewed Traditional Chinese static table shared by `zh-HK` and `zh-TW`; this does not leak into
-   the UI catalogs and is not a runtime conversion.
-8. **The number of differences is not a quality metric.** Review is judged by the meaning of each string, not
-   by "differs from another locale".
+1. **No Simplified → Traditional conversion.** OpenCC and character-level mappings are forbidden at build time, runtime,
+   and in batch scripts for producing `zh-HK` / `zh-TW` copy.
+2. **HK and TW are two independent, human-written catalogs.** There is no fallback chain: a missing key in `zh-HK` does
+   not fall back to `zh-TW`, and vice versa. A missing key does fall back to the merged English baseline, but that is a
+   "missing translation" signal, not a regional-variant strategy.
+3. **HK and TW are not required to differ.** Identical wording is often the correct outcome (for example, all 157
+   Inkling labels are currently identical in HK/TW). Rewriting copy just to "look different" is forbidden.
+4. **No machine translation to fill keys.** A new key must be added to all four catalogs at once; `tsc` and catalog
+   validation enforce structure, human review enforces wording.
+5. **Placeholders and ICU structure are untranslatable.** `{name}`, `{count, plural, …}`, `{kind, select, …}`, and
+   `<tag>…</tag>` stay as-is; translate only the text inside branches. Message keys themselves are never translated.
+6. **User content is not translated.** Posts, pages, comments, usernames, site titles, and other author data stay in
+   their original language; the UI locale affects only the interface and system email. Content language
+   (`contentLanguage`) and UI locale are two different things.
+7. **The calendar is the single shared exception.** The lunar/almanac terms in the calendar image come from one
+   human-reviewed Traditional Chinese static table shared by `zh-HK` and `zh-TW`; this does not leak into the UI
+   catalogs and is not a runtime conversion.
+8. **The number of differences is not a quality metric.** Review is judged by the meaning of each string, not by
+   "differs from another locale".
 
 ## 3. Common actions (common.action.*)
 
@@ -61,8 +57,8 @@ difference.
 | `common.state.loading` | Loading… | 加载中… | 載入中…  | 載入中…  | Both Traditional locales use 「載入」                   |
 | `common.state.saving`  | Saving…  | 保存中… | 儲存中…  | 儲存中…  | Follows the wording of save                             |
 
-`reload` is the first regional difference pinned by this document: HK uses 「重新載入」 and TW uses
-「重新整理」. Do not write 「重新整理」 in `zh-HK`, and do not unify them in the other direction.
+`reload` is the first regional difference pinned by this document: HK uses 「重新載入」 and TW uses 「重新整理」. Do not
+write 「重新整理」 in `zh-HK`, and do not unify them in the other direction.
 
 ## 4. Notifications (notifications.*)
 
@@ -76,9 +72,8 @@ difference.
 | `notifications.markAllRead`        | Mark all as read    | 全部标为已读   | 全部標為已讀     | 全部標為已讀     | Simplified/Traditional conversion only |
 | `notifications.compose.noUsers`    | No matching users   | 没有匹配的用户 | 沒有相符嘅使用者 | 沒有相符的使用者 | **Cantonese 「嘅」vs Mandarin 「的」** |
 
-HK/TW differences in the notification area fall into two groups: mail-related vocabulary (`電郵` vs
-`電子郵件`, see §5) and written Cantonese (`嘅`, `喺`, `冇`, `唔`, `咗`). The latter cannot be produced by
-character conversion.
+HK/TW differences in the notification area fall into two groups: mail-related vocabulary (`電郵` vs `電子郵件`, see §5)
+and written Cantonese (`嘅`, `喺`, `冇`, `唔`, `咗`). The latter cannot be produced by character conversion.
 
 ## 5. Comments (comments.*)
 
@@ -98,16 +93,14 @@ Confirmed regional terminology:
 
 - **email**: HK `電郵`, TW `電子郵件`. The same difference runs through `auth.*`, `admin.users.*`,
   `admin.settings.mail.*`, and `notifications.*`.
-- **comment**: HK prefers `留言` (including the admin area); TW uses `留言` for reader-visible content and
-  `評論` for moderation. `admin.comments.title` is the clearest example in this repository: HK
-  `留言管理`, TW `評論管理`.
+- **comment**: HK prefers `留言` (including the admin area); TW uses `留言` for reader-visible content and `評論` for
+  moderation. `admin.comments.title` is the clearest example in this repository: HK `留言管理`, TW `評論管理`.
 - **like**: HK `讚好`, TW `按讚`; CN `点赞`.
-- **network**: HK `網絡`, TW `網路`; CN `网络`. For example
-  `admin.settings.backup.restore.networkError`.
+- **network**: HK `網絡`, TW `網路`; CN `网络`. For example `admin.settings.backup.restore.networkError`.
 - **programming**: HK `編程`, TW `程式設計`; CN `编程`. For example the category/tag name placeholders.
 - **greetings**: HK `早晨`, TW `早安`; at midday HK `食晏`, TW `吃午餐`.
-- **written Cantonese**: HK `嘅 / 喺 / 冇 / 唔 / 咗 / 睇`, TW `的 / 在 / 沒有 / 不 / 了 / 看`. This is a
-  register difference, not a glyph (Simplified vs Traditional) difference.
+- **written Cantonese**: HK `嘅 / 喺 / 冇 / 唔 / 咗 / 睇`, TW `的 / 在 / 沒有 / 不 / 了 / 看`. This is a register
+  difference, not a glyph (Simplified vs Traditional) difference.
 
 ## 6. Editor (admin.editor.* and Inkling labels)
 
@@ -134,8 +127,8 @@ Inkling label side (`packages/shared/i18n/src/inkling-labels/*`):
 | `menu.image.label`             | Image                      | 图片          | 圖片          | 圖片          | HK/TW agree |
 | `placeholder.editor`           | Begin writing your post... | 开始撰写内容… | 開始撰寫內容… | 開始撰寫內容… | HK/TW agree |
 
-**Current fact: of the 157 Inkling labels, `zh-HK` and `zh-TW` differ in 0 entries.** That is allowed and
-expected; do not rewrite one of them into a different set of synonyms just to create a regional difference.
+**Current fact: of the 157 Inkling labels, `zh-HK` and `zh-TW` differ in 0 entries.** That is allowed and expected; do
+not rewrite one of them into a different set of synonyms just to create a regional difference.
 
 ## 7. Date and settings terminology
 
@@ -151,11 +144,11 @@ expected; do not rewrite one of them into a different set of synonyms just to cr
 | `common.sort.loginTime`                        | Signed in            | 登录时间       | 登入時間       | 登入時間       | Both Traditional locales use 「登入」  |
 
 Date display is not catalog copy; it is produced by `packages/shared/utils/src/format.ts` through
-`Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })`.
-`timeFormat: null` means "follow the language"; only custom mode substitutes by placeholder. Sample
-`dateStyle/timeStyle: short` output for 2026-11-08 14:30 (Asia/Shanghai): en-US `11/8/26, 2:30 PM`,
-zh-CN `2026/11/8 14:30`, zh-HK `8/11/2026 下午2:30`, zh-TW `2026/11/8 下午2:30`. **The differing HK/TW date
-order comes from ICU regional data; it is not a catalog difference waiting to be unified.**
+`Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })`. `timeFormat: null` means "follow
+the language"; only custom mode substitutes by placeholder. Sample `dateStyle/timeStyle: short` output for 2026-11-08
+14:30 (Asia/Shanghai): en-US `11/8/26, 2:30 PM`, zh-CN `2026/11/8 14:30`, zh-HK `8/11/2026 下午2:30`, zh-TW
+`2026/11/8 下午2:30`. **The differing HK/TW date order comes from ICU regional data; it is not a catalog difference
+waiting to be unified.**
 
 Locale self-names (`LOCALE_DISPLAY_NAMES`, deliberately untranslated):
 
@@ -170,8 +163,8 @@ Locale self-names (`LOCALE_DISPLAY_NAMES`, deliberately untranslated):
 
 ## 8. Distinguishing "regional differences" from "Traditional Chinese word choices"
 
-The following are **shared Traditional Chinese choices**, identical in HK and TW, and must not be recorded
-as HK-vs-TW decisions:
+The following are **shared Traditional Chinese choices**, identical in HK and TW, and must not be recorded as HK-vs-TW
+decisions:
 
 - `保存` → `儲存`
 - `用户` → `使用者`
@@ -182,8 +175,7 @@ as HK-vs-TW decisions:
 - `登录` → `登入`
 - `消息` → `訊息`
 
-The following are the **genuine HK/TW regional differences** confirmed by this document (as of the
-snapshot):
+The following are the **genuine HK/TW regional differences** confirmed by this document (as of the snapshot):
 
 | Meaning              | zh-HK                   | zh-TW                    |
 | -------------------- | ----------------------- | ------------------------ |
@@ -199,9 +191,9 @@ snapshot):
 
 ## 9. Machine-readable anchors
 
-The two tables below are parsed by `tests/unit/shared/i18n/glossary.test.ts` and compared item by item
-against the catalogs. Only representative items both sides have confirmed are added; adding or removing a
-row requires updating both the test and the catalog review record.
+The two tables below are parsed by `tests/unit/shared/i18n/glossary.test.ts` and compared item by item against the
+catalogs. Only representative items both sides have confirmed are added; adding or removing a row requires updating both
+the test and the catalog review record.
 
 <!-- glossary:ui:start -->
 
@@ -267,24 +259,21 @@ row requires updating both the test and the catalog review record.
 
 <!-- glossary:inkling:end -->
 
-Every value in these tables (including the English ones) is a verbatim copy of the catalog; the test
-compares all four locales one by one. If the English baseline in a catalog changes later, change the
-catalog first, then sync this table and the test.
+Every value in these tables (including the English ones) is a verbatim copy of the catalog; the test compares all four
+locales one by one. If the English baseline in a catalog changes later, change the catalog first, then sync this table
+and the test.
 
 ## 10. Review workflow
 
-1. Inspect current differences read-only: `pnpm run i18n:regional-diff` (add
-   `--keys` to list the specific keys).
-2. Choose a representative term; decide whether it is a "regional difference" or a "shared Traditional
-   Chinese word choice".
-3. Land it in all four catalog files at once (the English baseline defines the key; the others use
-   `satisfies`).
+1. Inspect current differences read-only: `pnpm run i18n:regional-diff` (add `--keys` to list the specific keys).
+2. Choose a representative term; decide whether it is a "regional difference" or a "shared Traditional Chinese word
+   choice".
+3. Land it in all four catalog files at once (the English baseline defines the key; the others use `satisfies`).
 4. Update the anchor table and prose in this document; update the direct assertions in
    `tests/unit/shared/i18n/glossary.test.ts` (representative items only).
 5. Run `pnpm test packages/shared/i18n/tests/unit`.
-6. **Do not** add the full difference set to the tests, and **do not** use the number of differences as a
-   review-pass criterion.
+6. **Do not** add the full difference set to the tests, and **do not** use the number of differences as a review-pass
+   criterion.
 
-Human review status and the acceptance matrix live in [`acceptance.md`](./acceptance.md). This document
-records no sign-offs; sign-offs belong only in the acceptance matrix, and must name a reviewer, a date, and
-a scope.
+Human review status and the acceptance matrix live in [`acceptance.md`](./acceptance.md). This document records no
+sign-offs; sign-offs belong only in the acceptance matrix, and must name a reviewer, a date, and a scope.
